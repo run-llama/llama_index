@@ -1,2 +1,1 @@
-langchain
-openai
+-e .
