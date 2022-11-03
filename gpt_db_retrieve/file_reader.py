@@ -13,7 +13,7 @@ class SimpleDirectoryReader:
                 raise ValueError(f"Expected {input_file} to be a file.")
         self.input_files = input_files
 
-   def load_data(self) -> str:
+    def load_data(self) -> str:
         """Loads data from the input directory."""
         data = ""
         for input_file in self.input_files:
