@@ -56,9 +56,11 @@ Practically speaking, it is much cheaper to do so and I want to limit my monthly
 Please let me know! I am not up-to-date on the latest NLP ArXiv papers or Github projects. I will give the appropriate references/credit below.
 
 **Does this actually work?**
+
 Kind of. It works for simple queries, such as the prompt provided for the NYC Wikipedia data above ("What are the three main airports?"). Sometimes it fails in frustrating ways, where the correct node to choose given the query is obvious but GPT stil picks another node for some unforseen reason (for instance, given a query prompt on "What are the main ethnicities within NYC?", GPT-3 somehow picks a node which summarizes the architecture within Brooklyn). Some of this can be fixed with prompt tuning; this is an active area of work! 
 
 **How much does this cost to run?**
+
 We currently use the Davinci model for good results. Unfortunately Davinci is quite expensive. The cost of building the tree is roughly 
 $cN\log(N)\frac{p}{1000}$, where $p=4096$ is the prompt limit and $c$ is the cost per 1000 tokens ($0.02 as mentioned on the [pricing page](https://openai.com/api/pricing/)). The cost of querying the tree is roughly 
 $c\log(N)\frac{p}{1000}$.
