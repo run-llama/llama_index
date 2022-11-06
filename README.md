@@ -45,7 +45,7 @@ The intent is not to compete against existing methods. A simpler embedding-based
 
 **Why build a tree? Why not just incremental go through each chunk?**
 
-Algorithmically speaking, $O(log N)$ is better than $O(N)$.
+Algorithmically speaking, $O(\log N)$ is better than $O(N)$.
 
 More broadly, building a tree helps us to test GPT's capabilities in modeling information in a hierarchy. It seems to me that our brains organize information in a similar way (citation needed). We can use this design to test how GPT can use its own hierarchy to answer questions.
 
@@ -60,8 +60,8 @@ Kind of. It works for simple queries, such as the prompt provided for the NYC Wi
 
 **How much does this cost to run?**
 We currently use the Davinci model for good results. Unfortunately Davinci is quite expensive. The cost of building the tree is roughly 
-$ N \log(N) \frac{\text{prompt_limit}}{1000} c_{\text{per_1000}}$, where $\text{prompt_limit}=4096$ and $c_{\text{per_1000}}$ is the cost per 1000 tokens ($0.02 as mentioned on the [pricing page](https://openai.com/api/pricing/)). The cost of querying the tree is roughly 
-$\log(N) \frac{\text{prompt_limit}}{1000} c_{\text{per_1000}}$.
+$ N \log(N) \frac{p}{1000} c$, where $p=4096$ is the prompt limit and $c$ is the cost per 1000 tokens ($0.02 as mentioned on the [pricing page](https://openai.com/api/pricing/)). The cost of querying the tree is roughly 
+$\log(N) \frac{p}{1000} c$.
 
 For the NYC example, this equates to $~0.40$ per query.
 
