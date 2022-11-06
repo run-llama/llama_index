@@ -3,12 +3,12 @@
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin, Undefined, dataclass_json
 from pathlib import Path
-from gpt_db_retrieve.file_reader import SimpleDirectoryReader
+from gpt_index.file_reader import SimpleDirectoryReader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain import OpenAI, Prompt, LLMChain
-from gpt_db_retrieve.prompts import DEFAULT_SUMMARY_PROMPT, DEFAULT_QUERY_PROMPT, DEFAULT_TEXT_QA_PROMPT
-from gpt_db_retrieve.utils import get_chunk_size_given_prompt, extract_number_given_response
-from gpt_db_retrieve.text_splitter import TokenTextSplitter
+from gpt_index.prompts import DEFAULT_SUMMARY_PROMPT, DEFAULT_QUERY_PROMPT, DEFAULT_TEXT_QA_PROMPT
+from gpt_index.utils import get_chunk_size_given_prompt, extract_number_given_response
+from gpt_index.text_splitter import TokenTextSplitter
 
 from typing import List
 import json
