@@ -42,9 +42,16 @@ To query,
 index.query("<question_text>?")
 ```
 
-## Related Work
+## Related Work [WIP]
 
-TODO: fill out! 
+[Measuring and Narrowing the Compositionality Gap in Language Models, by Press et al.](https://arxiv.org/abs/2210.03350)
+- This paper introduces a *self-ask* paradigm, which forces the model to ask and answer followup questions before answering the original question. It is similar to GPT Index in that it uses GPT to reason through subproblems; the difference is that the GPT index itself represents an external source of information, whereas self-ask relies on the model itself.
+- [Example (from Langchain)](https://github.com/hwchase17/langchain/blob/master/examples/self_ask_with_search.ipynb)
+
+
+[ReAct: Synergizing Reasoning and Acting in Language Models, by Yao et al.](https://arxiv.org/abs/2210.03629)
+- This paper introduces a joint reasoning and acting framework in an interleaved manner, where reasoning can update action plans, and action plans can gather more information from external environments. This approach of connecting to external knowledge sources is roughly similar to our approach of having GPT traverse an externally stored index of data. The difference is that ReAct has much more fluid/sophisticated ways of traversal (e.g. search, lookup, finish), whereas GPT Index has more emphasis on building an internal data structure index along with simple tree-based traversal. We leave it as future work within GPT Index to explore alternative ways of organizing an information index, so that GPT does not need to rely on an externally organized information source (e.g. Wikipedia API) for query purposes.
+
 
 
 ## Additional Thoughts / FAQ
