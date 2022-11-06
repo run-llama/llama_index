@@ -19,7 +19,7 @@ The high-level intent of this project is to be a design-exercise to test the cap
 
 An example is provided in `examples/test_wiki/TestNYC.ipynb`. To build the index do something like  
 ```python
-from gpt_db_retrieve.index import GPTIndex
+from gpt_index.index import GPTIndex
 GPTIndex.from_input_dir('data')
 ```
 
