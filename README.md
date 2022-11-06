@@ -10,7 +10,7 @@ However, one fundamental limitation of GPT-3 is the context size. The most sophi
 
 But what if GPT-3 can have access to potentially a much larger database of knowledge for use in say, question-answering tasks? That's where the **GPT Tree Index** comes in. 
 
-**How It Works**
+#### How It Works 
 The GPT Tree Index first takes in a large dataset of unprocessed text data as input. It then builds up a tree-index in a bottom-up fashion; each parent node is able to summarize the children nodes using a general **summarization prompt**; each intermediate node contains text summarizing the components below. Once the index is built, it can be saved to disk as a JSON and loaded for future use. 
 
 Then, say the user wants to use GPT-3 to answer a question. Using a **query prompt template**, GPT-3 will be able to recursively perform tree traversal in a top-down fashion in order to answer a question. For example, in the very beginning GPT-3 is tasked with selecting between *n* top-level nodes which best answers a provided query, by outputting a number as a multiple-choice problem. The GPT Tree Index then uses the number to select the corresponding node, and the process repeats recursively among the children nodes until a leaf node is reached.
