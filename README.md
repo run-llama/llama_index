@@ -60,8 +60,8 @@ Kind of. It works for simple queries, such as the prompt provided for the NYC Wi
 
 **How much does this cost to run?**
 We currently use the Davinci model for good results. Unfortunately Davinci is quite expensive. The cost of building the tree is roughly 
-$ N \log(N) \frac{p}{1000} c$, where $p=4096$ is the prompt limit and $c$ is the cost per 1000 tokens ($0.02 as mentioned on the [pricing page](https://openai.com/api/pricing/)). The cost of querying the tree is roughly 
-$\log(N) \frac{p}{1000} c$.
+$cN\log(N)\frac{p}{1000}$, where $p=4096$ is the prompt limit and $c$ is the cost per 1000 tokens ($0.02 as mentioned on the [pricing page](https://openai.com/api/pricing/)). The cost of querying the tree is roughly 
+$c\log(N)\frac{p}{1000}$.
 
 For the NYC example, this equates to $~0.40$ per query.
 
