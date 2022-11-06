@@ -63,7 +63,7 @@ We currently use the Davinci model for good results. Unfortunately Davinci is qu
 $cN\log(N)\frac{p}{1000}$, where $p=4096$ is the prompt limit and $c$ is the cost per 1000 tokens ($0.02 as mentioned on the [pricing page](https://openai.com/api/pricing/)). The cost of querying the tree is roughly 
 $c\log(N)\frac{p}{1000}$.
 
-For the NYC example, this equates to $~0.40$ per query.
+For the NYC example, this equates to \$~0.40 per query.
 
 ## Dependencies
 
