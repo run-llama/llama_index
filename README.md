@@ -21,6 +21,12 @@ The GPT Index first takes in a large dataset of unprocessed text data as input. 
 
 Then, say the user wants to use GPT-3 to answer a question. Using a **query prompt template**, the GPT Index will be able to recursively perform tree traversal in a top-down fashion in order to answer a question. For example, in the very beginning GPT-3 is tasked with selecting between *n* top-level nodes which best answers a provided query, by outputting a number as a multiple-choice problem. The GPT Tree Index then uses the number to select the corresponding node, and the process repeats recursively among the children nodes until a leaf node is reached.
 
+## Dependencies
+
+The main third-party package requirements are `transformers`, `openai`, and `langchain`.
+
+All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply do `pip install -r requirements.txt`. 
+
 ## Example Usage
 
 An example is provided in `examples/test_wiki/TestNYC.ipynb`. To build the index do the following:
@@ -84,13 +90,8 @@ $c\log(N)\frac{p}{1000}$.
 
 For the NYC example, this equates to \$~0.40 per query.
 
-## Dependencies
-
-The main third-party package requirements are `transformers`, `openai`, and `langchain`.
-
-All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply do `pip install -r requirements.txt`. 
-
 ## Future Directions
+Please feel free to contribute with comments, issues, PR's! 
 - Add ability to insert/delete.
 - Add ability to more easily customize summarization and query prompts.
 - Build different trees from the same pool of raw data with different summarization prompts in order to solve task-specific needs. For instance, perhaps one method of summarization is better suited for answering questions about specific numbers. Another method of summarization could be to answer cause-effect questions.
