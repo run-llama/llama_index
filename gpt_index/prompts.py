@@ -18,7 +18,8 @@ DEFAULT_QUERY_PROMPT = (
     "---------------------\n"
     "Given the context information, answer the question: {query_str}\n"
     "The answer should be the number corresponding to the "
-    "summary that is most relevant to the question.\n"
+    "summary that is most relevant to the question. "
+    "Provide answer in the following format: 'ANSWER: <number>'.\n"
 )
 
 DEFAULT_TEXT_QA_PROMPT = (
