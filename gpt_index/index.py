@@ -152,12 +152,16 @@ class GPTIndex(DataClassJsonMixin):
             print(f'cur query response: {response}')
         number = extract_number_given_response(response)
         if number is None:
-            print(f"Could not retrieve response - no numbers present")
+            if verbose:
+                print(f"Could not retrieve response - no numbers present")
             # just join text from current nodes as response
-            return _get_text_from_nodes(cur_nodes)
-        elif number > len(cur_nodes):
-            print(f'Invalid response: {response} - number {number} out of range')
             return response
+        elif number > len(cur_nodes):
+            if verbose:
+                print(f'Invalid response: {response} - number {number} out of range')
+            return response
+
+        print(f'number: {number}')
 
         # number is 1-indexed, so subtract 1
         selected_node = cur_nodes[number-1]
@@ -171,17 +175,25 @@ class GPTIndex(DataClassJsonMixin):
                 context_str=selected_node.text,
                 query_str=query_str
             )
+            if verbose:
+                formatted_answer_prompt = self.text_qa_template.format(
+                    context_str=selected_node.text,
+                    query_str=query_str
+                )
+                print('==============')
+                print(f'final answer prompt: {formatted_answer_prompt}')
             return response
         else:
             return self._query(
                 [self.graph.all_nodes[i] for i in selected_node.child_indices], 
-                query_str
+                query_str,
+                verbose=verbose
             )
 
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         if verbose:
-            print('Starting query: {query_str}')
+            print(f'Starting query: {query_str}')
         return self._query(self.graph.root_nodes, query_str, verbose=verbose).strip()
             
     @classmethod
