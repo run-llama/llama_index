@@ -1,25 +1,27 @@
 """Set of default prompts."""
 
 DEFAULT_SUMMARY_PROMPT = (
-    "Write a concise summary of the following:\n"
+    "Write a summary of the following. Try to use only the information provided. "
+    "Try to include as many key details as possible.\n"
     "\n"
     "\n"
     "{text}\n"
     "\n"
     "\n"
-    "CONCISE SUMMARY:\"\"\"\n"
+    "SUMMARY:\"\"\"\n"
 )
 
 DEFAULT_QUERY_PROMPT = (
-    "Context information is below. It is provided in a numbered list (1 to {num_chunks}),"
+    "Some choices are given below. It is provided in a numbered list (1 to {num_chunks}),"
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
     "---------------------\n"
-    "Given the context information, answer the question: {query_str}\n"
-    "The answer should be the number corresponding to the "
-    "summary that is most relevant to the question. "
-    "Provide answer in the following format: 'ANSWER: <number>'.\n"
+    "Return the choice that is most relevant to the question: {query_str}\n"
+    # "Given the context information, answer the question: {query_str}\n"
+    # "The answer should be the number corresponding to the "
+    # "summary that is most relevant to the question. "
+    "Provide answer in the following format: 'ANSWER: <number>' and explain why.\n"
 )
 
 DEFAULT_TEXT_QA_PROMPT = (
