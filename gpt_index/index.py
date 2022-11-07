@@ -10,7 +10,7 @@ from gpt_index.prompts import DEFAULT_SUMMARY_PROMPT, DEFAULT_QUERY_PROMPT, DEFA
 from gpt_index.utils import get_chunk_size_given_prompt, extract_number_given_response
 from gpt_index.text_splitter import TokenTextSplitter
 
-from typing import List
+from typing import List, Dict, Set
 import json
 
 
@@ -26,29 +26,38 @@ class Node(DataClassJsonMixin):
 
     text: str
     index: int
-    child_indices: List[int]
+    child_indices: Set[int]
 
 
 @dataclass
 class IndexGraph(DataClassJsonMixin):
-    all_nodes: List[Node]
-    root_nodes: List[Node]
+    all_nodes: Dict[int, Node]
+    root_nodes: Dict[int, Node]
+
+    @property
+    def size(self):
+        return len(self.all_nodes)
 
 
-def _get_text_from_nodes(nodes: List[Node]) -> str:
+def _get_sorted_node_list(node_dict: Dict[int, Node]) -> List[Node]:
+    sorted_indices = sorted(node_dict.keys())
+    return [node_dict[index] for index in sorted_indices]
+
+
+def _get_text_from_nodes(node_list: List[Node]) -> str:
     """Get text from nodes."""
     text = ""
-    for node in nodes:
+    for node in node_list:
         text += node.text
         text += "\n"
     return text
 
 
-def _get_numbered_text_from_nodes(nodes: List[Node]) -> str:
+def _get_numbered_text_from_nodes(node_list: List[Node]) -> str:
     """Get text from nodes in the format of a numbered list."""
     text = ""
     number = 1
-    for node in nodes:
+    for node in node_list:
         text += f"({number}) {' '.join(node.text.splitlines())}"
         text += "\n\n"
         number += 1
@@ -88,35 +97,38 @@ class GPTIndexBuilder:
         text_chunks = self.text_splitter.split_text(text)
 
         # instantiate all_nodes from initial text chunks
-        all_nodes = [Node(t, i, []) for i, t in enumerate(text_chunks)]
+        all_nodes = {i: Node(t, i, set()) for i, t in enumerate(text_chunks)}
         root_nodes = self._build_index_from_nodes(all_nodes, all_nodes)
         return IndexGraph(all_nodes, root_nodes)
 
     def _build_index_from_nodes(
-        self, cur_nodes: List[Node], all_nodes: List[Node]
-    ) -> List[Node]:
+        self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node]
+    ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
+        cur_node_list = _get_sorted_node_list(cur_nodes)
         cur_index = len(all_nodes)
-        new_node_list = []
+        new_node_dict = {}
         print(f'building index from nodes: {len(cur_nodes) // self.num_children} chunks')
-        for i in range(0, len(cur_nodes), self.num_children):
+        for i in range(0, len(cur_node_list), self.num_children):
             print(f'{i}/{len(cur_nodes)}')
-            cur_nodes_chunk = cur_nodes[i:i+self.num_children]
+            cur_nodes_chunk = cur_node_list[i:i+self.num_children]
 
             text_chunk = _get_text_from_nodes(cur_nodes_chunk)
 
             new_summary = self.llm_chain.predict(text=text_chunk)
             print(f'{i}/{len(cur_nodes)}, summary: {new_summary}')
-            new_node = Node(new_summary, cur_index, [n.index for n in cur_nodes_chunk])
-            new_node_list.append(new_node)
+            new_node = Node(
+                new_summary, cur_index, {n.index for n in cur_nodes_chunk}
+            )
+            new_node_dict[cur_index] = new_node
             cur_index += 1
 
-        all_nodes.extend(new_node_list)
+        all_nodes.update(new_node_dict)
 
-        if len(new_node_list) <= self.num_children:
-            return new_node_list
+        if len(new_node_dict) <= self.num_children:
+            return new_node_dict
         else:
-            return self._build_index_from_nodes(new_node_list, all_nodes)
+            return self._build_index_from_nodes(new_node_dict, all_nodes)
 
 
 @dataclass
@@ -127,8 +139,9 @@ class GPTIndex(DataClassJsonMixin):
     query_template: str = DEFAULT_QUERY_PROMPT
     text_qa_template: str = DEFAULT_TEXT_QA_PROMPT
 
-    def _query(self, cur_nodes: List[Node], query_str: str, verbose: bool = False) -> str:
+    def _query(self, cur_nodes: Dict[int, Node], query_str: str, verbose: bool = False) -> str:
         """Answer a query recursively."""
+        cur_node_list = _get_sorted_node_list(cur_nodes)
         query_prompt = Prompt(
             template=self.query_template, 
             input_variables=["num_chunks", "context_list", "query_str"]
@@ -137,15 +150,15 @@ class GPTIndex(DataClassJsonMixin):
         llm_chain = LLMChain(prompt=query_prompt, llm=llm) 
         response = llm_chain.predict(
             query_str=query_str,
-            num_chunks=len(cur_nodes), 
-            context_list=_get_numbered_text_from_nodes(cur_nodes)
+            num_chunks=len(cur_node_list), 
+            context_list=_get_numbered_text_from_nodes(cur_node_list)
         )
         
         if verbose:
             formatted_query = self.query_template.format(
-                num_chunks=len(cur_nodes),
+                num_chunks=len(cur_node_list),
                 query_str=query_str,
-                context_list=_get_numbered_text_from_nodes(cur_nodes)
+                context_list=_get_numbered_text_from_nodes(cur_node_list)
             )
             print(f'==============')
             print(f'current prompt template: {formatted_query}')
@@ -156,7 +169,7 @@ class GPTIndex(DataClassJsonMixin):
                 print(f"Could not retrieve response - no numbers present")
             # just join text from current nodes as response
             return response
-        elif number > len(cur_nodes):
+        elif number > len(cur_node_list):
             if verbose:
                 print(f'Invalid response: {response} - number {number} out of range')
             return response
@@ -164,7 +177,7 @@ class GPTIndex(DataClassJsonMixin):
         print(f'number: {number}')
 
         # number is 1-indexed, so subtract 1
-        selected_node = cur_nodes[number-1]
+        selected_node = cur_node_list[number-1]
         if len(selected_node.child_indices) == 0:
             answer_prompt = Prompt(
                 template=self.text_qa_template, 
@@ -185,7 +198,7 @@ class GPTIndex(DataClassJsonMixin):
             return response
         else:
             return self._query(
-                [self.graph.all_nodes[i] for i in selected_node.child_indices], 
+                {i: self.graph.all_nodes[i] for i in selected_node.child_indices}, 
                 query_str,
                 verbose=verbose
             )
