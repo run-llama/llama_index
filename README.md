@@ -1,8 +1,8 @@
-# GPT Tree Index
+# 🌲🗂️ ️GPT Tree Index
 
 A tree-based index containing text data that is created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
 
-## Overview
+## 🚀 Overview
 
 GPT-3 is a phenomenonal piece of technology that at its core takes in text input and is able to generate text output. It is a very simple but general paradigm, and GPT-3 (especially the latest iterations) is able to execute this amazingly well. It is able to perform many tasks in a zero-shot setting, from sentiment analysis to categorization to question answering.
 
@@ -21,13 +21,13 @@ The GPT Index first takes in a large dataset of unprocessed text data as input. 
 
 Then, say the user wants to use GPT-3 to answer a question. Using a **query prompt template**, the GPT Index will be able to recursively perform tree traversal in a top-down fashion in order to answer a question. For example, in the very beginning GPT-3 is tasked with selecting between *n* top-level nodes which best answers a provided query, by outputting a number as a multiple-choice problem. The GPT Tree Index then uses the number to select the corresponding node, and the process repeats recursively among the children nodes until a leaf node is reached.
 
-## Dependencies
+## 🔧 Dependencies
 
 The main third-party package requirements are `transformers`, `openai`, and `langchain`.
 
 All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply do `pip install -r requirements.txt`. 
 
-## Example Usage
+## 💻 Example Usage
 
 An example is provided in `examples/test_wiki/TestNYC.ipynb`. To build the index do the following:
 ```python
@@ -48,7 +48,7 @@ To query,
 index.query("<question_text>?")
 ```
 
-## Related Work [WIP]
+## 🔬 Related Work [WIP]
 
 [Measuring and Narrowing the Compositionality Gap in Language Models, by Press et al.](https://arxiv.org/abs/2210.03350)
 - This paper introduces a *self-ask* paradigm, which forces the model to ask and answer followup questions before answering the original question. It is similar to GPT Index in that it uses GPT to reason through subproblems; the difference is that the GPT index itself represents an external source of information, whereas self-ask relies on the model itself.
@@ -60,7 +60,7 @@ index.query("<question_text>?")
 
 
 
-## Additional Thoughts / FAQ
+## ❓🧠 Additional Thoughts / FAQ
 
 **How is this better than an embeddings-based approach / other state-of-the-art QA and retrieval methods?**
 
@@ -90,7 +90,7 @@ $c\log(N)\frac{p}{1000}$.
 
 For the NYC example, this equates to \$~0.40 per query.
 
-## Future Directions
+## ⏭️ Future Directions
 Please feel free to contribute with comments, issues, PR's! 
 - Add ability to insert/delete.
 - Add ability to more easily customize summarization and query prompts.
