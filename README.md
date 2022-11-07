@@ -59,6 +59,14 @@ index.query("<question_text>?")
 - This paper introduces a joint reasoning and acting framework in an interleaved manner, where reasoning can update action plans, and action plans can gather more information from external environments. This approach of connecting to external knowledge sources is roughly similar to our approach of having GPT traverse an externally stored index of data. The difference is that ReAct has much more fluid/sophisticated ways of traversal (e.g. search, lookup, finish), whereas GPT Index has more emphasis on building an internal data structure index along with simple tree-based traversal. We leave it as future work within GPT Index to explore alternative ways of organizing an information index, so that GPT does not need to rely on an externally organized information source (e.g. Wikipedia API) for query purposes.
 
 
+## Does this actually work?
+
+Kind of, it's very much a WIP! It works for simple queries, such as the prompt provided for the Gatsby data in `examples/gatsby` ("What did the narrator do after getting back to Chicago?"?). 
+
+Yet in many cases it doesn't reason down the correct chain, and oftentimes it can fail in very frustrating ways. For instance, in the Paul Graham example `examples/paul_graham_essay`, when we ask "What did the author do during his time *after* Y Combinator?" and run with `verbose=True`, we find that the reasoning is oftentimes correct ("the author decided to try painting"), but the selected multiple choice answer is completely wrong, leading GPT Index down the wrong path. This is open to future work! 
+
+Interestingly in the case of the NYC wiki dataset `examples/test_wiki`, we find that GPT oftentimes relies on its own world knowledge (it leads GPT Index down the wrong path but still surfaces the correct answer in the end e.g. "What are the airports within New York City?").
+
 
 ## ❓🧠 Additional Thoughts / FAQ
 
@@ -77,10 +85,6 @@ Practically speaking, it is much cheaper to do so and I want to limit my monthly
 **This work is very similar to X paper/project.**
 
 Please let me know! I am not up-to-date on the latest NLP/LLM ArXiv papers or Github projects. I will give the appropriate references/credit below.
-
-**Does this actually work?**
-
-Kind of. It works for simple queries, such as the prompt provided for the NYC Wikipedia data above ("What are the three main airports?"). Sometimes it fails in frustrating ways, where the correct node to choose given the query is obvious but GPT stil picks another node for some unforseen reason (for instance, given a query prompt on "What are the main ethnicities within NYC?", GPT-3 somehow picks a node which summarizes the architecture styles within Brooklyn). Some of this can be fixed with prompt tuning; this is an active area of work! 
 
 **How much does this cost to run?**
 
