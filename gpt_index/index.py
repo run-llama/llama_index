@@ -233,12 +233,12 @@ class GPTIndex(DataClassJsonMixin):
     def load_from_disk(cls, save_path: str) -> None:
         """Load from disk."""
         with open(save_path, "r") as f:
-            return cls.from_dict(json.load(f))
+            return cls(graph=IndexGraph.from_dict(json.load(f)))
 
     def save_to_disk(self, save_path: str) -> None:
         """Safe to file."""
         with open(save_path, "w") as f:
-            json.dump(self.to_dict(), f)
+            json.dump(self.graph.to_dict(), f)
 
 
 
