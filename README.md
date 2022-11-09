@@ -10,8 +10,8 @@ A tree-based index containing text data that is created using GPT-3 and can be t
 - The ability to feed "knowledge" to GPT-3 is restricted to this limited prompt size and model weights.
 - **Thought**: What if GPT-3 can have access to potentially a much larger database of knowledge without retraining/finetuning? 
 
-#### Solution
-That's where the **GPT Tree Index** comes in. Instead of relying on world knowledge encoded in the model weights, the GPT Tree Index does the following:
+#### Proposed Solution [WIP]
+That's where the **GPT Tree Index** comes in (if we can resolve some kinks!). Instead of relying on world knowledge encoded in the model weights, the GPT Tree Index does the following:
 - Uses a pre-trained GPT-3 model primarily for *reasoning*/*summarization* instead of prior knowledge
 - Takes as input a large corpus of text data, uses GPT-3 to build a tree-structured index over it
 - Also use GPT-3 to traverse the tree index that it created in order to answer a query
