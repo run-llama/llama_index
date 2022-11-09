@@ -5,11 +5,13 @@ A tree-based index containing text data that is created using GPT-3 and can be t
 ## 🚀 Overview
 
 #### Context
-- GPT-3 is a phenomenonal piece of technology that can not only generate but also reason
-- A big limitation of GPT-3 is context size. The most sophisticated model, Davinci, has a combined input+completion limit of 4096 tokens. Large, but not infinite.
-- As a result, the ability to feed "knowledge" to GPT-3 is restricted to this limited prompt size and model weights.
+- GPT-3 is a phenomenonal piece of technology for knowledge generation and reasoning.
+- A big limitation of GPT-3 is context size (e.g. Davinci's limit is 4096 tokens. Large, but not infinite).
+- The ability to feed "knowledge" to GPT-3 is restricted to this limited prompt size and model weights.
+- **Thought**: What if GPT-3 can have access to potentially a much larger database of knowledge without retraining/finetuning? 
 
-But what if GPT-3 can have access to potentially a much larger database of knowledge that it can query in an efficient manner, for use in question-answering tasks, without retraining/finetuning? That's where the **GPT Tree Index** comes in. Instead of relying on world knowledge encoded in the model weights, the GPT Tree Index does the following:
+#### Solution
+That's where the **GPT Tree Index** comes in. Instead of relying on world knowledge encoded in the model weights, the GPT Tree Index does the following:
 - Uses a pre-trained GPT-3 model primarily for *reasoning*/*summarization* instead of prior knowledge
 - Takes as input a large corpus of text data, uses GPT-3 to build an index over it
 - Also use GPT-3 to reason over the index that it created in order to answer a query
@@ -47,7 +49,8 @@ index.query("<question_text>?")
 
 Kind of, it's very much a WIP! It works for simple queries, such as the prompt provided for the Gatsby data in `examples/gatsby` ("What did the narrator do after getting back to Chicago?"?). 
 
-Yet in many cases it doesn't reason down the correct chain, and oftentimes it can fail in very frustrating ways. For instance, in the Paul Graham example `examples/paul_graham_essay`, when we ask "What did the author do during his time *after* Y Combinator?" and run with `verbose=True`, we find that the reasoning is oftentimes correct ("the author decided to try painting"), but the selected multiple choice answer is completely wrong, leading GPT Index down the wrong path. This is open to future work! 
+#### Where it breaks
+In many cases it doesn't reason down the correct chain, and oftentimes it can fail in very frustrating ways. For instance, in the Paul Graham example `examples/paul_graham_essay`, when we ask "What did the author do during his time *after* Y Combinator?" and run with `verbose=True`, we find that the reasoning is oftentimes correct ("the author decided to try painting"), but the selected multiple choice answer is completely wrong, leading GPT Index down the wrong path. This is open to future work! 
 
 Interestingly in the case of the NYC wiki dataset `examples/test_wiki`, we find that GPT oftentimes relies on its own world knowledge (it leads GPT Index down the wrong path but still surfaces the correct answer in the end e.g. "What are the airports within New York City?").
 
@@ -55,6 +58,7 @@ Interestingly in the case of the NYC wiki dataset `examples/test_wiki`, we find 
 ## ❓🧠 Additional Thoughts / FAQ
 
 **More details on how it works**
+
 The GPT Index first takes in a large dataset of unprocessed text data as input. It then builds up a tree-index in a bottom-up fashion; each parent node is able to summarize the children nodes using a general **summarization prompt**; each intermediate node contains text summarizing the components below. Once the index is built, it can be saved to disk as a JSON and loaded for future use. 
 
 Then, say the user wants to use GPT-3 to answer a question. Using a **query prompt template**, the GPT Index will be able to recursively perform tree traversal in a top-down fashion in order to answer a question. For example, in the very beginning GPT-3 is tasked with selecting between *n* top-level nodes which best answers a provided query, by outputting a number as a multiple-choice problem. The GPT Tree Index then uses the number to select the corresponding node, and the process repeats recursively among the children nodes until a leaf node is reached.
@@ -74,7 +78,7 @@ Practically speaking, it is much cheaper to do so and I want to limit my monthly
 
 **This work is very similar to X paper/project.**
 
-Please let me know! I am not up-to-date on the latest NLP/LLM ArXiv papers or Github projects. I will give the appropriate references/credit below.
+Please let me know! I am not up-to-date on the latest NLP/LLM ArXiv papers or Github projects. I am happy to give references/credit below.
 
 **How much does this cost to run?**
 
