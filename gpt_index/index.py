@@ -175,7 +175,7 @@ class GPTIndex(DataClassJsonMixin):
 
         # number is 1-indexed, so subtract 1
         selected_node = cur_node_list[number-1]
-        print(f"> Answer: {response}")
+        print(f"> Selected node: {response}")
         print(f"> Node Summary text: {' '.join(selected_node.text.splitlines())}")
 
         if len(selected_node.child_indices) == 0:
