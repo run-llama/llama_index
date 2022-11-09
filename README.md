@@ -13,8 +13,8 @@ A tree-based index containing text data that is created using GPT-3 and can be t
 #### Solution
 That's where the **GPT Tree Index** comes in. Instead of relying on world knowledge encoded in the model weights, the GPT Tree Index does the following:
 - Uses a pre-trained GPT-3 model primarily for *reasoning*/*summarization* instead of prior knowledge
-- Takes as input a large corpus of text data, uses GPT-3 to build an index over it
-- Also use GPT-3 to reason over the index that it created in order to answer a query
+- Takes as input a large corpus of text data, uses GPT-3 to build a tree-structured index over it
+- Also use GPT-3 to traverse the tree index that it created in order to answer a query
 
 The high-level design exercise of this project is to test the capability of GPT-3 as a general-purpose processor to organize and retrieve data. From our current understanding, related works have used GPT-3 to reason with external db sources (see below); this work links reasoning with knowledge building.
 
@@ -47,7 +47,7 @@ index.query("<question_text>?")
 
 ## Does this actually work?
 
-Kind of, it's very much a WIP! It works for simple queries, such as the prompt provided for the Gatsby data in `examples/gatsby` ("What did the narrator do after getting back to Chicago?"?). 
+Kind of, it's very much a WIP! It works for simple queries, such as the prompt provided for the Gatsby data in `examples/gatsby` ("What did the narrator do after getting back to Chicago?"). 
 
 #### Where it breaks
 In many cases it doesn't reason down the correct chain, and oftentimes it can fail in very frustrating ways. For instance, in the Paul Graham example `examples/paul_graham_essay`, when we ask "What did the author do during his time *after* Y Combinator?" and run with `verbose=True`, we find that the reasoning is oftentimes correct ("the author decided to try painting"), but the selected multiple choice answer is completely wrong, leading GPT Index down the wrong path. This is open to future work! 
