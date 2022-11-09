@@ -40,9 +40,9 @@ DEFAULT_QUERY_PROMPT = (
 
 
 DEFAULT_TEXT_QA_PROMPT = (
-    "Context information is below. "
+    "Context information is below. \n"
     "---------------------\n"
     "{context_str}"
-    "---------------------\n"
+    "\n---------------------\n"
     "Given the context information and not prior knowledge, answer the question: {query_str}\n"
 )
