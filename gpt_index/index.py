@@ -108,7 +108,7 @@ class GPTIndexBuilder:
         cur_node_list = _get_sorted_node_list(cur_nodes)
         cur_index = len(all_nodes)
         new_node_dict = {}
-        print(f'building index from nodes: {len(cur_nodes) // self.num_children} chunks')
+        print(f'> Building index from nodes: {len(cur_nodes) // self.num_children} chunks')
         for i in range(0, len(cur_node_list), self.num_children):
             print(f'{i}/{len(cur_nodes)}')
             cur_nodes_chunk = cur_node_list[i:i+self.num_children]
@@ -116,7 +116,7 @@ class GPTIndexBuilder:
             text_chunk = _get_text_from_nodes(cur_nodes_chunk)
 
             new_summary = self.llm_chain.predict(text=text_chunk)
-            print(f'{i}/{len(cur_nodes)}, summary: {new_summary}')
+            print(f'> {i}/{len(cur_nodes)}, summary: {new_summary}')
             new_node = Node(
                 new_summary, cur_index, {n.index for n in cur_nodes_chunk}
             )
@@ -161,23 +161,23 @@ class GPTIndex(DataClassJsonMixin):
                 context_list=_get_numbered_text_from_nodes(cur_node_list)
             )
             print(f'==============')
-            print(f'current prompt template: {formatted_query}')
-            print(f'cur query response: {response}')
+            print(f'> current prompt template: {formatted_query}')
         number = extract_number_given_response(response)
         if number is None:
             if verbose:
-                print(f"Could not retrieve response - no numbers present")
+                print(f"> Could not retrieve response - no numbers present")
             # just join text from current nodes as response
             return response
         elif number > len(cur_node_list):
             if verbose:
-                print(f'Invalid response: {response} - number {number} out of range')
+                print(f'> Invalid response: {response} - number {number} out of range')
             return response
-
-        print(f'number: {number}')
 
         # number is 1-indexed, so subtract 1
         selected_node = cur_node_list[number-1]
+        print(f"> Answer: {response}")
+        print(f"> Node Summary text: {' '.join(selected_node.text.splitlines())}")
+
         if len(selected_node.child_indices) == 0:
             answer_prompt = Prompt(
                 template=self.text_qa_template, 
@@ -194,7 +194,7 @@ class GPTIndex(DataClassJsonMixin):
                     query_str=query_str
                 )
                 print('==============')
-                print(f'final answer prompt: {formatted_answer_prompt}')
+                print(f'> final answer prompt: {formatted_answer_prompt}')
             return response
         else:
             return self._query(
@@ -205,8 +205,7 @@ class GPTIndex(DataClassJsonMixin):
 
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
-        if verbose:
-            print(f'Starting query: {query_str}')
+        print(f'> Starting query: {query_str}')
         return self._query(self.graph.root_nodes, query_str, verbose=verbose).strip()
             
     @classmethod
@@ -240,9 +239,5 @@ class GPTIndex(DataClassJsonMixin):
         with open(save_path, "w") as f:
             json.dump(self.graph.to_dict(), f)
 
-
-
-if __name__ == "__main__":
-    print('hello world')
         
         
