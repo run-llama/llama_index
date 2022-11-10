@@ -5,6 +5,7 @@ from pathlib import Path
 
 class SimpleDirectoryReader:
     """Utilities for loading data from a directory."""
+
     def __init__(self, input_dir: Path) -> None:
         self.input_dir = input_dir
         input_files = list(input_dir.iterdir())

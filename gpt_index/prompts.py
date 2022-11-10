@@ -8,7 +8,7 @@ DEFAULT_SUMMARY_PROMPT = (
     "{text}\n"
     "\n"
     "\n"
-    "SUMMARY:\"\"\"\n"
+    'SUMMARY:"""\n'
 )
 
 # # single choice
