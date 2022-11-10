@@ -5,17 +5,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
 
-from dataclasses_json import DataClassJsonMixin, Undefined, dataclass_json
+from dataclasses_json import DataClassJsonMixin
 from langchain import LLMChain, OpenAI, Prompt
-from langchain.text_splitter import CharacterTextSplitter
 
 from gpt_index.file_reader import SimpleDirectoryReader
-from gpt_index.prompts import (DEFAULT_QUERY_PROMPT, DEFAULT_SUMMARY_PROMPT,
-                               DEFAULT_TEXT_QA_PROMPT)
+from gpt_index.prompts import (
+    DEFAULT_QUERY_PROMPT,
+    DEFAULT_SUMMARY_PROMPT,
+    DEFAULT_TEXT_QA_PROMPT,
+)
 from gpt_index.schema import IndexGraph, Node
 from gpt_index.text_splitter import TokenTextSplitter
-from gpt_index.utils import (extract_number_given_response,
-                             get_chunk_size_given_prompt)
+from gpt_index.utils import extract_number_given_response, get_chunk_size_given_prompt
 
 MAX_CHUNK_SIZE = 3900
 MAX_CHUNK_OVERLAP = 200
@@ -143,12 +144,12 @@ class GPTIndex(DataClassJsonMixin):
                 query_str=query_str,
                 context_list=_get_numbered_text_from_nodes(cur_node_list),
             )
-            print(f"==============")
+            print("==============")
             print(f"> current prompt template: {formatted_query}")
         number = extract_number_given_response(response)
         if number is None:
             if verbose:
-                print(f"> Could not retrieve response - no numbers present")
+                print("> Could not retrieve response - no numbers present")
             # just join text from current nodes as response
             return response
         elif number > len(cur_node_list):
@@ -193,7 +194,7 @@ class GPTIndex(DataClassJsonMixin):
     def from_input_dir(
         cls, input_dir: str, index_builder: GPTIndexBuilder = GPTIndexBuilder()
     ) -> "GPTIndex":
-        """Builds an index from an input directory.
+        """Build an index from an input directory.
 
         Uses the default index builder.
 
