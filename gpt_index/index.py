@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 from langchain import LLMChain, OpenAI, Prompt
@@ -13,10 +13,11 @@ from gpt_index.prompts import (
     DEFAULT_QUERY_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
+    DEFAULT_REFINE_PROMPT,
 )
 from gpt_index.schema import IndexGraph, Node
 from gpt_index.text_splitter import TokenTextSplitter
-from gpt_index.utils import extract_number_given_response, get_chunk_size_given_prompt
+from gpt_index.utils import extract_numbers_given_response, get_chunk_size_given_prompt
 
 MAX_CHUNK_SIZE = 3900
 MAX_CHUNK_OVERLAP = 200
@@ -117,9 +118,74 @@ class GPTIndexBuilder:
 class GPTIndex(DataClassJsonMixin):
     """GPT Index."""
 
+    # TODO: refactor to not be DataClassJsonMixin
+
     graph: IndexGraph
     query_template: str = DEFAULT_QUERY_PROMPT
     text_qa_template: str = DEFAULT_TEXT_QA_PROMPT
+    refine_template: str = DEFAULT_REFINE_PROMPT
+    # specify the number of children the Index can process
+    # (by default it only picks one child node given the parent)
+    children_traverse_limit: int = 1
+
+    def _query_with_selected_node(
+        self, 
+        selected_node: Node, 
+        query_str: str, 
+        prev_response: Optional[str] = None, 
+        verbose: bool = False
+    ) -> str:
+        """Get response for selected node. 
+
+        If not leaf node, it will recursively call _query on the child nodes.
+        If prev_response is provided, we will update prev_response with the answer.
+        
+        """
+        llm = OpenAI(temperature=0)
+        if len(selected_node.child_indices) == 0:
+            answer_prompt = Prompt(
+                template=self.text_qa_template,
+                input_variables=["context_str", "query_str"],
+            )
+            llm_chain = LLMChain(prompt=answer_prompt, llm=llm)
+            cur_response = llm_chain.predict(
+                context_str=selected_node.text, query_str=query_str
+            )
+            if verbose:
+                formatted_answer_prompt = self.text_qa_template.format(
+                    context_str=selected_node.text, query_str=query_str
+                )
+                print("==============")
+                print(f"> answer prompt: {formatted_answer_prompt}")
+        else:
+            cur_response = self._query(
+                {i: self.graph.all_nodes[i] for i in selected_node.child_indices},
+                query_str,
+                verbose=verbose,
+            )
+        
+        if prev_response is None:
+            return cur_response
+        else:
+            refine_prompt = Prompt(
+                template=self.refine_template,
+                input_variables=["query_str", "existing_answer", "context_msg"],
+            )
+            llm_chain = LLMChain(prompt=refine_prompt, llm=llm)
+            context_msg = "\n".join([selected_node.text, cur_response])
+            cur_response = llm_chain.predict(
+                query_str=query_str, existing_answer=prev_response, 
+                context_msg=context_msg
+            )
+            if verbose:
+                formatted_refine_prompt = self.refine_template.format(
+                    query_str=query_str, existing_answer=prev_response, 
+                    context_msg=context_msg
+                )
+                print("==============")
+                print(f"> refine prompt: {formatted_refine_prompt}")
+            return cur_response
+
 
     def _query(
         self, cur_nodes: Dict[int, Node], query_str: str, verbose: bool = False
@@ -146,44 +212,30 @@ class GPTIndex(DataClassJsonMixin):
             )
             print("==============")
             print(f"> current prompt template: {formatted_query}")
-        number = extract_number_given_response(response)
-        if number is None:
-            if verbose:
-                print("> Could not retrieve response - no numbers present")
-            # just join text from current nodes as response
-            return response
-        elif number > len(cur_node_list):
-            if verbose:
-                print(f"> Invalid response: {response} - number {number} out of range")
-            return response
+        
+        numbers = extract_numbers_given_response(response, n=self.children_traverse_limit)
+        result_response = None
+        for number in numbers:
+            number = numbers[0]
+            if number is None:
+                if verbose:
+                    print("> Could not retrieve response - no numbers present")
+                # just join text from current nodes as response
+                return response
+            elif number > len(cur_node_list):
+                if verbose:
+                    print(f"> Invalid response: {response} - number {number} out of range")
+                return response
 
-        # number is 1-indexed, so subtract 1
-        selected_node = cur_node_list[number - 1]
-        print(f"> Selected node: {response}")
-        print(f"> Node Summary text: {' '.join(selected_node.text.splitlines())}")
+            # number is 1-indexed, so subtract 1
+            selected_node = cur_node_list[number - 1]
+            print(f"> Selected node: {response}")
+            print(f"> Node Summary text: {' '.join(selected_node.text.splitlines())}")
+            result_response = self._query_with_selected_node(
+                selected_node, query_str, prev_response=result_response, verbose=verbose
+            )
+        return result_response
 
-        if len(selected_node.child_indices) == 0:
-            answer_prompt = Prompt(
-                template=self.text_qa_template,
-                input_variables=["context_str", "query_str"],
-            )
-            llm_chain = LLMChain(prompt=answer_prompt, llm=llm)
-            response = llm_chain.predict(
-                context_str=selected_node.text, query_str=query_str
-            )
-            if verbose:
-                formatted_answer_prompt = self.text_qa_template.format(
-                    context_str=selected_node.text, query_str=query_str
-                )
-                print("==============")
-                print(f"> final answer prompt: {formatted_answer_prompt}")
-            return response
-        else:
-            return self._query(
-                {i: self.graph.all_nodes[i] for i in selected_node.child_indices},
-                query_str,
-                verbose=verbose,
-            )
 
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
@@ -192,7 +244,7 @@ class GPTIndex(DataClassJsonMixin):
 
     @classmethod
     def from_input_dir(
-        cls, input_dir: str, index_builder: GPTIndexBuilder = GPTIndexBuilder()
+        cls, input_dir: str, index_builder: GPTIndexBuilder = GPTIndexBuilder(), **kwargs
     ) -> "GPTIndex":
         """Build an index from an input directory.
 
@@ -206,7 +258,7 @@ class GPTIndex(DataClassJsonMixin):
 
         # Use index builder
         index_graph = index_builder.build_from_text(text_data)
-        return cls(index_graph)
+        return cls(index_graph, **kwargs)
 
     @classmethod
     def load_from_disk(cls, save_path: str) -> "GPTIndex":
