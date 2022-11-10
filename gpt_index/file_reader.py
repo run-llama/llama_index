@@ -5,7 +5,9 @@ from pathlib import Path
 
 class SimpleDirectoryReader:
     """Utilities for loading data from a directory."""
+
     def __init__(self, input_dir: Path) -> None:
+        """Initialize with parameters."""
         self.input_dir = input_dir
         input_files = list(input_dir.iterdir())
         for input_file in input_files:
@@ -14,7 +16,7 @@ class SimpleDirectoryReader:
         self.input_files = input_files
 
     def load_data(self) -> str:
-        """Loads data from the input directory."""
+        """Load data from the input directory."""
         data = ""
         for input_file in self.input_files:
             with open(input_file, "r") as f:

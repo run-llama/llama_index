@@ -1,6 +1,7 @@
-from langchain.text_splitter import TextSplitter
+"""Text splitter implementations."""
 from typing import List
 
+from langchain.text_splitter import TextSplitter
 from transformers import GPT2TokenizerFast
 
 
@@ -38,7 +39,7 @@ class TokenTextSplitter(TextSplitter):
                     total -= len(cur_tokens["input_ids"])
                     current_doc = current_doc[1:]
             current_doc.append(d)
-            num_tokens = len(self.tokenizer(d)['input_ids'])
+            num_tokens = len(self.tokenizer(d)["input_ids"])
             total += num_tokens
         docs.append(self._separator.join(current_doc))
         return docs
