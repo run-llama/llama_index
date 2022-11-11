@@ -1,7 +1,7 @@
 """Utils file."""
 
 import re
-from typing import Optional
+from typing import Optional, List
 
 from transformers import GPT2TokenizerFast
 
@@ -17,10 +17,10 @@ def get_chunk_size_given_prompt(
     return (max_input_size - num_prompt_tokens - num_output) // num_chunks
 
 
-def extract_number_given_response(response: str) -> Optional[int]:
+def extract_numbers_given_response(response: str, n: int = 1) -> Optional[List[int]]:
     """Extract number given the GPT-generated response."""
     numbers = re.findall(r"\d+", response)
     if len(numbers) == 0:
         return None
     else:
-        return int(numbers[0])
+        return numbers[:n]
