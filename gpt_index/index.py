@@ -14,10 +14,12 @@ from gpt_index.prompts import (
     DEFAULT_SUMMARY_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
     DEFAULT_REFINE_PROMPT,
+    DEFAULT_QUERY_PROMPT_MULTIPLE
 )
 from gpt_index.schema import IndexGraph, Node
 from gpt_index.text_splitter import TokenTextSplitter
 from gpt_index.utils import extract_numbers_given_response, get_chunk_size_given_prompt
+from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 
 MAX_CHUNK_SIZE = 3900
 MAX_CHUNK_OVERLAP = 200
@@ -122,17 +124,19 @@ class GPTIndex(DataClassJsonMixin):
 
     graph: IndexGraph
     query_template: str = DEFAULT_QUERY_PROMPT
+    query_template_multiple: str = DEFAULT_QUERY_PROMPT_MULTIPLE
     text_qa_template: str = DEFAULT_TEXT_QA_PROMPT
     refine_template: str = DEFAULT_REFINE_PROMPT
     # specify the number of children the Index can process
     # (by default it only picks one child node given the parent)
-    children_traverse_limit: int = 1
+    child_branch_factor: int = 1
 
     def _query_with_selected_node(
         self, 
         selected_node: Node, 
         query_str: str, 
         prev_response: Optional[str] = None, 
+        level: int = 0,
         verbose: bool = False
     ) -> str:
         """Get response for selected node. 
@@ -141,98 +145,84 @@ class GPTIndex(DataClassJsonMixin):
         If prev_response is provided, we will update prev_response with the answer.
         
         """
-        llm = OpenAI(temperature=0)
         if len(selected_node.child_indices) == 0:
-            answer_prompt = Prompt(
-                template=self.text_qa_template,
-                input_variables=["context_str", "query_str"],
-            )
-            llm_chain = LLMChain(prompt=answer_prompt, llm=llm)
-            cur_response = llm_chain.predict(
-                context_str=selected_node.text, query_str=query_str
+            cur_response, formatted_answer_prompt = openai_llm_predict(
+                self.text_qa_template,
+                context_str=selected_node.text,
+                query_str=query_str
             )
             if verbose:
-                formatted_answer_prompt = self.text_qa_template.format(
-                    context_str=selected_node.text, query_str=query_str
-                )
-                print("==============")
-                print(f"> answer prompt: {formatted_answer_prompt}")
+                print(f">[Level {level}] answer prompt: {formatted_answer_prompt}")
+            print(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query(
                 {i: self.graph.all_nodes[i] for i in selected_node.child_indices},
                 query_str,
+                level=level+1,
                 verbose=verbose,
             )
         
         if prev_response is None:
             return cur_response
         else:
-            refine_prompt = Prompt(
-                template=self.refine_template,
-                input_variables=["query_str", "existing_answer", "context_msg"],
-            )
-            llm_chain = LLMChain(prompt=refine_prompt, llm=llm)
             context_msg = "\n".join([selected_node.text, cur_response])
-            cur_response = llm_chain.predict(
+            cur_response, formatted_refine_prompt = openai_llm_predict(
+                self.refine_template,
                 query_str=query_str, existing_answer=prev_response, 
                 context_msg=context_msg
             )
+
             if verbose:
-                formatted_refine_prompt = self.refine_template.format(
-                    query_str=query_str, existing_answer=prev_response, 
-                    context_msg=context_msg
-                )
-                print("==============")
-                print(f"> refine prompt: {formatted_refine_prompt}")
+                print(f">[Level {level}] Refine prompt: {formatted_refine_prompt}")
+            print(f">[Level {level}] Current refined response: {cur_response} ")
             return cur_response
 
 
     def _query(
-        self, cur_nodes: Dict[int, Node], query_str: str, verbose: bool = False
+        self, cur_nodes: Dict[int, Node], query_str: str, level: int = 0, verbose: bool = False
     ) -> str:
         """Answer a query recursively."""
         cur_node_list = _get_sorted_node_list(cur_nodes)
-        query_prompt = Prompt(
-            template=self.query_template,
-            input_variables=["num_chunks", "context_list", "query_str"],
-        )
-        llm = OpenAI(temperature=0)
-        llm_chain = LLMChain(prompt=query_prompt, llm=llm)
-        response = llm_chain.predict(
-            query_str=query_str,
-            num_chunks=len(cur_node_list),
-            context_list=_get_numbered_text_from_nodes(cur_node_list),
-        )
-
-        if verbose:
-            formatted_query = self.query_template.format(
+        
+        if self.child_branch_factor == 1:
+            response, formatted_query_prompt = openai_llm_predict(
+                self.query_template,
                 num_chunks=len(cur_node_list),
                 query_str=query_str,
                 context_list=_get_numbered_text_from_nodes(cur_node_list),
             )
-            print("==============")
-            print(f"> current prompt template: {formatted_query}")
+        else:
+            response, formatted_query_prompt = openai_llm_predict(
+                self.query_template_multiple,
+                num_chunks=len(cur_node_list),
+                query_str=query_str,
+                context_list=_get_numbered_text_from_nodes(cur_node_list),
+                branching_factor=self.child_branch_factor,
+            )
+
+        if verbose:
+            print(f">[Level {level}] current prompt template: {formatted_query_prompt}")
         
-        numbers = extract_numbers_given_response(response, n=self.children_traverse_limit)
+        numbers = extract_numbers_given_response(response, n=self.child_branch_factor)
         result_response = None
-        for number in numbers:
-            number = numbers[0]
+        for number_str in numbers:
+            number = int(number_str)
             if number is None:
                 if verbose:
-                    print("> Could not retrieve response - no numbers present")
+                    print(f">[Level {level}] Could not retrieve response - no numbers present")
                 # just join text from current nodes as response
                 return response
             elif number > len(cur_node_list):
                 if verbose:
-                    print(f"> Invalid response: {response} - number {number} out of range")
+                    print(f">[Level {level}] Invalid response: {response} - number {number} out of range")
                 return response
 
             # number is 1-indexed, so subtract 1
             selected_node = cur_node_list[number - 1]
-            print(f"> Selected node: {response}")
-            print(f"> Node Summary text: {' '.join(selected_node.text.splitlines())}")
+            print(f">[Level {level}] Selected node: [{number}]/[{','.join([str(int(n)) for n in numbers])}]")
+            print(f">[Level {level}] Node [{number}] Summary text: {' '.join(selected_node.text.splitlines())}")
             result_response = self._query_with_selected_node(
-                selected_node, query_str, prev_response=result_response, verbose=verbose
+                selected_node, query_str, prev_response=result_response, level=level, verbose=verbose
             )
         return result_response
 
@@ -240,7 +230,7 @@ class GPTIndex(DataClassJsonMixin):
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
-        return self._query(self.graph.root_nodes, query_str, verbose=verbose).strip()
+        return self._query(self.graph.root_nodes, query_str, level=0, verbose=verbose).strip()
 
     @classmethod
     def from_input_dir(
@@ -261,10 +251,10 @@ class GPTIndex(DataClassJsonMixin):
         return cls(index_graph, **kwargs)
 
     @classmethod
-    def load_from_disk(cls, save_path: str) -> "GPTIndex":
+    def load_from_disk(cls, save_path: str, **kwargs) -> "GPTIndex":
         """Load from disk."""
         with open(save_path, "r") as f:
-            return cls(graph=IndexGraph.from_dict(json.load(f)))
+            return cls(graph=IndexGraph.from_dict(json.load(f)), **kwargs)
 
     def save_to_disk(self, save_path: str) -> None:
         """Safe to file."""
