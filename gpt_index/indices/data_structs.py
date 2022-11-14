@@ -1,16 +1,14 @@
-"""Base schema for data structures."""
+"""File for core data structures."""
+
 from dataclasses import dataclass
-from typing import Dict, Optional, Set
+from typing import Dict, Set
 
 from dataclasses_json import DataClassJsonMixin
 
 
 @dataclass
-class Document:
-    """Generic interface for document."""
-
-    text: str
-    extra_info: Optional[Dict] = None
+class IndexStruct(DataClassJsonMixin):
+    """A base data struct for a GPT index."""
 
 
 @dataclass
@@ -23,7 +21,7 @@ class Node(DataClassJsonMixin):
 
 
 @dataclass
-class IndexGraph(DataClassJsonMixin):
+class IndexGraph(IndexStruct):
     """A graph representing the tree-structured index."""
 
     all_nodes: Dict[int, Node]

@@ -1,14 +1,20 @@
-"""Core abstractions for building an index of GPT data."""
+"""Tree-based index."""
 
 import json
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
-from dataclasses_json import DataClassJsonMixin
 from langchain import LLMChain, OpenAI, Prompt
 
-from gpt_index.file_reader import SimpleDirectoryReader
+from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
+from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.utils import (
+    extract_numbers_given_response,
+    get_chunk_size_given_prompt,
+    get_numbered_text_from_nodes,
+    get_sorted_node_list,
+    get_text_from_nodes,
+)
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts import (
@@ -18,41 +24,15 @@ from gpt_index.prompts import (
     DEFAULT_SUMMARY_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
-from gpt_index.schema import IndexGraph, Node
-from gpt_index.utils import extract_numbers_given_response, get_chunk_size_given_prompt
-
-MAX_CHUNK_SIZE = 3900
-MAX_CHUNK_OVERLAP = 200
-NUM_OUTPUTS = 256
+from gpt_index.schema import Document
 
 
-def _get_sorted_node_list(node_dict: Dict[int, Node]) -> List[Node]:
-    sorted_indices = sorted(node_dict.keys())
-    return [node_dict[index] for index in sorted_indices]
+class GPTTreeIndexBuilder:
+    """GPT tree index builder.
 
+    Helper class to build the tree-structured index.
 
-def _get_text_from_nodes(node_list: List[Node]) -> str:
-    """Get text from nodes."""
-    text = ""
-    for node in node_list:
-        text += node.text
-        text += "\n"
-    return text
-
-
-def _get_numbered_text_from_nodes(node_list: List[Node]) -> str:
-    """Get text from nodes in the format of a numbered list."""
-    text = ""
-    number = 1
-    for node in node_list:
-        text += f"({number}) {' '.join(node.text.splitlines())}"
-        text += "\n\n"
-        number += 1
-    return text
-
-
-class GPTIndexBuilder:
-    """GPT Index builder."""
+    """
 
     def __init__(
         self, num_children: int = 10, summary_prompt: str = DEFAULT_SUMMARY_PROMPT
@@ -90,7 +70,7 @@ class GPTIndexBuilder:
         self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node]
     ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
-        cur_node_list = _get_sorted_node_list(cur_nodes)
+        cur_node_list = get_sorted_node_list(cur_nodes)
         cur_index = len(all_nodes)
         new_node_dict = {}
         print(
@@ -100,7 +80,7 @@ class GPTIndexBuilder:
             print(f"{i}/{len(cur_nodes)}")
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
 
-            text_chunk = _get_text_from_nodes(cur_nodes_chunk)
+            text_chunk = get_text_from_nodes(cur_nodes_chunk)
 
             new_summary = self.llm_chain.predict(text=text_chunk)
             print(f"> {i}/{len(cur_nodes)}, summary: {new_summary}")
@@ -116,20 +96,33 @@ class GPTIndexBuilder:
             return self._build_index_from_nodes(new_node_dict, all_nodes)
 
 
-@dataclass
-class GPTIndex(DataClassJsonMixin):
+class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     """GPT Index."""
 
     # TODO: refactor to not be DataClassJsonMixin
 
-    graph: IndexGraph
-    query_template: str = DEFAULT_QUERY_PROMPT
-    query_template_multiple: str = DEFAULT_QUERY_PROMPT_MULTIPLE
-    text_qa_template: str = DEFAULT_TEXT_QA_PROMPT
-    refine_template: str = DEFAULT_REFINE_PROMPT
-    # specify the number of children the Index can process
-    # (by default it only picks one child node given the parent)
-    child_branch_factor: int = 1
+    def __init__(
+        self,
+        documents: Optional[List[Document]] = None,
+        index_struct: Optional[IndexGraph] = None,
+        summary_template: str = DEFAULT_SUMMARY_PROMPT,
+        query_template: str = DEFAULT_QUERY_PROMPT,
+        query_template_multiple: str = DEFAULT_QUERY_PROMPT_MULTIPLE,
+        text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
+        refine_template: str = DEFAULT_REFINE_PROMPT,
+        num_children: int = 10,
+        child_branch_factor: int = 1,
+    ) -> None:
+        """Initialize params."""
+        # need to set parameters before building index in base class.
+        self.summary_template = summary_template
+        self.query_template = query_template
+        self.query_template_multiple = query_template_multiple
+        self.text_qa_template = text_qa_template
+        self.refine_template = refine_template
+        self.num_children = num_children
+        self.child_branch_factor = child_branch_factor
+        super().__init__(documents=documents, index_struct=index_struct)
 
     def _query_with_selected_node(
         self,
@@ -156,7 +149,10 @@ class GPTIndex(DataClassJsonMixin):
             print(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query(
-                {i: self.graph.all_nodes[i] for i in selected_node.child_indices},
+                {
+                    i: self.index_struct.all_nodes[i]
+                    for i in selected_node.child_indices
+                },
                 query_str,
                 level=level + 1,
                 verbose=verbose,
@@ -186,21 +182,21 @@ class GPTIndex(DataClassJsonMixin):
         verbose: bool = False,
     ) -> str:
         """Answer a query recursively."""
-        cur_node_list = _get_sorted_node_list(cur_nodes)
+        cur_node_list = get_sorted_node_list(cur_nodes)
 
         if self.child_branch_factor == 1:
             response, formatted_query_prompt = openai_llm_predict(
                 self.query_template,
                 num_chunks=len(cur_node_list),
                 query_str=query_str,
-                context_list=_get_numbered_text_from_nodes(cur_node_list),
+                context_list=get_numbered_text_from_nodes(cur_node_list),
             )
         else:
             response, formatted_query_prompt = openai_llm_predict(
                 self.query_template_multiple,
                 num_chunks=len(cur_node_list),
                 query_str=query_str,
-                context_list=_get_numbered_text_from_nodes(cur_node_list),
+                context_list=get_numbered_text_from_nodes(cur_node_list),
                 branching_factor=self.child_branch_factor,
             )
 
@@ -250,37 +246,24 @@ class GPTIndex(DataClassJsonMixin):
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         return self._query(
-            self.graph.root_nodes, query_str, level=0, verbose=verbose
+            self.index_struct.root_nodes, query_str, level=0, verbose=verbose
         ).strip()
 
-    @classmethod
-    def from_input_dir(
-        cls,
-        input_dir: str,
-        index_builder: GPTIndexBuilder = GPTIndexBuilder(),
-        **kwargs: Any,
-    ) -> "GPTIndex":
-        """Build an index from an input directory.
-
-        Uses the default index builder.
-
-        """
-        input_d = Path(input_dir)
-        # instantiate file reader
-        reader = SimpleDirectoryReader(input_d)
-        text_data = reader.load_data()
-
-        # Use index builder
+    def build_index_from_documents(self, documents: List[Document]) -> IndexGraph:
+        """Build the index from documents."""
+        # do simple concatenation
+        text_data = "\n".join([d.text for d in documents])
+        index_builder = GPTTreeIndexBuilder(self.num_children, self.summary_template)
         index_graph = index_builder.build_from_text(text_data)
-        return cls(index_graph, **kwargs)
+        return index_graph
 
     @classmethod
-    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTIndex":
+    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTTreeIndex":
         """Load from disk."""
         with open(save_path, "r") as f:
-            return cls(graph=IndexGraph.from_dict(json.load(f)), **kwargs)
+            return cls(index_struct=IndexGraph.from_dict(json.load(f)), **kwargs)
 
     def save_to_disk(self, save_path: str) -> None:
         """Safe to file."""
         with open(save_path, "w") as f:
-            json.dump(self.graph.to_dict(), f)
+            json.dump(self.index_struct.to_dict(), f)
