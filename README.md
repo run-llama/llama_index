@@ -28,8 +28,8 @@ All requirements should be contained within the `setup.py` file. To run the pack
 
 An example is provided in `examples/test_wiki/TestNYC.ipynb`. To build the index do the following:
 ```python
-from gpt_index.index import GPTIndex
-GPTIndex.from_input_dir('data')
+from gpt_index import GPTTreeIndex, SimpleDirectoryReader
+GPTTreeIndex.from_input_dir('data')
 ```
 
 To save to disk and load from disk, do
@@ -37,12 +37,12 @@ To save to disk and load from disk, do
 # save to disk
 index.save_to_disk('index.json')
 # load from disk
-index = GPTIndex.load_from_disk('index.json')
+index = GPTTreeIndex.load_from_disk('index.json')
 ```
 
 To query,
 ```python
-index.query("<question_text>?")
+index.query("<question_text>?", child_branch_factor=1)
 ```
 
 ## Does this actually work?
