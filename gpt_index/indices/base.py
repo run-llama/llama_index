@@ -1,6 +1,6 @@
 """Base data structure classes."""
 from abc import abstractmethod
-from typing import Any, Generic, List, Optional, Set, TypeVar, cast
+from typing import Any, Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct
 from gpt_index.schema import Document

@@ -8,6 +8,7 @@ from gpt_index.indices.data_structs import Node
 
 
 def get_sorted_node_list(node_dict: Dict[int, Node]) -> List[Node]:
+    """Get sorted node list."""
     sorted_indices = sorted(node_dict.keys())
     return [node_dict[index] for index in sorted_indices]
 
