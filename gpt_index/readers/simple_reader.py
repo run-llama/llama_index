@@ -13,10 +13,10 @@ class SimpleDirectoryReader(BaseReader):
 
     """
 
-    def __init__(self, input_dir: Path) -> None:
+    def __init__(self, input_dir: str) -> None:
         """Initialize with parameters."""
-        self.input_dir = input_dir
-        input_files = list(input_dir.iterdir())
+        self.input_dir = Path(input_dir)
+        input_files = list(self.input_dir.iterdir())
         for input_file in input_files:
             if not input_file.is_file():
                 raise ValueError(f"Expected {input_file} to be a file.")

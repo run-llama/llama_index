@@ -42,8 +42,8 @@ class BaseGPTIndex(Generic[IS]):
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "BaseGPTIndex":
         """Load from disk."""
 
