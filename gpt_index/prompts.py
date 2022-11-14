@@ -88,7 +88,7 @@ DEFAULT_KEYWORD_EXTRACT_TEMPLATE = (
 DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = (
     "A question is provided below. Given the question, extract up to {max_keywords} "
     "keywords from the text. Focus on extracting the keywords that we can use "
-    "to best lookup answers to the question. Avoid stopwords."
+    "to best lookup answers to the question. Avoid stopwords.\n"
     "---------------------\n"
     "{question}\n"
     "---------------------\n"

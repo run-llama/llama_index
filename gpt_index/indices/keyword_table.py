@@ -23,11 +23,15 @@ from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
+    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT
 )
 from gpt_index.schema import Document
 
+from collections import defaultdict
+
+DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     """GPT Index."""
@@ -37,12 +41,12 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         documents: Optional[List[Document]] = None,
         index_struct: Optional[KeywordTable] = None,
         keyword_extract_template: str = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
-        query_keyword_extract_template: Optional[str] = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
+        query_keyword_extract_template: Optional[str] = DQKET,
         refine_template: str = DEFAULT_REFINE_PROMPT,
         text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
-        max_keywords_per_chunk: int = 6,
-        max_keywords_per_query: int = 5,
-        keyword_chunk_set_max_size: int = 10,
+        max_keywords_per_chunk: int = 10,
+        max_keywords_per_query: int = 10,
+        num_chunks_per_query: int = 10,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
@@ -55,7 +59,7 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self.text_qa_template = text_qa_template
         self.max_keywords_per_chunk = max_keywords_per_chunk
         self.max_keywords_per_query = max_keywords_per_query
-        self.keyword_chunk_set_max_size = keyword_chunk_set_max_size
+        self.num_chunks_per_query = num_chunks_per_query
         super().__init__(documents=documents, index_struct=index_struct)
 
     
@@ -83,13 +87,14 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         )
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for text_chunk in text_chunks:
-            response = openai_llm_predict(
+            response, _ = openai_llm_predict(
                 self.refine_template,
                 query_str=query_str,
                 existing_answer=response,
                 context_msg=text_chunk
             )
-            print("> Refined response: {response}")
+            if verbose:
+                print(f"> Refined response: {response}")
         return response
 
     def _give_response(
@@ -115,56 +120,59 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         response = None
         for text_chunk in text_chunks:
             if response is None:
-                response = openai_llm_predict(
+                response, _ = openai_llm_predict(
                     self.text_qa_template,
                     query_str=query_str,
                     context_str=text_chunk
                 )
-                print(f"> Initial response: {response}")
+                if verbose:
+                    print(f"> Initial response: {response}")
             else:
                 response = self._refine_response(response, query_str, text_chunk)
         return response
 
-    def _query_with_keyword(
-        self, 
-        keyword: str, 
-        query_str: str, 
-        result_response: Optional[str] = None,
-        verbose: bool = False
+    def _query_with_chunk(
+        self, text_chunk: str, 
+        query_str: str, result_response: Optional[str] = None, verbose: bool = False
     ) -> str:
         """Query with a keyword."""
-        cur_response = result_response
-        text_chunks = self.index_struct.get_texts(keyword)
-        text_chunks = text_chunks[:self.keyword_chunk_set_max_size]
-        for text_chunk in text_chunks:
-            if cur_response is None:
-                cur_response = self._give_response(query_str, text_chunk, verbose=verbose)
-            else:
-                cur_response = self._refine_response(cur_response, query_str, text_chunk, verbose=verbose)
-                
-        return result_response
+        if result_response is None:
+            return self._give_response(query_str, text_chunk, verbose=verbose)
+        else:
+            return self._refine_response(result_response, query_str, text_chunk, verbose=verbose)
 
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
-        response = openai_llm_predict(
+        response, _ = openai_llm_predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str
         )
         keywords = extract_keywords_given_response(response, self.max_keywords_per_query)
 
-        # refine keywords based on frequency in the index (lowest frequency first)
-        keywords = [k for k in keywords if k in self.index_struct.table]
-        sorted_keywords = sorted(keywords, key=lambda k: len(self.index_struct.get_texts(k)))
-        # NOTE: though we prompted GPT already, this is for insurance
-        sorted_keywords = sorted_keywords[:self.max_keywords_per_query]
-        print(f"Extracted keywords: {sorted_keywords}")
-
+        # go through text chunks in order of most matching keywords
+        chunk_indices_count = defaultdict(int)
+        keywords = [k for k in keywords if k in self.index_struct.keywords]
+        print(f"Extracted keywords: {keywords}")
+        for k in keywords:
+            for text_chunk_idx in self.index_struct.table[k]:
+                chunk_indices_count[text_chunk_idx] += 1
+        sorted_chunk_indices = sorted(
+            list(chunk_indices_count.keys()),  
+            key=lambda x: chunk_indices_count[x],
+            reverse=True
+        )
+        sorted_chunk_indices = sorted_chunk_indices[:self.num_chunks_per_query]
         result_response = None
-        for keyword in sorted_keywords:
-            result_response = self._query_with_keyword(
-                keyword, query_str, result_response=result_response, verbose=verbose
+        for text_chunk_idx in sorted_chunk_indices:
+            fmt_text_chunk = truncate_text(self.index_struct.text_chunks[text_chunk_idx], 50)
+            print(f"> Querying with idx: {text_chunk_idx}: {fmt_text_chunk}")
+            result_response = self._query_with_chunk(
+                self.index_struct.text_chunks[text_chunk_idx],
+                query_str, 
+                result_response=result_response,
+                verbose=verbose
             )
         return result_response
 
@@ -192,17 +200,19 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         )
         text_chunks = self.text_splitter.split_text(text_data)
         for i, text_chunk in enumerate(text_chunks):
-            response, formatted_query_prompt = openai_llm_predict(
+            response, _ = openai_llm_predict(
                 self.keyword_extract_template,
                 max_keywords=self.max_keywords_per_chunk,
                 text=text_chunk
             )
             keywords = extract_keywords_given_response(response, self.max_keywords_per_query)
             fmt_text_chunk = truncate_text(text_chunk, 50)
-            print(f"> Processing chunk {i} of {len(text_chunks)}: {fmt_text_chunk}")
+            text_chunk_id = index_struct.add_text(keywords, text_chunk)
+            print(
+                f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
+                f"{fmt_text_chunk}"
+            )
             print(f"> Keywords: {keywords}")
-            for keyword in keywords:
-                index_struct.add_text(keyword, text_chunk)
         return index_struct
 
     @classmethod

@@ -51,13 +51,15 @@ class KeywordTable(IndexStruct):
                 break
         return idx
 
-    def add_text(self, keyword: str, text_chunk: str) -> None:
+    def add_text(self, keywords: List[str], text_chunk: str) -> int:
         """Add text to table."""
-        if keyword not in self.table:
-            self.table[keyword] = set()
         cur_idx = self._get_index()
-        self.table[keyword].add(cur_idx)
+        for keyword in keywords:
+            if keyword not in self.table:
+                self.table[keyword] = set()
+            self.table[keyword].add(cur_idx)
         self.text_chunks[cur_idx] = text_chunk
+        return cur_idx
 
     def get_texts(self, keyword: str) -> List[str]:
         """Get texts given keyword."""
@@ -66,9 +68,9 @@ class KeywordTable(IndexStruct):
         return [self.text_chunks[idx] for idx in self.table[keyword]]
 
     @property
-    def keywords(self) -> List[str]:
+    def keywords(self) -> Set[str]:
         """Get all keywords in the table."""
-        return list(self.table.keys())
+        return set(self.table.keys())
 
     @property
     def size(self) -> int:
