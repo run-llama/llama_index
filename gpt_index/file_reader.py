@@ -15,11 +15,11 @@
 #                 raise ValueError(f"Expected {input_file} to be a file.")
 #         self.input_files = input_files
 
-    # def load_data(self) -> str:
-    #     """Load data from the input directory."""
-    #     data = ""
-    #     for input_file in self.input_files:
-    #         with open(input_file, "r") as f:
-    #             data += f.read()
-    #         data += "\n"
-    #     return data
+# def load_data(self) -> str:
+#     """Load data from the input directory."""
+#     data = ""
+#     for input_file in self.input_files:
+#         with open(input_file, "r") as f:
+#             data += f.read()
+#         data += "\n"
+#     return data

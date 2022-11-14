@@ -1,6 +1,6 @@
 """Base schema for data structures."""
 from dataclasses import dataclass
-from typing import Dict, Set, Optional
+from typing import Dict, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -8,6 +8,7 @@ from dataclasses_json import DataClassJsonMixin
 @dataclass
 class Document:
     """Generic interface for document."""
+
     text: str
     extra_info: Optional[Dict] = None
 

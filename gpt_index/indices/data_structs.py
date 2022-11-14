@@ -1,9 +1,9 @@
 """File for core data structures."""
 
-from dataclasses_json import DataClassJsonMixin
 from dataclasses import dataclass
+from typing import Dict, Set
 
-from typing import Set, Dict
+from dataclasses_json import DataClassJsonMixin
 
 
 @dataclass
@@ -11,6 +11,7 @@ class IndexStruct(DataClassJsonMixin):
     """A base data struct for a GPT index."""
 
 
+@dataclass
 class Node(DataClassJsonMixin):
     """A node in the GPT tree index."""
 

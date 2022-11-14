@@ -1,8 +1,9 @@
 """Simple reader that ."""
-from gpt_index.schema import Document
-from gpt_index.readers.base import BaseReader
-from typing import List
 from pathlib import Path
+from typing import List
+
+from gpt_index.readers.base import BaseReader
+from gpt_index.schema import Document
 
 
 class SimpleDirectoryReader(BaseReader):

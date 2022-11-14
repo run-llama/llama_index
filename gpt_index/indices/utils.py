@@ -1,6 +1,9 @@
 """Utilities for GPT indices."""
+import re
+from typing import Dict, List, Optional
+
 from transformers import GPT2TokenizerFast
-from typing import Optional, List, Dict
+
 from gpt_index.indices.data_structs import Node
 
 
@@ -27,7 +30,6 @@ def get_numbered_text_from_nodes(node_list: List[Node]) -> str:
         text += "\n\n"
         number += 1
     return text
-
 
 
 def get_chunk_size_given_prompt(

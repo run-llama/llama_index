@@ -1,9 +1,9 @@
 """Base data structure classes."""
 from abc import abstractmethod
-from typing import Dict, Set, List, Any, Generic, TypeVar
+from typing import Any, Generic, List, Optional, Set, TypeVar, cast
 
-from gpt_index.schema import Document
 from gpt_index.indices.data_structs import IndexStruct
+from gpt_index.schema import Document
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -11,11 +11,28 @@ IS = TypeVar("IS", bound=IndexStruct)
 class BaseGPTIndex(Generic[IS]):
     """Base GPT Index."""
 
-    def __init__(self, documents: List[Document]) -> None:
+    def __init__(
+        self,
+        documents: Optional[List[Document]] = None,
+        index_struct: Optional[IS] = None,
+    ) -> None:
         """Initialize with parameters."""
+        if index_struct is None and documents is None:
+            raise ValueError("One of documents or index_struct must be provided.")
+        if index_struct is not None and documents is not None:
+            raise ValueError("Only one of documents or index_struct can be provided.")
+
         # build index struct in the init function
-        self.documents = documents
-        self.index_struct = self.build_index_from_documents(documents)
+        if index_struct is not None:
+            self._index_struct = index_struct
+        else:
+            documents = cast(List[Document], documents)
+            self._index_struct = self.build_index_from_documents(documents)
+
+    @property
+    def index_struct(self) -> IS:
+        """Get the index struct."""
+        return self._index_struct
 
     @abstractmethod
     def build_index_from_documents(self, documents: List[Document]) -> IS:

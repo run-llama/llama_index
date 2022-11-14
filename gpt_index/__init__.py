@@ -11,9 +11,4 @@ from gpt_index.indices.tree import GPTTreeIndex
 # readers
 from gpt_index.readers.simple_reader import SimpleDirectoryReader
 
-
-__all__ = [
-    "GPTTreeIndex",
-    "SimpleDirectoryReader"
-]
-
+__all__ = ["GPTTreeIndex", "SimpleDirectoryReader"]

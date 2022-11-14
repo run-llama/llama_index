@@ -1,32 +1,37 @@
 """Tree-based index."""
 
-from gpt_index.prompts import (
-    DEFAULT_QUERY_PROMPT, DEFAULT_QUERY_PROMPT_MULTIPLE, 
-    DEFAULT_TEXT_QA_PROMPT, DEFAULT_REFINE_PROMPT,
-    DEFAULT_SUMMARY_PROMPT
-)
-from langchain import LLMChain, OpenAI, Prompt
-from gpt_index.indices.data_structs import IndexGraph, Node
-from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.utils import (
-    get_sorted_node_list, get_numbered_text_from_nodes, 
-    extract_numbers_given_response, get_chunk_size_given_prompt,
-    get_text_from_nodes
-)
-from gpt_index.constants import MAX_CHUNK_OVERLAP, NUM_OUTPUTS, MAX_CHUNK_SIZE
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
-from gpt_index.schema import Document
-from typing import Optional, Dict, cast, Any, List
-from pathlib import Path
 import json
+from typing import Any, Dict, List, Optional, cast
+
+from langchain import LLMChain, OpenAI, Prompt
+
+from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
+from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.utils import (
+    extract_numbers_given_response,
+    get_chunk_size_given_prompt,
+    get_numbered_text_from_nodes,
+    get_sorted_node_list,
+    get_text_from_nodes,
+)
+from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
+from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.prompts import (
+    DEFAULT_QUERY_PROMPT,
+    DEFAULT_QUERY_PROMPT_MULTIPLE,
+    DEFAULT_REFINE_PROMPT,
+    DEFAULT_SUMMARY_PROMPT,
+    DEFAULT_TEXT_QA_PROMPT,
+)
+from gpt_index.schema import Document
 
 
 class GPTTreeIndexBuilder:
     """GPT tree index builder.
 
     Helper class to build the tree-structured index.
-    
+
     """
 
     def __init__(
@@ -98,7 +103,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
 
     def __init__(
         self,
-        documents: List[Document],
+        documents: Optional[List[Document]] = None,
+        index_struct: Optional[IndexGraph] = None,
         summary_template: str = DEFAULT_SUMMARY_PROMPT,
         query_template: str = DEFAULT_QUERY_PROMPT,
         query_template_multiple: str = DEFAULT_QUERY_PROMPT_MULTIPLE,
@@ -116,7 +122,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.refine_template = refine_template
         self.num_children = num_children
         self.child_branch_factor = child_branch_factor
-        super().__init__(documents)
+        super().__init__(documents=documents, index_struct=index_struct)
 
     def _query_with_selected_node(
         self,
@@ -143,7 +149,10 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             print(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query(
-                {i: self.graph.all_nodes[i] for i in selected_node.child_indices},
+                {
+                    i: self.index_struct.all_nodes[i]
+                    for i in selected_node.child_indices
+                },
                 query_str,
                 level=level + 1,
                 verbose=verbose,
@@ -237,7 +246,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         return self._query(
-            self.graph.root_nodes, query_str, level=0, verbose=verbose
+            self.index_struct.root_nodes, query_str, level=0, verbose=verbose
         ).strip()
 
     def build_index_from_documents(self, documents: List[Document]) -> IndexGraph:
@@ -252,9 +261,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTTreeIndex":
         """Load from disk."""
         with open(save_path, "r") as f:
-            return cls(graph=IndexGraph.from_dict(json.load(f)), **kwargs)
+            return cls(index_struct=IndexGraph.from_dict(json.load(f)), **kwargs)
 
     def save_to_disk(self, save_path: str) -> None:
         """Safe to file."""
         with open(save_path, "w") as f:
-            json.dump(self.graph.to_dict(), f)
+            json.dump(self.index_struct.to_dict(), f)
