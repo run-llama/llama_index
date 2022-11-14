@@ -1,8 +1,10 @@
 """File for core data structures."""
 
-from dataclasses import dataclass
-from typing import Dict, Set
+from dataclasses import dataclass, field
+from typing import Dict, Set, List
 
+import random
+import sys
 from dataclasses_json import DataClassJsonMixin
 
 
@@ -31,3 +33,44 @@ class IndexGraph(IndexStruct):
     def size(self) -> int:
         """Get the size of the graph."""
         return len(self.all_nodes)
+
+
+@dataclass
+class KeywordTable(IndexStruct):
+    """A table of keywords mapping keywords to text chunks."""
+    
+    table: Dict[str, Set[int]] = field(default_factory=dict)
+    text_chunks: Dict[int, str] = field(default_factory=dict)
+
+    def _get_index(self) -> int:
+        """Get the next index for the text chunk."""
+        # randomly generate until we get a unique index
+        while True:
+            idx = random.randint(0, sys.maxsize)
+            if idx not in self.text_chunks:
+                break
+        return idx
+
+    def add_text(self, keyword: str, text_chunk: str) -> None:
+        """Add text to table."""
+        if keyword not in self.table:
+            self.table[keyword] = set()
+        cur_idx = self._get_index()
+        self.table[keyword].add(cur_idx)
+        self.text_chunks[cur_idx] = text_chunk
+
+    def get_texts(self, keyword: str) -> List[str]:
+        """Get texts given keyword."""
+        if keyword not in self.table:
+            raise ValueError("Keyword not found in table.")
+        return [self.text_chunks[idx] for idx in self.table[keyword]]
+
+    @property
+    def keywords(self) -> List[str]:
+        """Get all keywords in the table."""
+        return list(self.table.keys())
+
+    @property
+    def size(self) -> int:
+        """Get the size of the table."""
+        return len(self.table)

@@ -99,8 +99,6 @@ class GPTTreeIndexBuilder:
 class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     """GPT Index."""
 
-    # TODO: refactor to not be DataClassJsonMixin
-
     def __init__(
         self,
         documents: Optional[List[Document]] = None,
