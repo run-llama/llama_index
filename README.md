@@ -24,19 +24,9 @@ The main third-party package requirements are `transformers`, `openai`, and `lan
 
 All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply do `pip install -r requirements.txt`. 
 
-## 💻 Usage
+## 💻 Example Usage
 
-We currently support the following indices:
-- `GPTTreeIndex`: a tree data structure
-    - **Creation**: with GPT hierarchical summarization over sub-documents
-    - **Query**: with GPT recursive querying over multiple choice problems
-
-- `GPTKeywordTableIndex`: a keyword-based table
-    - **Creation**: with GPT keyword extraction over each sub-document
-    - **Query**: with GPT keyword extraction over question, match to sub-documents. *Create and refine* an answer over candidate sub-documents.
-
-#### Examples
-Examples are in the `examples` folder.
+Examples are in the `examples` folder. Indices are in the `indices` folder (see list of indices below).
 
 To build a tree index do the following:
 ```python
@@ -58,6 +48,17 @@ To query,
 index.query("<question_text>?", child_branch_factor=1)
 ```
 
+
+## Index Details
+
+- [`GPTTreeIndex`](gpt_index/indices/tree/README.md): a tree data structure
+    - **Creation**: with GPT hierarchical summarization over sub-documents
+    - **Query**: with GPT recursive querying over multiple choice problems
+- [`GPTKeywordTableIndex`](gpt_index/indices/keyword_table/README.md): a keyword-based table
+    - **Creation**: with GPT keyword extraction over each sub-document
+    - **Query**: with GPT keyword extraction over question, match to sub-documents. *Create and refine* an answer over candidate sub-documents.
+
+
 ## Does this actually work?
 
 It works in varying degrees depending on the index struct (tree, keyword), the data,
@@ -65,10 +66,6 @@ and the question asked.
 
 Check out this [Twitter thread](https://twitter.com/jerryjliu0/status/1590192529286520832?s=20&t=1Ss6eJJMZzFA6y-QmSU9lw) for instance describing the tree index.
 
-
-## More Details on Each Index
-- [`GPTTreeIndex`](gpt_index/indices/tree/README.md)
-- [`GPTKeywordTableIndex`](gpt_index/indices/keyword_table/README.md)
 
 ## ❓🧠 Additional Thoughts / FAQ
 
