@@ -60,7 +60,7 @@ Check out this [Twitter thread](https://twitter.com/jerryjliu0/status/1590192529
 
 ## More Details on Each Index
 - [`GPTTreeIndex`](indices/tree/README.md)
-- [`GPTKeywordTableIndex`](indices/tree/README.md)
+- [`GPTKeywordTableIndex`](indices/keyword_table/README.md)
 
 ## ❓🧠 Additional Thoughts / FAQ
 
@@ -77,12 +77,15 @@ Please let me know! I am not up-to-date on the latest NLP/LLM ArXiv papers or Gi
 
 ## ⏭️ Future Directions
 Please feel free to contribute with comments, issues, PR's! 
-- Add ability to insert/delete.
-- Add ability to more easily customize summarization and query prompts.
-- Build different trees from the same pool of raw data with different summarization prompts in order to solve task-specific needs. For instance, perhaps one method of summarization is better suited for answering questions about specific numbers. Another method of summarization could be to answer cause-effect questions.
-- Similarly, would also be interesting to explore query prompts that allow more flexible querying traversals than purely a top-down linear approach!
-- Add different index structures beyond trees.
-- Add ability for GPT itself to reason about connections between nodes.
+- `GPTTreeIndex`
+    - Add ability to insert/delete.
+    - Build different trees from the same pool of raw data with different summarization prompts in order to solve task-specific needs. For instance, perhaps one method of summarization is better suited for answering questions about specific numbers. Another method of summarization could be to answer cause-effect questions.
+    - Similarly, continue exploring query prompts that allow more flexible querying traversals than purely a top-down linear approach!
+- `GPTKeywordTableIndex`
+    - Explore alternate methods of generating "keywords"
+- Customization
+    - Add ability to more easily customize summarization and query prompts.
+- Other data structures: add different index structures beyond trees/hash tables.
 
 
 ## 🔬 Related Work [WIP]

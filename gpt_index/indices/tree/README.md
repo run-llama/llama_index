@@ -1,4 +1,4 @@
-## More details on how it works
+## GPTTreeIndex
 
 
 The GPTTreeIndex first takes in a large dataset of unprocessed text data as input. It then builds up a tree-index in a bottom-up fashion; each parent node is able to summarize the children nodes using a general **summarization prompt**; each intermediate node contains text summarizing the components below. Once the index is built, it can be saved to disk as a JSON and loaded for future use. 
@@ -21,3 +21,4 @@ $cN\log(N)\frac{p}{1000}$, where $p=4096$ is the prompt limit and $c$ is the cos
 $c\log(N)\frac{p}{1000}$.
 
 For the NYC example, this equates to \$~0.40 per query.
+
