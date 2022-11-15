@@ -1,10 +1,10 @@
 """File for core data structures."""
 
-from dataclasses import dataclass, field
-from typing import Dict, Set, List
-
 import random
 import sys
+from dataclasses import dataclass, field
+from typing import Dict, List, Set
+
 from dataclasses_json import DataClassJsonMixin
 
 
@@ -38,7 +38,7 @@ class IndexGraph(IndexStruct):
 @dataclass
 class KeywordTable(IndexStruct):
     """A table of keywords mapping keywords to text chunks."""
-    
+
     table: Dict[str, Set[int]] = field(default_factory=dict)
     text_chunks: Dict[int, str] = field(default_factory=dict)
 

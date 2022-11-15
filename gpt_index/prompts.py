@@ -83,7 +83,7 @@ DEFAULT_KEYWORD_EXTRACT_TEMPLATE = (
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
 )
 
-# NOTE: the keyword extraction for queries can be the same as 
+# NOTE: the keyword extraction for queries can be the same as
 # the one used to build the index, but here we tune it to see if performance is better.
 DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = (
     "A question is provided below. Given the question, extract up to {max_keywords} "

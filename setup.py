@@ -15,11 +15,11 @@ setup(
     packages=find_packages(),
     description="Building an index of GPT summaries.",
     install_requires=[
-        "langchain", 
-        "openai", 
-        "dataclasses_json", 
+        "langchain",
+        "openai",
+        "dataclasses_json",
         "transformers",
-        "nltk"
+        "nltk",
     ],
     long_description=long_description,
     license="MIT",
