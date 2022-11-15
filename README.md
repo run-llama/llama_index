@@ -26,10 +26,15 @@ All requirements should be contained within the `setup.py` file. To run the pack
 
 ## 💻 Example Usage
 
-An example is provided in `examples/test_wiki/TestNYC.ipynb`. To build the index do the following:
+Examples are in the `examples` folder. We currently support the following indices:
+- `GPTTreeIndex`
+- `GPTKeywordTableIndex`
+
+To build a tree index do the following:
 ```python
 from gpt_index import GPTTreeIndex, SimpleDirectoryReader
-GPTTreeIndex.from_input_dir('data')
+documents = SimpleDirectoryReader('data').load_data()
+index = GPTTreeIndex(documents)
 ```
 
 To save to disk and load from disk, do
@@ -47,46 +52,28 @@ index.query("<question_text>?", child_branch_factor=1)
 
 ## Does this actually work?
 
-Kind of, it's very much a WIP! It works for simple queries, such as the prompt provided for the Gatsby data in `examples/gatsby` ("What did the narrator do after getting back to Chicago?"). 
+It works in varying degrees depending on the index struct (tree, keyword), the data,
+and the question asked.
 
-#### Where it breaks
-In many cases it doesn't reason down the correct chain, and oftentimes it can fail in very frustrating ways. For instance, in the Paul Graham example `examples/paul_graham_essay`, when we ask "What did the author do during his time *after* Y Combinator?" and run with `verbose=True`, we find that the reasoning is oftentimes correct ("the author decided to try painting"), but the selected multiple choice answer is completely wrong, leading GPT Index down the wrong path. This is open to future work! 
+Check out this [Twitter thread](https://twitter.com/jerryjliu0/status/1590192529286520832?s=20&t=1Ss6eJJMZzFA6y-QmSU9lw) for instance describing the tree index.
 
-Interestingly in the case of the NYC wiki dataset `examples/test_wiki`, we find that GPT oftentimes relies on its own world knowledge (it leads GPT Index down the wrong path but still surfaces the correct answer in the end e.g. "What are the airports within New York City?").
 
+## More Details on Each Index
+- [`GPTTreeIndex`](indices/tree/README.md)
+- [`GPTKeywordTableIndex`](indices/tree/README.md)
 
 ## ❓🧠 Additional Thoughts / FAQ
 
-**More details on how it works**
-
-The GPT Index first takes in a large dataset of unprocessed text data as input. It then builds up a tree-index in a bottom-up fashion; each parent node is able to summarize the children nodes using a general **summarization prompt**; each intermediate node contains text summarizing the components below. Once the index is built, it can be saved to disk as a JSON and loaded for future use. 
-
-Then, say the user wants to use GPT-3 to answer a question. Using a **query prompt template**, the GPT Index will be able to recursively perform tree traversal in a top-down fashion in order to answer a question. For example, in the very beginning GPT-3 is tasked with selecting between *n* top-level nodes which best answers a provided query, by outputting a number as a multiple-choice problem. The GPT Tree Index then uses the number to select the corresponding node, and the process repeats recursively among the children nodes until a leaf node is reached.
-
-
 **How is this better than an embeddings-based approach / other state-of-the-art QA and retrieval methods?**
 
-The intent is not to compete against existing methods. A simpler embedding-based technique could be to just encode each chunk as an embedding and do a simple question-document embedding look-up to retrieve the result. Instead, this project is intended as a design exercise to test how GPT can organize information and lookup information purely through the text-in/text-out paradigm.
+The intent is not to compete against existing methods. An embedding-based technique could be to just encode each chunk as an embedding and do a simple question-document embedding look-up to retrieve the result. 
 
-**Why build a tree? Why not just incrementally go through each chunk?**
-
-Algorithmically speaking, $O(\log N)$ is better than $O(N)$.
-
-More broadly, building a tree helps us to test GPT's capabilities in modeling information in a hierarchy. It seems to me that our brains organize information in a similar way (citation needed). We can use this design to test how GPT can use its own hierarchy to answer questions.
-
-Practically speaking, it is much cheaper to do so and I want to limit my monthly spending (see below for costs).
+Instead, this project is focused on providing a set of data structures to test how GPT can organize information and lookup information purely through the text-in/text-out paradigm.
 
 **This work is very similar to X paper/project.**
 
 Please let me know! I am not up-to-date on the latest NLP/LLM ArXiv papers or Github projects. I am happy to give references/credit below.
 
-**How much does this cost to run?**
-
-We currently use the Davinci model for good results. Unfortunately Davinci is quite expensive. The cost of building the tree is roughly 
-$cN\log(N)\frac{p}{1000}$, where $p=4096$ is the prompt limit and $c$ is the cost per 1000 tokens ($0.02 as mentioned on the [pricing page](https://openai.com/api/pricing/)). The cost of querying the tree is roughly 
-$c\log(N)\frac{p}{1000}$.
-
-For the NYC example, this equates to \$~0.40 per query.
 
 ## ⏭️ Future Directions
 Please feel free to contribute with comments, issues, PR's! 
