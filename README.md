@@ -1,6 +1,6 @@
-# 🌲🗂️ ️GPT Tree Index
+# 🗂️ ️GPT Index
 
-A tree-based index containing text data that is created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
+GPT Index is a project consisting of a set of *data structures* that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
 
 ## 🚀 Overview
 
@@ -10,11 +10,11 @@ A tree-based index containing text data that is created using GPT-3 and can be t
 - The ability to feed "knowledge" to GPT-3 is restricted to this limited prompt size and model weights.
 - **Thought**: What if GPT-3 can have access to potentially a much larger database of knowledge without retraining/finetuning? 
 
-#### Proposed Solution [WIP]
-That's where the **GPT Tree Index** comes in (if we can resolve some kinks!). Instead of relying on world knowledge encoded in the model weights, the GPT Tree Index does the following:
-- Uses a pre-trained GPT-3 model primarily for *reasoning*/*summarization* instead of prior knowledge
-- Takes as input a large corpus of text data, uses GPT-3 to build a tree-structured index over it
-- Also use GPT-3 to traverse the tree index that it created in order to answer a query
+#### Proposed Solution
+That's where the **GPT Index** data structures come in. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
+- Uses a pre-trained GPT-3 model primarily for *reasoning*/*summarization* instead of prior knowledge.
+- Takes as input a large corpus of text data, uses GPT-3 to build a structured index over it
+- Also use GPT-3 to traverse the index that it created in order to answer a query
 
 The high-level design exercise of this project is to test the capability of GPT-3 as a general-purpose processor to organize and retrieve data. From our current understanding, related works have used GPT-3 to reason with external db sources (see below); this work links reasoning with knowledge building.
 
@@ -24,11 +24,19 @@ The main third-party package requirements are `transformers`, `openai`, and `lan
 
 All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply do `pip install -r requirements.txt`. 
 
-## 💻 Example Usage
+## 💻 Usage
 
-Examples are in the `examples` folder. We currently support the following indices:
-- `GPTTreeIndex`
-- `GPTKeywordTableIndex`
+We currently support the following indices:
+- `GPTTreeIndex`: a tree data structure
+    - **Creation**: with GPT hierarchical summarization over sub-documents
+    - **Query**: with GPT recursive querying over multiple choice problems
+
+- `GPTKeywordTableIndex`: a keyword-based table
+    - **Creation**: with GPT keyword extraction over each sub-document
+    - **Query**: with GPT keyword extraction over question, match to sub-documents. *Create and refine* an answer over candidate sub-documents.
+
+#### Examples
+Examples are in the `examples` folder.
 
 To build a tree index do the following:
 ```python
