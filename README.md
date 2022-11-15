@@ -59,8 +59,8 @@ Check out this [Twitter thread](https://twitter.com/jerryjliu0/status/1590192529
 
 
 ## More Details on Each Index
-- [`GPTTreeIndex`](indices/tree/README.md)
-- [`GPTKeywordTableIndex`](indices/keyword_table/README.md)
+- [`GPTTreeIndex`](gpt_index/indices/tree/README.md)
+- [`GPTKeywordTableIndex`](gpt_index/indices/keyword_table/README.md)
 
 ## ❓🧠 Additional Thoughts / FAQ
 
