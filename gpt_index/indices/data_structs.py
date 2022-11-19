@@ -76,3 +76,17 @@ class KeywordTable(IndexStruct):
     def size(self) -> int:
         """Get the size of the table."""
         return len(self.table)
+
+
+@dataclass
+class IndexList(IndexStruct):
+    """A list of documents."""
+
+    nodes: List[Node] = field(default_factory=list)
+
+    def add_text(self, text_chunk: str) -> int:
+        """Add text to table, return current position in list."""
+        # don't worry about child indices for now, nodes are all in order
+        cur_node = Node(text=text_chunk, index=len(self.nodes), child_indices=set())
+        self.nodes.append(cur_node)
+        return cur_node.index

@@ -97,6 +97,7 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self, query_str: str, text_chunk: str, verbose: bool = False
     ) -> str:
         """Give response given a query and a corresponding text chunk."""
+        # TODO: merge this with response_utils
         empty_text_qa_template = self.text_qa_template.format(
             query_str=query_str,
             context_str="",
