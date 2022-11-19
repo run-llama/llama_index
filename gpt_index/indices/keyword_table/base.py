@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.data_structs import KeywordTable
+from gpt_index.indices.response_utils.refine import give_response, refine_response
 from gpt_index.indices.utils import (
     extract_keywords_given_response,
     get_chunk_size_given_prompt,
@@ -29,7 +30,6 @@ from gpt_index.prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
 from gpt_index.schema import Document
-from gpt_index.indices.response_utils.refine import refine_response, give_response
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -73,18 +73,21 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         """Query with a keyword."""
         if result_response is None:
             return give_response(
-                query_str, text_chunk, 
+                query_str,
+                text_chunk,
                 text_qa_template=self.text_qa_template,
                 refine_template=self.refine_template,
-                verbose=verbose
+                verbose=verbose,
             )
         else:
             return refine_response(
-                result_response, query_str, text_chunk,
+                result_response,
+                query_str,
+                text_chunk,
                 refine_template=self.refine_template,
-                verbose=verbose
+                verbose=verbose,
             )
-        
+
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
