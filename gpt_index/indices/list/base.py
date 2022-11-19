@@ -1,4 +1,4 @@
-"""Linked-list index.
+"""List index.
 
 A simple data structure where GPT Index iterates through document chunks
 in sequence in order to answer a given query.
@@ -10,7 +10,7 @@ from typing import Any, List, Optional
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.data_structs import LinkedList
+from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -18,13 +18,13 @@ from gpt_index.prompts import DEFAULT_REFINE_PROMPT, DEFAULT_TEXT_QA_PROMPT
 from gpt_index.schema import Document
 
 
-class GPTLinkedListIndex(BaseGPTIndex[LinkedList]):
-    """GPT Linked List Index."""
+class GPTListIndex(BaseGPTIndex[IndexList]):
+    """GPT List Index."""
 
     def __init__(
         self,
         documents: Optional[List[Document]] = None,
-        index_struct: Optional[LinkedList] = None,
+        index_struct: Optional[IndexList] = None,
         refine_template: str = DEFAULT_REFINE_PROMPT,
         text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
     ) -> None:
@@ -45,11 +45,11 @@ class GPTLinkedListIndex(BaseGPTIndex[LinkedList]):
         )
         super().__init__(documents=documents, index_struct=index_struct)
 
-    def build_index_from_documents(self, documents: List[Document]) -> LinkedList:
+    def build_index_from_documents(self, documents: List[Document]) -> IndexList:
         """Build the index from documents."""
         # do a simple concatenation
         text_data = "\n".join([d.text for d in documents])
-        index_struct = LinkedList()
+        index_struct = IndexList()
         text_chunks = self.text_splitter.split_text(text_data)
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
@@ -88,10 +88,10 @@ class GPTLinkedListIndex(BaseGPTIndex[LinkedList]):
         return response or ""
 
     @classmethod
-    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTLinkedListIndex":
+    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTListIndex":
         """Load from disk."""
         with open(save_path, "r") as f:
-            return cls(index_struct=LinkedList.from_dict(json.load(f)), **kwargs)
+            return cls(index_struct=IndexList.from_dict(json.load(f)), **kwargs)
 
     def save_to_disk(self, save_path: str) -> None:
         """Safe to file."""

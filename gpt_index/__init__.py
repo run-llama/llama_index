@@ -7,7 +7,7 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 
 
 from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
-from gpt_index.indices.linked_list.base import GPTLinkedListIndex
+from gpt_index.indices.list.base import GPTListIndex
 
 # indices
 from gpt_index.indices.tree.base import GPTTreeIndex
@@ -17,7 +17,7 @@ from gpt_index.readers.simple_reader import SimpleDirectoryReader
 
 __all__ = [
     "GPTKeywordTableIndex",
-    "GPTLinkedListIndex",
+    "GPTListIndex",
     "GPTTreeIndex",
     "SimpleDirectoryReader",
 ]

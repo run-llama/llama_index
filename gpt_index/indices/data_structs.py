@@ -79,7 +79,7 @@ class KeywordTable(IndexStruct):
 
 
 @dataclass
-class LinkedList(IndexStruct):
+class IndexList(IndexStruct):
     """A list of documents."""
 
     nodes: List[Node] = field(default_factory=list)

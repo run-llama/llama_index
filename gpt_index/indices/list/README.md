@@ -1,1 +1,1 @@
-## GPTLinkedList
+## GPTList
