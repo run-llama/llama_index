@@ -29,6 +29,7 @@ from gpt_index.prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
 from gpt_index.schema import Document
+from gpt_index.indices.response_utils.refine import refine_response, give_response
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -62,67 +63,6 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self.num_chunks_per_query = num_chunks_per_query
         super().__init__(documents=documents, index_struct=index_struct)
 
-    def _refine_response(
-        self, response: str, query_str: str, text_chunk: str, verbose: bool = False
-    ) -> str:
-        """Refine response."""
-        if verbose:
-            print("> Refine context: {text_chunk}")
-        empty_refine_template = self.refine_template.format(
-            query_str=query_str,
-            existing_answer=response,
-            context_msg="",
-        )
-        refine_chunk_size = get_chunk_size_given_prompt(
-            empty_refine_template, MAX_CHUNK_SIZE, 1, NUM_OUTPUTS
-        )
-        refine_text_splitter = TokenTextSplitter(
-            separator=" ",
-            chunk_size=refine_chunk_size,
-            chunk_overlap=MAX_CHUNK_OVERLAP,
-        )
-        text_chunks = refine_text_splitter.split_text(text_chunk)
-        for text_chunk in text_chunks:
-            response, _ = openai_llm_predict(
-                self.refine_template,
-                query_str=query_str,
-                existing_answer=response,
-                context_msg=text_chunk,
-            )
-            if verbose:
-                print(f"> Refined response: {response}")
-        return response
-
-    def _give_response(
-        self, query_str: str, text_chunk: str, verbose: bool = False
-    ) -> str:
-        """Give response given a query and a corresponding text chunk."""
-        # TODO: merge this with response_utils
-        empty_text_qa_template = self.text_qa_template.format(
-            query_str=query_str,
-            context_str="",
-        )
-        qa_chunk_size = get_chunk_size_given_prompt(
-            empty_text_qa_template, MAX_CHUNK_SIZE, 1, NUM_OUTPUTS
-        )
-        qa_text_splitter = TokenTextSplitter(
-            separator=" ",
-            chunk_size=qa_chunk_size,
-            chunk_overlap=MAX_CHUNK_OVERLAP,
-        )
-        text_chunks = qa_text_splitter.split_text(text_chunk)
-        response = None
-        for text_chunk in text_chunks:
-            if response is None:
-                response, _ = openai_llm_predict(
-                    self.text_qa_template, query_str=query_str, context_str=text_chunk
-                )
-                if verbose:
-                    print(f"> Initial response: {response}")
-            else:
-                response = self._refine_response(response, query_str, text_chunk)
-        return response or ""
-
     def _query_with_chunk(
         self,
         text_chunk: str,
@@ -132,12 +72,19 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     ) -> str:
         """Query with a keyword."""
         if result_response is None:
-            return self._give_response(query_str, text_chunk, verbose=verbose)
-        else:
-            return self._refine_response(
-                result_response, query_str, text_chunk, verbose=verbose
+            return give_response(
+                query_str, text_chunk, 
+                text_qa_template=self.text_qa_template,
+                refine_template=self.refine_template,
+                verbose=verbose
             )
-
+        else:
+            return refine_response(
+                result_response, query_str, text_chunk,
+                refine_template=self.refine_template,
+                verbose=verbose
+            )
+        
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
