@@ -17,6 +17,7 @@ index = GPTListIndex(documents)
 index.save_to_disk('index_list.json')
 # load index from disk
 index = GPTListIndex.load_from_disk('index_list.json')
+# query
 response = index.query("<question text>", verbose=True)
 
 ```
