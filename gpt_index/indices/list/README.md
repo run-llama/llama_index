@@ -1,4 +1,4 @@
-## 🔗 GPTList
+## 🔗 GPTListIndex
 
 GPTListIndex is a simple list-based data structure. During index construction, GPTListIndex takes in a dataset of text documents as input, chunks them up into smaller document chunks, and concatenates them into a list. GPT is not called at all during index construction.
 
