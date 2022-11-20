@@ -29,7 +29,6 @@ class GPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
             if verbose:
                 print(f"> Searching in chunk: {fmt_text_chunk}")
 
-            # TODO: abstract create and refine procedure
             if response is None:
                 response = give_response(
                     query_str,

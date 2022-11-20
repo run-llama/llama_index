@@ -108,7 +108,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         """Query mode to class."""
         if mode == DEFAULT_MODE:
             # TODO: remove unused __init__ args
-            query = GPTTreeIndexLeafQuery(self.index_struct, mode, **query_kwargs)
+            query = GPTTreeIndexLeafQuery(self.index_struct, **query_kwargs)
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
         return query

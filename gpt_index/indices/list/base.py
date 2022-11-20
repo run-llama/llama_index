@@ -25,7 +25,6 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         self,
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IndexList] = None,
-        # refine_template: str = DEFAULT_REFINE_PROMPT,
         text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
     ) -> None:
         """Initialize params."""
@@ -62,7 +61,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
                     "text_qa_template": self.text_qa_template,
                 }
             )
-            query = GPTListIndexQuery(self.index_struct, mode, **query_kwargs)
+            query = GPTListIndexQuery(self.index_struct, **query_kwargs)
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
         return query

@@ -63,16 +63,13 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
         if mode == DEFAULT_MODE:
-            # TODO: remove unused __init__ args
             query_kwargs.update(
                 {
                     "max_keywords_per_query": self.max_keywords_per_query,
                     "keyword_extract_template": self.keyword_extract_template,
                 }
             )
-            query = GPTKeywordTableIndexFreqQuery(
-                self.index_struct, mode, **query_kwargs
-            )
+            query = GPTKeywordTableIndexFreqQuery(self.index_struct, **query_kwargs)
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
