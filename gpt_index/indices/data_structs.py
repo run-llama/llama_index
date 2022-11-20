@@ -14,7 +14,7 @@ class IndexStruct(DataClassJsonMixin):
 
 
 @dataclass
-class Node(DataClassJsonMixin):
+class Node(IndexStruct):
     """A node in the GPT tree index."""
 
     text: str
