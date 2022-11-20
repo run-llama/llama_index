@@ -100,9 +100,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         # need to set parameters before building index in base class.
         self.num_children = num_children
         # if query_str is specified, then we try to load into summary template
-        self.summary_template = summary_template
         if query_str is not None:
-            self.summary_template.partial_format(query_str=query_str)
+            summary_template = summary_template.partial_format(query_str=query_str)
+        self.summary_template = summary_template
         validate_prompt(self.summary_template, ["text"], ["query_str"])
         super().__init__(documents=documents, index_struct=index_struct)
 

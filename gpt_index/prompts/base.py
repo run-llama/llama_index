@@ -1,4 +1,5 @@
 """Base module for prompts."""
+from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
 from langchain import Prompt as LangchainPrompt
@@ -14,7 +15,7 @@ class Prompt(LangchainPrompt):
 
     partial_dict: Dict[str, Any] = Field(default_factory=dict)
 
-    def partial_format(self, **kwargs: Any) -> None:
+    def partial_format(self, **kwargs: Any) -> "Prompt":
         """Format the prompt partially.
 
         Return an instance of itself.
@@ -25,7 +26,10 @@ class Prompt(LangchainPrompt):
                 raise ValueError(
                     f"Invalid input variable: {k}, not found in input_variables"
                 )
-        self.partial_dict.update(kwargs)
+
+        copy_obj = deepcopy(self)
+        copy_obj.partial_dict.update(kwargs)
+        return copy_obj
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt."""
