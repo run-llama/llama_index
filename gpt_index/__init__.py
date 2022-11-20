@@ -12,6 +12,9 @@ from gpt_index.indices.list.base import GPTListIndex
 # indices
 from gpt_index.indices.tree.base import GPTTreeIndex
 
+# prompts
+from gpt_index.prompts.base import Prompt
+
 # readers
 from gpt_index.readers.simple_reader import SimpleDirectoryReader
 
@@ -19,5 +22,6 @@ __all__ = [
     "GPTKeywordTableIndex",
     "GPTListIndex",
     "GPTTreeIndex",
+    "Prompt",
     "SimpleDirectoryReader",
 ]
