@@ -7,6 +7,7 @@ from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import extract_keywords_given_response, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
+from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
@@ -23,10 +24,10 @@ class GPTKeywordTableIndexFreqQuery(BaseGPTIndexQuery[KeywordTable]):
     def __init__(
         self,
         index_struct: KeywordTable,
-        keyword_extract_template: str = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
-        query_keyword_extract_template: Optional[str] = DQKET,
-        refine_template: str = DEFAULT_REFINE_PROMPT,
-        text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
+        keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
+        query_keyword_extract_template: Optional[Prompt] = DQKET,
+        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
+        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
     ) -> None:

@@ -3,8 +3,6 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from langchain import LLMChain, OpenAI, Prompt
-
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
@@ -14,7 +12,9 @@ from gpt_index.indices.utils import (
     get_sorted_node_list,
     get_text_from_nodes,
 )
+from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import DEFAULT_SUMMARY_PROMPT
 from gpt_index.schema import Document
 
@@ -27,14 +27,11 @@ class GPTTreeIndexBuilder:
     """
 
     def __init__(
-        self, num_children: int = 10, summary_prompt: str = DEFAULT_SUMMARY_PROMPT
+        self, num_children: int = 10, summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT
     ) -> None:
         """Initialize with params."""
         self.num_children = num_children
-        # instantiate LLM
-        summary_prompt_obj = Prompt(template=summary_prompt, input_variables=["text"])
-        llm = OpenAI(temperature=0)
-        self.llm_chain = LLMChain(prompt=summary_prompt_obj, llm=llm)
+        self.summary_prompt = summary_prompt
         chunk_size = get_chunk_size_given_prompt(
             summary_prompt.format(text=""), MAX_CHUNK_SIZE, num_children, NUM_OUTPUTS
         )
@@ -71,10 +68,10 @@ class GPTTreeIndexBuilder:
         for i in range(0, len(cur_node_list), self.num_children):
             print(f"{i}/{len(cur_nodes)}")
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
-
             text_chunk = get_text_from_nodes(cur_nodes_chunk)
 
-            new_summary = self.llm_chain.predict(text=text_chunk)
+            new_summary, _ = openai_llm_predict(self.summary_prompt, text=text_chunk)
+
             print(f"> {i}/{len(cur_nodes)}, summary: {new_summary}")
             new_node = Node(new_summary, cur_index, {n.index for n in cur_nodes_chunk})
             new_node_dict[cur_index] = new_node
@@ -95,19 +92,23 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self,
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IndexGraph] = None,
-        summary_template: str = DEFAULT_SUMMARY_PROMPT,
+        summary_template: Prompt = DEFAULT_SUMMARY_PROMPT,
+        query_str: Optional[str] = None,
         num_children: int = 10,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
-        self.summary_template = summary_template
         self.num_children = num_children
+        # if query_str is specified, then we try to load into summary template
+        if query_str is not None:
+            summary_template = summary_template.partial_format(query_str=query_str)
+        self.summary_template = summary_template
+        validate_prompt(self.summary_template, ["text"], ["query_str"])
         super().__init__(documents=documents, index_struct=index_struct)
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
         if mode == DEFAULT_MODE:
-            # TODO: remove unused __init__ args
             query = GPTTreeIndexLeafQuery(self.index_struct, **query_kwargs)
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
@@ -117,7 +118,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         """Build the index from documents."""
         # do simple concatenation
         text_data = "\n".join([d.text for d in documents])
-        index_builder = GPTTreeIndexBuilder(self.num_children, self.summary_template)
+        index_builder = GPTTreeIndexBuilder(
+            num_children=self.num_children, summary_prompt=self.summary_template
+        )
         index_graph = index_builder.build_from_text(text_data)
         return index_graph
 

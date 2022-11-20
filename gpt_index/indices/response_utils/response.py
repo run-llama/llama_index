@@ -4,6 +4,7 @@ from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
@@ -14,7 +15,7 @@ def refine_response(
     response: str,
     query_str: str,
     text_chunk: str,
-    refine_template: str = DEFAULT_REFINE_PROMPT,
+    refine_template: Prompt = DEFAULT_REFINE_PROMPT,
     verbose: bool = False,
 ) -> str:
     """Refine response."""
@@ -50,8 +51,8 @@ def refine_response(
 def give_response(
     query_str: str,
     text_chunk: str,
-    text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
-    refine_template: str = DEFAULT_REFINE_PROMPT,
+    text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
+    refine_template: Prompt = DEFAULT_REFINE_PROMPT,
     verbose: bool = False,
 ) -> str:
     """Give response given a query and a corresponding text chunk."""

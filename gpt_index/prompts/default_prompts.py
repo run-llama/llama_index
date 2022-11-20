@@ -1,10 +1,12 @@
 """Set of default prompts."""
 
+from gpt_index.prompts.base import Prompt
+
 ############################################
 # Tree
 ############################################
 
-DEFAULT_SUMMARY_PROMPT = (
+DEFAULT_SUMMARY_PROMPT_TMPL = (
     "Write a summary of the following. Try to use only the "
     "information provided. "
     "Try to include as many key details as possible.\n"
@@ -16,8 +18,12 @@ DEFAULT_SUMMARY_PROMPT = (
     'SUMMARY:"""\n'
 )
 
+DEFAULT_SUMMARY_PROMPT = Prompt(
+    input_variables=["text"], template=DEFAULT_SUMMARY_PROMPT_TMPL
+)
+
 # # single choice
-DEFAULT_QUERY_PROMPT = (
+DEFAULT_QUERY_PROMPT_TMPL = (
     "Some choices are given below. It is provided in a numbered list "
     "(1 to {num_chunks}),"
     "where each item in the list corresponds to a summary.\n"
@@ -29,9 +35,13 @@ DEFAULT_QUERY_PROMPT = (
     "Provide choice in the following format: 'ANSWER: <number>' and explain why "
     "this summary was selected in relation to the question.\n"
 )
+DEFAULT_QUERY_PROMPT = Prompt(
+    input_variables=["num_chunks", "context_list", "query_str"],
+    template=DEFAULT_QUERY_PROMPT_TMPL,
+)
 
 # multiple choice
-DEFAULT_QUERY_PROMPT_MULTIPLE = (
+DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
     "Some choices are given below. It is provided in a numbered "
     "list (1 to {num_chunks}), "
     "where each item in the list corresponds to a summary.\n"
@@ -44,9 +54,13 @@ DEFAULT_QUERY_PROMPT_MULTIPLE = (
     "Provide choices in the following format: 'ANSWER: <numbers>' and explain why "
     "these summaries were selected in relation to the question.\n"
 )
+DEFAULT_QUERY_PROMPT_MULTIPLE = Prompt(
+    input_variables=["num_chunks", "context_list", "query_str", "branching_factor"],
+    template=DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL,
+)
 
 
-DEFAULT_REFINE_PROMPT = (
+DEFAULT_REFINE_PROMPT_TMPL = (
     "The original question is as follows: {query_str}\n"
     "We have provided an existing answer: {existing_answer}\n"
     "We have the opportunity to refine the existing answer"
@@ -58,9 +72,13 @@ DEFAULT_REFINE_PROMPT = (
     "answer the question. "
     "If the context isn't useful, return the original answer."
 )
+DEFAULT_REFINE_PROMPT = Prompt(
+    input_variables=["query_str", "existing_answer", "context_msg"],
+    template=DEFAULT_REFINE_PROMPT_TMPL,
+)
 
 
-DEFAULT_TEXT_QA_PROMPT = (
+DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "Context information is below. \n"
     "---------------------\n"
     "{context_str}"
@@ -68,13 +86,16 @@ DEFAULT_TEXT_QA_PROMPT = (
     "Given the context information and not prior knowledge, "
     "answer the question: {query_str}\n"
 )
+DEFAULT_TEXT_QA_PROMPT = Prompt(
+    input_variables=["context_str", "query_str"], template=DEFAULT_TEXT_QA_PROMPT_TMPL
+)
 
 
 ############################################
 # Keyword Table
 ############################################
 
-DEFAULT_KEYWORD_EXTRACT_TEMPLATE = (
+DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
     "Some text is provided below. Given the text, extract up to {max_keywords} "
     "keywords from the text. Avoid stopwords."
     "---------------------\n"
@@ -82,10 +103,15 @@ DEFAULT_KEYWORD_EXTRACT_TEMPLATE = (
     "---------------------\n"
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
 )
+DEFAULT_KEYWORD_EXTRACT_TEMPLATE = Prompt(
+    input_variables=["text", "max_keywords"],
+    template=DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL,
+)
+
 
 # NOTE: the keyword extraction for queries can be the same as
 # the one used to build the index, but here we tune it to see if performance is better.
-DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = (
+DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
     "A question is provided below. Given the question, extract up to {max_keywords} "
     "keywords from the text. Focus on extracting the keywords that we can use "
     "to best lookup answers to the question. Avoid stopwords.\n"
@@ -93,4 +119,8 @@ DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = (
     "{question}\n"
     "---------------------\n"
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
+)
+DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = Prompt(
+    input_variables=["question", "max_keywords"],
+    template=DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL,
 )
