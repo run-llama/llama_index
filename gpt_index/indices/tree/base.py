@@ -1,29 +1,21 @@
 """Tree-based index."""
 
 import json
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
 from langchain import LLMChain, OpenAI, Prompt
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
-from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.utils import (
-    extract_numbers_given_response,
     get_chunk_size_given_prompt,
-    get_numbered_text_from_nodes,
     get_sorted_node_list,
     get_text_from_nodes,
 )
-from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts import (
-    DEFAULT_QUERY_PROMPT,
-    DEFAULT_QUERY_PROMPT_MULTIPLE,
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_SUMMARY_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
-)
+from gpt_index.prompts import DEFAULT_SUMMARY_PROMPT
 from gpt_index.schema import Document
 
 
@@ -104,148 +96,22 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IndexGraph] = None,
         summary_template: str = DEFAULT_SUMMARY_PROMPT,
-        query_template: str = DEFAULT_QUERY_PROMPT,
-        query_template_multiple: str = DEFAULT_QUERY_PROMPT_MULTIPLE,
-        text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
-        refine_template: str = DEFAULT_REFINE_PROMPT,
         num_children: int = 10,
-        child_branch_factor: int = 1,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
         self.summary_template = summary_template
-        self.query_template = query_template
-        self.query_template_multiple = query_template_multiple
-        self.text_qa_template = text_qa_template
-        self.refine_template = refine_template
         self.num_children = num_children
-        self.child_branch_factor = child_branch_factor
         super().__init__(documents=documents, index_struct=index_struct)
 
-    def _query_with_selected_node(
-        self,
-        selected_node: Node,
-        query_str: str,
-        prev_response: Optional[str] = None,
-        level: int = 0,
-        verbose: bool = False,
-    ) -> str:
-        """Get response for selected node.
-
-        If not leaf node, it will recursively call _query on the child nodes.
-        If prev_response is provided, we will update prev_response with the answer.
-
-        """
-        if len(selected_node.child_indices) == 0:
-            cur_response, formatted_answer_prompt = openai_llm_predict(
-                self.text_qa_template,
-                context_str=selected_node.text,
-                query_str=query_str,
-            )
-            if verbose:
-                print(f">[Level {level}] answer prompt: {formatted_answer_prompt}")
-            print(f">[Level {level}] Current answer response: {cur_response} ")
+    def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
+        """Query mode to class."""
+        if mode == DEFAULT_MODE:
+            # TODO: remove unused __init__ args
+            query = GPTTreeIndexLeafQuery(self.index_struct, **query_kwargs)
         else:
-            cur_response = self._query(
-                {
-                    i: self.index_struct.all_nodes[i]
-                    for i in selected_node.child_indices
-                },
-                query_str,
-                level=level + 1,
-                verbose=verbose,
-            )
-
-        if prev_response is None:
-            return cur_response
-        else:
-            context_msg = "\n".join([selected_node.text, cur_response])
-            cur_response, formatted_refine_prompt = openai_llm_predict(
-                self.refine_template,
-                query_str=query_str,
-                existing_answer=prev_response,
-                context_msg=context_msg,
-            )
-
-            if verbose:
-                print(f">[Level {level}] Refine prompt: {formatted_refine_prompt}")
-            print(f">[Level {level}] Current refined response: {cur_response} ")
-            return cur_response
-
-    def _query(
-        self,
-        cur_nodes: Dict[int, Node],
-        query_str: str,
-        level: int = 0,
-        verbose: bool = False,
-    ) -> str:
-        """Answer a query recursively."""
-        cur_node_list = get_sorted_node_list(cur_nodes)
-
-        if self.child_branch_factor == 1:
-            response, formatted_query_prompt = openai_llm_predict(
-                self.query_template,
-                num_chunks=len(cur_node_list),
-                query_str=query_str,
-                context_list=get_numbered_text_from_nodes(cur_node_list),
-            )
-        else:
-            response, formatted_query_prompt = openai_llm_predict(
-                self.query_template_multiple,
-                num_chunks=len(cur_node_list),
-                query_str=query_str,
-                context_list=get_numbered_text_from_nodes(cur_node_list),
-                branching_factor=self.child_branch_factor,
-            )
-
-        if verbose:
-            print(f">[Level {level}] current prompt template: {formatted_query_prompt}")
-
-        numbers = extract_numbers_given_response(response, n=self.child_branch_factor)
-        if numbers is None:
-            if verbose:
-                print(
-                    f">[Level {level}] Could not retrieve response - no numbers present"
-                )
-            # just join text from current nodes as response
-            return response
-        result_response = None
-        for number_str in numbers:
-            number = int(number_str)
-            if number > len(cur_node_list):
-                if verbose:
-                    print(
-                        f">[Level {level}] Invalid response: {response} - "
-                        f"number {number} out of range"
-                    )
-                return response
-
-            # number is 1-indexed, so subtract 1
-            selected_node = cur_node_list[number - 1]
-            print(
-                f">[Level {level}] Selected node: "
-                f"[{number}]/[{','.join([str(int(n)) for n in numbers])}]"
-            )
-            print(
-                f">[Level {level}] Node "
-                f"[{number}] Summary text: {' '.join(selected_node.text.splitlines())}"
-            )
-            result_response = self._query_with_selected_node(
-                selected_node,
-                query_str,
-                prev_response=result_response,
-                level=level,
-                verbose=verbose,
-            )
-        # result_response should not be None
-        return cast(str, result_response)
-
-    def query(self, query_str: str, verbose: bool = False) -> str:
-        """Answer a query."""
-        print(f"> Starting query: {query_str}")
-        return self._query(
-            self.index_struct.root_nodes, query_str, level=0, verbose=verbose
-        ).strip()
+            raise ValueError(f"Invalid query mode: {mode}.")
+        return query
 
     def build_index_from_documents(self, documents: List[Document]) -> IndexGraph:
         """Build the index from documents."""

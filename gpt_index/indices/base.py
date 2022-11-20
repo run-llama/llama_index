@@ -7,6 +7,40 @@ from gpt_index.schema import Document
 
 IS = TypeVar("IS", bound=IndexStruct)
 
+DEFAULT_MODE = "default"
+
+
+class BaseGPTIndexQuery(Generic[IS]):
+    """Base GPT Index Query.
+
+    Helper class that is used to query an index. Can be called within `query`
+    method of a BaseGPTIndex object, or instantiated independently.
+
+    """
+
+    def __init__(
+        self,
+        index_struct: IS,
+    ) -> None:
+        """Initialize with parameters."""
+        if index_struct is None:
+            raise ValueError("index_struct must be provided.")
+        self._validate_index_struct(index_struct)
+        self._index_struct = index_struct
+
+    @property
+    def index_struct(self) -> IS:
+        """Get the index struct."""
+        return self._index_struct
+
+    def _validate_index_struct(self, index_struct: IS) -> None:
+        """Validate the index struct."""
+        pass
+
+    @abstractmethod
+    def query(self, query_str: str, verbose: bool = False) -> str:
+        """Answer a query."""
+
 
 class BaseGPTIndex(Generic[IS]):
     """Base GPT Index."""
@@ -39,8 +73,19 @@ class BaseGPTIndex(Generic[IS]):
         """Build the index from documents."""
 
     @abstractmethod
-    def query(self, query_str: str, verbose: bool = False) -> str:
+    def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
+        """Query mode to class."""
+
+    def query(
+        self,
+        query_str: str,
+        verbose: bool = False,
+        mode: str = DEFAULT_MODE,
+        **query_kwargs: Any
+    ) -> str:
         """Answer a query."""
+        query_obj = self._mode_to_query(mode, **query_kwargs)
+        return query_obj.query(query_str, verbose=verbose)
 
     @classmethod
     @abstractmethod
