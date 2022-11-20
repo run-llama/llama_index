@@ -1,19 +1,21 @@
+"""Base module for prompts."""
+from typing import Any, Dict, List, Optional
+
 from langchain import Prompt as LangchainPrompt
 from pydantic import Field
 
-from typing import Any, Dict, List, Optional
 
 class Prompt(LangchainPrompt):
     """Prompt class for GPT Index.
 
     Extends langchain's prompt, but also adds ability to partially fill values.
-    
+
     """
 
     partial_dict: Dict[str, Any] = Field(default_factory=dict)
 
     def partial_format(self, **kwargs: Any) -> None:
-        """Partially format the prompt.
+        """Format the prompt partially.
 
         Return an instance of itself.
 
@@ -31,19 +33,19 @@ class Prompt(LangchainPrompt):
         return super().format(**kwargs)
 
     def get_full_format_args(self, kwargs: Any) -> Dict[str, Any]:
-        """Dict of all format args.
+        """Get dict of all format args.
 
         Hack to pass into Langchain to pass validation.
-        
+
         """
         kwargs.update(self.partial_dict)
         return kwargs
 
 
 def validate_prompt(
-    prompt: Prompt, 
-    required_fields: List[str], 
-    optional_fields: Optional[List[str]] = None
+    prompt: Prompt,
+    required_fields: List[str],
+    optional_fields: Optional[List[str]] = None,
 ) -> None:
     """Validate prompts."""
     # make sure all required fields are in input_variables
@@ -61,5 +63,3 @@ def validate_prompt(
                 f"`{input_var}` is not a valid input variable for this prompt."
                 f"Set of valid fields: {valid_fields}."
             )
-    
-

@@ -2,7 +2,8 @@
 
 from typing import Any, Dict, Optional, Tuple
 
-from langchain import LLMChain, OpenAI, Prompt
+from langchain import LLMChain, OpenAI
+
 from gpt_index.prompts.base import Prompt
 
 

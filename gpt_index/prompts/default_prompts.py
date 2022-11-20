@@ -19,8 +19,7 @@ DEFAULT_SUMMARY_PROMPT_TMPL = (
 )
 
 DEFAULT_SUMMARY_PROMPT = Prompt(
-    input_variables=["text"],
-    template=DEFAULT_SUMMARY_PROMPT_TMPL
+    input_variables=["text"], template=DEFAULT_SUMMARY_PROMPT_TMPL
 )
 
 # # single choice
@@ -38,7 +37,7 @@ DEFAULT_QUERY_PROMPT_TMPL = (
 )
 DEFAULT_QUERY_PROMPT = Prompt(
     input_variables=["num_chunks", "context_list", "query_str"],
-    template=DEFAULT_QUERY_PROMPT_TMPL
+    template=DEFAULT_QUERY_PROMPT_TMPL,
 )
 
 # multiple choice
@@ -57,7 +56,7 @@ DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
 )
 DEFAULT_QUERY_PROMPT_MULTIPLE = Prompt(
     input_variables=["num_chunks", "context_list", "query_str", "branching_factor"],
-    template=DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL
+    template=DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL,
 )
 
 
@@ -75,7 +74,7 @@ DEFAULT_REFINE_PROMPT_TMPL = (
 )
 DEFAULT_REFINE_PROMPT = Prompt(
     input_variables=["query_str", "existing_answer", "context_msg"],
-    template=DEFAULT_REFINE_PROMPT_TMPL
+    template=DEFAULT_REFINE_PROMPT_TMPL,
 )
 
 
@@ -88,8 +87,7 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "answer the question: {query_str}\n"
 )
 DEFAULT_TEXT_QA_PROMPT = Prompt(
-    input_variables=["context_str", "query_str"],
-    template=DEFAULT_TEXT_QA_PROMPT_TMPL
+    input_variables=["context_str", "query_str"], template=DEFAULT_TEXT_QA_PROMPT_TMPL
 )
 
 
@@ -107,7 +105,7 @@ DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
 )
 DEFAULT_KEYWORD_EXTRACT_TEMPLATE = Prompt(
     input_variables=["text", "max_keywords"],
-    template=DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL
+    template=DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL,
 )
 
 
@@ -124,5 +122,5 @@ DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
 )
 DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = Prompt(
     input_variables=["question", "max_keywords"],
-    template=DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL
+    template=DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL,
 )

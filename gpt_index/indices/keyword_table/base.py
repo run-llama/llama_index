@@ -22,6 +22,7 @@ from gpt_index.indices.utils import (
 )
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
@@ -38,7 +39,7 @@ class GPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self,
         documents: Optional[List[Document]] = None,
         index_struct: Optional[KeywordTable] = None,
-        keyword_extract_template: str = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
+        keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
         max_keywords_per_query: int = 10,
         max_keywords_per_chunk: int = 10,
     ) -> None:

@@ -3,9 +3,6 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from langchain import LLMChain, OpenAI, Prompt
-
-from gpt_index.prompts.base import Prompt
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
@@ -17,7 +14,7 @@ from gpt_index.indices.utils import (
 )
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts.base import validate_prompt
+from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import DEFAULT_SUMMARY_PROMPT
 from gpt_index.schema import Document
 
@@ -73,10 +70,7 @@ class GPTTreeIndexBuilder:
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
             text_chunk = get_text_from_nodes(cur_nodes_chunk)
 
-            new_summary, _ = openai_llm_predict(
-                self.summary_prompt,
-                text=text_chunk
-            )
+            new_summary, _ = openai_llm_predict(self.summary_prompt, text=text_chunk)
 
             print(f"> {i}/{len(cur_nodes)}, summary: {new_summary}")
             new_node = Node(new_summary, cur_index, {n.index for n in cur_nodes_chunk})
@@ -125,8 +119,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         # do simple concatenation
         text_data = "\n".join([d.text for d in documents])
         index_builder = GPTTreeIndexBuilder(
-            num_children=self.num_children, 
-            summary_prompt=self.summary_template
+            num_children=self.num_children, summary_prompt=self.summary_template
         )
         index_graph = index_builder.build_from_text(text_data)
         return index_graph
