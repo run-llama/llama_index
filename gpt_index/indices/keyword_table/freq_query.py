@@ -7,7 +7,7 @@ from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import extract_keywords_given_response, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
-from gpt_index.prompts import (
+from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_REFINE_PROMPT,

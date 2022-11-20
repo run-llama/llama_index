@@ -10,7 +10,7 @@ from gpt_index.indices.utils import (
     get_sorted_node_list,
 )
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
-from gpt_index.prompts import (
+from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
     DEFAULT_QUERY_PROMPT_MULTIPLE,
     DEFAULT_REFINE_PROMPT,
