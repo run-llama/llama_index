@@ -14,7 +14,7 @@ from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.list.query import GPTListIndexQuery
 from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts import DEFAULT_TEXT_QA_PROMPT
+from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.schema import Document
 
 

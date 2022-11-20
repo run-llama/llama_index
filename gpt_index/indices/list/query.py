@@ -3,7 +3,10 @@ from gpt_index.indices.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import truncate_text
-from gpt_index.prompts import DEFAULT_REFINE_PROMPT, DEFAULT_TEXT_QA_PROMPT
+from gpt_index.prompts.default_prompts import (
+    DEFAULT_REFINE_PROMPT,
+    DEFAULT_TEXT_QA_PROMPT,
+)
 
 
 class GPTListIndexQuery(BaseGPTIndexQuery[IndexList]):

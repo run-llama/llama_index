@@ -15,7 +15,7 @@ from gpt_index.indices.utils import (
     get_text_from_nodes,
 )
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts import DEFAULT_SUMMARY_PROMPT
+from gpt_index.prompts.default_prompts import DEFAULT_SUMMARY_PROMPT
 from gpt_index.schema import Document
 
 
