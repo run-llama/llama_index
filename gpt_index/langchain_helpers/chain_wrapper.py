@@ -2,11 +2,13 @@
 
 from typing import Any, Dict, Optional, Tuple
 
-from langchain import LLMChain, OpenAI, Prompt
+from langchain import LLMChain, OpenAI
+
+from gpt_index.prompts.base import Prompt
 
 
 def openai_llm_predict(
-    prompt_template: str, llm_args_dict: Optional[Dict] = None, **prompt_args: Any
+    prompt: Prompt, llm_args_dict: Optional[Dict] = None, **prompt_args: Any
 ) -> Tuple[str, str]:
     """Predict using OpenAI LLM with a prompt string.
 
@@ -15,8 +17,8 @@ def openai_llm_predict(
     """
     llm_args_dict = llm_args_dict or {}
     llm = OpenAI(temperature=0, **llm_args_dict)
-    prompt = Prompt(template=prompt_template, input_variables=list(prompt_args.keys()))
     llm_chain = LLMChain(prompt=prompt, llm=llm)
 
-    formatted_prompt = prompt_template.format(**prompt_args)
-    return llm_chain.predict(**prompt_args), formatted_prompt
+    formatted_prompt = prompt.format(**prompt_args)
+    full_prompt_args = prompt.get_full_format_args(prompt_args)
+    return llm_chain.predict(**full_prompt_args), formatted_prompt
