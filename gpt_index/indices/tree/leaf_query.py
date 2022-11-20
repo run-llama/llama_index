@@ -16,6 +16,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
+from gpt_index.prompts.base import Prompt
 
 
 class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
@@ -29,10 +30,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
     def __init__(
         self,
         index_struct: IndexGraph,
-        query_template: str = DEFAULT_QUERY_PROMPT,
-        query_template_multiple: str = DEFAULT_QUERY_PROMPT_MULTIPLE,
-        text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
-        refine_template: str = DEFAULT_REFINE_PROMPT,
+        query_template: Prompt = DEFAULT_QUERY_PROMPT,
+        query_template_multiple: Prompt = DEFAULT_QUERY_PROMPT_MULTIPLE,
+        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
+        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
         child_branch_factor: int = 1,
     ) -> None:
         """Initialize params."""
