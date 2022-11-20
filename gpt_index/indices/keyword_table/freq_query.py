@@ -2,7 +2,7 @@
 from collections import defaultdict
 from typing import Dict, Optional
 
-from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndexQuery
+from gpt_index.indices.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import extract_keywords_given_response, truncate_text
@@ -67,9 +67,7 @@ class GPTKeywordTableIndexFreqQuery(BaseGPTIndexQuery[KeywordTable]):
                 verbose=verbose,
             )
 
-    def query(
-        self, query_str: str, verbose: bool = False, mode: str = DEFAULT_MODE
-    ) -> str:
+    def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         response, _ = openai_llm_predict(

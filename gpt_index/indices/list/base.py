@@ -6,7 +6,7 @@ in sequence in order to answer a given query.
 """
 
 import json
-from typing import Any, List, Optional, Type
+from typing import Any, List, Optional
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
@@ -14,7 +14,7 @@ from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.list.query import GPTListIndexQuery
 from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts import DEFAULT_REFINE_PROMPT, DEFAULT_TEXT_QA_PROMPT
+from gpt_index.prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.schema import Document
 
 
@@ -26,14 +26,12 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IndexList] = None,
         # refine_template: str = DEFAULT_REFINE_PROMPT,
-        # text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
+        text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
     ) -> None:
         """Initialize params."""
-        # self.refine_template = refine_template
-        # self.text_qa_template = text_qa_template
+        self.text_qa_template = text_qa_template
         # we need to figure out the max length of refine_template or text_qa_template
         # to find the minimum chunk size.
-
         empty_qa = self.text_qa_template.format(context_str="", query_str="")
         chunk_size = get_chunk_size_given_prompt(
             empty_qa, MAX_CHUNK_SIZE, 1, NUM_OUTPUTS
@@ -57,44 +55,17 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             index_struct.add_text(text_chunk)
         return index_struct
 
-    def _mode_to_query(
-        self, mode: str, **query_kwargs: Any
-    ) -> Optional[BaseGPTIndexQuery]:
+    def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         if mode == DEFAULT_MODE:
-            query = GPTListIndexQuery(mode, **query_kwargs)
+            query_kwargs.update(
+                {
+                    "text_qa_template": self.text_qa_template,
+                }
+            )
+            query = GPTListIndexQuery(self.index_struct, mode, **query_kwargs)
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
-
-    # def query(self, query_str: str, verbose: bool = False, mode: str = DEFAULT_MODE) -> str:
-    #     """Answer a query."""
-    # print(f"> Starting query: {query_str}")
-    # response = None
-    # for node in self.index_struct.nodes:
-    #     fmt_text_chunk = truncate_text(node.text, 50)
-    #     if verbose:
-    #         print(f"> Searching in chunk: {fmt_text_chunk}")
-
-    #     # TODO: abstract create and refine procedure
-    #     if response is None:
-    #         response = give_response(
-    #             query_str,
-    #             node.text,
-    #             text_qa_template=self.text_qa_template,
-    #             refine_template=self.refine_template,
-    #             verbose=verbose,
-    #         )
-    #     else:
-    #         response = refine_response(
-    #             response,
-    #             query_str,
-    #             node.text,
-    #             refine_template=self.refine_template,
-    #             verbose=verbose,
-    #         )
-    #     if verbose:
-    #         print(f"> Response: {response}")
-    # return response or ""
 
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTListIndex":

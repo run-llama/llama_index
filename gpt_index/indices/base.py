@@ -1,6 +1,6 @@
 """Base data structure classes."""
 from abc import abstractmethod
-from typing import Any, Generic, List, Optional, Type, TypeVar, cast
+from typing import Any, Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct
 from gpt_index.schema import Document
@@ -37,6 +37,10 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Validate the index struct."""
         pass
 
+    @abstractmethod
+    def query(self, query_str: str, verbose: bool = False) -> str:
+        """Answer a query."""
+
 
 class BaseGPTIndex(Generic[IS]):
     """Base GPT Index."""
@@ -69,9 +73,7 @@ class BaseGPTIndex(Generic[IS]):
         """Build the index from documents."""
 
     @abstractmethod
-    def _mode_to_query(
-        self, mode: str, **query_kwargs: Any
-    ) -> Optional[BaseGPTIndexQuery]:
+    def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
 
     def query(
@@ -82,8 +84,6 @@ class BaseGPTIndex(Generic[IS]):
         **query_kwargs: Any
     ) -> str:
         """Answer a query."""
-        # query_cls = self._query_mode_to_cls(mode)
-        # query_obj = query_cls(self.index_struct, **query_kwargs)
         query_obj = self._mode_to_query(mode, **query_kwargs)
         return query_obj.query(query_str, verbose=verbose)
 

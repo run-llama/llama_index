@@ -37,7 +37,6 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct)
-        self.index_struct = index_struct
         self.query_template = query_template
         self.query_template_multiple = query_template_multiple
         self.text_qa_template = text_qa_template
