@@ -57,7 +57,7 @@ index.query("<question_text>?", child_branch_factor=1)
 - [`GPTKeywordTableIndex`](gpt_index/indices/keyword_table/README.md): a keyword-based table
     - **Creation**: with GPT keyword extraction over each sub-document
     - **Query**: with GPT keyword extraction over question, match to sub-documents. *Create and refine* an answer over candidate sub-documents.
-- [`GPTListIndex`]: a simple list-based data structure
+- [`GPTListIndex`](gpt_index/indices/list/README.md): a simple list-based data structure
     - **Creation**: by splitting documents into a list of text chunks
     - **Query**: use GPT with a create and refine prompt iterately over the list of sub-documents
 
