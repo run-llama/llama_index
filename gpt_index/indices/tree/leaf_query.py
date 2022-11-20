@@ -1,4 +1,4 @@
-"""Default query mechanism."""
+"""Leaf query mechanism."""
 
 from typing import Dict, Optional, cast
 

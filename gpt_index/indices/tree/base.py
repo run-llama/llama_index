@@ -7,6 +7,7 @@ from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
+from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.utils import (
     get_chunk_size_given_prompt,
     get_sorted_node_list,
@@ -17,6 +18,8 @@ from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import DEFAULT_SUMMARY_PROMPT
 from gpt_index.schema import Document
+
+RETRIEVE_MODE = "retrieve"
 
 
 class GPTTreeIndexBuilder:
@@ -109,7 +112,11 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
         if mode == DEFAULT_MODE:
-            query = GPTTreeIndexLeafQuery(self.index_struct, **query_kwargs)
+            query: BaseGPTIndexQuery = GPTTreeIndexLeafQuery(
+                self.index_struct, **query_kwargs
+            )
+        elif mode == RETRIEVE_MODE:
+            query = GPTTreeIndexRetQuery(self.index_struct, **query_kwargs)
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
