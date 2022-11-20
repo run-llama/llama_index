@@ -19,7 +19,6 @@ from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import DEFAULT_SUMMARY_PROMPT
 from gpt_index.schema import Document
 
-
 RETRIEVE_MODE = "retrieve"
 
 
@@ -113,7 +112,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
         if mode == DEFAULT_MODE:
-            query = GPTTreeIndexLeafQuery(self.index_struct, **query_kwargs)
+            query: BaseGPTIndexQuery = GPTTreeIndexLeafQuery(
+                self.index_struct, **query_kwargs
+            )
         elif mode == RETRIEVE_MODE:
             query = GPTTreeIndexRetQuery(self.index_struct, **query_kwargs)
         else:
