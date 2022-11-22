@@ -17,11 +17,13 @@ from gpt_index.prompts.base import Prompt
 
 # readers
 from gpt_index.readers.simple_reader import SimpleDirectoryReader
+from gpt_index.readers.wikipedia import WikipediaReader
 
 __all__ = [
     "GPTKeywordTableIndex",
     "GPTListIndex",
     "GPTTreeIndex",
     "Prompt",
+    "WikipediaReader",
     "SimpleDirectoryReader",
 ]

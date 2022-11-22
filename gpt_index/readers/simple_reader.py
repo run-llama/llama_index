@@ -1,6 +1,6 @@
 """Simple reader that ."""
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.schema import Document
@@ -22,7 +22,7 @@ class SimpleDirectoryReader(BaseReader):
                 raise ValueError(f"Expected {input_file} to be a file.")
         self.input_files = input_files
 
-    def load_data(self) -> List[Document]:
+    def load_data(self, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
         data = ""
         for input_file in self.input_files:
