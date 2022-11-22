@@ -14,6 +14,7 @@ from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.list.query import GPTListIndexQuery
 from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.schema import Document
 
@@ -25,7 +26,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         self,
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IndexList] = None,
-        text_qa_template: str = DEFAULT_TEXT_QA_PROMPT,
+        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
     ) -> None:
         """Initialize params."""
         self.text_qa_template = text_qa_template

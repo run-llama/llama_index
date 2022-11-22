@@ -3,6 +3,6 @@
 black
 isort
 mypy
-# flake8
-# flake8-docstrings
+flake8
+flake8-docstrings
 pylint
