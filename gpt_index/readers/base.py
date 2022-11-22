@@ -1,6 +1,6 @@
 """Base reader class."""
 from abc import abstractmethod
-from typing import List
+from typing import Any, List
 
 from gpt_index.schema import Document
 
@@ -9,5 +9,5 @@ class BaseReader:
     """Utilities for loading data from a directory."""
 
     @abstractmethod
-    def load_data(self) -> List[Document]:
+    def load_data(self, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""

@@ -1,4 +1,8 @@
 -e .
+
+# third-party
+wikipedia
+
 # linting
 black
 isort
