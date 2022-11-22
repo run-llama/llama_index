@@ -1,0 +1,3 @@
+include gpt_index/py.typed
+include gpt_index/VERSION
+include LICENSE
