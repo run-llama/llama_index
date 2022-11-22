@@ -18,13 +18,11 @@ That's where the **GPT Index** data structures come in. Instead of relying on wo
 
 The high-level design exercise of this project is to test the capability of GPT-3 as a general-purpose processor to organize and retrieve data. From our current understanding, related works have used GPT-3 to reason with external db sources (see below); this work links reasoning with knowledge building.
 
-## 🔧 Dependencies
-
-The main third-party package requirements are `transformers`, `openai`, and `langchain`.
-
-All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply do `pip install -r requirements.txt`. 
-
 ## 💻 Example Usage
+
+```
+pip install gpt-index
+```
 
 Examples are in the `examples` folder. Indices are in the `indices` folder (see list of indices below).
 
@@ -47,6 +45,13 @@ To query,
 ```python
 index.query("<question_text>?", child_branch_factor=1)
 ```
+
+## 🔧 Dependencies
+
+The main third-party package requirements are `transformers`, `openai`, and `langchain`.
+
+All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply do `pip install -r requirements.txt`. 
+
 
 
 ## Index Details
