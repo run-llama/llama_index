@@ -1,6 +1,6 @@
 """Base reader class."""
 from abc import abstractmethod
-from typing import List, Any
+from typing import Any, List
 
 from gpt_index.schema import Document
 

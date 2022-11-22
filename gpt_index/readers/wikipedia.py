@@ -1,6 +1,5 @@
 """Simple reader that ."""
-from pathlib import Path
-from typing import List, Any, Union
+from typing import Any, List
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.schema import Document
@@ -16,7 +15,7 @@ class WikipediaReader(BaseReader):
     def __init__(self) -> None:
         """Initialize with parameters."""
         try:
-            import wikipedia
+            import wikipedia  # noqa: F401
         except ImportError:
             raise ValueError(
                 "`wikipedia` package not found, please run `pip install wikipedia`"
@@ -26,9 +25,12 @@ class WikipediaReader(BaseReader):
         """Load data from the input directory."""
         import wikipedia
 
-        page = load_kwargs.pop("page", None)
-        if page is None:
-            raise ValueError("Must specify a \"page\" in `load_kwargs`.")
+        pages: List[str] = load_kwargs.pop("pages", None)
+        if pages is None:
+            raise ValueError('Must specify a "page" in `load_kwargs`.')
 
-        page_content = wikipedia.page(page).content
-        return [Document(page_content)]
+        results = []
+        for page in pages:
+            page_content = wikipedia.page(page).content
+            results.append(Document(page_content))
+        return results
