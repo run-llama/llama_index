@@ -1,9 +1,14 @@
 """Query for GPTKeywordTableIndex."""
+from abc import abstractmethod
 from collections import defaultdict
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from gpt_index.indices.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import KeywordTable
+from gpt_index.indices.keyword_table.utils import (
+    rake_extract_keywords,
+    simple_extract_keywords,
+)
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import extract_keywords_given_response, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
@@ -18,8 +23,8 @@ from gpt_index.prompts.default_prompts import (
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
-class GPTKeywordTableIndexFreqQuery(BaseGPTIndexQuery[KeywordTable]):
-    """GPT Keyword Table Index Frequency Query."""
+class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
+    """Base GPT Keyword Table Index Query."""
 
     def __init__(
         self,
@@ -68,17 +73,14 @@ class GPTKeywordTableIndexFreqQuery(BaseGPTIndexQuery[KeywordTable]):
                 verbose=verbose,
             )
 
+    @abstractmethod
+    def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
+        """Extract keywords."""
+
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
-        response, _ = openai_llm_predict(
-            self.query_keyword_extract_template,
-            max_keywords=self.max_keywords_per_query,
-            question=query_str,
-        )
-        keywords = extract_keywords_given_response(
-            response, self.max_keywords_per_query
-        )
+        keywords = self._get_keywords(query_str, verbose=verbose)
 
         # go through text chunks in order of most matching keywords
         chunk_indices_count: Dict[int, int] = defaultdict(int)
@@ -106,3 +108,51 @@ class GPTKeywordTableIndexFreqQuery(BaseGPTIndexQuery[KeywordTable]):
                 verbose=verbose,
             )
         return result_response or "Empty response"
+
+
+class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
+    """GPT Keyword Table Index Query.
+
+    Extracts keywords using GPT.
+
+    """
+
+    def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
+        """Extract keywords."""
+        response, _ = openai_llm_predict(
+            self.query_keyword_extract_template,
+            max_keywords=self.max_keywords_per_query,
+            question=query_str,
+        )
+        keywords = extract_keywords_given_response(
+            response, self.max_keywords_per_query
+        )
+        return keywords
+
+
+class GPTKeywordTableSimpleQuery(BaseGPTKeywordTableQuery):
+    """GPT Keyword Table Index Simple Query.
+
+    Extracts keywords using Simple keyword extractor.
+
+    """
+
+    def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
+        """Extract keywords."""
+        return list(
+            simple_extract_keywords(query_str, max_keywords=self.max_keywords_per_query)
+        )
+
+
+class GPTKeywordTableRAKEQuery(BaseGPTKeywordTableQuery):
+    """GPT Keyword Table Index RAKE Query.
+
+    Extracts keywords using RAKE keyword extractor.
+
+    """
+
+    def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
+        """Extract keywords."""
+        return list(
+            rake_extract_keywords(query_str, max_keywords=self.max_keywords_per_query)
+        )
