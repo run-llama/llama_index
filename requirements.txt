@@ -2,6 +2,7 @@
 
 # third-party
 wikipedia
+rake_nltk
 
 # linting
 black

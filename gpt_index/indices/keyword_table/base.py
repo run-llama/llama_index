@@ -35,31 +35,6 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     """Base GPT Index."""
 
-    def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
-        """Query mode to class."""
-        if mode == DEFAULT_MODE:
-            query_kwargs.update(
-                {
-                    "max_keywords_per_query": self.max_keywords_per_query,
-                    "keyword_extract_template": self.keyword_extract_template,
-                }
-            )
-            query = GPTKeywordTableIndexFreqQuery(self.index_struct, **query_kwargs)
-        else:
-            raise ValueError(f"Invalid query mode: {mode}.")
-        return query
-
-    @classmethod
-    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTKeywordTableIndex":
-        """Load from disk."""
-        with open(save_path, "r") as f:
-            return cls(index_struct=KeywordTable.from_dict(json.load(f)), **kwargs)
-
-
-
-class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
-    """GPT Index."""
-
     def __init__(
         self,
         documents: Optional[List[Document]] = None,
@@ -85,6 +60,30 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
             chunk_overlap=MAX_CHUNK_OVERLAP,
         )
         super().__init__(documents=documents, index_struct=index_struct)
+
+    def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
+        """Query mode to class."""
+        if mode == DEFAULT_MODE:
+            query_kwargs.update(
+                {
+                    "max_keywords_per_query": self.max_keywords_per_query,
+                    "keyword_extract_template": self.keyword_extract_template,
+                }
+            )
+            query = GPTKeywordTableIndexFreqQuery(self.index_struct, **query_kwargs)
+        else:
+            raise ValueError(f"Invalid query mode: {mode}.")
+        return query
+
+    @classmethod
+    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTKeywordTableIndex":
+        """Load from disk."""
+        with open(save_path, "r") as f:
+            return cls(index_struct=KeywordTable.from_dict(json.load(f)), **kwargs)
+
+
+class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
+    """GPT Index."""
 
     def build_index_from_documents(self, documents: List[Document]) -> KeywordTable:
         """Build the index from documents."""

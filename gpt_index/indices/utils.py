@@ -65,6 +65,20 @@ def extract_numbers_given_response(response: str, n: int = 1) -> Optional[List[i
         return numbers[:n]
 
 
+def expand_tokens_with_subtokens(tokens: List[str]) -> List[str]:
+    """Get subtokens from a list of tokens., filtering for stopwords."""
+    results = []
+    for token in tokens:
+        results.append(token)
+        sub_tokens = re.findall(r"\w+", token)
+        if len(sub_tokens) > 1:
+            results.extend(
+                [w for w in sub_tokens if w not in stopwords.words("english")]
+            )
+
+    return results
+
+
 def extract_keywords_given_response(
     response: str, n: int = 5, lowercase: bool = True
 ) -> List[str]:
@@ -83,14 +97,9 @@ def extract_keywords_given_response(
             rk = rk.lower()
         results.append(rk.strip())
 
-        # if keyword consists of multiple words, split into subwords
-        # (removing stopwords)
-        rk_tokens = re.findall(r"\w+", rk)
-        if len(rk_tokens) > 1:
-            rk_tokens = [w for w in rk_tokens if w not in stopwords.words("english")]
-            results.extend([rkt.strip() for rkt in rk_tokens])
-
-    return results
+    # if keyword consists of multiple words, split into subwords
+    # (removing stopwords)
+    return expand_tokens_with_subtokens(results)
 
 
 def truncate_text(text: str, max_length: int) -> str:
