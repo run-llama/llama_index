@@ -76,7 +76,9 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         return query
 
     @classmethod
-    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTKeywordTableIndex":
+    def load_from_disk(
+        cls, save_path: str, **kwargs: Any
+    ) -> "BaseGPTKeywordTableIndex":
         """Load from disk."""
         with open(save_path, "r") as f:
             return cls(index_struct=KeywordTable.from_dict(json.load(f)), **kwargs)
