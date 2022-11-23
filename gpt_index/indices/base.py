@@ -1,4 +1,5 @@
 """Base data structure classes."""
+import json
 from abc import abstractmethod
 from typing import Any, Generic, List, Optional, TypeVar, cast
 
@@ -92,6 +93,7 @@ class BaseGPTIndex(Generic[IS]):
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "BaseGPTIndex":
         """Load from disk."""
 
-    @abstractmethod
     def save_to_disk(self, save_path: str) -> None:
         """Safe to file."""
+        with open(save_path, "w") as f:
+            json.dump(self.index_struct.to_dict(), f)

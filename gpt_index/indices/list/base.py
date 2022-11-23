@@ -72,8 +72,3 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         """Load from disk."""
         with open(save_path, "r") as f:
             return cls(index_struct=IndexList.from_dict(json.load(f)), **kwargs)
-
-    def save_to_disk(self, save_path: str) -> None:
-        """Safe to file."""
-        with open(save_path, "w") as f:
-            json.dump(self.index_struct.to_dict(), f)
