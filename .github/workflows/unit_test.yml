@@ -1,4 +1,4 @@
-name: Linting
+name: Unit Testing
 
 on: [push]
 
@@ -21,5 +21,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run linter
-        run: make lint
+        run: pytest tests
         
