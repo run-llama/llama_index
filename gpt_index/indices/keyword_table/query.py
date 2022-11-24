@@ -6,11 +6,12 @@ from typing import Dict, List, Optional
 from gpt_index.indices.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.keyword_table.utils import (
+    extract_keywords_given_response,
     rake_extract_keywords,
     simple_extract_keywords,
 )
 from gpt_index.indices.response_utils import give_response, refine_response
-from gpt_index.indices.utils import extract_keywords_given_response, truncate_text
+from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
@@ -124,10 +125,8 @@ class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
             max_keywords=self.max_keywords_per_query,
             question=query_str,
         )
-        keywords = extract_keywords_given_response(
-            response, self.max_keywords_per_query
-        )
-        return keywords
+        keywords = extract_keywords_given_response(response)
+        return list(keywords)
 
 
 class GPTKeywordTableSimpleQuery(BaseGPTKeywordTableQuery):
