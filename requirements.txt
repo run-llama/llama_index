@@ -1,5 +1,5 @@
 requirements.txt
-asdf-e .
+-e .
 
 # For testing
 pytest
