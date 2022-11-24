@@ -20,11 +20,8 @@ from gpt_index.indices.keyword_table.query import (
     GPTKeywordTableRAKEQuery,
     GPTKeywordTableSimpleQuery,
 )
-from gpt_index.indices.utils import (
-    extract_keywords_given_response,
-    get_chunk_size_given_prompt,
-    truncate_text,
-)
+from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
+from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
@@ -112,11 +109,9 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
                 max_keywords=self.max_keywords_per_chunk,
                 text=text_chunk,
             )
-            keywords = extract_keywords_given_response(
-                response, self.max_keywords_per_query
-            )
+            keywords = extract_keywords_given_response(response)
             fmt_text_chunk = truncate_text(text_chunk, 50)
-            text_chunk_id = index_struct.add_text(keywords, text_chunk)
+            text_chunk_id = index_struct.add_text(list(keywords), text_chunk)
             print(
                 f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
                 f"{fmt_text_chunk}"
