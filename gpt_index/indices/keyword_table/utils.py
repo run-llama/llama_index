@@ -40,3 +40,24 @@ def rake_extract_keywords(
         return set(expand_tokens_with_subtokens(keywords))
     else:
         return set(keywords)
+
+
+def extract_keywords_given_response(response: str, lowercase: bool = True) -> Set[str]:
+    """Extract keywords given the GPT-generated response.
+
+    Used by keyword table indices.
+
+    """
+    results = []
+    keywords = response.split(",")
+    for k in keywords:
+        if "KEYWORD" in k:
+            continue
+        rk = k
+        if lowercase:
+            rk = rk.lower()
+        results.append(rk.strip())
+
+    # if keyword consists of multiple words, split into subwords
+    # (removing stopwords)
+    return expand_tokens_with_subtokens(set(results))

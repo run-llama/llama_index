@@ -1,6 +1,6 @@
 """Utilities for GPT indices."""
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 import nltk
 from nltk.corpus import stopwords
@@ -61,41 +61,18 @@ def extract_numbers_given_response(response: str, n: int = 1) -> Optional[List[i
         return numbers[:n]
 
 
-def expand_tokens_with_subtokens(tokens: List[str]) -> List[str]:
+def expand_tokens_with_subtokens(tokens: Set[str]) -> Set[str]:
     """Get subtokens from a list of tokens., filtering for stopwords."""
-    results = []
+    results = set()
     for token in tokens:
-        results.append(token)
+        results.add(token)
         sub_tokens = re.findall(r"\w+", token)
         if len(sub_tokens) > 1:
-            results.extend(
-                [w for w in sub_tokens if w not in stopwords.words("english")]
+            results.update(
+                {w for w in sub_tokens if w not in stopwords.words("english")}
             )
 
     return results
-
-
-def extract_keywords_given_response(
-    response: str, n: int = 5, lowercase: bool = True
-) -> List[str]:
-    """Extract keywords given the GPT-generated response.
-
-    Used by keyword table indices.
-
-    """
-    results = []
-    keywords = response.split(",")
-    for k in keywords:
-        if "KEYWORD" in k:
-            continue
-        rk = k
-        if lowercase:
-            rk = rk.lower()
-        results.append(rk.strip())
-
-    # if keyword consists of multiple words, split into subwords
-    # (removing stopwords)
-    return expand_tokens_with_subtokens(results)
 
 
 def truncate_text(text: str, max_length: int) -> str:
