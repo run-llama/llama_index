@@ -1,4 +1,3 @@
-requirements.txt
 -e .
 
 # For testing
