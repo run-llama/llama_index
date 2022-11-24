@@ -1,4 +1,9 @@
--e .
+requirements.txt
+asdf-e .
+
+# For testing
+pytest
+pytest-dotenv
 
 # third-party
 wikipedia
