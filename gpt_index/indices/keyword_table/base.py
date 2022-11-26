@@ -83,6 +83,14 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
 
+    def insert(self, document: Document) -> None:
+        """Insert a document."""
+        raise NotImplementedError("Insert not implemented for keyword table index.")
+
+    def delete(self, document: Document) -> None:
+        """Delete a document."""
+        raise NotImplementedError("Delete not implemented for keyword table index.")
+
     @classmethod
     def load_from_disk(
         cls, save_path: str, **kwargs: Any

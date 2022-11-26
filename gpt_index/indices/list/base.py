@@ -67,6 +67,14 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
 
+    def insert(self, document: Document) -> None:
+        """Insert a document."""
+        raise NotImplementedError("Insert not implemented for list index.")
+
+    def delete(self, document: Document) -> None:
+        """Delete a document."""
+        raise NotImplementedError("Delete not implemented for list index.")
+
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTListIndex":
         """Load from disk."""

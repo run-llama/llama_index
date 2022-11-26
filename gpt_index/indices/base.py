@@ -74,6 +74,14 @@ class BaseGPTIndex(Generic[IS]):
         """Build the index from documents."""
 
     @abstractmethod
+    def insert(self, document: Document) -> None:
+        """Insert a document."""
+
+    @abstractmethod
+    def delete(self, document: Document) -> None:
+        """Delete a document."""
+
+    @abstractmethod
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
 
