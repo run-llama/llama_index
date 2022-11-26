@@ -67,7 +67,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
 
-    def insert(self, document: Document) -> None:
+    def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
         text_chunks = self.text_splitter.split_text(document.text)
         for _, text_chunk in enumerate(text_chunks):
