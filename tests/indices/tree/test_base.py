@@ -1,23 +1,23 @@
 """Test tree index."""
 
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import patch
 
 import pytest
 
+from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
 from tests.mock_utils.mock_predict import mock_openai_llm_predict
 from tests.mock_utils.mock_prompts import (
+    MOCK_INSERT_PROMPT,
     MOCK_QUERY_PROMPT,
     MOCK_REFINE_PROMPT,
     MOCK_SUMMARY_PROMPT,
     MOCK_TEXT_QA_PROMPT,
-    MOCK_INSERT_PROMPT
 )
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
-from gpt_index.indices.data_structs import Node, IndexGraph
 
 
 @pytest.fixture
@@ -54,14 +54,14 @@ def _get_left_or_right_node(
 ) -> Node:
     """Get 'left' or 'right' node."""
     if node is None:
-        indices = index_graph.root_nodes.keys()
+        indices = set(index_graph.root_nodes.keys())
     else:
         indices = node.child_indices
 
     index = min(indices) if left else max(indices)
 
     if index not in index_graph.all_nodes:
-        print(f'Node {index} not in index_graph.all_nodes')
+        print(f"Node {index} not in index_graph.all_nodes")
     return index_graph.all_nodes[index]
 
 
@@ -117,10 +117,12 @@ def test_insert(
     # Before:
     # Left root node: "Hello world.\nThis is a test."
     # "Hello world.", "This is a test" are two children of the left root node
-    # After: 
+    # After:
     # "Hello world.\nThis is a test\n.\nThis is a new doc." is the left root node
-    # "Hello world", "This is a test\n.This is a new doc." are the children of the left root node.
-    # "This is a test", "This is a new doc." are the children of "This is a test\n.This is a new doc."
+    # "Hello world", "This is a test\n.This is a new doc." are the children
+    # of the left root node.
+    # "This is a test", "This is a new doc." are the children of
+    # "This is a test\n.This is a new doc."
     left_root = _get_left_or_right_node(tree.index_struct, None)
     assert left_root.text == "Hello world.\nThis is a test.\nThis is a new doc."
     left_root2 = _get_left_or_right_node(tree.index_struct, left_root)

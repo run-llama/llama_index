@@ -24,12 +24,14 @@ DEFAULT_SUMMARY_PROMPT = Prompt(
 
 # insert prompts
 DEFAULT_INSERT_PROMPT_TMPL = (
-    "Context information is below. It is provided in a numbered list (1 to {num_chunks}),"
+    "Context information is below. It is provided in a numbered list "
+    "(1 to {num_chunks}),"
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
     "---------------------\n"
-    "Given the context information, here is a new piece of information: {new_chunk_text}\n"
+    "Given the context information, here is a new piece of "
+    "information: {new_chunk_text}\n"
     "Answer with the number corresponding to the summary that should be updated. "
     "The answer should be the number corresponding to the "
     "summary that is most relevant to the question.\n"

@@ -1,13 +1,9 @@
 """GPT Tree Index inserter."""
 
-import json
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
-from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
-from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
-from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
     get_chunk_size_given_prompt,
@@ -17,12 +13,11 @@ from gpt_index.indices.utils import (
 )
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts.base import Prompt, validate_prompt
+from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
-from gpt_index.schema import Document
 
 
 class GPTIndexInserter:
@@ -51,22 +46,14 @@ class GPTIndexInserter:
             chunk_overlap=MAX_CHUNK_OVERLAP // num_children,
         )
 
-        # # insert
-        # chunk_size = get_chunk_size_given_prompt(
-        #     insert_prompt.format(text=""), MAX_CHUNK_SIZE, num_children, NUM_OUTPUTS
-        # )
-        # self.text_splitter = TokenTextSplitter(
-        #     separator=" ",
-        #     chunk_size=chunk_size,
-        #     chunk_overlap=MAX_CHUNK_OVERLAP // num_children
-        # )
-
     def _insert_under_parent_and_consolidate(
         self, text_chunk: str, parent_node: Optional[Node]
     ) -> None:
         """Insert node under parent and consolidate.
+
         Consolidation will happen by dividing up child nodes, and creating a new
         intermediate layer of nodes.
+
         """
         # perform insertion
         text_node = Node(text_chunk, self.index_graph.size, set())
