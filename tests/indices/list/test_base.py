@@ -38,7 +38,7 @@ def test_build_list(_mock_splitter: Any, documents: List[Document]) -> None:
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 def test_list_insert(_mock_splitter: Any, documents: List[Document]) -> None:
-    """Test build list."""
+    """Test insert to list."""
     list_index = GPTListIndex([])
     assert len(list_index.index_struct.nodes) == 0
     list_index.insert(documents[0])
