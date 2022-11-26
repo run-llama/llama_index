@@ -131,6 +131,14 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         index_graph = index_builder.build_from_text(text_data)
         return index_graph
 
+    def insert(self, document: Document) -> None:
+        """Insert a document."""
+        raise NotImplementedError("Insert not implemented for tree index.")
+
+    def delete(self, document: Document) -> None:
+        """Delete a document."""
+        raise NotImplementedError("Delete not implemented for tree index.")
+
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTTreeIndex":
         """Load from disk."""
