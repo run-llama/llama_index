@@ -140,7 +140,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         inserter = GPTIndexInserter(
             self.index_struct,
             num_children=self.num_children,
-            summary_prompt=self.summary_template
+            summary_prompt=self.summary_template,
         )
         inserter.insert(document.text)
 

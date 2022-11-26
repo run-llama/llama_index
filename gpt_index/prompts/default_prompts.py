@@ -35,8 +35,8 @@ DEFAULT_INSERT_PROMPT_TMPL = (
     "summary that is most relevant to the question.\n"
 )
 DEFAULT_INSERT_PROMPT = Prompt(
-    input_variables=["num_chunks", "context_list", "new_chunk_text"], 
-    template=DEFAULT_INSERT_PROMPT_TMPL
+    input_variables=["num_chunks", "context_list", "new_chunk_text"],
+    template=DEFAULT_INSERT_PROMPT_TMPL,
 )
 
 

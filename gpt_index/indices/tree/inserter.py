@@ -9,16 +9,19 @@ from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.utils import (
+    extract_numbers_given_response,
     get_chunk_size_given_prompt,
+    get_numbered_text_from_nodes,
     get_sorted_node_list,
     get_text_from_nodes,
-    extract_numbers_given_response,
-    get_numbered_text_from_nodes,
 )
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt, validate_prompt
-from gpt_index.prompts.default_prompts import DEFAULT_SUMMARY_PROMPT, DEFAULT_INSERT_PROMPT
+from gpt_index.prompts.default_prompts import (
+    DEFAULT_INSERT_PROMPT,
+    DEFAULT_SUMMARY_PROMPT,
+)
 from gpt_index.schema import Document
 
 
@@ -26,11 +29,11 @@ class GPTIndexInserter:
     """GPT Index inserter."""
 
     def __init__(
-        self, 
+        self,
         index_graph: IndexGraph,
         num_children: int = 10,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
-        summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT
+        summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -44,8 +47,8 @@ class GPTIndexInserter:
         )
         self.text_splitter = TokenTextSplitter(
             separator=" ",
-            chunk_size=chunk_size, 
-            chunk_overlap=MAX_CHUNK_OVERLAP // num_children
+            chunk_size=chunk_size,
+            chunk_overlap=MAX_CHUNK_OVERLAP // num_children,
         )
 
         # # insert
@@ -54,7 +57,7 @@ class GPTIndexInserter:
         # )
         # self.text_splitter = TokenTextSplitter(
         #     separator=" ",
-        #     chunk_size=chunk_size, 
+        #     chunk_size=chunk_size,
         #     chunk_overlap=MAX_CHUNK_OVERLAP // num_children
         # )
 
@@ -62,7 +65,7 @@ class GPTIndexInserter:
         self, text_chunk: str, parent_node: Optional[Node]
     ) -> None:
         """Insert node under parent and consolidate.
-        Consolidation will happen by dividing up child nodes, and creating a new 
+        Consolidation will happen by dividing up child nodes, and creating a new
         intermediate layer of nodes.
         """
         # perform insertion
@@ -75,36 +78,32 @@ class GPTIndexInserter:
         else:
             # perform consolidation
             cur_graph_nodes = self.index_graph.get_children(parent_node)
+            cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
             # this layer is all leaf nodes, consolidate and split leaf nodes
             cur_node_index = self.index_graph.size
             # consolidate and split leaf nodes in half
-            half1 = cur_graph_nodes[:len(cur_graph_nodes)//2]
-            half2 = cur_graph_nodes[len(cur_graph_nodes)//2:]
+            # TODO: do better splitting (with a GPT prompt etc.)
+            half1 = cur_graph_node_list[: len(cur_graph_nodes) // 2]
+            half2 = cur_graph_node_list[len(cur_graph_nodes) // 2 :]
 
             text_chunk1 = get_text_from_nodes(half1)
-            summary1, _ = openai_llm_predict(
-                self.summary_prompt, text=text_chunk1
-            )
+            summary1, _ = openai_llm_predict(self.summary_prompt, text=text_chunk1)
             node1 = Node(summary1, cur_node_index, {n.index for n in half1})
 
             text_chunk2 = get_text_from_nodes(half2)
-            summary2, _ = openai_llm_predict(
-                self.summary_prompt, text=text_chunk2
-            )
-            node2 = Node(summary2, cur_node_index+1, {n.index for n in half2})
+            summary2, _ = openai_llm_predict(self.summary_prompt, text=text_chunk2)
+            node2 = Node(summary2, cur_node_index + 1, {n.index for n in half2})
 
             # insert half1 and half2 as new children of parent_node
             # first remove child indices from parent node
             if parent_node is not None:
-                parent_node.child_indices = {}
+                parent_node.child_indices = set()
             else:
-                self.index_graph.root_nodes = set()
+                self.index_graph.root_nodes = {}
             self.index_graph.insert_under_parent(node1, parent_node)
             self.index_graph.insert_under_parent(node2, parent_node)
 
-    def _insert_node(
-        self, text_chunk: str, parent_node: Optional[Node]
-    ) -> None:
+    def _insert_node(self, text_chunk: str, parent_node: Optional[Node]) -> None:
         """Insert node."""
         cur_graph_nodes = self.index_graph.get_children(parent_node)
         cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
@@ -116,9 +115,8 @@ class GPTIndexInserter:
             response, _ = openai_llm_predict(
                 self.insert_prompt,
                 new_chunk_text=text_chunk,
-                new_chunk_text=text_chunk,
                 num_chunks=len(cur_graph_node_list),
-                context_list=get_numbered_text_from_nodes(cur_graph_node_list)
+                context_list=get_numbered_text_from_nodes(cur_graph_node_list),
             )
             numbers = extract_numbers_given_response(response)
             if numbers is None or len(numbers) == 0:
@@ -128,16 +126,17 @@ class GPTIndexInserter:
                 # NOTE: if number is out of range, then we just insert under parent
                 self._insert_under_parent_and_consolidate(text_chunk, parent_node)
             else:
-                selected_node = cur_graph_node_list[numbers[0]-1]
+                selected_node = cur_graph_node_list[numbers[0] - 1]
                 self._insert_node(text_chunk, selected_node)
 
         # now we need to update summary for parent node, since we
         # need to bubble updated summaries up the tree
         if parent_node is not None:
-            text_chunk = get_text_from_nodes(self.index_graph.get_children(parent_node))
-            new_summary, _ = openai_llm_predict(
-                self.summary_prompt, text=text_chunk
-            )
+            # refetch children
+            cur_graph_nodes = self.index_graph.get_children(parent_node)
+            cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
+            text_chunk = get_text_from_nodes(cur_graph_node_list)
+            new_summary, _ = openai_llm_predict(self.summary_prompt, text=text_chunk)
 
             parent_node.text = new_summary
 
