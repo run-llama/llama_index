@@ -69,7 +69,11 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
 
     def insert(self, document: Document) -> None:
         """Insert a document."""
-        raise NotImplementedError("Insert not implemented for list index.")
+        text_chunks = self.text_splitter.split_text(document.text)
+        for _, text_chunk in enumerate(text_chunks):
+            fmt_text_chunk = truncate_text(text_chunk, 50)
+            print(f"> Adding chunk: {fmt_text_chunk}")
+            self._index_struct.add_text(text_chunk)
 
     def delete(self, document: Document) -> None:
         """Delete a document."""
