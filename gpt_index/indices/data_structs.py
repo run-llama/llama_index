@@ -15,10 +15,16 @@ class IndexStruct(DataClassJsonMixin):
 
 @dataclass
 class Node(IndexStruct):
-    """A node in the GPT tree index."""
+    """A generic node of data.
+
+    Used in the GPT Tree Index and List Index.
+
+    """
 
     text: str
+    # ID field
     index: int
+    # used for GPTTreeIndex
     child_indices: Set[int]
 
 
