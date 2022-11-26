@@ -9,7 +9,8 @@ existing keywords in the table.
 """
 
 import json
-from typing import Any, List, Optional
+from abc import abstractmethod
+from typing import Any, List, Optional, Set
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
@@ -83,9 +84,41 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
 
+    @abstractmethod
+    def _extract_keywords(self, text: str) -> Set[str]:
+        """Extract keywords from text."""
+
+    def build_index_from_documents(self, documents: List[Document]) -> KeywordTable:
+        """Build the index from documents."""
+        # do simple concatenation
+        text_data = "\n".join([d.text for d in documents])
+
+        index_struct = KeywordTable(table={})
+
+        text_chunks = self.text_splitter.split_text(text_data)
+        for i, text_chunk in enumerate(text_chunks):
+            keywords = self._extract_keywords(text_chunk)
+            fmt_text_chunk = truncate_text(text_chunk, 50)
+            text_chunk_id = index_struct.add_text(list(keywords), text_chunk)
+            print(
+                f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
+                f"{fmt_text_chunk}"
+            )
+            print(f"> Keywords: {keywords}")
+        return index_struct
+
     def insert(self, document: Document) -> None:
         """Insert a document."""
-        raise NotImplementedError("Insert not implemented for keyword table index.")
+        text_chunks = self.text_splitter.split_text(document.text)
+        for i, text_chunk in enumerate(text_chunks):
+            keywords = self._extract_keywords(text_chunk)
+            fmt_text_chunk = truncate_text(text_chunk, 50)
+            text_chunk_id = self._index_struct.add_text(list(keywords), text_chunk)
+            print(
+                f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
+                f"{fmt_text_chunk}"
+            )
+            print(f"> Keywords: {keywords}")
 
     def delete(self, document: Document) -> None:
         """Delete a document."""
@@ -101,28 +134,18 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 
 
 class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
-    """GPT Index."""
+    """GPT Keyword Table Index.
 
-    def build_index_from_documents(self, documents: List[Document]) -> KeywordTable:
-        """Build the index from documents."""
-        # do simple concatenation
-        text_data = "\n".join([d.text for d in documents])
+    Uses GPT to build keyword table.
 
-        index_struct = KeywordTable(table={})
+    """
 
-        text_chunks = self.text_splitter.split_text(text_data)
-        for i, text_chunk in enumerate(text_chunks):
-            response, _ = openai_llm_predict(
-                self.keyword_extract_template,
-                max_keywords=self.max_keywords_per_chunk,
-                text=text_chunk,
-            )
-            keywords = extract_keywords_given_response(response)
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            text_chunk_id = index_struct.add_text(list(keywords), text_chunk)
-            print(
-                f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
-                f"{fmt_text_chunk}"
-            )
-            print(f"> Keywords: {keywords}")
-        return index_struct
+    def _extract_keywords(self, text: str) -> Set[str]:
+        """Extract keywords from text."""
+        response, _ = openai_llm_predict(
+            self.keyword_extract_template,
+            max_keywords=self.max_keywords_per_chunk,
+            text=text,
+        )
+        keywords = extract_keywords_given_response(response)
+        return keywords
