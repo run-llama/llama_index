@@ -1,6 +1,6 @@
 """Test list index."""
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, List
 from unittest.mock import patch
 
 import pytest
@@ -8,13 +8,6 @@ import pytest
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
-from tests.mock_utils.mock_predict import mock_openai_llm_predict
-from tests.mock_utils.mock_prompts import (
-    MOCK_QUERY_PROMPT,
-    MOCK_REFINE_PROMPT,
-    MOCK_SUMMARY_PROMPT,
-    MOCK_TEXT_QA_PROMPT,
-)
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
@@ -32,9 +25,7 @@ def documents() -> List[Document]:
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-def test_build_list(
-    _mock_splitter: Any, documents: List[Document]
-) -> None:
+def test_build_list(_mock_splitter: Any, documents: List[Document]) -> None:
     """Test build list."""
     list_index = GPTListIndex(documents)
     assert len(list_index.index_struct.nodes) == 4
@@ -46,9 +37,7 @@ def test_build_list(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-def test_list_insert(
-    _mock_splitter: Any, documents: List[Document]
-) -> None:
+def test_list_insert(_mock_splitter: Any, documents: List[Document]) -> None:
     """Test build list."""
     list_index = GPTListIndex([])
     assert len(list_index.index_struct.nodes) == 0
