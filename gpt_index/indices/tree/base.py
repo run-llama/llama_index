@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.utils import (
@@ -16,7 +17,10 @@ from gpt_index.indices.utils import (
 from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt, validate_prompt
-from gpt_index.prompts.default_prompts import DEFAULT_SUMMARY_PROMPT
+from gpt_index.prompts.default_prompts import (
+    DEFAULT_INSERT_PROMPT,
+    DEFAULT_SUMMARY_PROMPT,
+)
 from gpt_index.schema import Document
 
 RETRIEVE_MODE = "retrieve"
@@ -33,6 +37,8 @@ class GPTTreeIndexBuilder:
         self, num_children: int = 10, summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT
     ) -> None:
         """Initialize with params."""
+        if num_children < 2:
+            raise ValueError("Invalid number of children.")
         self.num_children = num_children
         self.summary_prompt = summary_prompt
         chunk_size = get_chunk_size_given_prompt(
@@ -96,6 +102,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IndexGraph] = None,
         summary_template: Prompt = DEFAULT_SUMMARY_PROMPT,
+        insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         query_str: Optional[str] = None,
         num_children: int = 10,
     ) -> None:
@@ -106,6 +113,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         if query_str is not None:
             summary_template = summary_template.partial_format(query_str=query_str)
         self.summary_template = summary_template
+        self.insert_prompt = insert_prompt
         validate_prompt(self.summary_template, ["text"], ["query_str"])
         super().__init__(documents=documents, index_struct=index_struct)
 
@@ -131,9 +139,16 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         index_graph = index_builder.build_from_text(text_data)
         return index_graph
 
-    def insert(self, document: Document) -> None:
+    def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        raise NotImplementedError("Insert not implemented for tree index.")
+        # TODO: allow to customize insert prompt
+        inserter = GPTIndexInserter(
+            self.index_struct,
+            num_children=self.num_children,
+            summary_prompt=self.summary_template,
+            insert_prompt=self.insert_prompt,
+        )
+        inserter.insert(document.text)
 
     def delete(self, document: Document) -> None:
         """Delete a document."""

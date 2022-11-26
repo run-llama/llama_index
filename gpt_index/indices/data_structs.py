@@ -3,7 +3,7 @@
 import random
 import sys
 from dataclasses import dataclass, field
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -39,6 +39,26 @@ class IndexGraph(IndexStruct):
     def size(self) -> int:
         """Get the size of the graph."""
         return len(self.all_nodes)
+
+    def get_children(self, parent_node: Optional[Node]) -> Dict[int, Node]:
+        """Get nodes given indices."""
+        if parent_node is None:
+            return self.root_nodes
+        else:
+            return {i: self.all_nodes[i] for i in parent_node.child_indices}
+
+    def insert_under_parent(self, node: Node, parent_node: Optional[Node]) -> None:
+        """Insert under parent node."""
+        if node.index in self.all_nodes:
+            raise ValueError(
+                "Cannot insert a new node with the same index as an existing node."
+            )
+        if parent_node is None:
+            self.root_nodes[node.index] = node
+        else:
+            parent_node.child_indices.add(node.index)
+
+        self.all_nodes[node.index] = node
 
 
 @dataclass

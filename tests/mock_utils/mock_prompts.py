@@ -7,6 +7,12 @@ MOCK_SUMMARY_PROMPT = Prompt(
     input_variables=["text"], template=MOCK_SUMMARY_PROMPT_TMPL
 )
 
+MOCK_INSERT_PROMPT_TMPL = "{num_chunks}\n{context_list}{new_chunk_text}\n"
+MOCK_INSERT_PROMPT = Prompt(
+    input_variables=["num_chunks", "context_list", "new_chunk_text"],
+    template=MOCK_INSERT_PROMPT_TMPL,
+)
+
 # # single choice
 MOCK_QUERY_PROMPT_TMPL = "{num_chunks}\n" "{context_list}\n" "{query_str}'\n"
 MOCK_QUERY_PROMPT = Prompt(

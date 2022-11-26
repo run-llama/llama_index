@@ -74,7 +74,7 @@ class BaseGPTIndex(Generic[IS]):
         """Build the index from documents."""
 
     @abstractmethod
-    def insert(self, document: Document) -> None:
+    def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
 
     @abstractmethod
