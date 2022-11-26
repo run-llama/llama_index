@@ -122,11 +122,11 @@ class GPTIndexInserter:
             if numbers is None or len(numbers) == 0:
                 # NOTE: if we can't extract a number, then we just insert under parent
                 self._insert_under_parent_and_consolidate(text_chunk, parent_node)
-            elif numbers[0] > len(cur_graph_node_list):
+            elif int(numbers[0]) > len(cur_graph_node_list):
                 # NOTE: if number is out of range, then we just insert under parent
                 self._insert_under_parent_and_consolidate(text_chunk, parent_node)
             else:
-                selected_node = cur_graph_node_list[numbers[0] - 1]
+                selected_node = cur_graph_node_list[int(numbers[0]) - 1]
                 self._insert_node(text_chunk, selected_node)
 
         # now we need to update summary for parent node, since we

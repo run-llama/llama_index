@@ -1,6 +1,6 @@
 """Test tree index."""
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 from unittest.mock import patch
 
 import pytest
@@ -14,8 +14,10 @@ from tests.mock_utils.mock_prompts import (
     MOCK_REFINE_PROMPT,
     MOCK_SUMMARY_PROMPT,
     MOCK_TEXT_QA_PROMPT,
+    MOCK_INSERT_PROMPT
 )
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
+from gpt_index.indices.data_structs import Node, IndexGraph
 
 
 @pytest.fixture
@@ -23,6 +25,7 @@ def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
     index_kwargs = {
         "summary_template": MOCK_SUMMARY_PROMPT,
+        "insert_prompt": MOCK_INSERT_PROMPT,
         "num_children": 2,
     }
     query_kwargs = {
@@ -44,6 +47,22 @@ def documents() -> List[Document]:
         "This is a test v2."
     )
     return [Document(doc_text)]
+
+
+def _get_left_or_right_node(
+    index_graph: IndexGraph, node: Optional[Node], left: bool = True
+) -> Node:
+    """Get 'left' or 'right' node."""
+    if node is None:
+        indices = index_graph.root_nodes.keys()
+    else:
+        indices = node.child_indices
+
+    index = min(indices) if left else max(indices)
+
+    if index not in index_graph.all_nodes:
+        print(f'Node {index} not in index_graph.all_nodes')
+    return index_graph.all_nodes[index]
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -95,5 +114,20 @@ def test_insert(
     # test insert
     new_doc = Document("This is a new doc.")
     tree.insert(new_doc)
-    print(tree.index_struct.all_nodes)
-    raise Exception
+    # Before:
+    # Left root node: "Hello world.\nThis is a test."
+    # "Hello world.", "This is a test" are two children of the left root node
+    # After: 
+    # "Hello world.\nThis is a test\n.\nThis is a new doc." is the left root node
+    # "Hello world", "This is a test\n.This is a new doc." are the children of the left root node.
+    # "This is a test", "This is a new doc." are the children of "This is a test\n.This is a new doc."
+    left_root = _get_left_or_right_node(tree.index_struct, None)
+    assert left_root.text == "Hello world.\nThis is a test.\nThis is a new doc."
+    left_root2 = _get_left_or_right_node(tree.index_struct, left_root)
+    right_root2 = _get_left_or_right_node(tree.index_struct, left_root, left=False)
+    assert left_root2.text == "Hello world."
+    assert right_root2.text == "This is a test.\nThis is a new doc."
+    left_root3 = _get_left_or_right_node(tree.index_struct, right_root2)
+    right_root3 = _get_left_or_right_node(tree.index_struct, right_root2, left=False)
+    assert left_root3.text == "This is a test."
+    assert right_root3.text == "This is a new doc."
