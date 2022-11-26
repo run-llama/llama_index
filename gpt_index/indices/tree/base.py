@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.utils import (
@@ -33,6 +34,8 @@ class GPTTreeIndexBuilder:
         self, num_children: int = 10, summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT
     ) -> None:
         """Initialize with params."""
+        if num_children < 2:
+            raise ValueError("Invalid number of children.")
         self.num_children = num_children
         self.summary_prompt = summary_prompt
         chunk_size = get_chunk_size_given_prompt(
@@ -133,7 +136,13 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
 
     def insert(self, document: Document) -> None:
         """Insert a document."""
-        raise NotImplementedError("Insert not implemented for tree index.")
+        # TODO: allow to customize insert prompt
+        inserter = GPTIndexInserter(
+            self.index_struct,
+            num_children=self.num_children,
+            summary_prompt=self.summary_template
+        )
+        inserter.insert(document.text)
 
     def delete(self, document: Document) -> None:
         """Delete a document."""
