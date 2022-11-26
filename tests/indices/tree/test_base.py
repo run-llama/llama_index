@@ -80,3 +80,20 @@ def test_query(
     query_str = "What is?"
     response = tree.query(query_str, mode="default", **query_kwargs)
     assert response == ("What is?\n" "Hello world.")
+
+
+@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch("gpt_index.indices.tree.base.openai_llm_predict", mock_openai_llm_predict)
+@patch("gpt_index.indices.tree.inserter.openai_llm_predict", mock_openai_llm_predict)
+def test_insert(
+    _mock_predict: Any, documents: List[Document], struct_kwargs: Dict
+) -> None:
+    """Test insert."""
+    index_kwargs, _ = struct_kwargs
+    tree = GPTTreeIndex(documents, **index_kwargs)
+
+    # test insert
+    new_doc = Document("This is a new doc.")
+    tree.insert(new_doc)
+    print(tree.index_struct.all_nodes)
+    raise Exception

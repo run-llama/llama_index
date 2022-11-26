@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from gpt_index.prompts.base import Prompt
 from tests.mock_utils.mock_prompts import (
+    MOCK_INSERT_PROMPT,
     MOCK_QUERY_PROMPT,
     MOCK_REFINE_PROMPT,
     MOCK_SUMMARY_PROMPT,
@@ -14,6 +15,16 @@ from tests.mock_utils.mock_prompts import (
 def _mock_summary_predict(prompt_args: Dict) -> str:
     """Mock summary predict."""
     return prompt_args["text"]
+
+
+def _mock_insert_predict() -> str:
+    """Mock insert predict.
+
+    Used in GPT tree index during insertion
+    to select the next node.
+
+    """
+    return "ANSWER: 1"
 
 
 def _mock_query_select() -> str:
@@ -47,6 +58,8 @@ def mock_openai_llm_predict(
     formatted_prompt = prompt.format(**prompt_args)
     if prompt == MOCK_SUMMARY_PROMPT:
         response = _mock_summary_predict(prompt_args)
+    elif prompt == MOCK_INSERT_PROMPT:
+        response = _mock_insert_predict()
     elif prompt == MOCK_QUERY_PROMPT:
         response = _mock_query_select()
     elif prompt == MOCK_REFINE_PROMPT:

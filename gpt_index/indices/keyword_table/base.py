@@ -107,7 +107,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             print(f"> Keywords: {keywords}")
         return index_struct
 
-    def insert(self, document: Document) -> None:
+    def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
         text_chunks = self.text_splitter.split_text(document.text)
         for i, text_chunk in enumerate(text_chunks):
