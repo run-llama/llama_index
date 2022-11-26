@@ -1,29 +1,28 @@
 """Test keyword table index."""
 
-from typing import Any, Dict, List, Tuple, Set, Optional
+from typing import Any, List, Optional, Set
 from unittest.mock import patch
-import re
 
 import pytest
 
-from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from gpt_index.indices.keyword_table.utils import simple_extract_keywords
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
-from gpt_index.indices.keyword_table.utils import simple_extract_keywords
-from tests.mock_utils.mock_predict import mock_openai_llm_predict
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
 def _mock_extract_keywords(
     text_chunk: str, max_keywords: Optional[int] = None, filter_stopwords: bool = True
 ) -> Set[str]:
-    """Extract keywords (mock). 
+    """Extract keywords (mock).
 
     Same as simple_extract_keywords but without filtering stopwords.
-    
+
     """
-    return simple_extract_keywords(text_chunk, max_keywords=max_keywords, filter_stopwords=False)
+    return simple_extract_keywords(
+        text_chunk, max_keywords=max_keywords, filter_stopwords=False
+    )
 
 
 @pytest.fixture
@@ -40,10 +39,11 @@ def documents() -> List[Document]:
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch("gpt_index.indices.keyword_table.simple_base.simple_extract_keywords", _mock_extract_keywords)
-def test_build_table(
-    _mock_predict: Any, documents: List[Document]
-) -> None:
+@patch(
+    "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
+    _mock_extract_keywords,
+)
+def test_build_table(_mock_predict: Any, documents: List[Document]) -> None:
     """Test build table."""
     # test simple keyword table
     table = GPTSimpleKeywordTableIndex(documents)
@@ -57,15 +57,24 @@ def test_build_table(
     # test that expected keys are present in table
     # NOTE: in mock keyword extractor, stopwords are not filtered
     assert table.index_struct.table.keys() == {
-        "this", "hello", "world", "test", "another", "v2", "is", "a", "v2"
+        "this",
+        "hello",
+        "world",
+        "test",
+        "another",
+        "v2",
+        "is",
+        "a",
+        "v2",
     }
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch("gpt_index.indices.keyword_table.simple_base.simple_extract_keywords", _mock_extract_keywords)
-def test_insert(
-    _mock_predict: Any, documents: List[Document]
-) -> None:
+@patch(
+    "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
+    _mock_extract_keywords,
+)
+def test_insert(_mock_predict: Any, documents: List[Document]) -> None:
     """Test insert."""
     table = GPTSimpleKeywordTableIndex([])
     assert len(table.index_struct.table.keys()) == 0
@@ -78,6 +87,13 @@ def test_insert(
     # test that expected keys are present in table
     # NOTE: in mock keyword extractor, stopwords are not filtered
     assert table.index_struct.table.keys() == {
-        "this", "hello", "world", "test", "another", "v2", "is", "a", "v2"
+        "this",
+        "hello",
+        "world",
+        "test",
+        "another",
+        "v2",
+        "is",
+        "a",
+        "v2",
     }
-

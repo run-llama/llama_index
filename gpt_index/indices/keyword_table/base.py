@@ -9,8 +9,8 @@ existing keywords in the table.
 """
 
 import json
-from typing import Any, List, Optional
 from abc import abstractmethod
+from typing import Any, List, Optional, Set
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
@@ -85,7 +85,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         return query
 
     @abstractmethod
-    def _extract_keywords(self, text: str) -> List[str]:
+    def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
 
     def build_index_from_documents(self, documents: List[Document]) -> KeywordTable:
@@ -120,7 +120,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             )
             print(f"> Keywords: {keywords}")
 
-
     def delete(self, document: Document) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for keyword table index.")
@@ -138,10 +137,10 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
     """GPT Keyword Table Index.
 
     Uses GPT to build keyword table.
-    
+
     """
 
-    def _extract_keywords(self, text: str) -> List[str]:
+    def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
         response, _ = openai_llm_predict(
             self.keyword_extract_template,
