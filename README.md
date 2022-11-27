@@ -1,4 +1,4 @@
-# 🗂️ ️GPT Index
+ad# 🗂️ ️GPT Index
 
 GPT Index is a project consisting of a set of *data structures* that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
 
@@ -56,13 +56,13 @@ All requirements should be contained within the `setup.py` file. To run the pack
 
 ## Index Details
 
-- [`GPTTreeIndex`](gpt_index/indices/tree/README.md): a tree data structure
+- [`Tree Index`](gpt_index/indices/tree/README.md): Tree data structures
     - **Creation**: with GPT hierarchical summarization over sub-documents
     - **Query**: with GPT recursive querying over multiple choice problems
-- [`GPTKeywordTableIndex`](gpt_index/indices/keyword_table/README.md): a keyword-based table
+- [`Keyword Table Index`](gpt_index/indices/keyword_table/README.md): a keyword-based table
     - **Creation**: with GPT keyword extraction over each sub-document
     - **Query**: with GPT keyword extraction over question, match to sub-documents. *Create and refine* an answer over candidate sub-documents.
-- [`GPTListIndex`](gpt_index/indices/list/README.md): a simple list-based data structure
+- [`List Index`](gpt_index/indices/list/README.md): a simple list-based data structure
     - **Creation**: by splitting documents into a list of text chunks
     - **Query**: use GPT with a create and refine prompt iterately over the list of sub-documents
 

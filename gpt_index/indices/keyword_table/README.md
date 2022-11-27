@@ -1,11 +1,47 @@
 ## 🔑 GPTKeywordIndex
 
 
-GPTKeywordIndex is a keyword-based table data structure (inspired by "hash tables"). During index construction, GPTKeywordIndex first takes in a dataset of text documents as input, and chunks them up into smaller document chunks. For each text chunk, GPTKeywordIndex uses GPT to extract a set of relevant keywords with a **keyword extraction prompt**. (keywords can include short phrases, like "new york city"). These keywords are then stored in a table, referencing the same text chunk.
+GPTKeywordIndex is a keyword-based table data structure (inspired by "hash tables"). 
+
+### Index Construction
+
+During index construction, GPTKeywordIndex first takes in a dataset of text documents as input, and chunks them up into smaller document chunks. For each text chunk, GPTKeywordIndex uses GPT to extract a set of relevant keywords with a **keyword extraction prompt**. (keywords can include short phrases, like "new york city"). These keywords are then stored in a table, referencing the same text chunk.
+
+### Query
+
+There are three query modes: `default`, `simple`, and `rake`.
+
+**Default**
 
 During query-time, the GPTKeywordIndex extracts a set of relevant keywords from the query using a customized variant of the same **keyword extraction prompt**. These keywords are then used to fetch the set of candidate text chunk ID's. The text chunk ID's are ordered by number of matching keywords (from highest to lowest), and truncated after a cutoff $d$, which represents the maximum number of text chunks to consider. 
 
 We construct an answer using the *create and refine* paradigm. An initial answer to the query is constructed using the first text chunk. The answer is then *refined* through feeding in subsequent text chunks as context. Refinement could mean keeping the original answer, making small edits to the original answer, or rewriting the original answer completely.
+
+**Simple (Regex)**
+Instead of using GPT for keyword extraction, this mode uses a simple regex query to find words, filtering out stopwords.
+
+
+**RAKE**
+Use the popular RAKE keyword extractor.
+
+### Usage
+
+```python
+from gpt_index import GPTKeywordTableIndex, SimpleDirectoryReader
+
+# build index
+documents = SimpleDirectoryReader('data').load_data()
+index = GPTKeywordTableIndex(documents)
+# save index
+index.save_to_disk('index_table.json')
+# load index from disk
+index = GPTKeywordTableIndex.load_from_disk('index_table.json')
+# query
+response = index.query("<question text>", verbose=True, mode="default")
+```
+
+
+### FAQ/Additional
 
 **Runtime**
 
