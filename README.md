@@ -1,4 +1,4 @@
-ad# 🗂️ ️GPT Index
+# 🗂️ ️GPT Index
 
 GPT Index is a project consisting of a set of *data structures* that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
 
