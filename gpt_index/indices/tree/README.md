@@ -1,8 +1,41 @@
-## 🌲 GPTTreeIndex
+## 🌲 Tree Index
 
-The GPTTreeIndex first takes in a set of text documents as input. It then builds up a tree-index in a bottom-up fashion; each parent node is able to summarize the children nodes using a general **summarization prompt**; each intermediate node contains text summarizing the components below. Once the index is built, it can be saved to disk as a JSON and loaded for future use. 
+Currently the tree index refers to the `GPTTreeIndex` class. It organizes external data into a tree structure that can be queried.
 
-Then, say the user wants to use GPT-3 to answer a question. Using a **query prompt template**, the GPTTreeIndex will be able to recursively perform tree traversal in a top-down fashion in order to answer a question. For example, in the very beginning GPT-3 is tasked with selecting between *n* top-level nodes which best answers a provided query, by outputting a number as a multiple-choice problem. The GPTTreeIndex then uses the number to select the corresponding node, and the process repeats recursively among the children nodes until a leaf node is reached.
+### Index Construction
+The `GPTTreeIndex` first takes in a set of text documents as input. It then builds up a tree-index in a bottom-up fashion; each parent node is able to summarize the children nodes using a general **summarization prompt**; each intermediate node contains text summarizing the components below. Once the index is built, it can be saved to disk as a JSON and loaded for future use. 
+
+
+### Query
+
+There are two query modes: `default` and `retrieve`.
+
+**Default (GPTTreeIndexLeafQuery)**
+
+Using a **query prompt template**, the GPTTreeIndex will be able to recursively perform tree traversal in a top-down fashion in order to answer a question. For example, in the very beginning GPT-3 is tasked with selecting between *n* top-level nodes which best answers a provided query, by outputting a number as a multiple-choice problem. The GPTTreeIndex then uses the number to select the corresponding node, and the process repeats recursively among the children nodes until a leaf node is reached.
+
+**Retrieve (GPTTreeIndexRetQuery)**
+
+Simply use the root nodes as context to synthesize an answer to the query. This is especially effective if the tree is preseeded with a `query_str`.
+
+### Usage
+
+```python
+from gpt_index import GPTTreeIndex, SimpleDirectoryReader
+
+# build index
+documents = SimpleDirectoryReader('data').load_data()
+index = GPTTreeIndex(documents)
+# save index
+index.save_to_disk('index_tree.json')
+# load index from disk
+index = GPTListIndex.load_from_disk('index_tree.json')
+# query
+response = index.query("<question text>", verbose=True, mode="default")
+```
+
+
+### FAQ
 
 **Why build a tree? Why not just incrementally go through each chunk?**
 
