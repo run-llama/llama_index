@@ -4,8 +4,11 @@
 pytest
 pytest-dotenv
 
-# third-party
+# third-party (data)
 wikipedia
+pymongo
+
+# third-party (libraries)
 rake_nltk
 
 # linting
