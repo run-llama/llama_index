@@ -11,7 +11,7 @@ from gpt_index.schema import Document
 class SimpleMongoReader(BaseReader):
     """Simple mongo reader.
 
-    Concatenates all files into one document text.
+    Concatenates each Mongo doc into Document used by GPT Index.
 
     """
 
