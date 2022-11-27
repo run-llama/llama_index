@@ -1,6 +1,10 @@
 ## 🔗 GPTListIndex
 
+### Index Construction
+
 GPTListIndex is a simple list-based data structure. During index construction, GPTListIndex takes in a dataset of text documents as input, chunks them up into smaller document chunks, and concatenates them into a list. GPT is not called at all during index construction.
+
+### Query
 
 During query-time, GPT List Index constructs an answer using the *create and refine* paradigm. An initial answer to the query is constructed using the first text chunk. The answer is then *refined* through feeding in subsequent text chunks as context. Refinement could mean keeping the original answer, making small edits to the original answer, or rewriting the original answer completely.
 

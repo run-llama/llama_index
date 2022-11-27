@@ -1,4 +1,4 @@
-# 🗂️ ️GPT Index
+ad# 🗂️ ️GPT Index
 
 GPT Index is a project consisting of a set of *data structures* that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
 
@@ -13,8 +13,8 @@ GPT Index is a project consisting of a set of *data structures* that are created
 #### Proposed Solution
 That's where the **GPT Index** data structures come in. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
 - Uses a pre-trained GPT-3 model primarily for *reasoning*/*summarization* instead of prior knowledge.
-- Takes as input a large corpus of text data, uses GPT-3 to build a structured index over it
-- Also use GPT-3 to traverse the index that it created in order to answer a query
+- Takes as input a large corpus of text data and build a structured index over it (using GPT-3 or heuristics).
+- Allow users to _query_ the index in order to synthesize an answer to the question - this requires both _traversal_ of the index as well as a synthesis of the answer.
 
 The high-level design exercise of this project is to test the capability of GPT-3 as a general-purpose processor to organize and retrieve data. From our current understanding, related works have used GPT-3 to reason with external db sources (see below); this work links reasoning with knowledge building.
 
@@ -56,13 +56,13 @@ All requirements should be contained within the `setup.py` file. To run the pack
 
 ## Index Details
 
-- [`GPTTreeIndex`](gpt_index/indices/tree/README.md): a tree data structure
+- [`Tree Index`](gpt_index/indices/tree/README.md): Tree data structures
     - **Creation**: with GPT hierarchical summarization over sub-documents
     - **Query**: with GPT recursive querying over multiple choice problems
-- [`GPTKeywordTableIndex`](gpt_index/indices/keyword_table/README.md): a keyword-based table
+- [`Keyword Table Index`](gpt_index/indices/keyword_table/README.md): a keyword-based table
     - **Creation**: with GPT keyword extraction over each sub-document
     - **Query**: with GPT keyword extraction over question, match to sub-documents. *Create and refine* an answer over candidate sub-documents.
-- [`GPTListIndex`](gpt_index/indices/list/README.md): a simple list-based data structure
+- [`List Index`](gpt_index/indices/list/README.md): a simple list-based data structure
     - **Creation**: by splitting documents into a list of text chunks
     - **Query**: use GPT with a create and refine prompt iterately over the list of sub-documents
 
@@ -86,19 +86,6 @@ Instead, this project is focused on providing a set of data structures to test h
 **This work is very similar to X paper/project.**
 
 Please let me know! I am not up-to-date on the latest NLP/LLM ArXiv papers or Github projects. I am happy to give references/credit below.
-
-
-## ⏭️ Future Directions
-Please feel free to contribute with comments, issues, PR's! 
-- `GPTTreeIndex`
-    - Add ability to insert/delete.
-    - Build different trees from the same pool of raw data with different summarization prompts in order to solve task-specific needs. For instance, perhaps one method of summarization is better suited for answering questions about specific numbers. Another method of summarization could be to answer cause-effect questions.
-    - Similarly, continue exploring query prompts that allow more flexible querying traversals than purely a top-down linear approach!
-- `GPTKeywordTableIndex`
-    - Explore alternate methods of generating "keywords"
-- Customization
-    - Add ability to more easily customize summarization and query prompts.
-- Other data structures: add different index structures beyond trees/hash tables.
 
 
 ## 🔬 Related Work [WIP]
