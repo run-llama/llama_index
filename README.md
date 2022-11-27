@@ -88,19 +88,6 @@ Instead, this project is focused on providing a set of data structures to test h
 Please let me know! I am not up-to-date on the latest NLP/LLM ArXiv papers or Github projects. I am happy to give references/credit below.
 
 
-## ⏭️ Future Directions
-Please feel free to contribute with comments, issues, PR's! 
-- `GPTTreeIndex`
-    - Add ability to insert/delete.
-    - Build different trees from the same pool of raw data with different summarization prompts in order to solve task-specific needs. For instance, perhaps one method of summarization is better suited for answering questions about specific numbers. Another method of summarization could be to answer cause-effect questions.
-    - Similarly, continue exploring query prompts that allow more flexible querying traversals than purely a top-down linear approach!
-- `GPTKeywordTableIndex`
-    - Explore alternate methods of generating "keywords"
-- Customization
-    - Add ability to more easily customize summarization and query prompts.
-- Other data structures: add different index structures beyond trees/hash tables.
-
-
 ## 🔬 Related Work [WIP]
 
 [Measuring and Narrowing the Compositionality Gap in Language Models, by Press et al.](https://arxiv.org/abs/2210.03350)
