@@ -1,6 +1,6 @@
 """Mongo client."""
 
-from typing import List, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pymongo import MongoClient
 
@@ -17,14 +17,13 @@ class SimpleMongoReader(BaseReader):
 
     def __init__(self, host: str, port: int, max_docs: int = 1000) -> None:
         """Initialize with parameters."""
-        self.client = MongoClient(host, port)
+        self.client: MongoClient = MongoClient(host, port)
         self.max_docs = max_docs
 
-    def load_data(
+    def _load_data(
         self, db_name: str, collection_name: str, query_dict: Optional[Dict] = None
     ) -> List[Document]:
         """Load data from the input directory."""
-
         documents = []
         db = self.client[db_name]
         if query_dict is None:
@@ -37,3 +36,16 @@ class SimpleMongoReader(BaseReader):
                 raise ValueError("`text` field not found in Mongo document.")
             documents.append(Document(item["text"]))
         return documents
+
+    def load_data(self, **load_kwargs: Any) -> List[Document]:
+        """Load data from the input directory."""
+        if "db_name" not in load_kwargs:
+            raise ValueError("`db_name` not found in load_kwargs.")
+        else:
+            db_name = load_kwargs["db_name"]
+        if "collection_name" not in load_kwargs:
+            raise ValueError("`collection_name` not found in load_kwargs.")
+        else:
+            collection_name = load_kwargs["collection_name"]
+        query_dict = load_kwargs.get("query_dict", None)
+        return self._load_data(db_name, collection_name, query_dict=query_dict)
