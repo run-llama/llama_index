@@ -94,8 +94,12 @@ class GPTIndexInserter:
         """Insert node."""
         cur_graph_nodes = self.index_graph.get_children(parent_node)
         cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
+        # if cur_graph_nodes is empty (start with empty graph), then insert under
+        # parent (insert new root node)
+        if len(cur_graph_nodes) == 0:
+            self._insert_under_parent_and_consolidate(text_chunk, parent_node)
         # check if leaf nodes, then just insert under parent
-        if len(cur_graph_node_list[0].child_indices) == 0:
+        elif len(cur_graph_node_list[0].child_indices) == 0:
             self._insert_under_parent_and_consolidate(text_chunk, parent_node)
         # else try to find the right summary node to insert under
         else:
