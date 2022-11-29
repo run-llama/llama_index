@@ -44,6 +44,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
         max_keywords_per_query: int = 10,
         max_keywords_per_chunk: int = 10,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
@@ -61,7 +62,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             chunk_size=chunk_size,
             chunk_overlap=MAX_CHUNK_OVERLAP,
         )
-        super().__init__(documents=documents, index_struct=index_struct)
+        super().__init__(documents=documents, index_struct=index_struct, **kwargs)
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""

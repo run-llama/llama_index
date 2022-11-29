@@ -14,6 +14,9 @@ from gpt_index.indices.list.base import GPTListIndex
 # indices
 from gpt_index.indices.tree.base import GPTTreeIndex
 
+# langchain helper
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+
 # prompts
 from gpt_index.prompts.base import Prompt
 
@@ -30,4 +33,5 @@ __all__ = [
     "Prompt",
     "WikipediaReader",
     "SimpleDirectoryReader",
+    "LLMPredictor",
 ]

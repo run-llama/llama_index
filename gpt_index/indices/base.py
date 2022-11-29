@@ -43,6 +43,10 @@ class BaseGPTIndexQuery(Generic[IS]):
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
 
+    def set_llm_predictor(self, llm_predictor: LLMPredictor) -> None:
+        """Set LLM predictor."""
+        self._llm_predictor = llm_predictor
+
 
 class BaseGPTIndex(Generic[IS]):
     """Base GPT Index."""
@@ -98,6 +102,8 @@ class BaseGPTIndex(Generic[IS]):
     ) -> str:
         """Answer a query."""
         query_obj = self._mode_to_query(mode, **query_kwargs)
+        # set llm_predictor if exists
+        query_obj.set_llm_predictor(self._llm_predictor)
         return query_obj.query(query_str, verbose=verbose)
 
     @classmethod

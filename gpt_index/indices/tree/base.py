@@ -111,6 +111,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         query_str: Optional[str] = None,
         num_children: int = 10,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
@@ -121,7 +122,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.summary_template = summary_template
         self.insert_prompt = insert_prompt
         validate_prompt(self.summary_template, ["text"], ["query_str"])
-        super().__init__(documents=documents, index_struct=index_struct)
+        super().__init__(documents=documents, index_struct=index_struct, **kwargs)
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
