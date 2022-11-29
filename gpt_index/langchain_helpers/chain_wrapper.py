@@ -16,6 +16,8 @@ def openai_llm_predict(
 
     """
     llm_args_dict = llm_args_dict or {}
+    if "model" not in llm_args_dict:
+        llm_args_dict["model"] = "text-davinci-003"
     llm = OpenAI(temperature=0, **llm_args_dict)
     llm_chain = LLMChain(prompt=prompt, llm=llm)
 
