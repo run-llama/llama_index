@@ -2,7 +2,9 @@
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
-from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
+
+# from gpt_index.langchain_helpers.chain_wrapper import self._llm_predictor.predict
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
@@ -12,6 +14,7 @@ from gpt_index.prompts.default_prompts import (
 
 
 def refine_response(
+    llm_predictor: LLMPredictor,
     response: str,
     query_str: str,
     text_chunk: str,
@@ -37,7 +40,7 @@ def refine_response(
     )
     text_chunks = refine_text_splitter.split_text(text_chunk)
     for text_chunk in text_chunks:
-        response, _ = openai_llm_predict(
+        response, _ = llm_predictor.predict(
             refine_template,
             query_str=query_str,
             existing_answer=response,
@@ -49,6 +52,7 @@ def refine_response(
 
 
 def give_response(
+    llm_predictor: LLMPredictor,
     query_str: str,
     text_chunk: str,
     text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
@@ -72,7 +76,7 @@ def give_response(
     response = None
     for text_chunk in text_chunks:
         if response is None:
-            response, _ = openai_llm_predict(
+            response, _ = llm_predictor.predict(
                 text_qa_template, query_str=query_str, context_str=text_chunk
             )
             if verbose:

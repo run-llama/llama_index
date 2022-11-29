@@ -14,7 +14,7 @@ from gpt_index.indices.utils import (
     get_sorted_node_list,
     get_text_from_nodes,
 )
-from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import (
@@ -34,7 +34,10 @@ class GPTTreeIndexBuilder:
     """
 
     def __init__(
-        self, num_children: int = 10, summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT
+        self,
+        num_children: int = 10,
+        summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
+        llm_predictor: Optional[LLMPredictor] = None,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -49,6 +52,7 @@ class GPTTreeIndexBuilder:
             chunk_size=chunk_size,
             chunk_overlap=MAX_CHUNK_OVERLAP // num_children,
         )
+        self._llm_predictor = llm_predictor or LLMPredictor()
 
     def build_from_text(self, text: str) -> IndexGraph:
         """Build from text.
@@ -79,7 +83,9 @@ class GPTTreeIndexBuilder:
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
             text_chunk = get_text_from_nodes(cur_nodes_chunk)
 
-            new_summary, _ = openai_llm_predict(self.summary_prompt, text=text_chunk)
+            new_summary, _ = self._llm_predictor.predict(
+                self.summary_prompt, text=text_chunk
+            )
 
             print(f"> {i}/{len(cur_nodes)}, summary: {new_summary}")
             new_node = Node(new_summary, cur_index, {n.index for n in cur_nodes_chunk})
@@ -105,6 +111,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         query_str: Optional[str] = None,
         num_children: int = 10,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
@@ -115,7 +122,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.summary_template = summary_template
         self.insert_prompt = insert_prompt
         validate_prompt(self.summary_template, ["text"], ["query_str"])
-        super().__init__(documents=documents, index_struct=index_struct)
+        super().__init__(documents=documents, index_struct=index_struct, **kwargs)
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
@@ -134,7 +141,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         # do simple concatenation
         text_data = "\n".join([d.text for d in documents])
         index_builder = GPTTreeIndexBuilder(
-            num_children=self.num_children, summary_prompt=self.summary_template
+            num_children=self.num_children,
+            summary_prompt=self.summary_template,
+            llm_predictor=self._llm_predictor,
         )
         index_graph = index_builder.build_from_text(text_data)
         return index_graph

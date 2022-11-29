@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.indices.list.base import GPTListIndex
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
@@ -25,7 +26,10 @@ def documents() -> List[Document]:
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-def test_build_list(_mock_splitter: Any, documents: List[Document]) -> None:
+@patch.object(LLMPredictor, "__init__", return_value=None)
+def test_build_list(
+    _mock_init: Any, _mock_splitter: Any, documents: List[Document]
+) -> None:
     """Test build list."""
     list_index = GPTListIndex(documents)
     assert len(list_index.index_struct.nodes) == 4
@@ -37,7 +41,10 @@ def test_build_list(_mock_splitter: Any, documents: List[Document]) -> None:
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-def test_list_insert(_mock_splitter: Any, documents: List[Document]) -> None:
+@patch.object(LLMPredictor, "__init__", return_value=None)
+def test_list_insert(
+    _mock_init: Any, _mock_splitter: Any, documents: List[Document]
+) -> None:
     """Test insert to list."""
     list_index = GPTListIndex([])
     assert len(list_index.index_struct.nodes) == 0

@@ -7,6 +7,7 @@ import pytest
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.base import GPTTreeIndex
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
 from tests.mock_utils.mock_predict import mock_openai_llm_predict
@@ -61,14 +62,19 @@ def _get_left_or_right_node(
     index = min(indices) if left else max(indices)
 
     if index not in index_graph.all_nodes:
-        print(f"Node {index} not in index_graph.all_nodes")
+        raise ValueError(f"Node {index} not in index_graph.all_nodes")
     return index_graph.all_nodes[index]
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch("gpt_index.indices.tree.base.openai_llm_predict", mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "__init__", return_value=None)
 def test_build_tree(
-    _mock_predict: Any, documents: List[Document], struct_kwargs: Dict
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
 ) -> None:
     """Test build tree."""
     index_kwargs, _ = struct_kwargs
@@ -86,10 +92,14 @@ def test_build_tree(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch("gpt_index.indices.tree.base.openai_llm_predict", mock_openai_llm_predict)
-@patch("gpt_index.indices.tree.leaf_query.openai_llm_predict", mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "__init__", return_value=None)
 def test_query(
-    _mock_predict: Any, documents: List[Document], struct_kwargs: Dict
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
 ) -> None:
     """Test query."""
     index_kwargs, query_kwargs = struct_kwargs
@@ -102,10 +112,14 @@ def test_query(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch("gpt_index.indices.tree.base.openai_llm_predict", mock_openai_llm_predict)
-@patch("gpt_index.indices.tree.inserter.openai_llm_predict", mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "__init__", return_value=None)
 def test_insert(
-    _mock_predict: Any, documents: List[Document], struct_kwargs: Dict
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
 ) -> None:
     """Test insert."""
     index_kwargs, _ = struct_kwargs

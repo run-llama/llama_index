@@ -4,6 +4,7 @@ from abc import abstractmethod
 from typing import Any, Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import Document
 
 IS = TypeVar("IS", bound=IndexStruct)
@@ -20,14 +21,14 @@ class BaseGPTIndexQuery(Generic[IS]):
     """
 
     def __init__(
-        self,
-        index_struct: IS,
+        self, index_struct: IS, llm_predictor: Optional[LLMPredictor] = None
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
             raise ValueError("index_struct must be provided.")
         self._validate_index_struct(index_struct)
         self._index_struct = index_struct
+        self._llm_predictor = llm_predictor or LLMPredictor()
 
     @property
     def index_struct(self) -> IS:
@@ -42,6 +43,10 @@ class BaseGPTIndexQuery(Generic[IS]):
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
 
+    def set_llm_predictor(self, llm_predictor: LLMPredictor) -> None:
+        """Set LLM predictor."""
+        self._llm_predictor = llm_predictor
+
 
 class BaseGPTIndex(Generic[IS]):
     """Base GPT Index."""
@@ -50,12 +55,15 @@ class BaseGPTIndex(Generic[IS]):
         self,
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IS] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
             raise ValueError("One of documents or index_struct must be provided.")
         if index_struct is not None and documents is not None:
             raise ValueError("Only one of documents or index_struct can be provided.")
+
+        self._llm_predictor = llm_predictor or LLMPredictor()
 
         # build index struct in the init function
         if index_struct is not None:
@@ -94,6 +102,8 @@ class BaseGPTIndex(Generic[IS]):
     ) -> str:
         """Answer a query."""
         query_obj = self._mode_to_query(mode, **query_kwargs)
+        # set llm_predictor if exists
+        query_obj.set_llm_predictor(self._llm_predictor)
         return query_obj.query(query_str, verbose=verbose)
 
     @classmethod

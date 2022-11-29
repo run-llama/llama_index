@@ -11,7 +11,9 @@ from gpt_index.indices.utils import (
     get_sorted_node_list,
     get_text_from_nodes,
 )
-from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+
+# from gpt_index.langchain_helpers.chain_wrapper import self._llm_predictor.predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
@@ -29,6 +31,7 @@ class GPTIndexInserter:
         num_children: int = 10,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
+        llm_predictor: Optional[LLMPredictor] = None,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -45,6 +48,7 @@ class GPTIndexInserter:
             chunk_size=chunk_size,
             chunk_overlap=MAX_CHUNK_OVERLAP // num_children,
         )
+        self._llm_predictor = llm_predictor or LLMPredictor()
 
     def _insert_under_parent_and_consolidate(
         self, text_chunk: str, parent_node: Optional[Node]
@@ -74,11 +78,15 @@ class GPTIndexInserter:
             half2 = cur_graph_node_list[len(cur_graph_nodes) // 2 :]
 
             text_chunk1 = get_text_from_nodes(half1)
-            summary1, _ = openai_llm_predict(self.summary_prompt, text=text_chunk1)
+            summary1, _ = self._llm_predictor.predict(
+                self.summary_prompt, text=text_chunk1
+            )
             node1 = Node(summary1, cur_node_index, {n.index for n in half1})
 
             text_chunk2 = get_text_from_nodes(half2)
-            summary2, _ = openai_llm_predict(self.summary_prompt, text=text_chunk2)
+            summary2, _ = self._llm_predictor.predict(
+                self.summary_prompt, text=text_chunk2
+            )
             node2 = Node(summary2, cur_node_index + 1, {n.index for n in half2})
 
             # insert half1 and half2 as new children of parent_node
@@ -103,7 +111,7 @@ class GPTIndexInserter:
             self._insert_under_parent_and_consolidate(text_chunk, parent_node)
         # else try to find the right summary node to insert under
         else:
-            response, _ = openai_llm_predict(
+            response, _ = self._llm_predictor.predict(
                 self.insert_prompt,
                 new_chunk_text=text_chunk,
                 num_chunks=len(cur_graph_node_list),
@@ -127,7 +135,9 @@ class GPTIndexInserter:
             cur_graph_nodes = self.index_graph.get_children(parent_node)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
             text_chunk = get_text_from_nodes(cur_graph_node_list)
-            new_summary, _ = openai_llm_predict(self.summary_prompt, text=text_chunk)
+            new_summary, _ = self._llm_predictor.predict(
+                self.summary_prompt, text=text_chunk
+            )
 
             parent_node.text = new_summary
 

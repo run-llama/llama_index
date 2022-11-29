@@ -1,6 +1,6 @@
 """Mock predict."""
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 from gpt_index.prompts.base import Prompt
 from tests.mock_utils.mock_prompts import (
@@ -47,9 +47,7 @@ def _mock_refine(prompt_args: Dict) -> str:
     return prompt_args["existing_answer"]
 
 
-def mock_openai_llm_predict(
-    prompt: Prompt, llm_args_dict: Optional[Dict] = None, **prompt_args: Any
-) -> Tuple[str, str]:
+def mock_openai_llm_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
     """Mock OpenAI LLM predict.
 
     Depending on the prompt, return response.
