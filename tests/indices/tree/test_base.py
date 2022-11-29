@@ -68,7 +68,9 @@ def _get_left_or_right_node(
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "__init__", return_value=None)
 def test_build_tree(
+    _mock_init: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -91,7 +93,9 @@ def test_build_tree(
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "__init__", return_value=None)
 def test_query(
+    _mock_init: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -109,7 +113,9 @@ def test_query(
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "__init__", return_value=None)
 def test_insert(
+    _mock_init: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
