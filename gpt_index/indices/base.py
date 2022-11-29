@@ -5,6 +5,9 @@ from typing import Any, Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct
 from gpt_index.schema import Document
+from gpt_index.prompts.base import Prompt
+from gpt_index.langchain_helpers.chain_wrapper import DEFAULT_LLM, LLMPredictor
+
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -22,12 +25,14 @@ class BaseGPTIndexQuery(Generic[IS]):
     def __init__(
         self,
         index_struct: IS,
+        llm_predictor: Optional[LLMPredictor] = None
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
             raise ValueError("index_struct must be provided.")
         self._validate_index_struct(index_struct)
         self._index_struct = index_struct
+        self._llm_predictor = llm_predictor or LLMPredictor()
 
     @property
     def index_struct(self) -> IS:
@@ -50,6 +55,7 @@ class BaseGPTIndex(Generic[IS]):
         self,
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IS] = None,
+        llm_predictor: Optional[LLMPredictor] = None
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
@@ -63,6 +69,7 @@ class BaseGPTIndex(Generic[IS]):
         else:
             documents = cast(List[Document], documents)
             self._index_struct = self.build_index_from_documents(documents)
+        self._llm_predictor = llm_predictor or LLMPredictor()
 
     @property
     def index_struct(self) -> IS:

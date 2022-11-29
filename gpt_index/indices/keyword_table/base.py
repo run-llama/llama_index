@@ -23,7 +23,7 @@ from gpt_index.indices.keyword_table.query import (
 )
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
-from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
+from gpt_index.langchain_helpers.chain_wrapper import self._llm_predictor.predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
@@ -142,7 +142,7 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        response, _ = openai_llm_predict(
+        response, _ = self._llm_predictor.predict(
             self.keyword_extract_template,
             max_keywords=self.max_keywords_per_chunk,
             text=text,

@@ -14,7 +14,7 @@ from gpt_index.indices.utils import (
     get_sorted_node_list,
     get_text_from_nodes,
 )
-from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import (
@@ -34,7 +34,10 @@ class GPTTreeIndexBuilder:
     """
 
     def __init__(
-        self, num_children: int = 10, summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT
+        self, 
+        num_children: int = 10, 
+        summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
+        llm_predictor: Optional[LLMPredictor] = None
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -49,6 +52,7 @@ class GPTTreeIndexBuilder:
             chunk_size=chunk_size,
             chunk_overlap=MAX_CHUNK_OVERLAP // num_children,
         )
+        self._llm_predictor = llm_predictor or LLMPredictor()
 
     def build_from_text(self, text: str) -> IndexGraph:
         """Build from text.
@@ -79,7 +83,7 @@ class GPTTreeIndexBuilder:
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
             text_chunk = get_text_from_nodes(cur_nodes_chunk)
 
-            new_summary, _ = openai_llm_predict(self.summary_prompt, text=text_chunk)
+            new_summary, _ = self._llm_predictor.predict(self.summary_prompt, text=text_chunk)
 
             print(f"> {i}/{len(cur_nodes)}, summary: {new_summary}")
             new_node = Node(new_summary, cur_index, {n.index for n in cur_nodes_chunk})

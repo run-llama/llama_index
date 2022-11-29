@@ -48,7 +48,7 @@ def _mock_refine(prompt_args: Dict) -> str:
 
 
 def mock_openai_llm_predict(
-    prompt: Prompt, llm_args_dict: Optional[Dict] = None, **prompt_args: Any
+    prompt: Prompt, **prompt_args: Any
 ) -> Tuple[str, str]:
     """Mock OpenAI LLM predict.
 

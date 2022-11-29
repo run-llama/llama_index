@@ -18,6 +18,7 @@ from tests.mock_utils.mock_prompts import (
     MOCK_TEXT_QA_PROMPT,
 )
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
 
 @pytest.fixture
@@ -66,7 +67,7 @@ def _get_left_or_right_node(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch("gpt_index.indices.tree.base.openai_llm_predict", mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", mock_openai_llm_predict)
 def test_build_tree(
     _mock_predict: Any, documents: List[Document], struct_kwargs: Dict
 ) -> None:
@@ -86,8 +87,7 @@ def test_build_tree(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch("gpt_index.indices.tree.base.openai_llm_predict", mock_openai_llm_predict)
-@patch("gpt_index.indices.tree.leaf_query.openai_llm_predict", mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", mock_openai_llm_predict)
 def test_query(
     _mock_predict: Any, documents: List[Document], struct_kwargs: Dict
 ) -> None:
@@ -102,8 +102,7 @@ def test_query(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch("gpt_index.indices.tree.base.openai_llm_predict", mock_openai_llm_predict)
-@patch("gpt_index.indices.tree.inserter.openai_llm_predict", mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", mock_openai_llm_predict)
 def test_insert(
     _mock_predict: Any, documents: List[Document], struct_kwargs: Dict
 ) -> None:
