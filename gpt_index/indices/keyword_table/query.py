@@ -12,7 +12,6 @@ from gpt_index.indices.keyword_table.utils import (
 )
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import truncate_text
-from gpt_index.langchain_helpers.chain_wrapper import self._llm_predictor.predict
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
@@ -59,6 +58,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         """Query with a keyword."""
         if result_response is None:
             return give_response(
+                self._llm_predictor,
                 query_str,
                 text_chunk,
                 text_qa_template=self.text_qa_template,
@@ -67,6 +67,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
             )
         else:
             return refine_response(
+                self._llm_predictor,
                 result_response,
                 query_str,
                 text_chunk,

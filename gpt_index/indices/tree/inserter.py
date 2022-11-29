@@ -11,6 +11,8 @@ from gpt_index.indices.utils import (
     get_sorted_node_list,
     get_text_from_nodes,
 )
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+
 # from gpt_index.langchain_helpers.chain_wrapper import self._llm_predictor.predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
@@ -18,7 +20,6 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
 
 class GPTIndexInserter:
@@ -30,7 +31,7 @@ class GPTIndexInserter:
         num_children: int = 10,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
-        llm_predictor: Optional[LLMPredictor] = None
+        llm_predictor: Optional[LLMPredictor] = None,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -77,11 +78,15 @@ class GPTIndexInserter:
             half2 = cur_graph_node_list[len(cur_graph_nodes) // 2 :]
 
             text_chunk1 = get_text_from_nodes(half1)
-            summary1, _ = self._llm_predictor.predict(self.summary_prompt, text=text_chunk1)
+            summary1, _ = self._llm_predictor.predict(
+                self.summary_prompt, text=text_chunk1
+            )
             node1 = Node(summary1, cur_node_index, {n.index for n in half1})
 
             text_chunk2 = get_text_from_nodes(half2)
-            summary2, _ = self._llm_predictor.predict(self.summary_prompt, text=text_chunk2)
+            summary2, _ = self._llm_predictor.predict(
+                self.summary_prompt, text=text_chunk2
+            )
             node2 = Node(summary2, cur_node_index + 1, {n.index for n in half2})
 
             # insert half1 and half2 as new children of parent_node
@@ -130,7 +135,9 @@ class GPTIndexInserter:
             cur_graph_nodes = self.index_graph.get_children(parent_node)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
             text_chunk = get_text_from_nodes(cur_graph_node_list)
-            new_summary, _ = self._llm_predictor.predict(self.summary_prompt, text=text_chunk)
+            new_summary, _ = self._llm_predictor.predict(
+                self.summary_prompt, text=text_chunk
+            )
 
             parent_node.text = new_summary
 

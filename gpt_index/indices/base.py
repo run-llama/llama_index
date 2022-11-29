@@ -4,10 +4,8 @@ from abc import abstractmethod
 from typing import Any, Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import Document
-from gpt_index.prompts.base import Prompt
-from gpt_index.langchain_helpers.chain_wrapper import DEFAULT_LLM, LLMPredictor
-
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -23,9 +21,7 @@ class BaseGPTIndexQuery(Generic[IS]):
     """
 
     def __init__(
-        self,
-        index_struct: IS,
-        llm_predictor: Optional[LLMPredictor] = None
+        self, index_struct: IS, llm_predictor: Optional[LLMPredictor] = None
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -55,7 +51,7 @@ class BaseGPTIndex(Generic[IS]):
         self,
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IS] = None,
-        llm_predictor: Optional[LLMPredictor] = None
+        llm_predictor: Optional[LLMPredictor] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
@@ -63,13 +59,14 @@ class BaseGPTIndex(Generic[IS]):
         if index_struct is not None and documents is not None:
             raise ValueError("Only one of documents or index_struct can be provided.")
 
+        self._llm_predictor = llm_predictor or LLMPredictor()
+
         # build index struct in the init function
         if index_struct is not None:
             self._index_struct = index_struct
         else:
             documents = cast(List[Document], documents)
             self._index_struct = self.build_index_from_documents(documents)
-        self._llm_predictor = llm_predictor or LLMPredictor()
 
     @property
     def index_struct(self) -> IS:

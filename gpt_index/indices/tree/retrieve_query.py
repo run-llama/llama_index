@@ -35,6 +35,7 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
         node_list = get_sorted_node_list(self.index_struct.root_nodes)
         node_text = get_text_from_nodes(node_list)
         response = give_response(
+            self._llm_predictor,
             query_str,
             node_text,
             text_qa_template=self.text_qa_template,

@@ -41,6 +41,7 @@ class GPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
 
             if response is None:
                 response = give_response(
+                    self._llm_predictor,
                     query_str,
                     node.text,
                     text_qa_template=self.text_qa_template,
@@ -49,6 +50,7 @@ class GPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
                 )
             else:
                 response = refine_response(
+                    self._llm_predictor,
                     response,
                     query_str,
                     node.text,

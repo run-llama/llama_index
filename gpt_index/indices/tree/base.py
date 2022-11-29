@@ -34,10 +34,10 @@ class GPTTreeIndexBuilder:
     """
 
     def __init__(
-        self, 
-        num_children: int = 10, 
+        self,
+        num_children: int = 10,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
-        llm_predictor: Optional[LLMPredictor] = None
+        llm_predictor: Optional[LLMPredictor] = None,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -83,7 +83,9 @@ class GPTTreeIndexBuilder:
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
             text_chunk = get_text_from_nodes(cur_nodes_chunk)
 
-            new_summary, _ = self._llm_predictor.predict(self.summary_prompt, text=text_chunk)
+            new_summary, _ = self._llm_predictor.predict(
+                self.summary_prompt, text=text_chunk
+            )
 
             print(f"> {i}/{len(cur_nodes)}, summary: {new_summary}")
             new_node = Node(new_summary, cur_index, {n.index for n in cur_nodes_chunk})
@@ -138,7 +140,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         # do simple concatenation
         text_data = "\n".join([d.text for d in documents])
         index_builder = GPTTreeIndexBuilder(
-            num_children=self.num_children, summary_prompt=self.summary_template
+            num_children=self.num_children,
+            summary_prompt=self.summary_template,
+            llm_predictor=self._llm_predictor,
         )
         index_graph = index_builder.build_from_text(text_data)
         return index_graph
