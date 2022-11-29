@@ -7,6 +7,7 @@ import pytest
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.keyword_table.utils import simple_extract_keywords
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
@@ -39,11 +40,14 @@ def documents() -> List[Document]:
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "__init__", return_value=None)
 @patch(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     _mock_extract_keywords,
 )
-def test_build_table(_mock_predict: Any, documents: List[Document]) -> None:
+def test_build_table(
+    _mock_init: Any, _mock_predict: Any, documents: List[Document]
+) -> None:
     """Test build table."""
     # test simple keyword table
     table = GPTSimpleKeywordTableIndex(documents)
@@ -74,7 +78,8 @@ def test_build_table(_mock_predict: Any, documents: List[Document]) -> None:
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     _mock_extract_keywords,
 )
-def test_insert(_mock_predict: Any, documents: List[Document]) -> None:
+@patch.object(LLMPredictor, "__init__", return_value=None)
+def test_insert(_mock_init: Any, _mock_predict: Any, documents: List[Document]) -> None:
     """Test insert."""
     table = GPTSimpleKeywordTableIndex([])
     assert len(table.index_struct.table.keys()) == 0

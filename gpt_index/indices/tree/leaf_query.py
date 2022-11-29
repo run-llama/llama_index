@@ -9,7 +9,6 @@ from gpt_index.indices.utils import (
     get_numbered_text_from_nodes,
     get_sorted_node_list,
 )
-from gpt_index.langchain_helpers.chain_wrapper import openai_llm_predict
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
@@ -59,7 +58,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
         """
         if len(selected_node.child_indices) == 0:
-            cur_response, formatted_answer_prompt = openai_llm_predict(
+            cur_response, formatted_answer_prompt = self._llm_predictor.predict(
                 self.text_qa_template,
                 context_str=selected_node.text,
                 query_str=query_str,
@@ -82,7 +81,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             return cur_response
         else:
             context_msg = "\n".join([selected_node.text, cur_response])
-            cur_response, formatted_refine_prompt = openai_llm_predict(
+            cur_response, formatted_refine_prompt = self._llm_predictor.predict(
                 self.refine_template,
                 query_str=query_str,
                 existing_answer=prev_response,
@@ -105,14 +104,14 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         if self.child_branch_factor == 1:
-            response, formatted_query_prompt = openai_llm_predict(
+            response, formatted_query_prompt = self._llm_predictor.predict(
                 self.query_template,
                 num_chunks=len(cur_node_list),
                 query_str=query_str,
                 context_list=get_numbered_text_from_nodes(cur_node_list),
             )
         else:
-            response, formatted_query_prompt = openai_llm_predict(
+            response, formatted_query_prompt = self._llm_predictor.predict(
                 self.query_template_multiple,
                 num_chunks=len(cur_node_list),
                 query_str=query_str,

@@ -27,6 +27,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IndexList] = None,
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self.text_qa_template = text_qa_template
@@ -41,7 +42,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             chunk_size=chunk_size,
             chunk_overlap=MAX_CHUNK_OVERLAP,
         )
-        super().__init__(documents=documents, index_struct=index_struct)
+        super().__init__(documents=documents, index_struct=index_struct, **kwargs)
 
     def build_index_from_documents(self, documents: List[Document]) -> IndexList:
         """Build the index from documents."""
