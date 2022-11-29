@@ -44,8 +44,8 @@ DEFAULT_INSERT_PROMPT = Prompt(
 
 # # single choice
 DEFAULT_QUERY_PROMPT_TMPL = (
-    "Some choices are given below. It is provided in a numbered list "
-    "(1 to {num_chunks}),"
+    "Some choices are given below. It is provided in a numbered list, "
+    "(1) to ({num_chunks}),"
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
@@ -63,7 +63,7 @@ DEFAULT_QUERY_PROMPT = Prompt(
 # multiple choice
 DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
     "Some choices are given below. It is provided in a numbered "
-    "list (1 to {num_chunks}), "
+    "list, (1) to ({num_chunks}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
@@ -88,8 +88,9 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "------------\n"
     "{context_msg}\n"
     "------------\n"
-    "Given the new context, refine the original answer to better "
+    "Given the new context, edit the original answer to better "
     "answer the question. "
+    "Remove lines in the answer that are no longer relevant. "
     "If the context isn't useful, return the original answer."
 )
 DEFAULT_REFINE_PROMPT = Prompt(
