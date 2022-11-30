@@ -58,11 +58,8 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         if mode == DEFAULT_MODE:
-            query_kwargs.update(
-                {
-                    "text_qa_template": self.text_qa_template,
-                }
-            )
+            if "text_qa_template" not in query_kwargs:
+                query_kwargs["text_qa_template"] = self.text_qa_template
             query = GPTListIndexQuery(self.index_struct, **query_kwargs)
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
