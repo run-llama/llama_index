@@ -7,7 +7,7 @@ from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.embeddings.utils import (
     get_query_text_embedding_similarity,
-    TEXT_SEARCH_MODE
+    TEXT_SEARCH_MODE,
 )
 
 EMBEDDING_MODE = "embedding"
@@ -32,10 +32,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         self.child_branch_factor = child_branch_factor
 
     def query(
-        self,
-        query_str: str,
-        verbose: bool = False,
-        mode: str = TEXT_SEARCH_MODE
+        self, query_str: str, verbose: bool = False, mode: str = TEXT_SEARCH_MODE
     ) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
@@ -65,15 +62,11 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         return response
 
     def _get_most_similar_node(
-        self,
-        nodes: List[Node],
-        query_str: str,
-        mode: str = TEXT_SEARCH_MODE
+        self, nodes: List[Node], query_str: str, mode: str = TEXT_SEARCH_MODE
     ) -> Node:
         """Get the node with the highest similarity to the query."""
-        # Get the node with the highest similarity to the query
         similarities = [
-            get_query_text_embedding_similarity(node.text, query_str, mode)
+            get_query_text_embedding_similarity(query_str, node.text, mode)
             for node in nodes
         ]
         selected_node = nodes[similarities.index(max(similarities))]

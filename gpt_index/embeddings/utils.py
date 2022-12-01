@@ -11,9 +11,7 @@ TEXT_SEARCH_DAVINCI_QUERY = "text-search-davinci-query-001"
 TEXT_SEARCH_DAVINCI_DOC = "text-search-davinci-doc-001"
 
 
-def get_query_embedding(
-    query: str, mode: str = TEXT_SEARCH_MODE
-) -> List[float]:
+def get_query_embedding(query: str, mode: str = TEXT_SEARCH_MODE) -> List[float]:
     """Get query embedding."""
     if mode == SIMILARITY_MODE:
         engine = TEXT_SIMILARITY_DAVINCI
@@ -22,9 +20,7 @@ def get_query_embedding(
     return get_embedding(query, engine=engine)
 
 
-def get_text_embedding(
-    text: str, mode: str = TEXT_SEARCH_MODE
-) -> List[float]:
+def get_text_embedding(text: str, mode: str = TEXT_SEARCH_MODE) -> List[float]:
     """Get text embedding."""
     if mode == SIMILARITY_MODE:
         engine = TEXT_SIMILARITY_DAVINCI
@@ -55,19 +51,16 @@ def get_embedding_similarity(embedding1: List[float], embedding2: List[float]) -
     return cosine_similarity(embedding1, embedding2)
 
 
-def save_embeddings(embeddings: List[List[float]], file_path: str) -> None:
-    """Save embeddings to file."""
+def save_embedding(embedding: List[float], file_path: str) -> None:
+    """Save embedding to file."""
     with open(file_path, "w") as f:
-        for embedding in embeddings:
-            f.write(",".join([str(x) for x in embedding]))
-            f.write("\n")
+        f.write(",".join([str(x) for x in embedding]))
 
 
-def load_embeddings(file_path: str) -> List[List[float]]:
-    """Load embeddings from file."""
-    embeddings = []
+def load_embedding(file_path: str) -> List[float]:
+    """Load embedding from file. Will only return first embedding in file."""
     with open(file_path, "r") as f:
         for line in f:
             embedding = [float(x) for x in line.strip().split(",")]
-            embeddings.append(embedding)
-    return embeddings
+            break
+        return embedding

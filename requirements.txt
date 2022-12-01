@@ -11,7 +11,7 @@ pymongo
 # third-party (libraries)
 rake_nltk
 
-#math
+# math
 matplotlib
 plotly
 numpy

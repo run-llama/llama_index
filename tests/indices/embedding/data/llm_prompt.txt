@@ -1,0 +1,16 @@
+Context information is below. 
+---------------------
+rail transit projects under construction in New York City include the Second Avenue Subway, and the East Side Access project.
+
+
+==== Buses ====
+
+New York City's public bus fleet runs 24/7 and is the largest in North America. The Port Authority Bus Terminal, the main intercity bus terminal of the city, serves 7,000 buses and 200,000 commuters daily, making it the busiest bus station in the world.
+
+
+=== Air ===
+New York's airspace is the busiest in the United States and one of the world's busiest air transportation corridors. The three busiest airports in the New York metropolitan area include John F. Kennedy International Airport, Newark Liberty International Airport, and LaGuardia Airport; 130.5 million travelers used these three airports in 2016. JFK and Newark Liberty were the busiest and fourth busiest U.S. gateways for international air passengers, respectively, in 2012; as of 2011, JFK was the busiest airport for international passengers in North America.
+
+Plans have advanced to expand passenger volume at a fourth airport, Stewart International Airport near Newburgh, New York, by the Port Authority of New York and New Jersey. Plans were announced in July 2015 to entirely rebuild LaGuardia Airport in a multibillion-dollar project to replace its aging facilities. Other commercial airports in or serving the New York metropolitan area include Long Island MacArthur Airport, Trenton–Mercer Airport and Westchester County Airport. The primary general aviation airport serving the
+---------------------
+Given the context information and not prior knowledge, answer the question: What are the airports in New York City?
