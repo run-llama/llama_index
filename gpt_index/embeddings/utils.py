@@ -1,7 +1,8 @@
 """Embedding utils for gpt index."""
 
 from typing import List
-from openai.embeddings_utils import get_embedding, cosine_similarity
+
+from openai.embeddings_utils import cosine_similarity, get_embedding
 
 SIMILARITY_MODE = "similarity"
 TEXT_SEARCH_MODE = "text_search"

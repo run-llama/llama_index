@@ -1,21 +1,22 @@
 """Test embedding functionalities."""
 
-from typing import Any, Tuple
 import os
+from typing import Any, Tuple
 from unittest.mock import patch
 
-from gpt_index.prompts.base import Prompt
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from openai.embeddings_utils import cosine_similarity
+
 from gpt_index import GPTTreeIndex
-from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.embeddings.utils import (
+    get_embedding_similarity,
     get_query_embedding,
     get_text_embedding,
-    save_embedding,
     load_embedding,
-    get_embedding_similarity,
+    save_embedding,
 )
-from openai.embeddings_utils import cosine_similarity
+from gpt_index.indices.utils import get_sorted_node_list
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.prompts.base import Prompt
 
 TEXT_EMBED_FILE_PATH_TEMPLATE = "data/embeddings/text_embed_{}.txt"
 QUERY_STR = "What are the airports in New York City?"

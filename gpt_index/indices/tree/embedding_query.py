@@ -2,13 +2,13 @@
 
 from typing import Dict, List
 
-from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
-from gpt_index.indices.data_structs import IndexGraph, Node
-from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.embeddings.utils import (
-    get_query_text_embedding_similarity,
     TEXT_SEARCH_MODE,
+    get_query_text_embedding_similarity,
 )
+from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
+from gpt_index.indices.utils import get_sorted_node_list
 
 EMBEDDING_MODE = "embedding"
 
