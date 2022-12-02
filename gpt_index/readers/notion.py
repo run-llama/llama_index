@@ -9,9 +9,6 @@ import os
 from typing import Optional
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
-DATABASE_URL_TMPL = "https://api.notion.com/v1/databases/{database_id}/query"
-PAGE_URL_TMPL = "https://api.notion.com/v1/pages/{page_id}"
-BLOCK_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
 BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
 SEARCH_URL = "https://api.notion.com/v1/search"
 
@@ -96,11 +93,12 @@ class NotionPageReader(BaseReader):
         next_cursor = None
         page_ids = []
         while not done:
-            if next_cursor is None:
-                query_dict = {}
-            else:
-                query_dict = {"start_cursor": next_cursor}
-            res = requests.post(SEARCH_URL, headers=self.headers)
+            query_dict = {
+                "query": query,
+            }
+            if next_cursor is not None:
+                query_dict["start_cursor"]: next_cursor
+            res = requests.post(SEARCH_URL, headers=self.headers, json=query_dict)
             data = res.json()
             for result in data["results"]:
                 page_id = result["id"]
@@ -121,3 +119,8 @@ class NotionPageReader(BaseReader):
         for page_id in load_kwargs["page_ids"]:
             page_text = self.read_page(page_id)
             return Document(text=page_text, extra_info={"page_id": page_id})
+
+
+if __name__ == "__main__":
+    reader = NotionPageReader()
+    print(reader.search("What I"))
