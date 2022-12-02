@@ -9,6 +9,13 @@ from gpt_index.embeddings.utils import (
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.utils import get_sorted_node_list
+from gpt_index.prompts.base import Prompt
+from gpt_index.prompts.default_prompts import (
+    DEFAULT_QUERY_PROMPT,
+    DEFAULT_QUERY_PROMPT_MULTIPLE,
+    DEFAULT_REFINE_PROMPT,
+    DEFAULT_TEXT_QA_PROMPT,
+)
 
 EMBEDDING_MODE = "embedding"
 
@@ -25,10 +32,21 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
     def __init__(
         self,
         index_struct: IndexGraph,
+        query_template: Prompt = DEFAULT_QUERY_PROMPT,
+        query_template_multiple: Prompt = DEFAULT_QUERY_PROMPT_MULTIPLE,
+        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
+        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
         child_branch_factor: int = 1,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct)
+        super().__init__(
+            index_struct,
+            query_template,
+            query_template_multiple,
+            text_qa_template,
+            refine_template,
+            child_branch_factor,
+        )
         self.child_branch_factor = child_branch_factor
 
     def query(
