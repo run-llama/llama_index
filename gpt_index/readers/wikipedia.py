@@ -1,4 +1,4 @@
-"""Simple reader that ."""
+"""Simple reader that reads wikipedia."""
 from typing import Any, List
 
 from gpt_index.readers.base import BaseReader

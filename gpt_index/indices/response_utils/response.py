@@ -83,6 +83,7 @@ def give_response(
                 print(f"> Initial response: {response}")
         else:
             response = refine_response(
+                llm_predictor,
                 response,
                 query_str,
                 text_chunk,
