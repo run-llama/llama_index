@@ -27,7 +27,8 @@ class NotionPageReader(BaseReader):
             integration_token = os.getenv(INTEGRATION_TOKEN_NAME)
             if integration_token is None:
                 raise ValueError(
-                    "Must specify `integration_token` or set environment variable `NOTION_INTEGRATION_TOKEN`."
+                    "Must specify `integration_token` or set environment "
+                    "variable `NOTION_INTEGRATION_TOKEN`."
                 )
         self.token = integration_token
         self.headers = {
@@ -117,7 +118,7 @@ class NotionPageReader(BaseReader):
             raise ValueError('Must specify a "page_ids" in `load_kwargs`.')
         for page_id in load_kwargs["page_ids"]:
             page_text = self.read_page(page_id)
-            return Document(text=page_text, extra_info={"page_id": page_id})
+            return [Document(text=page_text, extra_info={"page_id": page_id})]
 
 
 if __name__ == "__main__":

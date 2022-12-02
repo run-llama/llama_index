@@ -5,6 +5,7 @@ from gpt_index.readers.base import BaseReader
 import os
 from gpt_index.schema import Document
 import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ class SlackReader(BaseReader):
 
     """
 
-    def __init__(self) -> None:
+    def __init__(self, slack_token: Optional[str] = None) -> None:
         """Initialize with parameters."""
         try:
             from slack_sdk import WebClient
@@ -24,7 +25,14 @@ class SlackReader(BaseReader):
             raise ValueError(
                 "`slack_sdk` package not found, please run `pip install slack_sdk`"
             )
-        self.client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
+        if slack_token is None:
+            slack_token = os.environ["SLACK_BOT_TOKEN"]
+            if slack_token is None:
+                raise ValueError(
+                    "Must specify `slack_token` or set environment "
+                    "variable `SLACK_BOT_TOKEN`."
+                )
+        self.client = WebClient(token=slack_token)
         res = self.client.api_test()
 
 
@@ -57,21 +65,21 @@ class SlackReader(BaseReader):
             except SlackApiError as e:
                 logger.error("Error creating conversation: {}".format(e))
 
-        return result_messages
+        return "\n\n".join([m["text"] for m in result_messages])
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
-        channels = load_kwargs.pop("channels", None)
-        if channels is None:
-            raise ValueError('Must specify a "channels" in `load_kwargs`.')
+        channel_ids = load_kwargs.pop("channel_ids", None)
+        if channel_ids is None:
+            raise ValueError('Must specify a "channel_id" in `load_kwargs`.')
         
         results = []
-        for channel in channels:
-            channel_content = self._read_channel(channel)
-            results.append(Document(channel_content, extra_info={"channel": channel}))
+        for channel_id in channel_ids:
+            channel_content = self._read_channel(channel_id)
+            results.append(Document(channel_content, extra_info={"channel": channel_id}))
         return results
 
 
 if __name__ == "__main__":
     reader = SlackReader()
-    print(reader.load_data(channels=["C04DC2VUY3F"]))
+    print(reader.load_data(channel_ids=["C04DC2VUY3F"]))
