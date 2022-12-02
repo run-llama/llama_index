@@ -1,11 +1,10 @@
 """Slack reader."""
-from typing import Any, List
+import logging
+import os
+from typing import Any, List, Optional
 
 from gpt_index.readers.base import BaseReader
-import os
 from gpt_index.schema import Document
-import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,8 @@ class SlackReader(BaseReader):
                 )
         self.client = WebClient(token=slack_token)
         res = self.client.api_test()
-
+        if not res["ok"]:
+            raise ValueError(f"Error initializing Slack API: {res['error']}")
 
     def _read_channel(self, channel_id: str) -> str:
         """Read a channel."""
@@ -44,15 +44,20 @@ class SlackReader(BaseReader):
         done = False
         next_cursor = None
         while not done:
-            result = self.client.conversations_history(channel=channel_id, cursor=next_cursor)
+            result = self.client.conversations_history(
+                channel=channel_id, cursor=next_cursor
+            )
             try:
                 # Call the conversations.history method using the WebClient
                 # conversations.history returns the first 100 messages by default
-                # These results are paginated, see: https://api.slack.com/methods/conversations.history$pagination
+                # These results are paginated,
+                # see: https://api.slack.com/methods/conversations.history$pagination
                 result = self.client.conversations_history(channel=channel_id)
                 conversation_history = result["messages"]
                 # Print results
-                logger.info("{} messages found in {}".format(len(conversation_history), id))
+                logger.info(
+                    "{} messages found in {}".format(len(conversation_history), id)
+                )
                 for message in conversation_history:
                     result_messages.append(message)
 
@@ -72,11 +77,13 @@ class SlackReader(BaseReader):
         channel_ids = load_kwargs.pop("channel_ids", None)
         if channel_ids is None:
             raise ValueError('Must specify a "channel_id" in `load_kwargs`.')
-        
+
         results = []
         for channel_id in channel_ids:
             channel_content = self._read_channel(channel_id)
-            results.append(Document(channel_content, extra_info={"channel": channel_id}))
+            results.append(
+                Document(channel_content, extra_info={"channel": channel_id})
+            )
         return results
 
 

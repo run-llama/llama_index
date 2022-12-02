@@ -12,6 +12,9 @@ slack_sdk
 # third-party (libraries)
 rake_nltk
 
+# linting stubs
+types-requests
+
 # linting
 black
 isort
