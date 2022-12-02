@@ -39,7 +39,6 @@ class NotionPageReader(BaseReader):
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
         """Reads a block."""
         done = False
-        next_cursor = None
         result_lines_arr = []
         cur_block_id = block_id
         while not done:
