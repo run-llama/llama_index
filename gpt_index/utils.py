@@ -2,6 +2,7 @@
 
 from typing import List, Optional
 
+import nltk
 from transformers import GPT2TokenizerFast
 
 
@@ -33,6 +34,7 @@ class GlobalsHelper:
                 raise ValueError(
                     "`nltk` package not found, please run `pip install nltk`"
                 )
+            nltk.download("stopwords")
             self._stopwords = stopwords.words("english")
         return self._stopwords
 
