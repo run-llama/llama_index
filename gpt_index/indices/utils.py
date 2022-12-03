@@ -2,9 +2,8 @@
 import re
 from typing import Dict, List, Optional, Set
 
-from gpt_index.utils import globals_helper
-
 from gpt_index.indices.data_structs import Node
+from gpt_index.utils import globals_helper
 
 
 def get_sorted_node_list(node_dict: Dict[int, Node]) -> List[Node]:
@@ -59,15 +58,12 @@ def extract_numbers_given_response(response: str, n: int = 1) -> Optional[List[i
 
 def expand_tokens_with_subtokens(tokens: Set[str]) -> Set[str]:
     """Get subtokens from a list of tokens., filtering for stopwords."""
-    stopwords = globals_helper.stopwords
     results = set()
     for token in tokens:
         results.add(token)
         sub_tokens = re.findall(r"\w+", token)
         if len(sub_tokens) > 1:
-            results.update(
-                {w for w in sub_tokens if w not in stopwords.words("english")}
-            )
+            results.update({w for w in sub_tokens if w not in globals_helper.stopwords})
 
     return results
 

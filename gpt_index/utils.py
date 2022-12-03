@@ -1,7 +1,8 @@
 """General utils functions."""
 
+from typing import List, Optional
+
 from transformers import GPT2TokenizerFast
-from typing import Any, Optional, List
 
 
 class GlobalsHelper:
@@ -34,5 +35,6 @@ class GlobalsHelper:
                 )
             self._stopwords = stopwords.words("english")
         return self._stopwords
+
 
 globals_helper = GlobalsHelper()

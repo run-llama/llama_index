@@ -2,6 +2,7 @@
 from typing import List
 
 from langchain.text_splitter import TextSplitter
+
 from gpt_index.utils import globals_helper
 
 
