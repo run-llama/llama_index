@@ -53,8 +53,7 @@ The main third-party package requirements are `transformers`, `openai`, and `lan
 All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply do `pip install -r requirements.txt`. 
 
 
-
-## Index Details
+## Index Data Structures
 
 - [`Tree Index`](gpt_index/indices/tree/README.md): Tree data structures
     - **Creation**: with GPT hierarchical summarization over sub-documents
@@ -67,25 +66,17 @@ All requirements should be contained within the `setup.py` file. To run the pack
     - **Query**: use GPT with a create and refine prompt iterately over the list of sub-documents
 
 
-## Does this actually work?
+## Data Connectors
 
-It works in varying degrees depending on the index struct (tree, keyword), the data,
-and the question asked.
+We currently offer connectors into the following data sources. External data sources are retrieved through their APIs + corresponding authentication token.
+- Notion (`NotionPageReader`)
+- Google Drive (`GoogleDocsReader`)
+- Slack (`SlackReader`)
+- MongoDB (local) (`SimpleMongoReader`)
+- Wikipedia (`WikipediaReader`)
+- local file directory (`SimpleDirectoryReader`)
 
-Check out this [Twitter thread](https://twitter.com/jerryjliu0/status/1590192529286520832?s=20&t=1Ss6eJJMZzFA6y-QmSU9lw) for instance describing the tree index.
-
-
-## ❓🧠 Additional Thoughts / FAQ
-
-**How is this better than an embeddings-based approach / other state-of-the-art QA and retrieval methods?**
-
-The intent is not to compete against existing methods. An embedding-based technique could be to just encode each chunk as an embedding and do a simple question-document embedding look-up to retrieve the result. 
-
-Instead, this project is focused on providing a set of data structures to test how GPT can organize information and lookup information purely through the text-in/text-out paradigm.
-
-**This work is very similar to X paper/project.**
-
-Please let me know! I am not up-to-date on the latest NLP/LLM ArXiv papers or Github projects. I am happy to give references/credit below.
+Example notebooks of how to use data connectors are found in the [Data Connector Example Notebooks](examples/data_connectors).
 
 
 ## 🔬 Related Work [WIP]
@@ -97,4 +88,7 @@ Please let me know! I am not up-to-date on the latest NLP/LLM ArXiv papers or Gi
 
 [ReAct: Synergizing Reasoning and Acting in Language Models, by Yao et al.](https://arxiv.org/abs/2210.03629)
 - Introduces a joint reasoning and action framework in an interleaved manner. This approach of connecting to external knowledge sources is similar to our approach of having GPT traverse an externally stored index of data. ReAct has much more fluid/sophisticated ways of traversal (e.g. search, lookup, finish), whereas this project just tries building an index with simple tree-based traversal.
+
+Please let me know if there are other related works - I am not up-to-date on the latest NLP/LLM ArXiv papers or Github projects. I am happy to give references/credit below.
+
 
