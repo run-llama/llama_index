@@ -126,7 +126,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.summary_template = summary_template
         self.insert_prompt = insert_prompt
         validate_prompt(self.summary_template, ["text"], ["query_str"])
-        super().__init__(documents=documents, index_struct=index_struct, llm_predictor=llm_predictor)
+        super().__init__(
+            documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
+        )
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
