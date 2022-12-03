@@ -6,6 +6,10 @@ from typing import Any, Dict, List, Optional
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.tree.embedding_query import (
+    EMBEDDING_MODE,
+    GPTTreeIndexEmbeddingQuery,
+)
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
@@ -132,6 +136,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             )
         elif mode == RETRIEVE_MODE:
             query = GPTTreeIndexRetQuery(self.index_struct, **query_kwargs)
+        elif mode == EMBEDDING_MODE:
+            query = GPTTreeIndexEmbeddingQuery(self.index_struct, **query_kwargs)
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
