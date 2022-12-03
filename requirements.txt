@@ -7,6 +7,7 @@ pytest-dotenv
 # third-party (data)
 wikipedia
 pymongo
+slack_sdk
 
 # third-party (libraries)
 rake_nltk
@@ -14,6 +15,9 @@ rake_nltk
 # math
 matplotlib
 plotly
+
+# linting stubs
+types-requests
 
 # linting
 black
