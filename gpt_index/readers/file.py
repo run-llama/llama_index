@@ -9,7 +9,8 @@ from gpt_index.schema import Document
 class SimpleDirectoryReader(BaseReader):
     """Simple directory reader.
 
-    Concatenates all files into one document text.
+    Can read files into separate documents, or concatenates
+    files into one document text.
 
     """
 
@@ -24,9 +25,15 @@ class SimpleDirectoryReader(BaseReader):
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
+        concatenate = load_kwargs.get("concatenate", True)
         data = ""
+        data_list = []
         for input_file in self.input_files:
             with open(input_file, "r") as f:
-                data += f.read()
-            data += "\n"
-        return [Document(data)]
+                data = f.read()
+                data_list.append(data)
+
+        if concatenate:
+            return [Document(text="\n".join(data_list))]
+        else:
+            return [Document(d) for d in data_list]
