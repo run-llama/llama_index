@@ -1,12 +1,12 @@
 """Google docs reader."""
 
 import os
-from gpt_index.readers.base import BaseReader
-from gpt_index.schema import Document
 from typing import Any, List
 
+from gpt_index.readers.base import BaseReader
+from gpt_index.schema import Document
 
-SCOPES = 'https://www.googleapis.com/auth/documents.readonly'
+SCOPES = "https://www.googleapis.com/auth/documents.readonly"
 
 
 # Copyright 2019 Google LLC
@@ -34,9 +34,9 @@ class GoogleDocsReader(BaseReader):
     def __init__(self) -> None:
         """Initialize with parameters."""
         try:
+            import google  # noqa: F401
             import google_auth_oauthlib  # noqa: F401
             import googleapiclient  # noqa: F401
-            import google # noqa: F401
         except ImportError:
             raise ValueError(
                 "`google_auth_oauthlib`, `googleapiclient` and `google` "
@@ -50,7 +50,7 @@ class GoogleDocsReader(BaseReader):
         document_ids: List[str] = load_kwargs.pop("document_ids", None)
         if document_ids is None:
             raise ValueError('Must specify a "document_ids" in `load_kwargs`.')
-        
+
         results = []
         for document_id in document_ids:
             doc = self._load_doc(document_id)
@@ -58,7 +58,7 @@ class GoogleDocsReader(BaseReader):
         return results
 
     def _load_doc(self, document_id: str) -> str:
-        """Loads a document from Google Docs.
+        """Load a document from Google Docs.
 
         Args:
             document_id: the document id.
@@ -69,14 +69,13 @@ class GoogleDocsReader(BaseReader):
         import googleapiclient.discovery as discovery
 
         credentials = self._get_credentials()
-        docs_service = discovery.build(
-            'docs', 'v1', credentials=credentials)
+        docs_service = discovery.build("docs", "v1", credentials=credentials)
         doc = docs_service.documents().get(documentId=document_id).execute()
-        doc_content = doc.get('body').get('content')
+        doc_content = doc.get("body").get("content")
         return self._read_structural_elements(doc_content)
 
     def _get_credentials(self) -> Any:
-        """Gets valid user credentials from storage.
+        """Get valid user credentials from storage.
 
         The file token.json stores the user's access and refresh tokens, and is
         created automatically when the authorization flow completes for the first
@@ -85,71 +84,70 @@ class GoogleDocsReader(BaseReader):
         Returns:
             Credentials, the obtained credential.
         """
-        from google.oauth2.credentials import Credentials
         from google.auth.transport.requests import Request
+        from google.oauth2.credentials import Credentials
         from google_auth_oauthlib.flow import InstalledAppFlow
 
         creds = None
-        if os.path.exists('token.json'):
-            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        if os.path.exists("token.json"):
+            creds = Credentials.from_authorized_user_file("token.json", SCOPES)
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', SCOPES)
+                    "credentials.json", SCOPES
+                )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open('token.json', 'w') as token:
+            with open("token.json", "w") as token:
                 token.write(creds.to_json())
 
         return creds
 
+    def _read_paragraph_element(self, element: Any) -> Any:
+        """Return the text in the given ParagraphElement.
 
-    def _read_paragraph_element(self, element):
-        """Returns the text in the given ParagraphElement.
-
-            Args:
-                element: a ParagraphElement from a Google Doc.
+        Args:
+            element: a ParagraphElement from a Google Doc.
         """
-        text_run = element.get('textRun')
+        text_run = element.get("textRun")
         if not text_run:
-            return ''
-        return text_run.get('content')
+            return ""
+        return text_run.get("content")
 
+    def _read_structural_elements(self, elements: List[Any]) -> Any:
+        """Recurse through a list of Structural Elements.
 
-    def _read_structural_elements(self, elements):
-        """Recurses through a list of Structural Elements to read a document's text where text may be
-            in nested elements.
+        Read a document's text where text may be in nested elements.
 
-            Args:
-                elements: a list of Structural Elements.
+        Args:
+            elements: a list of Structural Elements.
         """
-        text = ''
+        text = ""
         for value in elements:
-            if 'paragraph' in value:
-                elements = value.get('paragraph').get('elements')
+            if "paragraph" in value:
+                elements = value.get("paragraph").get("elements")
                 for elem in elements:
                     text += self._read_paragraph_element(elem)
-            elif 'table' in value:
-                # The text in table cells are in nested Structural Elements and tables may be
-                # nested.
-                table = value.get('table')
-                for row in table.get('tableRows'):
-                    cells = row.get('tableCells')
+            elif "table" in value:
+                # The text in table cells are in nested Structural Elements
+                # and tables may be nested.
+                table = value.get("table")
+                for row in table.get("tableRows"):
+                    cells = row.get("tableCells")
                     for cell in cells:
-                        text += self._read_structural_elements(cell.get('content'))
-            elif 'tableOfContents' in value:
+                        text += self._read_structural_elements(cell.get("content"))
+            elif "tableOfContents" in value:
                 # The text in the TOC is also in a Structural Element.
-                toc = value.get('tableOfContents')
-                text += self._read_structural_elements(toc.get('content'))
+                toc = value.get("tableOfContents")
+                text += self._read_structural_elements(toc.get("content"))
         return text
 
 
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     reader = GoogleDocsReader()
-    print(reader.load_data(document_ids=["11ctUj_tEf5S8vs_dk8_BNi-Zk8wW5YFhXkKqtmU_4B8"]))
+    print(
+        reader.load_data(document_ids=["11ctUj_tEf5S8vs_dk8_BNi-Zk8wW5YFhXkKqtmU_4B8"])
+    )
