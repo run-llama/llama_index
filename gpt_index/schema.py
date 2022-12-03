@@ -1,35 +1,44 @@
 """Base schema for data structures."""
-from dataclasses import dataclass
-from typing import Dict, Optional, Set
+from dataclasses import dataclass, field
+from typing import Dict, Optional, List
 
 from dataclasses_json import DataClassJsonMixin
 
+from gpt_index.utils import get_new_id
 
 @dataclass
 class Document:
     """Generic interface for document."""
 
+    doc_id: str
     text: str
     extra_info: Optional[Dict] = None
 
 
 @dataclass
-class Node(DataClassJsonMixin):
-    """A node in the GPT tree index."""
+class DocumentStore:
+    """Document store."""
 
-    text: str
-    index: int
-    child_indices: Set[int]
+    docs: Dict[str, Document] = field(default_factory=dict)
 
+    @classmethod
+    def from_documents(cls, docs: List[Document]) -> "DocumentStore":
+        obj = cls()
+        obj.add_documents(docs)
+        return obj
 
-@dataclass
-class IndexGraph(DataClassJsonMixin):
-    """A graph representing the tree-structured index."""
+    def get_new_id(self) -> str:
+        """Get a new ID."""
+        return get_new_id(set(self.docs.keys()))
 
-    all_nodes: Dict[int, Node]
-    root_nodes: Dict[int, Node]
+    def add_documents(self, docs: List[Document]) -> None:
+        """Add a document to the store."""
+        for doc in docs:
+            self.docs[doc.doc_id] = doc
 
-    @property
-    def size(self) -> int:
-        """Get the size of the graph."""
-        return len(self.all_nodes)
+    def get_document(self, doc_id: str) -> Optional[Document]:
+        """Get a document from the store."""
+        return self.docs.get(doc_id, None)
+
+    def __len__(self):
+        return len(self.docs.keys())
