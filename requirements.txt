@@ -12,6 +12,12 @@ slack_sdk
 # third-party (libraries)
 rake_nltk
 
+# math
+matplotlib
+plotly
+scipy
+scikit-learn
+
 # linting stubs
 types-requests
 
