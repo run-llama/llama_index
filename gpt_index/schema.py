@@ -1,10 +1,11 @@
 """Base schema for data structures."""
 from dataclasses import dataclass, field
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.utils import get_new_id
+
 
 @dataclass
 class Document:
