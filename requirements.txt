@@ -11,6 +11,13 @@ pymongo
 # third-party (libraries)
 rake_nltk
 
+# math
+matplotlib
+plotly
+numpy
+scipy
+scikit-learn
+
 # linting
 black
 isort
