@@ -76,7 +76,7 @@ We currently offer connectors into the following data sources. External data sou
 - Wikipedia (`WikipediaReader`)
 - local file directory (`SimpleDirectoryReader`)
 
-Example notebooks of how to use data connectors are found in the [Data Connector Example Notebooks](`gpt_index/examples/data_connectors/README.md`).
+Example notebooks of how to use data connectors are found in the [Data Connector Example Notebooks](`examples/data_connectors/README.md`).
 
 
 ## 🔬 Related Work [WIP]
