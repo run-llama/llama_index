@@ -31,7 +31,7 @@ def test_build_list(
     _mock_init: Any, _mock_splitter: Any, documents: List[Document]
 ) -> None:
     """Test build list."""
-    list_index = GPTListIndex(documents)
+    list_index = GPTListIndex(documents=documents)
     assert len(list_index.index_struct.nodes) == 4
     # check contents of nodes
     assert list_index.index_struct.nodes[0].text == "Hello world."

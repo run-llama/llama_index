@@ -1,11 +1,11 @@
 """Base data structure classes."""
 import json
 from abc import abstractmethod
-from typing import Any, Generic, List, Optional, TypeVar, cast
+from typing import Any, Generic, List, Optional, Sequence, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.schema import Document
+from gpt_index.schema import BaseDocument
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -53,7 +53,7 @@ class BaseGPTIndex(Generic[IS]):
 
     def __init__(
         self,
-        documents: Optional[List[Document]] = None,
+        documents: Optional[Sequence[BaseDocument]] = None,
         index_struct: Optional[IS] = None,
         llm_predictor: Optional[LLMPredictor] = None,
     ) -> None:
@@ -69,7 +69,7 @@ class BaseGPTIndex(Generic[IS]):
         if index_struct is not None:
             self._index_struct = index_struct
         else:
-            documents = cast(List[Document], documents)
+            documents = cast(List[BaseDocument], documents)
             self._index_struct = self.build_index_from_documents(documents)
 
     @property
@@ -78,15 +78,15 @@ class BaseGPTIndex(Generic[IS]):
         return self._index_struct
 
     @abstractmethod
-    def build_index_from_documents(self, documents: List[Document]) -> IS:
+    def build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
         """Build the index from documents."""
 
     @abstractmethod
-    def insert(self, document: Document, **insert_kwargs: Any) -> None:
+    def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
 
     @abstractmethod
-    def delete(self, document: Document) -> None:
+    def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
 
     @abstractmethod

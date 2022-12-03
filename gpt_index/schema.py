@@ -1,10 +1,11 @@
 """Base schema for data structures."""
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, Optional
 
 
-class BaseDocument:
+@dataclass
+class BaseDocument(ABC):
     """Base document.
 
     Generic abstract interfaces that captures both index structs
