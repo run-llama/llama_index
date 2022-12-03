@@ -14,9 +14,6 @@ rake_nltk
 # math
 matplotlib
 plotly
-numpy
-scipy
-scikit-learn
 
 # linting
 black
