@@ -2,62 +2,23 @@
 
 import random
 import sys
-from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.schema import Document, BaseDocument
+from gpt_index.schema import BaseDocument
 
 
 @dataclass
 class IndexStruct(BaseDocument, DataClassJsonMixin):
     """A base data struct for a GPT index."""
 
-    # doc_id: Optional[str]
-
-    # def _create_document(doc: Optional[Document] = None) -> Document:
-    #     """Create document.
-
-    #     This method is used to create a document from the index struct, which
-    #     will be registered in the document store. This method
-    #     should not be called directly.
-
-    #     """
-    #     raise NotImplementedError("Not iplemented yet.")
-
-    # def register_doc(
-    #     self,
-    #     doc_store: DocumentStore,
-    #     doc_id: Optional[str] = None,
-    #     doc: Optional[Document] = None,
-    # ) -> None:
-    #     """Register in document store.
-
-    #     This registers a document_id for the index struct. This is useful for
-    #     being able to construct higher-level indices that are based on lower-level
-    #     indices, since each index struct maps to a given document_id.
-
-    #     In order for a subclass to register a document_id, the subclass must
-    #     create a text document through _create_document.
-    #     This text can either be passed in as an optional argument,
-    #     or it can be synthesized from the index struct itself.
-
-    #     """
-    #     doc_id = doc_store.get_new_id() if doc_id is None else doc_id
-    #     doc = self._create_document(doc=doc)
-    #     doc_store = doc_store.add_document(doc)
-
-    # def get_text(self, doc_store: DocumentStore) -> str:
-    #     """Get the text of the index struct."""
-    #     if self.doc_id is None:
-    #         raise ValueError("self.doc_id must not be None.")
-    #     return doc_store.get_document(self.doc_id).text
-
     @property
     def text(self) -> str:
         """Get text."""
+        # TODO: make this an abstractmethod once we implement
+        # this for all index structs.
         raise NotImplementedError("Not implemented yet.")
 
 
@@ -69,8 +30,21 @@ class Node(IndexStruct):
 
     """
 
+    _text: str
+    # TODO: remove
+    index: int
     # used for GPTTreeIndex
     child_indices: Set[int] = field(default_factory=set)
+
+    @property
+    def text(self) -> str:
+        """Get text."""
+        return self._text
+
+    @text.setter
+    def text(self, text: str) -> None:
+        """Set text."""
+        self._text = text
 
 
 @dataclass
@@ -158,6 +132,6 @@ class IndexList(IndexStruct):
     def add_text(self, text_chunk: str) -> int:
         """Add text to table, return current position in list."""
         # don't worry about child indices for now, nodes are all in order
-        cur_node = Node(text=text_chunk, index=len(self.nodes), child_indices=set())
+        cur_node = Node(text_chunk, index=len(self.nodes), child_indices=set())
         self.nodes.append(cur_node)
         return cur_node.index

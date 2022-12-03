@@ -34,6 +34,6 @@ class SimpleDirectoryReader(BaseReader):
                 data_list.append(data)
 
         if concatenate:
-            return [Document(text="\n".join(data_list))]
+            return [Document("\n".join(data_list))]
         else:
             return [Document(d) for d in data_list]
