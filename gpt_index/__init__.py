@@ -19,6 +19,7 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
 # prompts
 from gpt_index.prompts.base import Prompt
+from gpt_index.readers.google.gdocs import GoogleDocsReader
 from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
 
@@ -38,6 +39,7 @@ __all__ = [
     "SimpleDirectoryReader",
     "SimpleMongoReader",
     "NotionPageReader",
+    "GoogleDocsReader",
     "SlackReader",
     "LLMPredictor",
 ]
