@@ -16,6 +16,7 @@ rake_nltk
 matplotlib
 plotly
 scipy
+scikit-learn
 
 # linting stubs
 types-requests
