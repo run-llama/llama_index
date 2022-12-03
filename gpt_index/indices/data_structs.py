@@ -8,52 +8,57 @@ from typing import Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.schema import Document, DocumentStore
+from gpt_index.schema import Document, BaseDocument
 
 
 @dataclass
-class IndexStruct(DataClassJsonMixin):
+class IndexStruct(BaseDocument, DataClassJsonMixin):
     """A base data struct for a GPT index."""
 
-    doc_id: Optional[str]
+    # doc_id: Optional[str]
 
-    def _create_document(doc: Optional[Document] = None) -> Document:
-        """Create document.
+    # def _create_document(doc: Optional[Document] = None) -> Document:
+    #     """Create document.
 
-        This method is used to create a document from the index struct, which
-        will be registered in the document store. This method
-        should not be called directly.
+    #     This method is used to create a document from the index struct, which
+    #     will be registered in the document store. This method
+    #     should not be called directly.
 
-        """
-        raise NotImplementedError("Not iplemented yet.")
+    #     """
+    #     raise NotImplementedError("Not iplemented yet.")
 
-    def register_doc(
-        self,
-        doc_store: DocumentStore,
-        doc_id: Optional[str] = None,
-        doc: Optional[Document] = None,
-    ) -> None:
-        """Register in document store.
+    # def register_doc(
+    #     self,
+    #     doc_store: DocumentStore,
+    #     doc_id: Optional[str] = None,
+    #     doc: Optional[Document] = None,
+    # ) -> None:
+    #     """Register in document store.
 
-        This registers a document_id for the index struct. This is useful for
-        being able to construct higher-level indices that are based on lower-level
-        indices, since each index struct maps to a given document_id.
+    #     This registers a document_id for the index struct. This is useful for
+    #     being able to construct higher-level indices that are based on lower-level
+    #     indices, since each index struct maps to a given document_id.
 
-        In order for a subclass to register a document_id, the subclass must
-        create a text document through _create_document.
-        This text can either be passed in as an optional argument,
-        or it can be synthesized from the index struct itself.
+    #     In order for a subclass to register a document_id, the subclass must
+    #     create a text document through _create_document.
+    #     This text can either be passed in as an optional argument,
+    #     or it can be synthesized from the index struct itself.
 
-        """
-        doc_id = doc_store.get_new_id() if doc_id is None else doc_id
-        doc = self._create_document(doc=doc)
-        doc_store = doc_store.add_document(doc)
+    #     """
+    #     doc_id = doc_store.get_new_id() if doc_id is None else doc_id
+    #     doc = self._create_document(doc=doc)
+    #     doc_store = doc_store.add_document(doc)
 
-    def get_text(self, doc_store: DocumentStore) -> str:
-        """Get the text of the index struct."""
-        if self.doc_id is None:
-            raise ValueError("self.doc_id must not be None.")
-        return doc_store.get_document(self.doc_id).text
+    # def get_text(self, doc_store: DocumentStore) -> str:
+    #     """Get the text of the index struct."""
+    #     if self.doc_id is None:
+    #         raise ValueError("self.doc_id must not be None.")
+    #     return doc_store.get_document(self.doc_id).text
+
+    @property
+    def text(self) -> str:
+        """Get text."""
+        raise NotImplementedError("Not implemented yet.")
 
 
 @dataclass
