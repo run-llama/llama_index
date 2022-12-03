@@ -15,6 +15,7 @@ rake_nltk
 # math
 matplotlib
 plotly
+scipy
 
 # linting stubs
 types-requests
