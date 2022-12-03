@@ -23,6 +23,7 @@ from gpt_index.indices.keyword_table.query import (
 )
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
@@ -44,7 +45,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
         max_keywords_per_query: int = 10,
         max_keywords_per_chunk: int = 10,
-        **kwargs: Any,
+        llm_predictor: Optional[LLMPredictor] = None,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
@@ -62,7 +63,9 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             chunk_size=chunk_size,
             chunk_overlap=MAX_CHUNK_OVERLAP,
         )
-        super().__init__(documents=documents, index_struct=index_struct, **kwargs)
+        super().__init__(
+            documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
+        )
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""

@@ -13,6 +13,7 @@ from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.list.query import GPTListIndexQuery
 from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -27,7 +28,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         documents: Optional[List[Document]] = None,
         index_struct: Optional[IndexList] = None,
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
-        **kwargs: Any,
+        llm_predictor: Optional[LLMPredictor] = None,
     ) -> None:
         """Initialize params."""
         self.text_qa_template = text_qa_template
@@ -42,7 +43,9 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             chunk_size=chunk_size,
             chunk_overlap=MAX_CHUNK_OVERLAP,
         )
-        super().__init__(documents=documents, index_struct=index_struct, **kwargs)
+        super().__init__(
+            documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
+        )
 
     def build_index_from_documents(self, documents: List[Document]) -> IndexList:
         """Build the index from documents."""
