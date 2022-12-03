@@ -5,9 +5,10 @@ import sys
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
-from gpt_index.schema import DocumentStore, Document
 
 from dataclasses_json import DataClassJsonMixin
+
+from gpt_index.schema import Document, DocumentStore
 
 
 @dataclass
@@ -20,14 +21,17 @@ class IndexStruct(DataClassJsonMixin):
         """Create document.
 
         This method is used to create a document from the index struct, which
-        will be registered in the document store. This method 
+        will be registered in the document store. This method
         should not be called directly.
-        
+
         """
         raise NotImplementedError("Not iplemented yet.")
 
     def register_doc(
-        self, doc_store: DocumentStore, doc_id: Optional[str] = None, doc: Optional[Document] = None
+        self,
+        doc_store: DocumentStore,
+        doc_id: Optional[str] = None,
+        doc: Optional[Document] = None,
     ) -> None:
         """Register in document store.
 
@@ -35,7 +39,7 @@ class IndexStruct(DataClassJsonMixin):
         being able to construct higher-level indices that are based on lower-level
         indices, since each index struct maps to a given document_id.
 
-        In order for a subclass to register a document_id, the subclass must 
+        In order for a subclass to register a document_id, the subclass must
         create a text document through _create_document.
         This text can either be passed in as an optional argument,
         or it can be synthesized from the index struct itself.
