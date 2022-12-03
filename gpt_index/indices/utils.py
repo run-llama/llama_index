@@ -2,13 +2,8 @@
 import re
 from typing import Dict, List, Optional, Set
 
-import nltk
-from nltk.corpus import stopwords
-from transformers import GPT2TokenizerFast
-
 from gpt_index.indices.data_structs import Node
-
-nltk.download("stopwords")
+from gpt_index.utils import globals_helper
 
 
 def get_sorted_node_list(node_dict: Dict[int, Node]) -> List[Node]:
@@ -41,7 +36,7 @@ def get_chunk_size_given_prompt(
     prompt: str, max_input_size: int, num_chunks: int, num_output: int
 ) -> int:
     """Get chunk size making sure we can also fit the prompt in."""
-    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+    tokenizer = globals_helper.tokenizer
     prompt_tokens = tokenizer(prompt)
     num_prompt_tokens = len(prompt_tokens["input_ids"])
 
@@ -68,9 +63,7 @@ def expand_tokens_with_subtokens(tokens: Set[str]) -> Set[str]:
         results.add(token)
         sub_tokens = re.findall(r"\w+", token)
         if len(sub_tokens) > 1:
-            results.update(
-                {w for w in sub_tokens if w not in stopwords.words("english")}
-            )
+            results.update({w for w in sub_tokens if w not in globals_helper.stopwords})
 
     return results
 

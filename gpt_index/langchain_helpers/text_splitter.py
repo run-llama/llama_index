@@ -2,7 +2,8 @@
 from typing import List
 
 from langchain.text_splitter import TextSplitter
-from transformers import GPT2TokenizerFast
+
+from gpt_index.utils import globals_helper
 
 
 class TokenTextSplitter(TextSplitter):
@@ -20,7 +21,7 @@ class TokenTextSplitter(TextSplitter):
         self._separator = separator
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
-        self.tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+        self.tokenizer = globals_helper.tokenizer
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""

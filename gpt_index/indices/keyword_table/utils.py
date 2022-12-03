@@ -5,9 +5,9 @@ from typing import Optional, Set
 
 import nltk
 import pandas as pd
-from nltk.corpus import stopwords
 
 from gpt_index.indices.utils import expand_tokens_with_subtokens
+from gpt_index.utils import globals_helper
 
 
 def simple_extract_keywords(
@@ -16,7 +16,7 @@ def simple_extract_keywords(
     """Extract keywords with simple algorithm."""
     tokens = [t.strip().lower() for t in re.findall(r"\w+", text_chunk)]
     if filter_stopwords:
-        tokens = [t for t in tokens if t not in stopwords.words("english")]
+        tokens = [t for t in tokens if t not in globals_helper.stopwords]
     value_counts = pd.Series(tokens).value_counts()
     keywords = value_counts.index.tolist()[:max_keywords]
     return set(keywords)
