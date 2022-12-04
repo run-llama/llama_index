@@ -20,6 +20,11 @@ setup(
         "dataclasses_json",
         "transformers",
         "nltk",
+        # for openAI embeddings
+        "matplotlib",
+        "plotly",
+        "scipy",
+        "scikit-learn",
     ],
     long_description=long_description,
     license="MIT",
