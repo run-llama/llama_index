@@ -29,6 +29,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         index_struct: Optional[IndexList] = None,
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         llm_predictor: Optional[LLMPredictor] = None,
+        summarize_text: bool = False,
     ) -> None:
         """Initialize params."""
         self.text_qa_template = text_qa_template
@@ -44,8 +45,23 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             chunk_overlap=MAX_CHUNK_OVERLAP,
         )
         super().__init__(
-            documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
+            documents=documents, 
+            index_struct=index_struct, 
+            llm_predictor=llm_predictor,
+            summarize_text=summarize_text,
         )
+
+    def _summarize_text(self, index_struct: IndexGraph) -> None:
+        # get summary string
+        # TODO
+        struct_summary = ""
+        if self._summarize_text:
+            root_text_chunk = get_text_from_nodes(list(index_struct.root_nodes.values()))
+            struct_summary, _ = self._llm_predictor.predict(
+                self.summary_template, text=root_text_chunk
+            )
+        index_struct.text = struct_summary
+
 
     def build_index_from_documents(
         self, documents: Sequence[BaseDocument]

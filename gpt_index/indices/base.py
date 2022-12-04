@@ -56,26 +56,44 @@ class BaseGPTIndex(Generic[IS]):
         documents: Optional[Sequence[BaseDocument]] = None,
         index_struct: Optional[IS] = None,
         llm_predictor: Optional[LLMPredictor] = None,
+        summarize_text: bool = False,
     ) -> None:
-        """Initialize with parameters."""
+        """Initialize with parameters.
+
+        Either documents or index_struct must be provided.
+
+        Args:
+            documents: A list of documents to index.
+            index_struct: An index struct to load from.
+            llm_predictor: An LLM predictor to use for queries.
+            summarize_text: Whether to create a text summary of the index
+
+        """
         if index_struct is None and documents is None:
             raise ValueError("One of documents or index_struct must be provided.")
         if index_struct is not None and documents is not None:
             raise ValueError("Only one of documents or index_struct can be provided.")
 
         self._llm_predictor = llm_predictor or LLMPredictor()
+        self._summarize_text = summarize_text
 
         # build index struct in the init function
         if index_struct is not None:
             self._index_struct = index_struct
         else:
-            documents = cast(List[BaseDocument], documents)
             self._index_struct = self.build_index_from_documents(documents)
+            if self._summarize_text:
+                self._summarize_text(self._index_struct)
+
 
     @property
     def index_struct(self) -> IS:
         """Get the index struct."""
         return self._index_struct
+
+    def _summarize_text(self, index_struct: IS) -> None:
+        """Summarize the index text."""
+        raise NotImplementedError("_summarize_text not implemented.")
 
     @abstractmethod
     def build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:

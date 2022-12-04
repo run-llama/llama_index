@@ -53,6 +53,23 @@ class IndexGraph(IndexStruct):
 
     all_nodes: Dict[int, Node] = field(default_factory=dict)
     root_nodes: Dict[int, Node] = field(default_factory=dict)
+    _text: Optional[str] = None
+
+    @property
+    def text(self) -> str:
+        """Get text.
+
+        Summarize the root nodes.
+
+        """
+        if self._text is None:
+            raise ValueError("_text is not set.")
+        return self._text
+
+    @text.setter
+    def text(self, text: str) -> None:
+        """Set text."""
+        self._text = text
 
     @property
     def size(self) -> int:
@@ -86,6 +103,23 @@ class KeywordTable(IndexStruct):
 
     table: Dict[str, Set[int]] = field(default_factory=dict)
     text_chunks: Dict[int, str] = field(default_factory=dict)
+    _text: Optional[str] = None
+
+    @property
+    def text(self) -> str:
+        """Get text.
+
+        Summarize the root nodes.
+
+        """
+        if self._text is None:
+            raise ValueError("_text is not set.")
+        return self._text
+
+    @text.setter
+    def text(self, text: str) -> None:
+        """Set text."""
+        self._text = text
 
     def _get_index(self) -> int:
         """Get the next index for the text chunk."""
@@ -128,6 +162,23 @@ class IndexList(IndexStruct):
     """A list of documents."""
 
     nodes: List[Node] = field(default_factory=list)
+    _text: Optional[str] = None
+
+    @property
+    def text(self) -> str:
+        """Get text.
+
+        Summarize the root nodes.
+
+        """
+        if self._text is None:
+            raise ValueError("_text is not set.")
+        return self._text
+
+    @text.setter
+    def text(self, text: str) -> None:
+        """Set text."""
+        self._text = text
 
     def add_text(self, text_chunk: str) -> int:
         """Add text to table, return current position in list."""

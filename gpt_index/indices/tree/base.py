@@ -42,6 +42,7 @@ class GPTTreeIndexBuilder:
         num_children: int = 10,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
         llm_predictor: Optional[LLMPredictor] = None,
+        summarize_text: bool = False,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -57,6 +58,7 @@ class GPTTreeIndexBuilder:
             chunk_overlap=MAX_CHUNK_OVERLAP // num_children,
         )
         self._llm_predictor = llm_predictor or LLMPredictor()
+        self._summarize_text = summarize_text
 
     def build_from_text(self, text: str) -> IndexGraph:
         """Build from text.
@@ -70,6 +72,7 @@ class GPTTreeIndexBuilder:
         # instantiate all_nodes from initial text chunks
         all_nodes = {i: Node(t, i, set()) for i, t in enumerate(text_chunks)}
         root_nodes = self._build_index_from_nodes(all_nodes, all_nodes)
+
         return IndexGraph(all_nodes, root_nodes)
 
     def _build_index_from_nodes(
@@ -116,6 +119,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         query_str: Optional[str] = None,
         num_children: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
+        summarize_text: bool = False,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
@@ -127,8 +131,18 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.insert_prompt = insert_prompt
         validate_prompt(self.summary_template, ["text"], ["query_str"])
         super().__init__(
-            documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
+            documents=documents, index_struct=index_struct, llm_predictor=llm_predictor, summarize_text=summarize_text
         )
+
+    def _summarize_text(self, index_struct: IndexGraph) -> None:
+        # get summary string
+        struct_summary = ""
+        if self._summarize_text:
+            root_text_chunk = get_text_from_nodes(list(index_struct.root_nodes.values()))
+            struct_summary, _ = self._llm_predictor.predict(
+                self.summary_template, text=root_text_chunk
+            )
+        index_struct.text = struct_summary
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
@@ -154,6 +168,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             num_children=self.num_children,
             summary_prompt=self.summary_template,
             llm_predictor=self._llm_predictor,
+            summarize_text=self._summarize_text,
         )
         index_graph = index_builder.build_from_text(text_data)
         return index_graph
