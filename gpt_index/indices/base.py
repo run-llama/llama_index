@@ -10,6 +10,7 @@ from gpt_index.schema import BaseDocument
 IS = TypeVar("IS", bound=IndexStruct)
 
 DEFAULT_MODE = "default"
+EMBEDDING_MODE = "embedding"
 
 
 class BaseGPTIndexQuery(Generic[IS]):

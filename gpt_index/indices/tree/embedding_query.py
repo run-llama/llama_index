@@ -19,8 +19,6 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
 
-EMBEDDING_MODE = "embedding"
-
 
 class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
     """
@@ -94,6 +92,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             text_embedding = node.embedding
         else:
             text_embedding = get_text_embedding(node.text, mode=mode)
+            node.embedding = text_embedding
 
         return cosine_similarity(query_embedding, text_embedding)
 
