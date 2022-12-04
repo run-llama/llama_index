@@ -1,6 +1,7 @@
 """General utils functions."""
 
-from typing import List, Optional
+import uuid
+from typing import List, Optional, Set
 
 import nltk
 from transformers import GPT2TokenizerFast
@@ -40,3 +41,12 @@ class GlobalsHelper:
 
 
 globals_helper = GlobalsHelper()
+
+
+def get_new_id(d: Set) -> str:
+    """Get a new ID."""
+    while True:
+        new_id = str(uuid.uuid4())
+        if new_id not in d:
+            break
+    return new_id

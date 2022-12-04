@@ -1,35 +1,41 @@
 """Base schema for data structures."""
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Optional, Set
-
-from dataclasses_json import DataClassJsonMixin
+from typing import Dict, Optional
 
 
 @dataclass
-class Document:
-    """Generic interface for document."""
+class BaseDocument(ABC):
+    """Base document.
 
-    text: str
-    extra_info: Optional[Dict] = None
+    Generic abstract interfaces that captures both index structs
+    as well as documents.
 
-
-@dataclass
-class Node(DataClassJsonMixin):
-    """A node in the GPT tree index."""
-
-    text: str
-    index: int
-    child_indices: Set[int]
-
-
-@dataclass
-class IndexGraph(DataClassJsonMixin):
-    """A graph representing the tree-structured index."""
-
-    all_nodes: Dict[int, Node]
-    root_nodes: Dict[int, Node]
+    """
 
     @property
-    def size(self) -> int:
-        """Get the size of the graph."""
-        return len(self.all_nodes)
+    @abstractmethod
+    def text(self) -> str:
+        """Get text."""
+
+    @property
+    def doc_id(self) -> str:
+        """Get doc_id."""
+        raise NotImplementedError("Not implemented yet.")
+
+
+@dataclass
+class Document(BaseDocument):
+    """Generic interface for a data document.
+
+    This document connects to data sources.
+
+    """
+
+    _text: str
+    extra_info: Optional[Dict] = None
+
+    @property
+    def text(self) -> str:
+        """Get text."""
+        return self._text
