@@ -10,7 +10,7 @@ existing keywords in the table.
 
 import json
 from abc import abstractmethod
-from typing import Any, List, Optional, Set
+from typing import Any, Optional, Sequence, Set
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
@@ -30,7 +30,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
-from gpt_index.schema import Document
+from gpt_index.schema import BaseDocument
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -40,7 +40,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 
     def __init__(
         self,
-        documents: Optional[List[Document]] = None,
+        documents: Optional[Sequence[BaseDocument]] = None,
         index_struct: Optional[KeywordTable] = None,
         keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
         max_keywords_per_query: int = 10,
@@ -91,7 +91,9 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
 
-    def build_index_from_documents(self, documents: List[Document]) -> KeywordTable:
+    def build_index_from_documents(
+        self, documents: Sequence[BaseDocument]
+    ) -> KeywordTable:
         """Build the index from documents."""
         # do simple concatenation
         text_data = "\n".join([d.text for d in documents])
@@ -110,7 +112,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             print(f"> Keywords: {keywords}")
         return index_struct
 
-    def insert(self, document: Document, **insert_kwargs: Any) -> None:
+    def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
         text_chunks = self.text_splitter.split_text(document.text)
         for i, text_chunk in enumerate(text_chunks):
@@ -123,7 +125,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             )
             print(f"> Keywords: {keywords}")
 
-    def delete(self, document: Document) -> None:
+    def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for keyword table index.")
 

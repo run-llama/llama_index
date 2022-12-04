@@ -7,10 +7,19 @@ from typing import Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
+from gpt_index.schema import BaseDocument
+
 
 @dataclass
-class IndexStruct(DataClassJsonMixin):
+class IndexStruct(BaseDocument, DataClassJsonMixin):
     """A base data struct for a GPT index."""
+
+    @property
+    def text(self) -> str:
+        """Get text."""
+        # TODO: make this an abstractmethod once we implement
+        # this for all index structs.
+        raise NotImplementedError("Not implemented yet.")
 
 
 @dataclass
@@ -21,19 +30,29 @@ class Node(IndexStruct):
 
     """
 
-    text: str
-    # ID field
+    _text: str
+    # TODO: remove
     index: int
     # used for GPTTreeIndex
-    child_indices: Set[int]
+    child_indices: Set[int] = field(default_factory=set)
+
+    @property
+    def text(self) -> str:
+        """Get text."""
+        return self._text
+
+    @text.setter
+    def text(self, text: str) -> None:
+        """Set text."""
+        self._text = text
 
 
 @dataclass
 class IndexGraph(IndexStruct):
     """A graph representing the tree-structured index."""
 
-    all_nodes: Dict[int, Node]
-    root_nodes: Dict[int, Node]
+    all_nodes: Dict[int, Node] = field(default_factory=dict)
+    root_nodes: Dict[int, Node] = field(default_factory=dict)
 
     @property
     def size(self) -> int:
@@ -113,6 +132,6 @@ class IndexList(IndexStruct):
     def add_text(self, text_chunk: str) -> int:
         """Add text to table, return current position in list."""
         # don't worry about child indices for now, nodes are all in order
-        cur_node = Node(text=text_chunk, index=len(self.nodes), child_indices=set())
+        cur_node = Node(text_chunk, index=len(self.nodes), child_indices=set())
         self.nodes.append(cur_node)
         return cur_node.index

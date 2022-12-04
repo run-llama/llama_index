@@ -1,7 +1,7 @@
 """Tree-based index."""
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
@@ -25,7 +25,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
-from gpt_index.schema import Document
+from gpt_index.schema import BaseDocument
 
 RETRIEVE_MODE = "retrieve"
 
@@ -109,7 +109,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
 
     def __init__(
         self,
-        documents: Optional[List[Document]] = None,
+        documents: Optional[Sequence[BaseDocument]] = None,
         index_struct: Optional[IndexGraph] = None,
         summary_template: Prompt = DEFAULT_SUMMARY_PROMPT,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
@@ -144,7 +144,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
 
-    def build_index_from_documents(self, documents: List[Document]) -> IndexGraph:
+    def build_index_from_documents(
+        self, documents: Sequence[BaseDocument]
+    ) -> IndexGraph:
         """Build the index from documents."""
         # do simple concatenation
         text_data = "\n".join([d.text for d in documents])
@@ -156,7 +158,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         index_graph = index_builder.build_from_text(text_data)
         return index_graph
 
-    def insert(self, document: Document, **insert_kwargs: Any) -> None:
+    def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
         # TODO: allow to customize insert prompt
         inserter = GPTIndexInserter(
@@ -167,7 +169,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         )
         inserter.insert(document.text)
 
-    def delete(self, document: Document) -> None:
+    def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for tree index.")
 

@@ -121,7 +121,7 @@ class NotionPageReader(BaseReader):
         docs = []
         for page_id in load_kwargs["page_ids"]:
             page_text = self.read_page(page_id)
-            docs.append(Document(text=page_text, extra_info={"page_id": page_id}))
+            docs.append(Document(page_text, extra_info={"page_id": page_id}))
         return docs
 
 

@@ -6,7 +6,7 @@ in sequence in order to answer a given query.
 """
 
 import json
-from typing import Any, List, Optional
+from typing import Any, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
@@ -17,7 +17,7 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.schema import Document
+from gpt_index.schema import BaseDocument
 
 
 class GPTListIndex(BaseGPTIndex[IndexList]):
@@ -25,7 +25,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
 
     def __init__(
         self,
-        documents: Optional[List[Document]] = None,
+        documents: Optional[Sequence[BaseDocument]] = None,
         index_struct: Optional[IndexList] = None,
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -47,7 +47,9 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
         )
 
-    def build_index_from_documents(self, documents: List[Document]) -> IndexList:
+    def build_index_from_documents(
+        self, documents: Sequence[BaseDocument]
+    ) -> IndexList:
         """Build the index from documents."""
         # do a simple concatenation
         text_data = "\n".join([d.text for d in documents])
@@ -68,7 +70,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
 
-    def insert(self, document: Document, **insert_kwargs: Any) -> None:
+    def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
         text_chunks = self.text_splitter.split_text(document.text)
         for _, text_chunk in enumerate(text_chunks):
@@ -76,7 +78,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             print(f"> Adding chunk: {fmt_text_chunk}")
             self._index_struct.add_text(text_chunk)
 
-    def delete(self, document: Document) -> None:
+    def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for list index.")
 
