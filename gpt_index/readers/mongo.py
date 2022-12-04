@@ -2,8 +2,6 @@
 
 from typing import Any, Dict, List, Optional
 
-from pymongo import MongoClient
-
 from gpt_index.readers.base import BaseReader
 from gpt_index.schema import Document
 
@@ -17,6 +15,13 @@ class SimpleMongoReader(BaseReader):
 
     def __init__(self, host: str, port: int, max_docs: int = 1000) -> None:
         """Initialize with parameters."""
+        try:
+            import pymongo  # noqa: F401
+            from pymongo import MongoClient  # noqa: F401
+        except ImportError:
+            raise ValueError(
+                "`pymongo` package not found, please run `pip install pymongo`"
+            )
         self.client: MongoClient = MongoClient(host, port)
         self.max_docs = max_docs
 
