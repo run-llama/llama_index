@@ -13,8 +13,8 @@ class BaseDocument(ABC):
 
     """
 
-    @abstractmethod
     @property
+    @abstractmethod
     def text(self) -> str:
         """Get text."""
 
