@@ -5,6 +5,8 @@ from typing import Dict, List
 from gpt_index.embeddings.utils import (
     TEXT_SEARCH_MODE,
     get_query_text_embedding_similarity,
+    get_query_embedding,
+    get_text_embedding
 )
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
@@ -79,13 +81,35 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
 
         return response
 
+    def _get_query_text_embedding_similarity(
+        self, query_embedding: List[float], node: Node, 
+        mode: str = TEXT_SEARCH_MODE
+    ) -> float:
+        """
+        Get query text embedding similarity.
+
+        Cache the query embedding and the node text embedding.
+        
+        """
+        if node.embedding is not None:
+            text_embedding = node.embedding
+        else:
+            text_embedding = get_text_embedding(node.text, mode=mode)
+
+        return get_query_text_embedding_similarity(
+            query_embedding, text_embedding, mode=mode
+        )
+
     def _get_most_similar_node(
         self, nodes: List[Node], query_str: str, mode: str = TEXT_SEARCH_MODE
     ) -> Node:
         """Get the node with the highest similarity to the query."""
+        query_embedding = get_query_embedding(query_str, mode=mode)
+
         similarities = [
-            get_query_text_embedding_similarity(query_str, node.text, mode)
+            self._get_query_text_embedding_similarity(query_embedding, node, mode=mode)
             for node in nodes
         ]
+
         selected_node = nodes[similarities.index(max(similarities))]
         return selected_node
