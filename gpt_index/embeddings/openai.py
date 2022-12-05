@@ -15,6 +15,8 @@ class OpenAIEmbeddingMode(str, Enum):
     TEXT_SEARCH_MODE = "text_search"
 
 
+EMBED_MAX_TOKEN_LIMIT = 2048
+
 TEXT_SIMILARITY_DAVINCI = "text-similarity-davinci-001"
 TEXT_SEARCH_DAVINCI_QUERY = "text-search-davinci-query-001"
 TEXT_SEARCH_DAVINCI_DOC = "text-search-davinci-doc-001"

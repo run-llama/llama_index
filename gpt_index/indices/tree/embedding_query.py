@@ -1,6 +1,6 @@
 """Query Tree using embedding similarity between query and node text."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexGraph, Node
@@ -57,7 +57,12 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         # Get the node with the highest similarity to the query
-        selected_node = self._get_most_similar_node(cur_node_list, query_str)
+        selected_node, selected_index = self._get_most_similar_node(cur_node_list, query_str)
+        if verbose:
+            print(
+                f">[Level {level}] Node "
+                f"[{selected_index+1}] Summary text: {' '.join(selected_node.text.splitlines())}"
+            )
 
         # Get the response for the selected node
         response = self._query_with_selected_node(
@@ -88,9 +93,11 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             similarities.append(similarity)
         return similarities
 
-    def _get_most_similar_node(self, nodes: List[Node], query_str: str) -> Node:
+    def _get_most_similar_node(self, nodes: List[Node], query_str: str) -> Tuple[Node, int]:
         """Get the node with the highest similarity to the query."""
         similarities = self._get_query_text_embedding_similarities(query_str, nodes)
 
+        selected_index = similarities.index(max(similarities))
+
         selected_node = nodes[similarities.index(max(similarities))]
-        return selected_node
+        return selected_node, selected_index

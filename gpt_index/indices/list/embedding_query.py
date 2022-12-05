@@ -9,6 +9,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
+from gpt_index.indices.utils import truncate_text
 
 
 class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
@@ -20,7 +21,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         refine_template: Prompt = DEFAULT_REFINE_PROMPT,
         keyword: Optional[str] = None,
-        similarity_top_k: Optional[int] = 3,
+        similarity_top_k: Optional[int] = 1,
         embed_model: Optional[OpenAIEmbedding] = None,
     ) -> None:
         """Initialize params."""
@@ -49,6 +50,10 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         sorted_nodes = [n for _, n in sorted_node_tups]
         similarity_top_k = self.similarity_top_k or len(nodes)
         top_k_nodes = sorted_nodes[:similarity_top_k]
+        if verbose:
+            # top_k_node_text = "\n".join([truncate_text(n.text, 200) for n in top_k_nodes])
+            top_k_node_text = "\n".join([n.text for n in top_k_nodes])
+            print(f"Top {similarity_top_k} nodes: {top_k_node_text}")
         return top_k_nodes
 
     def _get_query_text_embedding_similarities(
