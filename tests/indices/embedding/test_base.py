@@ -1,4 +1,4 @@
-"""Test list index."""
+"""Test embedding functionalities."""
 
 from collections import defaultdict
 from typing import Any, Dict, List, Tuple
@@ -6,24 +6,42 @@ from unittest.mock import patch
 
 import pytest
 
+from gpt_index.embeddings.utils import get_embedding_similarity
 from gpt_index.indices.data_structs import Node
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.tree.base import GPTTreeIndex
+from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
 from tests.mock_utils.mock_predict import mock_openai_llm_predict
-from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
+from tests.mock_utils.mock_prompts import (
+    MOCK_INSERT_PROMPT,
+    MOCK_QUERY_PROMPT,
+    MOCK_REFINE_PROMPT,
+    MOCK_SUMMARY_PROMPT,
+    MOCK_TEXT_QA_PROMPT,
+)
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
+
+
+def test_embedding_similarity() -> None:
+    """Test embedding similarity."""
+    text_embedding = [3.0, 4.0, 0.0]
+    query_embedding = [0.0, 1.0, 0.0]
+    cosine = get_embedding_similarity(query_embedding, text_embedding)
+    assert cosine == 0.8
 
 
 @pytest.fixture
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
     index_kwargs = {
-        "text_qa_template": MOCK_TEXT_QA_PROMPT,
+        "summary_template": MOCK_SUMMARY_PROMPT,
+        "insert_prompt": MOCK_INSERT_PROMPT,
+        "num_children": 2,
     }
     query_kwargs = {
+        "query_template": MOCK_QUERY_PROMPT,
         "text_qa_template": MOCK_TEXT_QA_PROMPT,
         "refine_template": MOCK_REFINE_PROMPT,
     }
@@ -41,37 +59,6 @@ def documents() -> List[Document]:
         "This is a test v2."
     )
     return [Document(doc_text)]
-
-
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "__init__", return_value=None)
-def test_build_list(
-    _mock_init: Any, _mock_splitter: Any, documents: List[Document]
-) -> None:
-    """Test build list."""
-    list_index = GPTListIndex(documents=documents)
-    assert len(list_index.index_struct.nodes) == 4
-    # check contents of nodes
-    assert list_index.index_struct.nodes[0].text == "Hello world."
-    assert list_index.index_struct.nodes[1].text == "This is a test."
-    assert list_index.index_struct.nodes[2].text == "This is another test."
-    assert list_index.index_struct.nodes[3].text == "This is a test v2."
-
-
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "__init__", return_value=None)
-def test_list_insert(
-    _mock_init: Any, _mock_splitter: Any, documents: List[Document]
-) -> None:
-    """Test insert to list."""
-    list_index = GPTListIndex([])
-    assert len(list_index.index_struct.nodes) == 0
-    list_index.insert(documents[0])
-    # check contents of nodes
-    assert list_index.index_struct.nodes[0].text == "Hello world."
-    assert list_index.index_struct.nodes[1].text == "This is a test."
-    assert list_index.index_struct.nodes[2].text == "This is another test."
-    assert list_index.index_struct.nodes[3].text == "This is a test v2."
 
 
 def _get_node_text_embedding_similarities(
@@ -95,7 +82,7 @@ def _get_node_text_embedding_similarities(
 @patch.object(LLMPredictor, "__init__", return_value=None)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
 @patch.object(
-    GPTListIndexEmbeddingQuery,
+    GPTTreeIndexEmbeddingQuery,
     "_get_query_text_embedding_similarities",
     side_effect=_get_node_text_embedding_similarities,
 )
@@ -104,16 +91,14 @@ def test_embedding_query(
     _mock_predict: Any,
     _mock_init: Any,
     _mock_split_text: Any,
-    documents: List[Document],
     struct_kwargs: Dict,
+    documents: List[Document],
 ) -> None:
     """Test embedding query."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents, **index_kwargs)
+    tree = GPTTreeIndex(documents, **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
-    response = index.query(
-        query_str, mode="embedding", similarity_top_k=1, **query_kwargs
-    )
+    response = tree.query(query_str, mode="embedding", **query_kwargs)
     assert response == ("What is?\n" "Hello world.")

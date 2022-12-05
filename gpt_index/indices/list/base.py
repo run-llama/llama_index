@@ -9,9 +9,15 @@ import json
 from typing import Any, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
-from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
+from gpt_index.indices.base import (
+    DEFAULT_MODE,
+    EMBEDDING_MODE,
+    BaseGPTIndex,
+    BaseGPTIndexQuery,
+)
 from gpt_index.indices.data_structs import IndexList
-from gpt_index.indices.list.query import GPTListIndexQuery
+from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.list.query import BaseGPTListIndexQuery, GPTListIndexQuery
 from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -65,7 +71,11 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         if mode == DEFAULT_MODE:
             if "text_qa_template" not in query_kwargs:
                 query_kwargs["text_qa_template"] = self.text_qa_template
-            query = GPTListIndexQuery(self.index_struct, **query_kwargs)
+            query: BaseGPTListIndexQuery = GPTListIndexQuery(
+                self.index_struct, **query_kwargs
+            )
+        elif mode == EMBEDDING_MODE:
+            query = GPTListIndexEmbeddingQuery(self.index_struct, **query_kwargs)
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
         return query

@@ -53,6 +53,7 @@ def mock_openai_llm_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, st
     Depending on the prompt, return response.
 
     """
+    print(prompt)
     formatted_prompt = prompt.format(**prompt_args)
     if prompt == MOCK_SUMMARY_PROMPT:
         response = _mock_summary_predict(prompt_args)
