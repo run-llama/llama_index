@@ -1,11 +1,7 @@
 """Embedding query for list index."""
 from typing import List, Optional
 
-from gpt_index.embeddings.utils import (
-    cosine_similarity,
-    get_query_embedding,
-    get_text_embedding,
-)
+from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexList, Node
 from gpt_index.indices.list.query import BaseGPTListIndexQuery
 from gpt_index.prompts.base import Prompt
@@ -24,7 +20,8 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         refine_template: Prompt = DEFAULT_REFINE_PROMPT,
         keyword: Optional[str] = None,
-        similarity_top_k: Optional[int] = 3,
+        similarity_top_k: Optional[int] = 1,
+        embed_model: Optional[OpenAIEmbedding] = None,
     ) -> None:
         """Initialize params."""
         super().__init__(
@@ -33,6 +30,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
             refine_template=refine_template,
             keyword=keyword,
         )
+        self._embed_model = embed_model or OpenAIEmbedding()
         self.similarity_top_k = similarity_top_k
 
     def _get_nodes_for_response(
@@ -51,23 +49,25 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         sorted_nodes = [n for _, n in sorted_node_tups]
         similarity_top_k = self.similarity_top_k or len(nodes)
         top_k_nodes = sorted_nodes[:similarity_top_k]
+        if verbose:
+            top_k_node_text = "\n".join([n.text for n in top_k_nodes])
+            print(f"Top {similarity_top_k} nodes: {top_k_node_text}")
         return top_k_nodes
 
     def _get_query_text_embedding_similarities(
         self, query_str: str, nodes: List[Node]
     ) -> List[float]:
         """Get top nodes by similarity to the query."""
-        query_embedding = get_query_embedding(query_str)
-        # node_similarities: List[Tuple[float, Node]] = []
+        query_embedding = self._embed_model.get_query_embedding(query_str)
         similarities = []
         for node in self.index_struct.nodes:
             if node.embedding is not None:
                 text_embedding = node.embedding
             else:
-                text_embedding = get_text_embedding(node.text)
+                text_embedding = self._embed_model.get_text_embedding(node.text)
                 node.embedding = text_embedding
 
-            similarity = cosine_similarity(query_embedding, text_embedding)
+            similarity = self._embed_model.similarity(query_embedding, text_embedding)
             similarities.append(similarity)
 
         return similarities

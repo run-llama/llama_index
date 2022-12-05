@@ -4,6 +4,7 @@ import json
 from typing import Any, Dict, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
+from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
 from gpt_index.indices.base import (
     DEFAULT_MODE,
     EMBEDDING_MODE,
@@ -51,7 +52,11 @@ class GPTTreeIndexBuilder:
         self.num_children = num_children
         self.summary_prompt = summary_prompt
         chunk_size = get_chunk_size_given_prompt(
-            summary_prompt.format(text=""), MAX_CHUNK_SIZE, num_children, NUM_OUTPUTS
+            summary_prompt.format(text=""),
+            MAX_CHUNK_SIZE,
+            num_children,
+            NUM_OUTPUTS,
+            embedding_limit=EMBED_MAX_TOKEN_LIMIT,
         )
         self.text_splitter = TokenTextSplitter(
             separator=" ",

@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.embeddings.utils import get_embedding_similarity
+from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import Node
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
@@ -26,9 +26,10 @@ from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 def test_embedding_similarity() -> None:
     """Test embedding similarity."""
+    embed_model = OpenAIEmbedding()
     text_embedding = [3.0, 4.0, 0.0]
     query_embedding = [0.0, 1.0, 0.0]
-    cosine = get_embedding_similarity(query_embedding, text_embedding)
+    cosine = embed_model.similarity(query_embedding, text_embedding)
     assert cosine == 0.8
 
 
