@@ -74,7 +74,7 @@ def test_list_insert(
     assert list_index.index_struct.nodes[3].text == "This is a test v2."
 
 
-def _get_node_text_embedding_similarity(
+def _get_node_text_embedding_similarities(
     query_embedding: List[float], nodes: List[Node]
 ) -> List[float]:
     """Get node text embedding similarity."""
@@ -97,7 +97,7 @@ def _get_node_text_embedding_similarity(
 @patch.object(
     GPTListIndexEmbeddingQuery,
     "_get_query_text_embedding_similarities",
-    side_effect=_get_node_text_embedding_similarity,
+    side_effect=_get_node_text_embedding_similarities,
 )
 def test_embedding_query(
     _mock_similarity: Any,

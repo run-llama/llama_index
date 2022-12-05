@@ -61,9 +61,9 @@ def documents() -> List[Document]:
     return [Document(doc_text)]
 
 
-def _get_node_text_embedding_similarity(
-    query_embedding: List[float], node: Node, mode: str
-) -> float:
+def _get_node_text_embedding_similarities(
+    query_embedding: List[float], nodes: List[Node]
+) -> List[float]:
     """Get node text embedding similarity."""
     text_similarity_map = defaultdict(lambda: 0.0)
     text_similarity_map["Hello world."] = 0.9
@@ -71,7 +71,11 @@ def _get_node_text_embedding_similarity(
     text_similarity_map["This is another test."] = 0.7
     text_similarity_map["This is a test v2."] = 0.6
 
-    return text_similarity_map[node.text]
+    similarities = []
+    for node in nodes:
+        similarities.append(text_similarity_map[node.text])
+
+    return similarities
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -79,8 +83,8 @@ def _get_node_text_embedding_similarity(
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
 @patch.object(
     GPTTreeIndexEmbeddingQuery,
-    "_get_query_text_embedding_similarity",
-    side_effect=_get_node_text_embedding_similarity,
+    "_get_query_text_embedding_similarities",
+    side_effect=_get_node_text_embedding_similarities,
 )
 def test_embedding_query(
     _mock_similarity: Any,
