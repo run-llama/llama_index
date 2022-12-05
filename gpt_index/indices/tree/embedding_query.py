@@ -1,13 +1,8 @@
 """Query Tree using embedding similarity between query and node text."""
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
-from gpt_index.embeddings.utils import (
-    TEXT_SEARCH_MODE,
-    cosine_similarity,
-    get_query_embedding,
-    get_text_embedding,
-)
+from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.utils import get_sorted_node_list
@@ -37,6 +32,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         refine_template: Prompt = DEFAULT_REFINE_PROMPT,
         child_branch_factor: int = 1,
+        embed_model: Optional[OpenAIEmbedding] = None,
     ) -> None:
         """Initialize params."""
         super().__init__(
@@ -47,16 +43,8 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             refine_template,
             child_branch_factor,
         )
+        self._embed_model = embed_model or OpenAIEmbedding()
         self.child_branch_factor = child_branch_factor
-
-    def query(
-        self, query_str: str, verbose: bool = False, mode: str = TEXT_SEARCH_MODE
-    ) -> str:
-        """Answer a query."""
-        print(f"> Starting query: {query_str}")
-        return self._query(
-            self.index_struct.root_nodes, query_str, level=0, verbose=verbose, mode=mode
-        ).strip()
 
     def _query(
         self,
@@ -64,13 +52,12 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         query_str: str,
         level: int = 0,
         verbose: bool = False,
-        mode: str = TEXT_SEARCH_MODE,
     ) -> str:
 
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         # Get the node with the highest similarity to the query
-        selected_node = self._get_most_similar_node(cur_node_list, query_str, mode)
+        selected_node = self._get_most_similar_node(cur_node_list, query_str)
 
         # Get the response for the selected node
         response = self._query_with_selected_node(
@@ -80,7 +67,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         return response
 
     def _get_query_text_embedding_similarities(
-        self, query_str: str, nodes: List[Node], mode: str = TEXT_SEARCH_MODE
+        self, query_str: str, nodes: List[Node]
     ) -> List[float]:
         """
         Get query text embedding similarity.
@@ -88,22 +75,20 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         Cache the query embedding and the node text embedding.
 
         """
-        query_embedding = get_query_embedding(query_str, mode=mode)
+        query_embedding = self._embed_model.get_query_embedding(query_str)
         similarities = []
         for node in nodes:
             if node.embedding is not None:
                 text_embedding = node.embedding
             else:
-                text_embedding = get_text_embedding(node.text, mode=mode)
+                text_embedding = self._embed_model.get_text_embedding(node.text)
                 node.embedding = text_embedding
 
-            similarity = cosine_similarity(query_embedding, text_embedding)
+            similarity = self._embed_model.similarity(query_embedding, text_embedding)
             similarities.append(similarity)
         return similarities
 
-    def _get_most_similar_node(
-        self, nodes: List[Node], query_str: str, mode: str = TEXT_SEARCH_MODE
-    ) -> Node:
+    def _get_most_similar_node(self, nodes: List[Node], query_str: str) -> Node:
         """Get the node with the highest similarity to the query."""
         similarities = self._get_query_text_embedding_similarities(query_str, nodes)
 
