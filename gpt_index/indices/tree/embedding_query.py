@@ -57,11 +57,13 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         # Get the node with the highest similarity to the query
-        selected_node, selected_index = self._get_most_similar_node(cur_node_list, query_str)
+        selected_node, selected_index = self._get_most_similar_node(
+            cur_node_list, query_str
+        )
         if verbose:
             print(
-                f">[Level {level}] Node "
-                f"[{selected_index+1}] Summary text: {' '.join(selected_node.text.splitlines())}"
+                f">[Level {level}] Node [{selected_index+1}] Summary text: "
+                f"{' '.join(selected_node.text.splitlines())}"
             )
 
         # Get the response for the selected node
@@ -93,7 +95,9 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             similarities.append(similarity)
         return similarities
 
-    def _get_most_similar_node(self, nodes: List[Node], query_str: str) -> Tuple[Node, int]:
+    def _get_most_similar_node(
+        self, nodes: List[Node], query_str: str
+    ) -> Tuple[Node, int]:
         """Get the node with the highest similarity to the query."""
         similarities = self._get_query_text_embedding_similarities(query_str, nodes)
 

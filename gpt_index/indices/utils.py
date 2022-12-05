@@ -33,11 +33,11 @@ def get_numbered_text_from_nodes(node_list: List[Node]) -> str:
 
 
 def get_chunk_size_given_prompt(
-    prompt: str, 
-    max_input_size: int, 
-    num_chunks: int, 
+    prompt: str,
+    max_input_size: int,
+    num_chunks: int,
     num_output: int,
-    embedding_limit: Optional[int] = None
+    embedding_limit: Optional[int] = None,
 ) -> int:
     """Get chunk size making sure we can also fit the prompt in."""
     tokenizer = globals_helper.tokenizer

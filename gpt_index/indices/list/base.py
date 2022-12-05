@@ -9,6 +9,7 @@ import json
 from typing import Any, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
+from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
 from gpt_index.indices.base import (
     DEFAULT_MODE,
     EMBEDDING_MODE,
@@ -24,7 +25,6 @@ from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.schema import BaseDocument
-from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
 
 
 class GPTListIndex(BaseGPTIndex[IndexList]):
@@ -47,7 +47,11 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         # To do this, we would need to include the embedding_limit in the
         # embed_model, and include that for every index.
         chunk_size = get_chunk_size_given_prompt(
-            empty_qa, MAX_CHUNK_SIZE, 1, NUM_OUTPUTS, embedding_limit=EMBED_MAX_TOKEN_LIMIT
+            empty_qa,
+            MAX_CHUNK_SIZE,
+            1,
+            NUM_OUTPUTS,
+            embedding_limit=EMBED_MAX_TOKEN_LIMIT,
         )
         self.text_splitter = TokenTextSplitter(
             separator=" ",
