@@ -36,6 +36,9 @@ class Node(IndexStruct):
     # used for GPTTreeIndex
     child_indices: Set[int] = field(default_factory=set)
 
+    # embeddings
+    embedding: Optional[List[float]] = None
+
     @property
     def text(self) -> str:
         """Get text."""

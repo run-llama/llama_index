@@ -30,23 +30,6 @@ def get_text_embedding(text: str, mode: str = TEXT_SEARCH_MODE) -> List[float]:
     return get_embedding(text, engine=engine)
 
 
-def get_query_text_embedding_similarity(
-    query: str,
-    text: str,
-    mode: str = TEXT_SEARCH_MODE,
-) -> float:
-    """Get similarity between query and text."""
-    if mode == SIMILARITY_MODE:
-        query_engine = TEXT_SIMILARITY_DAVINCI
-        doc_engine = TEXT_SIMILARITY_DAVINCI
-    elif mode == TEXT_SEARCH_MODE:
-        query_engine = TEXT_SEARCH_DAVINCI_QUERY
-        doc_engine = TEXT_SEARCH_DAVINCI_DOC
-    query_embedding = get_embedding(query, engine=query_engine)
-    text_embedding = get_embedding(text, engine=doc_engine)
-    return cosine_similarity(query_embedding, text_embedding)
-
-
 def get_embedding_similarity(embedding1: List[float], embedding2: List[float]) -> float:
     """Get similarity between two embeddings."""
     return cosine_similarity(embedding1, embedding2)
