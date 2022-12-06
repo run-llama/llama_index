@@ -65,10 +65,15 @@ class GPTTreeIndexBuilder:
         )
         self._llm_predictor = llm_predictor or LLMPredictor()
 
-    def _get_nodes_from_document(self, document: BaseDocument) -> Dict[int, Node]:
+    def _get_nodes_from_document(
+        self, start_idx: int, document: BaseDocument
+    ) -> Dict[int, Node]:
         """Add document to index."""
         text_chunks = self.text_splitter.split_text(document.text)
-        doc_nodes = {i: Node(t, i, set()) for i, t in enumerate(text_chunks)}
+        doc_nodes = {
+            (start_idx + i): Node(t, (start_idx + i), set())
+            for i, t in enumerate(text_chunks)
+        }
         return doc_nodes
 
     def build_from_text(self, documents: Sequence[BaseDocument]) -> IndexGraph:
@@ -78,9 +83,9 @@ class GPTTreeIndexBuilder:
             IndexGraph: graph object consisting of all_nodes, root_nodes
 
         """
-        all_nodes = {}
+        all_nodes: Dict[int, Node] = {}
         for d in documents:
-            all_nodes.update(self._get_nodes_from_document(d))
+            all_nodes.update(self._get_nodes_from_document(len(all_nodes), d))
         # instantiate all_nodes from initial text chunks
         root_nodes = self._build_index_from_nodes(all_nodes, all_nodes)
         return IndexGraph(all_nodes, root_nodes)
