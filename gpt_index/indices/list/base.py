@@ -65,7 +65,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
     def _add_document_to_index(
         self, index_struct: IndexList, document: BaseDocument
     ) -> None:
-        """Build index from document."""
+        """Add document to index."""
         text_chunks = self.text_splitter.split_text(document.text)
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)

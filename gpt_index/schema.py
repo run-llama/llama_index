@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-from gpt_index.utils import get_new_id
-
 
 @dataclass
 class BaseDocument(ABC):

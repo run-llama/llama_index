@@ -1,7 +1,7 @@
 """Tree-based index."""
 
 import json
-from typing import Any, Dict, Optional, Sequence, List
+from typing import Any, Dict, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
@@ -65,13 +65,13 @@ class GPTTreeIndexBuilder:
         )
         self._llm_predictor = llm_predictor or LLMPredictor()
 
-    def _get_nodes_from_document(self, document: BaseDocument) -> None:
+    def _get_nodes_from_document(self, document: BaseDocument) -> Dict[int, Node]:
         """Add document to index."""
         text_chunks = self.text_splitter.split_text(document.text)
         doc_nodes = {i: Node(t, i, set()) for i, t in enumerate(text_chunks)}
         return doc_nodes
 
-    def build_from_text(self, documents: List[BaseDocument]) -> IndexGraph:
+    def build_from_text(self, documents: Sequence[BaseDocument]) -> IndexGraph:
         """Build from text.
 
         Returns:
@@ -156,7 +156,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
-
 
     def build_index_from_documents(
         self, documents: Sequence[BaseDocument]
