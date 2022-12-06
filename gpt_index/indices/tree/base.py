@@ -88,7 +88,7 @@ class GPTTreeIndexBuilder:
             all_nodes.update(self._get_nodes_from_document(len(all_nodes), d))
         # instantiate all_nodes from initial text chunks
         root_nodes = self._build_index_from_nodes(all_nodes, all_nodes)
-        return IndexGraph(all_nodes, root_nodes)
+        return IndexGraph(all_nodes=all_nodes, root_nodes=root_nodes)
 
     def _build_index_from_nodes(
         self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node]

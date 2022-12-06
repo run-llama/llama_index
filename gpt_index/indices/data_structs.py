@@ -4,6 +4,7 @@ import random
 import sys
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
+from abc import abstractmethod
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -14,12 +15,21 @@ from gpt_index.schema import BaseDocument
 class IndexStruct(BaseDocument, DataClassJsonMixin):
     """A base data struct for a GPT index."""
 
+    # NOTE: this field represents a summary of the content of the index struct.
+    # primarily used for composing indices with other indices
+    _text: Optional[str] = None
+
     @property
     def text(self) -> str:
         """Get text."""
-        # TODO: make this an abstractmethod once we implement
-        # this for all index structs.
-        raise NotImplementedError("Not implemented yet.")
+        if self._text is None:
+            raise ValueError("_text field not set.")
+        return self._text
+
+    @text.setter
+    def text(self, text: str) -> None:
+        """Set text."""
+        self._text = text
 
 
 @dataclass
@@ -30,25 +40,14 @@ class Node(IndexStruct):
 
     """
 
-    _text: str
     # TODO: remove
-    index: int
+    index: int = 0
     # used for GPTTreeIndex
     child_indices: Set[int] = field(default_factory=set)
 
     # embeddings
     embedding: Optional[List[float]] = None
-
-    @property
-    def text(self) -> str:
-        """Get text."""
-        return self._text
-
-    @text.setter
-    def text(self, text: str) -> None:
-        """Set text."""
-        self._text = text
-
+   
 
 @dataclass
 class IndexGraph(IndexStruct):
@@ -56,7 +55,7 @@ class IndexGraph(IndexStruct):
 
     all_nodes: Dict[int, Node] = field(default_factory=dict)
     root_nodes: Dict[int, Node] = field(default_factory=dict)
-
+   
     @property
     def size(self) -> int:
         """Get the size of the graph."""

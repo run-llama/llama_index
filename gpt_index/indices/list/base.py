@@ -7,6 +7,7 @@ in sequence in order to answer a given query.
 
 import json
 from typing import Any, Optional, Sequence
+from abc import abstractmethod
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
@@ -25,6 +26,12 @@ from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.schema import BaseDocument
+
+
+# This query is used to summarize the contents of the index.
+GENERATE_TEXT_QUERY = (
+    "What is a concise summary of this document?"
+)
 
 
 class GPTListIndex(BaseGPTIndex[IndexList]):
@@ -81,7 +88,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             self._add_document_to_index(index_struct, d)
         return index_struct
 
-    def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
+    def _mode_to_query(self, mode: str, *query_args: Any, **query_kwargs: Any) -> BaseGPTIndexQuery:
         if mode == DEFAULT_MODE:
             if "text_qa_template" not in query_kwargs:
                 query_kwargs["text_qa_template"] = self.text_qa_template
