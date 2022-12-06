@@ -38,6 +38,7 @@ class SlackReader(BaseReader):
 
     def _read_message(self, channel_id: str, message_ts: str) -> str:
         from slack_sdk.errors import SlackApiError
+
         """Read a message."""
 
         messages_text = []
@@ -46,7 +47,8 @@ class SlackReader(BaseReader):
             # https://slack.com/api/conversations.replies
             # List all replies to a message, including the message itself.
             result = self.client.conversations_replies(
-                channel=channel_id, ts=message_ts, cursor=next_cursor)
+                channel=channel_id, ts=message_ts, cursor=next_cursor
+            )
             try:
                 messages = result["messages"]
                 for message in messages:
@@ -63,6 +65,7 @@ class SlackReader(BaseReader):
 
     def _read_channel(self, channel_id: str) -> str:
         from slack_sdk.errors import SlackApiError
+
         """Read a channel."""
 
         result_messages = []
@@ -84,7 +87,8 @@ class SlackReader(BaseReader):
                 )
                 for message in conversation_history:
                     result_messages.append(
-                        self._read_message(channel_id, message["ts"]))
+                        self._read_message(channel_id, message["ts"])
+                    )
 
                 if not result["has_more"]:
                     break
@@ -93,7 +97,7 @@ class SlackReader(BaseReader):
             except SlackApiError as e:
                 logger.error("Error creating conversation: {}".format(e))
 
-        return "\n\n".join([m["text"] for m in result_messages])
+        return "\n\n".join(result_messages)
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
