@@ -5,7 +5,6 @@ from typing import Any, List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.schema import Document
-from slack_sdk.errors import SlackApiError
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +37,7 @@ class SlackReader(BaseReader):
             raise ValueError(f"Error initializing Slack API: {res['error']}")
 
     def _read_message(self, channel_id: str, message_ts: str) -> str:
+        from slack_sdk.errors import SlackApiError
         """Read a message."""
 
         messages_text = []
@@ -62,6 +62,7 @@ class SlackReader(BaseReader):
         return "\n\n".join(messages_text)
 
     def _read_channel(self, channel_id: str) -> str:
+        from slack_sdk.errors import SlackApiError
         """Read a channel."""
 
         result_messages = []
