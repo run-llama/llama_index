@@ -5,6 +5,7 @@ from typing import Any, List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.schema import Document
+from slack_sdk.errors import SlackApiError
 
 logger = logging.getLogger(__name__)
 
@@ -36,14 +37,36 @@ class SlackReader(BaseReader):
         if not res["ok"]:
             raise ValueError(f"Error initializing Slack API: {res['error']}")
 
+    def _read_message(self, channel_id: str, message_ts: str) -> str:
+        """Read a message."""
+
+        messages_text = []
+        next_cursor = None
+        while True:
+            # https://slack.com/api/conversations.replies
+            # List all replies to a message, including the message itself.
+            result = self.client.conversations_replies(
+                channel=channel_id, ts=message_ts, cursor=next_cursor)
+            try:
+                messages = result["messages"]
+                for message in messages:
+                    messages_text.append(message["text"])
+
+                if not result["has_more"]:
+                    break
+
+                next_cursor = result["response_metadata"]["next_cursor"]
+            except SlackApiError as e:
+                logger.error("Error parsing conversation replies: {}".format(e))
+
+        return "\n\n".join(messages_text)
+
     def _read_channel(self, channel_id: str) -> str:
         """Read a channel."""
-        from slack_sdk.errors import SlackApiError
 
         result_messages = []
-        done = False
         next_cursor = None
-        while not done:
+        while True:
             result = self.client.conversations_history(
                 channel=channel_id, cursor=next_cursor
             )
@@ -59,13 +82,12 @@ class SlackReader(BaseReader):
                     "{} messages found in {}".format(len(conversation_history), id)
                 )
                 for message in conversation_history:
-                    result_messages.append(message)
+                    result_messages.append(
+                        self._read_message(channel_id, message["ts"]))
 
-                if result["has_more"]:
-                    next_cursor = result["response_metadata"]["next_cursor"]
-                else:
-                    done = True
+                if not result["has_more"]:
                     break
+                next_cursor = result["response_metadata"]["next_cursor"]
 
             except SlackApiError as e:
                 logger.error("Error creating conversation: {}".format(e))
