@@ -60,13 +60,11 @@ def test_build_list(
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "__init__", return_value=None)
-def test_build_list(
-    _mock_init: Any, _mock_splitter: Any
-) -> None:
+def test_build_list_multiple(_mock_init: Any, _mock_splitter: Any) -> None:
     """Test build list multiple."""
     documents = [
         Document("Hello world.\nThis is a test."),
-        Document("This is another test.\nThis is a test v2.")
+        Document("This is another test.\nThis is a test v2."),
     ]
     list_index = GPTListIndex(documents=documents)
     assert len(list_index.index_struct.nodes) == 4
