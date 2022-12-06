@@ -94,6 +94,31 @@ def test_build_tree(
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
+def test_build_tree_multiple(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test build tree."""
+    new_docs = [
+        Document("Hello world.\nThis is a test."),
+        Document("This is another test.\nThis is a test v2."),
+    ]
+    index_kwargs, _ = struct_kwargs
+    tree = GPTTreeIndex(new_docs, **index_kwargs)
+    assert len(tree.index_struct.all_nodes) == 6
+    # check contents of nodes
+    assert tree.index_struct.all_nodes[0].text == "Hello world."
+    assert tree.index_struct.all_nodes[1].text == "This is a test."
+    assert tree.index_struct.all_nodes[2].text == "This is another test."
+    assert tree.index_struct.all_nodes[3].text == "This is a test v2."
+
+
+@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "__init__", return_value=None)
 def test_query(
     _mock_init: Any,
     _mock_predict: Any,
