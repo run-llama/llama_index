@@ -5,7 +5,7 @@ from typing import Any, Generic, List, Optional, Sequence, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.schema import BaseDocument, DocumentStore
+from gpt_index.schema import BaseDocument
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -22,11 +22,7 @@ class BaseGPTIndexQuery(Generic[IS]):
     """
 
     def __init__(
-        self, 
-        index_struct: IS, 
-        # TODO: pass from superclass
-        llm_predictor: Optional[LLMPredictor] = None,
-        docstore: Optional[DocumentStore] = None
+        self, index_struct: IS, llm_predictor: Optional[LLMPredictor] = None
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -34,7 +30,6 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._validate_index_struct(index_struct)
         self._index_struct = index_struct
         self._llm_predictor = llm_predictor or LLMPredictor()
-        self._docstore = docstore
 
     @property
     def index_struct(self) -> IS:
@@ -54,7 +49,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._llm_predictor = llm_predictor
 
 
-class BaseGPTIndex(BaseDocument, Generic[IS]):
+class BaseGPTIndex(Generic[IS]):
     """Base GPT Index."""
 
     def __init__(
@@ -76,40 +71,12 @@ class BaseGPTIndex(BaseDocument, Generic[IS]):
             self._index_struct = index_struct
         else:
             documents = cast(List[BaseDocument], documents)
-            # TODO: introduce document store outside __init__ function
-            self._docstore = DocumentStore.from_documents(documents)
             self._index_struct = self.build_index_from_documents(documents)
 
     @property
     def index_struct(self) -> IS:
         """Get the index struct."""
         return self._index_struct
-
-    @property
-    def index_struct_with_text(self) -> IS:
-        """Get the index struct with text.
-
-        If text not set, raise an error.
-        For use when composing indices with other indices.
-        
-        """
-        # make sure that we generate text for index struct
-        if self._index_struct.text is None:
-            raise ValueError(
-                "Index must have text property set in order "
-                "to be composed with other indices. "
-                "In order to set text, please run `index.set_text()`."
-            )
-        return self._index_struct
-
-    def set_text(self) -> None:
-        """Set text for index struct.
-
-        This allows index_struct_with_text to be used to compose indices
-        with other indices.
-        
-        """
-        self._index_struct.set_text()
 
     @abstractmethod
     def build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
