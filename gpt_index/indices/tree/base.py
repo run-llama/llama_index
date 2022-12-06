@@ -65,17 +65,28 @@ class GPTTreeIndexBuilder:
         )
         self._llm_predictor = llm_predictor or LLMPredictor()
 
-    def build_from_text(self, text: str) -> IndexGraph:
+    def _get_nodes_from_document(
+        self, start_idx: int, document: BaseDocument
+    ) -> Dict[int, Node]:
+        """Add document to index."""
+        text_chunks = self.text_splitter.split_text(document.text)
+        doc_nodes = {
+            (start_idx + i): Node(t, (start_idx + i), set())
+            for i, t in enumerate(text_chunks)
+        }
+        return doc_nodes
+
+    def build_from_text(self, documents: Sequence[BaseDocument]) -> IndexGraph:
         """Build from text.
 
         Returns:
             IndexGraph: graph object consisting of all_nodes, root_nodes
 
         """
-        text_chunks = self.text_splitter.split_text(text)
-
+        all_nodes: Dict[int, Node] = {}
+        for d in documents:
+            all_nodes.update(self._get_nodes_from_document(len(all_nodes), d))
         # instantiate all_nodes from initial text chunks
-        all_nodes = {i: Node(t, i, set()) for i, t in enumerate(text_chunks)}
         root_nodes = self._build_index_from_nodes(all_nodes, all_nodes)
         return IndexGraph(all_nodes, root_nodes)
 
@@ -156,13 +167,12 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     ) -> IndexGraph:
         """Build the index from documents."""
         # do simple concatenation
-        text_data = "\n".join([d.text for d in documents])
         index_builder = GPTTreeIndexBuilder(
             num_children=self.num_children,
             summary_prompt=self.summary_template,
             llm_predictor=self._llm_predictor,
         )
-        index_graph = index_builder.build_from_text(text_data)
+        index_graph = index_builder.build_from_text(documents)
         return index_graph
 
     def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:

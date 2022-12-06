@@ -62,18 +62,23 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
         )
 
-    def build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
-    ) -> IndexList:
-        """Build the index from documents."""
-        # do a simple concatenation
-        text_data = "\n".join([d.text for d in documents])
-        index_struct = IndexList()
-        text_chunks = self.text_splitter.split_text(text_data)
+    def _add_document_to_index(
+        self, index_struct: IndexList, document: BaseDocument
+    ) -> None:
+        """Add document to index."""
+        text_chunks = self.text_splitter.split_text(document.text)
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
             index_struct.add_text(text_chunk)
+
+    def build_index_from_documents(
+        self, documents: Sequence[BaseDocument]
+    ) -> IndexList:
+        """Build the index from documents."""
+        index_struct = IndexList()
+        for d in documents:
+            self._add_document_to_index(index_struct, d)
         return index_struct
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
