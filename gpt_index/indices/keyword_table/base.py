@@ -91,16 +91,11 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
 
-    def build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
-    ) -> KeywordTable:
-        """Build the index from documents."""
-        # do simple concatenation
-        text_data = "\n".join([d.text for d in documents])
-
-        index_struct = KeywordTable(table={})
-
-        text_chunks = self.text_splitter.split_text(text_data)
+    def _add_document_to_index(
+        self, index_struct: KeywordTable, document: BaseDocument
+    ) -> None:
+        """Add document to index."""
+        text_chunks = self.text_splitter.split_text(document.text)
         for i, text_chunk in enumerate(text_chunks):
             keywords = self._extract_keywords(text_chunk)
             fmt_text_chunk = truncate_text(text_chunk, 50)
@@ -110,6 +105,16 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
                 f"{fmt_text_chunk}"
             )
             print(f"> Keywords: {keywords}")
+
+    def build_index_from_documents(
+        self, documents: Sequence[BaseDocument]
+    ) -> KeywordTable:
+        """Build the index from documents."""
+        # do simple concatenation
+        index_struct = KeywordTable(table={})
+        for d in documents:
+            self._add_document_to_index(index_struct, d)
+
         return index_struct
 
     def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
