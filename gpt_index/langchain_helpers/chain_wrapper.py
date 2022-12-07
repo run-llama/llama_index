@@ -25,7 +25,9 @@ class LLMPredictor:
         full_prompt_args = prompt.get_full_format_args(prompt_args)
         llm_prediction = llm_chain.predict(**full_prompt_args)
 
-        self.total_tokens_used += self._count_tokens(formatted_prompt) + self._count_tokens(llm_prediction)
+        self.total_tokens_used += self._count_tokens(
+            formatted_prompt
+        ) + self._count_tokens(llm_prediction)
         return llm_prediction, formatted_prompt
 
     def _count_tokens(self, text: str) -> int:
