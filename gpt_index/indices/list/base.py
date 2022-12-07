@@ -70,7 +70,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
-            index_struct.add_text(text_chunk, doc_id=document.doc_id)
+            index_struct.add_text(text_chunk, document.doc_id)
 
     def build_index_from_documents(
         self, documents: Sequence[BaseDocument]
@@ -102,7 +102,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
-            self._index_struct.add_text(text_chunk, doc_id=document.doc_id)
+            self._index_struct.add_text(text_chunk, document.doc_id)
 
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""

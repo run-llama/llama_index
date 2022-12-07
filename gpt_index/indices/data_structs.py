@@ -148,7 +148,7 @@ class IndexList(IndexStruct):
 
     nodes: List[Node] = field(default_factory=list)
 
-    def add_text(self, text_chunk: str, ref_doc_id: int) -> int:
+    def add_text(self, text_chunk: str, ref_doc_id: str) -> int:
         """Add text to table, return current position in list."""
         # don't worry about child indices for now, nodes are all in order
         cur_node = Node(text_chunk, index=len(self.nodes), ref_doc_id=ref_doc_id)

@@ -98,7 +98,9 @@ class DocumentStore:
             # NOTE: doc could already exist in the store, but we overwrite it
             self.docs[doc.doc_id] = doc
 
-    def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseDocument]:
+    def get_document(
+        self, doc_id: str, raise_error: bool = True
+    ) -> Optional[BaseDocument]:
         """Get a document from the store."""
         doc = self.docs.get(doc_id, None)
         if doc is None and raise_error:
