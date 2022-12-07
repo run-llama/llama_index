@@ -6,6 +6,9 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
     __version__ = _f.read().strip()
 
 
+# embeddings
+from gpt_index.embeddings.langchain import LangchainEmbedding
+from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
 from gpt_index.indices.keyword_table.rake_base import GPTRAKEKeywordTableIndex
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
@@ -35,6 +38,8 @@ __all__ = [
     "GPTListIndex",
     "GPTTreeIndex",
     "Prompt",
+    "LangchainEmbedding",
+    "OpenAIEmbedding",
     "WikipediaReader",
     "SimpleDirectoryReader",
     "SimpleMongoReader",

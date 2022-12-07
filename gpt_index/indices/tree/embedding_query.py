@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Optional, Tuple
 
+from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
@@ -32,7 +33,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         refine_template: Prompt = DEFAULT_REFINE_PROMPT,
         child_branch_factor: int = 1,
-        embed_model: Optional[OpenAIEmbedding] = None,
+        embed_model: Optional[BaseEmbedding] = None,
     ) -> None:
         """Initialize params."""
         super().__init__(
