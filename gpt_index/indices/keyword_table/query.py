@@ -1,7 +1,7 @@
 """Query for GPTKeywordTableIndex."""
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.keyword_table.utils import (
@@ -35,9 +35,10 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct)
+        super().__init__(index_struct=index_struct, **kwargs)
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
         self.keyword_extract_template = keyword_extract_template

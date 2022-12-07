@@ -15,6 +15,8 @@ class BaseDocument(ABC):
 
     """
 
+    # TODO: consolidate fields from Document/IndexStruct into base class
+
     @property
     @abstractmethod
     def text(self) -> str:
@@ -97,7 +99,7 @@ class DocumentStore:
 
         """
         for doc in docs:
-            if doc.doc_id is None:
+            if doc.is_doc_id_none:
                 if generate_id:
                     doc.doc_id = self.get_new_id()
                 else:

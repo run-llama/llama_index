@@ -1,6 +1,6 @@
 """Default query for GPTListIndex."""
 from abc import abstractmethod
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from gpt_index.indices.data_structs import IndexList, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -22,9 +22,10 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         refine_template: Prompt = DEFAULT_REFINE_PROMPT,
         keyword: Optional[str] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct)
+        super().__init__(index_struct=index_struct, **kwargs)
         self.text_qa_template = text_qa_template
         self.refine_template = refine_template
         self.keyword = keyword

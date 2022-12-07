@@ -38,10 +38,23 @@ class BaseGPTIndex(Generic[IS]):
             self._index_struct = index_struct
         else:
             documents = cast(List[BaseDocument], documents)
+            self._validate_documents(documents)
             # TODO: introduce document store outside __init__ function
             self._docstore = docstore or DocumentStore()
             self._docstore.add_documents(documents)
             self._index_struct = self.build_index_from_documents(documents)
+
+    def _validate_documents(self, documents: Sequence[BaseDocument]) -> None:
+        """Validate documents."""
+        for doc in documents:
+            if isinstance(doc, BaseGPTIndex):
+                raise ValueError(
+                    "Cannot add a BaseGPTIndex as a document - to pass in "
+                    "the underlying data structure, please call `index_struct_with_text` "
+                    "on the index class instead."
+                )
+            elif not isinstance(doc, BaseDocument):
+                raise ValueError("Documents must be of type BaseDocument.")
 
     @property
     def index_struct(self) -> IS:

@@ -1,6 +1,6 @@
 """Leaf query mechanism."""
 
-from typing import Dict, Optional, cast
+from typing import Any, Dict, Optional, cast
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -34,9 +34,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         refine_template: Prompt = DEFAULT_REFINE_PROMPT,
         child_branch_factor: int = 1,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct)
+        super().__init__(index_struct, **kwargs)
         self.query_template = query_template
         self.query_template_multiple = query_template_multiple
         self.text_qa_template = text_qa_template

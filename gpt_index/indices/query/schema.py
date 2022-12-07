@@ -9,7 +9,7 @@ from dataclasses_json import DataClassJsonMixin
 from gpt_index.indices.data_structs import IndexStruct, IndexStructType, Node
 
 
-class QueryMode(Enum):
+class QueryMode(str, Enum):
     """Query mode."""
 
     DEFAULT = "default"
