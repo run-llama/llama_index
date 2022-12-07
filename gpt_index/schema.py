@@ -21,8 +21,15 @@ class BaseDocument(ABC):
         """Get text."""
 
     @property
+    @abstractmethod
     def doc_id(self) -> str:
         """Get doc_id."""
+        raise NotImplementedError("Not implemented yet.")
+
+    @doc_id.setter
+    @abstractmethod
+    def doc_id(self, doc_id: str) -> None:
+        """Set doc_id."""
         raise NotImplementedError("Not implemented yet.")
 
 

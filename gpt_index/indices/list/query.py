@@ -41,7 +41,7 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
                 self.text_qa_template,
                 self.refine_template,
                 response=response,
-                verbose=verbose
+                verbose=verbose,
             )
         return response or ""
 

@@ -67,7 +67,7 @@ class GPTTreeIndexBuilder:
         """Add document to index."""
         text_chunks = self.text_splitter.split_text(document.text)
         doc_nodes = {
-            (start_idx + i): Node(t, (start_idx + i), set())
+            (start_idx + i): Node(_text=t, index=(start_idx + i))
             for i, t in enumerate(text_chunks)
         }
         return doc_nodes
@@ -106,7 +106,11 @@ class GPTTreeIndexBuilder:
             )
 
             print(f"> {i}/{len(cur_nodes)}, summary: {new_summary}")
-            new_node = Node(new_summary, cur_index, {n.index for n in cur_nodes_chunk})
+            new_node = Node(
+                _text=new_summary,
+                index=cur_index,
+                child_indices={n.index for n in cur_nodes_chunk},
+            )
             new_node_dict[cur_index] = new_node
             cur_index += 1
 

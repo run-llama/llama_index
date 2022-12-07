@@ -3,13 +3,13 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Generic, List, Optional, TypeVar, cast
-from gpt_index.indices.utils import truncate_text
 
 from gpt_index.indices.data_structs import IndexStruct, Node
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.schema import DocumentStore
-from gpt_index.prompts.base import Prompt
 from gpt_index.indices.response_utils import give_response, refine_response
+from gpt_index.indices.utils import truncate_text
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.prompts.base import Prompt
+from gpt_index.schema import DocumentStore
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -50,13 +50,13 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._query_runner = query_runner
 
     def _query_node(
-        self, 
-        query_str: str, 
-        node: Node, 
+        self,
+        query_str: str,
+        node: Node,
         text_qa_template: Prompt,
         refine_template: Prompt,
         response: Optional[str] = None,
-        verbose: bool = False
+        verbose: bool = False,
     ) -> str:
         """Query a given node.
 
@@ -69,7 +69,7 @@ class BaseGPTIndexQuery(Generic[IS]):
             print(f"> Searching in chunk: {fmt_text_chunk}")
 
         is_index_struct = False
-        if node.ref_doc_id is not None:
+        if node.ref_doc_id is not None and self._docstore is not None:
             doc = self._docstore.get_document(node.ref_doc_id)
             if isinstance(doc, IndexStruct):
                 is_index_struct = True
@@ -78,7 +78,7 @@ class BaseGPTIndexQuery(Generic[IS]):
             if self._query_runner is None:
                 raise ValueError("query_runner must be provided.")
             # if is index struct, then recurse and get answer
-            text = self._query_runner.query(query_str, cast(doc, IndexStruct))
+            text = self._query_runner.query(query_str, cast(IndexStruct, doc))
         else:
             # if not index struct, then just fetch text
             text = node.text
@@ -102,7 +102,6 @@ class BaseGPTIndexQuery(Generic[IS]):
                 verbose=verbose,
             )
         return response
-        
 
     @property
     def index_struct(self) -> IS:

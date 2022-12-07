@@ -60,7 +60,7 @@ class GPTIndexInserter:
 
         """
         # perform insertion
-        text_node = Node(text_chunk, self.index_graph.size, set())
+        text_node = Node(_text=text_chunk, index=self.index_graph.size)
         self.index_graph.insert_under_parent(text_node, parent_node)
 
         # if under num_children limit, then we're fine
@@ -81,13 +81,21 @@ class GPTIndexInserter:
             summary1, _ = self._llm_predictor.predict(
                 self.summary_prompt, text=text_chunk1
             )
-            node1 = Node(summary1, cur_node_index, {n.index for n in half1})
+            node1 = Node(
+                _text=summary1,
+                index=cur_node_index,
+                child_indices={n.index for n in half1},
+            )
 
             text_chunk2 = get_text_from_nodes(half2)
             summary2, _ = self._llm_predictor.predict(
                 self.summary_prompt, text=text_chunk2
             )
-            node2 = Node(summary2, cur_node_index + 1, {n.index for n in half2})
+            node2 = Node(
+                _text=summary2,
+                index=cur_node_index + 1,
+                child_indices={n.index for n in half2},
+            )
 
             # insert half1 and half2 as new children of parent_node
             # first remove child indices from parent node

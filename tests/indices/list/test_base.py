@@ -112,7 +112,6 @@ def _get_node_text_embedding_similarities(
 @patch.object(LLMPredictor, "__init__", return_value=None)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
 def test_query(
-    _mock_similarity: Any,
     _mock_predict: Any,
     _mock_init: Any,
     _mock_split_text: Any,
@@ -127,7 +126,6 @@ def test_query(
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
     assert response == ("What is?\n" "Hello world.")
-
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)

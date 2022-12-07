@@ -16,9 +16,10 @@ from gpt_index.schema import BaseDocument
 class IndexStruct(BaseDocument, DataClassJsonMixin):
     """A base data struct for a GPT index."""
 
-    # NOTE: this field represents a summary of the content of the index struct.
+    # NOTE: the text represents a summary of the content of the index struct.
     # primarily used for composing indices with other indices
     _text: Optional[str] = None
+    _doc_id: Optional[str] = None
 
     @property
     def text(self) -> str:
@@ -31,6 +32,18 @@ class IndexStruct(BaseDocument, DataClassJsonMixin):
     def text(self, text: str) -> None:
         """Set text."""
         self._text = text
+
+    @property
+    def doc_id(self) -> str:
+        """Get doc_id."""
+        if self._doc_id is None:
+            raise ValueError("doc_id not set.")
+        return self._doc_id
+
+    @text.setter
+    def doc_id(self, doc_id: str) -> None:
+        """Set doc_id."""
+        self._doc_id = doc_id
 
 
 @dataclass
@@ -50,7 +63,7 @@ class Node(IndexStruct):
     embedding: Optional[List[float]] = None
 
     # reference document id
-    ref_doc_id: Optional[int] = None
+    ref_doc_id: Optional[str] = None
 
 
 @dataclass
