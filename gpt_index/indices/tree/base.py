@@ -91,7 +91,10 @@ class GPTTreeIndexBuilder:
         root_nodes = self._build_index_from_nodes(all_nodes, all_nodes)
         end_token_ct = self._llm_predictor.total_tokens_used
         print(
-            f"> Total token usage from index building: {end_token_ct - start_token_ct} tokens"
+            (
+                "> Total token usage from index building: "
+                f"{end_token_ct - start_token_ct} tokens"
+            )
         )
         return IndexGraph(all_nodes, root_nodes)
 

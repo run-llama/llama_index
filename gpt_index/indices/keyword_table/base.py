@@ -117,7 +117,10 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             self._add_document_to_index(index_struct, d)
         end_token_ct = self._llm_predictor.total_tokens_used
         print(
-            f"> Total token usage from index building: {end_token_ct - start_token_ct} tokens"
+            (
+                "> Total token usage from index building: "
+                f"{end_token_ct - start_token_ct} tokens"
+            )
         )
         return index_struct
 
@@ -136,7 +139,10 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             print(f"> Keywords: {keywords}")
         end_token_ct = self._llm_predictor.total_tokens_used
         print(
-            f"> Total token usage from index insertion: {end_token_ct - start_token_ct} tokens"
+            (
+                "> Total token usage from index insertion: "
+                f"{end_token_ct - start_token_ct} tokens"
+            )
         )
 
     def delete(self, document: BaseDocument) -> None:
