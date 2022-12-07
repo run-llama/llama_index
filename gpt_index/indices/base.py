@@ -23,6 +23,7 @@ class BaseGPTIndex(Generic[IS]):
         documents: Optional[Sequence[BaseDocument]] = None,
         index_struct: Optional[IS] = None,
         llm_predictor: Optional[LLMPredictor] = None,
+        docstore: Optional[DocumentStore] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
@@ -38,7 +39,8 @@ class BaseGPTIndex(Generic[IS]):
         else:
             documents = cast(List[BaseDocument], documents)
             # TODO: introduce document store outside __init__ function
-            self._docstore = DocumentStore.from_documents(documents)
+            self._docstore = docstore or DocumentStore()
+            self._docstore.add_documents(documents)
             self._index_struct = self.build_index_from_documents(documents)
 
     @property

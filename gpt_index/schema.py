@@ -83,17 +83,27 @@ class DocumentStore:
     def add_documents(self, docs: List[BaseDocument], generate_id: bool = True) -> None:
         """Add a document to the store.
 
-        If generate_id = True, then generate_id for doc if doesn't exist.
+        If generate_id = True, then generate id for doc if doc_id doesn't exist.
 
         """
         for doc in docs:
-            if generate_id and doc.doc_id is None:
-                doc.doc_id = self.get_new_id()
+            if doc.doc_id is None:
+                if generate_id:
+                    doc.doc_id = self.get_new_id()
+                else:
+                    raise ValueError(
+                        "doc_id not set (to generate id, please set generate_id=True)."
+                    )
+
+            # NOTE: doc could already exist in the store, but we overwrite it
             self.docs[doc.doc_id] = doc
 
-    def get_document(self, doc_id: str) -> Optional[BaseDocument]:
+    def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseDocument]:
         """Get a document from the store."""
-        return self.docs.get(doc_id, None)
+        doc = self.docs.get(doc_id, None)
+        if doc is None and raise_error:
+            raise ValueError(f"doc_id {doc_id} not found.")
+        return doc
 
     def __len__(self) -> int:
         return len(self.docs.keys())
