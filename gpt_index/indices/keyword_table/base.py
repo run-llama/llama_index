@@ -112,14 +112,19 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         """Build the index from documents."""
         # do simple concatenation
         index_struct = KeywordTable(table={})
+        start_token_ct = self._llm_predictor.total_tokens_used
         for d in documents:
             self._add_document_to_index(index_struct, d)
-
+        end_token_ct = self._llm_predictor.total_tokens_used
+        print(
+            f"> Total token usage from index building: {end_token_ct - start_token_ct} tokens"
+        )
         return index_struct
 
     def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
         text_chunks = self.text_splitter.split_text(document.text)
+        start_token_ct = self._llm_predictor.total_tokens_used
         for i, text_chunk in enumerate(text_chunks):
             keywords = self._extract_keywords(text_chunk)
             fmt_text_chunk = truncate_text(text_chunk, 50)
@@ -129,6 +134,10 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
                 f"{fmt_text_chunk}"
             )
             print(f"> Keywords: {keywords}")
+        end_token_ct = self._llm_predictor.total_tokens_used
+        print(
+            f"> Total token usage from index insertion: {end_token_ct - start_token_ct} tokens"
+        )
 
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
