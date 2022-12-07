@@ -32,6 +32,11 @@ class BaseDocument(ABC):
         """Set doc_id."""
         raise NotImplementedError("Not implemented yet.")
 
+    @property
+    @abstractmethod
+    def is_doc_id_none(self) -> bool:
+        """Check if doc_id is None."""
+
 
 @dataclass
 class Document(BaseDocument):
@@ -62,6 +67,11 @@ class Document(BaseDocument):
     def doc_id(self, doc_id: str) -> None:
         """Set doc_id."""
         self._doc_id = doc_id
+
+    @property
+    def is_doc_id_none(self) -> bool:
+        """Check if doc_id is None."""
+        return self._doc_id is None
 
 
 @dataclass
