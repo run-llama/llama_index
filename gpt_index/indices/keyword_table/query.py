@@ -3,13 +3,13 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Dict, List, Optional
 
-from gpt_index.indices.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.keyword_table.utils import (
     extract_keywords_given_response,
     rake_extract_keywords,
     simple_extract_keywords,
 )
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.base import Prompt

@@ -1,4 +1,4 @@
-"""Base data structure classes."""
+"""Base index classes."""
 import json
 from abc import abstractmethod
 from typing import Any, Generic, List, Optional, Sequence, TypeVar, cast
@@ -6,52 +6,13 @@ from typing import Any, Generic, List, Optional, Sequence, TypeVar, cast
 from gpt_index.indices.data_structs import IndexStruct
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import BaseDocument, DocumentStore
+from gpt_index.indices.query.query_runner import QueryRunner
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 
 IS = TypeVar("IS", bound=IndexStruct)
 
 DEFAULT_MODE = "default"
 EMBEDDING_MODE = "embedding"
-
-
-class BaseGPTIndexQuery(Generic[IS]):
-    """Base GPT Index Query.
-
-    Helper class that is used to query an index. Can be called within `query`
-    method of a BaseGPTIndex object, or instantiated independently.
-
-    """
-
-    def __init__(
-        self, 
-        index_struct: IS, 
-        # TODO: pass from superclass
-        llm_predictor: Optional[LLMPredictor] = None,
-        docstore: Optional[DocumentStore] = None
-    ) -> None:
-        """Initialize with parameters."""
-        if index_struct is None:
-            raise ValueError("index_struct must be provided.")
-        self._validate_index_struct(index_struct)
-        self._index_struct = index_struct
-        self._llm_predictor = llm_predictor or LLMPredictor()
-        self._docstore = docstore
-
-    @property
-    def index_struct(self) -> IS:
-        """Get the index struct."""
-        return self._index_struct
-
-    def _validate_index_struct(self, index_struct: IS) -> None:
-        """Validate the index struct."""
-        pass
-
-    @abstractmethod
-    def query(self, query_str: str, verbose: bool = False) -> str:
-        """Answer a query."""
-
-    def set_llm_predictor(self, llm_predictor: LLMPredictor) -> None:
-        """Set LLM predictor."""
-        self._llm_predictor = llm_predictor
 
 
 class BaseGPTIndex(BaseDocument, Generic[IS]):
@@ -135,10 +96,18 @@ class BaseGPTIndex(BaseDocument, Generic[IS]):
         **query_kwargs: Any
     ) -> str:
         """Answer a query."""
-        query_obj = self._mode_to_query(mode, **query_kwargs)
-        # set llm_predictor if exists
-        query_obj.set_llm_predictor(self._llm_predictor)
-        return query_obj.query(query_str, verbose=verbose)
+        # TODO: remove _mode_to_query and consolidate with query_runner
+        if mode == "recursive":
+            if "query_configs" not in query_kwargs:
+                raise ValueError("query_configs must be provided for recursive mode.")
+            query_configs = query_kwargs["query_configs"]
+            query_runner = QueryRunner(self, query_configs, self._llm_predictor, verbose=verbose)
+            return query_runner.query(query_str, self._index_struct)
+        else:
+            query_obj = self._mode_to_query(mode, **query_kwargs)
+            # set llm_predictor if exists
+            query_obj.set_llm_predictor(self._llm_predictor)
+            return query_obj.query(query_str, verbose=verbose)
 
     @classmethod
     @abstractmethod

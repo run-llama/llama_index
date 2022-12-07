@@ -5,6 +5,7 @@ import sys
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 from abc import abstractmethod
+from enum import Enum
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -137,3 +138,33 @@ class IndexList(IndexStruct):
         cur_node = Node(text_chunk, index=len(self.nodes), child_indices=set())
         self.nodes.append(cur_node)
         return cur_node.index
+
+
+class IndexStructType(str, Enum):
+    """Index struct type."""
+    TREE = "tree"
+    LIST = "list"
+    KEYWORD_TABLE = "keyword_table"
+
+    def get_index_struct_cls(self) -> type:
+        """Get index struct class."""
+        if self == IndexStructType.TREE:
+            return IndexGraph
+        elif self == IndexStructType.LIST:
+            return IndexList
+        elif self == IndexStructType.KEYWORD_TABLE:
+            return KeywordTable
+        else:
+            raise ValueError("Invalid index struct type.")
+
+    @classmethod
+    def from_index_struct(cls, index_struct: IndexStruct) -> type:
+        """Get index enum from index struct class."""
+        if isinstance(index_struct, IndexGraph):
+            return cls.TREE
+        elif isinstance(index_struct, IndexList):
+            return cls.LIST
+        elif isinstance(index_struct, KeywordTable):
+            return cls.KEYWORD_TABLE
+        else:
+            raise ValueError("Invalid index struct type.")

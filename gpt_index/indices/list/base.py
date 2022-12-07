@@ -15,8 +15,8 @@ from gpt_index.indices.base import (
     DEFAULT_MODE,
     EMBEDDING_MODE,
     BaseGPTIndex,
-    BaseGPTIndexQuery,
 )
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.list.query import BaseGPTListIndexQuery, GPTListIndexQuery

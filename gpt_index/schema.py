@@ -90,3 +90,13 @@ class DocumentStore:
 
     def __len__(self):
         return len(self.docs.keys())
+
+
+@dataclass
+class BaseQueryRunner:
+    """Base query runner."""
+
+    @abstractmethod
+    def query(self, query: str) -> List[str]:
+        """Schedule a query."""
+        raise NotImplementedError("Not implemented yet.")

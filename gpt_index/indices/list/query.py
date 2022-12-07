@@ -2,7 +2,7 @@
 from abc import abstractmethod
 from typing import List, Optional
 
-from gpt_index.indices.base import BaseGPTIndexQuery
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexList, Node
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import truncate_text

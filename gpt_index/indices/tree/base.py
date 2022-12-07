@@ -9,8 +9,8 @@ from gpt_index.indices.base import (
     DEFAULT_MODE,
     EMBEDDING_MODE,
     BaseGPTIndex,
-    BaseGPTIndexQuery,
 )
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
