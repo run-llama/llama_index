@@ -35,12 +35,19 @@ class TokenTextSplitter(TextSplitter):
         current_doc: List[str] = []
         total = 0
         for d in splits:
+            # If the total tokens in current_doc exceeds the chunk size:
+            # 1. Update the docs list
             if total > self._chunk_size:
                 docs.append(self._separator.join(current_doc))
+                # 2. Shrink the current_doc (from the front) until it is gets smaller
+                # than the overlap size
                 while total > self._chunk_overlap:
                     cur_tokens = self.tokenizer(current_doc[0])
                     total -= len(cur_tokens["input_ids"])
                     current_doc = current_doc[1:]
+                # 3. From here we can continue to build up the current_doc again
+            # Build up the current_doc with term d, and update the total counter with
+            # the number of the number of tokens in d, wrt self.tokenizer
             current_doc.append(d)
             num_tokens = len(self.tokenizer(d)["input_ids"])
             total += num_tokens
