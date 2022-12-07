@@ -2,11 +2,14 @@
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Generic, List, Optional, TypeVar
+from typing import Any, Generic, List, Optional, TypeVar, cast
+from gpt_index.indices.utils import truncate_text
 
-from gpt_index.indices.data_structs import IndexStruct
+from gpt_index.indices.data_structs import IndexStruct, Node
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import DocumentStore
+from gpt_index.prompts.base import Prompt
+from gpt_index.indices.response_utils import give_response, refine_response
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -46,11 +49,60 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._docstore = docstore
         self._query_runner = query_runner
 
-    def _query_index_struct(self, query_str: str, index_struct: IndexStruct) -> str:
-        """Recursively query the index struct."""
-        if self._query_runner is None:
-            raise ValueError("query_runner must be provided.")
-        return self._query_runner.query(query_str, index_struct)
+    def _query_node(
+        self, 
+        query_str: str, 
+        node: Node, 
+        text_qa_template: Prompt,
+        refine_template: Prompt,
+        response: Optional[str] = None,
+        verbose: bool = False
+    ) -> str:
+        """Query a given node.
+
+        If node references a given document, then return the document.
+        If node references a given index, then query the index.
+
+        """
+        fmt_text_chunk = truncate_text(node.text, 50)
+        if verbose:
+            print(f"> Searching in chunk: {fmt_text_chunk}")
+
+        is_index_struct = False
+        if node.ref_doc_id is not None:
+            doc = self._docstore.get_document(node.ref_doc_id)
+            if isinstance(doc, IndexStruct):
+                is_index_struct = True
+
+        if is_index_struct:
+            if self._query_runner is None:
+                raise ValueError("query_runner must be provided.")
+            # if is index struct, then recurse and get answer
+            text = self._query_runner.query(query_str, cast(doc, IndexStruct))
+        else:
+            # if not index struct, then just fetch text
+            text = node.text
+
+        if response is None:
+            response = give_response(
+                self._llm_predictor,
+                query_str,
+                text,
+                text_qa_template=text_qa_template,
+                refine_template=refine_template,
+                verbose=verbose,
+            )
+        else:
+            response = refine_response(
+                self._llm_predictor,
+                response,
+                query_str,
+                text,
+                refine_template=refine_template,
+                verbose=verbose,
+            )
+        return response
+        
 
     @property
     def index_struct(self) -> IS:

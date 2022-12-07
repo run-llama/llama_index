@@ -49,6 +49,9 @@ class Node(IndexStruct):
     # embeddings
     embedding: Optional[List[float]] = None
 
+    # reference document id
+    ref_doc_id: Optional[int] = None
+
 
 @dataclass
 class IndexGraph(IndexStruct):

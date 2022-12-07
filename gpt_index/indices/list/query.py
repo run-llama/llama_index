@@ -35,30 +35,14 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
         """Give response for nodes."""
         response = None
         for node in nodes:
-            fmt_text_chunk = truncate_text(node.text, 50)
-            if verbose:
-                print(f"> Searching in chunk: {fmt_text_chunk}")
-
-            if response is None:
-                response = give_response(
-                    self._llm_predictor,
-                    query_str,
-                    node.text,
-                    text_qa_template=self.text_qa_template,
-                    refine_template=self.refine_template,
-                    verbose=verbose,
-                )
-            else:
-                response = refine_response(
-                    self._llm_predictor,
-                    response,
-                    query_str,
-                    node.text,
-                    refine_template=self.refine_template,
-                    verbose=verbose,
-                )
-            if verbose:
-                print(f"> Response: {response}")
+            response = self._query_node(
+                query_str,
+                node,
+                self.text_qa_template,
+                self.refine_template,
+                response=response,
+                verbose=verbose
+            )
         return response or ""
 
     @abstractmethod
