@@ -65,7 +65,7 @@ class Document(BaseDocument):
             raise ValueError("doc_id not set.")
         return self._doc_id
 
-    @text.setter
+    @doc_id.setter
     def doc_id(self, doc_id: str) -> None:
         """Set doc_id."""
         self._doc_id = doc_id
@@ -91,6 +91,10 @@ class DocumentStore:
     def get_new_id(self) -> str:
         """Get a new ID."""
         return get_new_id(set(self.docs.keys()))
+
+    def update_docstore(self, other: "DocumentStore") -> None:
+        """Update docstore."""
+        self.docs.update(other.docs)
 
     def add_documents(self, docs: List[BaseDocument], generate_id: bool = True) -> None:
         """Add a document to the store.

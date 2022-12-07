@@ -57,6 +57,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         refine_template: Prompt,
         response: Optional[str] = None,
         verbose: bool = False,
+        level: Optional[int] = None
     ) -> str:
         """Query a given node.
 
@@ -64,9 +65,10 @@ class BaseGPTIndexQuery(Generic[IS]):
         If node references a given index, then query the index.
 
         """
+        level_str = "" if level is None else f"[Level {level}]"
         fmt_text_chunk = truncate_text(node.text, 50)
         if verbose:
-            print(f"> Searching in chunk: {fmt_text_chunk}")
+            print(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
         is_index_struct = False
         if node.ref_doc_id is not None and self._docstore is not None:
@@ -78,29 +80,34 @@ class BaseGPTIndexQuery(Generic[IS]):
             if self._query_runner is None:
                 raise ValueError("query_runner must be provided.")
             # if is index struct, then recurse and get answer
-            text = self._query_runner.query(query_str, cast(IndexStruct, doc))
+            response = self._query_runner.query(query_str, cast(IndexStruct, doc))
         else:
-            # if not index struct, then just fetch text
+            # if not index struct, then just fetch text from the node
             text = node.text
+            if response is None:
+                response = give_response(
+                    self._llm_predictor,
+                    query_str,
+                    text,
+                    text_qa_template=text_qa_template,
+                    refine_template=refine_template,
+                    verbose=verbose,
+                )
+            else:
+                response = refine_response(
+                    self._llm_predictor,
+                    response,
+                    query_str,
+                    text,
+                    refine_template=refine_template,
+                    verbose=verbose,
+                )
 
-        if response is None:
-            response = give_response(
-                self._llm_predictor,
-                query_str,
-                text,
-                text_qa_template=text_qa_template,
-                refine_template=refine_template,
-                verbose=verbose,
-            )
-        else:
-            response = refine_response(
-                self._llm_predictor,
-                response,
-                query_str,
-                text,
-                refine_template=refine_template,
-                verbose=verbose,
-            )
+        print(f'is index struct: {is_index_struct}')
+        print(node.ref_doc_id)
+        print(node.text)
+        print(f'response: {response}')
+
         return response
 
     @property

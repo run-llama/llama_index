@@ -40,7 +40,7 @@ class IndexStruct(BaseDocument, DataClassJsonMixin):
             raise ValueError("doc_id not set.")
         return self._doc_id
 
-    @text.setter
+    @doc_id.setter
     def doc_id(self, doc_id: str) -> None:
         """Set doc_id."""
         self._doc_id = doc_id

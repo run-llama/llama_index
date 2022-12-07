@@ -39,7 +39,7 @@ def _mock_query_select() -> str:
 
 def _mock_answer(prompt_args: Dict) -> str:
     """Mock answer."""
-    return prompt_args["query_str"] + "\n" + prompt_args["context_str"]
+    return prompt_args["query_str"] + ":" + prompt_args["context_str"]
 
 
 def _mock_refine(prompt_args: Dict) -> str:

@@ -99,13 +99,13 @@ def test_recursive_query(
     list4.set_text("summary4")
     tree = GPTTreeIndex(
         [
-            list1.index_struct_with_text,
-            list2.index_struct_with_text,
-            list3.index_struct_with_text,
-            list4.index_struct_with_text,
+            list1,
+            list2,
+            list3,
+            list4,
         ],
         **tree_kwargs
     )
     query_str = "What is?"
     response = tree.query(query_str, mode="recursive", query_configs=query_configs)
-    assert response == ("What is?\nThis is a test v2.")
+    assert response == ("What is?:This is a test v2.")

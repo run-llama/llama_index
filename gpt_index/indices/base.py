@@ -8,6 +8,7 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import BaseDocument, DocumentStore
+from typing import Union
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -15,12 +16,15 @@ DEFAULT_MODE = "default"
 EMBEDDING_MODE = "embedding"
 
 
+DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
+
+
 class BaseGPTIndex(Generic[IS]):
     """Base GPT Index."""
 
     def __init__(
         self,
-        documents: Optional[Sequence[BaseDocument]] = None,
+        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IS] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         docstore: Optional[DocumentStore] = None,
@@ -37,23 +41,37 @@ class BaseGPTIndex(Generic[IS]):
         if index_struct is not None:
             self._index_struct = index_struct
         else:
-            documents = cast(List[BaseDocument], documents)
+            self._docstore = docstore or DocumentStore()
+            documents = self._process_documents(documents, self._docstore)
             self._validate_documents(documents)
             # TODO: introduce document store outside __init__ function
-            self._docstore = docstore or DocumentStore()
-            self._docstore.add_documents(documents)
             self._index_struct = self.build_index_from_documents(documents)
+
+    @property
+    def docstore(self) -> DocumentStore:
+        """Get the docstore corresponding to the index."""
+        return self._docstore
+
+    def _process_documents(
+        self, documents: Sequence[DOCUMENTS_INPUT], docstore: DocumentStore
+    ) -> List[BaseDocument]:
+        """Process documents."""
+        results = []
+        for doc in documents:
+            if isinstance(doc, BaseGPTIndex):
+                # if user passed in another index, we need to extract the index struct,
+                # and also update docstore with the docstore in the index
+                results.append(doc.index_struct_with_text)
+                docstore.update_docstore(doc.docstore)
+            else:
+                results.append(doc)
+        docstore.add_documents(results)
+        return results
 
     def _validate_documents(self, documents: Sequence[BaseDocument]) -> None:
         """Validate documents."""
         for doc in documents:
-            if isinstance(doc, BaseGPTIndex):
-                raise ValueError(
-                    "Cannot add a BaseGPTIndex as a document - to pass in "
-                    "the underlying data structure, please call `index_struct_with_text` "
-                    "on the index class instead."
-                )
-            elif not isinstance(doc, BaseDocument):
+            if not isinstance(doc, BaseDocument):
                 raise ValueError("Documents must be of type BaseDocument.")
 
     @property
@@ -117,7 +135,7 @@ class BaseGPTIndex(Generic[IS]):
                 raise ValueError("query_configs must be provided for recursive mode.")
             query_configs = query_kwargs["query_configs"]
             query_runner = QueryRunner(
-                query_configs, self._llm_predictor, verbose=verbose
+                query_configs, self._llm_predictor, self._docstore, verbose=verbose
             )
             return query_runner.query(query_str, self._index_struct)
         else:
