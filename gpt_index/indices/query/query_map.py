@@ -1,18 +1,20 @@
 """Query map."""
 
-from gpt_index.indices.list.query import BaseGPTListIndexQuery, GPTListIndexQuery
-from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
-from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
-from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
-from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
-from gpt_index.indices.keyword_table.query import (
-    GPTKeywordTableGPTQuery, GPTKeywordTableRAKEQuery, GPTKeywordTableSimpleQuery
-)
-from gpt_index.indices.base import BaseGPTIndexQuery
 from typing import Type
 
+from gpt_index.indices.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexStruct, IndexStructType
+from gpt_index.indices.keyword_table.query import (
+    GPTKeywordTableGPTQuery,
+    GPTKeywordTableRAKEQuery,
+    GPTKeywordTableSimpleQuery,
+)
+from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.list.query import BaseGPTListIndexQuery, GPTListIndexQuery
 from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
+from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
+from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
 
 # TODO: migrate _mode_to_query in indices/base.py to use this file
 MODE_TO_QUERY_MAP_TREE = {
@@ -29,10 +31,13 @@ MODE_TO_QUERY_MAP_LIST = {
 MODE_TO_QUERY_MAP_KEYWORD_TABLE = {
     QueryMode.DEFAULT: GPTKeywordTableGPTQuery,
     QueryMode.SIMPLE: GPTKeywordTableRAKEQuery,
-    QueryMode.RAKE: GPTKeywordTableSimpleQuery
+    QueryMode.RAKE: GPTKeywordTableSimpleQuery,
 }
 
-def get_query_cls(index_struct_type: IndexStructType, mode: str) -> Type[BaseGPTIndexQuery]:
+
+def get_query_cls(
+    index_struct_type: IndexStructType, mode: QueryMode
+) -> Type[BaseGPTIndexQuery]:
     """Get query class."""
     if index_struct_type == IndexStructType.TREE:
         return MODE_TO_QUERY_MAP_TREE[mode]

@@ -1,13 +1,24 @@
 """Base query classes."""
 
 from abc import abstractmethod
+from dataclasses import dataclass
 from typing import Any, Generic, List, Optional, TypeVar
 
 from gpt_index.indices.data_structs import IndexStruct
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.schema import DocumentStore, BaseQueryRunner
+from gpt_index.schema import DocumentStore
 
 IS = TypeVar("IS", bound=IndexStruct)
+
+
+@dataclass
+class BaseQueryRunner:
+    """Base query runner."""
+
+    @abstractmethod
+    def query(self, query: str, index_struct: IndexStruct) -> str:
+        """Schedule a query."""
+        raise NotImplementedError("Not implemented yet.")
 
 
 class BaseGPTIndexQuery(Generic[IS]):
@@ -19,12 +30,12 @@ class BaseGPTIndexQuery(Generic[IS]):
     """
 
     def __init__(
-        self, 
-        index_struct: IS, 
+        self,
+        index_struct: IS,
         # TODO: pass from superclass
         llm_predictor: Optional[LLMPredictor] = None,
         docstore: Optional[DocumentStore] = None,
-        query_runner: Optional[BaseQueryRunner] = None
+        query_runner: Optional[BaseQueryRunner] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -35,7 +46,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._docstore = docstore
         self._query_runner = query_runner
 
-    def _query_index_struct(self, query_str: str, index_struct: IndexStruct) -> List[Any]:
+    def _query_index_struct(self, query_str: str, index_struct: IndexStruct) -> str:
         """Recursively query the index struct."""
         if self._query_runner is None:
             raise ValueError("query_runner must be provided.")
@@ -57,4 +68,3 @@ class BaseGPTIndexQuery(Generic[IS]):
     def set_llm_predictor(self, llm_predictor: LLMPredictor) -> None:
         """Set LLM predictor."""
         self._llm_predictor = llm_predictor
-

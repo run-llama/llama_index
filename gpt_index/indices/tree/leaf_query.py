@@ -2,8 +2,8 @@
 
 from typing import Dict, Optional, cast
 
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
     get_numbered_text_from_nodes,

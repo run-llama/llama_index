@@ -5,13 +5,9 @@ from typing import Any, Dict, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
-from gpt_index.indices.base import (
-    DEFAULT_MODE,
-    EMBEDDING_MODE,
-    BaseGPTIndex,
-)
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.base import DEFAULT_MODE, EMBEDDING_MODE, BaseGPTIndex
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery

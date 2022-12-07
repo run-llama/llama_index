@@ -1,16 +1,15 @@
 """Query runner."""
 
-from gpt_index.schema import BaseQueryRunner
-from gpt_index.indices.data_structs import Node, IndexStruct, IndexStructType
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
 from dataclasses_json import DataClassJsonMixin
 
+from gpt_index.indices.data_structs import IndexStruct, IndexStructType, Node
+from gpt_index.indices.query.base import BaseQueryRunner
 from gpt_index.indices.query.query_map import get_query_cls
-from gpt_index.indices.query.schema import QueryMode
-
-from typing import List, Dict, Any, Optional
+from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.indices.query.schema import QueryConfig
 
 
 class QueryRunner(BaseQueryRunner):
@@ -22,9 +21,9 @@ class QueryRunner(BaseQueryRunner):
 
     def __init__(
         self,
-        query_configs: List[Dict], 
-        llm_predictor: Optional[LLMPredictor] = None,
-        verbose: bool = False
+        query_configs: List[Dict],
+        llm_predictor: LLMPredictor,
+        verbose: bool = False,
     ) -> None:
         """Init params."""
         config_dict: Dict[IndexStructType, QueryConfig] = {}

@@ -2,10 +2,10 @@
 
 import random
 import sys
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
 from abc import abstractmethod
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -48,7 +48,7 @@ class Node(IndexStruct):
 
     # embeddings
     embedding: Optional[List[float]] = None
-   
+
 
 @dataclass
 class IndexGraph(IndexStruct):
@@ -56,7 +56,7 @@ class IndexGraph(IndexStruct):
 
     all_nodes: Dict[int, Node] = field(default_factory=dict)
     root_nodes: Dict[int, Node] = field(default_factory=dict)
-   
+
     @property
     def size(self) -> int:
         """Get the size of the graph."""
@@ -142,6 +142,7 @@ class IndexList(IndexStruct):
 
 class IndexStructType(str, Enum):
     """Index struct type."""
+
     TREE = "tree"
     LIST = "list"
     KEYWORD_TABLE = "keyword_table"
@@ -158,7 +159,7 @@ class IndexStructType(str, Enum):
             raise ValueError("Invalid index struct type.")
 
     @classmethod
-    def from_index_struct(cls, index_struct: IndexStruct) -> type:
+    def from_index_struct(cls, index_struct: IndexStruct) -> "IndexStructType":
         """Get index enum from index struct class."""
         if isinstance(index_struct, IndexGraph):
             return cls.TREE

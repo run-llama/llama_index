@@ -4,10 +4,10 @@ from abc import abstractmethod
 from typing import Any, Generic, List, Optional, Sequence, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct
+from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import BaseDocument, DocumentStore
-from gpt_index.indices.query.query_runner import QueryRunner
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -15,7 +15,7 @@ DEFAULT_MODE = "default"
 EMBEDDING_MODE = "embedding"
 
 
-class BaseGPTIndex(BaseDocument, Generic[IS]):
+class BaseGPTIndex(Generic[IS]):
     """Base GPT Index."""
 
     def __init__(
@@ -52,7 +52,7 @@ class BaseGPTIndex(BaseDocument, Generic[IS]):
 
         If text not set, raise an error.
         For use when composing indices with other indices.
-        
+
         """
         # make sure that we generate text for index struct
         if self._index_struct.text is None:
@@ -63,14 +63,14 @@ class BaseGPTIndex(BaseDocument, Generic[IS]):
             )
         return self._index_struct
 
-    def set_text(self) -> None:
+    def set_text(self, text: str) -> None:
         """Set text for index struct.
 
         This allows index_struct_with_text to be used to compose indices
         with other indices.
-        
+
         """
-        self._index_struct.set_text()
+        self._index_struct.text = text
 
     @abstractmethod
     def build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
@@ -101,7 +101,9 @@ class BaseGPTIndex(BaseDocument, Generic[IS]):
             if "query_configs" not in query_kwargs:
                 raise ValueError("query_configs must be provided for recursive mode.")
             query_configs = query_kwargs["query_configs"]
-            query_runner = QueryRunner(self, query_configs, self._llm_predictor, verbose=verbose)
+            query_runner = QueryRunner(
+                query_configs, self._llm_predictor, verbose=verbose
+            )
             return query_runner.query(query_str, self._index_struct)
         else:
             query_obj = self._mode_to_query(mode, **query_kwargs)

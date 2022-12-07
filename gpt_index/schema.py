@@ -1,10 +1,10 @@
 """Base schema for data structures."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, Optional, List
-
+from typing import Dict, List, Optional
 
 from gpt_index.utils import get_new_id
+
 
 @dataclass
 class BaseDocument(ABC):
@@ -77,7 +77,7 @@ class DocumentStore:
         """Add a document to the store.
 
         If generate_id = True, then generate_id for doc if doesn't exist.
-        
+
         """
         for doc in docs:
             if generate_id and doc.doc_id is None:
@@ -88,15 +88,5 @@ class DocumentStore:
         """Get a document from the store."""
         return self.docs.get(doc_id, None)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.docs.keys())
-
-
-@dataclass
-class BaseQueryRunner:
-    """Base query runner."""
-
-    @abstractmethod
-    def query(self, query: str) -> List[str]:
-        """Schedule a query."""
-        raise NotImplementedError("Not implemented yet.")
