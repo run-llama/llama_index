@@ -147,6 +147,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
             # number is 1-indexed, so subtract 1
             selected_node = cur_node_list[number - 1]
+            
             print(
                 f">[Level {level}] Selected node: "
                 f"[{number}]/[{','.join([str(int(n)) for n in numbers])}]"

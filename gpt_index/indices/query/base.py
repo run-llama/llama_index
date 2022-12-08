@@ -88,7 +88,18 @@ class BaseGPTIndexQuery(Generic[IS]):
         if is_index_struct:
             # if is index struct, then recurse and get answer
             query_runner = cast(BaseQueryRunner, self._query_runner)
-            response = query_runner.query(query_str, cast(IndexStruct, doc))
+            query_response = query_runner.query(query_str, cast(IndexStruct, doc))
+            if response is None:
+                response = query_response
+            else:
+                response = refine_response(
+                    self._llm_predictor,
+                    response,
+                    query_str,
+                    query_response,
+                    refine_template=refine_template,
+                    verbose=verbose,
+                )
         else:
             # if not index struct, then just fetch text from the node
             text = node.get_text()
@@ -110,11 +121,6 @@ class BaseGPTIndexQuery(Generic[IS]):
                     refine_template=refine_template,
                     verbose=verbose,
                 )
-
-        print(f"is index struct: {is_index_struct}")
-        print(node.ref_doc_id)
-        print(node.get_text())
-        print(f"response: {response}")
 
         return response
 
