@@ -80,6 +80,7 @@ def _get_node_text_embedding_similarities(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
 @patch.object(
@@ -91,6 +92,7 @@ def test_embedding_query(
     _mock_similarity: Any,
     _mock_predict: Any,
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     struct_kwargs: Dict,
     documents: List[Document],

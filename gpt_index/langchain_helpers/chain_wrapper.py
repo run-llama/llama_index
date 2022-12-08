@@ -15,7 +15,7 @@ class LLMPredictor:
     def __init__(self, llm: Optional[LLM] = None) -> None:
         """Initialize params."""
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-002")
-        self.total_tokens_used = 0
+        self._total_tokens_used = 0
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Predict the answer to a query."""
@@ -25,10 +25,15 @@ class LLMPredictor:
         full_prompt_args = prompt.get_full_format_args(prompt_args)
         llm_prediction = llm_chain.predict(**full_prompt_args)
 
-        self.total_tokens_used += self._count_tokens(
+        self._total_tokens_used += self._count_tokens(
             formatted_prompt
         ) + self._count_tokens(llm_prediction)
         return llm_prediction, formatted_prompt
+
+    @property
+    def total_tokens_used(self) -> int:
+        """Get the total tokens used so far."""
+        return self._total_tokens_used
 
     def _count_tokens(self, text: str) -> int:
         tokens = globals_helper.tokenizer(text)

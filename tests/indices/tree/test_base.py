@@ -67,11 +67,13 @@ def _get_left_or_right_node(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_build_tree(
     _mock_init: Any,
     _mock_predict: Any,
+    _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
@@ -92,11 +94,13 @@ def test_build_tree(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_build_tree_multiple(
     _mock_init: Any,
     _mock_predict: Any,
+    _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
@@ -117,11 +121,13 @@ def test_build_tree_multiple(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_query(
     _mock_init: Any,
     _mock_predict: Any,
+    _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
@@ -137,11 +143,13 @@ def test_query(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_insert(
     _mock_init: Any,
     _mock_predict: Any,
+    _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
