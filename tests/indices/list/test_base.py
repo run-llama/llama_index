@@ -93,7 +93,6 @@ def test_list_insert(
     # test insert with ID
     document = documents[0]
     document.doc_id = "test_id"
-    print(document)
     list_index = GPTListIndex([])
     list_index.insert(document)
     # check contents of nodes
