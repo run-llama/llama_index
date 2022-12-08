@@ -51,7 +51,7 @@ def test_build_table(
     """Test build table."""
     # test simple keyword table
     table = GPTSimpleKeywordTableIndex(documents)
-    table_chunks = set(table.index_struct.text_chunks.values())
+    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
     assert len(table_chunks) == 4
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
@@ -84,7 +84,7 @@ def test_insert(_mock_init: Any, _mock_predict: Any, documents: List[Document]) 
     table = GPTSimpleKeywordTableIndex([])
     assert len(table.index_struct.table.keys()) == 0
     table.insert(documents[0])
-    table_chunks = set(table.index_struct.text_chunks.values())
+    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
     assert "This is another test." in table_chunks
@@ -102,3 +102,18 @@ def test_insert(_mock_init: Any, _mock_predict: Any, documents: List[Document]) 
         "a",
         "v2",
     }
+
+    # test insert with doc_id
+    document1 = Document("This is", _doc_id="test_id1")
+    document2 = Document("test v3", _doc_id="test_id2")
+    table = GPTSimpleKeywordTableIndex([])
+    table.insert(document1)
+    table.insert(document2)
+    chunk_index1_1 = list(table.index_struct.table["this"])[0]
+    chunk_index1_2 = list(table.index_struct.table["is"])[0]
+    chunk_index2_1 = list(table.index_struct.table["test"])[0]
+    chunk_index2_2 = list(table.index_struct.table["v3"])[0]
+    assert table.index_struct.text_chunks[chunk_index1_1].ref_doc_id == "test_id1"
+    assert table.index_struct.text_chunks[chunk_index1_2].ref_doc_id == "test_id1"
+    assert table.index_struct.text_chunks[chunk_index2_1].ref_doc_id == "test_id2"
+    assert table.index_struct.text_chunks[chunk_index2_2].ref_doc_id == "test_id2"

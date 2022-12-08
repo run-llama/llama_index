@@ -90,6 +90,16 @@ def test_list_insert(
     assert list_index.index_struct.nodes[2].text == "This is another test."
     assert list_index.index_struct.nodes[3].text == "This is a test v2."
 
+    # test insert with ID
+    document = documents[0]
+    document.doc_id = "test_id"
+    print(document)
+    list_index = GPTListIndex([])
+    list_index.insert(document)
+    # check contents of nodes
+    for node in list_index.index_struct.nodes:
+        assert node.ref_doc_id == "test_id"
+
 
 def _get_node_text_embedding_similarities(
     query_embedding: List[float], nodes: List[Node]

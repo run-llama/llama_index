@@ -19,6 +19,11 @@ class IndexStruct(BaseDocument, DataClassJsonMixin):
     # NOTE: the text represents a summary of the content of the index struct.
     # primarily used for composing indices with other indices
     _text: Optional[str] = None
+    # the doc_id represents a unique identifier for the index struct
+    # that will be put in the docstore.
+    # Not all index_structs need to have a doc_id. Only index_structs that
+    # represent a complete data structure (e.g. IndexGraph, IndexList),
+    # and are used to compose a higher level index, will have a doc_id.
     _doc_id: Optional[str] = None
 
     @property
@@ -59,9 +64,8 @@ class Node(IndexStruct):
 
     """
 
-    # TODO: remove
-    index: int = 0
     # used for GPTTreeIndex
+    index: int = 0
     child_indices: Set[int] = field(default_factory=set)
 
     # embeddings
@@ -109,7 +113,7 @@ class KeywordTable(IndexStruct):
     """A table of keywords mapping keywords to text chunks."""
 
     table: Dict[str, Set[int]] = field(default_factory=dict)
-    text_chunks: Dict[int, str] = field(default_factory=dict)
+    text_chunks: Dict[int, Node] = field(default_factory=dict)
 
     def _get_index(self) -> int:
         """Get the next index for the text chunk."""
@@ -120,21 +124,21 @@ class KeywordTable(IndexStruct):
                 break
         return idx
 
-    def add_text(self, keywords: List[str], text_chunk: str) -> int:
+    def add_text(self, keywords: List[str], text_chunk: str, ref_doc_id: str) -> int:
         """Add text to table."""
         cur_idx = self._get_index()
         for keyword in keywords:
             if keyword not in self.table:
                 self.table[keyword] = set()
             self.table[keyword].add(cur_idx)
-        self.text_chunks[cur_idx] = text_chunk
+        self.text_chunks[cur_idx] = Node(text_chunk, ref_doc_id=ref_doc_id)
         return cur_idx
 
     def get_texts(self, keyword: str) -> List[str]:
         """Get texts given keyword."""
         if keyword not in self.table:
             raise ValueError("Keyword not found in table.")
-        return [self.text_chunks[idx] for idx in self.table[keyword]]
+        return [self.text_chunks[idx].text for idx in self.table[keyword]]
 
     @property
     def keywords(self) -> Set[str]:

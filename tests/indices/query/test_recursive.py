@@ -77,7 +77,7 @@ def documents() -> List[Document]:
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
-def test_recursive_query(
+def test_recursive_query_list_tree(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
@@ -85,6 +85,7 @@ def test_recursive_query(
     struct_kwargs: Dict,
 ) -> None:
     """Test query."""
+
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
@@ -97,6 +98,9 @@ def test_recursive_query(
     list3.set_text("summary3")
     list4 = GPTListIndex(documents[6:8], **list_kwargs)
     list4.set_text("summary4")
+
+    # there are two root nodes in this tree: one containing [list1, list2]
+    # and the other containing [list3, list4]
     tree = GPTTreeIndex(
         [
             list1,
@@ -107,5 +111,12 @@ def test_recursive_query(
         **tree_kwargs
     )
     query_str = "What is?"
+    # query should first pick the left root node, then pick list1
+    # within list1, it should go through the first document and second document
     response = tree.query(query_str, mode="recursive", query_configs=query_configs)
     assert response == ("What is?:This is a test v2.")
+
+    # Also test a non-recursive query. This should not go down into the list
+    tree_query_kwargs = query_configs[0].query_kwargs
+    response = tree.query(query_str, mode="default", **tree_query_kwargs)
+    assert response == ("What is?:summary1")

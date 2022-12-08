@@ -49,32 +49,32 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         self.refine_template = refine_template
         self.text_qa_template = text_qa_template
 
-    def _query_with_chunk(
-        self,
-        text_chunk: str,
-        query_str: str,
-        result_response: Optional[str] = None,
-        verbose: bool = False,
-    ) -> str:
-        """Query with a keyword."""
-        if result_response is None:
-            return give_response(
-                self._llm_predictor,
-                query_str,
-                text_chunk,
-                text_qa_template=self.text_qa_template,
-                refine_template=self.refine_template,
-                verbose=verbose,
-            )
-        else:
-            return refine_response(
-                self._llm_predictor,
-                result_response,
-                query_str,
-                text_chunk,
-                refine_template=self.refine_template,
-                verbose=verbose,
-            )
+    # def _query_with_chunk(
+    #     self,
+    #     text_chunk: str,
+    #     query_str: str,
+    #     result_response: Optional[str] = None,
+    #     verbose: bool = False,
+    # ) -> str:
+    #     """Query with a keyword."""
+    #     if result_response is None:
+    #         return give_response(
+    #             self._llm_predictor,
+    #             query_str,
+    #             text_chunk,
+    #             text_qa_template=self.text_qa_template,
+    #             refine_template=self.refine_template,
+    #             verbose=verbose,
+    #         )
+    #     else:
+    #         return refine_response(
+    #             self._llm_predictor,
+    #             result_response,
+    #             query_str,
+    #             text_chunk,
+    #             refine_template=self.refine_template,
+    #             verbose=verbose,
+    #         )
 
     @abstractmethod
     def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
@@ -101,13 +101,15 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         result_response = None
         for text_chunk_idx in sorted_chunk_indices:
             fmt_text_chunk = truncate_text(
-                self.index_struct.text_chunks[text_chunk_idx], 50
+                self.index_struct.text_chunks[text_chunk_idx].text, 50
             )
             print(f"> Querying with idx: {text_chunk_idx}: {fmt_text_chunk}")
-            result_response = self._query_with_chunk(
-                self.index_struct.text_chunks[text_chunk_idx],
+            result_response = self._query_node(
                 query_str,
-                result_response=result_response,
+                self.index_struct.text_chunks[text_chunk_idx],
+                text_qa_template=self.text_qa_template,
+                refine_template=self.refine_template,
+                response=result_response,
                 verbose=verbose,
             )
         return result_response or "Empty response"

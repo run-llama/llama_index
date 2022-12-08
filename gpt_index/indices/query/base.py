@@ -71,16 +71,24 @@ class BaseGPTIndexQuery(Generic[IS]):
             print(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
         is_index_struct = False
-        if node.ref_doc_id is not None and self._docstore is not None:
+        # if self._query_runner is not None, assume we want to do a recursive
+        # query. In order to not perform a recursive query, make sure
+        # _query_runner is None.
+        if (
+            self._query_runner is not None
+            and node.ref_doc_id is not None
+            and self._docstore is not None
+        ):
             doc = self._docstore.get_document(node.ref_doc_id, raise_error=True)
             if isinstance(doc, IndexStruct):
                 is_index_struct = True
 
+        # If the retrieved node corresponds to another index struct, then
+        # recursively query that node. Otherwise, simply return the node's text.
         if is_index_struct:
-            if self._query_runner is None:
-                raise ValueError("query_runner must be provided.")
             # if is index struct, then recurse and get answer
-            response = self._query_runner.query(query_str, cast(IndexStruct, doc))
+            query_runner = cast(BaseQueryRunner, self._query_runner)
+            response = query_runner.query(query_str, cast(IndexStruct, doc))
         else:
             # if not index struct, then just fetch text from the node
             text = node.text

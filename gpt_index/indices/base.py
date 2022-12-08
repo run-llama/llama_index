@@ -41,6 +41,7 @@ class BaseGPTIndex(Generic[IS]):
             self._index_struct = index_struct
         else:
             self._docstore = docstore or DocumentStore()
+            documents = cast(Sequence[DOCUMENTS_INPUT], documents)
             documents = self._process_documents(documents, self._docstore)
             self._validate_documents(documents)
             # TODO: introduce document store outside __init__ function

@@ -103,7 +103,9 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         for i, text_chunk in enumerate(text_chunks):
             keywords = self._extract_keywords(text_chunk)
             fmt_text_chunk = truncate_text(text_chunk, 50)
-            text_chunk_id = index_struct.add_text(list(keywords), text_chunk)
+            text_chunk_id = index_struct.add_text(
+                list(keywords), text_chunk, document.doc_id
+            )
             print(
                 f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
                 f"{fmt_text_chunk}"
@@ -127,7 +129,9 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         for i, text_chunk in enumerate(text_chunks):
             keywords = self._extract_keywords(text_chunk)
             fmt_text_chunk = truncate_text(text_chunk, 50)
-            text_chunk_id = self._index_struct.add_text(list(keywords), text_chunk)
+            text_chunk_id = self._index_struct.add_text(
+                list(keywords), text_chunk, document.doc_id
+            )
             print(
                 f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
                 f"{fmt_text_chunk}"
