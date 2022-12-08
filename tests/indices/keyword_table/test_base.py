@@ -104,8 +104,8 @@ def test_insert(_mock_init: Any, _mock_predict: Any, documents: List[Document]) 
     }
 
     # test insert with doc_id
-    document1 = Document("This is", _doc_id="test_id1")
-    document2 = Document("test v3", _doc_id="test_id2")
+    document1 = Document("This is", doc_id="test_id1")
+    document2 = Document("test v3", doc_id="test_id2")
     table = GPTSimpleKeywordTableIndex([])
     table.insert(document1)
     table.insert(document2)

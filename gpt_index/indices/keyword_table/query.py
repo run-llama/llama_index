@@ -100,13 +100,12 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         sorted_chunk_indices = sorted_chunk_indices[: self.num_chunks_per_query]
         result_response = None
         for text_chunk_idx in sorted_chunk_indices:
-            fmt_text_chunk = truncate_text(
-                self.index_struct.text_chunks[text_chunk_idx].text, 50
-            )
+            node = self.index_struct.text_chunks[text_chunk_idx]
+            fmt_text_chunk = truncate_text(node.get_text(), 50)
             print(f"> Querying with idx: {text_chunk_idx}: {fmt_text_chunk}")
             result_response = self._query_node(
                 query_str,
-                self.index_struct.text_chunks[text_chunk_idx],
+                node,
                 text_qa_template=self.text_qa_template,
                 refine_template=self.refine_template,
                 response=result_response,

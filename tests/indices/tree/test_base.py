@@ -151,7 +151,7 @@ def test_insert(
     tree = GPTTreeIndex(documents, **index_kwargs)
 
     # test insert
-    new_doc = Document("This is a new doc.", _doc_id="new_doc")
+    new_doc = Document("This is a new doc.", doc_id="new_doc")
     tree.insert(new_doc)
     # Before:
     # Left root node: "Hello world.\nThis is a test."
@@ -183,7 +183,7 @@ def test_insert(
 
     # test insert from empty (with_id)
     tree = GPTTreeIndex([], **index_kwargs)
-    new_doc = Document("This is a new doc.", _doc_id="new_doc_test")
+    new_doc = Document("This is a new doc.", doc_id="new_doc_test")
     tree.insert(new_doc)
     assert len(tree.index_struct.all_nodes) == 1
     assert tree.index_struct.all_nodes[0].text == "This is a new doc."

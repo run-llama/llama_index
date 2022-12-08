@@ -11,7 +11,12 @@ from typing import Any, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
-from gpt_index.indices.base import DEFAULT_MODE, EMBEDDING_MODE, BaseGPTIndex
+from gpt_index.indices.base import (
+    DEFAULT_MODE,
+    DOCUMENTS_INPUT,
+    EMBEDDING_MODE,
+    BaseGPTIndex,
+)
 from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.list.query import BaseGPTListIndexQuery, GPTListIndexQuery
@@ -32,7 +37,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[BaseDocument]] = None,
+        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexList] = None,
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -70,11 +75,11 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         self, index_struct: IndexList, document: BaseDocument
     ) -> None:
         """Add document to index."""
-        text_chunks = self.text_splitter.split_text(document.text)
+        text_chunks = self.text_splitter.split_text(document.get_text())
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
-            index_struct.add_text(text_chunk, document.doc_id)
+            index_struct.add_text(text_chunk, document.get_doc_id())
 
     def build_index_from_documents(
         self, documents: Sequence[BaseDocument]
@@ -102,11 +107,11 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        text_chunks = self.text_splitter.split_text(document.text)
+        text_chunks = self.text_splitter.split_text(document.get_text())
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
-            self._index_struct.add_text(text_chunk, document.doc_id)
+            self._index_struct.add_text(text_chunk, document.get_doc_id())
 
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""

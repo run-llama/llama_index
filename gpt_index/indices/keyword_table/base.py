@@ -13,7 +13,12 @@ from abc import abstractmethod
 from typing import Any, Optional, Sequence, Set
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
-from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
+from gpt_index.indices.base import (
+    DEFAULT_MODE,
+    DOCUMENTS_INPUT,
+    BaseGPTIndex,
+    BaseGPTIndexQuery,
+)
 from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.keyword_table.query import (
     BaseGPTKeywordTableQuery,
@@ -40,7 +45,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[BaseDocument]] = None,
+        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[KeywordTable] = None,
         keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
         max_keywords_per_query: int = 10,
@@ -99,12 +104,12 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self, index_struct: KeywordTable, document: BaseDocument
     ) -> None:
         """Add document to index."""
-        text_chunks = self.text_splitter.split_text(document.text)
+        text_chunks = self.text_splitter.split_text(document.get_text())
         for i, text_chunk in enumerate(text_chunks):
             keywords = self._extract_keywords(text_chunk)
             fmt_text_chunk = truncate_text(text_chunk, 50)
             text_chunk_id = index_struct.add_text(
-                list(keywords), text_chunk, document.doc_id
+                list(keywords), text_chunk, document.get_doc_id()
             )
             print(
                 f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
@@ -125,12 +130,12 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        text_chunks = self.text_splitter.split_text(document.text)
+        text_chunks = self.text_splitter.split_text(document.get_text())
         for i, text_chunk in enumerate(text_chunks):
             keywords = self._extract_keywords(text_chunk)
             fmt_text_chunk = truncate_text(text_chunk, 50)
             text_chunk_id = self._index_struct.add_text(
-                list(keywords), text_chunk, document.doc_id
+                list(keywords), text_chunk, document.get_doc_id()
             )
             print(
                 f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "

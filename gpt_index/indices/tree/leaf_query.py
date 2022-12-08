@@ -84,7 +84,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         if prev_response is None:
             return cur_response
         else:
-            context_msg = "\n".join([selected_node.text, cur_response])
+            context_msg = "\n".join([selected_node.get_text(), cur_response])
             cur_response, formatted_refine_prompt = self._llm_predictor.predict(
                 self.refine_template,
                 query_str=query_str,
@@ -153,7 +153,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             )
             print(
                 f">[Level {level}] Node "
-                f"[{number}] Summary text: {' '.join(selected_node.text.splitlines())}"
+                f"[{number}] Summary text: {' '.join(selected_node.get_text().splitlines())}"
             )
             result_response = self._query_with_selected_node(
                 selected_node,

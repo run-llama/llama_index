@@ -5,7 +5,12 @@ from typing import Any, Dict, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
-from gpt_index.indices.base import DEFAULT_MODE, EMBEDDING_MODE, BaseGPTIndex
+from gpt_index.indices.base import (
+    DEFAULT_MODE,
+    DOCUMENTS_INPUT,
+    EMBEDDING_MODE,
+    BaseGPTIndex,
+)
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
@@ -65,10 +70,10 @@ class GPTTreeIndexBuilder:
         self, start_idx: int, document: BaseDocument
     ) -> Dict[int, Node]:
         """Add document to index."""
-        text_chunks = self.text_splitter.split_text(document.text)
+        text_chunks = self.text_splitter.split_text(document.get_text())
         doc_nodes = {
             (start_idx + i): Node(
-                _text=t, index=(start_idx + i), ref_doc_id=document.doc_id
+                text=t, index=(start_idx + i), ref_doc_id=document.get_doc_id()
             )
             for i, t in enumerate(text_chunks)
         }
@@ -110,7 +115,7 @@ class GPTTreeIndexBuilder:
 
             print(f"> {i}/{len(cur_nodes)}, summary: {new_summary}")
             new_node = Node(
-                _text=new_summary,
+                text=new_summary,
                 index=cur_index,
                 child_indices={n.index for n in cur_nodes_chunk},
             )
@@ -130,7 +135,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[BaseDocument]] = None,
+        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexGraph] = None,
         summary_template: Prompt = DEFAULT_SUMMARY_PROMPT,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,

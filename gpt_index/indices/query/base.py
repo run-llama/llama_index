@@ -66,7 +66,7 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         """
         level_str = "" if level is None else f"[Level {level}]"
-        fmt_text_chunk = truncate_text(node.text, 50)
+        fmt_text_chunk = truncate_text(node.get_text(), 50)
         if verbose:
             print(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
@@ -91,7 +91,7 @@ class BaseGPTIndexQuery(Generic[IS]):
             response = query_runner.query(query_str, cast(IndexStruct, doc))
         else:
             # if not index struct, then just fetch text from the node
-            text = node.text
+            text = node.get_text()
             if response is None:
                 response = give_response(
                     self._llm_predictor,
@@ -113,7 +113,7 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         print(f"is index struct: {is_index_struct}")
         print(node.ref_doc_id)
-        print(node.text)
+        print(node.get_text())
         print(f"response: {response}")
 
         return response

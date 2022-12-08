@@ -16,44 +16,16 @@ from gpt_index.schema import BaseDocument
 class IndexStruct(BaseDocument, DataClassJsonMixin):
     """A base data struct for a GPT index."""
 
-    # NOTE: the text represents a summary of the content of the index struct.
+    # NOTE: the text field, inherited from BaseDocument,
+    # represents a summary of the content of the index struct.
     # primarily used for composing indices with other indices
-    _text: Optional[str] = None
-    # the doc_id represents a unique identifier for the index struct
+
+    # NOTE: the doc_id field, inherited from BaseDocument,
+    # represents a unique identifier for the index struct
     # that will be put in the docstore.
     # Not all index_structs need to have a doc_id. Only index_structs that
     # represent a complete data structure (e.g. IndexGraph, IndexList),
     # and are used to compose a higher level index, will have a doc_id.
-    _doc_id: Optional[str] = None
-
-    @property
-    def text(self) -> str:
-        """Get text."""
-        if self._text is None:
-            raise ValueError("_text field not set.")
-        return self._text
-
-    @text.setter
-    def text(self, text: str) -> None:
-        """Set text."""
-        self._text = text
-
-    @property
-    def doc_id(self) -> str:
-        """Get doc_id."""
-        if self._doc_id is None:
-            raise ValueError("doc_id not set.")
-        return self._doc_id
-
-    @doc_id.setter
-    def doc_id(self, doc_id: str) -> None:
-        """Set doc_id."""
-        self._doc_id = doc_id
-
-    @property
-    def is_doc_id_none(self) -> bool:
-        """Check if doc_id is None."""
-        return self._doc_id is None
 
 
 @dataclass
@@ -63,6 +35,12 @@ class Node(IndexStruct):
     Used in the GPT Tree Index and List Index.
 
     """
+
+    def __post_init__(self) -> None:
+        """Post init."""
+        # NOTE: for Node objects, the text field is required
+        if self.text is None:
+            raise ValueError("text field not set.")
 
     # used for GPTTreeIndex
     index: int = 0
@@ -138,7 +116,7 @@ class KeywordTable(IndexStruct):
         """Get texts given keyword."""
         if keyword not in self.table:
             raise ValueError("Keyword not found in table.")
-        return [self.text_chunks[idx].text for idx in self.table[keyword]]
+        return [self.text_chunks[idx].get_text() for idx in self.table[keyword]]
 
     @property
     def keywords(self) -> Set[str]:

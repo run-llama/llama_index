@@ -53,7 +53,7 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
         """Get nodes for response."""
         nodes = self.index_struct.nodes
         if self.keyword is not None:
-            nodes = [node for node in nodes if self.keyword in node.text]
+            nodes = [node for node in nodes if self.keyword in node.get_text()]
         return nodes
 
     def query(self, query_str: str, verbose: bool = False) -> str:
@@ -72,5 +72,5 @@ class GPTListIndexQuery(BaseGPTListIndexQuery):
         """Get nodes for response."""
         nodes = self.index_struct.nodes
         if self.keyword is not None:
-            nodes = [node for node in nodes if self.keyword in node.text]
+            nodes = [node for node in nodes if self.keyword in node.get_text()]
         return nodes

@@ -62,7 +62,7 @@ class GPTIndexInserter:
         """
         # perform insertion
         text_node = Node(
-            _text=text_chunk, index=self.index_graph.size, ref_doc_id=doc_id
+            text=text_chunk, index=self.index_graph.size, ref_doc_id=doc_id
         )
         self.index_graph.insert_under_parent(text_node, parent_node)
 
@@ -85,7 +85,7 @@ class GPTIndexInserter:
                 self.summary_prompt, text=text_chunk1
             )
             node1 = Node(
-                _text=summary1,
+                text=summary1,
                 index=cur_node_index,
                 child_indices={n.index for n in half1},
             )
@@ -95,7 +95,7 @@ class GPTIndexInserter:
                 self.summary_prompt, text=text_chunk2
             )
             node2 = Node(
-                _text=summary2,
+                text=summary2,
                 index=cur_node_index + 1,
                 child_indices={n.index for n in half2},
             )
@@ -160,7 +160,7 @@ class GPTIndexInserter:
 
     def insert(self, doc: BaseDocument) -> None:
         """Insert into index_graph."""
-        text_chunks = self.text_splitter.split_text(doc.text)
+        text_chunks = self.text_splitter.split_text(doc.get_text())
 
         for text_chunk in text_chunks:
-            self._insert_node(text_chunk, doc.doc_id, None)
+            self._insert_node(text_chunk, doc.get_doc_id(), None)

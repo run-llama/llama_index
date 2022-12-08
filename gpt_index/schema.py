@@ -16,28 +16,25 @@ class BaseDocument(ABC):
     """
 
     # TODO: consolidate fields from Document/IndexStruct into base class
+    text: Optional[str] = None
+    doc_id: Optional[str] = None
 
-    @property
-    @abstractmethod
-    def text(self) -> str:
+    def get_text(self) -> str:
         """Get text."""
+        if self.text is None:
+            raise ValueError("text field not set.")
+        return self.text
 
-    @property
-    @abstractmethod
-    def doc_id(self) -> str:
+    def get_doc_id(self) -> str:
         """Get doc_id."""
-        raise NotImplementedError("Not implemented yet.")
-
-    @doc_id.setter
-    @abstractmethod
-    def doc_id(self, doc_id: str) -> None:
-        """Set doc_id."""
-        raise NotImplementedError("Not implemented yet.")
+        if self.doc_id is None:
+            raise ValueError("doc_id not set.")
+        return self.doc_id
 
     @property
-    @abstractmethod
     def is_doc_id_none(self) -> bool:
         """Check if doc_id is None."""
+        return self.doc_id is None
 
 
 @dataclass
@@ -48,32 +45,12 @@ class Document(BaseDocument):
 
     """
 
-    _text: str
     extra_info: Optional[Dict] = None
-    # TODO: introduce concept of docstore for unique id's
-    _doc_id: Optional[str] = None
 
-    @property
-    def text(self) -> str:
-        """Get text."""
-        return self._text
-
-    @property
-    def doc_id(self) -> str:
-        """Get doc_id."""
-        if self._doc_id is None:
-            raise ValueError("doc_id not set.")
-        return self._doc_id
-
-    @doc_id.setter
-    def doc_id(self, doc_id: str) -> None:
-        """Set doc_id."""
-        self._doc_id = doc_id
-
-    @property
-    def is_doc_id_none(self) -> bool:
-        """Check if doc_id is None."""
-        return self._doc_id is None
+    def __post_init__(self) -> None:
+        """Post init."""
+        if self.text is None:
+            raise ValueError("text field not set.")
 
 
 @dataclass
@@ -112,7 +89,7 @@ class DocumentStore:
                     )
 
             # NOTE: doc could already exist in the store, but we overwrite it
-            self.docs[doc.doc_id] = doc
+            self.docs[doc.get_doc_id()] = doc
 
     def get_document(
         self, doc_id: str, raise_error: bool = True
