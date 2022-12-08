@@ -152,10 +152,8 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                 f">[Level {level}] Selected node: "
                 f"[{number}]/[{','.join([str(int(n)) for n in numbers])}]"
             )
-            print(
-                f">[Level {level}] Node "
-                f"[{number}] Summary text: {' '.join(selected_node.get_text().splitlines())}"
-            )
+            summary_text = " ".join(selected_node.get_text().splitlines())
+            print(f">[Level {level}] Node " f"[{number}] Summary text: {summary_text}")
             result_response = self._query_with_selected_node(
                 selected_node,
                 query_str,

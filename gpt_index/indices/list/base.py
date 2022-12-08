@@ -6,7 +6,6 @@ in sequence in order to answer a given query.
 """
 
 import json
-from abc import abstractmethod
 from typing import Any, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
@@ -26,7 +25,7 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.schema import BaseDocument, DocumentStore
+from gpt_index.schema import BaseDocument
 
 # This query is used to summarize the contents of the index.
 GENERATE_TEXT_QUERY = "What is a concise summary of this document?"

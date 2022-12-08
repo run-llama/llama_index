@@ -1,11 +1,11 @@
 """Test recursive queries."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
 
-from gpt_index.indices.data_structs import IndexGraph, IndexStructType, Node
+from gpt_index.indices.data_structs import IndexStructType
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
@@ -24,7 +24,6 @@ from tests.mock_utils.mock_prompts import (
     MOCK_TEXT_QA_PROMPT,
 )
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
-from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
 @pytest.fixture
@@ -101,7 +100,6 @@ def test_recursive_query_list_tree(
     struct_kwargs: Dict,
 ) -> None:
     """Test query."""
-
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
@@ -149,7 +147,6 @@ def test_recursive_query_tree_list(
     struct_kwargs: Dict,
 ) -> None:
     """Test query."""
-
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
@@ -188,7 +185,6 @@ def test_recursive_query_table_list(
     struct_kwargs: Dict,
 ) -> None:
     """Test query."""
-
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
     table_kwargs = index_kwargs["table"]
@@ -224,7 +220,6 @@ def test_recursive_query_list_table(
     struct_kwargs: Dict,
 ) -> None:
     """Test query."""
-
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
     table_kwargs = index_kwargs["table"]

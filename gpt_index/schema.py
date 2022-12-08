@@ -1,5 +1,5 @@
 """Base schema for data structures."""
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
@@ -61,6 +61,7 @@ class DocumentStore:
 
     @classmethod
     def from_documents(cls, docs: List[BaseDocument]) -> "DocumentStore":
+        """Create from documents."""
         obj = cls()
         obj.add_documents(docs)
         return obj
@@ -101,4 +102,5 @@ class DocumentStore:
         return doc
 
     def __len__(self) -> int:
+        """Get length."""
         return len(self.docs.keys())

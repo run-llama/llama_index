@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Generic, List, Optional, TypeVar, cast
+from typing import Generic, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct, Node
 from gpt_index.indices.response_utils import give_response, refine_response

@@ -2,11 +2,11 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.indices.data_structs import IndexStruct, IndexStructType, Node
+from gpt_index.indices.data_structs import IndexStructType
 
 
 class QueryMode(str, Enum):

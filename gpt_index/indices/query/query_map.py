@@ -3,14 +3,14 @@
 from typing import Type
 
 from gpt_index.indices.base import BaseGPTIndexQuery
-from gpt_index.indices.data_structs import IndexStruct, IndexStructType
+from gpt_index.indices.data_structs import IndexStructType
 from gpt_index.indices.keyword_table.query import (
     GPTKeywordTableGPTQuery,
     GPTKeywordTableRAKEQuery,
     GPTKeywordTableSimpleQuery,
 )
 from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
-from gpt_index.indices.list.query import BaseGPTListIndexQuery, GPTListIndexQuery
+from gpt_index.indices.list.query import GPTListIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery

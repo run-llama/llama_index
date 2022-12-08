@@ -1,6 +1,6 @@
 """Test keyword table index."""
 
-from typing import Any, List, Optional, Set
+from typing import Any, List
 from unittest.mock import patch
 
 import pytest
