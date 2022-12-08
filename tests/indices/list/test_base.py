@@ -125,7 +125,7 @@ def test_query(
     # test embedding query
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
-    assert response == ("What is?\n" "Hello world.")
+    assert response == ("What is?:Hello world.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -153,4 +153,4 @@ def test_embedding_query(
     response = index.query(
         query_str, mode="embedding", similarity_top_k=1, **query_kwargs
     )
-    assert response == ("What is?\n" "Hello world.")
+    assert response == ("What is?:Hello world.")

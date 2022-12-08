@@ -21,7 +21,7 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.schema import BaseDocument
+from gpt_index.schema import BaseDocument, DocumentStore
 
 # This query is used to summarize the contents of the index.
 GENERATE_TEXT_QUERY = "What is a concise summary of this document?"
@@ -36,6 +36,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         index_struct: Optional[IndexList] = None,
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         llm_predictor: Optional[LLMPredictor] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self.text_qa_template = text_qa_template
@@ -59,7 +60,10 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             chunk_overlap=MAX_CHUNK_OVERLAP,
         )
         super().__init__(
-            documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
+            documents=documents,
+            index_struct=index_struct,
+            llm_predictor=llm_predictor,
+            **kwargs,
         )
 
     def _add_document_to_index(
@@ -96,7 +100,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
 
-    def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
         text_chunks = self.text_splitter.split_text(document.text)
         for _, text_chunk in enumerate(text_chunks):

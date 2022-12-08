@@ -46,6 +46,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         max_keywords_per_query: int = 10,
         max_keywords_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
@@ -64,7 +65,10 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             chunk_overlap=MAX_CHUNK_OVERLAP,
         )
         super().__init__(
-            documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
+            documents=documents,
+            index_struct=index_struct,
+            llm_predictor=llm_predictor,
+            **kwargs,
         )
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
@@ -117,7 +121,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 
         return index_struct
 
-    def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
         text_chunks = self.text_splitter.split_text(document.text)
         for i, text_chunk in enumerate(text_chunks):

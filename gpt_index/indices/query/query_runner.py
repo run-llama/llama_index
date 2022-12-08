@@ -46,7 +46,10 @@ class QueryRunner(BaseQueryRunner):
         mode = config.query_mode
         query_cls = get_query_cls(index_struct_type, mode)
         query_obj = query_cls(
-            index_struct, **config.query_kwargs, query_runner=self, docstore=self._docstore
+            index_struct,
+            **config.query_kwargs,
+            query_runner=self,
+            docstore=self._docstore,
         )
 
         # set llm_predictor if exists

@@ -61,19 +61,13 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         if len(selected_node.child_indices) == 0:
             # call _query_node to get an answer from doc (either Document/IndexStruct)
             cur_response = self._query_node(
-                query_str, 
-                selected_node, 
-                self.text_qa_template, 
+                query_str,
+                selected_node,
+                self.text_qa_template,
                 self.refine_template,
                 verbose=verbose,
-                level=level
+                level=level,
             )
-            # # TODO: put formatted answer prompt in 
-            # cur_response, formatted_answer_prompt = self._llm_predictor.predict(
-            #     self.text_qa_template,
-            #     context_str=selected_node.text,
-            #     query_str=query_str,
-            # )
             if verbose:
                 print(f">[Level {level}] Current answer response: {cur_response} ")
         else:

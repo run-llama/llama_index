@@ -57,7 +57,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         refine_template: Prompt,
         response: Optional[str] = None,
         verbose: bool = False,
-        level: Optional[int] = None
+        level: Optional[int] = None,
     ) -> str:
         """Query a given node.
 
@@ -103,10 +103,10 @@ class BaseGPTIndexQuery(Generic[IS]):
                     verbose=verbose,
                 )
 
-        print(f'is index struct: {is_index_struct}')
+        print(f"is index struct: {is_index_struct}")
         print(node.ref_doc_id)
         print(node.text)
-        print(f'response: {response}')
+        print(f"response: {response}")
 
         return response
 
