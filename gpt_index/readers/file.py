@@ -5,6 +5,7 @@ from typing import Any, List
 from gpt_index.readers.base import BaseReader
 from gpt_index.schema import Document
 
+
 class SimpleDirectoryReader(BaseReader):
     """Simple directory reader.
 
