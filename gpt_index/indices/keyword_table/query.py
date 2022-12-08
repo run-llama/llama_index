@@ -49,33 +49,6 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         self.refine_template = refine_template
         self.text_qa_template = text_qa_template
 
-    # def _query_with_chunk(
-    #     self,
-    #     text_chunk: str,
-    #     query_str: str,
-    #     result_response: Optional[str] = None,
-    #     verbose: bool = False,
-    # ) -> str:
-    #     """Query with a keyword."""
-    #     if result_response is None:
-    #         return give_response(
-    #             self._llm_predictor,
-    #             query_str,
-    #             text_chunk,
-    #             text_qa_template=self.text_qa_template,
-    #             refine_template=self.refine_template,
-    #             verbose=verbose,
-    #         )
-    #     else:
-    #         return refine_response(
-    #             self._llm_predictor,
-    #             result_response,
-    #             query_str,
-    #             text_chunk,
-    #             refine_template=self.refine_template,
-    #             verbose=verbose,
-    #         )
-
     @abstractmethod
     def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
         """Extract keywords."""
