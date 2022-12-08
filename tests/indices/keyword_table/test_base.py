@@ -63,7 +63,7 @@ def test_build_table(
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
-    _mock_extract_keywords,
+    mock_extract_keywords,
 )
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_insert(_mock_init: Any, _mock_predict: Any, documents: List[Document]) -> None:

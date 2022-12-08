@@ -5,10 +5,10 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.data_structs import IndexGraph, IndexStructType, Node
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.query.schema import QueryConfig
+from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -45,8 +45,8 @@ def struct_kwargs() -> Tuple[Dict, List]:
     }
     query_configs = [
         QueryConfig(
-            index_struct_type="tree",
-            query_mode="default",
+            index_struct_type=IndexStructType.TREE,
+            query_mode=QueryMode.DEFAULT,
             query_kwargs={
                 "query_template": MOCK_QUERY_PROMPT,
                 "text_qa_template": MOCK_TEXT_QA_PROMPT,
@@ -54,16 +54,16 @@ def struct_kwargs() -> Tuple[Dict, List]:
             },
         ),
         QueryConfig(
-            index_struct_type="list",
-            query_mode="default",
+            index_struct_type=IndexStructType.LIST,
+            query_mode=QueryMode.DEFAULT,
             query_kwargs={
                 "text_qa_template": MOCK_TEXT_QA_PROMPT,
                 "refine_template": MOCK_REFINE_PROMPT,
             },
         ),
         QueryConfig(
-            index_struct_type="keyword_table",
-            query_mode="default",
+            index_struct_type=IndexStructType.KEYWORD_TABLE,
+            query_mode=QueryMode.DEFAULT,
             query_kwargs={
                 "query_keyword_extract_template": MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
                 "text_qa_template": MOCK_TEXT_QA_PROMPT,
