@@ -59,17 +59,20 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self.keyword_extract_template = keyword_extract_template
         self.max_keywords_per_query = max_keywords_per_query
         self.max_keywords_per_chunk = max_keywords_per_chunk
-        empty_keyword_extract_template = self.keyword_extract_template.format(
-            max_keywords=self.max_keywords_per_chunk, text=""
+        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.keyword_extract_template, 1
         )
-        chunk_size = get_chunk_size_given_prompt(
-            empty_keyword_extract_template, MAX_CHUNK_SIZE, 1, NUM_OUTPUTS
-        )
-        self.text_splitter = TokenTextSplitter(
-            separator=" ",
-            chunk_size=chunk_size,
-            chunk_overlap=MAX_CHUNK_OVERLAP,
-        )
+        # empty_keyword_extract_template = self.keyword_extract_template.format(
+        #     max_keywords=self.max_keywords_per_chunk, text=""
+        # )
+        # chunk_size = get_chunk_size_given_prompt(
+        #     empty_keyword_extract_template, MAX_CHUNK_SIZE, 1, NUM_OUTPUTS
+        # )
+        # self.text_splitter = TokenTextSplitter(
+        #     separator=" ",
+        #     chunk_size=chunk_size,
+        #     chunk_overlap=MAX_CHUNK_OVERLAP,
+        # )
         super().__init__(
             documents=documents,
             index_struct=index_struct,

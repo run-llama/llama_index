@@ -10,6 +10,7 @@ from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt
 from gpt_index.schema import DocumentStore
+from gpt_index.indices.prompt_helper import PromptHelper
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -39,6 +40,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         llm_predictor: Optional[LLMPredictor] = None,
         docstore: Optional[DocumentStore] = None,
         query_runner: Optional[BaseQueryRunner] = None,
+        prompt_helper: Optional[PromptHelper] = None
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -48,6 +50,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._llm_predictor = llm_predictor or LLMPredictor()
         self._docstore = docstore
         self._query_runner = query_runner
+        self._prompt_helper = prompt_helper or PromptHelper()
 
     def _query_node(
         self,
@@ -140,3 +143,7 @@ class BaseGPTIndexQuery(Generic[IS]):
     def set_llm_predictor(self, llm_predictor: LLMPredictor) -> None:
         """Set LLM predictor."""
         self._llm_predictor = llm_predictor
+
+    def set_prompt_helper(self, prompt_helper: PromptHelper) -> None:
+        """Set prompt helper."""
+        self._prompt_helper = prompt_helper

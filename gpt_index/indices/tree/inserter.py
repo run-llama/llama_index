@@ -13,7 +13,6 @@ from gpt_index.indices.utils import (
 )
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
-# from gpt_index.langchain_helpers.chain_wrapper import self._llm_predictor.predict
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
@@ -21,6 +20,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from gpt_index.schema import BaseDocument
+from gpt_index.indices.prompt_helper import PromptHelper
 
 
 class GPTIndexInserter:
@@ -33,6 +33,7 @@ class GPTIndexInserter:
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
         llm_predictor: Optional[LLMPredictor] = None,
+        prompt_helper: Optional[PromptHelper] = None,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -41,13 +42,9 @@ class GPTIndexInserter:
         self.summary_prompt = summary_prompt
         self.insert_prompt = insert_prompt
         self.index_graph = index_graph
-        chunk_size = get_chunk_size_given_prompt(
-            summary_prompt.format(text=""), MAX_CHUNK_SIZE, num_children, NUM_OUTPUTS
-        )
-        self.text_splitter = TokenTextSplitter(
-            separator=" ",
-            chunk_size=chunk_size,
-            chunk_overlap=MAX_CHUNK_OVERLAP // num_children,
+        self._prompt_helper = prompt_helper or PromptHelper()
+        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.summary_prompt, self.num_children 
         )
         self._llm_predictor = llm_predictor or LLMPredictor()
 
@@ -160,7 +157,7 @@ class GPTIndexInserter:
 
     def insert(self, doc: BaseDocument) -> None:
         """Insert into index_graph."""
-        text_chunks = self.text_splitter.split_text(doc.get_text())
+        text_chunks = self._text_splitter.split_text(doc.get_text())
 
         for text_chunk in text_chunks:
             self._insert_node(text_chunk, doc.get_doc_id(), None)

@@ -19,7 +19,6 @@ from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.utils import (
     get_chunk_size_given_prompt,
     get_sorted_node_list,
-    get_text_from_nodes,
 )
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -100,7 +99,9 @@ class GPTTreeIndexBuilder:
         for i in range(0, len(cur_node_list), self.num_children):
             print(f"{i}/{len(cur_nodes)}")
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
-            text_chunk = get_text_from_nodes(cur_nodes_chunk)
+            text_chunk = self._prompt_helper.get_text_from_nodes(
+                cur_nodes_chunk, prompt=self.summary_prompt
+            )
 
             new_summary, _ = self._llm_predictor.predict(
                 self.summary_prompt, text=text_chunk
@@ -194,6 +195,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             num_children=self.num_children,
             summary_prompt=self.summary_template,
             insert_prompt=self.insert_prompt,
+            prompt_helper=self._prompt_helper,
         )
         inserter.insert(document)
 

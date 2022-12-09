@@ -81,7 +81,6 @@ class PromptHelper:
         )
         return text_splitter
 
-
     def get_text_from_nodes(
         self, node_list: List[Node], prompt: Optional[Prompt] = None
     ) -> str:

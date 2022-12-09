@@ -45,25 +45,21 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
     ) -> None:
         """Initialize params."""
         self.text_qa_template = text_qa_template
-        # we need to figure out the max length of refine_template or text_qa_template
-        # to find the minimum chunk size.
-        empty_qa = self.text_qa_template.format(context_str="", query_str="")
-
-        # TODO: make embedding_limit not hardcoded.
-        # To do this, we would need to include the embedding_limit in the
-        # embed_model, and include that for every index.
-        chunk_size = get_chunk_size_given_prompt(
-            empty_qa,
-            MAX_CHUNK_SIZE,
-            1,
-            NUM_OUTPUTS,
-            embedding_limit=EMBED_MAX_TOKEN_LIMIT,
+        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.text_qa_template, 1
         )
-        self.text_splitter = TokenTextSplitter(
-            separator=" ",
-            chunk_size=chunk_size,
-            chunk_overlap=MAX_CHUNK_OVERLAP,
-        )
+        # chunk_size = get_chunk_size_given_prompt(
+        #     empty_qa,
+        #     MAX_CHUNK_SIZE,
+        #     1,
+        #     NUM_OUTPUTS,
+        #     embedding_limit=EMBED_MAX_TOKEN_LIMIT,
+        # )
+        # self.text_splitter = TokenTextSplitter(
+        #     separator=" ",
+        #     chunk_size=chunk_size,
+        #     chunk_overlap=MAX_CHUNK_OVERLAP,
+        # )
         super().__init__(
             documents=documents,
             index_struct=index_struct,
