@@ -46,3 +46,22 @@ class TokenTextSplitter(TextSplitter):
             total += num_tokens
         docs.append(self._separator.join(current_doc))
         return docs
+
+    def truncate_text(self, text: str) -> str:
+        """Truncate text in order to fit the underlying chunk size."""
+        if text == "":
+            return ""
+        # First we naively split the large input into a bunch of smaller ones.
+        splits = text.split(self._separator)
+        # We now want to combine these smaller pieces into medium size
+        # chunks to send to the LLM.
+        current_doc: List[str] = []
+        total = 0
+        for d in splits:
+            current_doc.append(d)
+            num_tokens = len(self.tokenizer(d)["input_ids"])
+            total += num_tokens
+            if total > self._chunk_size:
+                current_doc = current_doc[:-1]
+                break
+        return self._separator.join(current_doc)

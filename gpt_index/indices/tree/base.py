@@ -42,25 +42,20 @@ class GPTTreeIndexBuilder:
 
     def __init__(
         self,
-        num_children: int = 10,
-        summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
-        llm_predictor: Optional[LLMPredictor] = None,
+        num_children: int,
+        summary_prompt: Prompt,
+        llm_predictor: Optional[LLMPredictor],
+        node_chunk_size: int,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
             raise ValueError("Invalid number of children.")
         self.num_children = num_children
         self.summary_prompt = summary_prompt
-        chunk_size = get_chunk_size_given_prompt(
-            summary_prompt.format(text=""),
-            MAX_CHUNK_SIZE,
-            num_children,
-            NUM_OUTPUTS,
-            embedding_limit=EMBED_MAX_TOKEN_LIMIT,
-        )
+        self._node_chunk_size = node_chunk_size
         self.text_splitter = TokenTextSplitter(
             separator=" ",
-            chunk_size=chunk_size,
+            chunk_size=self._node_chunk_size,
             chunk_overlap=MAX_CHUNK_OVERLAP // num_children,
         )
         self._llm_predictor = llm_predictor or LLMPredictor()
@@ -151,6 +146,14 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         # if query_str is specified, then we try to load into summary template
         if query_str is not None:
             summary_template = summary_template.partial_format(query_str=query_str)
+
+        self._node_chunk_size = get_chunk_size_given_prompt(
+            summary_template.format(text=""),
+            MAX_CHUNK_SIZE,
+            num_children,
+            NUM_OUTPUTS,
+            embedding_limit=EMBED_MAX_TOKEN_LIMIT,
+        )
         self.summary_template = summary_template
         self.insert_prompt = insert_prompt
         validate_prompt(self.summary_template, ["text"], ["query_str"])
@@ -181,9 +184,10 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         """Build the index from documents."""
         # do simple concatenation
         index_builder = GPTTreeIndexBuilder(
-            num_children=self.num_children,
-            summary_prompt=self.summary_template,
-            llm_predictor=self._llm_predictor,
+            self.num_children,
+            self.summary_template,
+            self._llm_predictor,
+            self._node_chunk_size
         )
         index_graph = index_builder.build_from_text(documents)
         return index_graph
