@@ -63,7 +63,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         if verbose:
             print(
                 f">[Level {level}] Node [{selected_index+1}] Summary text: "
-                f"{' '.join(selected_node.text.splitlines())}"
+                f"{' '.join(selected_node.get_text().splitlines())}"
             )
 
         # Get the response for the selected node
@@ -88,7 +88,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             if node.embedding is not None:
                 text_embedding = node.embedding
             else:
-                text_embedding = self._embed_model.get_text_embedding(node.text)
+                text_embedding = self._embed_model.get_text_embedding(node.get_text())
                 node.embedding = text_embedding
 
             similarity = self._embed_model.similarity(query_embedding, text_embedding)
