@@ -1,9 +1,9 @@
 """Leaf query mechanism."""
 
-from typing import Dict, Optional, cast
+from typing import Any, Dict, Optional, cast
 
-from gpt_index.indices.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
     get_numbered_text_from_nodes,
@@ -34,9 +34,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
         refine_template: Prompt = DEFAULT_REFINE_PROMPT,
         child_branch_factor: int = 1,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct)
+        super().__init__(index_struct, **kwargs)
         self.query_template = query_template
         self.query_template_multiple = query_template_multiple
         self.text_qa_template = text_qa_template
@@ -58,14 +59,17 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
         """
         if len(selected_node.child_indices) == 0:
-            cur_response, formatted_answer_prompt = self._llm_predictor.predict(
+            # call _query_node to get an answer from doc (either Document/IndexStruct)
+            cur_response = self._query_node(
+                query_str,
+                selected_node,
                 self.text_qa_template,
-                context_str=selected_node.text,
-                query_str=query_str,
+                self.refine_template,
+                verbose=verbose,
+                level=level,
             )
             if verbose:
-                print(f">[Level {level}] answer prompt: {formatted_answer_prompt}")
-            print(f">[Level {level}] Current answer response: {cur_response} ")
+                print(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query(
                 {
@@ -80,7 +84,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         if prev_response is None:
             return cur_response
         else:
-            context_msg = "\n".join([selected_node.text, cur_response])
+            context_msg = "\n".join([selected_node.get_text(), cur_response])
             cur_response, formatted_refine_prompt = self._llm_predictor.predict(
                 self.refine_template,
                 query_str=query_str,
@@ -143,14 +147,13 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
             # number is 1-indexed, so subtract 1
             selected_node = cur_node_list[number - 1]
+
             print(
                 f">[Level {level}] Selected node: "
                 f"[{number}]/[{','.join([str(int(n)) for n in numbers])}]"
             )
-            print(
-                f">[Level {level}] Node "
-                f"[{number}] Summary text: {' '.join(selected_node.text.splitlines())}"
-            )
+            summary_text = " ".join(selected_node.get_text().splitlines())
+            print(f">[Level {level}] Node " f"[{number}] Summary text: {summary_text}")
             result_response = self._query_with_selected_node(
                 selected_node,
                 query_str,

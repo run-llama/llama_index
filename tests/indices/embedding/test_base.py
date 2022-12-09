@@ -74,7 +74,7 @@ def _get_node_text_embedding_similarities(
 
     similarities = []
     for node in nodes:
-        similarities.append(text_similarity_map[node.text])
+        similarities.append(text_similarity_map[node.get_text()])
 
     return similarities
 
@@ -102,4 +102,4 @@ def test_embedding_query(
     # test embedding query
     query_str = "What is?"
     response = tree.query(query_str, mode="embedding", **query_kwargs)
-    assert response == ("What is?\n" "Hello world.")
+    assert response == ("What is?:Hello world.")

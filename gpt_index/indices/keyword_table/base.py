@@ -8,12 +8,16 @@ existing keywords in the table.
 
 """
 
-import json
 from abc import abstractmethod
 from typing import Any, Optional, Sequence, Set
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
-from gpt_index.indices.base import DEFAULT_MODE, BaseGPTIndex, BaseGPTIndexQuery
+from gpt_index.indices.base import (
+    DEFAULT_MODE,
+    DOCUMENTS_INPUT,
+    BaseGPTIndex,
+    BaseGPTIndexQuery,
+)
 from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.keyword_table.query import (
     BaseGPTKeywordTableQuery,
@@ -38,14 +42,17 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     """Base GPT Index."""
 
+    index_struct_cls = KeywordTable
+
     def __init__(
         self,
-        documents: Optional[Sequence[BaseDocument]] = None,
+        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[KeywordTable] = None,
         keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
         max_keywords_per_query: int = 10,
         max_keywords_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
@@ -64,7 +71,10 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             chunk_overlap=MAX_CHUNK_OVERLAP,
         )
         super().__init__(
-            documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
+            documents=documents,
+            index_struct=index_struct,
+            llm_predictor=llm_predictor,
+            **kwargs,
         )
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
@@ -95,11 +105,13 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self, index_struct: KeywordTable, document: BaseDocument
     ) -> None:
         """Add document to index."""
-        text_chunks = self.text_splitter.split_text(document.text)
+        text_chunks = self.text_splitter.split_text(document.get_text())
         for i, text_chunk in enumerate(text_chunks):
             keywords = self._extract_keywords(text_chunk)
             fmt_text_chunk = truncate_text(text_chunk, 50)
-            text_chunk_id = index_struct.add_text(list(keywords), text_chunk)
+            text_chunk_id = index_struct.add_text(
+                list(keywords), text_chunk, document.get_doc_id()
+            )
             print(
                 f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
                 f"{fmt_text_chunk}"
@@ -117,13 +129,15 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 
         return index_struct
 
-    def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        text_chunks = self.text_splitter.split_text(document.text)
+        text_chunks = self.text_splitter.split_text(document.get_text())
         for i, text_chunk in enumerate(text_chunks):
             keywords = self._extract_keywords(text_chunk)
             fmt_text_chunk = truncate_text(text_chunk, 50)
-            text_chunk_id = self._index_struct.add_text(list(keywords), text_chunk)
+            text_chunk_id = self._index_struct.add_text(
+                list(keywords), text_chunk, document.get_doc_id()
+            )
             print(
                 f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
                 f"{fmt_text_chunk}"
@@ -133,14 +147,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for keyword table index.")
-
-    @classmethod
-    def load_from_disk(
-        cls, save_path: str, **kwargs: Any
-    ) -> "BaseGPTKeywordTableIndex":
-        """Load from disk."""
-        with open(save_path, "r") as f:
-            return cls(index_struct=KeywordTable.from_dict(json.load(f)), **kwargs)
 
 
 class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):

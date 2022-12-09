@@ -90,6 +90,15 @@ def test_list_insert(
     assert list_index.index_struct.nodes[2].text == "This is another test."
     assert list_index.index_struct.nodes[3].text == "This is a test v2."
 
+    # test insert with ID
+    document = documents[0]
+    document.doc_id = "test_id"
+    list_index = GPTListIndex([])
+    list_index.insert(document)
+    # check contents of nodes
+    for node in list_index.index_struct.nodes:
+        assert node.ref_doc_id == "test_id"
+
 
 def _get_node_text_embedding_similarities(
     query_embedding: List[float], nodes: List[Node]
@@ -103,9 +112,29 @@ def _get_node_text_embedding_similarities(
 
     similarities = []
     for node in nodes:
-        similarities.append(text_similarity_map[node.text])
+        similarities.append(text_similarity_map[node.get_text()])
 
     return similarities
+
+
+@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+def test_query(
+    _mock_predict: Any,
+    _mock_init: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test embedding query."""
+    index_kwargs, query_kwargs = struct_kwargs
+    index = GPTListIndex(documents, **index_kwargs)
+
+    # test embedding query
+    query_str = "What is?"
+    response = index.query(query_str, mode="default", **query_kwargs)
+    assert response == ("What is?:Hello world.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -133,4 +162,4 @@ def test_embedding_query(
     response = index.query(
         query_str, mode="embedding", similarity_top_k=1, **query_kwargs
     )
-    assert response == ("What is?\n" "Hello world.")
+    assert response == ("What is?:Hello world.")

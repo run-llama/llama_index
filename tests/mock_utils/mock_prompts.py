@@ -32,3 +32,16 @@ MOCK_TEXT_QA_PROMPT_TMPL = "{context_str}\n" "{query_str}\n"
 MOCK_TEXT_QA_PROMPT = Prompt(
     input_variables=["context_str", "query_str"], template=MOCK_TEXT_QA_PROMPT_TMPL
 )
+
+
+MOCK_KEYWORD_EXTRACT_PROMPT_TMPL = "{max_keywords}\n{text}\n"
+MOCK_KEYWORD_EXTRACT_PROMPT = Prompt(
+    input_variables=["max_keywords", "text"], template=MOCK_KEYWORD_EXTRACT_PROMPT_TMPL
+)
+
+# TODO: consolidate with keyword extract
+MOCK_QUERY_KEYWORD_EXTRACT_PROMPT_TMPL = "{max_keywords}\n{question}\n"
+MOCK_QUERY_KEYWORD_EXTRACT_PROMPT = Prompt(
+    input_variables=["max_keywords", "question"],
+    template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT_TMPL,
+)

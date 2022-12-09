@@ -1,7 +1,9 @@
 """Retrieve query."""
 
-from gpt_index.indices.base import BaseGPTIndexQuery
+from typing import Any
+
 from gpt_index.indices.data_structs import IndexGraph
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response_utils.response import give_response
 from gpt_index.indices.utils import get_sorted_node_list, get_text_from_nodes
 from gpt_index.prompts.base import Prompt, validate_prompt
@@ -23,9 +25,10 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
         self,
         index_struct: IndexGraph,
         text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct)
+        super().__init__(index_struct, **kwargs)
         self.text_qa_template = text_qa_template
         validate_prompt(self.text_qa_template, ["context_str", "query_str"])
 
