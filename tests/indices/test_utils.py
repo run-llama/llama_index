@@ -5,8 +5,8 @@ from gpt_index.indices.utils import expand_tokens_with_subtokens, get_text_from_
 
 def test_get_text_from_nodes() -> None:
     """Get text from nodes. Used by tree-structured indices."""
-    node1 = Node("This is a test. Hello my name is John.", 0, set())
-    node2 = Node("This is another test. Hello world!", 1, set())
+    node1 = Node(text="This is a test. Hello my name is John.")
+    node2 = Node(text="This is another test. Hello world!")
     node_list = [node1, node2]
     response = get_text_from_nodes(node_list)
     assert response == (

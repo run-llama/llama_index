@@ -39,7 +39,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         """Get nodes for response."""
         nodes = self.index_struct.nodes
         if self.keyword is not None:
-            nodes = [node for node in nodes if self.keyword in node.text]
+            nodes = [node for node in nodes if self.keyword in node.get_text()]
 
         # top k nodes
         similarities = self._get_query_text_embedding_similarities(query_str, nodes)
@@ -50,7 +50,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         similarity_top_k = self.similarity_top_k or len(nodes)
         top_k_nodes = sorted_nodes[:similarity_top_k]
         if verbose:
-            top_k_node_text = "\n".join([n.text for n in top_k_nodes])
+            top_k_node_text = "\n".join([n.get_text() for n in top_k_nodes])
             print(f"Top {similarity_top_k} nodes: {top_k_node_text}")
         return top_k_nodes
 
@@ -64,7 +64,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
             if node.embedding is not None:
                 text_embedding = node.embedding
             else:
-                text_embedding = self._embed_model.get_text_embedding(node.text)
+                text_embedding = self._embed_model.get_text_embedding(node.get_text())
                 node.embedding = text_embedding
 
             similarity = self._embed_model.similarity(query_embedding, text_embedding)

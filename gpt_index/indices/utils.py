@@ -14,7 +14,7 @@ def get_sorted_node_list(node_dict: Dict[int, Node]) -> List[Node]:
 
 def get_text_from_nodes(node_list: List[Node]) -> str:
     """Get text from nodes. Used by tree-structured indices."""
-    return "\n".join([node.text for node in node_list])
+    return "\n".join([node.get_text() for node in node_list])
 
 
 def get_numbered_text_from_nodes(node_list: List[Node]) -> str:
@@ -26,7 +26,7 @@ def get_numbered_text_from_nodes(node_list: List[Node]) -> str:
     text = ""
     number = 1
     for node in node_list:
-        text += f"({number}) {' '.join(node.text.splitlines())}"
+        text += f"({number}) {' '.join(node.get_text().splitlines())}"
         text += "\n\n"
         number += 1
     return text

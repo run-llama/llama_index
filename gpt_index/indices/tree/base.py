@@ -1,17 +1,17 @@
 """Tree-based index."""
 
-import json
 from typing import Any, Dict, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
 from gpt_index.indices.base import (
     DEFAULT_MODE,
+    DOCUMENTS_INPUT,
     EMBEDDING_MODE,
     BaseGPTIndex,
-    BaseGPTIndexQuery,
 )
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
@@ -69,9 +69,11 @@ class GPTTreeIndexBuilder:
         self, start_idx: int, document: BaseDocument
     ) -> Dict[int, Node]:
         """Add document to index."""
-        text_chunks = self.text_splitter.split_text(document.text)
+        text_chunks = self.text_splitter.split_text(document.get_text())
         doc_nodes = {
-            (start_idx + i): Node(t, (start_idx + i), set())
+            (start_idx + i): Node(
+                text=t, index=(start_idx + i), ref_doc_id=document.get_doc_id()
+            )
             for i, t in enumerate(text_chunks)
         }
         return doc_nodes
@@ -86,9 +88,10 @@ class GPTTreeIndexBuilder:
         all_nodes: Dict[int, Node] = {}
         for d in documents:
             all_nodes.update(self._get_nodes_from_document(len(all_nodes), d))
+
         # instantiate all_nodes from initial text chunks
         root_nodes = self._build_index_from_nodes(all_nodes, all_nodes)
-        return IndexGraph(all_nodes, root_nodes)
+        return IndexGraph(all_nodes=all_nodes, root_nodes=root_nodes)
 
     def _build_index_from_nodes(
         self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node]
@@ -110,7 +113,11 @@ class GPTTreeIndexBuilder:
             )
 
             print(f"> {i}/{len(cur_nodes)}, summary: {new_summary}")
-            new_node = Node(new_summary, cur_index, {n.index for n in cur_nodes_chunk})
+            new_node = Node(
+                text=new_summary,
+                index=cur_index,
+                child_indices={n.index for n in cur_nodes_chunk},
+            )
             new_node_dict[cur_index] = new_node
             cur_index += 1
 
@@ -125,15 +132,18 @@ class GPTTreeIndexBuilder:
 class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     """GPT Index."""
 
+    index_struct_cls = IndexGraph
+
     def __init__(
         self,
-        documents: Optional[Sequence[BaseDocument]] = None,
+        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexGraph] = None,
         summary_template: Prompt = DEFAULT_SUMMARY_PROMPT,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         query_str: Optional[str] = None,
         num_children: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
@@ -145,7 +155,10 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.insert_prompt = insert_prompt
         validate_prompt(self.summary_template, ["text"], ["query_str"])
         super().__init__(
-            documents=documents, index_struct=index_struct, llm_predictor=llm_predictor
+            documents=documents,
+            index_struct=index_struct,
+            llm_predictor=llm_predictor,
+            **kwargs,
         )
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
@@ -175,7 +188,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         index_graph = index_builder.build_from_text(documents)
         return index_graph
 
-    def insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
         # TODO: allow to customize insert prompt
         inserter = GPTIndexInserter(
@@ -184,14 +197,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             summary_prompt=self.summary_template,
             insert_prompt=self.insert_prompt,
         )
-        inserter.insert(document.text)
+        inserter.insert(document)
 
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for tree index.")
-
-    @classmethod
-    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTTreeIndex":
-        """Load from disk."""
-        with open(save_path, "r") as f:
-            return cls(index_struct=IndexGraph.from_dict(json.load(f)), **kwargs)

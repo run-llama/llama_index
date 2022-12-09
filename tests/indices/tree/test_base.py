@@ -133,7 +133,7 @@ def test_query(
     # test default query
     query_str = "What is?"
     response = tree.query(query_str, mode="default", **query_kwargs)
-    assert response == ("What is?\n" "Hello world.")
+    assert response == ("What is?:Hello world.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -151,7 +151,7 @@ def test_insert(
     tree = GPTTreeIndex(documents, **index_kwargs)
 
     # test insert
-    new_doc = Document("This is a new doc.")
+    new_doc = Document("This is a new doc.", doc_id="new_doc")
     tree.insert(new_doc)
     # Before:
     # Left root node: "Hello world.\nThis is a test."
@@ -172,10 +172,19 @@ def test_insert(
     right_root3 = _get_left_or_right_node(tree.index_struct, right_root2, left=False)
     assert left_root3.text == "This is a test."
     assert right_root3.text == "This is a new doc."
+    assert right_root3.ref_doc_id == "new_doc"
 
-    # test insert from empty
+    # test insert from empty (no_id)
     tree = GPTTreeIndex([], **index_kwargs)
     new_doc = Document("This is a new doc.")
     tree.insert(new_doc)
     assert len(tree.index_struct.all_nodes) == 1
     assert tree.index_struct.all_nodes[0].text == "This is a new doc."
+
+    # test insert from empty (with_id)
+    tree = GPTTreeIndex([], **index_kwargs)
+    new_doc = Document("This is a new doc.", doc_id="new_doc_test")
+    tree.insert(new_doc)
+    assert len(tree.index_struct.all_nodes) == 1
+    assert tree.index_struct.all_nodes[0].text == "This is a new doc."
+    assert tree.index_struct.all_nodes[0].ref_doc_id == "new_doc_test"
