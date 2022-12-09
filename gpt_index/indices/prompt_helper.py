@@ -58,8 +58,9 @@ class PromptHelper:
         self,
         prompt: Prompt,
         num_chunks: int,
+        padding: Optional[int] = 1
     ) -> TokenTextSplitter:
-        """Get text splitter given prompt.
+        """Get text splitter given initial prompt.
 
         Allows us to get the text splitter which will split up text according
         to the desired chunk size.
@@ -71,6 +72,7 @@ class PromptHelper:
         chunk_size = self.get_chunk_size_given_prompt(
             prompt,
             num_chunks,
+            padding=padding
         )
         text_splitter = TokenTextSplitter(
             separator=" ",
@@ -85,17 +87,17 @@ class PromptHelper:
     ) -> str:
         """Get text from nodes. Used by tree-structured indices."""
         num_nodes = len(node_list)
-        chunk_size = None
+        text_splitter = None
         if prompt is not None:
             # add padding given the newline character
-            chunk_size = self.get_chunk_size_given_prompt(
+            text_splitter = self.get_text_splitter_given_prompt(
                 prompt,
                 num_nodes,
                 padding=1,
             )
         results = []
         for node in node_list:
-            text = node.text[:chunk_size] if chunk_size is not None else node.text
+            text = text_splitter.truncate_text(node.text) if text_splitter is not None else node.text
             results.append(text)
         return "\n".join(results)
 
@@ -109,10 +111,10 @@ class PromptHelper:
 
         """
         num_nodes = len(node_list)
-        chunk_size = None
+        text_splitter = None
         if prompt is not None:
             # add padding given the number, and the newlines
-            chunk_size = self.get_chunk_size_given_prompt(
+            text_splitter = self.get_text_splitter_given_prompt(
                 prompt,
                 num_nodes,
                 padding=5,
@@ -121,7 +123,7 @@ class PromptHelper:
         number = 1
         for node in node_list:
             text = f"({number}) {' '.join(node.text.splitlines())}"
-            if chunk_size is not None:
-                text = text[:chunk_size]
+            if text_splitter is not None:
+                text = text_splitter.truncate_text(text)
             results.append()
         return "\n\n".join(results)
