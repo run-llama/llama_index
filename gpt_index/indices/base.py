@@ -1,7 +1,18 @@
 """Base index classes."""
 import json
 from abc import abstractmethod
-from typing import Any, Generic, List, Optional, Sequence, TypeVar, Union, cast
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from gpt_index.indices.data_structs import IndexStruct
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -21,6 +32,8 @@ DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
 class BaseGPTIndex(Generic[IS]):
     """Base GPT Index."""
 
+    index_struct_cls: Type[IS]
+
     def __init__(
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
@@ -37,10 +50,10 @@ class BaseGPTIndex(Generic[IS]):
         self._llm_predictor = llm_predictor or LLMPredictor()
 
         # build index struct in the init function
+        self._docstore = docstore or DocumentStore()
         if index_struct is not None:
             self._index_struct = index_struct
         else:
-            self._docstore = docstore or DocumentStore()
             documents = cast(Sequence[DOCUMENTS_INPUT], documents)
             documents = self._process_documents(documents, self._docstore)
             self._validate_documents(documents)
@@ -141,7 +154,10 @@ class BaseGPTIndex(Generic[IS]):
                 raise ValueError("query_configs must be provided for recursive mode.")
             query_configs = query_kwargs["query_configs"]
             query_runner = QueryRunner(
-                query_configs, self._llm_predictor, self._docstore, verbose=verbose
+                self._llm_predictor,
+                self._docstore,
+                query_configs=query_configs,
+                verbose=verbose,
             )
             return query_runner.query(query_str, self._index_struct)
         else:
@@ -151,11 +167,19 @@ class BaseGPTIndex(Generic[IS]):
             return query_obj.query(query_str, verbose=verbose)
 
     @classmethod
-    @abstractmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "BaseGPTIndex":
         """Load from disk."""
+        with open(save_path, "r") as f:
+            result_dict = json.load(f)
+            index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])
+            docstore = DocumentStore.from_dict(result_dict["docstore"])
+            return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 
     def save_to_disk(self, save_path: str) -> None:
         """Safe to file."""
+        out_dict: Dict[str, dict] = {
+            "index_struct": self.index_struct.to_dict(),
+            "docstore": self.docstore.to_dict(),
+        }
         with open(save_path, "w") as f:
-            json.dump(self.index_struct.to_dict(), f)
+            json.dump(out_dict, f)

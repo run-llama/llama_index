@@ -1,13 +1,28 @@
 """Query runner."""
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from gpt_index.indices.data_structs import IndexStruct, IndexStructType
 from gpt_index.indices.query.base import BaseQueryRunner
 from gpt_index.indices.query.query_map import get_query_cls
-from gpt_index.indices.query.schema import QueryConfig
+from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import DocumentStore
+
+DEFAULT_QUERY_CONFIGS = [
+    QueryConfig(
+        index_struct_type=IndexStructType.TREE,
+        query_mode=QueryMode.DEFAULT,
+    ),
+    QueryConfig(
+        index_struct_type=IndexStructType.LIST,
+        query_mode=QueryMode.DEFAULT,
+    ),
+    QueryConfig(
+        index_struct_type=IndexStructType.KEYWORD_TABLE,
+        query_mode=QueryMode.DEFAULT,
+    ),
+]
 
 
 class QueryRunner(BaseQueryRunner):
@@ -19,15 +34,19 @@ class QueryRunner(BaseQueryRunner):
 
     def __init__(
         self,
-        query_configs: List[Dict],
         llm_predictor: LLMPredictor,
         docstore: DocumentStore,
+        query_configs: Optional[List[Dict]] = None,
         verbose: bool = False,
     ) -> None:
         """Init params."""
         config_dict: Dict[IndexStructType, QueryConfig] = {}
-        for qc_dict in query_configs:
-            qc = QueryConfig.from_dict(qc_dict)
+        if query_configs is None:
+            query_config_objs = DEFAULT_QUERY_CONFIGS
+        else:
+            query_config_objs = [QueryConfig.from_dict(qc) for qc in query_configs]
+
+        for qc in query_config_objs:
             config_dict[qc.index_struct_type] = qc
         self._config_dict = config_dict
         self._llm_predictor = llm_predictor

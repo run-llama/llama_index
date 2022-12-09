@@ -56,6 +56,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         keywords = self._get_keywords(query_str, verbose=verbose)
+        print(f"query keywords: {keywords}")
 
         # go through text chunks in order of most matching keywords
         chunk_indices_count: Dict[int, int] = defaultdict(int)

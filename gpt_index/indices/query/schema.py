@@ -1,6 +1,6 @@
 """Query schema."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict
 
@@ -27,4 +27,4 @@ class QueryConfig(DataClassJsonMixin):
 
     index_struct_type: IndexStructType
     query_mode: QueryMode
-    query_kwargs: Dict[str, Any]
+    query_kwargs: Dict[str, Any] = field(default_factory=dict)

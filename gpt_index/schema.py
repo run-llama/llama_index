@@ -3,6 +3,8 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
+from dataclasses_json import DataClassJsonMixin
+
 from gpt_index.utils import get_new_id
 
 
@@ -54,7 +56,7 @@ class Document(BaseDocument):
 
 
 @dataclass
-class DocumentStore:
+class DocumentStore(DataClassJsonMixin):
     """Document store."""
 
     docs: Dict[str, BaseDocument] = field(default_factory=dict)

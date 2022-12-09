@@ -5,7 +5,6 @@ in sequence in order to answer a given query.
 
 """
 
-import json
 from typing import Any, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
@@ -33,6 +32,8 @@ GENERATE_TEXT_QUERY = "What is a concise summary of this document?"
 
 class GPTListIndex(BaseGPTIndex[IndexList]):
     """GPT List Index."""
+
+    index_struct_cls = IndexList
 
     def __init__(
         self,
@@ -115,9 +116,3 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for list index.")
-
-    @classmethod
-    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTListIndex":
-        """Load from disk."""
-        with open(save_path, "r") as f:
-            return cls(index_struct=IndexList.from_dict(json.load(f)), **kwargs)

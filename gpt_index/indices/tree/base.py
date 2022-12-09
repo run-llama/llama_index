@@ -1,6 +1,5 @@
 """Tree-based index."""
 
-import json
 from typing import Any, Dict, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
@@ -133,6 +132,8 @@ class GPTTreeIndexBuilder:
 class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     """GPT Index."""
 
+    index_struct_cls = IndexGraph
+
     def __init__(
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
@@ -201,9 +202,3 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for tree index.")
-
-    @classmethod
-    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "GPTTreeIndex":
-        """Load from disk."""
-        with open(save_path, "r") as f:
-            return cls(index_struct=IndexGraph.from_dict(json.load(f)), **kwargs)

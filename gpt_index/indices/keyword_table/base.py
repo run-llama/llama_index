@@ -8,7 +8,6 @@ existing keywords in the table.
 
 """
 
-import json
 from abc import abstractmethod
 from typing import Any, Optional, Sequence, Set
 
@@ -42,6 +41,8 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     """Base GPT Index."""
+
+    index_struct_cls = KeywordTable
 
     def __init__(
         self,
@@ -146,14 +147,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for keyword table index.")
-
-    @classmethod
-    def load_from_disk(
-        cls, save_path: str, **kwargs: Any
-    ) -> "BaseGPTKeywordTableIndex":
-        """Load from disk."""
-        with open(save_path, "r") as f:
-            return cls(index_struct=KeywordTable.from_dict(json.load(f)), **kwargs)
 
 
 class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
