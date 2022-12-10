@@ -5,12 +5,13 @@ structs but keeping token limitations in mind.
 
 """
 
+from typing import List, Optional
+
+from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
+from gpt_index.indices.data_structs import Node
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
-from gpt_index.indices.data_structs import Node
-from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.utils import globals_helper
-from typing import Optional, List
 
 
 class PromptHelper:
@@ -28,24 +29,29 @@ class PromptHelper:
         self.num_output = num_output
         self.max_chunk_overlap = max_chunk_overlap
         self.embedding_limit = embedding_limit
+        # TODO: make configurable
+        self._tokenizer = globals_helper.tokenizer
 
-    def get_chunk_size_given_prompt(self, prompt: str, num_chunks: int, padding: Optional[int] = 1) -> int:
+    def get_chunk_size_given_prompt(
+        self, prompt: str, num_chunks: int, padding: Optional[int] = 1
+    ) -> int:
         """Get chunk size making sure we can also fit the prompt in.
 
         Chunk size is computed based on a function of the total input size, the prompt length,
         the number of outputs, and the number of chunks.
-        
+
         If padding is specified, then we subtract that from the chunk size.
         By default we assume there is a padding of 1 (for the newline between chunks).
-        
+
         """
-        tokenizer = globals_helper.tokenizer
-        prompt_tokens = tokenizer(prompt)
+        prompt_tokens = self._tokenizer(prompt)
         num_prompt_tokens = len(prompt_tokens["input_ids"])
 
         # NOTE: if embedding limit is specified, then chunk_size must not be larger than
         # embedding_limit
-        result = (self.max_input_size - num_prompt_tokens - self.num_output) // num_chunks
+        result = (
+            self.max_input_size - num_prompt_tokens - self.num_output
+        ) // num_chunks
         if padding is not None:
             result -= padding
 
@@ -55,10 +61,7 @@ class PromptHelper:
             return result
 
     def get_text_splitter_given_prompt(
-        self,
-        prompt: Prompt,
-        num_chunks: int,
-        padding: Optional[int] = 1
+        self, prompt: Prompt, num_chunks: int, padding: Optional[int] = 1
     ) -> TokenTextSplitter:
         """Get text splitter given initial prompt.
 
@@ -66,13 +69,11 @@ class PromptHelper:
         to the desired chunk size.
 
         """
-        
+
         fmt_dict = {v: "" for v in prompt.input_variables}
         prompt.format(**fmt_dict)
         chunk_size = self.get_chunk_size_given_prompt(
-            prompt,
-            num_chunks,
-            padding=padding
+            prompt, num_chunks, padding=padding
         )
         text_splitter = TokenTextSplitter(
             separator=" ",
@@ -96,10 +97,13 @@ class PromptHelper:
             )
         results = []
         for node in node_list:
-            text = text_splitter.truncate_text(node.text) if text_splitter is not None else node.text
+            text = (
+                text_splitter.truncate_text(node.text)
+                if text_splitter is not None
+                else node.text
+            )
             results.append(text)
         return "\n".join(results)
-
 
     def get_numbered_text_from_nodes(
         self, node_list: List[Node], prompt: Optional[Prompt] = None

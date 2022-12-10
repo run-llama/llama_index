@@ -3,8 +3,8 @@ import re
 from typing import Dict, List, Optional, Set
 
 from gpt_index.indices.data_structs import Node
-from gpt_index.utils import globals_helper
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.utils import globals_helper
 
 
 def get_sorted_node_list(node_dict: Dict[int, Node]) -> List[Node]:

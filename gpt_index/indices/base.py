@@ -15,11 +15,11 @@ from typing import (
 )
 
 from gpt_index.indices.data_structs import IndexStruct
+from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import BaseDocument, DocumentStore
-from gpt_index.indices.prompt_helper import PromptHelper
 
 IS = TypeVar("IS", bound=IndexStruct)
 

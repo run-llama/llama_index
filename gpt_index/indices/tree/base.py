@@ -11,15 +11,13 @@ from gpt_index.indices.base import (
     BaseGPTIndex,
 )
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
-from gpt_index.indices.utils import (
-    get_chunk_size_given_prompt,
-    get_sorted_node_list,
-)
+from gpt_index.indices.utils import get_chunk_size_given_prompt, get_sorted_node_list
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt, validate_prompt
@@ -28,7 +26,6 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from gpt_index.schema import BaseDocument
-from gpt_index.indices.prompt_helper import PromptHelper
 
 RETRIEVE_MODE = "retrieve"
 
@@ -54,7 +51,7 @@ class GPTTreeIndexBuilder:
         self.summary_prompt = summary_prompt
         self._prompt_helper = prompt_helper or PromptHelper()
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.summary_prompt, self.num_children 
+            self.summary_prompt, self.num_children
         )
         self._llm_predictor = llm_predictor or LLMPredictor()
 
@@ -182,7 +179,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self.num_children,
             self.summary_template,
             self._llm_predictor,
-            self._prompt_helper
+            self._prompt_helper,
         )
         index_graph = index_builder.build_from_text(documents)
         return index_graph

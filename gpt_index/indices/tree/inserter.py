@@ -4,6 +4,7 @@ from typing import Optional
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
     get_chunk_size_given_prompt,
@@ -12,7 +13,6 @@ from gpt_index.indices.utils import (
     get_text_from_nodes,
 )
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
@@ -20,7 +20,6 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from gpt_index.schema import BaseDocument
-from gpt_index.indices.prompt_helper import PromptHelper
 
 
 class GPTIndexInserter:
@@ -44,7 +43,7 @@ class GPTIndexInserter:
         self.index_graph = index_graph
         self._prompt_helper = prompt_helper or PromptHelper()
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.summary_prompt, self.num_children 
+            self.summary_prompt, self.num_children
         )
         self._llm_predictor = llm_predictor or LLMPredictor()
 

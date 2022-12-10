@@ -5,12 +5,12 @@ from dataclasses import dataclass
 from typing import Generic, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct, Node
+from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt
 from gpt_index.schema import DocumentStore
-from gpt_index.indices.prompt_helper import PromptHelper
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -40,7 +40,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         llm_predictor: Optional[LLMPredictor] = None,
         docstore: Optional[DocumentStore] = None,
         query_runner: Optional[BaseQueryRunner] = None,
-        prompt_helper: Optional[PromptHelper] = None
+        prompt_helper: Optional[PromptHelper] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
