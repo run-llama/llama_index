@@ -1,5 +1,5 @@
 """Text splitter implementations."""
-from typing import List
+from typing import Callable, List, Optional
 
 from langchain.text_splitter import TextSplitter
 
@@ -10,7 +10,11 @@ class TokenTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at word tokens."""
 
     def __init__(
-        self, separator: str = " ", chunk_size: int = 4000, chunk_overlap: int = 200
+        self,
+        separator: str = " ",
+        chunk_size: int = 4000,
+        chunk_overlap: int = 200,
+        tokenizer: Optional[Callable] = None,
     ):
         """Initialize with parameters."""
         if chunk_overlap > chunk_size:
@@ -21,7 +25,7 @@ class TokenTextSplitter(TextSplitter):
         self._separator = separator
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
-        self.tokenizer = globals_helper.tokenizer
+        self.tokenizer = tokenizer or globals_helper.tokenizer
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
@@ -35,14 +39,14 @@ class TokenTextSplitter(TextSplitter):
         current_doc: List[str] = []
         total = 0
         for d in splits:
-            if total > self._chunk_size:
+            num_tokens = len(self.tokenizer(d)["input_ids"])
+            if total + num_tokens > self._chunk_size:
                 docs.append(self._separator.join(current_doc))
                 while total > self._chunk_overlap:
                     cur_tokens = self.tokenizer(current_doc[0])
                     total -= len(cur_tokens["input_ids"])
                     current_doc = current_doc[1:]
             current_doc.append(d)
-            num_tokens = len(self.tokenizer(d)["input_ids"])
             total += num_tokens
         docs.append(self._separator.join(current_doc))
         return docs
@@ -58,10 +62,9 @@ class TokenTextSplitter(TextSplitter):
         current_doc: List[str] = []
         total = 0
         for d in splits:
-            current_doc.append(d)
             num_tokens = len(self.tokenizer(d)["input_ids"])
-            total += num_tokens
-            if total > self._chunk_size:
-                current_doc = current_doc[:-1]
+            if total + num_tokens > self._chunk_size:
                 break
+            current_doc.append(d)
+            total += num_tokens
         return self._separator.join(current_doc)

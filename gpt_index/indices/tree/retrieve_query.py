@@ -40,6 +40,7 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
             node_list, prompt=self.text_qa_template
         )
         response = give_response(
+            self._prompt_helper,
             self._llm_predictor,
             query_str,
             node_text,

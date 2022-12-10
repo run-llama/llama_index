@@ -2,16 +2,10 @@
 
 from typing import Optional
 
-from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.utils import (
-    extract_numbers_given_response,
-    get_numbered_text_from_nodes,
-    get_sorted_node_list,
-)
+from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
@@ -152,7 +146,9 @@ class GPTIndexInserter:
             # refetch children
             cur_graph_nodes = self.index_graph.get_children(parent_node)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
-            text_chunk = get_text_from_nodes(cur_graph_node_list)
+            text_chunk = self._prompt_helper.get_text_from_nodes(
+                cur_graph_node_list, prompt=self.summary_prompt
+            )
             new_summary, _ = self._llm_predictor.predict(
                 self.summary_prompt, text=text_chunk
             )

@@ -7,8 +7,6 @@ in sequence in order to answer a given query.
 
 from typing import Any, Optional, Sequence
 
-from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
-from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
 from gpt_index.indices.base import (
     DEFAULT_MODE,
     DOCUMENTS_INPUT,
@@ -21,7 +19,6 @@ from gpt_index.indices.list.query import BaseGPTListIndexQuery, GPTListIndexQuer
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.schema import BaseDocument
@@ -48,18 +45,6 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.text_qa_template, 1
         )
-        # chunk_size = get_chunk_size_given_prompt(
-        #     empty_qa,
-        #     MAX_CHUNK_SIZE,
-        #     1,
-        #     NUM_OUTPUTS,
-        #     embedding_limit=EMBED_MAX_TOKEN_LIMIT,
-        # )
-        # self.text_splitter = TokenTextSplitter(
-        #     separator=" ",
-        #     chunk_size=chunk_size,
-        #     chunk_overlap=MAX_CHUNK_OVERLAP,
-        # )
         super().__init__(
             documents=documents,
             index_struct=index_struct,
@@ -71,7 +56,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         self, index_struct: IndexList, document: BaseDocument
     ) -> None:
         """Add document to index."""
-        text_chunks = self.text_splitter.split_text(document.get_text())
+        text_chunks = self._text_splitter.split_text(document.get_text())
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
@@ -103,7 +88,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        text_chunks = self.text_splitter.split_text(document.get_text())
+        text_chunks = self._text_splitter.split_text(document.get_text())
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")

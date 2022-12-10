@@ -96,6 +96,7 @@ class BaseGPTIndexQuery(Generic[IS]):
                 response = query_response
             else:
                 response = refine_response(
+                    self._prompt_helper,
                     self._llm_predictor,
                     response,
                     query_str,
@@ -108,6 +109,7 @@ class BaseGPTIndexQuery(Generic[IS]):
             text = node.get_text()
             if response is None:
                 response = give_response(
+                    self._prompt_helper,
                     self._llm_predictor,
                     query_str,
                     text,
@@ -117,6 +119,7 @@ class BaseGPTIndexQuery(Generic[IS]):
                 )
             else:
                 response = refine_response(
+                    self._prompt_helper,
                     self._llm_predictor,
                     response,
                     query_str,
