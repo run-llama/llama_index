@@ -1,14 +1,13 @@
 """Response refine functions."""
 
+from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import truncate_text
-
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
-from gpt_index.indices.prompt_helper import PromptHelper
 
 
 def refine_response(
@@ -50,9 +49,7 @@ def give_response(
     verbose: bool = False,
 ) -> str:
     """Give response given a query and a corresponding text chunk."""
-    qa_text_splitter = prompt_helper.get_text_splitter_given_prompt(
-        text_qa_template, 1
-    )
+    qa_text_splitter = prompt_helper.get_text_splitter_given_prompt(text_qa_template, 1)
     text_chunks = qa_text_splitter.split_text(text_chunk)
     response = None
     for text_chunk in text_chunks:

@@ -4,11 +4,7 @@ from typing import Any, Dict, Optional, cast
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.utils import (
-    extract_numbers_given_response,
-    get_numbered_text_from_nodes,
-    get_sorted_node_list,
-)
+from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,

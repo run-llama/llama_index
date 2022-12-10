@@ -19,7 +19,7 @@ from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.list.query import BaseGPTListIndexQuery, GPTListIndexQuery
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
+from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
