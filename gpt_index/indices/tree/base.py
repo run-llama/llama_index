@@ -2,8 +2,6 @@
 
 from typing import Any, Dict, Optional, Sequence
 
-from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
-from gpt_index.embeddings.openai import EMBED_MAX_TOKEN_LIMIT
 from gpt_index.indices.base import (
     DEFAULT_MODE,
     DOCUMENTS_INPUT,
@@ -11,18 +9,14 @@ from gpt_index.indices.base import (
     BaseGPTIndex,
 )
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
-from gpt_index.indices.utils import (
-    get_chunk_size_given_prompt,
-    get_sorted_node_list,
-    get_text_from_nodes,
-)
+from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
@@ -42,26 +36,19 @@ class GPTTreeIndexBuilder:
 
     def __init__(
         self,
-        num_children: int = 10,
-        summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
-        llm_predictor: Optional[LLMPredictor] = None,
+        num_children: int,
+        summary_prompt: Prompt,
+        llm_predictor: Optional[LLMPredictor],
+        prompt_helper: Optional[PromptHelper],
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
             raise ValueError("Invalid number of children.")
         self.num_children = num_children
         self.summary_prompt = summary_prompt
-        chunk_size = get_chunk_size_given_prompt(
-            summary_prompt.format(text=""),
-            MAX_CHUNK_SIZE,
-            num_children,
-            NUM_OUTPUTS,
-            embedding_limit=EMBED_MAX_TOKEN_LIMIT,
-        )
-        self.text_splitter = TokenTextSplitter(
-            separator=" ",
-            chunk_size=chunk_size,
-            chunk_overlap=MAX_CHUNK_OVERLAP // num_children,
+        self._prompt_helper = prompt_helper or PromptHelper()
+        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.summary_prompt, self.num_children
         )
         self._llm_predictor = llm_predictor or LLMPredictor()
 
@@ -69,7 +56,7 @@ class GPTTreeIndexBuilder:
         self, start_idx: int, document: BaseDocument
     ) -> Dict[int, Node]:
         """Add document to index."""
-        text_chunks = self.text_splitter.split_text(document.get_text())
+        text_chunks = self._text_splitter.split_text(document.get_text())
         doc_nodes = {
             (start_idx + i): Node(
                 text=t, index=(start_idx + i), ref_doc_id=document.get_doc_id()
@@ -106,7 +93,9 @@ class GPTTreeIndexBuilder:
         for i in range(0, len(cur_node_list), self.num_children):
             print(f"{i}/{len(cur_nodes)}")
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
-            text_chunk = get_text_from_nodes(cur_nodes_chunk)
+            text_chunk = self._prompt_helper.get_text_from_nodes(
+                cur_nodes_chunk, prompt=self.summary_prompt
+            )
 
             new_summary, _ = self._llm_predictor.predict(
                 self.summary_prompt, text=text_chunk
@@ -151,6 +140,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         # if query_str is specified, then we try to load into summary template
         if query_str is not None:
             summary_template = summary_template.partial_format(query_str=query_str)
+
         self.summary_template = summary_template
         self.insert_prompt = insert_prompt
         validate_prompt(self.summary_template, ["text"], ["query_str"])
@@ -181,9 +171,10 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         """Build the index from documents."""
         # do simple concatenation
         index_builder = GPTTreeIndexBuilder(
-            num_children=self.num_children,
-            summary_prompt=self.summary_template,
-            llm_predictor=self._llm_predictor,
+            self.num_children,
+            self.summary_template,
+            self._llm_predictor,
+            self._prompt_helper,
         )
         index_graph = index_builder.build_from_text(documents)
         return index_graph
@@ -196,6 +187,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             num_children=self.num_children,
             summary_prompt=self.summary_template,
             insert_prompt=self.insert_prompt,
+            prompt_helper=self._prompt_helper,
         )
         inserter.insert(document)
 
