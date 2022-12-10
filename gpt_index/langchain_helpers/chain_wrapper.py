@@ -21,10 +21,14 @@ class LLMPredictor:
         """Predict the answer to a query."""
         llm_chain = LLMChain(prompt=prompt, llm=self._llm)
 
+        # Note: we don't pass formatted_prompt to llm_chain.predict because
+        # langchain does the same formatting under the hood
         formatted_prompt = prompt.format(**prompt_args)
         full_prompt_args = prompt.get_full_format_args(prompt_args)
         llm_prediction = llm_chain.predict(**full_prompt_args)
 
+        # We assume that the value of formatted_prompt is exactly the thing
+        # eventually sent to OpenAI, or whatever LLM downstream
         self._total_tokens_used += self._count_tokens(
             formatted_prompt
         ) + self._count_tokens(llm_prediction)
