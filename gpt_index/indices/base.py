@@ -15,6 +15,7 @@ from typing import (
 )
 
 from gpt_index.indices.data_structs import IndexStruct
+from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -40,6 +41,7 @@ class BaseGPTIndex(Generic[IS]):
         index_struct: Optional[IS] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         docstore: Optional[DocumentStore] = None,
+        prompt_helper: Optional[PromptHelper] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
@@ -48,6 +50,9 @@ class BaseGPTIndex(Generic[IS]):
             raise ValueError("Only one of documents or index_struct can be provided.")
 
         self._llm_predictor = llm_predictor or LLMPredictor()
+
+        # TODO: move out of base if we need custom params per index
+        self._prompt_helper = prompt_helper or PromptHelper()
 
         # build index struct in the init function
         self._docstore = docstore or DocumentStore()
@@ -164,6 +169,8 @@ class BaseGPTIndex(Generic[IS]):
             query_obj = self._mode_to_query(mode, **query_kwargs)
             # set llm_predictor if exists
             query_obj.set_llm_predictor(self._llm_predictor)
+            # set prompt_helper if exists
+            query_obj.set_prompt_helper(self._prompt_helper)
             return query_obj.query(query_str, verbose=verbose)
 
     @classmethod
