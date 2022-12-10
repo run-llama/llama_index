@@ -29,6 +29,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import llm_token_counter
 
 RETRIEVE_MODE = "retrieve"
 
@@ -78,6 +79,7 @@ class GPTTreeIndexBuilder:
         }
         return doc_nodes
 
+    @llm_token_counter("GPTTreeIndexBuilder.build_from_text")
     def build_from_text(self, documents: Sequence[BaseDocument]) -> IndexGraph:
         """Build from text.
 
@@ -90,15 +92,7 @@ class GPTTreeIndexBuilder:
             all_nodes.update(self._get_nodes_from_document(len(all_nodes), d))
 
         # instantiate all_nodes from initial text chunks
-        start_token_ct = self._llm_predictor.total_tokens_used
         root_nodes = self._build_index_from_nodes(all_nodes, all_nodes)
-        end_token_ct = self._llm_predictor.total_tokens_used
-        print(
-            (
-                "> Total token usage from index building: "
-                f"{end_token_ct - start_token_ct} tokens"
-            )
-        )
         return IndexGraph(all_nodes=all_nodes, root_nodes=root_nodes)
 
     def _build_index_from_nodes(
