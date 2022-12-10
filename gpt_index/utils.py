@@ -58,19 +58,19 @@ def llm_token_counter(method_name_str: str) -> Callable:
 
     Do not use this on abstract methods.
 
-    For example, if you do
+    For example, consider the class below:
     ```
     class GPTTreeIndexBuilder:
         ...
-        @llm_token_counter("GPTTreeIndexBuilder.build_from_text")
+        @llm_token_counter("build_from_text")
         def build_from_text(self, documents: Sequence[BaseDocument]) -> IndexGraph:
             ...
     ```
 
-    Then after you run `build_from_text()`, it will print the output in the form below:
+    If you run `build_from_text()`, it will print the output in the form below:
 
     ```
-    [GPTTreeIndexBuilder.build_from_text] Total token usage: <some-number> tokens
+    [build_from_text] Total token usage: <some-number> tokens
     ```
     """
 
