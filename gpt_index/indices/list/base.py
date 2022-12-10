@@ -19,6 +19,7 @@ from gpt_index.indices.list.query import BaseGPTListIndexQuery, GPTListIndexQuer
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.schema import BaseDocument
@@ -42,21 +43,24 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
     ) -> None:
         """Initialize params."""
         self.text_qa_template = text_qa_template
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
-        )
         super().__init__(
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             **kwargs,
         )
+        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.text_qa_template, 1
+        )
 
     def _add_document_to_index(
-        self, index_struct: IndexList, document: BaseDocument
+        self,
+        index_struct: IndexList,
+        document: BaseDocument,
+        text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
-        text_chunks = self._text_splitter.split_text(document.get_text())
+        text_chunks = text_splitter.split_text(document.get_text())
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
@@ -66,9 +70,12 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         self, documents: Sequence[BaseDocument]
     ) -> IndexList:
         """Build the index from documents."""
+        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.text_qa_template, 1
+        )
         index_struct = IndexList()
         for d in documents:
-            self._add_document_to_index(index_struct, d)
+            self._add_document_to_index(index_struct, d, text_splitter)
         return index_struct
 
     def _mode_to_query(

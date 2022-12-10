@@ -141,8 +141,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         if query_str is not None:
             summary_template = summary_template.partial_format(query_str=query_str)
 
-        # TODO: allow ability to set default values
-        self._prompt_helper = PromptHelper()
         self.summary_template = summary_template
         self.insert_prompt = insert_prompt
         validate_prompt(self.summary_template, ["text"], ["query_str"])
