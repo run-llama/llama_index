@@ -16,6 +16,7 @@ class LLMPredictor:
         """Initialize params."""
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-002")
         self._total_tokens_used = 0
+        self.flag = True
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Predict the answer to a query."""
@@ -29,9 +30,20 @@ class LLMPredictor:
 
         # We assume that the value of formatted_prompt is exactly the thing
         # eventually sent to OpenAI, or whatever LLM downstream
-        self._total_tokens_used += self._count_tokens(
+        old_token_count = self._total_tokens_used
+        prompt_tokens_count = self._count_tokens(
             formatted_prompt
-        ) + self._count_tokens(llm_prediction)
+        )
+        prediction_tokens_count = self._count_tokens(llm_prediction)
+        self._total_tokens_used += prompt_tokens_count + prediction_tokens_count 
+        print(f"""
+            ======
+            old_token_count: {old_token_count}
+            prompt_tokens_count: {prompt_tokens_count}
+            prediction_tokens_count: {prediction_tokens_count}
+            new_token_count: {self._total_tokens_used}
+            ======
+        """)
         return llm_prediction, formatted_prompt
 
     @property
