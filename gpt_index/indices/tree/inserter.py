@@ -12,6 +12,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import llm_token_counter
 
 
 class GPTIndexInserter:
@@ -155,6 +156,7 @@ class GPTIndexInserter:
 
             parent_node.text = new_summary
 
+    @llm_token_counter("insert")
     def insert(self, doc: BaseDocument) -> None:
         """Insert into index_graph."""
         text_chunks = self._text_splitter.split_text(doc.get_text())
