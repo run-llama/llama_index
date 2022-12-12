@@ -6,6 +6,15 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
     __version__ = _f.read().strip()
 
 
+# indices
+from gpt_index.indices.keyword_table import (
+    GPTKeywordTableIndex,
+    GPTRAKEKeywordTableIndex,
+    GPTSimpleKeywordTableIndex,
+)
+from gpt_index.indices.list import GPTListIndex
+from gpt_index.indices.tree import GPTTreeIndex
+
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
@@ -19,12 +28,6 @@ from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
 from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.wikipedia import WikipediaReader
-
-# indices
-from gpt_index.indices.keyword_table import GPTKeywordTableIndex, GPTRAKEKeywordTableIndex, GPTSimpleKeywordTableIndex
-from gpt_index.indices.list import GPTListIndex
-from gpt_index.indices.tree import GPTTreeIndex
-
 
 __all__ = [
     "GPTKeywordTableIndex",

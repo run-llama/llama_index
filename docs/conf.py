@@ -19,9 +19,9 @@ sys.path.insert(0, os.path.abspath("../"))
 
 import sphinx_rtd_theme
 
-project = 'GPT Index'
-copyright = '2022, Jerry Liu'
-author = 'Jerry Liu'
+project = "GPT Index"
+copyright = "2022, Jerry Liu"
+author = "Jerry Liu"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -33,16 +33,15 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx_rtd_theme",
-    "myst_parser"
+    "myst_parser",
 ]
 
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
