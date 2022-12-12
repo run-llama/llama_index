@@ -13,7 +13,7 @@ from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
-from tests.mock_utils.mock_predict import mock_openai_llm_predict
+from tests.mock_utils.mock_predict import mock_llmpredictor_predict
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_KEYWORD_EXTRACT_PROMPT,
@@ -90,7 +90,7 @@ def documents() -> List[Document]:
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_list_tree(
     _mock_init: Any,
@@ -137,7 +137,7 @@ def test_recursive_query_list_tree(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_tree_list(
     _mock_init: Any,
@@ -175,7 +175,7 @@ def test_recursive_query_tree_list(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_table_list(
     _mock_init: Any,
@@ -210,7 +210,7 @@ def test_recursive_query_table_list(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_list_table(
     _mock_init: Any,
