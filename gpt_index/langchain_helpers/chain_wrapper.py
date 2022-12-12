@@ -30,20 +30,9 @@ class LLMPredictor:
 
         # We assume that the value of formatted_prompt is exactly the thing
         # eventually sent to OpenAI, or whatever LLM downstream
-        old_token_count = self._total_tokens_used
-        prompt_tokens_count = self._count_tokens(
-            formatted_prompt
-        )
+        prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
-        self._total_tokens_used += prompt_tokens_count + prediction_tokens_count 
-        print(f"""
-            ======
-            old_token_count: {old_token_count}
-            prompt_tokens_count: {prompt_tokens_count}
-            prediction_tokens_count: {prediction_tokens_count}
-            new_token_count: {self._total_tokens_used}
-            ======
-        """)
+        self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
         return llm_prediction, formatted_prompt
 
     @property
