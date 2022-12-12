@@ -1,4 +1,4 @@
-# Starter Example
+# Starter Tutorial
 
 Here is a starter example for using GPT Index. Make sure you've followed the [installation](installation.md) steps first.
 
@@ -10,7 +10,7 @@ We first want to download this `examples` folder. An easy way to do this is to j
 
 
 We now want to navigate to the following folder:
-```
+```bash
 cd examples/paul_graham_essay
 ```
 
@@ -20,7 +20,7 @@ This contains GPT Index examples around Paul Graham's essay, ["What I Worked On"
 ### Build and Query Index
 Create a new `.py` file with the following:
 
-```
+```python
 from gpt_index import GPTTreeIndex, SimpleDirectoryReader
 from IPython.display import Markdown, display
 
@@ -30,11 +30,22 @@ index = GPTTreeIndex(documents)
 ```
 
 This builds an index over the documents in the `data` folder (which in this case just consists of the essay text). We then run the following
-```
+```python
 response = index.query("What did the author do growing up?")
 ```
 
 You should get back a response similar to the following: `The author wrote short stories and tried to program on an IBM 1401.`
+
+### Saving and Loading
+
+To save to disk and load from disk, do
+
+```python
+# save to disk
+index.save_to_disk('index.json')
+# load from disk
+index = GPTTreeIndex.load_from_disk('index.json')
+```
 
 
 ### Next Steps
