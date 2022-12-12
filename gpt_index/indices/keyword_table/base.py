@@ -18,13 +18,13 @@ from gpt_index.indices.base import (
     BaseGPTIndexQuery,
 )
 from gpt_index.indices.data_structs import KeywordTable
-from gpt_index.indices.keyword_table.query import (
+from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
+from gpt_index.indices.query.keyword_table.query import (
     BaseGPTKeywordTableQuery,
     GPTKeywordTableGPTQuery,
     GPTKeywordTableRAKEQuery,
     GPTKeywordTableSimpleQuery,
 )
-from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
