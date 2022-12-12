@@ -1,1 +1,1 @@
-"""Init file."""
+"""Keyword Table Index Data Structures."""

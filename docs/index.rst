@@ -49,3 +49,10 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    how_to/insert.md
    how_to/cost_analysis.md
 
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reference
+
+   reference/indices.rst
+

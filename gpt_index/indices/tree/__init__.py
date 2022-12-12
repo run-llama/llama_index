@@ -1,1 +1,1 @@
-"""Init file."""
+"""Tree-structured Index Data Structures."""
