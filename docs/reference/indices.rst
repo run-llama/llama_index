@@ -1,5 +1,10 @@
+.. _Ref Indices
+
 Indices
 =======
+
+This doc shows both the classes that are used to create indices and the
+classes that are used to query indices.
 
 .. toctree::
    :maxdepth: 1
