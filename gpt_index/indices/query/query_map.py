@@ -2,8 +2,8 @@
 
 from typing import Type
 
-from gpt_index.indices.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexStructType
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.keyword_table.query import (
     GPTKeywordTableGPTQuery,
     GPTKeywordTableRAKEQuery,
@@ -14,7 +14,7 @@ from gpt_index.indices.query.list.query import GPTListIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
-from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
+from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 
 # TODO: migrate _mode_to_query in indices/base.py to use this file
 MODE_TO_QUERY_MAP_TREE = {
