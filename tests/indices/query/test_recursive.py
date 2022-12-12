@@ -13,7 +13,10 @@ from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor, OpenAI
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
-from tests.mock_utils.mock_predict import mock_llmchain_predict, mock_llmpredictor_predict
+from tests.mock_utils.mock_predict import (
+    mock_llmchain_predict,
+    mock_llmpredictor_predict,
+)
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_KEYWORD_EXTRACT_PROMPT,
@@ -262,7 +265,7 @@ def test_recursive_query_list_tree_token_count(
     _mock_predict: Any,
     documents: List[Document],
     struct_kwargs: Dict,
-):
+) -> None:
     """Test query."""
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
@@ -289,8 +292,9 @@ def test_recursive_query_list_tree_token_count(
         ],
         **tree_kwargs
     )
-    # first pass prompt is "summary1\nsummary2\n", response is the mock response (10 tokens)
-    # total is 16 tokens, multiply by 2 to get the total 
+    # first pass prompt is "summary1\nsummary2\n" (6 tokens),
+    # response is the mock response (10 tokens)
+    # total is 16 tokens, multiply by 2 to get the total
     assert tree._llm_predictor.total_tokens_used == 32
 
     query_str = "What is?"
@@ -298,6 +302,5 @@ def test_recursive_query_list_tree_token_count(
     # within list1, it should go through the first document and second document
     start_token_ct = tree._llm_predictor.total_tokens_used
     tree.query(query_str, mode="recursive", query_configs=query_configs)
-    # prompt is "2\n(1) generic response from LLMChain.predict()\n\n(2) generic response from LLMChain.predict()\nWhat is?'\n"
-    # which is 35 tokens, plus 10 for the mock response
+    # prompt is which is 35 tokens, plus 10 for the mock response
     assert tree._llm_predictor.total_tokens_used - start_token_ct == 45

@@ -13,7 +13,10 @@ from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor, OpenAI
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
-from tests.mock_utils.mock_predict import mock_llmchain_predict, mock_llmpredictor_predict
+from tests.mock_utils.mock_predict import (
+    mock_llmchain_predict,
+    mock_llmpredictor_predict,
+)
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_QUERY_PROMPT,
@@ -120,7 +123,8 @@ def test_query_and_count_tokens(
     _mock_predict: Any,
     struct_kwargs: Dict,
     documents: List[Document],
-):
+) -> None:
+    """Test query and count tokens."""
     index_kwargs, query_kwargs = struct_kwargs
     document_token_count = (
         24  # mock_prompts.MOCK_SUMMARY_PROMPT_TMPL adds a "\n" to the document text
@@ -136,7 +140,8 @@ def test_query_and_count_tokens(
     # test embedding query
     start_token_ct = tree._llm_predictor.total_tokens_used
     query_str = "What is?"
-    query_prompt_token_count = 28  # Follows from MOCK_TEXT_QA_PROMPT
+    # From MOCK_TEXT_QA_PROMPT, the prompt is 28 total
+    query_prompt_token_count = 28
     tree.query(query_str, mode="embedding", **query_kwargs)
     assert (
         tree._llm_predictor.total_tokens_used - start_token_ct
