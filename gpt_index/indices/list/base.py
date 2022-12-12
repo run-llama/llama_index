@@ -37,12 +37,12 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexList] = None,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
+        text_qa_template: Optional[Prompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self.text_qa_template = text_qa_template
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         super().__init__(
             documents=documents,
             index_struct=index_struct,
