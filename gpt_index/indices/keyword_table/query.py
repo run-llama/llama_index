@@ -29,7 +29,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         self,
         index_struct: KeywordTable,
         keyword_extract_template: Optional[Prompt] = None,
-        query_keyword_extract_template: Optional[Prompt] = DQKET,
+        query_keyword_extract_template: Optional[Prompt] = None,
         refine_template: Optional[Prompt] = None,
         text_qa_template: Optional[Prompt] = None,
         max_keywords_per_query: int = 10,
