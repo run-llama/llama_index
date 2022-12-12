@@ -28,10 +28,10 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     def __init__(
         self,
         index_struct: KeywordTable,
-        keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
-        query_keyword_extract_template: Optional[Prompt] = DQKET,
-        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
+        keyword_extract_template: Optional[Prompt] = None,
+        query_keyword_extract_template: Optional[Prompt] = None,
+        refine_template: Optional[Prompt] = None,
+        text_qa_template: Optional[Prompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         **kwargs: Any,
@@ -40,13 +40,12 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         super().__init__(index_struct=index_struct, **kwargs)
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
-        self.keyword_extract_template = keyword_extract_template
-        if query_keyword_extract_template is None:
-            self.query_keyword_extract_template = keyword_extract_template
-        else:
-            self.query_keyword_extract_template = query_keyword_extract_template
-        self.refine_template = refine_template
-        self.text_qa_template = text_qa_template
+        self.keyword_extract_template = (
+            keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
+        )
+        self.query_keyword_extract_template = query_keyword_extract_template or DQKET
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
 
     @abstractmethod
     def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:

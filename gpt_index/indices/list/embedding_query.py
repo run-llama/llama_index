@@ -5,10 +5,6 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexList, Node
 from gpt_index.indices.list.query import BaseGPTListIndexQuery
 from gpt_index.prompts.base import Prompt
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
-)
 
 
 class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
@@ -17,8 +13,8 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     def __init__(
         self,
         index_struct: IndexList,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
-        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
+        text_qa_template: Optional[Prompt] = None,
+        refine_template: Optional[Prompt] = None,
         keyword: Optional[str] = None,
         similarity_top_k: Optional[int] = 1,
         embed_model: Optional[OpenAIEmbedding] = None,

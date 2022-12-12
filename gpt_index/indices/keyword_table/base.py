@@ -47,7 +47,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[KeywordTable] = None,
-        keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
+        keyword_extract_template: Optional[Prompt] = None,
         max_keywords_per_query: int = 10,
         max_keywords_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -55,7 +55,9 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
-        self.keyword_extract_template = keyword_extract_template
+        self.keyword_extract_template = (
+            keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
+        )
         self.max_keywords_per_query = max_keywords_per_query
         self.max_keywords_per_chunk = max_keywords_per_chunk
         super().__init__(

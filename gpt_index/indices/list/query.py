@@ -17,15 +17,15 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
     def __init__(
         self,
         index_struct: IndexList,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
-        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
+        text_qa_template: Optional[Prompt] = None,
+        refine_template: Optional[Prompt] = None,
         keyword: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct=index_struct, **kwargs)
-        self.text_qa_template = text_qa_template
-        self.refine_template = refine_template
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self.keyword = keyword
 
     def _give_response_for_nodes(
