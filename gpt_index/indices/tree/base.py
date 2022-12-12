@@ -127,8 +127,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexGraph] = None,
-        summary_template: Prompt = DEFAULT_SUMMARY_PROMPT,
-        insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
+        summary_template: Optional[Prompt] = None,
+        insert_prompt: Optional[Prompt] = None,
         query_str: Optional[str] = None,
         num_children: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -137,12 +137,13 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         """Initialize params."""
         # need to set parameters before building index in base class.
         self.num_children = num_children
+        summary_template = summary_template or DEFAULT_SUMMARY_PROMPT
         # if query_str is specified, then we try to load into summary template
         if query_str is not None:
             summary_template = summary_template.partial_format(query_str=query_str)
 
         self.summary_template = summary_template
-        self.insert_prompt = insert_prompt
+        self.insert_prompt = insert_prompt or DEFAULT_INSERT_PROMPT
         validate_prompt(self.summary_template, ["text"], ["query_str"])
         super().__init__(
             documents=documents,

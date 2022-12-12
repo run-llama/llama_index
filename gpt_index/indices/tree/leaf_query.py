@@ -25,19 +25,21 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
     def __init__(
         self,
         index_struct: IndexGraph,
-        query_template: Prompt = DEFAULT_QUERY_PROMPT,
-        query_template_multiple: Prompt = DEFAULT_QUERY_PROMPT_MULTIPLE,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
-        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
+        query_template: Optional[Prompt] = None,
+        query_template_multiple: Optional[Prompt] = None,
+        text_qa_template: Optional[Prompt] = None,
+        refine_template: Optional[Prompt] = None,
         child_branch_factor: int = 1,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct, **kwargs)
-        self.query_template = query_template
-        self.query_template_multiple = query_template_multiple
-        self.text_qa_template = text_qa_template
-        self.refine_template = refine_template
+        self.query_template = query_template or DEFAULT_QUERY_PROMPT
+        self.query_template_multiple = (
+            query_template_multiple or DEFAULT_QUERY_PROMPT_MULTIPLE
+        )
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self.child_branch_factor = child_branch_factor
 
     def _query_with_selected_node(
