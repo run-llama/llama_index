@@ -56,6 +56,9 @@ def llm_token_counter(method_name_str: str) -> Callable:
     """
     Use this as a decorator for methods in index/query classes that make calls to LLMs.
 
+    At the moment, this decorator can only be used on class instance methods with a 
+    `_llm_predictor` attribute.
+
     Do not use this on abstract methods.
 
     For example, consider the class below:
