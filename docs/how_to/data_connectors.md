@@ -1,4 +1,4 @@
-# Data Conectors
+# Data Connectors
 
 We currently offer connectors into the following data sources. External data sources are retrieved through their APIs + corresponding authentication token.
 
