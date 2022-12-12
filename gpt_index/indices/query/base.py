@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Generic, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct, Node
+from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -39,6 +40,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         llm_predictor: Optional[LLMPredictor] = None,
         docstore: Optional[DocumentStore] = None,
         query_runner: Optional[BaseQueryRunner] = None,
+        prompt_helper: Optional[PromptHelper] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -48,6 +50,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._llm_predictor = llm_predictor or LLMPredictor()
         self._docstore = docstore
         self._query_runner = query_runner
+        self._prompt_helper = prompt_helper or PromptHelper()
 
     def _query_node(
         self,
@@ -93,6 +96,7 @@ class BaseGPTIndexQuery(Generic[IS]):
                 response = query_response
             else:
                 response = refine_response(
+                    self._prompt_helper,
                     self._llm_predictor,
                     response,
                     query_str,
@@ -105,6 +109,7 @@ class BaseGPTIndexQuery(Generic[IS]):
             text = node.get_text()
             if response is None:
                 response = give_response(
+                    self._prompt_helper,
                     self._llm_predictor,
                     query_str,
                     text,
@@ -114,6 +119,7 @@ class BaseGPTIndexQuery(Generic[IS]):
                 )
             else:
                 response = refine_response(
+                    self._prompt_helper,
                     self._llm_predictor,
                     response,
                     query_str,
@@ -140,3 +146,7 @@ class BaseGPTIndexQuery(Generic[IS]):
     def set_llm_predictor(self, llm_predictor: LLMPredictor) -> None:
         """Set LLM predictor."""
         self._llm_predictor = llm_predictor
+
+    def set_prompt_helper(self, prompt_helper: PromptHelper) -> None:
+        """Set prompt helper."""
+        self._prompt_helper = prompt_helper

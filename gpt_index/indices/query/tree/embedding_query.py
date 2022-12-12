@@ -4,15 +4,9 @@ from typing import Dict, List, Optional, Tuple
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexGraph, Node
-from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
+from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.prompts.base import Prompt
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_QUERY_PROMPT,
-    DEFAULT_QUERY_PROMPT_MULTIPLE,
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
-)
 
 
 class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
@@ -27,10 +21,10 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
     def __init__(
         self,
         index_struct: IndexGraph,
-        query_template: Prompt = DEFAULT_QUERY_PROMPT,
-        query_template_multiple: Prompt = DEFAULT_QUERY_PROMPT_MULTIPLE,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
-        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
+        query_template: Optional[Prompt] = None,
+        query_template_multiple: Optional[Prompt] = None,
+        text_qa_template: Optional[Prompt] = None,
+        refine_template: Optional[Prompt] = None,
         child_branch_factor: int = 1,
         embed_model: Optional[OpenAIEmbedding] = None,
     ) -> None:

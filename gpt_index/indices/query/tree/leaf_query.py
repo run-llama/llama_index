@@ -4,11 +4,7 @@ from typing import Any, Dict, Optional, cast
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.utils import (
-    extract_numbers_given_response,
-    get_numbered_text_from_nodes,
-    get_sorted_node_list,
-)
+from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
@@ -29,19 +25,21 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
     def __init__(
         self,
         index_struct: IndexGraph,
-        query_template: Prompt = DEFAULT_QUERY_PROMPT,
-        query_template_multiple: Prompt = DEFAULT_QUERY_PROMPT_MULTIPLE,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
-        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
+        query_template: Optional[Prompt] = None,
+        query_template_multiple: Optional[Prompt] = None,
+        text_qa_template: Optional[Prompt] = None,
+        refine_template: Optional[Prompt] = None,
         child_branch_factor: int = 1,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct, **kwargs)
-        self.query_template = query_template
-        self.query_template_multiple = query_template_multiple
-        self.text_qa_template = text_qa_template
-        self.refine_template = refine_template
+        self.query_template = query_template or DEFAULT_QUERY_PROMPT
+        self.query_template_multiple = (
+            query_template_multiple or DEFAULT_QUERY_PROMPT_MULTIPLE
+        )
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self.child_branch_factor = child_branch_factor
 
     def _query_with_selected_node(
@@ -108,18 +106,24 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         if self.child_branch_factor == 1:
+            numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
+                cur_node_list, prompt=self.query_template
+            )
             response, formatted_query_prompt = self._llm_predictor.predict(
                 self.query_template,
                 num_chunks=len(cur_node_list),
                 query_str=query_str,
-                context_list=get_numbered_text_from_nodes(cur_node_list),
+                context_list=numbered_node_text,
             )
         else:
+            numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
+                cur_node_list, prompt=self.query_template_multiple
+            )
             response, formatted_query_prompt = self._llm_predictor.predict(
                 self.query_template_multiple,
                 num_chunks=len(cur_node_list),
                 query_str=query_str,
-                context_list=get_numbered_text_from_nodes(cur_node_list),
+                context_list=numbered_node_text,
                 branching_factor=self.child_branch_factor,
             )
 

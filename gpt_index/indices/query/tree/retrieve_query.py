@@ -1,11 +1,11 @@
 """Retrieve query."""
 
-from typing import Any
+from typing import Any, Optional
 
 from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response_utils.response import give_response
-from gpt_index.indices.utils import get_sorted_node_list, get_text_from_nodes
+from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 
@@ -24,20 +24,23 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
     def __init__(
         self,
         index_struct: IndexGraph,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
+        text_qa_template: Optional[Prompt] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct, **kwargs)
-        self.text_qa_template = text_qa_template
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         validate_prompt(self.text_qa_template, ["context_str", "query_str"])
 
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         node_list = get_sorted_node_list(self.index_struct.root_nodes)
-        node_text = get_text_from_nodes(node_list)
+        node_text = self._prompt_helper.get_text_from_nodes(
+            node_list, prompt=self.text_qa_template
+        )
         response = give_response(
+            self._prompt_helper,
             self._llm_predictor,
             query_str,
             node_text,

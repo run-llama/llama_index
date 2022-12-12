@@ -8,7 +8,7 @@ import pytest
 
 from gpt_index.indices.data_structs import Node
 from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document

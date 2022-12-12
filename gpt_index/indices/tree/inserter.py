@@ -2,19 +2,10 @@
 
 from typing import Optional
 
-from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.data_structs import IndexGraph, Node
-from gpt_index.indices.utils import (
-    extract_numbers_given_response,
-    get_chunk_size_given_prompt,
-    get_numbered_text_from_nodes,
-    get_sorted_node_list,
-    get_text_from_nodes,
-)
+from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-
-# from gpt_index.langchain_helpers.chain_wrapper import self._llm_predictor.predict
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
@@ -33,6 +24,7 @@ class GPTIndexInserter:
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
         llm_predictor: Optional[LLMPredictor] = None,
+        prompt_helper: Optional[PromptHelper] = None,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -41,13 +33,9 @@ class GPTIndexInserter:
         self.summary_prompt = summary_prompt
         self.insert_prompt = insert_prompt
         self.index_graph = index_graph
-        chunk_size = get_chunk_size_given_prompt(
-            summary_prompt.format(text=""), MAX_CHUNK_SIZE, num_children, NUM_OUTPUTS
-        )
-        self.text_splitter = TokenTextSplitter(
-            separator=" ",
-            chunk_size=chunk_size,
-            chunk_overlap=MAX_CHUNK_OVERLAP // num_children,
+        self._prompt_helper = prompt_helper or PromptHelper()
+        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.summary_prompt, self.num_children
         )
         self._llm_predictor = llm_predictor or LLMPredictor()
 
@@ -80,7 +68,9 @@ class GPTIndexInserter:
             half1 = cur_graph_node_list[: len(cur_graph_nodes) // 2]
             half2 = cur_graph_node_list[len(cur_graph_nodes) // 2 :]
 
-            text_chunk1 = get_text_from_nodes(half1)
+            text_chunk1 = self._prompt_helper.get_text_from_nodes(
+                half1, prompt=self.summary_prompt
+            )
             summary1, _ = self._llm_predictor.predict(
                 self.summary_prompt, text=text_chunk1
             )
@@ -90,7 +80,9 @@ class GPTIndexInserter:
                 child_indices={n.index for n in half1},
             )
 
-            text_chunk2 = get_text_from_nodes(half2)
+            text_chunk2 = self._prompt_helper.get_text_from_nodes(
+                half2, prompt=self.summary_prompt
+            )
             summary2, _ = self._llm_predictor.predict(
                 self.summary_prompt, text=text_chunk2
             )
@@ -124,11 +116,14 @@ class GPTIndexInserter:
             self._insert_under_parent_and_consolidate(text_chunk, doc_id, parent_node)
         # else try to find the right summary node to insert under
         else:
+            numbered_text = self._prompt_helper.get_numbered_text_from_nodes(
+                cur_graph_node_list, prompt=self.insert_prompt
+            )
             response, _ = self._llm_predictor.predict(
                 self.insert_prompt,
                 new_chunk_text=text_chunk,
                 num_chunks=len(cur_graph_node_list),
-                context_list=get_numbered_text_from_nodes(cur_graph_node_list),
+                context_list=numbered_text,
             )
             numbers = extract_numbers_given_response(response)
             if numbers is None or len(numbers) == 0:
@@ -151,7 +146,9 @@ class GPTIndexInserter:
             # refetch children
             cur_graph_nodes = self.index_graph.get_children(parent_node)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
-            text_chunk = get_text_from_nodes(cur_graph_node_list)
+            text_chunk = self._prompt_helper.get_text_from_nodes(
+                cur_graph_node_list, prompt=self.summary_prompt
+            )
             new_summary, _ = self._llm_predictor.predict(
                 self.summary_prompt, text=text_chunk
             )
@@ -160,7 +157,7 @@ class GPTIndexInserter:
 
     def insert(self, doc: BaseDocument) -> None:
         """Insert into index_graph."""
-        text_chunks = self.text_splitter.split_text(doc.get_text())
+        text_chunks = self._text_splitter.split_text(doc.get_text())
 
         for text_chunk in text_chunks:
             self._insert_node(text_chunk, doc.get_doc_id(), None)

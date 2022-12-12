@@ -11,7 +11,6 @@ existing keywords in the table.
 from abc import abstractmethod
 from typing import Any, Optional, Sequence, Set
 
-from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.base import (
     DEFAULT_MODE,
     DOCUMENTS_INPUT,
@@ -19,14 +18,14 @@ from gpt_index.indices.base import (
     BaseGPTIndexQuery,
 )
 from gpt_index.indices.data_structs import KeywordTable
-from gpt_index.indices.keyword_table.query import (
+from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
+from gpt_index.indices.query.keyword_table.query import (
     BaseGPTKeywordTableQuery,
     GPTKeywordTableGPTQuery,
     GPTKeywordTableRAKEQuery,
     GPTKeywordTableSimpleQuery,
 )
-from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.utils import get_chunk_size_given_prompt, truncate_text
+from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
@@ -49,7 +48,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[KeywordTable] = None,
-        keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
+        keyword_extract_template: Optional[Prompt] = None,
         max_keywords_per_query: int = 10,
         max_keywords_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -57,25 +56,19 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
-        self.keyword_extract_template = keyword_extract_template
+        self.keyword_extract_template = (
+            keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
+        )
         self.max_keywords_per_query = max_keywords_per_query
         self.max_keywords_per_chunk = max_keywords_per_chunk
-        empty_keyword_extract_template = self.keyword_extract_template.format(
-            max_keywords=self.max_keywords_per_chunk, text=""
-        )
-        chunk_size = get_chunk_size_given_prompt(
-            empty_keyword_extract_template, MAX_CHUNK_SIZE, 1, NUM_OUTPUTS
-        )
-        self.text_splitter = TokenTextSplitter(
-            separator=" ",
-            chunk_size=chunk_size,
-            chunk_overlap=MAX_CHUNK_OVERLAP,
-        )
         super().__init__(
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             **kwargs,
+        )
+        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.keyword_extract_template, 1
         )
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
@@ -103,10 +96,13 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         """Extract keywords from text."""
 
     def _add_document_to_index(
-        self, index_struct: KeywordTable, document: BaseDocument
+        self,
+        index_struct: KeywordTable,
+        document: BaseDocument,
+        text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
-        text_chunks = self.text_splitter.split_text(document.get_text())
+        text_chunks = text_splitter.split_text(document.get_text())
         for i, text_chunk in enumerate(text_chunks):
             keywords = self._extract_keywords(text_chunk)
             fmt_text_chunk = truncate_text(text_chunk, 50)
@@ -124,24 +120,19 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self, documents: Sequence[BaseDocument]
     ) -> KeywordTable:
         """Build the index from documents."""
+        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.keyword_extract_template, 1
+        )
         # do simple concatenation
         index_struct = KeywordTable(table={})
-        start_token_ct = self._llm_predictor.total_tokens_used
         for d in documents:
-            self._add_document_to_index(index_struct, d)
-        end_token_ct = self._llm_predictor.total_tokens_used
-        print(
-            (
-                "> Total token usage from index building: "
-                f"{end_token_ct - start_token_ct} tokens"
-            )
-        )
+            self._add_document_to_index(index_struct, d, text_splitter)
+
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        text_chunks = self.text_splitter.split_text(document.get_text())
-        start_token_ct = self._llm_predictor.total_tokens_used
+        text_chunks = self._text_splitter.split_text(document.get_text())
         for i, text_chunk in enumerate(text_chunks):
             keywords = self._extract_keywords(text_chunk)
             fmt_text_chunk = truncate_text(text_chunk, 50)
@@ -153,13 +144,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
                 f"{fmt_text_chunk}"
             )
             print(f"> Keywords: {keywords}")
-        end_token_ct = self._llm_predictor.total_tokens_used
-        print(
-            (
-                "> Total token usage from index insertion: "
-                f"{end_token_ct - start_token_ct} tokens"
-            )
-        )
 
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
