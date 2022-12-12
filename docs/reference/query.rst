@@ -1,10 +1,9 @@
-.. _Ref-Indices:
+.. _Ref-Query:
 
-Indices
+Querying an Index
 =======
 
-This doc shows both the overarching class used to represent an index. These
-classes allow for index creation, insertion, and also querying.
+This doc specifically shows the classes that are used to query indices.
 
 .. toctree::
    :maxdepth: 1

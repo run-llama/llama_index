@@ -56,5 +56,6 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    :caption: Reference
 
    reference/indices.rst
+   reference/query.rst
    reference/readers.rst
 

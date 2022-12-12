@@ -159,7 +159,7 @@ class BaseGPTIndex(Generic[IS]):
         `query_kwargs` are parameters that are specific to the query type.
 
         For a comprehensive documentation of available `mode` and `query_kwargs` to query 
-        a given index, please visit :ref:`Ref Indices`.
+        a given index, please visit :ref:`Ref-Query`.
         
         
         """
