@@ -91,9 +91,11 @@ def documents() -> List[Document]:
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_list_tree(
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -138,9 +140,11 @@ def test_recursive_query_list_tree(
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_tree_list(
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -176,9 +180,11 @@ def test_recursive_query_tree_list(
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_table_list(
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -211,9 +217,11 @@ def test_recursive_query_table_list(
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_list_table(
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
