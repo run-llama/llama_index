@@ -79,7 +79,6 @@ class GPTTreeIndexBuilder:
         }
         return doc_nodes
 
-    @llm_token_counter("GPTTreeIndexBuilder.build_from_text")
     def build_from_text(self, documents: Sequence[BaseDocument]) -> IndexGraph:
         """Build from text.
 
@@ -177,6 +176,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
 
+    @llm_token_counter("build_index_from_document")
     def build_index_from_documents(
         self, documents: Sequence[BaseDocument]
     ) -> IndexGraph:
