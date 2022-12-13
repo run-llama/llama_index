@@ -5,6 +5,8 @@ During query-time, we can use embeddings to do max-similarity retrieval of nodes
 Since similarity lookup using embeddings (e.g. using cosine similarity) does not require a LLM call, embeddings serve as a cheaper lookup mechanism instead
 of using LLM's to traverse nodes.
 
+NOTE: we currently support OpenAI embeddings. External embeddings are coming soon!
+
 **How are Embeddings Generated?**
 
 Embeddings are lazily generated and then cached at query time (if mode="embedding" is specified during `index.query`), and not during index construction.
