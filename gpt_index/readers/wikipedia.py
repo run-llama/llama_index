@@ -22,7 +22,12 @@ class WikipediaReader(BaseReader):
             )
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory."""
+        """Load data from the input directory.
+
+        Args:
+            pages (List[str]): List of pages to read.
+
+        """
         import wikipedia
 
         pages: List[str] = load_kwargs.pop("pages", None)
