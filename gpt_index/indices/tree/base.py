@@ -119,23 +119,7 @@ class GPTTreeIndexBuilder:
 
 
 class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
-    """GPT Tree Index.
-
-    The tree index is a tree-structured index, where each node is a summary of
-    the children nodes. During index construction, the tree is constructed
-    in a bottoms-up fashion until we end up with a set of root_nodes.
-
-    There are a few different options during query time (see :ref:`Ref-Query`).
-    The main option is to traverse down the tree from the root nodes.
-    A secondary answer is to directly synthesize the answer from the root nodes.
-
-    Args:
-        summary_template (Optional[Prompt]): A Summarization Prompt
-            (see :ref:`Prompt-Templates`).
-        insert_prompt (Optional[Prompt]): An Tree Insertion Prompt
-            (see :ref:`Prompt-Templates`).
-
-    """
+    """GPT Index."""
 
     index_struct_cls = IndexGraph
 
