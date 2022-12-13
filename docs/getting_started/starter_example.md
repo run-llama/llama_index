@@ -50,6 +50,6 @@ index = GPTTreeIndex.load_from_disk('index.json')
 
 ### Next Steps
 
-That's it! 
-TODO: add next steps
+That's it! For more information on GPT Index features, please check out the numerous "How-To Guides" to the left.
+Additionally, if you would like to play around with Example Notebooks, check out (/reference/example_notebooks.rst).
 

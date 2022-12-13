@@ -1,7 +1,7 @@
 # Data Connectors
 
 We currently offer connectors into the following data sources. External data sources are retrieved through their APIs + corresponding authentication token.
-The API reference can be found [here](/reference/readers.rst)
+The API reference can be found [here](/reference/readers.rst).
 
 - [Notion](https://developers.notion.com/) (`NotionPageReader`)
 - [Google Docs](https://developers.google.com/docs/api) (`GoogleDocsReader`)
