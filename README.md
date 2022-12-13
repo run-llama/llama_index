@@ -4,6 +4,8 @@ GPT Index is a project consisting of a set of *data structures* that are created
 
 PyPi: https://pypi.org/project/gpt-index/.
 
+Documentation: https://gpt-index.readthedocs.io/en/latest/.
+
 ## 🚀 Overview
 
 #### Context
@@ -29,7 +31,7 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
 
 Full documentation can be found here: https://gpt-index.readthedocs.io/en/latest/. 
 
-Please check it out for the most up-to-date information of the package! 
+Please check it out for the most up-to-date tutorials, how-to guides, references, and other resources! 
 
 
 ## 💻 Example Usage
