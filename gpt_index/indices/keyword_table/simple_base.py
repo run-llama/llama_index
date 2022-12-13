@@ -15,7 +15,11 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
 class GPTSimpleKeywordTableIndex(BaseGPTKeywordTableIndex):
-    """GPT Index."""
+    """GPT Simple Keyword Table Index.
+
+    This index uses a simple regex extractor to extract keywords from the text.
+
+    """
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
