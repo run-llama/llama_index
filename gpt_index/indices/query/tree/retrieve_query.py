@@ -19,6 +19,14 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
     the answer (because it was constructed with a query_str), so it does not
     attempt to parse information down the graph in order to synthesize an answer.
 
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="retrieve")
+
+    Args:
+        text_qa_template (Optional[Prompt]): Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+
     """
 
     def __init__(
