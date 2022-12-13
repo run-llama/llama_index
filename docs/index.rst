@@ -42,7 +42,7 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    :maxdepth: 1
    :caption: Getting Started
 
-   getting_strated/overview.rst
+   getting_started/overview.rst
    getting_started/installation.md
    getting_started/starter_example.md
 
