@@ -12,6 +12,9 @@ class SimpleDirectoryReader(BaseReader):
     Can read files into separate documents, or concatenates
     files into one document text.
 
+    input_dir (str): Path to the directory.
+    exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
+
     """
 
     def __init__(self, input_dir: str, exclude_hidden: bool = True) -> None:
@@ -26,7 +29,15 @@ class SimpleDirectoryReader(BaseReader):
         self.input_files = input_files
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory."""
+        """Load data from the input directory.
+
+        Args:
+            concatenate (bool): whether to concatenate all files into one document.
+
+        Returns:
+            List[Document]: A list of documents.
+
+        """
         concatenate = load_kwargs.get("concatenate", True)
         data = ""
         data_list = []

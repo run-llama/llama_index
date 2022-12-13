@@ -1,0 +1,75 @@
+.. GPT Index documentation master file, created by
+   sphinx-quickstart on Sun Dec 11 14:30:34 2022.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to GPT Index!
+=====================================
+
+GPT Index is a project consisting of a set of data structures that are created using LLMs and can be traversed using LLMs in order to answer queries.
+
+The Github project page is here: https://github.com/jerryjliu/gpt_index.
+
+The pypi package is here: https://pypi.org/project/gpt-index/.
+
+
+🚀 Overview
+-----------
+
+Context
+^^^^^^^
+- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning.
+- A big limitation of LLMs is context size (e.g. Davinci's limit is 4096 tokens. Large, but not infinite).
+- The ability to feed "knowledge" to LLMs is restricted to this limited prompt size and model weights.
+- **Thought**: What if LLMs can have access to potentially a much larger database of knowledge without retraining/finetuning? 
+
+Proposed Solution
+^^^^^^^^^^^^^^^^^
+That's where the **GPT Index** comes in. GPT Index is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
+
+- Provides simple data structures to resolve prompt size limitations.
+- Offers data connectors to your external data sources.
+- Offers you a comprehensive toolset trading off cost and performance.
+
+At the core of GPT Index is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
+
+- Uses a pre-trained LLM primarily for *reasoning*/*summarization* instead of prior knowledge.
+- Takes as input a large corpus of text data and build a structured index over it (using an LLM or heuristics).
+- Allow users to *query* the index in order to synthesize an answer to the question - this requires both *traversal* of the index as well as a synthesis of the answer.
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Getting Started
+
+   getting_started/overview.rst
+   getting_started/installation.md
+   getting_started/starter_example.md
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: How To
+
+   how_to/overview.rst
+   how_to/data_connectors.md
+   how_to/composability.md
+   how_to/insert.md
+   how_to/cost_analysis.md
+   how_to/embeddings.md
+   how_to/custom_prompts.md
+   how_to/custom_llms.md
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reference
+
+   reference/overview.rst
+   reference/indices.rst
+   reference/query.rst
+   reference/readers.rst
+   reference/prompts.rst
+   reference/example_notebooks.rst
+   reference/llm_predictor.rst
+
