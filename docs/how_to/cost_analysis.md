@@ -6,7 +6,7 @@ Each call to an LLM will cost some amount of money - for instance, OpenAI's Davi
 3. parameters used during building 
 4. parameters used during querying
 
-The cost of building and querying each index is given in the reference documentation (TODO). In the meantime, here is a high-level overview of the cost structure of the indices.
+The cost of building and querying each index is a TODO in the reference documentation. In the meantime, here is a high-level overview of the cost structure of the indices.
 
 ### Index Building
 
@@ -23,9 +23,9 @@ The following indices do require LLM calls during build time:
 ### Query Time
 
 There will always be >= 1 LLM call during query time, in order to synthesize the final answer. Here are some notes regarding each of the indices:
-- `GPTListIndex`: by default requires N LLM calls, where N is the number of nodes.
+- `GPTListIndex`: by default requires {math}`N` LLM calls, where N is the number of nodes.
     - However, can do `index.query(..., keyword="<keyword>")` to filter out nodes that don't contain the keyword
-- `GPTTreeIndex`: by default requires log N LLM calls, where N is the number of leaf nodes. 
+- `GPTTreeIndex`: by default requires {math}`\log (N)` LLM calls, where N is the number of leaf nodes. 
     - Setting `child_branch_factor=2` will be more expensive than the default `child_branch_factor=1` (polynomial vs logarithmic), because we traverse 2 children instead of just 1 for each parent node.
 - `GPTKeywordTableIndex`: by default requires an LLM call to extract query keywords.
     - Can do `index.query(..., mode="simple")` or `index.query(..., mode="rake")` to also use regex/RAKE keyword extractors on your query text.
