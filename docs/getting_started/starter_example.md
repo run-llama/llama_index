@@ -6,7 +6,10 @@ Here is a starter example for using GPT Index. Make sure you've followed the [in
 ### Download
 GPT Index examples can be found in the `examples` folder of the GPT Index repository. 
 We first want to download this `examples` folder. An easy way to do this is to just clone the repo: 
-`git clone git@github.com:jerryjliu/gpt_index.git`.
+
+```
+git clone git@github.com:jerryjliu/gpt_index.git
+```
 
 
 We now want to navigate to the following folder:

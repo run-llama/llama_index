@@ -1,6 +1,6 @@
 # 🗂️ ️GPT Index
 
-GPT Index is a project consisting of a set of *data structures* that are created using LLM's and can be traversed using LLM's in order to answer queries.
+GPT Index is a project consisting of a set of *data structures* that are created using LLMs and can be traversed using LLMs in order to answer queries.
 
 PyPi: https://pypi.org/project/gpt-index/.
 
@@ -9,13 +9,13 @@ Documentation: https://gpt-index.readthedocs.io/en/latest/.
 ## 🚀 Overview
 
 #### Context
-- LLM's are a phenomenonal piece of technology for knowledge generation and reasoning.
-- A big limitation of LLM's is context size (e.g. Davinci's limit is 4096 tokens. Large, but not infinite).
-- The ability to feed "knowledge" to LLM's is restricted to this limited prompt size and model weights.
-- **Thought**: What if LLM's can have access to potentially a much larger database of knowledge without retraining/finetuning? 
+- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning.
+- A big limitation of LLMs is context size (e.g. OpenAI's `davinci` model for GPT-3 has a [limit](https://openai.com/api/pricing/) of 4096 tokens. Large, but not infinite).
+- The ability to feed "knowledge" to LLMs is restricted to this limited prompt size and model weights.
+- **Thought**: What if LLMs can have access to potentially a much larger database of knowledge without retraining/finetuning? 
 
 #### Proposed Solution
-That's where the **GPT Index** comes in. GPT Index is a simple, flexible interface between your external data and LLM's. It resolves the following pain points:
+That's where the **GPT Index** comes in. GPT Index is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
 
 - Provides simple data structures to resolve prompt size limitations.
 - Offers data connectors to your external data sources.

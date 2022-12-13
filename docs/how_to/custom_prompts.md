@@ -1,6 +1,6 @@
 # Defining Prompts
 
-Prompting is the fundamental input that gives LLM's their expressive power. GPT Index uses prompts to build the index, do insertion, 
+Prompting is the fundamental input that gives LLMs their expressive power. GPT Index uses prompts to build the index, do insertion, 
 perform traversal during querying, and to synthesize the final answer.
 
 GPT Index uses a finite set of *prompt types*, described [here](/reference/prompts.rst). 

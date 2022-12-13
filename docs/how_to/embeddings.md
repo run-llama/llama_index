@@ -3,7 +3,7 @@
 GPT Index provides embedding support to our tree and list indices. In addition to each node storing text, each node can optionally store an embedding.
 During query-time, we can use embeddings to do max-similarity retrieval of nodes before calling the LLM to synthesize an answer. 
 Since similarity lookup using embeddings (e.g. using cosine similarity) does not require a LLM call, embeddings serve as a cheaper lookup mechanism instead
-of using LLM's to traverse nodes.
+of using LLMs to traverse nodes.
 
 NOTE: we currently support OpenAI embeddings. External embeddings are coming soon!
 

@@ -1,10 +1,10 @@
-# Defining LLM's
+# Defining LLMs
 
 The goal of GPT Index is to provide a toolkit of data structures that can organize external information in a manner that 
-is easily compatible with the prompt limitations of an LLM. Therefore LLM's are always used to construct the final
+is easily compatible with the prompt limitations of an LLM. Therefore LLMs are always used to construct the final
 answer.
 Depending on the [type of index](/reference/indices.rst) being used,
-LLM's may also be used during index construction, insertion, and query traversal.
+LLMs may also be used during index construction, insertion, and query traversal.
 
 GPT Index uses Langchain's [LLM](https://langchain.readthedocs.io/en/latest/modules/llms.html) 
 and [LLMChain](https://langchain.readthedocs.io/en/latest/modules/chains.html) module to define
