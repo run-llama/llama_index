@@ -11,11 +11,6 @@ class SimpleMongoReader(BaseReader):
 
     Concatenates each Mongo doc into Document used by GPT Index.
 
-    Args:
-        host (str): Mongo host.
-        port (int): Mongo port.
-        max_docs (int): Maximum number of documents to load.
-
     """
 
     def __init__(self, host: str, port: int, max_docs: int = 1000) -> None:
@@ -48,16 +43,7 @@ class SimpleMongoReader(BaseReader):
         return documents
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory.
-
-        Args:
-            db_name (str): name of the database.
-            collection_name (str): name of the collection.
-
-        Returns:
-            List[Document]: A list of documents.
-
-        """
+        """Load data from the input directory."""
         if "db_name" not in load_kwargs:
             raise ValueError("`db_name` not found in load_kwargs.")
         else:
