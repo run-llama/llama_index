@@ -82,6 +82,7 @@ class GPTListIndexQuery(BaseGPTListIndexQuery):
     Set when `mode="default"` in `query` method of `GPTListIndex`.
 
     .. code-block:: python
+
         response = index.query("<query_str>", mode="default")
 
     See BaseGPTListIndexQuery for arguments.

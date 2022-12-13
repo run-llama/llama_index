@@ -16,6 +16,10 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
     This class traverses the index graph using the embedding similarity between the
     query and the node text.
 
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="embedding")
+
     Args:
         query_template (Optional[Prompt]): Tree Select Query Prompt
             (see :ref:`Prompt-Templates`).

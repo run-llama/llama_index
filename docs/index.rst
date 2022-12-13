@@ -6,7 +6,11 @@
 Welcome to GPT Index!
 =====================================
 
-GPT Index is a project consisting of a set of data structures that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
+GPT Index is a project consisting of a set of data structures that are created using LLM's and can be traversed using LLM's in order to answer queries.
+
+The Github project page is here: https://github.com/jerryjliu/gpt_index.
+
+The pypi package is here: https://pypi.org/project/gpt-index/.
 
 
 🚀 Overview
@@ -22,11 +26,13 @@ Context
 Proposed Solution
 ^^^^^^^^^^^^^^^^^
 That's where the **GPT Index** comes in. GPT Index is a simple, flexible interface between your external data and LLM's. It resolves the following pain points:
+
 - Provides simple data structures to resolve prompt size limitations.
 - Offers data connectors to your external data sources.
 - Offers you a comprehensive toolset trading off cost and performance.
 
 At the core of GPT Index is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
+
 - Uses a pre-trained LLM primarily for *reasoning*/*summarization* instead of prior knowledge.
 - Takes as input a large corpus of text data and build a structured index over it (using an LLM or heuristics).
 - Allow users to _query_ the index in order to synthesize an answer to the question - this requires both _traversal_ of the index as well as a synthesis of the answer.
@@ -49,6 +55,7 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    how_to/insert.md
    how_to/cost_analysis.md
    how_to/embeddings.md
+   how_to/custom_prompts.md
 
 
 .. toctree::
@@ -59,4 +66,6 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    reference/query.rst
    reference/readers.rst
    reference/prompts.rst
+   reference/example_notebooks.rst
+   reference/llm_predictor.rst
 

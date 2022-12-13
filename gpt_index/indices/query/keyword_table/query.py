@@ -109,6 +109,7 @@ class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
     `GPTKeywordTableIndex`.
 
     .. code-block:: python
+
         response = index.query("<query_str>", mode="default")
 
     See BaseGPTKeywordTableQuery for arguments.
@@ -133,6 +134,7 @@ class GPTKeywordTableSimpleQuery(BaseGPTKeywordTableQuery):
     Set when `mode="simple"` in `query` method of `GPTKeywordTableIndex`.
 
     .. code-block:: python
+
         response = index.query("<query_str>", mode="simple")
 
     See BaseGPTKeywordTableQuery for arguments.
@@ -153,6 +155,7 @@ class GPTKeywordTableRAKEQuery(BaseGPTKeywordTableQuery):
     Set when `mode="rake"` in `query` method of `GPTKeywordTableIndex`.
 
     .. code-block:: python
+
         response = index.query("<query_str>", mode="rake")
 
     See BaseGPTKeywordTableQuery for arguments.

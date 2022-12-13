@@ -20,6 +20,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
     This class traverses the index graph and searches for a leaf node that can best
     answer the query.
 
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="default")
+
     Args:
         query_template (Optional[Prompt]): Tree Select Query Prompt
             (see :ref:`Prompt-Templates`).

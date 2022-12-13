@@ -16,6 +16,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     Set when `mode="embedding"` in `query` method of `GPTListIndex`.
 
     .. code-block:: python
+
         response = index.query("<query_str>", mode="embedding")
 
     See BaseGPTListIndexQuery for arguments.
