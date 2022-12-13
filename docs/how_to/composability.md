@@ -23,7 +23,7 @@ index2 = GPTTreeIndex(doc2)
 index2 = GPTTreeIndex(doc2)
 ```
 
-![](/_static/composability/diagram_b0.png)
+![](/_static/composability/diagram_b1.png)
 
 We can then create a list index on these 3 tree indices:
 
