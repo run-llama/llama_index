@@ -152,7 +152,17 @@ class BaseGPTIndex(Generic[IS]):
         mode: str = DEFAULT_MODE,
         **query_kwargs: Any
     ) -> str:
-        """Answer a query."""
+        """Answer a query.
+
+        When `query` is called, we query the index with the given `mode` and
+        `query_kwargs`. The `mode` determines the type of query to run, and
+        `query_kwargs` are parameters that are specific to the query type.
+
+        For a comprehensive documentation of available `mode` and `query_kwargs` to
+        query a given index, please visit :ref:`Ref-Query`.
+
+
+        """
         # TODO: remove _mode_to_query and consolidate with query_runner
         if mode == "recursive":
             if "query_configs" not in query_kwargs:
@@ -175,7 +185,20 @@ class BaseGPTIndex(Generic[IS]):
 
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "BaseGPTIndex":
-        """Load from disk."""
+        """Load index from disk.
+
+        This method loads the index from a JSON file stored on disk. The index data
+        structure itself is preserved completely. If the index is defined over
+        subindices, those subindices will also be preserved (and subindices of
+        those subindices, etc.).
+
+        Args:
+            save_path (str): The save_path of the file.
+
+        Returns:
+            BaseGPTIndex: The loaded index.
+
+        """
         with open(save_path, "r") as f:
             result_dict = json.load(f)
             index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])
@@ -183,7 +206,14 @@ class BaseGPTIndex(Generic[IS]):
             return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 
     def save_to_disk(self, save_path: str) -> None:
-        """Safe to file."""
+        """Save to file.
+
+        This method stores the index into a JSON file stored on disk.
+
+        Args:
+            save_path (str): The save_path of the file.
+
+        """
         out_dict: Dict[str, dict] = {
             "index_struct": self.index_struct.to_dict(),
             "docstore": self.docstore.to_dict(),
