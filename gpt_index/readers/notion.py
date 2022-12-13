@@ -18,9 +18,6 @@ class NotionPageReader(BaseReader):
 
     Reads a set of Notion pages.
 
-    Args:
-        integration_token (str): Notion integration token.
-
     """
 
     def __init__(self, integration_token: Optional[str] = None) -> None:
@@ -118,15 +115,7 @@ class NotionPageReader(BaseReader):
         return page_ids
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory.
-
-        Args:
-            page_ids (List[str]): List of page ids to load.
-
-        Returns:
-            List[Document]: List of documents.
-
-        """
+        """Load data from the input directory."""
         if "page_ids" not in load_kwargs:
             raise ValueError('Must specify a "page_ids" in `load_kwargs`.')
         docs = []

@@ -23,23 +23,7 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
 class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
-    """Base GPT Keyword Table Index Query.
-
-    Arguments are shared among subclasses.
-
-    Args:
-        keyword_extract_template (Optional[Prompt]): A Keyword Extraction Prompt
-            (see :ref:`Prompt-Templates`).
-        query_keyword_extract_template (Optional[Prompt]): A Query Keyword Extraction
-            Prompt (see :ref:`Prompt-Templates`).
-        refine_template (Optional[Prompt]): A Refinement Prompt
-            (see :ref:`Prompt-Templates`).
-        text_qa_template (Optional[Prompt]): A Question Answering Prompt
-            (see :ref:`Prompt-Templates`).
-        max_keywords_per_query (int): Maximum number of keywords to extract from query.
-        num_chunks_per_query (int): Maximum number of text chunks to query.
-
-    """
+    """Base GPT Keyword Table Index Query."""
 
     def __init__(
         self,
@@ -105,14 +89,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
 class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
     """GPT Keyword Table Index Query.
 
-    Extracts keywords using GPT. Set when `mode="default"` in `query` method of
-    `GPTKeywordTableIndex`.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="default")
-
-    See BaseGPTKeywordTableQuery for arguments.
+    Extracts keywords using GPT.
 
     """
 
@@ -130,14 +107,7 @@ class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
 class GPTKeywordTableSimpleQuery(BaseGPTKeywordTableQuery):
     """GPT Keyword Table Index Simple Query.
 
-    Extracts keywords using simple regex-based keyword extractor.
-    Set when `mode="simple"` in `query` method of `GPTKeywordTableIndex`.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="simple")
-
-    See BaseGPTKeywordTableQuery for arguments.
+    Extracts keywords using Simple keyword extractor.
 
     """
 
@@ -152,13 +122,6 @@ class GPTKeywordTableRAKEQuery(BaseGPTKeywordTableQuery):
     """GPT Keyword Table Index RAKE Query.
 
     Extracts keywords using RAKE keyword extractor.
-    Set when `mode="rake"` in `query` method of `GPTKeywordTableIndex`.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="rake")
-
-    See BaseGPTKeywordTableQuery for arguments.
 
     """
 

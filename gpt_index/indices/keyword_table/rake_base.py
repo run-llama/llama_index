@@ -11,11 +11,7 @@ from gpt_index.indices.keyword_table.utils import rake_extract_keywords
 
 
 class GPTRAKEKeywordTableIndex(BaseGPTKeywordTableIndex):
-    """GPT RAKE Keyword Table Index.
-
-    This index uses a RAKE keyword extractor to extract keywords from the text.
-
-    """
+    """GPT Index."""
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
