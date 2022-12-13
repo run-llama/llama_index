@@ -15,7 +15,7 @@ class SlackReader(BaseReader):
     Reads conversations from channels.
 
     Args:
-        slack_token (Optional[str]): Slack token. If not provided, we 
+        slack_token (Optional[str]): Slack token. If not provided, we
             assume the environment variable `SLACK_BOT_TOKEN` is set.
 
     """
@@ -105,7 +105,7 @@ class SlackReader(BaseReader):
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory.
-        
+
         Args:
             channel_ids (List[str]): List of channel ids to read.
 

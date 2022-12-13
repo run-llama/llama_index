@@ -16,8 +16,9 @@ class LLMPredictor:
     Args:
         llm (Optional[LLM]): LLM from Langchain to use for predictions.
             Defaults to OpenAI's text-davinci-002 model.
-            Please see 
-            `Langchain's LLM Page <https://langchain.readthedocs.io/en/latest/modules/llms.html>`_
+            Please see
+            `Langchain's LLM Page
+            <https://langchain.readthedocs.io/en/latest/modules/llms.html>`_
             for more details.
 
     """

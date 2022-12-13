@@ -1,7 +1,7 @@
 """Data Connectors for GPT Index.
 
 This module contains the data connectors for GPT Index. Each connector inherits
-from a `BaseReader` class, connects to a data source, and loads BaseDocument objects 
+from a `BaseReader` class, connects to a data source, and loads BaseDocument objects
 from that data source.
 
 """
@@ -23,4 +23,3 @@ __all__ = [
     "SlackReader",
     "LLMPredictor",
 ]
-

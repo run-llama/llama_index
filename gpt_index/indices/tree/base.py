@@ -130,11 +130,11 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     A secondary answer is to directly synthesize the answer from the root nodes.
 
     Args:
-        summary_template (Optional[Prompt]): A Summarization Prompt 
+        summary_template (Optional[Prompt]): A Summarization Prompt
             (see :ref:`Prompt-Templates`).
         insert_prompt (Optional[Prompt]): An Tree Insertion Prompt
             (see :ref:`Prompt-Templates`).
-    
+
     """
 
     index_struct_cls = IndexGraph

@@ -1,3 +1,4 @@
+"""Configuration for sphinx."""
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -12,12 +13,13 @@
 import os
 import sys
 
+import sphinx_rtd_theme  # noqa: F401
+
 sys.path.insert(0, os.path.abspath("../"))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-import sphinx_rtd_theme
 
 project = "GPT Index"
 copyright = "2022, Jerry Liu"

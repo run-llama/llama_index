@@ -31,18 +31,18 @@ GENERATE_TEXT_QUERY = "What is a concise summary of this document?"
 class GPTListIndex(BaseGPTIndex[IndexList]):
     """GPT List Index.
 
-    The list index is a simple data structure where nodes are stored in 
-    a sequence. During index construction, the document texts are 
+    The list index is a simple data structure where nodes are stored in
+    a sequence. During index construction, the document texts are
     chunked up, converted to nodes, and stored in a list.
 
-    During query time, the list index iterates through the nodes 
+    During query time, the list index iterates through the nodes
     with some optional filter parameters, and synthesizes an
     answer from all the nodes.
 
     Args:
         text_qa_template (Optional[Prompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
-    
+
     """
 
     index_struct_cls = IndexList

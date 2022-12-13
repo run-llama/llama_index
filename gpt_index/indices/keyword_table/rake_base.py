@@ -14,7 +14,7 @@ class GPTRAKEKeywordTableIndex(BaseGPTKeywordTableIndex):
     """GPT RAKE Keyword Table Index.
 
     This index uses a RAKE keyword extractor to extract keywords from the text.
-    
+
     """
 
     def _extract_keywords(self, text: str) -> Set[str]:

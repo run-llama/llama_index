@@ -18,7 +18,7 @@ class GPTSimpleKeywordTableIndex(BaseGPTKeywordTableIndex):
     """GPT Simple Keyword Table Index.
 
     This index uses a simple regex extractor to extract keywords from the text.
-    
+
     """
 
     def _extract_keywords(self, text: str) -> Set[str]:

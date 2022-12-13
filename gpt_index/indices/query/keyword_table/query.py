@@ -28,17 +28,17 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     Arguments are shared among subclasses.
 
     Args:
-        keyword_extract_template (Optional[Prompt]): A Keyword Extraction Prompt 
+        keyword_extract_template (Optional[Prompt]): A Keyword Extraction Prompt
             (see :ref:`Prompt-Templates`).
-        query_keyword_extract_template (Optional[Prompt]): A Query Keyword Extraction Prompt 
+        query_keyword_extract_template (Optional[Prompt]): A Query Keyword Extraction
+            Prompt (see :ref:`Prompt-Templates`).
+        refine_template (Optional[Prompt]): A Refinement Prompt
             (see :ref:`Prompt-Templates`).
-        refine_template (Optional[Prompt]): A Refinement Prompt 
-            (see :ref:`Prompt-Templates`).
-        text_qa_template (Optional[Prompt]): A Question Answering Prompt 
+        text_qa_template (Optional[Prompt]): A Question Answering Prompt
             (see :ref:`Prompt-Templates`).
         max_keywords_per_query (int): Maximum number of keywords to extract from query.
         num_chunks_per_query (int): Maximum number of text chunks to query.
-    
+
     """
 
     def __init__(
@@ -105,7 +105,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
 class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
     """GPT Keyword Table Index Query.
 
-    Extracts keywords using GPT. Set when `mode="default"` in `query` method of 
+    Extracts keywords using GPT. Set when `mode="default"` in `query` method of
     `GPTKeywordTableIndex`.
 
     .. code-block:: python
@@ -130,7 +130,7 @@ class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
 class GPTKeywordTableSimpleQuery(BaseGPTKeywordTableQuery):
     """GPT Keyword Table Index Simple Query.
 
-    Extracts keywords using simple regex-based keyword extractor. 
+    Extracts keywords using simple regex-based keyword extractor.
     Set when `mode="simple"` in `query` method of `GPTKeywordTableIndex`.
 
     .. code-block:: python

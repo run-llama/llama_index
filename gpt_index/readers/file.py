@@ -33,7 +33,7 @@ class SimpleDirectoryReader(BaseReader):
 
         Args:
             concatenate (bool): whether to concatenate all files into one document.
-        
+
         Returns:
             List[Document]: A list of documents.
 

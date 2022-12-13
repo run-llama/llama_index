@@ -3,13 +3,11 @@
 from gpt_index.indices.query.keyword_table.query import (
     GPTKeywordTableGPTQuery,
     GPTKeywordTableRAKEQuery,
-    GPTKeywordTableSimpleQuery
+    GPTKeywordTableSimpleQuery,
 )
 
 __all__ = [
     "GPTKeywordTableGPTQuery",
     "GPTKeywordTableRAKEQuery",
-    "GPTKeywordTableSimpleQuery"
+    "GPTKeywordTableSimpleQuery",
 ]
-
-
