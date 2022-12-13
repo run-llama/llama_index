@@ -126,9 +126,8 @@ def test_query_and_count_tokens(
 ) -> None:
     """Test query and count tokens."""
     index_kwargs, query_kwargs = struct_kwargs
-    document_token_count = (
-        24  # mock_prompts.MOCK_SUMMARY_PROMPT_TMPL adds a "\n" to the document text
-    )
+    # mock_prompts.MOCK_SUMMARY_PROMPT_TMPL adds a "\n" to the document text
+    document_token_count = 24
     llmchain_mock_resp_token_count = 10
     # build the tree
     tree = GPTTreeIndex(documents, **index_kwargs)

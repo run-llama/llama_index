@@ -62,13 +62,12 @@ def llm_token_counter(method_name_str: str) -> Callable:
     Do not use this on abstract methods.
 
     For example, consider the class below:
-    ```
-    class GPTTreeIndexBuilder:
-        ...
-        @llm_token_counter("build_from_text")
-        def build_from_text(self, documents: Sequence[BaseDocument]) -> IndexGraph:
+        .. code-block:: python
+            class GPTTreeIndexBuilder:
             ...
-    ```
+            @llm_token_counter("build_from_text")
+            def build_from_text(self, documents: Sequence[BaseDocument]) -> IndexGraph:
+                ...
 
     If you run `build_from_text()`, it will print the output in the form below:
 
@@ -78,7 +77,7 @@ def llm_token_counter(method_name_str: str) -> Callable:
     """
 
     def wrap(f: Callable) -> Callable:
-        def wrapped_f(_self: Any, *args: Any, **kwargs: Any) -> Any:
+        def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
             start_token_ct = _self._llm_predictor.total_tokens_used
             f_return_val = f(_self, *args, **kwargs)
             net_tokens = _self._llm_predictor.total_tokens_used - start_token_ct
@@ -86,6 +85,6 @@ def llm_token_counter(method_name_str: str) -> Callable:
 
             return f_return_val
 
-        return wrapped_f
+        return wrapped_llm_predict
 
     return wrap
