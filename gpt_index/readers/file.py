@@ -31,7 +31,7 @@ class SimpleDirectoryReader(BaseReader):
         data = ""
         data_list = []
         for input_file in self.input_files:
-            with open(input_file, "r") as f:
+            with open(input_file, "r", errors='replace') as f:
                 data = f.read()
                 data_list.append(data)
 
