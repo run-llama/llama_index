@@ -28,6 +28,7 @@ from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
 from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.wikipedia import WikipediaReader
+from gpt_index.readers.weaviate import WeaviateReader
 
 __all__ = [
     "GPTKeywordTableIndex",
@@ -42,5 +43,6 @@ __all__ = [
     "NotionPageReader",
     "GoogleDocsReader",
     "SlackReader",
+    "WeaviateReader",
     "LLMPredictor",
 ]
