@@ -36,7 +36,7 @@ class WeaviateReader(BaseReader):
         self.client: Client = Client(host, auth_client_secret=auth_client_secret)
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory.
+        """Load data from Weaviate.
 
         If `graphql_query` is not found in load_kwargs, we assume that
         `class_name` and `properties` are provided.
