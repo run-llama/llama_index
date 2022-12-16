@@ -12,20 +12,18 @@ class SimpleDirectoryReader(BaseReader):
     Can read files into separate documents, or concatenates
     files into one document text.
 
-    input_dir (str): Path to the directory.
-    exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
+    Args:
+        input_dir (str): Path to the directory.
+        exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
+        errors (bool): how encoding and decoding errors are to be handled,
+              see https://docs.python.org/3/library/functions.html#open
 
     """
 
     def __init__(
         self, input_dir: str, exclude_hidden: bool = True, errors: str = "ignore"
     ) -> None:
-        """Initialize with parameters.
-
-        Args:
-          errors: how encoding and decoding errors are to be handled,
-                  see https://docs.python.org/3/library/functions.html#open
-        """
+        """Initialize with parameters."""
         self.input_dir = Path(input_dir)
         self.errors = errors
         input_files = list(self.input_dir.iterdir())
