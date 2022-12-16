@@ -14,11 +14,13 @@ class SimpleDirectoryReader(BaseReader):
 
     """
 
-    def __init__(self, input_dir: str, exclude_hidden: bool = True, errors: str = 'ignore') -> None:
+    def __init__(
+        self, input_dir: str, exclude_hidden: bool = True, errors: str = "ignore"
+    ) -> None:
         """Initialize with parameters.
 
         Args:
-          errors: how encoding and decoding errors are to be handled, 
+          errors: how encoding and decoding errors are to be handled,
                   see https://docs.python.org/3/library/functions.html#open
         """
         self.input_dir = Path(input_dir)
