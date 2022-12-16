@@ -14,9 +14,15 @@ class SimpleDirectoryReader(BaseReader):
 
     """
 
-    def __init__(self, input_dir: str, exclude_hidden: bool = True) -> None:
-        """Initialize with parameters."""
+    def __init__(self, input_dir: str, exclude_hidden: bool = True, errors: str = 'ignore') -> None:
+        """Initialize with parameters.
+
+        Args:
+          errors: how encoding and decoding errors are to be handled, 
+                  see https://docs.python.org/3/library/functions.html#open
+        """
         self.input_dir = Path(input_dir)
+        self.errors = errors
         input_files = list(self.input_dir.iterdir())
         if exclude_hidden:
             input_files = [f for f in input_files if not f.name.startswith(".")]
@@ -31,7 +37,7 @@ class SimpleDirectoryReader(BaseReader):
         data = ""
         data_list = []
         for input_file in self.input_files:
-            with open(input_file, "r", errors='replace') as f:
+            with open(input_file, "r", errors=self.errors) as f:
                 data = f.read()
                 data_list.append(data)
 
