@@ -16,6 +16,26 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
     This class traverses the index graph using the embedding similarity between the
     query and the node text.
 
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="embedding")
+
+    Args:
+        query_template (Optional[Prompt]): Tree Select Query Prompt
+            (see :ref:`Prompt-Templates`).
+        query_template_multiple (Optional[Prompt]): Tree Select Query Prompt (Multiple)
+            (see :ref:`Prompt-Templates`).
+        text_qa_template (Optional[Prompt]): Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+        refine_template (Optional[Prompt]): Refinement Prompt
+            (see :ref:`Prompt-Templates`).
+        child_branch_factor (int): Number of child nodes to consider at each level.
+            If child_branch_factor is 1, then the query will only choose one child node
+            to traverse for any given parent node.
+            If child_branch_factor is 2, then the query will choose two child nodes.
+        embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
+            embedding similarity.
+
     """
 
     def __init__(

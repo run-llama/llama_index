@@ -39,7 +39,26 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
 class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
-    """Base GPT Index."""
+    """GPT Keyword Table Index.
+
+    This index extracts keywords from the text, and maps each
+    keyword to the node(s) that it corresponds to. In this sense it mimicks a
+    "hash table". During index construction, the keyword table is constructed
+    by extracting keywords from each node and creating an internal mapping.
+
+    During query time, the keywords are extracted from the query text, and these
+    keywords are used to index into the keyword table. The retrieved nodes
+    are then used to answer the query.
+
+    Args:
+        keyword_extract_template (Optional[Prompt]): A Keyword Extraction Prompt
+            (see :ref:`Prompt-Templates`).
+        max_keywords_per_query (int): The maximum number of keywords to extract
+            per query.
+        max_keywords_per_query (int): The maximum number of keywords to extract
+            per chunk.
+
+    """
 
     index_struct_cls = KeywordTable
 
@@ -151,7 +170,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
     """GPT Keyword Table Index.
 
-    Uses GPT to build keyword table.
+    This index uses a GPT model to extract keywords from the text.
 
     """
 

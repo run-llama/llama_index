@@ -1,22 +1,38 @@
 # 🗂️ ️GPT Index
 
-GPT Index is a project consisting of a set of *data structures* that are created using GPT-3 and can be traversed using GPT-3 in order to answer queries.
+GPT Index is a project consisting of a set of *data structures* that are created using LLMs and can be traversed using LLMs in order to answer queries.
+
+PyPi: https://pypi.org/project/gpt-index/.
+
+Documentation: https://gpt-index.readthedocs.io/en/latest/.
 
 ## 🚀 Overview
 
 #### Context
-- GPT-3 is a phenomenonal piece of technology for knowledge generation and reasoning.
-- A big limitation of GPT-3 is context size (e.g. Davinci's limit is 4096 tokens. Large, but not infinite).
-- The ability to feed "knowledge" to GPT-3 is restricted to this limited prompt size and model weights.
-- **Thought**: What if GPT-3 can have access to potentially a much larger database of knowledge without retraining/finetuning? 
+- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning.
+- A big limitation of LLMs is context size (e.g. OpenAI's `davinci` model for GPT-3 has a [limit](https://openai.com/api/pricing/) of 4096 tokens. Large, but not infinite).
+- The ability to feed "knowledge" to LLMs is restricted to this limited prompt size and model weights.
+- **Thought**: What if LLMs can have access to potentially a much larger database of knowledge without retraining/finetuning? 
 
 #### Proposed Solution
-That's where the **GPT Index** data structures come in. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
-- Uses a pre-trained GPT-3 model primarily for *reasoning*/*summarization* instead of prior knowledge.
-- Takes as input a large corpus of text data and build a structured index over it (using GPT-3 or heuristics).
-- Allow users to _query_ the index in order to synthesize an answer to the question - this requires both _traversal_ of the index as well as a synthesis of the answer.
+That's where the **GPT Index** comes in. GPT Index is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
 
-The high-level design exercise of this project is to test the capability of GPT-3 as a general-purpose processor to organize and retrieve data. From our current understanding, related works have used GPT-3 to reason with external db sources (see below); this work links reasoning with knowledge building.
+- Provides simple data structures to resolve prompt size limitations.
+- Offers data connectors to your external data sources.
+- Offers you a comprehensive toolset trading off cost and performance.
+
+At the core of GPT Index is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
+
+- Uses a pre-trained LLM primarily for *reasoning*/*summarization* instead of prior knowledge.
+- Takes as input a large corpus of text data and build a structured index over it (using an LLM or heuristics).
+- Allow users to *query* the index in order to synthesize an answer to the question - this requires both *traversal* of the index as well as a synthesis of the answer.
+
+## 📄 Documentation
+
+Full documentation can be found here: https://gpt-index.readthedocs.io/en/latest/. 
+
+Please check it out for the most up-to-date tutorials, how-to guides, references, and other resources! 
+
 
 ## 💻 Example Usage
 
@@ -51,32 +67,6 @@ index.query("<question_text>?", child_branch_factor=1)
 The main third-party package requirements are `transformers`, `openai`, and `langchain`.
 
 All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply do `pip install -r requirements.txt`. 
-
-
-## Index Data Structures
-
-- [`Tree Index`](gpt_index/indices/tree/README.md): Tree data structures
-    - **Creation**: with GPT hierarchical summarization over sub-documents
-    - **Query**: with GPT recursive querying over multiple choice problems
-- [`Keyword Table Index`](gpt_index/indices/keyword_table/README.md): a keyword-based table
-    - **Creation**: with GPT keyword extraction over each sub-document
-    - **Query**: with GPT keyword extraction over question, match to sub-documents. *Create and refine* an answer over candidate sub-documents.
-- [`List Index`](gpt_index/indices/list/README.md): a simple list-based data structure
-    - **Creation**: by splitting documents into a list of text chunks
-    - **Query**: use GPT with a create and refine prompt iterately over the list of sub-documents
-
-
-## Data Connectors
-
-We currently offer connectors into the following data sources. External data sources are retrieved through their APIs + corresponding authentication token.
-- Notion (`NotionPageReader`)
-- Google Drive (`GoogleDocsReader`)
-- Slack (`SlackReader`)
-- MongoDB (local) (`SimpleMongoReader`)
-- Wikipedia (`WikipediaReader`)
-- local file directory (`SimpleDirectoryReader`)
-
-Example notebooks of how to use data connectors are found in the [Data Connector Example Notebooks](examples/data_connectors).
 
 
 ## 🔬 Related Work [WIP]
