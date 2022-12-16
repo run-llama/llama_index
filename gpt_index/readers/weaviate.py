@@ -15,7 +15,8 @@ class WeaviateReader(BaseReader):
 
     Args:
         host (str): host.
-
+        auth_client_secret (Optional[weaviate.auth.AuthCredentials]):
+            auth_client_secret.
     """
 
     def __init__(

@@ -7,7 +7,12 @@ from gpt_index.schema import Document
 
 
 class PineconeReader(BaseReader):
-    """Pinecone reader."""
+    """Pinecone reader.
+
+    Args:
+        api_key (str): Pinecone API key.
+        environment (str): Pinecone environment.
+    """
 
     def __init__(self, api_key: str, environment: str):
         """Initialize with parameters."""
