@@ -1,19 +1,16 @@
-""""Vector store index.
+"""Vector store index.
 
 An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, cast
+
 import numpy as np
 
-from gpt_index.indices.base import (
-    DEFAULT_MODE,
-    DOCUMENTS_INPUT,
-    EMBEDDING_MODE,
-    BaseGPTIndex,
-)
-from gpt_index.indices.data_structs import IndexList, IndexDict
+from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.indices.base import DEFAULT_MODE, DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.data_structs import IndexDict
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.vector_store.faiss import GPTFaissIndexQuery
 from gpt_index.indices.utils import truncate_text
@@ -22,19 +19,33 @@ from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.schema import BaseDocument
-from gpt_index.embeddings.openai import OpenAIEmbedding
-
-# This query is used to summarize the contents of the index.
-GENERATE_TEXT_QUERY = "What is a concise summary of this document?"
 
 
 class GPTFaissIndex(BaseGPTIndex[IndexDict]):
-    """GPT Faiss Index."""
+    """GPT Faiss Index.
+
+    The GPTFaissIndex is a data structure where nodes are keyed by
+    embeddings, and those embeddings are stored within a Faiss index.
+    During index construction, the document texts are chunked up,
+    converted to nodes with text; they are then encoded in
+    document embeddings stored within Faiss.
+
+    During query time, the index uses Faiss to query for the top
+    k most similar nodes, and synthesizes an answer from the
+    retrieved nodes.
+
+    Args:
+        text_qa_template (Optional[Prompt]): A Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+        faiss_index (faiss.Index): A Faiss Index object (required)
+        embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
+            embedding similarity.
+    """
 
     def __init__(
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[IndexList] = None,
+        index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[Prompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         faiss_index: Optional[Any] = None,
@@ -53,7 +64,10 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
             raise ValueError(import_err_msg)
 
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        self._faiss_index = faiss_index
+        if faiss_index is None:
+            raise ValueError("faiss_index cannot be None.")
+        # NOTE: cast to Any for now
+        self._faiss_index = cast(Any, faiss_index)
         self._embed_model = embed_model or OpenAIEmbedding()
         super().__init__(
             documents=documents,
@@ -87,7 +101,10 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
             # add to index
             index_struct.add_text(text_chunk, document.get_doc_id(), text_id=new_id)
 
-    def build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IndexDict:
+    def build_index_from_documents(
+        self, documents: Sequence[BaseDocument]
+    ) -> IndexDict:
+        """Build index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.text_qa_template, 1
         )

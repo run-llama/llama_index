@@ -1,9 +1,9 @@
 """General utils functions."""
 
-import uuid
-from typing import List, Optional, Set
 import random
 import sys
+import uuid
+from typing import List, Optional, Set
 
 import nltk
 from transformers import GPT2TokenizerFast

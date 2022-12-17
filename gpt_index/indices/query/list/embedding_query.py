@@ -10,7 +10,7 @@ from gpt_index.prompts.base import Prompt
 class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     """GPTListIndex query.
 
-    An embedding-based for GPTListIndex, which traverses
+    An embedding-based query for GPTListIndex, which traverses
     each node in sequence and retrieves top-k nodes by
     embedding similarity to the query.
     Set when `mode="embedding"` in `query` method of `GPTListIndex`.

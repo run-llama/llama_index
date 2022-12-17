@@ -4,12 +4,12 @@ import random
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Set, Hashable
-from gpt_index.utils import get_new_int_id
+from typing import Dict, Hashable, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import get_new_int_id
 
 
 @dataclass
@@ -152,23 +152,35 @@ class IndexDict(IndexStruct):
     id_map: Dict[Hashable, int] = field(default_factory=dict)
 
     def add_text(
-        self, 
-        text_chunk: str, 
-        ref_doc_id: str, 
-        text_id: Optional[str] = None,
+        self,
+        text_chunk: str,
+        ref_doc_id: str,
+        text_id: Optional[Hashable] = None,
     ) -> Hashable:
         """Add text to table, return current position in list."""
         if text_id in self.id_map:
             raise ValueError("text_id cannot already exist in index.")
-        int_id = get_new_int_id(self.nodes_dict.keys())
+        int_id = get_new_int_id(set(self.nodes_dict.keys()))
         if text_id is None:
             text_id = int_id
         self.id_map[text_id] = int_id
 
         # don't worry about child indices for now, nodes are all in order
         cur_node = Node(text_chunk, index=int_id, ref_doc_id=ref_doc_id)
-        self.nodes_dict[int_id] = text_chunk
+        self.nodes_dict[int_id] = cur_node
         return text_id
+
+    def get_nodes(self, text_ids: List[str]) -> List[Node]:
+        """Get nodes."""
+        nodes = []
+        for text_id in text_ids:
+            if text_id not in self.id_map:
+                raise ValueError("text_id not found in id_map")
+            int_id = self.id_map[text_id]
+            if int_id not in self.nodes_dict:
+                raise ValueError("int_id not found in nodes_dict")
+            nodes.append(self.nodes_dict[int_id])
+        return nodes
 
 
 class IndexStructType(str, Enum):
