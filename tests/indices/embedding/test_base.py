@@ -111,7 +111,8 @@ def test_embedding_query(
 
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
-@patch.object(OpenAI, "__init__", return_value=None)
+@patch("gpt_index.langchain_helpers.chain_wrapper.OpenAI")
+@patch.object(LLMChain, "__init__", return_value=None)
 @patch.object(
     GPTTreeIndexEmbeddingQuery,
     "_get_query_text_embedding_similarities",
@@ -119,6 +120,7 @@ def test_embedding_query(
 )
 def test_query_and_count_tokens(
     _mock_similarity: Any,
+    _mock_llmchain: Any,
     _mock_init: Any,
     _mock_predict: Any,
     struct_kwargs: Dict,
