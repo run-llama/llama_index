@@ -4,7 +4,8 @@ import random
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Hashable
+from gpt_index.utils import get_new_int_id
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -140,6 +141,34 @@ class IndexList(IndexStruct):
         cur_node = Node(text_chunk, index=len(self.nodes), ref_doc_id=ref_doc_id)
         self.nodes.append(cur_node)
         return cur_node.index
+
+
+@dataclass
+class IndexDict(IndexStruct):
+    """A simple dictionary of documents."""
+
+    nodes_dict: Dict[int, Node] = field(default_factory=dict)
+    # allows users to pass in any hashable type
+    id_map: Dict[Hashable, int] = field(default_factory=dict)
+
+    def add_text(
+        self, 
+        text_chunk: str, 
+        ref_doc_id: str, 
+        text_id: Optional[str] = None,
+    ) -> Hashable:
+        """Add text to table, return current position in list."""
+        if text_id in self.id_map:
+            raise ValueError("text_id cannot already exist in index.")
+        int_id = get_new_int_id(self.nodes_dict.keys())
+        if text_id is None:
+            text_id = int_id
+        self.id_map[text_id] = int_id
+
+        # don't worry about child indices for now, nodes are all in order
+        cur_node = Node(text_chunk, index=int_id, ref_doc_id=ref_doc_id)
+        self.nodes_dict[int_id] = text_chunk
+        return text_id
 
 
 class IndexStructType(str, Enum):
