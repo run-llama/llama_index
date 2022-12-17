@@ -10,7 +10,7 @@ from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableInd
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor, OpenAI
+from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
 from tests.mock_utils.mock_predict import (
