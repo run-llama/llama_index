@@ -259,9 +259,11 @@ def test_recursive_query_list_table(
 
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
-@patch.object(OpenAI, "__init__", return_value=None)
+@patch("gpt_index.langchain_helpers.chain_wrapper.OpenAI")
+@patch.object(LLMChain, "__init__", return_value=None)
 def test_recursive_query_list_tree_token_count(
     _mock_init: Any,
+    _mock_llmchain: Any,
     _mock_predict: Any,
     documents: List[Document],
     struct_kwargs: Dict,
