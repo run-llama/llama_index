@@ -12,7 +12,19 @@ from gpt_index.prompts.default_prompts import (
 
 
 class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
-    """GPTListIndex query."""
+    """GPTListIndex query.
+
+    Arguments are shared among subclasses.
+
+    Args:
+        text_qa_template (Optional[Prompt]): A Question Answering Prompt
+            (see :ref:`Prompt-Templates`).
+        refine_template (Optional[Prompt]): A Refinement Prompt
+            (see :ref:`Prompt-Templates`).
+        keyword (Optional[str]): If specified, keyword to filter nodes.
+            Simulates Ctrl+F lookup in a document.
+
+    """
 
     def __init__(
         self,
@@ -62,7 +74,20 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
 
 
 class GPTListIndexQuery(BaseGPTListIndexQuery):
-    """GPTListIndex query."""
+    """GPTListIndex query.
+
+    The default query mode for GPTListIndex, which traverses
+    each node in sequence and synthesizes a response across all nodes
+    (with an optional keyword filter).
+    Set when `mode="default"` in `query` method of `GPTListIndex`.
+
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="default")
+
+    See BaseGPTListIndexQuery for arguments.
+
+    """
 
     def _get_nodes_for_response(
         self, query_str: str, verbose: bool = False
