@@ -1,6 +1,8 @@
 version: 2
 sphinx:
   configuration: docs/conf.py
+build:
+  image: testing
 formats: all
 python:
   version: 3.9
