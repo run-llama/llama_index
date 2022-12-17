@@ -4,7 +4,7 @@ import uuid
 from typing import Any, Callable, List, Optional, Set
 
 import nltk
-from transformers import GPT2TokenizerFast
+import tiktoken
 
 
 class GlobalsHelper:
@@ -15,14 +15,15 @@ class GlobalsHelper:
 
     """
 
-    _tokenizer: Optional[GPT2TokenizerFast] = None
+    _tokenizer: Optional[Callable[[str], List]] = None
     _stopwords: Optional[List[str]] = None
 
     @property
-    def tokenizer(self) -> GPT2TokenizerFast:
+    def tokenizer(self) -> Callable[[str], List]:
         """Get tokenizer."""
         if self._tokenizer is None:
-            self._tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+            enc = tiktoken.get_encoding("gpt2")
+            self._tokenizer = enc.encode
         return self._tokenizer
 
     @property

@@ -18,7 +18,7 @@ setup(
         "langchain",
         "openai",
         "dataclasses_json",
-        "transformers",
+        "tiktoken",
         "nltk",
         # for openAI embeddings
         "matplotlib",

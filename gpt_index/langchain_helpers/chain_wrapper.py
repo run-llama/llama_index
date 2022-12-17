@@ -42,4 +42,4 @@ class LLMPredictor:
 
     def _count_tokens(self, text: str) -> int:
         tokens = globals_helper.tokenizer(text)
-        return len(tokens["input_ids"])
+        return len(tokens)
