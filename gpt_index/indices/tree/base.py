@@ -23,6 +23,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import llm_token_counter
 
 RETRIEVE_MODE = "retrieve"
 
@@ -182,6 +183,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
 
+    @llm_token_counter("build_index_from_documents")
     def build_index_from_documents(
         self, documents: Sequence[BaseDocument]
     ) -> IndexGraph:

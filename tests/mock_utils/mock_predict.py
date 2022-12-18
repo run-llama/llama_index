@@ -60,8 +60,8 @@ def _mock_query_keyword_extract(prompt_args: Dict) -> str:
     return mock_extract_keywords_response(prompt_args["question"])
 
 
-def mock_openai_llm_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
-    """Mock OpenAI LLM predict.
+def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
+    """Mock predict method of LLMPredictor.
 
     Depending on the prompt, return response.
 
@@ -85,3 +85,8 @@ def mock_openai_llm_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, st
         raise ValueError("Invalid prompt to use with mocks.")
 
     return response, formatted_prompt
+
+
+def mock_llmchain_predict(**full_prompt_args: Any) -> str:
+    """Mock LLMChain predict with a generic response."""
+    return "generic response from LLMChain.predict()"
