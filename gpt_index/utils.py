@@ -1,10 +1,11 @@
 """General utils functions."""
 
+import sys
 import uuid
 from typing import Any, Callable, List, Optional, Set
 
 import nltk
-import tiktoken
+from transformers import GPT2TokenizerFast
 
 
 class GlobalsHelper:
@@ -22,8 +23,24 @@ class GlobalsHelper:
     def tokenizer(self) -> Callable[[str], List]:
         """Get tokenizer."""
         if self._tokenizer is None:
-            enc = tiktoken.get_encoding("gpt2")
-            self._tokenizer = enc.encode
+            # if python version >= 3.9, then use tiktoken
+            # else use GPT2TokenizerFast
+            if sys.version_info >= (3, 9):
+                try:
+                    import tiktoken
+                except ImportError:
+                    raise ValueError(
+                        "`tiktoken` package not found, please run `pip install tiktoken`"
+                    )
+                enc = tiktoken.get_encoding("gpt2")
+                self._tokenizer = enc.encode
+            else:
+                tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+
+                def tokenizer_fn(text: str) -> List:
+                    return tokenizer(text)["input_ids"]
+
+                self._tokenizer = tokenizer_fn
         return self._tokenizer
 
     @property
