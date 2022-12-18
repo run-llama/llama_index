@@ -64,7 +64,7 @@ index.query("<question_text>?", child_branch_factor=1)
 
 ## 🔧 Dependencies
 
-The main third-party package requirements are `transformers`, `openai`, and `langchain`.
+The main third-party package requirements are `tiktoken`, `openai`, and `langchain`.
 
 All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply do `pip install -r requirements.txt`. 
 

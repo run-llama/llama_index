@@ -15,7 +15,7 @@ class SimpleDirectoryReader(BaseReader):
     Args:
         input_dir (str): Path to the directory.
         exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
-        errors (bool): how encoding and decoding errors are to be handled,
+        errors (str): how encoding and decoding errors are to be handled,
               see https://docs.python.org/3/library/functions.html#open
 
     """

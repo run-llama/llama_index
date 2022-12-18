@@ -27,13 +27,17 @@ def documents() -> List[Document]:
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 @patch(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_build_table(
-    _mock_init: Any, _mock_predict: Any, documents: List[Document]
+    _mock_init: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
 ) -> None:
     """Test build table."""
     # test simple keyword table
@@ -65,8 +69,14 @@ def test_build_table(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
-def test_insert(_mock_init: Any, _mock_predict: Any, documents: List[Document]) -> None:
+def test_insert(
+    _mock_init: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+) -> None:
     """Test insert."""
     table = GPTSimpleKeywordTableIndex([])
     assert len(table.index_struct.table.keys()) == 0

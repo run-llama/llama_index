@@ -34,6 +34,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import llm_token_counter
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -133,6 +134,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             )
             print(f"> Keywords: {keywords}")
 
+    @llm_token_counter("build_index_from_documents")
     def build_index_from_documents(
         self, documents: Sequence[BaseDocument]
     ) -> KeywordTable:

@@ -20,6 +20,7 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import BaseDocument, DocumentStore
+from gpt_index.utils import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -131,6 +132,7 @@ class BaseGPTIndex(Generic[IS]):
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
 
+    @llm_token_counter("insert")
     def insert(self, document: DOCUMENTS_INPUT, **insert_kwargs: Any) -> None:
         """Insert a document."""
         processed_doc = self._process_documents([document], self._docstore)[0]
@@ -145,6 +147,7 @@ class BaseGPTIndex(Generic[IS]):
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
 
+    @llm_token_counter("query")
     def query(
         self,
         query_str: str,
