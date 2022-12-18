@@ -170,7 +170,7 @@ class IndexDict(IndexStruct):
         self.nodes_dict[int_id] = cur_node
         return text_id
 
-    def get_nodes(self, text_ids: List[str]) -> List[Node]:
+    def get_nodes(self, text_ids: List[Hashable]) -> List[Node]:
         """Get nodes."""
         nodes = []
         for text_id in text_ids:
@@ -181,6 +181,10 @@ class IndexDict(IndexStruct):
                 raise ValueError("int_id not found in nodes_dict")
             nodes.append(self.nodes_dict[int_id])
         return nodes
+
+    def get_node(self, text_id: Hashable) -> Node:
+        """Get node."""
+        return self.get_nodes([text_id])[0]
 
 
 class IndexStructType(str, Enum):
