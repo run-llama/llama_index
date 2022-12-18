@@ -60,7 +60,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         top_k_nodes = sorted_nodes[:similarity_top_k]
         if verbose:
             top_k_node_text = "\n".join([n.get_text() for n in top_k_nodes])
-            print(f"Top {similarity_top_k} nodes: {top_k_node_text}")
+            print(f"Top {similarity_top_k} nodes:\n{top_k_node_text}")
         return top_k_nodes
 
     def _get_query_text_embedding_similarities(

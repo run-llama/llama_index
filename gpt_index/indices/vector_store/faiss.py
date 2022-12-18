@@ -120,7 +120,7 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
             if "text_qa_template" not in query_kwargs:
                 query_kwargs["text_qa_template"] = self.text_qa_template
             query: GPTFaissIndexQuery = GPTFaissIndexQuery(
-                self.index_struct, **query_kwargs
+                self.index_struct, faiss_index=self._faiss_index, **query_kwargs
             )
         else:
             raise ValueError(f"Invalid query mode: {mode}.")

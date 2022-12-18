@@ -6,6 +6,7 @@ import numpy as np
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexDict, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
@@ -87,8 +88,17 @@ class GPTFaissIndexQuery(BaseGPTIndexQuery[IndexDict]):
 
         # returned dimension is 1 x k
         node_idxs = list(indices[0])
-        nodes = self._index_struct.get_nodes(node_idxs)
-        return nodes
+        top_k_nodes = self._index_struct.get_nodes(node_idxs)
+
+        # print verbose output
+        if verbose:
+            fmt_txts = []
+            for node_idx, node in zip(node_idxs, top_k_nodes):
+                fmt_txt = f"> [Node {node_idx}] {truncate_text(node.get_text(), 100)}"
+                fmt_txts.append(fmt_txt)
+            top_k_node_text = "\n".join(fmt_txts)
+            print(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
+        return top_k_nodes
 
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
