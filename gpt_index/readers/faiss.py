@@ -14,6 +14,9 @@ class FaissReader(BaseReader):
     If you wish use Faiss itself as an index to to organize documents,
     insert documents, and perform queries on them, please use GPTFaissIndex.
 
+    Args:
+        faiss_index (faiss.Index): A Faiss Index object (required)
+
     """
 
     def __init__(self, index: Any):
