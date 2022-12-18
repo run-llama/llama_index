@@ -9,9 +9,9 @@ GPT Index offers multiple integration points with vector stores / vector databas
 ## Loading Data from Vector Stores using Data Connector
 GPT Index supports loading data from the following sources. See [Data Connectors](data_connectors.md) for more details and API documentation.
 
-- Weaviate (`WeaviateReader`)
-- Pinecone (`PineconeReader`)
-- Faiss (`FaissReader`)
+- Weaviate (`WeaviateReader`). [Installation](https://weaviate.io/developers/weaviate/current/getting-started/installation.html). [Python Client](https://weaviate.io/developers/weaviate/current/client-libraries/python.html).
+- Pinecone (`PineconeReader`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
+- Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
 
 NOTE: Both Pinecone and Faiss data loaders assume that the respective data sources only store vectors; text content is stored elsewhere. Therefore, both data loaders require that the user specifies an `id_to_text_map` in the load_data call.
 
