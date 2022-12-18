@@ -10,7 +10,7 @@ with open(Path(__file__).absolute().parents[0] / "gpt_index" / "VERSION") as _f:
 with open("README.md", "r") as f:
     long_description = f.read()
 
-install_requires=[
+install_requires = [
     "langchain",
     "openai",
     "dataclasses_json",
@@ -21,7 +21,8 @@ install_requires=[
     "plotly",
     "scipy",
     "scikit-learn",
-],
+]
+
 # NOTE: if python version >= 3.9, install tiktoken
 if sys.version_info >= (3, 9):
     install_requires.extend(["tiktoken"])
