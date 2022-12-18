@@ -10,10 +10,13 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import Node
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
-from tests.mock_utils.mock_predict import mock_openai_llm_predict
+from tests.mock_utils.mock_predict import (
+    mock_llmchain_predict,
+    mock_llmpredictor_predict,
+)
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_QUERY_PROMPT,
@@ -80,8 +83,9 @@ def _get_node_text_embedding_similarities(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
 @patch.object(
     GPTTreeIndexEmbeddingQuery,
     "_get_query_text_embedding_similarities",
@@ -91,6 +95,7 @@ def test_embedding_query(
     _mock_similarity: Any,
     _mock_predict: Any,
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     struct_kwargs: Dict,
     documents: List[Document],
@@ -103,3 +108,43 @@ def test_embedding_query(
     query_str = "What is?"
     response = tree.query(query_str, mode="embedding", **query_kwargs)
     assert response == ("What is?:Hello world.")
+
+
+@patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
+@patch("gpt_index.langchain_helpers.chain_wrapper.OpenAI")
+@patch.object(LLMChain, "__init__", return_value=None)
+@patch.object(
+    GPTTreeIndexEmbeddingQuery,
+    "_get_query_text_embedding_similarities",
+    side_effect=_get_node_text_embedding_similarities,
+)
+def test_query_and_count_tokens(
+    _mock_similarity: Any,
+    _mock_llmchain: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    struct_kwargs: Dict,
+    documents: List[Document],
+) -> None:
+    """Test query and count tokens."""
+    index_kwargs, query_kwargs = struct_kwargs
+    # mock_prompts.MOCK_SUMMARY_PROMPT_TMPL adds a "\n" to the document text
+    document_token_count = 24
+    llmchain_mock_resp_token_count = 10
+    # build the tree
+    tree = GPTTreeIndex(documents, **index_kwargs)
+    assert (
+        tree._llm_predictor.total_tokens_used
+        == document_token_count + llmchain_mock_resp_token_count
+    )
+
+    # test embedding query
+    start_token_ct = tree._llm_predictor.total_tokens_used
+    query_str = "What is?"
+    # From MOCK_TEXT_QA_PROMPT, the prompt is 28 total
+    query_prompt_token_count = 28
+    tree.query(query_str, mode="embedding", **query_kwargs)
+    assert (
+        tree._llm_predictor.total_tokens_used - start_token_ct
+        == query_prompt_token_count + llmchain_mock_resp_token_count
+    )

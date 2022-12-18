@@ -10,10 +10,13 @@ from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableInd
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
-from tests.mock_utils.mock_predict import mock_openai_llm_predict
+from tests.mock_utils.mock_predict import (
+    mock_llmchain_predict,
+    mock_llmpredictor_predict,
+)
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_KEYWORD_EXTRACT_PROMPT,
@@ -90,10 +93,12 @@ def documents() -> List[Document]:
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_list_tree(
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -137,10 +142,12 @@ def test_recursive_query_list_tree(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_tree_list(
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -175,10 +182,12 @@ def test_recursive_query_tree_list(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_table_list(
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -210,10 +219,12 @@ def test_recursive_query_table_list(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_recursive_query_list_table(
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -245,3 +256,53 @@ def test_recursive_query_list_table(
     query_str = "Cat?"
     response = table.query(query_str, mode="recursive", query_configs=query_configs)
     assert response == ("Cat?:This is another test.")
+
+
+@patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
+@patch("gpt_index.langchain_helpers.chain_wrapper.OpenAI")
+@patch.object(LLMChain, "__init__", return_value=None)
+def test_recursive_query_list_tree_token_count(
+    _mock_init: Any,
+    _mock_llmchain: Any,
+    _mock_predict: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test query."""
+    index_kwargs, query_configs = struct_kwargs
+    list_kwargs = index_kwargs["list"]
+    tree_kwargs = index_kwargs["tree"]
+    # try building a list for every two, then a tree
+    list1 = GPTListIndex(documents[0:2], **list_kwargs)
+    list1.set_text("summary1")
+    list2 = GPTListIndex(documents[2:4], **list_kwargs)
+    list2.set_text("summary2")
+    list3 = GPTListIndex(documents[4:6], **list_kwargs)
+    list3.set_text("summary3")
+    list4 = GPTListIndex(documents[6:8], **list_kwargs)
+    list4.set_text("summary4")
+
+    # there are two root nodes in this tree: one containing [list1, list2]
+    # and the other containing [list3, list4]
+    # import pdb; pdb.set_trace()
+    tree = GPTTreeIndex(
+        [
+            list1,
+            list2,
+            list3,
+            list4,
+        ],
+        **tree_kwargs
+    )
+    # first pass prompt is "summary1\nsummary2\n" (6 tokens),
+    # response is the mock response (10 tokens)
+    # total is 16 tokens, multiply by 2 to get the total
+    assert tree._llm_predictor.total_tokens_used == 32
+
+    query_str = "What is?"
+    # query should first pick the left root node, then pick list1
+    # within list1, it should go through the first document and second document
+    start_token_ct = tree._llm_predictor.total_tokens_used
+    tree.query(query_str, mode="recursive", query_configs=query_configs)
+    # prompt is which is 35 tokens, plus 10 for the mock response
+    assert tree._llm_predictor.total_tokens_used - start_token_ct == 45

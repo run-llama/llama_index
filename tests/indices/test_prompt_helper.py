@@ -1,15 +1,15 @@
 """Test PromptHelper."""
-from typing import Dict, List
+from typing import List
 
 from gpt_index.indices.data_structs import Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.prompts.base import Prompt
 
 
-def mock_tokenizer(text: str) -> Dict[str, List[str]]:
+def mock_tokenizer(text: str) -> List[str]:
     """Mock tokenizer."""
     tokens = text.split(" ")
-    return {"input_ids": tokens}
+    return tokens
 
 
 def test_get_chunk_size() -> None:

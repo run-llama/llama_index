@@ -23,7 +23,7 @@ class PromptHelper:
         num_output: int = NUM_OUTPUTS,
         max_chunk_overlap: int = MAX_CHUNK_OVERLAP,
         embedding_limit: Optional[int] = None,
-        tokenizer: Optional[Callable] = None,
+        tokenizer: Optional[Callable[[str], List]] = None,
     ) -> None:
         """Init params."""
         self.max_input_size = max_input_size
@@ -46,7 +46,7 @@ class PromptHelper:
 
         """
         prompt_tokens = self._tokenizer(prompt_text)
-        num_prompt_tokens = len(prompt_tokens["input_ids"])
+        num_prompt_tokens = len(prompt_tokens)
 
         # NOTE: if embedding limit is specified, then chunk_size must not be larger than
         # embedding_limit
