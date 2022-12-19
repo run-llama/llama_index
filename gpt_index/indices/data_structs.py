@@ -4,12 +4,14 @@ import random
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Hashable, List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_int_id
+
+from typing import Any
 
 
 @dataclass
@@ -148,15 +150,16 @@ class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
     nodes_dict: Dict[int, Node] = field(default_factory=dict)
-    # allows users to pass in any hashable type
-    id_map: Dict[Hashable, int] = field(default_factory=dict)
+    # TODO: allow users to pass in Hashable type
+    # currently Hashable doesn't play nice with dataclasses_json
+    id_map: Dict[Any, int] = field(default_factory=dict)
 
     def add_text(
         self,
         text_chunk: str,
         ref_doc_id: str,
-        text_id: Optional[Hashable] = None,
-    ) -> Hashable:
+        text_id: Optional[Any] = None,
+    ) -> Any:
         """Add text to table, return current position in list."""
         if text_id in self.id_map:
             raise ValueError("text_id cannot already exist in index.")
@@ -170,7 +173,7 @@ class IndexDict(IndexStruct):
         self.nodes_dict[int_id] = cur_node
         return text_id
 
-    def get_nodes(self, text_ids: List[Hashable]) -> List[Node]:
+    def get_nodes(self, text_ids: List[Any]) -> List[Node]:
         """Get nodes."""
         nodes = []
         for text_id in text_ids:
@@ -182,7 +185,7 @@ class IndexDict(IndexStruct):
             nodes.append(self.nodes_dict[int_id])
         return nodes
 
-    def get_node(self, text_id: Hashable) -> Node:
+    def get_node(self, text_id: Any) -> Node:
         """Get node."""
         return self.get_nodes([text_id])[0]
 

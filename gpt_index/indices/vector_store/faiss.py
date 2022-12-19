@@ -4,7 +4,8 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Optional, Sequence, cast
+from typing import Any, Optional, Sequence, cast, Dict
+import json
 
 import numpy as np
 
@@ -41,6 +42,8 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
         embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
             embedding similarity.
     """
+
+    index_struct_cls = IndexDict
 
     def __init__(
         self,
@@ -133,3 +136,62 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for Faiss index.")
+
+    @classmethod
+    def load_from_disk(
+        cls, save_path: str, faiss_index_save_path: Optional[str] = None, **kwargs: Any
+    ) -> "BaseGPTIndex":
+        """Load index from disk.
+
+        This method loads the index from a JSON file stored on disk. The index data
+        structure itself is preserved completely. If the index is defined over
+        subindices, those subindices will also be preserved (and subindices of
+        those subindices, etc.).
+        In GPTFaissIndex, we allow user to specify an additional
+        `faiss_index_save_path` to load faiss index from a file - that
+        way, the user does not have to recreate the faiss index outside
+        of this class.
+
+        Args:
+            save_path (str): The save_path of the file.
+            faiss_index_save_path (Optional[str]): The save_path of the
+                Faiss index file. If not specified, the Faiss index
+                will not be saved to disk.
+            **kwargs: Additional kwargs to pass to the index constructor.
+
+        Returns:
+            BaseGPTIndex: The loaded index.
+
+        """
+        if faiss_index_save_path is not None:
+            import faiss
+            faiss_index = faiss.read_index(faiss_index_save_path)
+            return super().load_from_disk(save_path, faiss_index=faiss_index, **kwargs)
+        else:
+            return super().load_from_disk(save_path, **kwargs)
+
+    def save_to_disk(
+        self, save_path: str, faiss_index_save_path: Optional[str] = None, **save_kwargs: Any
+    ) -> None:
+        """Save to file.
+
+        This method stores the index into a JSON file stored on disk.
+        In GPTFaissIndex, we allow user to specify an additional
+        `faiss_index_save_path` to save the faiss index to a file - that
+        way, the user can pass in the same argument in 
+        `GPTFaissIndex.load_from_disk` without having to recreate
+        the Faiss index outside of this class.
+
+        Args:
+            save_path (str): The save_path of the file.
+            faiss_index_save_path (Optional[str]): The save_path of the
+                Faiss index file. If not specified, the Faiss index
+                will not be saved to disk.
+
+        """
+        super().save_to_disk(save_path, **save_kwargs)
+        
+        if faiss_index_save_path is not None:
+            import faiss
+            faiss.write_index(self._faiss_index, faiss_index_save_path)
+            
