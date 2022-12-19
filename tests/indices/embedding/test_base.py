@@ -25,6 +25,7 @@ from tests.mock_utils.mock_prompts import (
     MOCK_TEXT_QA_PROMPT,
 )
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
+from tests.mock_utils.mock_decorator import patch_common
 
 
 def test_embedding_similarity() -> None:
@@ -82,10 +83,7 @@ def _get_node_text_embedding_similarities(
     return similarities
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
-@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch_common
 @patch.object(
     GPTTreeIndexEmbeddingQuery,
     "_get_query_text_embedding_similarities",
@@ -93,8 +91,8 @@ def _get_node_text_embedding_similarities(
 )
 def test_embedding_query(
     _mock_similarity: Any,
-    _mock_predict: Any,
     _mock_init: Any,
+    _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     struct_kwargs: Dict,
