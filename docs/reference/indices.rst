@@ -13,3 +13,4 @@ classes allow for index creation, insertion, and also querying.
    indices/list.rst
    indices/table.rst
    indices/tree.rst
+   indices/vector_store.rst
