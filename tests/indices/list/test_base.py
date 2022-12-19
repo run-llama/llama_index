@@ -9,12 +9,9 @@ import pytest
 from gpt_index.indices.data_structs import Node
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
-from tests.mock_utils.mock_predict import mock_llmpredictor_predict
+from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
-from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
 @pytest.fixture
@@ -43,11 +40,10 @@ def documents() -> List[Document]:
     return [Document(doc_text)]
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 def test_build_list(
     _mock_init: Any,
+    _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_splitter: Any,
     documents: List[Document],
@@ -62,11 +58,12 @@ def test_build_list(
     assert list_index.index_struct.nodes[3].text == "This is a test v2."
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 def test_build_list_multiple(
-    _mock_init: Any, _mock_total_tokens_used: Any, _mock_splitter: Any
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_splitter: Any,
 ) -> None:
     """Test build list multiple."""
     documents = [
@@ -82,11 +79,10 @@ def test_build_list_multiple(
     assert list_index.index_struct.nodes[3].text == "This is a test v2."
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 def test_list_insert(
     _mock_init: Any,
+    _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_splitter: Any,
     documents: List[Document],
@@ -128,13 +124,10 @@ def _get_node_text_embedding_similarities(
     return similarities
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
-@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch_common
 def test_query(
-    _mock_predict: Any,
     _mock_init: Any,
+    _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -150,10 +143,7 @@ def test_query(
     assert response == ("What is?:Hello world.")
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
-@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch_common
 @patch.object(
     GPTListIndexEmbeddingQuery,
     "_get_query_text_embedding_similarities",
@@ -161,8 +151,8 @@ def test_query(
 )
 def test_embedding_query(
     _mock_similarity: Any,
-    _mock_predict: Any,
     _mock_init: Any,
+    _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],

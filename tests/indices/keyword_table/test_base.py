@@ -6,10 +6,8 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
-from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
+from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
@@ -26,21 +24,22 @@ def documents() -> List[Document]:
     return [Document(doc_text)]
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 @patch(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_build_table(
     _mock_init: Any,
+    _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
 ) -> None:
     """Test build table."""
     # test simple keyword table
+    # NOTE: here the keyword extraction isn't mocked because we're using
+    # the regex-based keyword extractor, not GPT
     table = GPTSimpleKeywordTableIndex(documents)
     table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
     assert len(table_chunks) == 4
@@ -64,15 +63,14 @@ def test_build_table(
     }
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch_common
 @patch(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
 def test_insert(
     _mock_init: Any,
+    _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
