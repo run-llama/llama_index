@@ -18,7 +18,6 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
-from gpt_index.utils import llm_token_counter
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -68,7 +67,6 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
         """Extract keywords."""
 
-    @llm_token_counter("query")
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")

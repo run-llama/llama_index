@@ -103,7 +103,7 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
             # add to index
             index_struct.add_text(text_chunk, document.get_doc_id(), text_id=new_id)
 
-    def build_index_from_documents(
+    def _build_index_from_documents(
         self, documents: Sequence[BaseDocument]
     ) -> IndexDict:
         """Build index from documents."""

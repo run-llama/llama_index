@@ -44,9 +44,13 @@ def documents() -> List[Document]:
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 def test_build_list(
-    _mock_init: Any, _mock_splitter: Any, documents: List[Document]
+    _mock_init: Any,
+    _mock_total_tokens_used: Any,
+    _mock_splitter: Any,
+    documents: List[Document],
 ) -> None:
     """Test build list."""
     list_index = GPTListIndex(documents=documents)
@@ -59,8 +63,11 @@ def test_build_list(
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
-def test_build_list_multiple(_mock_init: Any, _mock_splitter: Any) -> None:
+def test_build_list_multiple(
+    _mock_init: Any, _mock_total_tokens_used: Any, _mock_splitter: Any
+) -> None:
     """Test build list multiple."""
     documents = [
         Document("Hello world.\nThis is a test."),
