@@ -9,13 +9,9 @@ import pytest
 from gpt_index.indices.data_structs import Node
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
 from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_predict import mock_llmpredictor_predict
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
-from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
 @pytest.fixture

@@ -6,11 +6,8 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
 from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 

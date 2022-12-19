@@ -3,16 +3,15 @@ import functools
 from typing import Any, Callable
 from unittest.mock import patch
 
-from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from tests.mock_utils.mock_predict import (
-    mock_llmchain_predict,
-    mock_llmpredictor_predict,
-)
+from tests.mock_utils.mock_predict import mock_llmpredictor_predict
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
 def patch_common(f: Callable) -> Callable:
+    """Create patch decorator with common mocks."""
+
     @patch.object(
         TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline
     )
