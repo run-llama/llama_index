@@ -4,14 +4,12 @@ import random
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_int_id
-
-from typing import Any
 
 
 @dataclass

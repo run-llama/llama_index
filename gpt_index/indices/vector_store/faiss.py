@@ -4,8 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Optional, Sequence, cast, Dict
-import json
+from typing import Any, Optional, Sequence, cast
 
 import numpy as np
 
@@ -165,20 +164,24 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
         """
         if faiss_index_save_path is not None:
             import faiss
+
             faiss_index = faiss.read_index(faiss_index_save_path)
             return super().load_from_disk(save_path, faiss_index=faiss_index, **kwargs)
         else:
             return super().load_from_disk(save_path, **kwargs)
 
     def save_to_disk(
-        self, save_path: str, faiss_index_save_path: Optional[str] = None, **save_kwargs: Any
+        self,
+        save_path: str,
+        faiss_index_save_path: Optional[str] = None,
+        **save_kwargs: Any,
     ) -> None:
         """Save to file.
 
         This method stores the index into a JSON file stored on disk.
         In GPTFaissIndex, we allow user to specify an additional
         `faiss_index_save_path` to save the faiss index to a file - that
-        way, the user can pass in the same argument in 
+        way, the user can pass in the same argument in
         `GPTFaissIndex.load_from_disk` without having to recreate
         the Faiss index outside of this class.
 
@@ -190,8 +193,8 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
 
         """
         super().save_to_disk(save_path, **save_kwargs)
-        
+
         if faiss_index_save_path is not None:
             import faiss
+
             faiss.write_index(self._faiss_index, faiss_index_save_path)
-            
