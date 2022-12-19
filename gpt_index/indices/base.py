@@ -208,7 +208,7 @@ class BaseGPTIndex(Generic[IS]):
             docstore = DocumentStore.from_dict(result_dict["docstore"])
             return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 
-    def save_to_disk(self, save_path: str) -> None:
+    def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
         """Save to file.
 
         This method stores the index into a JSON file stored on disk.

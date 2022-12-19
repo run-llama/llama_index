@@ -12,3 +12,4 @@ This doc specifically shows the classes that are used to query indices.
    indices/list_query.rst
    indices/table_query.rst
    indices/tree_query.rst
+   indices/vector_store_query.rst

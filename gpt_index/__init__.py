@@ -14,6 +14,7 @@ from gpt_index.indices.keyword_table import (
 )
 from gpt_index.indices.list import GPTListIndex
 from gpt_index.indices.tree import GPTTreeIndex
+from gpt_index.indices.vector_store import GPTFaissIndex
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -27,6 +28,7 @@ from gpt_index.readers.google.gdocs import GoogleDocsReader
 from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
 from gpt_index.readers.slack import SlackReader
+from gpt_index.readers.weaviate import WeaviateReader
 from gpt_index.readers.wikipedia import WikipediaReader
 
 __all__ = [
@@ -35,6 +37,7 @@ __all__ = [
     "GPTRAKEKeywordTableIndex",
     "GPTListIndex",
     "GPTTreeIndex",
+    "GPTFaissIndex",
     "Prompt",
     "WikipediaReader",
     "SimpleDirectoryReader",
@@ -42,5 +45,6 @@ __all__ = [
     "NotionPageReader",
     "GoogleDocsReader",
     "SlackReader",
+    "WeaviateReader",
     "LLMPredictor",
 ]
