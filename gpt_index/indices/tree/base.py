@@ -202,8 +202,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         inserter = GPTIndexInserter(
             self.index_struct,
             num_children=self.num_children,
-            summary_prompt=self.summary_template,
             insert_prompt=self.insert_prompt,
+            summary_prompt=self.summary_template,
+            llm_predictor=self._llm_predictor,
             prompt_helper=self._prompt_helper,
         )
         inserter.insert(document)
