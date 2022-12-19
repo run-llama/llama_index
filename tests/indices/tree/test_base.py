@@ -7,13 +7,10 @@ import pytest
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.langchain_helpers.chain_wrapper import LLMChain
 from gpt_index.schema import Document
-from tests.mock_utils.mock_predict import (
-    mock_llmchain_predict,
-    mock_llmpredictor_predict,
-)
+from tests.mock_utils.mock_decorator import patch_common
+from tests.mock_utils.mock_predict import mock_llmchain_predict
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_QUERY_PROMPT,
@@ -21,7 +18,6 @@ from tests.mock_utils.mock_prompts import (
     MOCK_SUMMARY_PROMPT,
     MOCK_TEXT_QA_PROMPT,
 )
-from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
 @pytest.fixture
@@ -69,10 +65,7 @@ def _get_left_or_right_node(
     return index_graph.all_nodes[index]
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 def test_build_tree(
     _mock_init: Any,
     _mock_predict: Any,
@@ -96,10 +89,7 @@ def test_build_tree(
     )
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 def test_build_tree_multiple(
     _mock_init: Any,
     _mock_predict: Any,
@@ -123,10 +113,7 @@ def test_build_tree_multiple(
     assert tree.index_struct.all_nodes[3].text == "This is a test v2."
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 def test_query(
     _mock_init: Any,
     _mock_predict: Any,
@@ -145,10 +132,7 @@ def test_query(
     assert response == ("What is?:Hello world.")
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 def test_insert(
     _mock_init: Any,
     _mock_predict: Any,
