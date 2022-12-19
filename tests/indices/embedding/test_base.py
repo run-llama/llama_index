@@ -13,6 +13,7 @@ from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import Document
+from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_predict import (
     mock_llmchain_predict,
     mock_llmpredictor_predict,
@@ -25,7 +26,6 @@ from tests.mock_utils.mock_prompts import (
     MOCK_TEXT_QA_PROMPT,
 )
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
-from tests.mock_utils.mock_decorator import patch_common
 
 
 def test_embedding_similarity() -> None:
