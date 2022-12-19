@@ -100,6 +100,7 @@ def mock_get_query_embedding(query: str) -> List[float]:
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "__init__", return_value=None)
 @patch.object(
     OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
@@ -107,6 +108,7 @@ def mock_get_query_embedding(query: str) -> List[float]:
 def test_build_faiss(
     _mock_embed: Any,
     _mock_init: Any,
+    _mock_total_tokens_used: Any,
     _mock_splitter: Any,
     documents: List[Document],
     struct_kwargs: Dict,

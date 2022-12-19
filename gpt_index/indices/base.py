@@ -125,8 +125,13 @@ class BaseGPTIndex(Generic[IS]):
         self._index_struct.text = text
 
     @abstractmethod
+    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
+        """Build the index from documents."""
+
+    @llm_token_counter("build_index_from_documents")
     def build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
         """Build the index from documents."""
+        return self._build_index_from_documents(documents)
 
     @abstractmethod
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
