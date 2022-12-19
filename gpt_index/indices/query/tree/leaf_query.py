@@ -12,7 +12,6 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
-from gpt_index.utils import llm_token_counter
 
 
 class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
@@ -187,7 +186,6 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         # result_response should not be None
         return cast(str, result_response)
 
-    @llm_token_counter("query")
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
