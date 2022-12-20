@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Optional
 
-from gpt_index.indices.data_structs import IndexStruct, IndexStructType
+from gpt_index.data_structs import IndexStruct, IndexStructType
 from gpt_index.indices.query.base import BaseQueryRunner
 from gpt_index.indices.query.query_map import get_query_cls
 from gpt_index.indices.query.schema import QueryConfig, QueryMode

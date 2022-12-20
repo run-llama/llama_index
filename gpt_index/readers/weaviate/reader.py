@@ -1,8 +1,13 @@
 """Weaviate reader."""
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Type
 
+from gpt_index.data_structs import IndexStruct
 from gpt_index.readers.base import BaseReader
+from gpt_index.readers.weaviate.data_structs import (
+    load_index_struct,
+    serialize_index_struct,
+)
 from gpt_index.schema import Document
 
 
@@ -101,3 +106,21 @@ class WeaviateReader(BaseReader):
             documents = [Document(text=text)]
 
         return documents
+
+    def load_index(
+        self, index_struct_cls: Type[IndexStruct], **load_kwargs: Any
+    ) -> IndexStruct:
+        """Load index struct."""
+        object_id = load_kwargs.get("object_id", None)
+        if object_id is None:
+            raise ValueError("`object_id` not found in load_kwargs.")
+        class_prefix = load_kwargs.get("class_prefix", None)
+
+        return load_index_struct(
+            index_struct_cls, self.client, object_id, class_prefix=class_prefix
+        )
+
+    def save_index(self, index_struct: IndexStruct, **save_kwargs: Any) -> str:
+        """Save index struct."""
+        class_prefix = save_kwargs.get("class_prefix", None)
+        serialize_index_struct(index_struct, self.client, class_prefix=class_prefix)

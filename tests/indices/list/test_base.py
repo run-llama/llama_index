@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.indices.data_structs import Node
+from gpt_index.data_structs import Node
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.schema import Document

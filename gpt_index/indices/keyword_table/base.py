@@ -11,13 +11,13 @@ existing keywords in the table.
 from abc import abstractmethod
 from typing import Any, Optional, Sequence, Set
 
+from gpt_index.data_structs import KeywordTable
 from gpt_index.indices.base import (
     DEFAULT_MODE,
     DOCUMENTS_INPUT,
     BaseGPTIndex,
     BaseGPTIndexQuery,
 )
-from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.query.keyword_table.query import (
     BaseGPTKeywordTableQuery,

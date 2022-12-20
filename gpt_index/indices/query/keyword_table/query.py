@@ -3,7 +3,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from gpt_index.indices.data_structs import KeywordTable
+from gpt_index.data_structs import KeywordTable
 from gpt_index.indices.keyword_table.utils import (
     extract_keywords_given_response,
     rake_extract_keywords,

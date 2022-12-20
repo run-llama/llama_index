@@ -3,8 +3,8 @@ from typing import Any, List, Optional, cast
 
 import numpy as np
 
+from gpt_index.data_structs import IndexDict, Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.data_structs import IndexDict, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.base import Prompt

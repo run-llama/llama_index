@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.indices.data_structs import IndexStructType
+from gpt_index.data_structs import IndexStructType
 
 
 class QueryMode(str, Enum):

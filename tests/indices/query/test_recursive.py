@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.indices.data_structs import IndexStructType
+from gpt_index.data_structs import IndexStructType
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryConfig, QueryMode

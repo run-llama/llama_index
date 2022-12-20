@@ -1,8 +1,8 @@
 """Embedding query for list index."""
 from typing import List, Optional
 
+from gpt_index.data_structs import IndexList, Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.data_structs import IndexList, Node
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
 from gpt_index.prompts.base import Prompt
 

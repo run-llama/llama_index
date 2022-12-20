@@ -14,11 +14,12 @@ from typing import (
     cast,
 )
 
-from gpt_index.indices.data_structs import IndexStruct
+from gpt_index.data_structs import IndexStruct
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.readers.base import BaseReader
 from gpt_index.schema import BaseDocument, DocumentStore
 from gpt_index.utils import llm_token_counter
 
@@ -228,3 +229,13 @@ class BaseGPTIndex(Generic[IS]):
         }
         with open(save_path, "w") as f:
             json.dump(out_dict, f)
+
+    @classmethod
+    def load(cls, data_source: BaseReader, **load_kwargs: Any) -> IS:
+        """Load index."""
+        # TODO: need to go through docstore
+        return data_source.load_index(cls.index_struct_cls, **load_kwargs)
+
+    def save(self, data_source: BaseReader, **save_kwargs: Any) -> None:
+        """Save index to source."""
+        data_source.save_index(self.index_struct, **save_kwargs)

@@ -1,7 +1,7 @@
 """Test PromptHelper."""
 from typing import List
 
-from gpt_index.indices.data_structs import Node
+from gpt_index.data_structs import Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.prompts.base import Prompt
 

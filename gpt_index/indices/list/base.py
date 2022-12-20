@@ -7,13 +7,13 @@ in sequence in order to answer a given query.
 
 from typing import Any, Optional, Sequence
 
+from gpt_index.data_structs import IndexList
 from gpt_index.indices.base import (
     DEFAULT_MODE,
     DOCUMENTS_INPUT,
     EMBEDDING_MODE,
     BaseGPTIndex,
 )
-from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery, GPTListIndexQuery

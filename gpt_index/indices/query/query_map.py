@@ -2,7 +2,7 @@
 
 from typing import Type
 
-from gpt_index.indices.data_structs import IndexStructType
+from gpt_index.data_structs import IndexStructType
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.keyword_table.query import (
     GPTKeywordTableGPTQuery,

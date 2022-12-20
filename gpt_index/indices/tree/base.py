@@ -2,13 +2,13 @@
 
 from typing import Any, Dict, Optional, Sequence
 
+from gpt_index.data_structs import IndexGraph, Node
 from gpt_index.indices.base import (
     DEFAULT_MODE,
     DOCUMENTS_INPUT,
     EMBEDDING_MODE,
     BaseGPTIndex,
 )
-from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
