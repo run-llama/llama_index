@@ -96,7 +96,9 @@ class BaseWeaviateIndexStruct(Generic[IS]):
         validate_client(client)
         # Create schema if doesn't exist
         cls.create_schema(client, class_prefix)
-        return cls._from_gpt_index(client, index, class_prefix)
+        index_id = cls._from_gpt_index(client, index, class_prefix)
+        client.batch.flush()
+        return index_id
 
 
 class WeaviateNode(BaseWeaviateIndexStruct[Node]):
