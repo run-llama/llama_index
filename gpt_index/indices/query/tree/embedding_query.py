@@ -60,7 +60,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         self._embed_model = embed_model or OpenAIEmbedding()
         self.child_branch_factor = child_branch_factor
 
-    def _query(
+    def _query_level(
         self,
         cur_nodes: Dict[int, Node],
         query_str: str,

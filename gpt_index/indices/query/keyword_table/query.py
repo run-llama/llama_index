@@ -67,7 +67,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
         """Extract keywords."""
 
-    def query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         keywords = self._get_keywords(query_str, verbose=verbose)

@@ -66,7 +66,7 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
             nodes = [node for node in nodes if self.keyword in node.get_text()]
         return nodes
 
-    def query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         nodes = self._get_nodes_for_response(query_str, verbose=verbose)
