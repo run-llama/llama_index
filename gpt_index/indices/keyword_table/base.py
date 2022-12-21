@@ -28,11 +28,11 @@ from gpt_index.indices.query.keyword_table.query import (
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
+from gpt_index.prompts.prompts import KeywordExtractPrompt
 from gpt_index.schema import BaseDocument
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -51,7 +51,8 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     are then used to answer the query.
 
     Args:
-        keyword_extract_template (Optional[Prompt]): A Keyword Extraction Prompt
+        keyword_extract_template (Optional[KeywordExtractPrompt]): A Keyword
+            Extraction Prompt
             (see :ref:`Prompt-Templates`).
         max_keywords_per_query (int): The maximum number of keywords to extract
             per query.
@@ -66,7 +67,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[KeywordTable] = None,
-        keyword_extract_template: Optional[Prompt] = None,
+        keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,
         max_keywords_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,

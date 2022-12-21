@@ -1,24 +1,44 @@
 """Base module for prompts."""
 from copy import deepcopy
-from typing import Any, Dict, List, Optional
+from string import Formatter
+from typing import Any, Dict, List, Type, TypeVar
 
 from langchain import Prompt as LangchainPrompt
-from pydantic import Field
 
 from gpt_index.prompts.prompt_type import PromptType
 
+PMT = TypeVar("PMT", bound="Prompt")
 
-class Prompt(LangchainPrompt):
+
+class Prompt:
     """Prompt class for GPT Index.
 
-    Extends langchain's prompt, but also adds ability to partially fill values.
+    Wrapper around langchain's prompt class. Adds ability to:
+        - enforce certain prompt types
+        - partially fill values
 
     """
 
-    prompt_type: PromptType = PromptType.SUMMARY
-    partial_dict: Dict[str, Any] = Field(default_factory=dict)
+    input_variables: List[str]
+    prompt_type: PromptType = PromptType.CUSTOM
 
-    def partial_format(self, **kwargs: Any) -> "Prompt":
+    def __init__(self, template: str, **prompt_kwargs: Any) -> None:
+        """Init params."""
+        # validate
+        tmpl_vars = {v for _, v, _, _ in Formatter().parse(template) if v is not None}
+        if tmpl_vars != set(self.input_variables):
+            raise ValueError(
+                f"Invalid template: {template}, variables do not match the "
+                f"required input_variables: {self.input_variables}"
+            )
+
+        self.prompt: LangchainPrompt = LangchainPrompt(
+            input_variables=self.input_variables, template=template, **prompt_kwargs
+        )
+        self.partial_dict: Dict[str, Any] = {}
+        self.prompt_kwargs = prompt_kwargs
+
+    def partial_format(self: PMT, **kwargs: Any) -> PMT:
         """Format the prompt partially.
 
         Return an instance of itself.
@@ -34,12 +54,37 @@ class Prompt(LangchainPrompt):
         copy_obj.partial_dict.update(kwargs)
         return copy_obj
 
+    @classmethod
+    def from_prompt(cls: Type[PMT], prompt: "Prompt") -> PMT:
+        """Create a prompt from an existing prompt.
+
+        Use case: If the existing prompt is already partially filled,
+        and the remaining fields satisfy the requirements of the
+        prompt class, then we can create a new prompt from the existing
+        partially filled prompt.
+
+        """
+        template = prompt.prompt.template
+        tmpl_vars = {v for _, v, _, _ in Formatter().parse(template) if v is not None}
+        format_dict = {}
+        for var in tmpl_vars:
+            if var not in prompt.partial_dict:
+                format_dict[var] = f"{{{var}}}"
+
+        template_str = prompt.format(**format_dict)
+        cls_obj: PMT = cls(template_str, **prompt.prompt_kwargs)
+        return cls_obj
+
+    def get_langchain_prompt(self) -> LangchainPrompt:
+        """Get langchain prompt."""
+        return self.prompt
+
     def format(self, **kwargs: Any) -> str:
         """Format the prompt."""
         kwargs.update(self.partial_dict)
-        return super().format(**kwargs)
+        return self.prompt.format(**kwargs)
 
-    def get_full_format_args(self, kwargs: Any) -> Dict[str, Any]:
+    def get_full_format_args(self, kwargs: Dict) -> Dict[str, Any]:
         """Get dict of all format args.
 
         Hack to pass into Langchain to pass validation.
@@ -47,26 +92,3 @@ class Prompt(LangchainPrompt):
         """
         kwargs.update(self.partial_dict)
         return kwargs
-
-
-def validate_prompt(
-    prompt: Prompt,
-    required_fields: List[str],
-    optional_fields: Optional[List[str]] = None,
-) -> None:
-    """Validate prompts."""
-    # make sure all required fields are in input_variables
-    for req_field in required_fields:
-        if req_field not in prompt.input_variables:
-            raise ValueError(f"`{req_field}` must be provided in prompt.")
-
-    optional_fields = optional_fields or []
-    valid_fields = required_fields + optional_fields
-
-    # make sure all input_variables are either required or optional
-    for input_var in prompt.input_variables:
-        if input_var not in valid_fields:
-            raise ValueError(
-                f"`{input_var}` is not a valid input variable for this prompt."
-                f"Set of valid fields: {valid_fields}."
-            )

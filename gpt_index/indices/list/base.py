@@ -20,8 +20,8 @@ from gpt_index.indices.query.list.query import BaseGPTListIndexQuery, GPTListInd
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 
 # This query is used to summarize the contents of the index.
@@ -40,7 +40,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
     answer from all the nodes.
 
     Args:
-        text_qa_template (Optional[Prompt]): A Question-Answer Prompt
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
 
     """
@@ -51,7 +51,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexList] = None,
-        text_qa_template: Optional[Prompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         **kwargs: Any,
     ) -> None:

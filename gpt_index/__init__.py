@@ -21,6 +21,16 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
 # prompts
 from gpt_index.prompts.base import Prompt
+from gpt_index.prompts.prompts import (
+    KeywordExtractPrompt,
+    QueryKeywordExtractPrompt,
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    SummaryPrompt,
+    TreeInsertPrompt,
+    TreeSelectMultiplePrompt,
+    TreeSelectPrompt,
+)
 
 # readers
 from gpt_index.readers.file import SimpleDirectoryReader
@@ -42,6 +52,14 @@ __all__ = [
     "GPTTreeIndex",
     "GPTFaissIndex",
     "Prompt",
+    "SummaryPrompt",
+    "TreeInsertPrompt",
+    "TreeSelectPrompt",
+    "TreeSelectMultiplePrompt",
+    "RefinePrompt",
+    "QuestionAnswerPrompt",
+    "KeywordExtractPrompt",
+    "QueryKeywordExtractPrompt",
     "WikipediaReader",
     "SimpleDirectoryReader",
     "SimpleMongoReader",

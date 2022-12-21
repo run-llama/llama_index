@@ -4,7 +4,7 @@ from typing import List, Optional
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexList, Node
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
-from gpt_index.prompts.base import Prompt
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
 class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
@@ -26,8 +26,8 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     def __init__(
         self,
         index_struct: IndexList,
-        text_qa_template: Optional[Prompt] = None,
-        refine_template: Optional[Prompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         keyword: Optional[str] = None,
         similarity_top_k: Optional[int] = 1,
         embed_model: Optional[OpenAIEmbedding] = None,
