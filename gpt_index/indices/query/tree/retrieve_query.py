@@ -40,7 +40,7 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         validate_prompt(self.text_qa_template, ["context_str", "query_str"])
 
-    def query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         node_list = get_sorted_node_list(self.index_struct.root_nodes)
