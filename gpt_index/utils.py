@@ -108,9 +108,7 @@ def llm_token_counter(method_name_str: str) -> Callable:
     def wrap(f: Callable) -> Callable:
         def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
             start_token_ct = _self._llm_predictor.total_tokens_used
-            print(f"start token ct: {start_token_ct}")
             f_return_val = f(_self, *args, **kwargs)
-            print(f"end token ct: {_self._llm_predictor.total_tokens_used}")
             net_tokens = _self._llm_predictor.total_tokens_used - start_token_ct
             _self._llm_predictor.last_token_usage = net_tokens
             print(f"> [{method_name_str}] Total token usage: {net_tokens} tokens")
