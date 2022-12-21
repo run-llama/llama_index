@@ -6,8 +6,8 @@ from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response_utils.response import give_response
 from gpt_index.indices.utils import get_sorted_node_list
-from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from gpt_index.prompts.prompts import QuestionAnswerPrompt
 
 
 class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
@@ -24,7 +24,7 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
         response = index.query("<query_str>", mode="retrieve")
 
     Args:
-        text_qa_template (Optional[Prompt]): Question-Answer Prompt
+        text_qa_template (Optional[QuestionAnswerPrompt]): Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
 
     """
@@ -32,13 +32,12 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
     def __init__(
         self,
         index_struct: IndexGraph,
-        text_qa_template: Optional[Prompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct, **kwargs)
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        validate_prompt(self.text_qa_template, ["context_str", "query_str"])
 
     def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""

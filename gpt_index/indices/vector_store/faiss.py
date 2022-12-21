@@ -16,8 +16,8 @@ from gpt_index.indices.query.vector_store.faiss import GPTFaissIndexQuery
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 
 
@@ -35,7 +35,7 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[Prompt]): A Question-Answer Prompt
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
         faiss_index (faiss.Index): A Faiss Index object (required)
         embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
@@ -48,7 +48,7 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[Prompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         faiss_index: Optional[Any] = None,
         embed_model: Optional[OpenAIEmbedding] = None,

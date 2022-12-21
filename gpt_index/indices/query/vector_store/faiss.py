@@ -7,11 +7,11 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexDict, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.utils import truncate_text
-from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
 class GPTFaissIndexQuery(BaseGPTIndexQuery[IndexDict]):
@@ -26,9 +26,9 @@ class GPTFaissIndexQuery(BaseGPTIndexQuery[IndexDict]):
         response = index.query("<query_str>", mode="default")
 
     Args:
-        text_qa_template (Optional[Prompt]): Question-Answer Prompt
+        text_qa_template (Optional[QuestionAnswerPrompt]): Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
-        refine_template (Optional[Prompt]): Refinement Prompt
+        refine_template (Optional[RefinePrompt]): Refinement Prompt
             (see :ref:`Prompt-Templates`).
         faiss_index (faiss.Index): A Faiss Index object (required)
         embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
@@ -40,8 +40,8 @@ class GPTFaissIndexQuery(BaseGPTIndexQuery[IndexDict]):
     def __init__(
         self,
         index_struct: IndexDict,
-        text_qa_template: Optional[Prompt] = None,
-        refine_template: Optional[Prompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         faiss_index: Optional[Any] = None,
         embed_model: Optional[OpenAIEmbedding] = None,
         similarity_top_k: Optional[int] = 1,

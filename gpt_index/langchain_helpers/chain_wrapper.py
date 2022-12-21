@@ -32,7 +32,7 @@ class LLMPredictor:
 
     def _predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Inner predict function."""
-        llm_chain = LLMChain(prompt=prompt, llm=self._llm)
+        llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm)
 
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
