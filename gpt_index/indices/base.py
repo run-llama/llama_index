@@ -236,6 +236,11 @@ class BaseGPTIndex(Generic[IS]):
         # TODO: need to go through docstore
         return data_source.load_index(cls.index_struct_cls, **load_kwargs)
 
-    def save(self, data_source: BaseReader, **save_kwargs: Any) -> None:
-        """Save index to source."""
-        data_source.save_index(self.index_struct, **save_kwargs)
+    def save(self, data_source: BaseReader, **save_kwargs: Any) -> str:
+        """Save index to source.
+
+        Returns:
+            str: The id of the saved index.
+
+        """
+        return data_source.save_index(self.index_struct, **save_kwargs)

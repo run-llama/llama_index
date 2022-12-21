@@ -37,7 +37,7 @@ def get_by_id(
 
     where_filter = {"path": ["id"], "operator": "Equal", "valueString": object_id}
     query_result = (
-        client.query.get(class_name, ["all_nodes", "root_nodes"])
+        client.query.get(class_name, properties)
         .with_where(where_filter)
         .with_additional(["id", "vector"])
         .do()
@@ -45,6 +45,8 @@ def get_by_id(
 
     parsed_result = parse_get_response(query_result)
     entries = parsed_result[class_name]
-    if len(entries) > 1:
+    if len(entries) == 0:
+        raise ValueError("No entry found for the given id")
+    elif len(entries) > 1:
         raise ValueError("More than one entry found for the given id")
     return entries[0]

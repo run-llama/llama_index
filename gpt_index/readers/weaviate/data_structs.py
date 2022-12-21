@@ -7,7 +7,7 @@ Contain conversion to and from dataclasses that GPT Index uses.
 import json
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, Generic, Optional, Type, TypeVar, cast
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -29,13 +29,39 @@ class BaseWeaviateIndexStruct(Generic[IS]):
         """Return class name."""
 
     @classmethod
+    def _get_common_properties(cls) -> List[Dict]:
+        """Get common properties."""
+        return [
+            {
+                "dataType": ["string"],
+                "description": f"Text property",
+                "name": "text",
+            },
+            {
+                "dataType": ["string"],
+                "description": f"Document id",
+                "name": "doc_id",
+            },
+        ]
+
+    @classmethod
     @abstractmethod
-    def _get_properties(cls) -> None:
+    def _get_properties(cls) -> List[Dict]:
         """Get properties specific to each index struct.
 
         Used in creating schema.
 
         """
+
+    @classmethod
+    def _get_by_id(cls, client: Any, object_id: str, class_prefix: str) -> Dict:
+        """Get entry by id."""
+        validate_client(client)
+        class_name = cls._class_name(class_prefix)
+        properties = cls._get_common_properties() + cls._get_properties()
+        prop_names = [p["name"] for p in properties]
+        entry = get_by_id(client, object_id, class_name, prop_names)
+        return entry
 
     @classmethod
     def create_schema(cls, client: Any, class_prefix: str) -> None:
@@ -50,18 +76,9 @@ class BaseWeaviateIndexStruct(Generic[IS]):
         if class_name in existing_class_names:
             return
 
-        properties = [
-            {
-                "dataType": ["string"],
-                "description": f"Text property of the {class_name}",
-                "name": "text",
-            },
-            {
-                "dataType": ["string"],
-                "description": f"The doc_id of the {class_name}",
-                "name": "doc_id",
-            },
-        ]
+        # get common properties
+        properties = cls._get_common_properties()
+        # get specific properties
         properties.extend(cls._get_properties())
         class_obj = {
             "class": cls._class_name(class_prefix),  # <= note the capital "A".
@@ -110,7 +127,7 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         return f"{class_prefix}_Node"
 
     @classmethod
-    def _get_properties(cls) -> None:
+    def _get_properties(cls) -> List[Dict]:
         """Create schema."""
         return [
             {
@@ -133,19 +150,14 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
     @classmethod
     def _to_gpt_index(cls, client: Any, object_id: str, class_prefix: str) -> Node:
         """Convert to gpt index."""
-        class_name = cls._class_name(class_prefix)
-        entry = get_by_id(
-            client, object_id, class_name, ["index", "child_indices", "ref_doc_id"]
-        )
-        index = int(entry["index"])
-        child_indices = entry["child_indices"]
-        ref_doc_id = entry["ref_doc_id"]
-        embedding = entry["_additional"]["vector"]
+        entry = cls._get_by_id(client, object_id, class_prefix)
         return Node(
-            index=index,
-            child_indices=child_indices,
-            ref_doc_id=ref_doc_id,
-            embedding=embedding,
+            text=entry["text"],
+            doc_id=entry["doc_id"],
+            index=int(entry["index"]),
+            child_indices=entry["child_indices"],
+            ref_doc_id=entry["ref_doc_id"],
+            embedding=entry["_additional"]["vector"],
         )
 
     @classmethod
@@ -170,7 +182,7 @@ class WeaviateIndexGraph(BaseWeaviateIndexStruct[IndexGraph]):
         return f"{class_prefix}_IndexGraph"
 
     @classmethod
-    def _get_properties(cls) -> None:
+    def _get_properties(cls) -> List[Dict]:
         """Create schema."""
         return [
             {
@@ -192,8 +204,7 @@ class WeaviateIndexGraph(BaseWeaviateIndexStruct[IndexGraph]):
         """Fetch stored object, convert to gpt index."""
 
         # load from weaviate
-        class_name = cls._class_name(class_prefix)
-        entry = get_by_id(client, object_id, class_name, ["all_nodes", "root_nodes"])
+        entry = cls._get_by_id(client, object_id, class_prefix)
         weaviate_all_nodes = json.loads(entry["all_nodes"])
         weaviate_root_nodes = json.loads(entry["root_nodes"])
 
@@ -251,8 +262,7 @@ _INDEX_STRUCT_TO_WEAVIATE_MAP: Dict[
 
 
 def serialize_index_struct(
-    index_struct: IndexStruct, client: Any, 
-    class_prefix: Optional[str] = None
+    index_struct: IndexStruct, client: Any, class_prefix: Optional[str] = None
 ) -> str:
     """Serialize index struct."""
     if type(index_struct) not in _INDEX_STRUCT_TO_WEAVIATE_MAP:
