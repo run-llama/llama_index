@@ -55,7 +55,7 @@ class Prompt:
         return copy_obj
 
     @classmethod
-    def from_prompt(cls: Type[PMT], prompt: PMT) -> PMT:
+    def from_prompt(cls: Type[PMT], prompt: "Prompt") -> PMT:
         """Create a prompt from an existing prompt.
 
         Use case: If the existing prompt is already partially filled,
@@ -64,7 +64,14 @@ class Prompt:
         partially filled prompt.
 
         """
-        template_str = prompt.format()
+        template = prompt.prompt.template
+        tmpl_vars = {v for _, v, _, _ in Formatter().parse(template) if v is not None}
+        format_dict = {}
+        for var in tmpl_vars:
+            if var not in prompt.partial_dict:
+                format_dict[var] = f"{{{var}}}"
+
+        template_str = prompt.format(**format_dict)
         cls_obj: PMT = cls(template_str, **prompt.prompt_kwargs)
         return cls_obj
 
