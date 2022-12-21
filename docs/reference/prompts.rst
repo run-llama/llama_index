@@ -13,6 +13,7 @@ derived from `Langchain <https://langchain.readthedocs.io/en/latest/modules/prom
 .. automodule:: gpt_index.prompts.prompts
    :members:
    :inherited-members:
+   :exclude-members: get_full_format_args
 
 
 
