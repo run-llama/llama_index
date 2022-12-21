@@ -81,7 +81,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             index_struct.add_text(text_chunk, document.get_doc_id())
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
+        self, documents: Sequence[BaseDocument], verbose: bool = False
     ) -> IndexList:
         """Build the index from documents.
 

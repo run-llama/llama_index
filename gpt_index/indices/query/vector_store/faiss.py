@@ -100,7 +100,7 @@ class GPTFaissIndexQuery(BaseGPTIndexQuery[IndexDict]):
             print(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
         return top_k_nodes
 
-    def query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         nodes = self._get_nodes_for_response(query_str, verbose=verbose)

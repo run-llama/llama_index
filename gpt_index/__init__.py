@@ -31,6 +31,9 @@ from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.weaviate import WeaviateReader
 from gpt_index.readers.wikipedia import WikipediaReader
 
+# token predictor
+from gpt_index.token_predictor.mock_chain_wrapper import MockLLMPredictor
+
 __all__ = [
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
@@ -47,4 +50,5 @@ __all__ = [
     "SlackReader",
     "WeaviateReader",
     "LLMPredictor",
+    "MockLLMPredictor",
 ]

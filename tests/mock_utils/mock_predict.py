@@ -3,6 +3,7 @@
 from typing import Any, Dict, Tuple
 
 from gpt_index.prompts.base import Prompt
+from gpt_index.token_predictor.utils import mock_extract_keywords_response
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_KEYWORD_EXTRACT_PROMPT,
@@ -12,7 +13,6 @@ from tests.mock_utils.mock_prompts import (
     MOCK_SUMMARY_PROMPT,
     MOCK_TEXT_QA_PROMPT,
 )
-from tests.mock_utils.mock_utils import mock_extract_keywords_response
 
 
 def _mock_summary_predict(prompt_args: Dict) -> str:

@@ -69,6 +69,7 @@ class QueryRunner(BaseQueryRunner):
         )
 
         # set llm_predictor if exists
-        query_obj.set_llm_predictor(self._llm_predictor)
+        if not query_obj._llm_predictor_set:
+            query_obj.set_llm_predictor(self._llm_predictor)
 
         return query_obj.query(query_str, verbose=self._verbose)

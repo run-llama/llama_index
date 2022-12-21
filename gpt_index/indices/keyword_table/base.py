@@ -134,7 +134,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             print(f"> Keywords: {keywords}")
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
+        self, documents: Sequence[BaseDocument], verbose: bool = False
     ) -> KeywordTable:
         """Build the index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(

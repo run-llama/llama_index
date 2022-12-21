@@ -15,7 +15,7 @@ from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQu
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
-from gpt_index.indices.utils import get_sorted_node_list
+from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import (
@@ -65,7 +65,9 @@ class GPTTreeIndexBuilder:
         }
         return doc_nodes
 
-    def build_from_text(self, documents: Sequence[BaseDocument]) -> IndexGraph:
+    def build_from_text(
+        self, documents: Sequence[BaseDocument], verbose: bool = False
+    ) -> IndexGraph:
         """Build from text.
 
         Returns:
@@ -77,11 +79,14 @@ class GPTTreeIndexBuilder:
             all_nodes.update(self._get_nodes_from_document(len(all_nodes), d))
 
         # instantiate all_nodes from initial text chunks
-        root_nodes = self._build_index_from_nodes(all_nodes, all_nodes)
+        root_nodes = self._build_index_from_nodes(all_nodes, all_nodes, verbose=verbose)
         return IndexGraph(all_nodes=all_nodes, root_nodes=root_nodes)
 
     def _build_index_from_nodes(
-        self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node]
+        self,
+        cur_nodes: Dict[int, Node],
+        all_nodes: Dict[int, Node],
+        verbose: bool = False,
     ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         cur_node_list = get_sorted_node_list(cur_nodes)
@@ -101,7 +106,9 @@ class GPTTreeIndexBuilder:
                 self.summary_prompt, text=text_chunk
             )
 
-            print(f"> {i}/{len(cur_nodes)}, summary: {new_summary}")
+            if verbose:
+                fmt_summary = truncate_text(new_summary, 50)
+                print(f"> {i}/{len(cur_nodes)}, summary: {fmt_summary}")
             new_node = Node(
                 text=new_summary,
                 index=cur_index,
@@ -183,7 +190,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         return query
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
+        self, documents: Sequence[BaseDocument], verbose: bool = False
     ) -> IndexGraph:
         """Build the index from documents."""
         # do simple concatenation
@@ -193,7 +200,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self._llm_predictor,
             self._prompt_helper,
         )
-        index_graph = index_builder.build_from_text(documents)
+        index_graph = index_builder.build_from_text(documents, verbose=verbose)
         return index_graph
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:

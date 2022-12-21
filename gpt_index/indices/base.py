@@ -43,6 +43,7 @@ class BaseGPTIndex(Generic[IS]):
         llm_predictor: Optional[LLMPredictor] = None,
         docstore: Optional[DocumentStore] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
@@ -64,7 +65,9 @@ class BaseGPTIndex(Generic[IS]):
             documents = self._process_documents(documents, self._docstore)
             self._validate_documents(documents)
             # TODO: introduce document store outside __init__ function
-            self._index_struct = self.build_index_from_documents(documents)
+            self._index_struct = self.build_index_from_documents(
+                documents, verbose=verbose
+            )
 
     @property
     def docstore(self) -> DocumentStore:
@@ -125,13 +128,17 @@ class BaseGPTIndex(Generic[IS]):
         self._index_struct.text = text
 
     @abstractmethod
-    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
+    def _build_index_from_documents(
+        self, documents: Sequence[BaseDocument], verbose: bool = False
+    ) -> IS:
         """Build the index from documents."""
 
     @llm_token_counter("build_index_from_documents")
-    def build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
+    def build_index_from_documents(
+        self, documents: Sequence[BaseDocument], verbose: bool = False
+    ) -> IS:
         """Build the index from documents."""
-        return self._build_index_from_documents(documents)
+        return self._build_index_from_documents(documents, verbose=verbose)
 
     @abstractmethod
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
@@ -152,7 +159,6 @@ class BaseGPTIndex(Generic[IS]):
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
 
-    @llm_token_counter("query")
     def query(
         self,
         query_str: str,
@@ -186,7 +192,8 @@ class BaseGPTIndex(Generic[IS]):
         else:
             query_obj = self._mode_to_query(mode, **query_kwargs)
             # set llm_predictor if exists
-            query_obj.set_llm_predictor(self._llm_predictor)
+            if not query_obj._llm_predictor_set:
+                query_obj.set_llm_predictor(self._llm_predictor)
             # set prompt_helper if exists
             query_obj.set_prompt_helper(self._prompt_helper)
             return query_obj.query(query_str, verbose=verbose)

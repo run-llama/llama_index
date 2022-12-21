@@ -4,7 +4,11 @@ from typing import Any, Dict, Optional, cast
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
+from gpt_index.indices.utils import (
+    extract_numbers_given_response,
+    get_sorted_node_list,
+    truncate_text,
+)
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
@@ -87,7 +91,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             if verbose:
                 print(f">[Level {level}] Current answer response: {cur_response} ")
         else:
-            cur_response = self._query(
+            cur_response = self._query_level(
                 {
                     i: self.index_struct.all_nodes[i]
                     for i in selected_node.child_indices
@@ -110,10 +114,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
             if verbose:
                 print(f">[Level {level}] Refine prompt: {formatted_refine_prompt}")
-            print(f">[Level {level}] Current refined response: {cur_response} ")
+                print(f">[Level {level}] Current refined response: {cur_response} ")
             return cur_response
 
-    def _query(
+    def _query_level(
         self,
         cur_nodes: Dict[int, Node],
         query_str: str,
@@ -174,8 +178,13 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                 f">[Level {level}] Selected node: "
                 f"[{number}]/[{','.join([str(int(n)) for n in numbers])}]"
             )
-            summary_text = " ".join(selected_node.get_text().splitlines())
-            print(f">[Level {level}] Node " f"[{number}] Summary text: {summary_text}")
+            if verbose:
+                summary_text = " ".join(selected_node.get_text().splitlines())
+                fmt_summary_text = truncate_text(summary_text, 100)
+                print(
+                    f">[Level {level}] Node "
+                    f"[{number}] Summary text: {fmt_summary_text}"
+                )
             result_response = self._query_with_selected_node(
                 selected_node,
                 query_str,
@@ -186,9 +195,9 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         # result_response should not be None
         return cast(str, result_response)
 
-    def query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
-        return self._query(
+        return self._query_level(
             self.index_struct.root_nodes, query_str, level=0, verbose=verbose
         ).strip()

@@ -1,6 +1,7 @@
 """Set of default prompts."""
 
 from gpt_index.prompts.base import Prompt
+from gpt_index.prompts.prompt_type import PromptType
 
 ############################################
 # Tree
@@ -19,7 +20,9 @@ DEFAULT_SUMMARY_PROMPT_TMPL = (
 )
 
 DEFAULT_SUMMARY_PROMPT = Prompt(
-    input_variables=["text"], template=DEFAULT_SUMMARY_PROMPT_TMPL
+    prompt_type=PromptType.SUMMARY,
+    input_variables=["text"],
+    template=DEFAULT_SUMMARY_PROMPT_TMPL,
 )
 
 # insert prompts
@@ -37,6 +40,7 @@ DEFAULT_INSERT_PROMPT_TMPL = (
     "summary that is most relevant to the question.\n"
 )
 DEFAULT_INSERT_PROMPT = Prompt(
+    prompt_type=PromptType.TREE_INSERT,
     input_variables=["num_chunks", "context_list", "new_chunk_text"],
     template=DEFAULT_INSERT_PROMPT_TMPL,
 )
@@ -56,6 +60,7 @@ DEFAULT_QUERY_PROMPT_TMPL = (
     "this summary was selected in relation to the question.\n"
 )
 DEFAULT_QUERY_PROMPT = Prompt(
+    prompt_type=PromptType.TREE_SELECT,
     input_variables=["num_chunks", "context_list", "query_str"],
     template=DEFAULT_QUERY_PROMPT_TMPL,
 )
@@ -75,6 +80,7 @@ DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
     "these summaries were selected in relation to the question.\n"
 )
 DEFAULT_QUERY_PROMPT_MULTIPLE = Prompt(
+    prompt_type=PromptType.TREE_SELECT_MULTIPLE,
     input_variables=["num_chunks", "context_list", "query_str", "branching_factor"],
     template=DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL,
 )
@@ -93,6 +99,7 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "If the context isn't useful, return the original answer."
 )
 DEFAULT_REFINE_PROMPT = Prompt(
+    prompt_type=PromptType.REFINE,
     input_variables=["query_str", "existing_answer", "context_msg"],
     template=DEFAULT_REFINE_PROMPT_TMPL,
 )
@@ -107,7 +114,9 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "answer the question: {query_str}\n"
 )
 DEFAULT_TEXT_QA_PROMPT = Prompt(
-    input_variables=["context_str", "query_str"], template=DEFAULT_TEXT_QA_PROMPT_TMPL
+    prompt_type=PromptType.QUESTION_ANSWER,
+    input_variables=["context_str", "query_str"],
+    template=DEFAULT_TEXT_QA_PROMPT_TMPL,
 )
 
 
@@ -124,6 +133,7 @@ DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
 )
 DEFAULT_KEYWORD_EXTRACT_TEMPLATE = Prompt(
+    prompt_type=PromptType.KEYWORD_EXTRACT,
     input_variables=["text", "max_keywords"],
     template=DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL,
 )
@@ -141,6 +151,7 @@ DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
 )
 DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = Prompt(
+    prompt_type=PromptType.QUERY_KEYWORD_EXTRACT,
     input_variables=["question", "max_keywords"],
     template=DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL,
 )

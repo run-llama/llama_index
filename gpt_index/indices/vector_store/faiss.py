@@ -104,7 +104,7 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
             index_struct.add_text(text_chunk, document.get_doc_id(), text_id=new_id)
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
+        self, documents: Sequence[BaseDocument], verbose: bool = False
     ) -> IndexDict:
         """Build index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(

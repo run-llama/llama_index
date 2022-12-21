@@ -15,10 +15,9 @@ class LLMPredictor:
     Wrapper around an LLMChain from Langchain.
 
     Args:
-        llm (Optional[LLM]): LLM from Langchain to use for predictions.
-            Defaults to OpenAI's text-davinci-002 model.
-            Please see
-            `Langchain's LLM Page
+        llm (Optional[langchain.llms.base.LLM]): LLM from Langchain to use
+            for predictions. Defaults to OpenAI's text-davinci-002 model.
+            Please see `Langchain's LLM Page
             <https://langchain.readthedocs.io/en/latest/modules/llms.html>`_
             for more details.
 
@@ -29,6 +28,17 @@ class LLMPredictor:
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-002")
         self._total_tokens_used = 0
         self.flag = True
+        self._last_token_usage: Optional[int] = None
+
+    def _predict(self, prompt: Prompt, **prompt_args: Any) -> str:
+        """Inner predict function."""
+        llm_chain = LLMChain(prompt=prompt, llm=self._llm)
+
+        # Note: we don't pass formatted_prompt to llm_chain.predict because
+        # langchain does the same formatting under the hood
+        full_prompt_args = prompt.get_full_format_args(prompt_args)
+        llm_prediction = llm_chain.predict(**full_prompt_args)
+        return llm_prediction
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Predict the answer to a query.
@@ -40,13 +50,8 @@ class LLMPredictor:
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        llm_chain = LLMChain(prompt=prompt, llm=self._llm)
-
-        # Note: we don't pass formatted_prompt to llm_chain.predict because
-        # langchain does the same formatting under the hood
         formatted_prompt = prompt.format(**prompt_args)
-        full_prompt_args = prompt.get_full_format_args(prompt_args)
-        llm_prediction = llm_chain.predict(**full_prompt_args)
+        llm_prediction = self._predict(prompt, **prompt_args)
 
         # We assume that the value of formatted_prompt is exactly the thing
         # eventually sent to OpenAI, or whatever LLM downstream
@@ -63,3 +68,15 @@ class LLMPredictor:
     def _count_tokens(self, text: str) -> int:
         tokens = globals_helper.tokenizer(text)
         return len(tokens)
+
+    @property
+    def last_token_usage(self) -> int:
+        """Get the last token usage."""
+        if self._last_token_usage is None:
+            return 0
+        return self._last_token_usage
+
+    @last_token_usage.setter
+    def last_token_usage(self, value: int) -> None:
+        """Set the last token usage."""
+        self._last_token_usage = value

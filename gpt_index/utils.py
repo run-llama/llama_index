@@ -110,6 +110,7 @@ def llm_token_counter(method_name_str: str) -> Callable:
             start_token_ct = _self._llm_predictor.total_tokens_used
             f_return_val = f(_self, *args, **kwargs)
             net_tokens = _self._llm_predictor.total_tokens_used - start_token_ct
+            _self._llm_predictor.last_token_usage = net_tokens
             print(f"> [{method_name_str}] Total token usage: {net_tokens} tokens")
 
             return f_return_val

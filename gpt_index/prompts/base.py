@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional
 from langchain import Prompt as LangchainPrompt
 from pydantic import Field
 
+from gpt_index.prompts.prompt_type import PromptType
+
 
 class Prompt(LangchainPrompt):
     """Prompt class for GPT Index.
@@ -13,6 +15,7 @@ class Prompt(LangchainPrompt):
 
     """
 
+    prompt_type: PromptType = PromptType.SUMMARY
     partial_dict: Dict[str, Any] = Field(default_factory=dict)
 
     def partial_format(self, **kwargs: Any) -> "Prompt":
