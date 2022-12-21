@@ -15,7 +15,7 @@ class LLMPredictor:
     Wrapper around an LLMChain from Langchain.
 
     Args:
-        llm (Optional[LLM]): LLM from Langchain to use for predictions.
+        llm (Optional[langchain.llms.base.LLM]): LLM from Langchain to use for predictions.
             Defaults to OpenAI's text-davinci-002 model.
             Please see
             `Langchain's LLM Page
@@ -30,6 +30,17 @@ class LLMPredictor:
         self._total_tokens_used = 0
         self.flag = True
 
+    def _predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
+        """Inner predict function."""
+        llm_chain = LLMChain(prompt=prompt, llm=self._llm)
+
+        # Note: we don't pass formatted_prompt to llm_chain.predict because
+        # langchain does the same formatting under the hood
+        formatted_prompt = prompt.format(**prompt_args)
+        full_prompt_args = prompt.get_full_format_args(prompt_args)
+        llm_prediction = llm_chain.predict(**full_prompt_args)
+        return llm_prediction, formatted_prompt
+
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Predict the answer to a query.
 
@@ -40,13 +51,8 @@ class LLMPredictor:
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        llm_chain = LLMChain(prompt=prompt, llm=self._llm)
 
-        # Note: we don't pass formatted_prompt to llm_chain.predict because
-        # langchain does the same formatting under the hood
-        formatted_prompt = prompt.format(**prompt_args)
-        full_prompt_args = prompt.get_full_format_args(prompt_args)
-        llm_prediction = llm_chain.predict(**full_prompt_args)
+        llm_prediction, formatted_prompt = self._predict(prompt, **prompt_args)
 
         # We assume that the value of formatted_prompt is exactly the thing
         # eventually sent to OpenAI, or whatever LLM downstream
