@@ -11,12 +11,17 @@ from gpt_index.indices.keyword_table.utils import (
 )
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.utils import truncate_text
-from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
+)
+from gpt_index.prompts.prompts import (
+    KeywordExtractPrompt,
+    QueryKeywordExtractPrompt,
+    QuestionAnswerPrompt,
+    RefinePrompt,
 )
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -28,13 +33,15 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     Arguments are shared among subclasses.
 
     Args:
-        keyword_extract_template (Optional[Prompt]): A Keyword Extraction Prompt
+        keyword_extract_template (Optional[KeywordExtractPrompt]): A Keyword
+            Extraction Prompt
             (see :ref:`Prompt-Templates`).
-        query_keyword_extract_template (Optional[Prompt]): A Query Keyword Extraction
+        query_keyword_extract_template (Optional[QueryKeywordExtractPrompt]): A Query
+            Keyword Extraction
             Prompt (see :ref:`Prompt-Templates`).
-        refine_template (Optional[Prompt]): A Refinement Prompt
+        refine_template (Optional[RefinePrompt]): A Refinement Prompt
             (see :ref:`Prompt-Templates`).
-        text_qa_template (Optional[Prompt]): A Question Answering Prompt
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question Answering Prompt
             (see :ref:`Prompt-Templates`).
         max_keywords_per_query (int): Maximum number of keywords to extract from query.
         num_chunks_per_query (int): Maximum number of text chunks to query.
@@ -44,10 +51,10 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     def __init__(
         self,
         index_struct: KeywordTable,
-        keyword_extract_template: Optional[Prompt] = None,
-        query_keyword_extract_template: Optional[Prompt] = None,
-        refine_template: Optional[Prompt] = None,
-        text_qa_template: Optional[Prompt] = None,
+        keyword_extract_template: Optional[KeywordExtractPrompt] = None,
+        query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         **kwargs: Any,

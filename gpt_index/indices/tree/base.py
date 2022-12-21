@@ -17,11 +17,11 @@ from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.prompts.base import Prompt, validate_prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
+from gpt_index.prompts.prompts import SummaryPrompt, TreeInsertPrompt
 from gpt_index.schema import BaseDocument
 
 RETRIEVE_MODE = "retrieve"
@@ -37,7 +37,7 @@ class GPTTreeIndexBuilder:
     def __init__(
         self,
         num_children: int,
-        summary_prompt: Prompt,
+        summary_prompt: SummaryPrompt,
         llm_predictor: Optional[LLMPredictor],
         prompt_helper: Optional[PromptHelper],
     ) -> None:
@@ -137,9 +137,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     A secondary answer is to directly synthesize the answer from the root nodes.
 
     Args:
-        summary_template (Optional[Prompt]): A Summarization Prompt
+        summary_template (Optional[SummaryPrompt]): A Summarization Prompt
             (see :ref:`Prompt-Templates`).
-        insert_prompt (Optional[Prompt]): An Tree Insertion Prompt
+        insert_prompt (Optional[TreeInsertPrompt]): An Tree Insertion Prompt
             (see :ref:`Prompt-Templates`).
 
     """
@@ -150,9 +150,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IndexGraph] = None,
-        summary_template: Optional[Prompt] = None,
-        insert_prompt: Optional[Prompt] = None,
-        query_str: Optional[str] = None,
+        summary_template: Optional[SummaryPrompt] = None,
+        insert_prompt: Optional[TreeInsertPrompt] = None,
         num_children: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
         **kwargs: Any,
@@ -160,14 +159,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         """Initialize params."""
         # need to set parameters before building index in base class.
         self.num_children = num_children
-        summary_template = summary_template or DEFAULT_SUMMARY_PROMPT
-        # if query_str is specified, then we try to load into summary template
-        if query_str is not None:
-            summary_template = summary_template.partial_format(query_str=query_str)
-
-        self.summary_template = summary_template
-        self.insert_prompt = insert_prompt or DEFAULT_INSERT_PROMPT
-        validate_prompt(self.summary_template, ["text"], ["query_str"])
+        self.summary_template = summary_template or DEFAULT_SUMMARY_PROMPT
+        self.insert_prompt: TreeInsertPrompt = insert_prompt or DEFAULT_INSERT_PROMPT
         super().__init__(
             documents=documents,
             index_struct=index_struct,

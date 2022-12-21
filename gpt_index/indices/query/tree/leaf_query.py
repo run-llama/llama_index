@@ -9,12 +9,17 @@ from gpt_index.indices.utils import (
     get_sorted_node_list,
     truncate_text,
 )
-from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
     DEFAULT_QUERY_PROMPT_MULTIPLE,
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
+)
+from gpt_index.prompts.prompts import (
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    TreeSelectMultiplePrompt,
+    TreeSelectPrompt,
 )
 
 
@@ -29,13 +34,14 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         response = index.query("<query_str>", mode="default")
 
     Args:
-        query_template (Optional[Prompt]): Tree Select Query Prompt
+        query_template (Optional[TreeSelectPrompt]): Tree Select Query Prompt
             (see :ref:`Prompt-Templates`).
-        query_template_multiple (Optional[Prompt]): Tree Select Query Prompt (Multiple)
+        query_template_multiple (Optional[TreeSelectMultiplePrompt]): Tree Select
+            Query Prompt (Multiple)
             (see :ref:`Prompt-Templates`).
-        text_qa_template (Optional[Prompt]): Question-Answer Prompt
+        text_qa_template (Optional[QuestionAnswerPrompt]): Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
-        refine_template (Optional[Prompt]): Refinement Prompt
+        refine_template (Optional[RefinePrompt]): Refinement Prompt
             (see :ref:`Prompt-Templates`).
         child_branch_factor (int): Number of child nodes to consider at each level.
             If child_branch_factor is 1, then the query will only choose one child node
@@ -47,10 +53,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
     def __init__(
         self,
         index_struct: IndexGraph,
-        query_template: Optional[Prompt] = None,
-        query_template_multiple: Optional[Prompt] = None,
-        text_qa_template: Optional[Prompt] = None,
-        refine_template: Optional[Prompt] = None,
+        query_template: Optional[TreeSelectPrompt] = None,
+        query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         child_branch_factor: int = 1,
         **kwargs: Any,
     ) -> None:

@@ -23,27 +23,24 @@ the answer to the query can be simply synthesized from the root nodes.
 
 ```python
 
-from gpt_index import Prompt, GPTTreeIndex, SimpleDirectoryReader
+from gpt_index import SummaryPrompt, GPTTreeIndex, SimpleDirectoryReader
 
 # load documents
 documents = SimpleDirectoryReader('data').load_data()
-# define custom prompt
+
+# define custom SummaryPrompt
 query_str = "What did the author do growing up?"
-summary_prompt_tmpl = (
+SUMMARY_PROMPT_TMPL = (
     "Context information is below. \n"
     "---------------------\n"
     "{text}"
     "\n---------------------\n"
     "Given the context information and not prior knowledge, "
-    "answer the question: {query_str}\n"
+    f"answer the question: {query_str}\n"
 )
-
-summary_prompt = Prompt(
-    input_variables=["query_str", "text"],
-    template=DEFAULT_TEXT_QA_PROMPT_TMPL
-)
-# Build GPTTreeIndex: pass in custom prompt, also pass in query_str
-index_with_query = GPTTreeIndex(documents, summary_template=summary_prompt, query_str=query_str)
+SUMMARY_PROMPT = SummaryPrompt(SUMMARY_PROMPT_TMPL)
+# Build GPTTreeIndex: pass in custom prompt
+index_with_query = GPTTreeIndex(documents, summary_template=SUMMARY_PROMPT)
 
 ```
 
@@ -52,3 +49,5 @@ Once the index is built, we can retrieve our answer:
 # directly retrieve response from root nodes instead of traversing tree
 response = index_with_query.query(query_str, mode="retrieve")
 ```
+
+Check out the [reference documentation](/reference/prompts.rst) for a full set of all prompts.

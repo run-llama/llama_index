@@ -6,6 +6,12 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.prompts.base import Prompt
 
 
+class TestPrompt(Prompt):
+    """Test prompt class."""
+
+    input_variables: List[str] = ["text"]
+
+
 def mock_tokenizer(text: str) -> List[str]:
     """Mock tokenizer."""
     tokens = text.split(" ")
@@ -44,7 +50,7 @@ def test_get_chunk_size() -> None:
 def test_get_text_splitter() -> None:
     """Test get text splitter."""
     test_prompt_text = "This is the prompt{text}"
-    test_prompt = Prompt(input_variables=["text"], template=test_prompt_text)
+    test_prompt = TestPrompt(test_prompt_text)
     prompt_helper = PromptHelper(
         max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
@@ -62,7 +68,7 @@ def test_get_text_from_nodes() -> None:
     """Test get_text_from_nodes."""
     # test prompt uses up one token
     test_prompt_txt = "test{text}"
-    test_prompt = Prompt(input_variables=["text"], template=test_prompt_txt)
+    test_prompt = TestPrompt(test_prompt_txt)
     # set max_input_size=11
     # For each text chunk, there's 4 tokens for text + 1 for the padding
     prompt_helper = PromptHelper(
@@ -79,7 +85,7 @@ def test_get_numbered_text_from_nodes() -> None:
     """Test get_text_from_nodes."""
     # test prompt uses up one token
     test_prompt_txt = "test{text}"
-    test_prompt = Prompt(input_variables=["text"], template=test_prompt_txt)
+    test_prompt = TestPrompt(test_prompt_txt)
     # set max_input_size=17
     # For each text chunk, there's 3 for text, 5 for padding (including number)
     prompt_helper = PromptHelper(

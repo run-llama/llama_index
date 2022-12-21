@@ -4,11 +4,11 @@ from typing import Any, List, Optional
 
 from gpt_index.indices.data_structs import IndexList, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
 class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
@@ -17,9 +17,9 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
     Arguments are shared among subclasses.
 
     Args:
-        text_qa_template (Optional[Prompt]): A Question Answering Prompt
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question Answering Prompt
             (see :ref:`Prompt-Templates`).
-        refine_template (Optional[Prompt]): A Refinement Prompt
+        refine_template (Optional[RefinePrompt]): A Refinement Prompt
             (see :ref:`Prompt-Templates`).
         keyword (Optional[str]): If specified, keyword to filter nodes.
             Simulates Ctrl+F lookup in a document.
@@ -29,8 +29,8 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
     def __init__(
         self,
         index_struct: IndexList,
-        text_qa_template: Optional[Prompt] = None,
-        refine_template: Optional[Prompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         keyword: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
