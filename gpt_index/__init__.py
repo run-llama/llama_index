@@ -18,6 +18,8 @@ from gpt_index.indices.vector_store import GPTFaissIndex
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+# token predictor
+from gpt_index.token_predictor.mock_chain_wrapper import MockLLMPredictor
 
 # prompts
 from gpt_index.prompts.base import Prompt
@@ -47,4 +49,5 @@ __all__ = [
     "SlackReader",
     "WeaviateReader",
     "LLMPredictor",
+    "MockLLMPredictor"
 ]
