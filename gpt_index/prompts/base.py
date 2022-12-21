@@ -19,8 +19,8 @@ class Prompt:
 
     """
 
-    prompt_type: PromptType
     input_variables: List[str]
+    prompt_type: PromptType = PromptType.CUSTOM
 
     def __init__(self, template: str, **prompt_kwargs: Any) -> None:
         """Init params."""

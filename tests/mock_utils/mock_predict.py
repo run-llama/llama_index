@@ -3,16 +3,8 @@
 from typing import Any, Dict, Tuple
 
 from gpt_index.prompts.base import Prompt
+from gpt_index.prompts.prompt_type import PromptType
 from gpt_index.token_predictor.utils import mock_extract_keywords_response
-from tests.mock_utils.mock_prompts import (
-    MOCK_INSERT_PROMPT,
-    MOCK_KEYWORD_EXTRACT_PROMPT,
-    MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
-    MOCK_QUERY_PROMPT,
-    MOCK_REFINE_PROMPT,
-    MOCK_SUMMARY_PROMPT,
-    MOCK_TEXT_QA_PROMPT,
-)
 
 
 def _mock_summary_predict(prompt_args: Dict) -> str:
@@ -67,19 +59,19 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
 
     """
     formatted_prompt = prompt.format(**prompt_args)
-    if prompt == MOCK_SUMMARY_PROMPT:
+    if prompt.prompt_type == PromptType.SUMMARY:
         response = _mock_summary_predict(prompt_args)
-    elif prompt == MOCK_INSERT_PROMPT:
+    elif prompt.prompt_type == PromptType.TREE_INSERT:
         response = _mock_insert_predict()
-    elif prompt == MOCK_QUERY_PROMPT:
+    elif prompt.prompt_type == PromptType.TREE_SELECT:
         response = _mock_query_select()
-    elif prompt == MOCK_REFINE_PROMPT:
+    elif prompt.prompt_type == PromptType.REFINE:
         response = _mock_refine(prompt_args)
-    elif prompt == MOCK_TEXT_QA_PROMPT:
+    elif prompt.prompt_type == PromptType.QUESTION_ANSWER:
         response = _mock_answer(prompt_args)
-    elif prompt == MOCK_KEYWORD_EXTRACT_PROMPT:
+    elif prompt.prompt_type == PromptType.KEYWORD_EXTRACT:
         response = _mock_keyword_extract(prompt_args)
-    elif prompt == MOCK_QUERY_KEYWORD_EXTRACT_PROMPT:
+    elif prompt.prompt_type == PromptType.QUERY_KEYWORD_EXTRACT:
         response = _mock_query_keyword_extract(prompt_args)
     else:
         raise ValueError("Invalid prompt to use with mocks.")

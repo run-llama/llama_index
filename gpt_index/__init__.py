@@ -22,14 +22,14 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 # prompts
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.prompts import (
-    SummaryPrompt,
-    TreeInsertPrompt,
-    TreeSelectPrompt,
-    TreeSelectMultiplePrompt,
-    RefinePrompt,
-    QuestionAnswerPrompt,
     KeywordExtractPrompt,
     QueryKeywordExtractPrompt,
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    SummaryPrompt,
+    TreeInsertPrompt,
+    TreeSelectMultiplePrompt,
+    TreeSelectPrompt,
 )
 
 # readers
