@@ -1,5 +1,5 @@
 """Embedding query for list index."""
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexList, Node
@@ -31,6 +31,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         keyword: Optional[str] = None,
         similarity_top_k: Optional[int] = 1,
         embed_model: Optional[OpenAIEmbedding] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
@@ -38,6 +39,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
             text_qa_template=text_qa_template,
             refine_template=refine_template,
             keyword=keyword,
+            **kwargs,
         )
         self._embed_model = embed_model or OpenAIEmbedding()
         self.similarity_top_k = similarity_top_k

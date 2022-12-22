@@ -9,10 +9,9 @@ from typing import Any, Optional, Sequence, cast
 import numpy as np
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.base import DEFAULT_MODE, DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.data_structs import IndexDict
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.vector_store.faiss import GPTFaissIndexQuery
+from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -103,6 +102,11 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
             # add to index
             index_struct.add_text(text_chunk, document.get_doc_id(), text_id=new_id)
 
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Query mode to class."""
+        # pass along faiss_index
+        query_kwargs["faiss_index"] = self._faiss_index
+
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False
     ) -> IndexDict:
@@ -114,19 +118,6 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
         for d in documents:
             self._add_document_to_index(index_struct, d, text_splitter)
         return index_struct
-
-    def _mode_to_query(
-        self, mode: str, *query_args: Any, **query_kwargs: Any
-    ) -> BaseGPTIndexQuery:
-        if mode == DEFAULT_MODE:
-            if "text_qa_template" not in query_kwargs:
-                query_kwargs["text_qa_template"] = self.text_qa_template
-            query: GPTFaissIndexQuery = GPTFaissIndexQuery(
-                self.index_struct, faiss_index=self._faiss_index, **query_kwargs
-            )
-        else:
-            raise ValueError(f"Invalid query mode: {mode}.")
-        return query
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""

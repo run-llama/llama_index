@@ -38,6 +38,7 @@ class QueryRunner(BaseQueryRunner):
         docstore: DocumentStore,
         query_configs: Optional[List[Dict]] = None,
         verbose: bool = False,
+        recursive: bool = False,
     ) -> None:
         """Init params."""
         config_dict: Dict[IndexStructType, QueryConfig] = {}
@@ -52,6 +53,7 @@ class QueryRunner(BaseQueryRunner):
         self._llm_predictor = llm_predictor
         self._docstore = docstore
         self._verbose = verbose
+        self._recursive = recursive
 
     def query(self, query_str: str, index_struct: IndexStruct) -> str:
         """Run query."""
@@ -61,10 +63,12 @@ class QueryRunner(BaseQueryRunner):
         config = self._config_dict[index_struct_type]
         mode = config.query_mode
         query_cls = get_query_cls(index_struct_type, mode)
+        # if recursive, pass self as query_runner to each individual query
+        query_runner = self if self._recursive else None
         query_obj = query_cls(
             index_struct,
             **config.query_kwargs,
-            query_runner=self,
+            query_runner=query_runner,
             docstore=self._docstore,
         )
 
