@@ -11,7 +11,7 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.vector_store.faiss import GPTFaissIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.schema import Document
+from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_predict import mock_llmpredictor_predict
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline

@@ -37,6 +37,9 @@ from gpt_index.readers.file import SimpleDirectoryReader
 from gpt_index.readers.google.gdocs import GoogleDocsReader
 from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
+
+# allow importing Document at the top-level
+from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.weaviate import WeaviateReader
 from gpt_index.readers.wikipedia import WikipediaReader
@@ -61,6 +64,7 @@ __all__ = [
     "KeywordExtractPrompt",
     "QueryKeywordExtractPrompt",
     "WikipediaReader",
+    "Document",
     "SimpleDirectoryReader",
     "SimpleMongoReader",
     "NotionPageReader",
