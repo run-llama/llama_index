@@ -9,7 +9,7 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response_utils import give_response, refine_response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.prompts.base import Prompt
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.schema import DocumentStore
 from gpt_index.utils import llm_token_counter
 
@@ -63,8 +63,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         self,
         query_str: str,
         node: Node,
-        text_qa_template: Prompt,
-        refine_template: Prompt,
+        text_qa_template: QuestionAnswerPrompt,
+        refine_template: RefinePrompt,
         response: Optional[str] = None,
         verbose: bool = False,
         level: Optional[int] = None,

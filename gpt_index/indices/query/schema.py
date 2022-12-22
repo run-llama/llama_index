@@ -16,6 +16,9 @@ class QueryMode(str, Enum):
     RETRIEVE = "retrieve"
     EMBEDDING = "embedding"
 
+    # to hiearchically summarize using tree
+    SUMMARIZE = "summarize"
+
     # for keyword extractor
     SIMPLE = "simple"
     RAKE = "rake"

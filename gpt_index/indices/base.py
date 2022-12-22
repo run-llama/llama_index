@@ -24,8 +24,10 @@ from gpt_index.utils import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
 
+# TODO: remove and consolidate with QueryMode
 DEFAULT_MODE = "default"
 EMBEDDING_MODE = "embedding"
+SUMMARIZE_MODE = "summarize"
 
 
 DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
