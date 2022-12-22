@@ -133,6 +133,37 @@ def test_query(
 
 
 @patch_common
+def test_summarize_query(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test summarize query."""
+    # create tree index without building tree
+    index_kwargs, orig_query_kwargs = struct_kwargs
+    index_kwargs = index_kwargs.copy()
+    index_kwargs.update({"build_tree": False})
+    tree = GPTTreeIndex(documents, **index_kwargs)
+
+    # test summarize query
+    query_str = "What is?"
+    query_kwargs: Dict[str, Any] = {
+        "text_qa_template": MOCK_TEXT_QA_PROMPT,
+        "num_children": 2,
+    }
+    # TODO: fix unit test later
+    response = tree.query(query_str, mode="summarize", **query_kwargs)
+    assert response == ("What is?:Hello world.")
+
+    # test that default query fails
+    with pytest.raises(ValueError):
+        tree.query(query_str, mode="default", **orig_query_kwargs)
+
+
+@patch_common
 def test_insert(
     _mock_init: Any,
     _mock_predict: Any,

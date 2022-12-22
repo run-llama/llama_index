@@ -9,7 +9,7 @@ from gpt_index.token_predictor.utils import mock_extract_keywords_response
 
 def _mock_summary_predict(prompt_args: Dict) -> str:
     """Mock summary predict."""
-    return prompt_args["text"]
+    return prompt_args["context_str"]
 
 
 def _mock_insert_predict() -> str:

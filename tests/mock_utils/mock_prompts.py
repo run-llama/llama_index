@@ -10,7 +10,7 @@ from gpt_index.prompts.prompts import (
     TreeSelectPrompt,
 )
 
-MOCK_SUMMARY_PROMPT_TMPL = "{text}\n"
+MOCK_SUMMARY_PROMPT_TMPL = "{context_str}\n"
 MOCK_SUMMARY_PROMPT = SummaryPrompt(MOCK_SUMMARY_PROMPT_TMPL)
 
 MOCK_INSERT_PROMPT_TMPL = "{num_chunks}\n{context_list}{new_chunk_text}\n"

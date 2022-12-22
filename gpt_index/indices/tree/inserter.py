@@ -72,7 +72,7 @@ class GPTIndexInserter:
                 half1, prompt=self.summary_prompt
             )
             summary1, _ = self._llm_predictor.predict(
-                self.summary_prompt, text=text_chunk1
+                self.summary_prompt, context_str=text_chunk1
             )
             node1 = Node(
                 text=summary1,
@@ -84,7 +84,7 @@ class GPTIndexInserter:
                 half2, prompt=self.summary_prompt
             )
             summary2, _ = self._llm_predictor.predict(
-                self.summary_prompt, text=text_chunk2
+                self.summary_prompt, context_str=text_chunk2
             )
             node2 = Node(
                 text=summary2,
@@ -150,7 +150,7 @@ class GPTIndexInserter:
                 cur_graph_node_list, prompt=self.summary_prompt
             )
             new_summary, _ = self._llm_predictor.predict(
-                self.summary_prompt, text=text_chunk
+                self.summary_prompt, context_str=text_chunk
             )
 
             parent_node.text = new_summary

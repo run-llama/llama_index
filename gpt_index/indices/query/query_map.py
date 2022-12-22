@@ -15,12 +15,14 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
+from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 
 # TODO: migrate _mode_to_query in indices/base.py to use this file
 MODE_TO_QUERY_MAP_TREE = {
     QueryMode.DEFAULT: GPTTreeIndexLeafQuery,
     QueryMode.RETRIEVE: GPTTreeIndexRetQuery,
     QueryMode.EMBEDDING: GPTTreeIndexEmbeddingQuery,
+    QueryMode.SUMMARIZE: GPTTreeIndexSummarizeQuery,
 }
 
 MODE_TO_QUERY_MAP_LIST = {

@@ -21,7 +21,7 @@ DEFAULT_SUMMARY_PROMPT_TMPL = (
     "Try to include as many key details as possible.\n"
     "\n"
     "\n"
-    "{text}\n"
+    "{context_str}\n"
     "\n"
     "\n"
     'SUMMARY:"""\n'
