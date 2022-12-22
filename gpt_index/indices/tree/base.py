@@ -6,16 +6,11 @@ from gpt_index.indices.base import (
     DEFAULT_MODE,
     DOCUMENTS_INPUT,
     EMBEDDING_MODE,
-    SUMMARIZE_MODE,
     BaseGPTIndex,
 )
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.data_structs import IndexGraph
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
-from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
-from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
-from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
+from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
@@ -89,22 +84,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
                 f"but mode {mode} requires trees."
             )
 
-    def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Query mode to class."""
         self._validate_build_tree_required(mode)
-        if mode == DEFAULT_MODE:
-            query: BaseGPTIndexQuery = GPTTreeIndexLeafQuery(
-                self.index_struct, **query_kwargs
-            )
-        elif mode == RETRIEVE_MODE:
-            query = GPTTreeIndexRetQuery(self.index_struct, **query_kwargs)
-        elif mode == EMBEDDING_MODE:
-            query = GPTTreeIndexEmbeddingQuery(self.index_struct, **query_kwargs)
-        elif mode == SUMMARIZE_MODE:
-            query = GPTTreeIndexSummarizeQuery(self.index_struct, **query_kwargs)
-        else:
-            raise ValueError(f"Invalid query mode: {mode}.")
-        return query
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False

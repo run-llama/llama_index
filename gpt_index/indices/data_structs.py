@@ -143,6 +143,7 @@ class IndexList(IndexStruct):
         return cur_node.index
 
 
+# TODO: this should be specific to FAISS
 @dataclass
 class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
@@ -194,6 +195,7 @@ class IndexStructType(str, Enum):
     TREE = "tree"
     LIST = "list"
     KEYWORD_TABLE = "keyword_table"
+    DICT = "dict"
 
     def get_index_struct_cls(self) -> type:
         """Get index struct class."""
@@ -203,6 +205,8 @@ class IndexStructType(str, Enum):
             return IndexList
         elif self == IndexStructType.KEYWORD_TABLE:
             return KeywordTable
+        elif self == IndexStructType.DICT:
+            return IndexDict
         else:
             raise ValueError("Invalid index struct type.")
 
@@ -215,5 +219,7 @@ class IndexStructType(str, Enum):
             return cls.LIST
         elif isinstance(index_struct, KeywordTable):
             return cls.KEYWORD_TABLE
+        elif isinstance(index_struct, IndexDict):
+            return cls.DICT
         else:
             raise ValueError("Invalid index struct type.")
