@@ -7,7 +7,7 @@ import pytest
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response_utils.response import give_response
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.schema import Document
+from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
