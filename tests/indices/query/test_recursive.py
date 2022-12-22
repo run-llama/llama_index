@@ -12,7 +12,7 @@ from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.schema import Document
+from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_predict import (
     mock_llmchain_predict,
     mock_llmpredictor_predict,

@@ -2,7 +2,7 @@
 from abc import abstractmethod
 from typing import Any, List
 
-from gpt_index.schema import Document
+from gpt_index.readers.schema.base import Document
 
 
 class BaseReader:

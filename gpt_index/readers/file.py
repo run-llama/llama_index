@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, List
 
 from gpt_index.readers.base import BaseReader
-from gpt_index.schema import Document
+from gpt_index.readers.schema.base import Document
 
 
 class SimpleDirectoryReader(BaseReader):
