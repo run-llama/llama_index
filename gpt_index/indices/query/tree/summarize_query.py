@@ -55,7 +55,7 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
             self._llm_predictor,
             self._prompt_helper,
         )
-        all_nodes = self._index_struct.all_nodes
+        all_nodes = self._index_struct.all_nodes.copy()
         root_nodes = index_builder.build_index_from_nodes(
             all_nodes, all_nodes, verbose=verbose
         )
