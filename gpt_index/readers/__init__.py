@@ -18,8 +18,6 @@ from gpt_index.readers.google.gdocs import GoogleDocsReader
 from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
 from gpt_index.readers.pinecone import PineconeReader
-
-# TODO: move Document
 from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.weaviate import WeaviateReader
