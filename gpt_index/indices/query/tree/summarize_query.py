@@ -3,19 +3,13 @@
 
 from typing import Any, Optional
 
+from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response_utils.response import give_response
 from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
-from gpt_index.prompts.prompts import SummaryPrompt, TreeInsertPrompt, QuestionAnswerPrompt
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_INSERT_PROMPT,
-    DEFAULT_SUMMARY_PROMPT,
-)
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, SummaryPrompt
 
 
 class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
@@ -39,22 +33,25 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
         self,
         index_struct: IndexGraph,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        summary_template: Optional[SummaryPrompt] = None,
         num_children: int = 10,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct, **kwargs)
-        self.summary_template = summary_template or DEFAULT_SUMMARY_PROMPT
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self.num_children = num_children
 
     def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
+
+        # use prompt composability to build a summary prompt
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        summary_template = SummaryPrompt.from_prompt(text_qa_template)
+
         index_builder = GPTTreeIndexBuilder(
             self.num_children,
-            self.summary_template,
+            summary_template,
             self._llm_predictor,
             self._prompt_helper,
         )
@@ -62,6 +59,7 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
         root_nodes = index_builder.build_index_from_nodes(
             all_nodes, all_nodes, verbose=verbose
         )
+
         node_list = get_sorted_node_list(root_nodes)
         node_text = self._prompt_helper.get_text_from_nodes(
             node_list, prompt=self.text_qa_template
@@ -75,4 +73,3 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
             verbose=verbose,
         )
         return response
-        

@@ -8,9 +8,9 @@ from gpt_index.prompts.prompt_type import PromptType
 class SummaryPrompt(Prompt):
     """Summary prompt.
 
-    Prompt to summarize the provided `text`.
+    Prompt to summarize the provided `context_str`.
 
-    Required template variables: `text`
+    Required template variables: `context_str`
 
     Args:
         template (str): Template for the prompt.
@@ -19,7 +19,7 @@ class SummaryPrompt(Prompt):
     """
 
     prompt_type: PromptType = PromptType.SUMMARY
-    input_variables: List[str] = ["text"]
+    input_variables: List[str] = ["context_str"]
 
 
 class TreeInsertPrompt(Prompt):

@@ -1,7 +1,7 @@
 """Common classes/functions for tree index operations."""
 
 
-from typing import Any, Dict, Optional, Sequence
+from typing import Dict, Optional, Sequence
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -51,7 +51,10 @@ class GPTTreeIndexBuilder:
         return doc_nodes
 
     def build_from_text(
-        self, documents: Sequence[BaseDocument], build_tree: bool = True, verbose: bool = False
+        self,
+        documents: Sequence[BaseDocument],
+        build_tree: bool = True,
+        verbose: bool = False,
     ) -> IndexGraph:
         """Build from text.
 
@@ -65,7 +68,9 @@ class GPTTreeIndexBuilder:
 
         if build_tree:
             # instantiate all_nodes from initial text chunks
-            root_nodes = self.build_index_from_nodes(all_nodes, all_nodes, verbose=verbose)
+            root_nodes = self.build_index_from_nodes(
+                all_nodes, all_nodes, verbose=verbose
+            )
         else:
             # if build_tree is False, then don't surface any root nodes
             root_nodes = {}
@@ -92,7 +97,7 @@ class GPTTreeIndexBuilder:
             )
 
             new_summary, _ = self._llm_predictor.predict(
-                self.summary_prompt, text=text_chunk
+                self.summary_prompt, context_str=text_chunk
             )
 
             if verbose:
@@ -112,4 +117,3 @@ class GPTTreeIndexBuilder:
             return new_node_dict
         else:
             return self.build_index_from_nodes(new_node_dict, all_nodes)
-

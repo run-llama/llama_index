@@ -1,6 +1,6 @@
 """Tree-based index."""
 
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from gpt_index.indices.base import (
     DEFAULT_MODE,
@@ -9,15 +9,14 @@ from gpt_index.indices.base import (
     SUMMARIZE_MODE,
     BaseGPTIndex,
 )
-from gpt_index.indices.data_structs import IndexGraph, Node
-from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
+from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
-from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
@@ -25,7 +24,6 @@ from gpt_index.prompts.default_prompts import (
 )
 from gpt_index.prompts.prompts import SummaryPrompt, TreeInsertPrompt
 from gpt_index.schema import BaseDocument
-from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 
 RETRIEVE_MODE = "retrieve"
 
@@ -34,6 +32,7 @@ REQUIRE_TREE_MODES = {
     EMBEDDING_MODE,
     RETRIEVE_MODE,
 }
+
 
 class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     """GPT Tree Index.
@@ -82,12 +81,12 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             **kwargs,
         )
 
-    def _validate_build_tree_required(self, mode: str) -> bool:
+    def _validate_build_tree_required(self, mode: str) -> None:
         """Check if index supports modes that require trees."""
         if mode in REQUIRE_TREE_MODES and not self.build_tree:
             raise ValueError(
-                f"Index was constructed without building trees, "
-                "but mode {mode} requires trees."
+                "Index was constructed without building trees, "
+                f"but mode {mode} requires trees."
             )
 
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
@@ -118,7 +117,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self._llm_predictor,
             self._prompt_helper,
         )
-        index_graph = index_builder.build_from_text(documents, build_tree=self.build_tree, verbose=verbose)
+        index_graph = index_builder.build_from_text(
+            documents, build_tree=self.build_tree, verbose=verbose
+        )
         return index_graph
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
