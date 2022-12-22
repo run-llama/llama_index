@@ -6,7 +6,7 @@ from typing import Any, List
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
 
-SCOPES = "https://www.googleapis.com/auth/documents.readonly"
+SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
 
 
 # Copyright 2019 Google LLC
