@@ -6,6 +6,7 @@ from gpt_index.indices.base import (
     DEFAULT_MODE,
     DOCUMENTS_INPUT,
     EMBEDDING_MODE,
+    SUMMARIZE_MODE,
     BaseGPTIndex,
 )
 from gpt_index.indices.data_structs import IndexGraph, Node
@@ -14,6 +15,7 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
+from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -23,107 +25,15 @@ from gpt_index.prompts.default_prompts import (
 )
 from gpt_index.prompts.prompts import SummaryPrompt, TreeInsertPrompt
 from gpt_index.schema import BaseDocument
+from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 
 RETRIEVE_MODE = "retrieve"
 
-
-class GPTTreeIndexBuilder:
-    """GPT tree index builder.
-
-    Helper class to build the tree-structured index.
-
-    """
-
-    def __init__(
-        self,
-        num_children: int,
-        summary_prompt: SummaryPrompt,
-        llm_predictor: Optional[LLMPredictor],
-        prompt_helper: Optional[PromptHelper],
-    ) -> None:
-        """Initialize with params."""
-        if num_children < 2:
-            raise ValueError("Invalid number of children.")
-        self.num_children = num_children
-        self.summary_prompt = summary_prompt
-        self._prompt_helper = prompt_helper or PromptHelper()
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.summary_prompt, self.num_children
-        )
-        self._llm_predictor = llm_predictor or LLMPredictor()
-
-    def _get_nodes_from_document(
-        self, start_idx: int, document: BaseDocument
-    ) -> Dict[int, Node]:
-        """Add document to index."""
-        text_chunks = self._text_splitter.split_text(document.get_text())
-        doc_nodes = {
-            (start_idx + i): Node(
-                text=t, index=(start_idx + i), ref_doc_id=document.get_doc_id()
-            )
-            for i, t in enumerate(text_chunks)
-        }
-        return doc_nodes
-
-    def build_from_text(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
-    ) -> IndexGraph:
-        """Build from text.
-
-        Returns:
-            IndexGraph: graph object consisting of all_nodes, root_nodes
-
-        """
-        all_nodes: Dict[int, Node] = {}
-        for d in documents:
-            all_nodes.update(self._get_nodes_from_document(len(all_nodes), d))
-
-        # instantiate all_nodes from initial text chunks
-        root_nodes = self._build_index_from_nodes(all_nodes, all_nodes, verbose=verbose)
-        return IndexGraph(all_nodes=all_nodes, root_nodes=root_nodes)
-
-    def _build_index_from_nodes(
-        self,
-        cur_nodes: Dict[int, Node],
-        all_nodes: Dict[int, Node],
-        verbose: bool = False,
-    ) -> Dict[int, Node]:
-        """Consolidates chunks recursively, in a bottoms-up fashion."""
-        cur_node_list = get_sorted_node_list(cur_nodes)
-        cur_index = len(all_nodes)
-        new_node_dict = {}
-        print(
-            f"> Building index from nodes: {len(cur_nodes) // self.num_children} chunks"
-        )
-        for i in range(0, len(cur_node_list), self.num_children):
-            print(f"{i}/{len(cur_nodes)}")
-            cur_nodes_chunk = cur_node_list[i : i + self.num_children]
-            text_chunk = self._prompt_helper.get_text_from_nodes(
-                cur_nodes_chunk, prompt=self.summary_prompt
-            )
-
-            new_summary, _ = self._llm_predictor.predict(
-                self.summary_prompt, text=text_chunk
-            )
-
-            if verbose:
-                fmt_summary = truncate_text(new_summary, 50)
-                print(f"> {i}/{len(cur_nodes)}, summary: {fmt_summary}")
-            new_node = Node(
-                text=new_summary,
-                index=cur_index,
-                child_indices={n.index for n in cur_nodes_chunk},
-            )
-            new_node_dict[cur_index] = new_node
-            cur_index += 1
-
-        all_nodes.update(new_node_dict)
-
-        if len(new_node_dict) <= self.num_children:
-            return new_node_dict
-        else:
-            return self._build_index_from_nodes(new_node_dict, all_nodes)
-
+REQUIRE_TREE_MODES = {
+    DEFAULT_MODE,
+    EMBEDDING_MODE,
+    RETRIEVE_MODE,
+}
 
 class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     """GPT Tree Index.
@@ -141,6 +51,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             (see :ref:`Prompt-Templates`).
         insert_prompt (Optional[TreeInsertPrompt]): An Tree Insertion Prompt
             (see :ref:`Prompt-Templates`).
+        num_children (int): The number of children each node should have.
+        build_tree (bool): Whether to build the tree during index construction.
 
     """
 
@@ -154,6 +66,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         insert_prompt: Optional[TreeInsertPrompt] = None,
         num_children: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
+        build_tree: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -161,6 +74,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.num_children = num_children
         self.summary_template = summary_template or DEFAULT_SUMMARY_PROMPT
         self.insert_prompt: TreeInsertPrompt = insert_prompt or DEFAULT_INSERT_PROMPT
+        self.build_tree = build_tree
         super().__init__(
             documents=documents,
             index_struct=index_struct,
@@ -168,8 +82,17 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             **kwargs,
         )
 
+    def _validate_build_tree_required(self, mode: str) -> bool:
+        """Check if index supports modes that require trees."""
+        if mode in REQUIRE_TREE_MODES and not self.build_tree:
+            raise ValueError(
+                f"Index was constructed without building trees, "
+                "but mode {mode} requires trees."
+            )
+
     def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
         """Query mode to class."""
+        self._validate_build_tree_required(mode)
         if mode == DEFAULT_MODE:
             query: BaseGPTIndexQuery = GPTTreeIndexLeafQuery(
                 self.index_struct, **query_kwargs
@@ -178,6 +101,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             query = GPTTreeIndexRetQuery(self.index_struct, **query_kwargs)
         elif mode == EMBEDDING_MODE:
             query = GPTTreeIndexEmbeddingQuery(self.index_struct, **query_kwargs)
+        elif mode == SUMMARIZE_MODE:
+            query = GPTTreeIndexSummarizeQuery(self.index_struct, **query_kwargs)
         else:
             raise ValueError(f"Invalid query mode: {mode}.")
         return query
@@ -193,7 +118,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self._llm_predictor,
             self._prompt_helper,
         )
-        index_graph = index_builder.build_from_text(documents, verbose=verbose)
+        index_graph = index_builder.build_from_text(documents, build_tree=self.build_tree, verbose=verbose)
         return index_graph
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
