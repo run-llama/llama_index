@@ -23,6 +23,9 @@ class QueryMode(str, Enum):
     SIMPLE = "simple"
     RAKE = "rake"
 
+    # recursive queries (composable queries)
+    RECURSIVE = "recursive"
+
 
 @dataclass
 class QueryConfig(DataClassJsonMixin):

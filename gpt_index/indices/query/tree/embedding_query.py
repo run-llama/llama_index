@@ -1,6 +1,6 @@
 """Query Tree using embedding similarity between query and node text."""
 
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexGraph, Node
@@ -53,15 +53,17 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         refine_template: Optional[RefinePrompt] = None,
         child_branch_factor: int = 1,
         embed_model: Optional[OpenAIEmbedding] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             index_struct,
-            query_template,
-            query_template_multiple,
-            text_qa_template,
-            refine_template,
-            child_branch_factor,
+            query_template=query_template,
+            query_template_multiple=query_template_multiple,
+            text_qa_template=text_qa_template,
+            refine_template=refine_template,
+            child_branch_factor=child_branch_factor,
+            **kwargs,
         )
         self._embed_model = embed_model or OpenAIEmbedding()
         self.child_branch_factor = child_branch_factor

@@ -11,20 +11,9 @@ existing keywords in the table.
 from abc import abstractmethod
 from typing import Any, Optional, Sequence, Set
 
-from gpt_index.indices.base import (
-    DEFAULT_MODE,
-    DOCUMENTS_INPUT,
-    BaseGPTIndex,
-    BaseGPTIndexQuery,
-)
+from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.query.keyword_table.query import (
-    BaseGPTKeywordTableQuery,
-    GPTKeywordTableGPTQuery,
-    GPTKeywordTableRAKEQuery,
-    GPTKeywordTableSimpleQuery,
-)
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -54,10 +43,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         keyword_extract_template (Optional[KeywordExtractPrompt]): A Keyword
             Extraction Prompt
             (see :ref:`Prompt-Templates`).
-        max_keywords_per_query (int): The maximum number of keywords to extract
-            per query.
-        max_keywords_per_query (int): The maximum number of keywords to extract
-            per chunk.
 
     """
 
@@ -68,7 +53,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[KeywordTable] = None,
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
-        max_keywords_per_query: int = 10,
         max_keywords_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
         **kwargs: Any,
@@ -78,7 +62,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self.keyword_extract_template = (
             keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
         )
-        self.max_keywords_per_query = max_keywords_per_query
         self.max_keywords_per_chunk = max_keywords_per_chunk
         super().__init__(
             documents=documents,
@@ -89,26 +72,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.keyword_extract_template, 1
         )
-
-    def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
-        """Query mode to class."""
-        if mode == DEFAULT_MODE:
-            query_kwargs.update(
-                {
-                    "max_keywords_per_query": self.max_keywords_per_query,
-                    "keyword_extract_template": self.keyword_extract_template,
-                }
-            )
-            query: BaseGPTKeywordTableQuery = GPTKeywordTableGPTQuery(
-                self.index_struct, **query_kwargs
-            )
-        elif mode == "simple":
-            query = GPTKeywordTableSimpleQuery(self.index_struct, **query_kwargs)
-        elif mode == "rake":
-            query = GPTKeywordTableRAKEQuery(self.index_struct, **query_kwargs)
-        else:
-            raise ValueError(f"Invalid query mode: {mode}.")
-        return query
 
     @abstractmethod
     def _extract_keywords(self, text: str) -> Set[str]:

@@ -14,20 +14,15 @@ from typing import (
     cast,
 )
 
-from gpt_index.indices.data_structs import IndexStruct
+from gpt_index.indices.data_structs import IndexStruct, IndexStructType
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
+from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import BaseDocument, DocumentStore
 from gpt_index.utils import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
-
-# TODO: remove and consolidate with QueryMode
-DEFAULT_MODE = "default"
-EMBEDDING_MODE = "embedding"
-SUMMARIZE_MODE = "summarize"
 
 
 DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
@@ -157,15 +152,22 @@ class BaseGPTIndex(Generic[IS]):
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
 
-    @abstractmethod
-    def _mode_to_query(self, mode: str, **query_kwargs: Any) -> BaseGPTIndexQuery:
-        """Query mode to class."""
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
+        """Preprocess query.
+
+        This allows subclasses to pass in additional query kwargs
+        to query, for instance arguments that are shared between the
+        index and the query class. By default, this does nothing.
+        This also allows subclasses to do validation.
+
+        """
+        pass
 
     def query(
         self,
         query_str: str,
         verbose: bool = False,
-        mode: str = DEFAULT_MODE,
+        mode: str = QueryMode.DEFAULT,
         **query_kwargs: Any
     ) -> str:
         """Answer a query.
@@ -179,8 +181,9 @@ class BaseGPTIndex(Generic[IS]):
 
 
         """
+        mode_enum = QueryMode(mode)
         # TODO: remove _mode_to_query and consolidate with query_runner
-        if mode == "recursive":
+        if mode_enum == QueryMode.RECURSIVE:
             if "query_configs" not in query_kwargs:
                 raise ValueError("query_configs must be provided for recursive mode.")
             query_configs = query_kwargs["query_configs"]
@@ -189,16 +192,25 @@ class BaseGPTIndex(Generic[IS]):
                 self._docstore,
                 query_configs=query_configs,
                 verbose=verbose,
+                recursive=True,
             )
             return query_runner.query(query_str, self._index_struct)
         else:
-            query_obj = self._mode_to_query(mode, **query_kwargs)
-            # set llm_predictor if exists
-            if not query_obj._llm_predictor_set:
-                query_obj.set_llm_predictor(self._llm_predictor)
-            # set prompt_helper if exists
-            query_obj.set_prompt_helper(self._prompt_helper)
-            return query_obj.query(query_str, verbose=verbose)
+            self._preprocess_query(mode_enum, query_kwargs)
+            # TODO: pass in query config directly
+            query_config = QueryConfig(
+                index_struct_type=IndexStructType.from_index_struct(self._index_struct),
+                query_mode=mode_enum,
+                query_kwargs=query_kwargs,
+            ).to_dict()
+            query_runner = QueryRunner(
+                self._llm_predictor,
+                self._docstore,
+                query_configs=[query_config],
+                verbose=verbose,
+                recursive=False,
+            )
+            return query_runner.query(query_str, self._index_struct)
 
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "BaseGPTIndex":
