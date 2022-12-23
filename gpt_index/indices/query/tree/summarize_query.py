@@ -6,10 +6,13 @@ from typing import Any, Optional
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response_utils.response import give_response
+from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.indices.utils import get_sorted_node_list
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, SummaryPrompt
+from gpt_index.prompts.default_prompts import (
+    DEFAULT_REFINE_PROMPT,
+    DEFAULT_TEXT_QA_PROMPT,
+)
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
 
 
 class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
@@ -33,12 +36,14 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
         self,
         index_struct: IndexGraph,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         num_children: int = 10,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct, **kwargs)
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self.num_children = num_children
 
     def _query(self, query_str: str, verbose: bool = False) -> str:
@@ -64,12 +69,12 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
         node_text = self._prompt_helper.get_text_from_nodes(
             node_list, prompt=self.text_qa_template
         )
-        response = give_response(
+        response_builder = ResponseBuilder(
             self._prompt_helper,
             self._llm_predictor,
-            query_str,
-            node_text,
-            text_qa_template=self.text_qa_template,
-            verbose=verbose,
+            self.text_qa_template,
+            self.refine_template,
+            texts=[TextChunk(node_text)],
         )
+        response = response_builder.get_response(query_str, verbose=verbose)
         return response

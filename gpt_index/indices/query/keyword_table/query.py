@@ -10,6 +10,7 @@ from gpt_index.indices.keyword_table.utils import (
     simple_extract_keywords,
 )
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
@@ -93,19 +94,22 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
             reverse=True,
         )
         sorted_chunk_indices = sorted_chunk_indices[: self.num_chunks_per_query]
-        result_response = None
-        for text_chunk_idx in sorted_chunk_indices:
-            node = self.index_struct.text_chunks[text_chunk_idx]
+        sorted_nodes = [
+            self.index_struct.text_chunks[idx] for idx in sorted_chunk_indices
+        ]
+        response_builder = ResponseBuilder(
+            self._prompt_helper,
+            self._llm_predictor,
+            self.text_qa_template,
+            self.refine_template,
+        )
+        for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
             fmt_text_chunk = truncate_text(node.get_text(), 50)
-            print(f"> Querying with idx: {text_chunk_idx}: {fmt_text_chunk}")
-            result_response = self._query_node(
-                query_str,
-                node,
-                text_qa_template=self.text_qa_template,
-                refine_template=self.refine_template,
-                response=result_response,
-                verbose=verbose,
-            )
+            print(f"> Querying with idx: {chunk_idx}: {fmt_text_chunk}")
+            text = self._get_text_from_node(query_str, node, verbose=verbose)
+            response_builder.add_text_chunks([text])
+        result_response = response_builder.get_response(query_str, verbose=verbose)
+
         return result_response or "Empty response"
 
 

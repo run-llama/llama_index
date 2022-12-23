@@ -133,7 +133,7 @@ def test_query(
     documents: List[Document],
     struct_kwargs: Dict,
 ) -> None:
-    """Test embedding query."""
+    """Test list query."""
     index_kwargs, query_kwargs = struct_kwargs
     index = GPTListIndex(documents, **index_kwargs)
 
@@ -151,7 +151,7 @@ def test_query_with_keywords(
     documents: List[Document],
     struct_kwargs: Dict,
 ) -> None:
-    """Test embedding query."""
+    """Test list query with keywords."""
     index_kwargs, query_kwargs = struct_kwargs
     index = GPTListIndex(documents, **index_kwargs)
 

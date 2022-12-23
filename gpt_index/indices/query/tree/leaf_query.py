@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, cast
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
@@ -85,14 +86,18 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
         """
         if len(selected_node.child_indices) == 0:
-            # call _query_node to get an answer from doc (either Document/IndexStruct)
-            cur_response = self._query_node(
-                query_str,
-                selected_node,
+            response_builder = ResponseBuilder(
+                self._prompt_helper,
+                self._llm_predictor,
                 self.text_qa_template,
                 self.refine_template,
-                verbose=verbose,
-                level=level,
+            )
+            # use response builder to get answer from node
+            node_text = self._get_text_from_node(
+                query_str, selected_node, verbose=verbose, level=level
+            )
+            cur_response = response_builder.get_response_over_chunks(
+                query_str, [node_text], prev_response=prev_response, verbose=verbose
             )
             if verbose:
                 print(f">[Level {level}] Current answer response: {cur_response} ")
