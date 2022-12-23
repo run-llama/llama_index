@@ -10,7 +10,11 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import Node
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMChain
+from gpt_index.langchain_helpers.chain_wrapper import (
+    LLMChain,
+    LLMMetadata,
+    LLMPredictor,
+)
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_predict import mock_llmchain_predict
@@ -105,6 +109,7 @@ def test_embedding_query(
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
 @patch("gpt_index.langchain_helpers.chain_wrapper.OpenAI")
+@patch.object(LLMPredictor, "get_llm_metadata", return_value=LLMMetadata())
 @patch.object(LLMChain, "__init__", return_value=None)
 @patch.object(
     GPTTreeIndexEmbeddingQuery,
@@ -114,6 +119,7 @@ def test_embedding_query(
 def test_query_and_count_tokens(
     _mock_similarity: Any,
     _mock_llmchain: Any,
+    _mock_llm_metadata: Any,
     _mock_init: Any,
     _mock_predict: Any,
     struct_kwargs: Dict,

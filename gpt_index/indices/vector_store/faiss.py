@@ -104,6 +104,7 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Query mode to class."""
+        super()._preprocess_query(mode, query_kwargs)
         # pass along faiss_index
         query_kwargs["faiss_index"] = self._faiss_index
 

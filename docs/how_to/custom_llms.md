@@ -11,14 +11,14 @@ and [LLMChain](https://langchain.readthedocs.io/en/latest/modules/chains.html) m
 the underlying abstraction. We introduce a wrapper class, 
 [`LLMPredictor`](/reference/llm_predictor.rst), for integration into GPT Index.
 
-By default, we use OpenAI's `text-davinci-002` model. But you may choose to customize
+By default, we use OpenAI's `text-davinci-003` model. But you may choose to customize
 the underlying LLM being used.
 
 
 ## Example
 
 An example snippet of customizing the LLM being used is shown below. 
-In this example, we use `text-davinci-003` instead of `text-davinci-002`. Note that 
+In this example, we use `text-davinci-002` instead of `text-davinci-003`. Note that 
 you may plug in any LLM shown on Langchain's 
 [LLM](https://langchain.readthedocs.io/en/latest/modules/llms.html) page.
 

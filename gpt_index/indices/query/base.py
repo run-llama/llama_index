@@ -39,9 +39,9 @@ class BaseGPTIndexQuery(Generic[IS]):
         index_struct: IS,
         # TODO: pass from superclass
         llm_predictor: Optional[LLMPredictor] = None,
+        prompt_helper: Optional[PromptHelper] = None,
         docstore: Optional[DocumentStore] = None,
         query_runner: Optional[BaseQueryRunner] = None,
-        prompt_helper: Optional[PromptHelper] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -57,7 +57,10 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._llm_predictor = llm_predictor or LLMPredictor()
         self._docstore = docstore
         self._query_runner = query_runner
-        self._prompt_helper = prompt_helper or PromptHelper()
+        # TODO: make this a required param
+        if prompt_helper is None:
+            raise ValueError("prompt_helper must be provided.")
+        self._prompt_helper = cast(PromptHelper, prompt_helper)
 
     def _query_node(
         self,
