@@ -28,7 +28,6 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         index_struct: IndexList,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
-        keyword: Optional[str] = None,
         similarity_top_k: Optional[int] = 1,
         embed_model: Optional[OpenAIEmbedding] = None,
         **kwargs: Any,
@@ -38,7 +37,6 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
-            keyword=keyword,
             **kwargs,
         )
         self._embed_model = embed_model or OpenAIEmbedding()
@@ -49,9 +47,6 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     ) -> List[Node]:
         """Get nodes for response."""
         nodes = self.index_struct.nodes
-        if self.keyword is not None:
-            nodes = [node for node in nodes if self.keyword in node.get_text()]
-
         # top k nodes
         similarities = self._get_query_text_embedding_similarities(query_str, nodes)
         sorted_node_tups = sorted(

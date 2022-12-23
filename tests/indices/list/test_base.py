@@ -137,10 +137,33 @@ def test_query(
     index_kwargs, query_kwargs = struct_kwargs
     index = GPTListIndex(documents, **index_kwargs)
 
-    # test embedding query
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
     assert response == ("What is?:Hello world.")
+
+
+@patch_common
+def test_query_with_keywords(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test embedding query."""
+    index_kwargs, query_kwargs = struct_kwargs
+    index = GPTListIndex(documents, **index_kwargs)
+
+    # test query with keywords
+    query_str = "What is?"
+    query_kwargs.update({"required_keywords": ["test"]})
+    response = index.query(query_str, mode="default", **query_kwargs)
+    assert response == ("What is?:This is a test.")
+
+    query_kwargs.update({"exclude_keywords": ["Hello"]})
+    response = index.query(query_str, mode="default", **query_kwargs)
+    assert response == ("What is?:This is a test.")
 
 
 @patch_common
