@@ -1,8 +1,4 @@
-"""Faiss Vector store index.
-
-An index that that is built on top of an existing vector store.
-
-"""
+"""Simple vector store index."""
 
 from typing import Any, Optional, Sequence, cast
 
@@ -21,10 +17,10 @@ from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 
 
-class GPTFaissIndex(BaseGPTVectorStoreIndex):
-    """GPT Faiss Index.
+class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex):
+    """GPT Simple Vector Index.
 
-    The GPTFaissIndex is a data structure where nodes are keyed by
+    The GPTSimpleVectorIndex is a data structure where nodes are keyed by
     embeddings, and those embeddings are stored within a Faiss index.
     During index construction, the document texts are chunked up,
     converted to nodes with text; they are then encoded in
@@ -37,8 +33,7 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
-        faiss_index (faiss.Index): A Faiss Index object (required). Note: the index
-            will be reset during index construction.
+        faiss_index (faiss.Index): A Faiss Index object (required)
         embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
             embedding similarity.
     """
@@ -68,8 +63,8 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex):
 
         if faiss_index is None:
             raise ValueError("faiss_index cannot be None.")
-        faiss_index.reset()
-        self._faiss_index = cast(faiss.Index, faiss_index)
+        # NOTE: cast to Any for now
+        self._faiss_index = cast(Any, faiss_index)
         super().__init__(
             documents=documents,
             index_struct=index_struct,
@@ -95,7 +90,7 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex):
             # Faiss store
             text_embedding = self._embed_model.get_text_embedding(text_chunk)
             text_embedding_np = np.array(text_embedding)[np.newaxis, :]
-            new_id = str(self._faiss_index.ntotal)
+            new_id = self._faiss_index.ntotal
             self._faiss_index.add(text_embedding_np)
 
             # add to index
