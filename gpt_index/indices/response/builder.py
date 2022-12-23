@@ -8,18 +8,18 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 """
 
+from enum import Enum
+from typing import List, Optional
+
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import truncate_text
-from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from enum import Enum
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.indices.response.utils import give_response, refine_response
-from typing import List, Optional
 
 
 class ResponseMode(str, Enum):
     """Response modes."""
+
     DEFAULT = "default"
     COMPACT = "compact"
     TREE_SUMMARIZE = "tree_summarize"
@@ -29,12 +29,12 @@ class ResponseBuilder:
     """Response builder class."""
 
     def __init__(
-        self, 
-        prompt_helper: PromptHelper, 
+        self,
+        prompt_helper: PromptHelper,
         llm_predictor: LLMPredictor,
         text_qa_template: QuestionAnswerPrompt,
         refine_template: RefinePrompt,
-        texts: List[str] = None,
+        texts: Optional[List[str]] = None,
     ) -> None:
         """Init params."""
         self.prompt_helper = prompt_helper
@@ -73,7 +73,6 @@ class ResponseBuilder:
                 print(f"> Refined response: {response}")
         return response
 
-
     def give_response_single(
         self,
         query_str: str,
@@ -81,14 +80,18 @@ class ResponseBuilder:
         verbose: bool = False,
     ) -> str:
         """Give response given a query and a corresponding text chunk."""
-        qa_text_splitter = self.prompt_helper.get_text_splitter_given_prompt(self.text_qa_template, 1)
+        qa_text_splitter = self.prompt_helper.get_text_splitter_given_prompt(
+            self.text_qa_template, 1
+        )
         text_chunks = qa_text_splitter.split_text(text_chunk)
         response = None
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None:
                 response, _ = self.llm_predictor.predict(
-                    self.text_qa_template, query_str=query_str, context_str=cur_text_chunk
+                    self.text_qa_template,
+                    query_str=query_str,
+                    context_str=cur_text_chunk,
                 )
                 if verbose:
                     print(f"> Initial response: {response}")
@@ -101,10 +104,12 @@ class ResponseBuilder:
                 )
         return response or ""
 
-
     def get_response_over_chunks(
-        self, query_str: str, text_chunks: List[str], prev_response: Optional[str] = None, 
-        verbose: bool = False
+        self,
+        query_str: str,
+        text_chunks: List[str],
+        prev_response: Optional[str] = None,
+        verbose: bool = False,
     ) -> str:
         """Give response over chunks."""
         for text_chunk in text_chunks:
@@ -116,34 +121,44 @@ class ResponseBuilder:
                 )
             else:
                 response = self.refine_response_single(
-                    prev_response,
-                    query_str,
-                    text_chunk,
-                    verbose=verbose
+                    prev_response, query_str, text_chunk, verbose=verbose
                 )
         return response
 
-    def _get_response_default(self, query_str: str, prev_response: Optional[str], verbose: bool = False) -> str:
+    def _get_response_default(
+        self, query_str: str, prev_response: Optional[str], verbose: bool = False
+    ) -> str:
         return self.get_response_over_chunks(
             query_str, self._texts, prev_response=prev_response, verbose=verbose
         )
 
-    def _get_response_compact(self, query_str: str, prev_response: Optional[str], verbose: bool = False) -> str:
+    def _get_response_compact(
+        self, query_str: str, prev_response: Optional[str], verbose: bool = False
+    ) -> str:
         """Get compact response."""
         # use prompt helper to fix compact text_chunks under the prompt limitation
-        new_text_chunks = self.prompt_helper.compact_text_chunks(self._texts)
-        return self.get_response_over_chunks(query_str, new_text_chunks, prev_response=prev_response, verbose=verbose)
+        max_prompt = self.prompt_helper.get_biggest_prompt(
+            [self.text_qa_template, self.refine_template]
+        )
+        new_text_chunks = self.prompt_helper.compact_text_chunks(
+            max_prompt, self._texts
+        )
+        return self.get_response_over_chunks(
+            query_str, new_text_chunks, prev_response=prev_response, verbose=verbose
+        )
 
-    def _get_response_tree_summarize(self, query_str: str, prev_response: Optional[str], verbose: bool = False) -> str:
+    def _get_response_tree_summarize(
+        self, query_str: str, prev_response: Optional[str], verbose: bool = False
+    ) -> str:
         """Get tree summarize response."""
         raise NotImplementedError
 
     def get_response(
-        self, 
-        query_str: str, 
+        self,
+        query_str: str,
         prev_response: Optional[str] = None,
-        mode: ResponseMode = ResponseMode.DEFAULT, 
-        verbose: bool = False
+        mode: ResponseMode = ResponseMode.DEFAULT,
+        verbose: bool = False,
     ) -> str:
         """Get response."""
         if mode == ResponseMode.DEFAULT:
@@ -151,8 +166,8 @@ class ResponseBuilder:
         elif mode == ResponseMode.COMPACT:
             return self._get_response_compact(query_str, prev_response, verbose=verbose)
         elif mode == ResponseMode.TREE_SUMMARIZE:
-            return self._get_response_tree_summarize(query_str, prev_response, verbose=verbose)
+            return self._get_response_tree_summarize(
+                query_str, prev_response, verbose=verbose
+            )
         else:
             raise ValueError(f"Invalid mode: {mode}")
-
-    

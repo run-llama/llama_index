@@ -83,13 +83,13 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         return True
 
-    def _query_node(
+    def _get_text_from_node(
         self,
         query_str: str,
         node: Node,
-        text_qa_template: QuestionAnswerPrompt,
-        refine_template: RefinePrompt,
-        response: Optional[str] = None,
+        # text_qa_template: QuestionAnswerPrompt,
+        # refine_template: RefinePrompt,
+        # response: Optional[str] = None,
         verbose: bool = False,
         level: Optional[int] = None,
     ) -> str:
@@ -117,38 +117,48 @@ class BaseGPTIndexQuery(Generic[IS]):
             if isinstance(doc, IndexStruct):
                 is_index_struct = True
 
-        # If the retrieved node corresponds to another index struct, then
-        # recursively query that node. Otherwise, simply return the node's text.
-        response_builder = ResponseBuilder(
-            self._prompt_helper, 
-            self._llm_predictor,
-            text_qa_template,
-            refine_template,
-        )
         if is_index_struct:
-            # if is index struct, then recurse and get answer
             query_runner = cast(BaseQueryRunner, self._query_runner)
-            query_response = query_runner.query(query_str, cast(IndexStruct, doc))
-            if response is None:
-                response = query_response
-            else:
-                response = response_builder.refine_response_single(
-                    response,
-                    query_str,
-                    query_response,
-                    verbose=verbose,
-                )
+            text = query_runner.query(query_str, cast(IndexStruct, doc))
         else:
-            # if not index struct, then just fetch text from the node
             text = node.get_text()
-            response = response_builder.get_response_over_chunks(
-                query_str, [text], prev_response=response, verbose=verbose
-            )
-        # TODO: refactor query_node to return text, instead of generating
-        # a response from a node.
-        # then, we just need to add this text to the response builder.
 
-        return response
+        # TODO: allow texts from index structs to not be run
+
+        return text
+
+        # # If the retrieved node corresponds to another index struct, then
+        # # recursively query that node. Otherwise, simply return the node's text.
+        # response_builder = ResponseBuilder(
+        #     self._prompt_helper,
+        #     self._llm_predictor,
+        #     text_qa_template,
+        #     refine_template,
+        # )
+        # if is_index_struct:
+        #     # if is index struct, then recurse and get answer
+        #     query_runner = cast(BaseQueryRunner, self._query_runner)
+        #     query_response = query_runner.query(query_str, cast(IndexStruct, doc))
+        #     if response is None:
+        #         response = query_response
+        #     else:
+        #         response = response_builder.refine_response_single(
+        #             response,
+        #             query_str,
+        #             query_response,
+        #             verbose=verbose,
+        #         )
+        # else:
+        #     # if not index struct, then just fetch text from the node
+        #     text = node.get_text()
+        #     response = response_builder.get_response_over_chunks(
+        #         query_str, [text], prev_response=response, verbose=verbose
+        #     )
+        # # TODO: refactor query_node to return text, instead of generating
+        # # a response from a node.
+        # # then, we just need to add this text to the response builder.
+
+        # return response
 
     @property
     def index_struct(self) -> IS:

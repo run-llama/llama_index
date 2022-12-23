@@ -9,7 +9,6 @@ from gpt_index.prompts.default_prompts import (
 )
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
-
 # TODO: remove usage
 
 # def refine_response(
