@@ -1,12 +1,46 @@
 """Wrapper functions around an LLM chain."""
 
+from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
-from langchain import LLMChain, OpenAI
-from langchain.llms.base import LLM
+from langchain import Cohere, LLMChain, OpenAI
+from langchain.llms import AI21
+from langchain.llms.base import BaseLLM
 
+from gpt_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.prompts.base import Prompt
 from gpt_index.utils import globals_helper
+
+
+@dataclass
+class LLMMetadata:
+    """LLM metadata.
+
+    We extract this metadata to help with our prompts.
+
+    """
+
+    max_input_size: int = MAX_CHUNK_SIZE
+    num_output: int = NUM_OUTPUTS
+
+
+def _get_llm_metadata(llm: BaseLLM) -> LLMMetadata:
+    """Get LLM metadata from llm."""
+    if not isinstance(llm, BaseLLM):
+        raise ValueError("llm must be an instance of langchain.llms.base.LLM")
+    if isinstance(llm, OpenAI):
+        return LLMMetadata(
+            max_input_size=llm.modelname_to_contextsize(llm.model_name),
+            num_output=llm.max_tokens,
+        )
+    elif isinstance(llm, Cohere):
+        # TODO: figure out max input size for cohere
+        return LLMMetadata(num_output=llm.max_tokens)
+    elif isinstance(llm, AI21):
+        # TODO: figure out max input size for AI21
+        return LLMMetadata(num_output=llm.maxTokens)
+    else:
+        return LLMMetadata()
 
 
 class LLMPredictor:
@@ -16,19 +50,27 @@ class LLMPredictor:
 
     Args:
         llm (Optional[langchain.llms.base.LLM]): LLM from Langchain to use
-            for predictions. Defaults to OpenAI's text-davinci-002 model.
+            for predictions. Defaults to OpenAI's text-davinci-003 model.
             Please see `Langchain's LLM Page
             <https://langchain.readthedocs.io/en/latest/modules/llms.html>`_
             for more details.
 
     """
 
-    def __init__(self, llm: Optional[LLM] = None) -> None:
+    def __init__(self, llm: Optional[BaseLLM] = None) -> None:
         """Initialize params."""
-        self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-002")
+        self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
         self._total_tokens_used = 0
         self.flag = True
         self._last_token_usage: Optional[int] = None
+
+    def get_llm_metadata(self) -> LLMMetadata:
+        """Get LLM metadata."""
+        # TODO: refactor mocks in unit tests, this is a stopgap solution
+        if hasattr(self, "_llm"):
+            return _get_llm_metadata(self._llm)
+        else:
+            return LLMMetadata()
 
     def _predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Inner predict function."""

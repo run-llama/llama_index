@@ -4,6 +4,7 @@ from typing import Any, List
 
 import pytest
 
+from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response_utils.response import give_response
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -34,7 +35,7 @@ def test_give_response(
     documents: List[Document],
 ) -> None:
     """Test give response."""
-    prompt_helper = PromptHelper()
+    prompt_helper = PromptHelper(MAX_CHUNK_SIZE, NUM_OUTPUTS, MAX_CHUNK_OVERLAP)
     llm_predictor = LLMPredictor()
     query_str = "What is?"
 

@@ -40,6 +40,7 @@ class BaseGPTIndex(Generic[IS]):
         llm_predictor: Optional[LLMPredictor] = None,
         docstore: Optional[DocumentStore] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        chunk_size_limit: Optional[int] = None,
         verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
@@ -51,7 +52,9 @@ class BaseGPTIndex(Generic[IS]):
         self._llm_predictor = llm_predictor or LLMPredictor()
 
         # TODO: move out of base if we need custom params per index
-        self._prompt_helper = prompt_helper or PromptHelper()
+        self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
+            self._llm_predictor, chunk_size_limit=chunk_size_limit
+        )
 
         # build index struct in the init function
         self._docstore = docstore or DocumentStore()
@@ -189,6 +192,7 @@ class BaseGPTIndex(Generic[IS]):
             query_configs = query_kwargs["query_configs"]
             query_runner = QueryRunner(
                 self._llm_predictor,
+                self._prompt_helper,
                 self._docstore,
                 query_configs=query_configs,
                 verbose=verbose,
@@ -205,6 +209,7 @@ class BaseGPTIndex(Generic[IS]):
             ).to_dict()
             query_runner = QueryRunner(
                 self._llm_predictor,
+                self._prompt_helper,
                 self._docstore,
                 query_configs=[query_config],
                 verbose=verbose,

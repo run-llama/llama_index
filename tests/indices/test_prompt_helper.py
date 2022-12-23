@@ -20,6 +20,7 @@ def mock_tokenizer(text: str) -> List[str]:
 
 def test_get_chunk_size() -> None:
     """Test get chunk size given prompt."""
+    # test with 1 chunk
     empty_prompt_text = "This is the prompt"
     prompt_helper = PromptHelper(
         max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
@@ -29,6 +30,7 @@ def test_get_chunk_size() -> None:
     )
     assert chunk_size == 6
 
+    # test having 2 chunks
     prompt_helper = PromptHelper(
         max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
@@ -36,6 +38,19 @@ def test_get_chunk_size() -> None:
         empty_prompt_text, 2, padding=0
     )
     assert chunk_size == 3
+
+    # test with 2 chunks, and with chunk_size_limit
+    prompt_helper = PromptHelper(
+        max_input_size=11,
+        num_output=1,
+        max_chunk_overlap=0,
+        tokenizer=mock_tokenizer,
+        chunk_size_limit=2,
+    )
+    chunk_size = prompt_helper.get_chunk_size_given_prompt(
+        empty_prompt_text, 2, padding=0
+    )
+    assert chunk_size == 2
 
     # test padding
     prompt_helper = PromptHelper(
@@ -62,6 +77,20 @@ def test_get_text_splitter() -> None:
     assert text_chunks == ["Hello world", "foo Hello", "world bar"]
     truncated_text = text_splitter.truncate_text(test_text)
     assert truncated_text == "Hello world"
+
+    # test with chunk_size_limit
+    prompt_helper = PromptHelper(
+        max_input_size=11,
+        num_output=1,
+        max_chunk_overlap=0,
+        tokenizer=mock_tokenizer,
+        chunk_size_limit=1,
+    )
+    text_splitter = prompt_helper.get_text_splitter_given_prompt(
+        test_prompt, 2, padding=1
+    )
+    text_chunks = text_splitter.split_text(test_text)
+    assert text_chunks == ["Hello", "world", "foo", "Hello", "world", "bar"]
 
 
 def test_get_text_from_nodes() -> None:

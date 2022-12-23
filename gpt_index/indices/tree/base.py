@@ -79,6 +79,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Query mode to class."""
+        super()._preprocess_query(mode, query_kwargs)
         self._validate_build_tree_required(mode)
 
     def _build_index_from_documents(

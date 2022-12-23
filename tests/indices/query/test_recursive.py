@@ -10,7 +10,11 @@ from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableInd
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMChain, LLMPredictor
+from gpt_index.langchain_helpers.chain_wrapper import (
+    LLMChain,
+    LLMMetadata,
+    LLMPredictor,
+)
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_predict import (
@@ -260,9 +264,11 @@ def test_recursive_query_list_table(
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
 @patch("gpt_index.langchain_helpers.chain_wrapper.OpenAI")
+@patch.object(LLMPredictor, "get_llm_metadata", return_value=LLMMetadata())
 @patch.object(LLMChain, "__init__", return_value=None)
 def test_recursive_query_list_tree_token_count(
     _mock_init: Any,
+    _mock_llm_metadata: Any,
     _mock_llmchain: Any,
     _mock_predict: Any,
     documents: List[Document],

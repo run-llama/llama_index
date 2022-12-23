@@ -3,6 +3,7 @@
 from typing import Dict, List, Optional
 
 from gpt_index.indices.data_structs import IndexStruct, IndexStructType
+from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseQueryRunner
 from gpt_index.indices.query.query_map import get_query_cls
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
@@ -35,6 +36,7 @@ class QueryRunner(BaseQueryRunner):
     def __init__(
         self,
         llm_predictor: LLMPredictor,
+        prompt_helper: PromptHelper,
         docstore: DocumentStore,
         query_configs: Optional[List[Dict]] = None,
         verbose: bool = False,
@@ -51,6 +53,7 @@ class QueryRunner(BaseQueryRunner):
             config_dict[qc.index_struct_type] = qc
         self._config_dict = config_dict
         self._llm_predictor = llm_predictor
+        self._prompt_helper = prompt_helper
         self._docstore = docstore
         self._verbose = verbose
         self._recursive = recursive
@@ -67,11 +70,13 @@ class QueryRunner(BaseQueryRunner):
         query_runner = self if self._recursive else None
         query_obj = query_cls(
             index_struct,
+            prompt_helper=self._prompt_helper,
             **config.query_kwargs,
             query_runner=query_runner,
             docstore=self._docstore,
         )
 
+        # TODO: refactor this, so we can pass in during init
         # set llm_predictor if exists
         if not query_obj._llm_predictor_set:
             query_obj.set_llm_predictor(self._llm_predictor)

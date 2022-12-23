@@ -7,22 +7,37 @@ structs but keeping token limitations in mind.
 
 from typing import Callable, List, Optional
 
-from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
+from gpt_index.constants import MAX_CHUNK_OVERLAP
 from gpt_index.indices.data_structs import Node
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.utils import globals_helper
 
 
 class PromptHelper:
-    """Prompt helper."""
+    """Prompt helper.
+
+    This utility helps us fill in the prompt, split the text,
+    and fill in context information according to necessary token limitations.
+
+    Args:
+        max_input_size (int): Maximum input size for the LLM.
+        num_output (int): Number of outputs for the LLM.
+        max_chunk_overlap (int): Maximum chunk overlap for the LLM.
+        embedding_limit (Optional[int]): Maximum number of embeddings to use.
+        chunk_size_limit (Optional[int]): Maximum chunk size to use.
+        tokenizer (Optional[Callable[[str], List]]): Tokenizer to use.
+
+    """
 
     def __init__(
         self,
-        max_input_size: int = MAX_CHUNK_SIZE,
-        num_output: int = NUM_OUTPUTS,
-        max_chunk_overlap: int = MAX_CHUNK_OVERLAP,
+        max_input_size: int,
+        num_output: int,
+        max_chunk_overlap: int,
         embedding_limit: Optional[int] = None,
+        chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
     ) -> None:
         """Init params."""
@@ -30,8 +45,36 @@ class PromptHelper:
         self.num_output = num_output
         self.max_chunk_overlap = max_chunk_overlap
         self.embedding_limit = embedding_limit
+        self.chunk_size_limit = chunk_size_limit
         # TODO: make configurable
         self._tokenizer = tokenizer or globals_helper.tokenizer
+
+    @classmethod
+    def from_llm_predictor(
+        self,
+        llm_predictor: LLMPredictor,
+        max_chunk_overlap: Optional[int] = None,
+        embedding_limit: Optional[int] = None,
+        chunk_size_limit: Optional[int] = None,
+        tokenizer: Optional[Callable[[str], List]] = None,
+    ) -> "PromptHelper":
+        """Create from llm predictor.
+
+        This will autofill values like max_input_size and num_output.
+
+        """
+        llm_metadata = llm_predictor.get_llm_metadata()
+        max_chunk_overlap = max_chunk_overlap or min(
+            MAX_CHUNK_OVERLAP, llm_metadata.max_input_size // 10
+        )
+        return self(
+            llm_metadata.max_input_size,
+            llm_metadata.num_output,
+            max_chunk_overlap,
+            embedding_limit=embedding_limit,
+            chunk_size_limit=chunk_size_limit,
+            tokenizer=tokenizer,
+        )
 
     def get_chunk_size_given_prompt(
         self, prompt_text: str, num_chunks: int, padding: Optional[int] = 1
@@ -43,6 +86,8 @@ class PromptHelper:
 
         If padding is specified, then we subtract that from the chunk size.
         By default we assume there is a padding of 1 (for the newline between chunks).
+
+        Limit by embedding_limit and chunk_size_limit if specified.
 
         """
         prompt_tokens = self._tokenizer(prompt_text)
@@ -57,9 +102,11 @@ class PromptHelper:
             result -= padding
 
         if self.embedding_limit is not None:
-            return min(result, self.embedding_limit)
-        else:
-            return result
+            result = min(result, self.embedding_limit)
+        if self.chunk_size_limit is not None:
+            result = min(result, self.chunk_size_limit)
+
+        return result
 
     def get_text_splitter_given_prompt(
         self, prompt: Prompt, num_chunks: int, padding: Optional[int] = 1
