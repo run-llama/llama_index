@@ -7,10 +7,9 @@ from typing import Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response_utils import give_response, refine_response
+from gpt_index.indices.response.builder import TextChunk
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.schema import DocumentStore
 from gpt_index.utils import llm_token_counter
 
@@ -83,16 +82,13 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         return True
 
-    def _query_node(
+    def _get_text_from_node(
         self,
         query_str: str,
         node: Node,
-        text_qa_template: QuestionAnswerPrompt,
-        refine_template: RefinePrompt,
-        response: Optional[str] = None,
         verbose: bool = False,
         level: Optional[int] = None,
-    ) -> str:
+    ) -> TextChunk:
         """Query a given node.
 
         If node references a given document, then return the document.
@@ -117,49 +113,13 @@ class BaseGPTIndexQuery(Generic[IS]):
             if isinstance(doc, IndexStruct):
                 is_index_struct = True
 
-        # If the retrieved node corresponds to another index struct, then
-        # recursively query that node. Otherwise, simply return the node's text.
         if is_index_struct:
-            # if is index struct, then recurse and get answer
             query_runner = cast(BaseQueryRunner, self._query_runner)
-            query_response = query_runner.query(query_str, cast(IndexStruct, doc))
-            if response is None:
-                response = query_response
-            else:
-                response = refine_response(
-                    self._prompt_helper,
-                    self._llm_predictor,
-                    response,
-                    query_str,
-                    query_response,
-                    refine_template=refine_template,
-                    verbose=verbose,
-                )
+            text = query_runner.query(query_str, cast(IndexStruct, doc))
+            return TextChunk(text, is_answer=True)
         else:
-            # if not index struct, then just fetch text from the node
             text = node.get_text()
-            if response is None:
-                response = give_response(
-                    self._prompt_helper,
-                    self._llm_predictor,
-                    query_str,
-                    text,
-                    text_qa_template=text_qa_template,
-                    refine_template=refine_template,
-                    verbose=verbose,
-                )
-            else:
-                response = refine_response(
-                    self._prompt_helper,
-                    self._llm_predictor,
-                    response,
-                    query_str,
-                    text,
-                    refine_template=refine_template,
-                    verbose=verbose,
-                )
-
-        return response
+            return TextChunk(text)
 
     @property
     def index_struct(self) -> IS:

@@ -6,6 +6,7 @@ import numpy as np
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexDict, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
@@ -63,16 +64,17 @@ class GPTFaissIndexQuery(BaseGPTIndexQuery[IndexDict]):
         self, query_str: str, nodes: List[Node], verbose: bool = False
     ) -> str:
         """Give response for nodes."""
-        response = None
+        response_builder = ResponseBuilder(
+            self._prompt_helper,
+            self._llm_predictor,
+            self.text_qa_template,
+            self.refine_template,
+        )
         for node in nodes:
-            response = self._query_node(
-                query_str,
-                node,
-                self.text_qa_template,
-                self.refine_template,
-                response=response,
-                verbose=verbose,
-            )
+            text = self._get_text_from_node(query_str, node, verbose=verbose)
+            response_builder.add_text_chunks([text])
+        response = response_builder.get_response(query_str, verbose=verbose)
+
         return response or ""
 
     def _get_nodes_for_response(
