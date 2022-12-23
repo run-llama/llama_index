@@ -6,10 +6,13 @@ from typing import Any, Optional
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.utils import get_sorted_node_list
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT, DEFAULT_REFINE_PROMPT
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, SummaryPrompt, RefinePrompt
 from gpt_index.indices.response.builder import ResponseBuilder
+from gpt_index.indices.utils import get_sorted_node_list
+from gpt_index.prompts.default_prompts import (
+    DEFAULT_REFINE_PROMPT,
+    DEFAULT_TEXT_QA_PROMPT,
+)
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
 
 
 class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):

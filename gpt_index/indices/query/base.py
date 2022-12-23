@@ -7,10 +7,8 @@ from typing import Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.schema import DocumentStore
 from gpt_index.utils import llm_token_counter
 
@@ -123,42 +121,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         else:
             text = node.get_text()
 
-        # TODO: allow texts from index structs to not be run
-
         return text
-
-        # # If the retrieved node corresponds to another index struct, then
-        # # recursively query that node. Otherwise, simply return the node's text.
-        # response_builder = ResponseBuilder(
-        #     self._prompt_helper,
-        #     self._llm_predictor,
-        #     text_qa_template,
-        #     refine_template,
-        # )
-        # if is_index_struct:
-        #     # if is index struct, then recurse and get answer
-        #     query_runner = cast(BaseQueryRunner, self._query_runner)
-        #     query_response = query_runner.query(query_str, cast(IndexStruct, doc))
-        #     if response is None:
-        #         response = query_response
-        #     else:
-        #         response = response_builder.refine_response_single(
-        #             response,
-        #             query_str,
-        #             query_response,
-        #             verbose=verbose,
-        #         )
-        # else:
-        #     # if not index struct, then just fetch text from the node
-        #     text = node.get_text()
-        #     response = response_builder.get_response_over_chunks(
-        #         query_str, [text], prev_response=response, verbose=verbose
-        #     )
-        # # TODO: refactor query_node to return text, instead of generating
-        # # a response from a node.
-        # # then, we just need to add this text to the response builder.
-
-        # return response
 
     @property
     def index_struct(self) -> IS:

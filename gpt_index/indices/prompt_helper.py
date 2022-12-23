@@ -39,7 +39,7 @@ class PromptHelper:
         embedding_limit: Optional[int] = None,
         chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
-        separator: Optional[str] = " ",
+        separator: str = " ",
     ) -> None:
         """Init params."""
         self.max_input_size = max_input_size
@@ -123,16 +123,16 @@ class PromptHelper:
     def get_biggest_prompt(self, prompts: List[Prompt]) -> Prompt:
         """Get biggest prompt.
 
-        Oftentimes we need to fetch the biggest prompt, in order to 
+        Oftentimes we need to fetch the biggest prompt, in order to
         be the most conservative about chunking text. This
         is a helper utility for that.
-        
+
         """
-        empty_prompt_txts = [
-            self._get_empty_prompt_txt(prompt) for prompt in prompts
-        ]
+        empty_prompt_txts = [self._get_empty_prompt_txt(prompt) for prompt in prompts]
         empty_prompt_txt_lens = [len(txt) for txt in empty_prompt_txts]
-        biggest_prompt = prompts[empty_prompt_txt_lens.index(max(empty_prompt_txt_lens))]
+        biggest_prompt = prompts[
+            empty_prompt_txt_lens.index(max(empty_prompt_txt_lens))
+        ]
         return biggest_prompt
 
     def get_text_splitter_given_prompt(
@@ -208,7 +208,7 @@ class PromptHelper:
             number += 1
         return "\n\n".join(results)
 
-    def compact_text_chunks(self, prompt: Prompt, text_chunks: List[str]) -> str:
+    def compact_text_chunks(self, prompt: Prompt, text_chunks: List[str]) -> List[str]:
         """Compact text chunks.
 
         This will combine text chunks into consolidated chunks
