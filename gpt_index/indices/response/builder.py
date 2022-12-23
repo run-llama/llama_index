@@ -1,6 +1,6 @@
 """Response builder class.
 
-This class provides general functions for taking in a set of text 
+This class provides general functions for taking in a set of text
 and generating a response.
 
 Will support different modes, from 1) stuffing chunks into prompt,
