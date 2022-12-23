@@ -1,7 +1,7 @@
 """Common classes/functions for tree index operations."""
 
 
-from typing import Dict, Optional, Sequence
+from typing import Dict, Sequence
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -23,19 +23,19 @@ class GPTTreeIndexBuilder:
         self,
         num_children: int,
         summary_prompt: SummaryPrompt,
-        llm_predictor: Optional[LLMPredictor],
-        prompt_helper: Optional[PromptHelper],
+        llm_predictor: LLMPredictor,
+        prompt_helper: PromptHelper,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
             raise ValueError("Invalid number of children.")
         self.num_children = num_children
         self.summary_prompt = summary_prompt
-        self._prompt_helper = prompt_helper or PromptHelper()
+        self._llm_predictor = llm_predictor
+        self._prompt_helper = prompt_helper
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.summary_prompt, self.num_children
         )
-        self._llm_predictor = llm_predictor or LLMPredictor()
 
     def _get_nodes_from_document(
         self, start_idx: int, document: BaseDocument
