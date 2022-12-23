@@ -39,6 +39,7 @@ class PromptHelper:
         embedding_limit: Optional[int] = None,
         chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
+        separator: Optional[str] = " ",
     ) -> None:
         """Init params."""
         self.max_input_size = max_input_size
@@ -48,6 +49,7 @@ class PromptHelper:
         self.chunk_size_limit = chunk_size_limit
         # TODO: make configurable
         self._tokenizer = tokenizer or globals_helper.tokenizer
+        self._separator = separator
 
     @classmethod
     def from_llm_predictor(
@@ -124,7 +126,7 @@ class PromptHelper:
             empty_prompt_txt, num_chunks, padding=padding
         )
         text_splitter = TokenTextSplitter(
-            separator=" ",
+            separator=self._separator,
             chunk_size=chunk_size,
             chunk_overlap=self.max_chunk_overlap // num_chunks,
             tokenizer=self._tokenizer,
@@ -181,3 +183,15 @@ class PromptHelper:
             results.append(text)
             number += 1
         return "\n\n".join(results)
+
+    def compact_text_chunks(self, prompt: Prompt, text_chunks: List[str]) -> str:
+        """Compact text chunks.
+
+        This will combine text chunks into consolidated chunks
+        that more fully "pack" the prompt template given the max_input_size.
+
+        """
+        combined_str = "\n\n".join([c.strip() for c in text_chunks if c.strip()])
+        # resplit based on self.max_chunk_overlap
+        text_splitter = self.get_text_splitter_given_prompt(prompt, 1, padding=0)
+        return text_splitter.split_text(combined_str)

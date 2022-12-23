@@ -127,3 +127,16 @@ def test_get_numbered_text_from_nodes() -> None:
         [node1, node2], prompt=test_prompt
     )
     assert response == ("(1) This is a\n\n(2) Hello world bar")
+
+
+def test_compact_text() -> None:
+    """Test compact text."""
+    test_prompt_text = "This is the prompt{text}"
+    test_prompt = TestPrompt(test_prompt_text)
+    prompt_helper = PromptHelper(
+        max_input_size=8, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer,
+        separator="\n\n"
+    )
+    text_chunks = ["Hello", "world", "foo", "Hello", "world", "bar"]
+    compacted_chunks = prompt_helper.compact_text_chunks(test_prompt, text_chunks)
+    assert compacted_chunks == ["Hello\n\nworld\n\nfoo", "Hello\n\nworld\n\nbar"]

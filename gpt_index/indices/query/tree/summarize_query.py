@@ -6,7 +6,7 @@ from typing import Any, Optional
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response_utils.response import give_response
+from gpt_index.indices.response.utils import give_response
 from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, SummaryPrompt

@@ -7,7 +7,7 @@ from typing import Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response_utils import give_response, refine_response
+from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
@@ -119,6 +119,12 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         # If the retrieved node corresponds to another index struct, then
         # recursively query that node. Otherwise, simply return the node's text.
+        response_builder = ResponseBuilder(
+            self._prompt_helper, 
+            self._llm_predictor,
+            text_qa_template,
+            refine_template,
+        )
         if is_index_struct:
             # if is index struct, then recurse and get answer
             query_runner = cast(BaseQueryRunner, self._query_runner)
@@ -126,38 +132,21 @@ class BaseGPTIndexQuery(Generic[IS]):
             if response is None:
                 response = query_response
             else:
-                response = refine_response(
-                    self._prompt_helper,
-                    self._llm_predictor,
+                response = response_builder.refine_response_single(
                     response,
                     query_str,
                     query_response,
-                    refine_template=refine_template,
                     verbose=verbose,
                 )
         else:
             # if not index struct, then just fetch text from the node
             text = node.get_text()
-            if response is None:
-                response = give_response(
-                    self._prompt_helper,
-                    self._llm_predictor,
-                    query_str,
-                    text,
-                    text_qa_template=text_qa_template,
-                    refine_template=refine_template,
-                    verbose=verbose,
-                )
-            else:
-                response = refine_response(
-                    self._prompt_helper,
-                    self._llm_predictor,
-                    response,
-                    query_str,
-                    text,
-                    refine_template=refine_template,
-                    verbose=verbose,
-                )
+            response = response_builder.get_response_over_chunks(
+                query_str, [text], prev_response=response, verbose=verbose
+            )
+        # TODO: refactor query_node to return text, instead of generating
+        # a response from a node.
+        # then, we just need to add this text to the response builder.
 
         return response
 
