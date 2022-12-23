@@ -1,8 +1,9 @@
 """Base query classes."""
 
+import re
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Generic, Optional, TypeVar, cast
+from typing import Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -42,6 +43,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         prompt_helper: Optional[PromptHelper] = None,
         docstore: Optional[DocumentStore] = None,
         query_runner: Optional[BaseQueryRunner] = None,
+        required_keywords: Optional[List[str]] = None,
+        exclude_keywords: Optional[List[str]] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -61,6 +64,24 @@ class BaseGPTIndexQuery(Generic[IS]):
         if prompt_helper is None:
             raise ValueError("prompt_helper must be provided.")
         self._prompt_helper = cast(PromptHelper, prompt_helper)
+
+        self._required_keywords = required_keywords
+        self._exclude_keywords = exclude_keywords
+
+    def _should_use_node(self, node: Node) -> bool:
+        """Run node through filters to determine if it should be used."""
+        words = re.findall(r"\w+", node.get_text())
+        if self._required_keywords is not None:
+            for w in self._required_keywords:
+                if w not in words:
+                    return False
+
+        if self._exclude_keywords is not None:
+            for w in self._exclude_keywords:
+                if w in words:
+                    return False
+
+        return True
 
     def _query_node(
         self,
