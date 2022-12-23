@@ -21,8 +21,6 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
             (see :ref:`Prompt-Templates`).
         refine_template (Optional[RefinePrompt]): A Refinement Prompt
             (see :ref:`Prompt-Templates`).
-        keyword (Optional[str]): If specified, keyword to filter nodes.
-            Simulates Ctrl+F lookup in a document.
 
     """
 
@@ -31,14 +29,12 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
         index_struct: IndexList,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
-        keyword: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct=index_struct, **kwargs)
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
-        self.keyword = keyword
 
     def _give_response_for_nodes(
         self, query_str: str, nodes: List[Node], verbose: bool = False
@@ -56,20 +52,24 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
             )
         return response or ""
 
+    def get_nodes_for_response(
+        self, query_str: str, verbose: bool = False
+    ) -> List[Node]:
+        """Get nodes for response."""
+        nodes = self._get_nodes_for_response(query_str, verbose=verbose)
+        nodes = [node for node in nodes if self._should_use_node(node)]
+        return nodes
+
     @abstractmethod
     def _get_nodes_for_response(
         self, query_str: str, verbose: bool = False
     ) -> List[Node]:
         """Get nodes for response."""
-        nodes = self.index_struct.nodes
-        if self.keyword is not None:
-            nodes = [node for node in nodes if self.keyword in node.get_text()]
-        return nodes
 
     def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
-        nodes = self._get_nodes_for_response(query_str, verbose=verbose)
+        nodes = self.get_nodes_for_response(query_str, verbose=verbose)
         return self._give_response_for_nodes(query_str, nodes, verbose=verbose)
 
 
@@ -93,7 +93,4 @@ class GPTListIndexQuery(BaseGPTListIndexQuery):
         self, query_str: str, verbose: bool = False
     ) -> List[Node]:
         """Get nodes for response."""
-        nodes = self.index_struct.nodes
-        if self.keyword is not None:
-            nodes = [node for node in nodes if self.keyword in node.get_text()]
-        return nodes
+        return self.index_struct.nodes
