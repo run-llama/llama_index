@@ -8,6 +8,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 """
 
+from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 
@@ -25,6 +26,15 @@ class ResponseMode(str, Enum):
     TREE_SUMMARIZE = "tree_summarize"
 
 
+@dataclass
+class TextChunk:
+    """Response chunk."""
+
+    text: str
+    # Whether this chunk is already a response
+    is_answer: bool = False
+
+
 class ResponseBuilder:
     """Response builder class."""
 
@@ -34,7 +44,7 @@ class ResponseBuilder:
         llm_predictor: LLMPredictor,
         text_qa_template: QuestionAnswerPrompt,
         refine_template: RefinePrompt,
-        texts: Optional[List[str]] = None,
+        texts: Optional[List[TextChunk]] = None,
     ) -> None:
         """Init params."""
         self.prompt_helper = prompt_helper
@@ -43,7 +53,7 @@ class ResponseBuilder:
         self.refine_template = refine_template
         self._texts = texts or []
 
-    def add_text_chunks(self, text_chunks: List[str]) -> None:
+    def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
         self._texts.extend(text_chunks)
 
@@ -107,23 +117,31 @@ class ResponseBuilder:
     def get_response_over_chunks(
         self,
         query_str: str,
-        text_chunks: List[str],
+        text_chunks: List[TextChunk],
         prev_response: Optional[str] = None,
         verbose: bool = False,
     ) -> str:
         """Give response over chunks."""
+        response = None
         for text_chunk in text_chunks:
             if prev_response is None:
-                response = self.give_response_single(
-                    query_str,
-                    text_chunk,
-                    verbose=verbose,
-                )
+                # if this is the first chunk, and text chunk already
+                # is an answer, then return it
+                if text_chunk.is_answer:
+                    response = text_chunk.text
+                # otherwise give response
+                else:
+                    response = self.give_response_single(
+                        query_str,
+                        text_chunk.text,
+                        verbose=verbose,
+                    )
             else:
                 response = self.refine_response_single(
-                    prev_response, query_str, text_chunk, verbose=verbose
+                    prev_response, query_str, text_chunk.text, verbose=verbose
                 )
-        return response
+            prev_response = response
+        return response or "Empty Response"
 
     def _get_response_default(
         self, query_str: str, prev_response: Optional[str], verbose: bool = False
@@ -140,9 +158,10 @@ class ResponseBuilder:
         max_prompt = self.prompt_helper.get_biggest_prompt(
             [self.text_qa_template, self.refine_template]
         )
-        new_text_chunks = self.prompt_helper.compact_text_chunks(
-            max_prompt, self._texts
+        new_texts = self.prompt_helper.compact_text_chunks(
+            max_prompt, [t.text for t in self._texts]
         )
+        new_text_chunks = [TextChunk(text=t) for t in new_texts]
         return self.get_response_over_chunks(
             query_str, new_text_chunks, prev_response=prev_response, verbose=verbose
         )

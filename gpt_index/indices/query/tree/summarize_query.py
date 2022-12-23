@@ -6,7 +6,7 @@ from typing import Any, Optional
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder
+from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
@@ -74,7 +74,7 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
             self._llm_predictor,
             self.text_qa_template,
             self.refine_template,
-            texts=[node_text],
+            texts=[TextChunk(node_text)],
         )
         response = response_builder.get_response(query_str, verbose=verbose)
         return response

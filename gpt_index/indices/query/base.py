@@ -7,6 +7,7 @@ from typing import Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.response.builder import TextChunk
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import DocumentStore
@@ -85,12 +86,9 @@ class BaseGPTIndexQuery(Generic[IS]):
         self,
         query_str: str,
         node: Node,
-        # text_qa_template: QuestionAnswerPrompt,
-        # refine_template: RefinePrompt,
-        # response: Optional[str] = None,
         verbose: bool = False,
         level: Optional[int] = None,
-    ) -> str:
+    ) -> TextChunk:
         """Query a given node.
 
         If node references a given document, then return the document.
@@ -118,10 +116,10 @@ class BaseGPTIndexQuery(Generic[IS]):
         if is_index_struct:
             query_runner = cast(BaseQueryRunner, self._query_runner)
             text = query_runner.query(query_str, cast(IndexStruct, doc))
+            return TextChunk(text, is_answer=True)
         else:
             text = node.get_text()
-
-        return text
+            return TextChunk(text)
 
     @property
     def index_struct(self) -> IS:

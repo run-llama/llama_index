@@ -6,7 +6,7 @@ import pytest
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.builder import ResponseBuilder
+from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
@@ -45,7 +45,7 @@ def test_give_response(
         llm_predictor,
         MOCK_TEXT_QA_PROMPT,
         MOCK_REFINE_PROMPT,
-        texts=["This is a single line."],
+        texts=[TextChunk("This is a single line.")],
     )
     response = builder.get_response(query_str)
     assert response == "What is?:This is a single line."
@@ -56,7 +56,7 @@ def test_give_response(
         llm_predictor,
         MOCK_TEXT_QA_PROMPT,
         MOCK_REFINE_PROMPT,
-        texts=[documents[0].get_text()],
+        texts=[TextChunk(documents[0].get_text())],
     )
     response = builder.get_response(query_str)
     assert response == "What is?:Hello world."
