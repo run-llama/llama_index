@@ -7,7 +7,7 @@ from typing import Generic, List, Optional, TypeVar, cast
 
 from gpt_index.indices.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.builder import TextChunk
+from gpt_index.indices.response.builder import ResponseMode, TextChunk
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import DocumentStore
@@ -44,6 +44,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         query_runner: Optional[BaseQueryRunner] = None,
         required_keywords: Optional[List[str]] = None,
         exclude_keywords: Optional[List[str]] = None,
+        response_mode: ResponseMode = ResponseMode.DEFAULT,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -66,6 +67,7 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         self._required_keywords = required_keywords
         self._exclude_keywords = exclude_keywords
+        self._response_mode = ResponseMode(response_mode)
 
     def _should_use_node(self, node: Node) -> bool:
         """Run node through filters to determine if it should be used."""

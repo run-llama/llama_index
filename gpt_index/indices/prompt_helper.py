@@ -50,6 +50,7 @@ class PromptHelper:
         # TODO: make configurable
         self._tokenizer = tokenizer or globals_helper.tokenizer
         self._separator = separator
+        self.use_chunk_size_limit = chunk_size_limit is not None
 
     @classmethod
     def from_llm_predictor(
@@ -105,7 +106,7 @@ class PromptHelper:
 
         if self.embedding_limit is not None:
             result = min(result, self.embedding_limit)
-        if self.chunk_size_limit is not None:
+        if self.chunk_size_limit is not None and self.use_chunk_size_limit:
             result = min(result, self.chunk_size_limit)
 
         return result
@@ -217,5 +218,5 @@ class PromptHelper:
         """
         combined_str = "\n\n".join([c.strip() for c in text_chunks if c.strip()])
         # resplit based on self.max_chunk_overlap
-        text_splitter = self.get_text_splitter_given_prompt(prompt, 1, padding=0)
+        text_splitter = self.get_text_splitter_given_prompt(prompt, 1, padding=1)
         return text_splitter.split_text(combined_str)

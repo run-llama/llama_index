@@ -108,7 +108,9 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
             print(f"> Querying with idx: {chunk_idx}: {fmt_text_chunk}")
             text = self._get_text_from_node(query_str, node, verbose=verbose)
             response_builder.add_text_chunks([text])
-        result_response = response_builder.get_response(query_str, verbose=verbose)
+        result_response = response_builder.get_response(
+            query_str, verbose=verbose, mode=self._response_mode
+        )
 
         return result_response or "Empty response"
 

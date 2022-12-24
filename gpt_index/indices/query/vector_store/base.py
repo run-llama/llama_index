@@ -50,7 +50,9 @@ class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[BID], Generic[BID]):
         for node in nodes:
             text = self._get_text_from_node(query_str, node, verbose=verbose)
             response_builder.add_text_chunks([text])
-        response = response_builder.get_response(query_str, verbose=verbose)
+        response = response_builder.get_response(
+            query_str, verbose=verbose, mode=self._response_mode
+        )
 
         return response or ""
 
