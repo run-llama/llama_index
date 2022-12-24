@@ -4,7 +4,7 @@ import random
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -149,22 +149,22 @@ class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
     nodes_dict: Dict[int, Node] = field(default_factory=dict)
-    # TODO: allow users to pass in Hashable type
-    # currently Hashable doesn't play nice with dataclasses_json
-    id_map: Dict[Any, int] = field(default_factory=dict)
+    id_map: Dict[str, int] = field(default_factory=dict)
 
     def add_text(
         self,
         text_chunk: str,
         ref_doc_id: str,
-        text_id: Optional[Any] = None,
-    ) -> Any:
+        text_id: Optional[str] = None,
+    ) -> str:
         """Add text to table, return current position in list."""
+        int_id = get_new_int_id(set(self.nodes_dict.keys()))
         if text_id in self.id_map:
             raise ValueError("text_id cannot already exist in index.")
-        int_id = get_new_int_id(set(self.nodes_dict.keys()))
-        if text_id is None:
-            text_id = int_id
+        elif text_id is not None and not isinstance(text_id, str):
+            raise ValueError("text_id must be a string.")
+        elif text_id is None:
+            text_id = str(int_id)
         self.id_map[text_id] = int_id
 
         # don't worry about child indices for now, nodes are all in order
@@ -172,19 +172,21 @@ class IndexDict(IndexStruct):
         self.nodes_dict[int_id] = cur_node
         return text_id
 
-    def get_nodes(self, text_ids: List[Any]) -> List[Node]:
+    def get_nodes(self, text_ids: List[str]) -> List[Node]:
         """Get nodes."""
         nodes = []
         for text_id in text_ids:
             if text_id not in self.id_map:
                 raise ValueError("text_id not found in id_map")
+            elif not isinstance(text_id, str):
+                raise ValueError("text_id must be a string.")
             int_id = self.id_map[text_id]
             if int_id not in self.nodes_dict:
                 raise ValueError("int_id not found in nodes_dict")
             nodes.append(self.nodes_dict[int_id])
         return nodes
 
-    def get_node(self, text_id: Any) -> Node:
+    def get_node(self, text_id: str) -> Node:
         """Get node."""
         return self.get_nodes([text_id])[0]
 
