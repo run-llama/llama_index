@@ -234,7 +234,11 @@ class IndexStructType(str, Enum):
     TREE = "tree"
     LIST = "list"
     KEYWORD_TABLE = "keyword_table"
+    # for Faiss
+    # TODO: rename
     DICT = "dict"
+    # for simple embedding index
+    SIMPLE_DICT = "simple_dict"
 
     def get_index_struct_cls(self) -> type:
         """Get index struct class."""
@@ -246,6 +250,8 @@ class IndexStructType(str, Enum):
             return KeywordTable
         elif self == IndexStructType.DICT:
             return IndexDict
+        elif self == IndexStructType.SIMPLE_DICT:
+            return SimpleIndexDict
         else:
             raise ValueError("Invalid index struct type.")
 
@@ -260,5 +266,7 @@ class IndexStructType(str, Enum):
             return cls.KEYWORD_TABLE
         elif isinstance(index_struct, IndexDict):
             return cls.DICT
+        elif isinstance(index_struct, SimpleIndexDict):
+            return cls.SIMPLE_DICT
         else:
             raise ValueError("Invalid index struct type.")
