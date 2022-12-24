@@ -14,7 +14,6 @@ from typing import (
     cast,
 )
 
-from gpt_index.indices.response.builder import ResponseMode
 from gpt_index.indices.data_structs import IndexStruct, IndexStructType
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner

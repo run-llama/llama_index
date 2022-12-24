@@ -134,7 +134,7 @@ def test_compact_text() -> None:
     test_prompt_text = "This is the prompt{text}"
     test_prompt = TestPrompt(test_prompt_text)
     prompt_helper = PromptHelper(
-        max_input_size=8,
+        max_input_size=9,
         num_output=1,
         max_chunk_overlap=0,
         tokenizer=mock_tokenizer,
