@@ -1,7 +1,5 @@
 """Default query for GPTSimpleVectorIndex."""
-from typing import Any, List, Optional, Tuple, cast
-
-import numpy as np
+from typing import List, Tuple
 
 from gpt_index.indices.data_structs import Node, SimpleIndexDict
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings

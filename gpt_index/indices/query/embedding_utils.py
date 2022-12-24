@@ -3,7 +3,6 @@
 from typing import List, Optional, Tuple
 
 from gpt_index.embeddings.openai import BaseEmbedding
-from gpt_index.indices.data_structs import Node
 
 
 def get_top_k_embeddings(

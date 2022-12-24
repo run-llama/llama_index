@@ -2,9 +2,7 @@
 
 
 from abc import abstractmethod
-from typing import Any, Generic, List, Optional, Tuple, TypeVar, cast
-
-import numpy as np
+from typing import Any, Generic, List, Optional, Tuple, TypeVar
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import BaseIndexDict, Node
