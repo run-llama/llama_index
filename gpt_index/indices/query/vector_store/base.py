@@ -1,13 +1,13 @@
 """Base vector store index query."""
 
 
-from typing import Any, List, Optional, cast, Tuple
 from abc import abstractmethod
+from typing import Any, Generic, List, Optional, Tuple, TypeVar, cast
 
 import numpy as np
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.data_structs import IndexDict, Node
+from gpt_index.indices.data_structs import BaseIndexDict, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text
@@ -17,13 +17,15 @@ from gpt_index.prompts.default_prompts import (
 )
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
+BID = TypeVar("BID", bound=BaseIndexDict)
 
-class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
+
+class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[BID], Generic[BID]):
     """Base vector store query."""
 
     def __init__(
         self,
-        index_struct: IndexDict,
+        index_struct: BID,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         embed_model: Optional[OpenAIEmbedding] = None,
@@ -63,7 +65,9 @@ class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
     def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
-        node_idxs, top_k_nodes = self._get_nodes_for_response(query_str, verbose=verbose)
+        node_idxs, top_k_nodes = self._get_nodes_for_response(
+            query_str, verbose=verbose
+        )
         # print verbose output
         if verbose:
             fmt_txts = []

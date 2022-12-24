@@ -8,12 +8,12 @@ from typing import Any, Optional, Sequence, cast
 
 import numpy as np
 
-from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.data_structs import IndexDict
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.utils import truncate_text
+from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -21,7 +21,7 @@ from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 
 
-class GPTFaissIndex(BaseGPTVectorStoreIndex):
+class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
     """GPT Faiss Index.
 
     The GPTFaissIndex is a data structure where nodes are keyed by

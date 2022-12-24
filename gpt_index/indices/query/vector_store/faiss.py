@@ -1,11 +1,12 @@
 """Default query for GPTFaissIndex."""
-from typing import Any, List, Optional, cast
+from typing import Any, List, Optional, Tuple, cast
 
 import numpy as np
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexDict, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import (
@@ -13,10 +14,9 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
 
 
-class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery):
+class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
     """GPTFaissIndex query.
 
     An embedding-based query for GPTFaissIndex, which queries
@@ -51,12 +51,12 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery):
     ) -> None:
         """Initialize params."""
         super().__init__(
-            index_struct=index_struct, 
+            index_struct=index_struct,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
             embed_model=embed_model,
             similarity_top_k=similarity_top_k,
-            **kwargs
+            **kwargs,
         )
         if faiss_index is None:
             raise ValueError("faiss_index cannot be None.")
@@ -64,17 +64,16 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery):
         self._faiss_index = cast(Any, faiss_index)
         self._faiss_index = faiss_index
 
-
     def _get_nodes_for_response(
         self, query_str: str, verbose: bool = False
-    ) -> List[Node]:
+    ) -> Tuple[List[str], List[Node]]:
         """Get nodes for response."""
         query_embedding = self._embed_model.get_query_embedding(query_str)
         query_embedding_np = np.array(query_embedding)[np.newaxis, :]
         _, indices = self._faiss_index.search(query_embedding_np, self.similarity_top_k)
         # if empty, then return an empty response
         if len(indices) == 0:
-            return []
+            return [], []
 
         # returned dimension is 1 x k
         node_idxs = list([str(i) for i in indices[0]])

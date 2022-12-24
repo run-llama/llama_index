@@ -4,21 +4,21 @@ from typing import Any, Optional, Sequence, cast
 
 import numpy as np
 
-from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.data_structs import SimpleIndexDict
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.utils import truncate_text
-from gpt_index.utils import get_new_id
+from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import get_new_id
 
 
-class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex):
+class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
     """GPT Simple Vector Index.
 
     The GPTSimpleVectorIndex is a data structure where nodes are keyed by
@@ -74,8 +74,8 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex):
             # NOTE: embeddings won't be stored in Node but rather in underlying
             # Faiss store
             text_embedding = self._embed_model.get_text_embedding(text_chunk)
-            new_id = get_new_id(index_struct.nodes_dict.keys())
+            new_id = get_new_id(set(index_struct.nodes_dict.keys()))
 
             # add to index
             index_struct.add_text(text_chunk, document.get_doc_id(), text_id=new_id)
-            index_struct.add_embedding(text_embedding, text_id=new_id)
+            index_struct.add_embedding(new_id, text_embedding)

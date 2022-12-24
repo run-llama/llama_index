@@ -4,15 +4,14 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Optional, Sequence
-
 from abc import abstractmethod
+from typing import Any, Generic, Optional, Sequence, TypeVar
 
 import numpy as np
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.indices.data_structs import IndexDict
+from gpt_index.indices.data_structs import BaseIndexDict
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -21,8 +20,10 @@ from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 
+BID = TypeVar("BID", bound=BaseIndexDict)
 
-class BaseGPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
+
+class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
     """Base GPT Vector Store Index.
 
     Args:
@@ -32,12 +33,10 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             embedding similarity.
     """
 
-    index_struct_cls = IndexDict
-
     def __init__(
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[IndexDict] = None,
+        index_struct: Optional[BID] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[OpenAIEmbedding] = None,
@@ -59,7 +58,7 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     @abstractmethod
     def _add_document_to_index(
         self,
-        index_struct: IndexDict,
+        index_struct: BID,
         document: BaseDocument,
         text_splitter: TokenTextSplitter,
     ) -> None:
@@ -67,12 +66,12 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False
-    ) -> IndexDict:
+    ) -> BID:
         """Build index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.text_qa_template, 1
         )
-        index_struct = IndexDict()
+        index_struct = self.index_struct_cls()
         for d in documents:
             self._add_document_to_index(index_struct, d, text_splitter)
         return index_struct
@@ -84,4 +83,3 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for Faiss index.")
-

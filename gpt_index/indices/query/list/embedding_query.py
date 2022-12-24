@@ -1,8 +1,9 @@
 """Embedding query for list index."""
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexList, Node
+from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
@@ -48,24 +49,28 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         """Get nodes for response."""
         nodes = self.index_struct.nodes
         # top k nodes
-        similarities = self._get_query_text_embedding_similarities(query_str, nodes)
-        sorted_node_tups = sorted(
-            zip(similarities, nodes), key=lambda x: x[0], reverse=True
+        query_embedding, node_embeddings = self._get_embeddings(query_str, nodes)
+
+        _, top_idxs = get_top_k_embeddings(
+            self._embed_model,
+            query_embedding,
+            node_embeddings,
+            similarity_top_k=self.similarity_top_k,
+            embedding_ids=list(range(len(nodes))),
         )
-        sorted_nodes = [n for _, n in sorted_node_tups]
-        similarity_top_k = self.similarity_top_k or len(nodes)
-        top_k_nodes = sorted_nodes[:similarity_top_k]
+
+        top_k_nodes = [nodes[i] for i in top_idxs]
         if verbose:
             top_k_node_text = "\n".join([n.get_text() for n in top_k_nodes])
-            print(f"Top {similarity_top_k} nodes:\n{top_k_node_text}")
+            print(f"Top {len(top_idxs)} nodes:\n{top_k_node_text}")
         return top_k_nodes
 
-    def _get_query_text_embedding_similarities(
+    def _get_embeddings(
         self, query_str: str, nodes: List[Node]
-    ) -> List[float]:
+    ) -> Tuple[List[float], List[List[float]]]:
         """Get top nodes by similarity to the query."""
         query_embedding = self._embed_model.get_query_embedding(query_str)
-        similarities = []
+        node_embeddings: List[List[float]] = []
         for node in self.index_struct.nodes:
             if node.embedding is not None:
                 text_embedding = node.embedding
@@ -73,7 +78,5 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
                 text_embedding = self._embed_model.get_text_embedding(node.get_text())
                 node.embedding = text_embedding
 
-            similarity = self._embed_model.similarity(query_embedding, text_embedding)
-            similarities.append(similarity)
-
-        return similarities
+            node_embeddings.append(text_embedding)
+        return query_embedding, node_embeddings

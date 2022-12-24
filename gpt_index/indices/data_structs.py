@@ -204,10 +204,11 @@ class IndexDict(BaseIndexDict):
 class SimpleIndexDict(BaseIndexDict):
     """A simple dictionary of documents.
 
-    This index structure also contains an internal in-memory 
+    This index structure also contains an internal in-memory
     embedding dict.
 
     """
+
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
 
     def add_embedding(self, text_id: str, embedding: List[float]) -> None:
