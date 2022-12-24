@@ -16,6 +16,7 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from gpt_index.utils import temp_set_attrs
 
 
 class ResponseMode(str, Enum):
@@ -158,13 +159,15 @@ class ResponseBuilder:
         max_prompt = self.prompt_helper.get_biggest_prompt(
             [self.text_qa_template, self.refine_template]
         )
-        new_texts = self.prompt_helper.compact_text_chunks(
-            max_prompt, [t.text for t in self._texts]
-        )
-        new_text_chunks = [TextChunk(text=t) for t in new_texts]
-        return self.get_response_over_chunks(
-            query_str, new_text_chunks, prev_response=prev_response, verbose=verbose
-        )
+        with temp_set_attrs(self.prompt_helper, use_chunk_size_limit=False):
+            new_texts = self.prompt_helper.compact_text_chunks(
+                max_prompt, [t.text for t in self._texts]
+            )
+            new_text_chunks = [TextChunk(text=t) for t in new_texts]
+            response = self.get_response_over_chunks(
+                query_str, new_text_chunks, prev_response=prev_response, verbose=verbose
+            )
+        return response
 
     def _get_response_tree_summarize(
         self, query_str: str, prev_response: Optional[str], verbose: bool = False
