@@ -1,6 +1,15 @@
 """Set of default prompts."""
 
-from gpt_index.prompts.base import Prompt
+from gpt_index.prompts.prompts import (
+    KeywordExtractPrompt,
+    QueryKeywordExtractPrompt,
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    SummaryPrompt,
+    TreeInsertPrompt,
+    TreeSelectMultiplePrompt,
+    TreeSelectPrompt,
+)
 
 ############################################
 # Tree
@@ -12,15 +21,13 @@ DEFAULT_SUMMARY_PROMPT_TMPL = (
     "Try to include as many key details as possible.\n"
     "\n"
     "\n"
-    "{text}\n"
+    "{context_str}\n"
     "\n"
     "\n"
     'SUMMARY:"""\n'
 )
 
-DEFAULT_SUMMARY_PROMPT = Prompt(
-    input_variables=["text"], template=DEFAULT_SUMMARY_PROMPT_TMPL
-)
+DEFAULT_SUMMARY_PROMPT = SummaryPrompt(DEFAULT_SUMMARY_PROMPT_TMPL)
 
 # insert prompts
 DEFAULT_INSERT_PROMPT_TMPL = (
@@ -36,10 +43,7 @@ DEFAULT_INSERT_PROMPT_TMPL = (
     "The answer should be the number corresponding to the "
     "summary that is most relevant to the question.\n"
 )
-DEFAULT_INSERT_PROMPT = Prompt(
-    input_variables=["num_chunks", "context_list", "new_chunk_text"],
-    template=DEFAULT_INSERT_PROMPT_TMPL,
-)
+DEFAULT_INSERT_PROMPT = TreeInsertPrompt(DEFAULT_INSERT_PROMPT_TMPL)
 
 
 # # single choice
@@ -55,10 +59,7 @@ DEFAULT_QUERY_PROMPT_TMPL = (
     "Provide choice in the following format: 'ANSWER: <number>' and explain why "
     "this summary was selected in relation to the question.\n"
 )
-DEFAULT_QUERY_PROMPT = Prompt(
-    input_variables=["num_chunks", "context_list", "query_str"],
-    template=DEFAULT_QUERY_PROMPT_TMPL,
-)
+DEFAULT_QUERY_PROMPT = TreeSelectPrompt(DEFAULT_QUERY_PROMPT_TMPL)
 
 # multiple choice
 DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
@@ -74,9 +75,8 @@ DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
     "Provide choices in the following format: 'ANSWER: <numbers>' and explain why "
     "these summaries were selected in relation to the question.\n"
 )
-DEFAULT_QUERY_PROMPT_MULTIPLE = Prompt(
-    input_variables=["num_chunks", "context_list", "query_str", "branching_factor"],
-    template=DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL,
+DEFAULT_QUERY_PROMPT_MULTIPLE = TreeSelectMultiplePrompt(
+    DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL
 )
 
 
@@ -92,10 +92,7 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "answer the question. "
     "If the context isn't useful, return the original answer."
 )
-DEFAULT_REFINE_PROMPT = Prompt(
-    input_variables=["query_str", "existing_answer", "context_msg"],
-    template=DEFAULT_REFINE_PROMPT_TMPL,
-)
+DEFAULT_REFINE_PROMPT = RefinePrompt(DEFAULT_REFINE_PROMPT_TMPL)
 
 
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
@@ -106,9 +103,7 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "Given the context information and not prior knowledge, "
     "answer the question: {query_str}\n"
 )
-DEFAULT_TEXT_QA_PROMPT = Prompt(
-    input_variables=["context_str", "query_str"], template=DEFAULT_TEXT_QA_PROMPT_TMPL
-)
+DEFAULT_TEXT_QA_PROMPT = QuestionAnswerPrompt(DEFAULT_TEXT_QA_PROMPT_TMPL)
 
 
 ############################################
@@ -123,9 +118,8 @@ DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
     "---------------------\n"
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
 )
-DEFAULT_KEYWORD_EXTRACT_TEMPLATE = Prompt(
-    input_variables=["text", "max_keywords"],
-    template=DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL,
+DEFAULT_KEYWORD_EXTRACT_TEMPLATE = KeywordExtractPrompt(
+    DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL
 )
 
 
@@ -140,7 +134,6 @@ DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
     "---------------------\n"
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
 )
-DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = Prompt(
-    input_variables=["question", "max_keywords"],
-    template=DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL,
+DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = QueryKeywordExtractPrompt(
+    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL
 )

@@ -1,35 +1,44 @@
 """Embedding query for list index."""
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexList, Node
-from gpt_index.indices.list.query import BaseGPTListIndexQuery
-from gpt_index.prompts.base import Prompt
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
-)
+from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
 class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
-    """GPTListIndex query."""
+    """GPTListIndex query.
+
+    An embedding-based query for GPTListIndex, which traverses
+    each node in sequence and retrieves top-k nodes by
+    embedding similarity to the query.
+    Set when `mode="embedding"` in `query` method of `GPTListIndex`.
+
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="embedding")
+
+    See BaseGPTListIndexQuery for arguments.
+
+    """
 
     def __init__(
         self,
         index_struct: IndexList,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
-        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
-        keyword: Optional[str] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         similarity_top_k: Optional[int] = 1,
         embed_model: Optional[BaseEmbedding] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
-            keyword=keyword,
+            **kwargs,
         )
         self._embed_model = embed_model or OpenAIEmbedding()
         self.similarity_top_k = similarity_top_k
@@ -39,9 +48,6 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     ) -> List[Node]:
         """Get nodes for response."""
         nodes = self.index_struct.nodes
-        if self.keyword is not None:
-            nodes = [node for node in nodes if self.keyword in node.text]
-
         # top k nodes
         similarities = self._get_query_text_embedding_similarities(query_str, nodes)
         sorted_node_tups = sorted(
@@ -51,8 +57,8 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         similarity_top_k = self.similarity_top_k or len(nodes)
         top_k_nodes = sorted_nodes[:similarity_top_k]
         if verbose:
-            top_k_node_text = "\n".join([n.text for n in top_k_nodes])
-            print(f"Top {similarity_top_k} nodes: {top_k_node_text}")
+            top_k_node_text = "\n".join([n.get_text() for n in top_k_nodes])
+            print(f"Top {similarity_top_k} nodes:\n{top_k_node_text}")
         return top_k_nodes
 
     def _get_query_text_embedding_similarities(
@@ -65,7 +71,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
             if node.embedding is not None:
                 text_embedding = node.embedding
             else:
-                text_embedding = self._embed_model.get_text_embedding(node.text)
+                text_embedding = self._embed_model.get_text_embedding(node.get_text())
                 node.embedding = text_embedding
 
             similarity = self._embed_model.similarity(query_embedding, text_embedding)

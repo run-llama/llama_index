@@ -1,20 +1,25 @@
 """Leaf query mechanism."""
 
-from typing import Dict, Optional, cast
+from typing import Any, Dict, Optional, cast
 
-from gpt_index.indices.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
-    get_numbered_text_from_nodes,
     get_sorted_node_list,
+    truncate_text,
 )
-from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
     DEFAULT_QUERY_PROMPT_MULTIPLE,
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
+)
+from gpt_index.prompts.prompts import (
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    TreeSelectMultiplePrompt,
+    TreeSelectPrompt,
 )
 
 
@@ -24,23 +29,45 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
     This class traverses the index graph and searches for a leaf node that can best
     answer the query.
 
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="default")
+
+    Args:
+        query_template (Optional[TreeSelectPrompt]): Tree Select Query Prompt
+            (see :ref:`Prompt-Templates`).
+        query_template_multiple (Optional[TreeSelectMultiplePrompt]): Tree Select
+            Query Prompt (Multiple)
+            (see :ref:`Prompt-Templates`).
+        text_qa_template (Optional[QuestionAnswerPrompt]): Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+        refine_template (Optional[RefinePrompt]): Refinement Prompt
+            (see :ref:`Prompt-Templates`).
+        child_branch_factor (int): Number of child nodes to consider at each level.
+            If child_branch_factor is 1, then the query will only choose one child node
+            to traverse for any given parent node.
+            If child_branch_factor is 2, then the query will choose two child nodes.
+
     """
 
     def __init__(
         self,
         index_struct: IndexGraph,
-        query_template: Prompt = DEFAULT_QUERY_PROMPT,
-        query_template_multiple: Prompt = DEFAULT_QUERY_PROMPT_MULTIPLE,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
-        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
+        query_template: Optional[TreeSelectPrompt] = None,
+        query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         child_branch_factor: int = 1,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct)
-        self.query_template = query_template
-        self.query_template_multiple = query_template_multiple
-        self.text_qa_template = text_qa_template
-        self.refine_template = refine_template
+        super().__init__(index_struct, **kwargs)
+        self.query_template = query_template or DEFAULT_QUERY_PROMPT
+        self.query_template_multiple = (
+            query_template_multiple or DEFAULT_QUERY_PROMPT_MULTIPLE
+        )
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self.child_branch_factor = child_branch_factor
 
     def _query_with_selected_node(
@@ -58,16 +85,19 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
         """
         if len(selected_node.child_indices) == 0:
-            cur_response, formatted_answer_prompt = self._llm_predictor.predict(
+            # call _query_node to get an answer from doc (either Document/IndexStruct)
+            cur_response = self._query_node(
+                query_str,
+                selected_node,
                 self.text_qa_template,
-                context_str=selected_node.text,
-                query_str=query_str,
+                self.refine_template,
+                verbose=verbose,
+                level=level,
             )
             if verbose:
-                print(f">[Level {level}] answer prompt: {formatted_answer_prompt}")
-            print(f">[Level {level}] Current answer response: {cur_response} ")
+                print(f">[Level {level}] Current answer response: {cur_response} ")
         else:
-            cur_response = self._query(
+            cur_response = self._query_level(
                 {
                     i: self.index_struct.all_nodes[i]
                     for i in selected_node.child_indices
@@ -80,7 +110,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         if prev_response is None:
             return cur_response
         else:
-            context_msg = "\n".join([selected_node.text, cur_response])
+            context_msg = "\n".join([selected_node.get_text(), cur_response])
             cur_response, formatted_refine_prompt = self._llm_predictor.predict(
                 self.refine_template,
                 query_str=query_str,
@@ -90,10 +120,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
             if verbose:
                 print(f">[Level {level}] Refine prompt: {formatted_refine_prompt}")
-            print(f">[Level {level}] Current refined response: {cur_response} ")
+                print(f">[Level {level}] Current refined response: {cur_response} ")
             return cur_response
 
-    def _query(
+    def _query_level(
         self,
         cur_nodes: Dict[int, Node],
         query_str: str,
@@ -104,18 +134,24 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         if self.child_branch_factor == 1:
+            numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
+                cur_node_list, prompt=self.query_template
+            )
             response, formatted_query_prompt = self._llm_predictor.predict(
                 self.query_template,
                 num_chunks=len(cur_node_list),
                 query_str=query_str,
-                context_list=get_numbered_text_from_nodes(cur_node_list),
+                context_list=numbered_node_text,
             )
         else:
+            numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
+                cur_node_list, prompt=self.query_template_multiple
+            )
             response, formatted_query_prompt = self._llm_predictor.predict(
                 self.query_template_multiple,
                 num_chunks=len(cur_node_list),
                 query_str=query_str,
-                context_list=get_numbered_text_from_nodes(cur_node_list),
+                context_list=numbered_node_text,
                 branching_factor=self.child_branch_factor,
             )
 
@@ -143,14 +179,18 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
             # number is 1-indexed, so subtract 1
             selected_node = cur_node_list[number - 1]
+
             print(
                 f">[Level {level}] Selected node: "
                 f"[{number}]/[{','.join([str(int(n)) for n in numbers])}]"
             )
-            print(
-                f">[Level {level}] Node "
-                f"[{number}] Summary text: {' '.join(selected_node.text.splitlines())}"
-            )
+            if verbose:
+                summary_text = " ".join(selected_node.get_text().splitlines())
+                fmt_summary_text = truncate_text(summary_text, 100)
+                print(
+                    f">[Level {level}] Node "
+                    f"[{number}] Summary text: {fmt_summary_text}"
+                )
             result_response = self._query_with_selected_node(
                 selected_node,
                 query_str,
@@ -161,9 +201,9 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         # result_response should not be None
         return cast(str, result_response)
 
-    def query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
-        return self._query(
+        return self._query_level(
             self.index_struct.root_nodes, query_str, level=0, verbose=verbose
         ).strip()

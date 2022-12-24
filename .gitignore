@@ -129,3 +129,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# OS generated files
+.DS_Store

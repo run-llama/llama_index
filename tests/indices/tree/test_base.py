@@ -7,10 +7,14 @@ import pytest
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.schema import Document
-from tests.mock_utils.mock_predict import mock_openai_llm_predict
+from gpt_index.langchain_helpers.chain_wrapper import (
+    LLMChain,
+    LLMMetadata,
+    LLMPredictor,
+)
+from gpt_index.readers.schema.base import Document
+from tests.mock_utils.mock_decorator import patch_common
+from tests.mock_utils.mock_predict import mock_llmchain_predict
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_QUERY_PROMPT,
@@ -18,7 +22,6 @@ from tests.mock_utils.mock_prompts import (
     MOCK_SUMMARY_PROMPT,
     MOCK_TEXT_QA_PROMPT,
 )
-from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
 @pytest.fixture
@@ -66,12 +69,11 @@ def _get_left_or_right_node(
     return index_graph.all_nodes[index]
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 def test_build_tree(
     _mock_init: Any,
     _mock_predict: Any,
+    _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
@@ -91,12 +93,11 @@ def test_build_tree(
     )
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 def test_build_tree_multiple(
     _mock_init: Any,
     _mock_predict: Any,
+    _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
@@ -116,12 +117,11 @@ def test_build_tree_multiple(
     assert tree.index_struct.all_nodes[3].text == "This is a test v2."
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 def test_query(
     _mock_init: Any,
     _mock_predict: Any,
+    _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
@@ -133,15 +133,45 @@ def test_query(
     # test default query
     query_str = "What is?"
     response = tree.query(query_str, mode="default", **query_kwargs)
-    assert response == ("What is?\n" "Hello world.")
+    assert response == ("What is?:Hello world.")
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "predict", side_effect=mock_openai_llm_predict)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
+def test_summarize_query(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test summarize query."""
+    # create tree index without building tree
+    index_kwargs, orig_query_kwargs = struct_kwargs
+    index_kwargs = index_kwargs.copy()
+    index_kwargs.update({"build_tree": False})
+    tree = GPTTreeIndex(documents, **index_kwargs)
+
+    # test summarize query
+    query_str = "What is?"
+    query_kwargs: Dict[str, Any] = {
+        "text_qa_template": MOCK_TEXT_QA_PROMPT,
+        "num_children": 2,
+    }
+    # TODO: fix unit test later
+    response = tree.query(query_str, mode="summarize", **query_kwargs)
+    assert response == ("What is?:Hello world.")
+
+    # test that default query fails
+    with pytest.raises(ValueError):
+        tree.query(query_str, mode="default", **orig_query_kwargs)
+
+
+@patch_common
 def test_insert(
     _mock_init: Any,
     _mock_predict: Any,
+    _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
@@ -151,7 +181,7 @@ def test_insert(
     tree = GPTTreeIndex(documents, **index_kwargs)
 
     # test insert
-    new_doc = Document("This is a new doc.")
+    new_doc = Document("This is a new doc.", doc_id="new_doc")
     tree.insert(new_doc)
     # Before:
     # Left root node: "Hello world.\nThis is a test."
@@ -172,10 +202,44 @@ def test_insert(
     right_root3 = _get_left_or_right_node(tree.index_struct, right_root2, left=False)
     assert left_root3.text == "This is a test."
     assert right_root3.text == "This is a new doc."
+    assert right_root3.ref_doc_id == "new_doc"
 
-    # test insert from empty
+    # test insert from empty (no_id)
     tree = GPTTreeIndex([], **index_kwargs)
     new_doc = Document("This is a new doc.")
     tree.insert(new_doc)
     assert len(tree.index_struct.all_nodes) == 1
     assert tree.index_struct.all_nodes[0].text == "This is a new doc."
+
+    # test insert from empty (with_id)
+    tree = GPTTreeIndex([], **index_kwargs)
+    new_doc = Document("This is a new doc.", doc_id="new_doc_test")
+    tree.insert(new_doc)
+    assert len(tree.index_struct.all_nodes) == 1
+    assert tree.index_struct.all_nodes[0].text == "This is a new doc."
+    assert tree.index_struct.all_nodes[0].ref_doc_id == "new_doc_test"
+
+
+@patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
+@patch("gpt_index.langchain_helpers.chain_wrapper.OpenAI")
+@patch.object(LLMPredictor, "get_llm_metadata", return_value=LLMMetadata())
+@patch.object(LLMChain, "__init__", return_value=None)
+def test_build_and_count_tokens(
+    _mock_init: Any,
+    _mock_llm_metadata: Any,
+    _mock_llmchain: Any,
+    _mock_predict: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test build and count tokens."""
+    index_kwargs, _ = struct_kwargs
+    # mock_prompts.MOCK_SUMMARY_PROMPT_TMPL adds a "\n" to the document text
+    # and the document is 23 tokens
+    document_token_count = 24
+    llmchain_mock_resp_token_count = 10
+    tree = GPTTreeIndex(documents, **index_kwargs)
+    assert (
+        tree._llm_predictor.total_tokens_used
+        == document_token_count + llmchain_mock_resp_token_count
+    )

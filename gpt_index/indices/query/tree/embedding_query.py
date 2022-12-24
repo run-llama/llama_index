@@ -1,18 +1,17 @@
 """Query Tree using embedding similarity between query and node text."""
 
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexGraph, Node
-from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
+from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.utils import get_sorted_node_list
-from gpt_index.prompts.base import Prompt
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_QUERY_PROMPT,
-    DEFAULT_QUERY_PROMPT_MULTIPLE,
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
+from gpt_index.prompts.prompts import (
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    TreeSelectMultiplePrompt,
+    TreeSelectPrompt,
 )
 
 
@@ -23,31 +22,58 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
     This class traverses the index graph using the embedding similarity between the
     query and the node text.
 
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="embedding")
+
+    Args:
+        query_template (Optional[TreeSelectPrompt]): Tree Select Query Prompt
+            (see :ref:`Prompt-Templates`).
+        query_template_multiple (Optional[TreeSelectMultiplePrompt]): Tree Select
+            Query Prompt (Multiple)
+            (see :ref:`Prompt-Templates`).
+        text_qa_template (Optional[QuestionAnswerPrompt]): Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+        refine_template (Optional[RefinePrompt]): Refinement Prompt
+            (see :ref:`Prompt-Templates`).
+        child_branch_factor (int): Number of child nodes to consider at each level.
+            If child_branch_factor is 1, then the query will only choose one child node
+            to traverse for any given parent node.
+            If child_branch_factor is 2, then the query will choose two child nodes.
+        embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
+            embedding similarity.
+
     """
 
     def __init__(
         self,
         index_struct: IndexGraph,
-        query_template: Prompt = DEFAULT_QUERY_PROMPT,
-        query_template_multiple: Prompt = DEFAULT_QUERY_PROMPT_MULTIPLE,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
-        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
+        query_template: Optional[TreeSelectPrompt] = None,
+        query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         child_branch_factor: int = 1,
+<<<<<<< HEAD:gpt_index/indices/tree/embedding_query.py
         embed_model: Optional[BaseEmbedding] = None,
+=======
+        embed_model: Optional[OpenAIEmbedding] = None,
+        **kwargs: Any,
+>>>>>>> main:gpt_index/indices/query/tree/embedding_query.py
     ) -> None:
         """Initialize params."""
         super().__init__(
             index_struct,
-            query_template,
-            query_template_multiple,
-            text_qa_template,
-            refine_template,
-            child_branch_factor,
+            query_template=query_template,
+            query_template_multiple=query_template_multiple,
+            text_qa_template=text_qa_template,
+            refine_template=refine_template,
+            child_branch_factor=child_branch_factor,
+            **kwargs,
         )
         self._embed_model = embed_model or OpenAIEmbedding()
         self.child_branch_factor = child_branch_factor
 
-    def _query(
+    def _query_level(
         self,
         cur_nodes: Dict[int, Node],
         query_str: str,
@@ -64,7 +90,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         if verbose:
             print(
                 f">[Level {level}] Node [{selected_index+1}] Summary text: "
-                f"{' '.join(selected_node.text.splitlines())}"
+                f"{' '.join(selected_node.get_text().splitlines())}"
             )
 
         # Get the response for the selected node
@@ -89,7 +115,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             if node.embedding is not None:
                 text_embedding = node.embedding
             else:
-                text_embedding = self._embed_model.get_text_embedding(node.text)
+                text_embedding = self._embed_model.get_text_embedding(node.get_text())
                 node.embedding = text_embedding
 
             similarity = self._embed_model.similarity(query_embedding, text_embedding)

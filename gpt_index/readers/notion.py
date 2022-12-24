@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 import requests
 
 from gpt_index.readers.base import BaseReader
-from gpt_index.schema import Document
+from gpt_index.readers.schema.base import Document
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
 BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
@@ -17,6 +17,9 @@ class NotionPageReader(BaseReader):
     """Notion Page reader.
 
     Reads a set of Notion pages.
+
+    Args:
+        integration_token (str): Notion integration token.
 
     """
 
@@ -115,7 +118,15 @@ class NotionPageReader(BaseReader):
         return page_ids
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory."""
+        """Load data from the input directory.
+
+        Args:
+            page_ids (List[str]): List of page ids to load.
+
+        Returns:
+            List[Document]: List of documents.
+
+        """
         if "page_ids" not in load_kwargs:
             raise ValueError('Must specify a "page_ids" in `load_kwargs`.')
         docs = []

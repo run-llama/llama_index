@@ -1,88 +1,84 @@
 """Query for GPTKeywordTableIndex."""
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from gpt_index.indices.base import BaseGPTIndexQuery
 from gpt_index.indices.data_structs import KeywordTable
 from gpt_index.indices.keyword_table.utils import (
     extract_keywords_given_response,
     rake_extract_keywords,
     simple_extract_keywords,
 )
-from gpt_index.indices.response_utils import give_response, refine_response
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.utils import truncate_text
-from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
+from gpt_index.prompts.prompts import (
+    KeywordExtractPrompt,
+    QueryKeywordExtractPrompt,
+    QuestionAnswerPrompt,
+    RefinePrompt,
+)
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
 class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
-    """Base GPT Keyword Table Index Query."""
+    """Base GPT Keyword Table Index Query.
+
+    Arguments are shared among subclasses.
+
+    Args:
+        keyword_extract_template (Optional[KeywordExtractPrompt]): A Keyword
+            Extraction Prompt
+            (see :ref:`Prompt-Templates`).
+        query_keyword_extract_template (Optional[QueryKeywordExtractPrompt]): A Query
+            Keyword Extraction
+            Prompt (see :ref:`Prompt-Templates`).
+        refine_template (Optional[RefinePrompt]): A Refinement Prompt
+            (see :ref:`Prompt-Templates`).
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question Answering Prompt
+            (see :ref:`Prompt-Templates`).
+        max_keywords_per_query (int): Maximum number of keywords to extract from query.
+        num_chunks_per_query (int): Maximum number of text chunks to query.
+
+    """
 
     def __init__(
         self,
         index_struct: KeywordTable,
-        keyword_extract_template: Prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
-        query_keyword_extract_template: Optional[Prompt] = DQKET,
-        refine_template: Prompt = DEFAULT_REFINE_PROMPT,
-        text_qa_template: Prompt = DEFAULT_TEXT_QA_PROMPT,
+        keyword_extract_template: Optional[KeywordExtractPrompt] = None,
+        query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct)
+        super().__init__(index_struct=index_struct, **kwargs)
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
-        self.keyword_extract_template = keyword_extract_template
-        if query_keyword_extract_template is None:
-            self.query_keyword_extract_template = keyword_extract_template
-        else:
-            self.query_keyword_extract_template = query_keyword_extract_template
-        self.refine_template = refine_template
-        self.text_qa_template = text_qa_template
-
-    def _query_with_chunk(
-        self,
-        text_chunk: str,
-        query_str: str,
-        result_response: Optional[str] = None,
-        verbose: bool = False,
-    ) -> str:
-        """Query with a keyword."""
-        if result_response is None:
-            return give_response(
-                self._llm_predictor,
-                query_str,
-                text_chunk,
-                text_qa_template=self.text_qa_template,
-                refine_template=self.refine_template,
-                verbose=verbose,
-            )
-        else:
-            return refine_response(
-                self._llm_predictor,
-                result_response,
-                query_str,
-                text_chunk,
-                refine_template=self.refine_template,
-                verbose=verbose,
-            )
+        self.keyword_extract_template = (
+            keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
+        )
+        self.query_keyword_extract_template = query_keyword_extract_template or DQKET
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
 
     @abstractmethod
     def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
         """Extract keywords."""
 
-    def query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         keywords = self._get_keywords(query_str, verbose=verbose)
+        print(f"query keywords: {keywords}")
 
         # go through text chunks in order of most matching keywords
         chunk_indices_count: Dict[int, int] = defaultdict(int)
@@ -99,14 +95,15 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         sorted_chunk_indices = sorted_chunk_indices[: self.num_chunks_per_query]
         result_response = None
         for text_chunk_idx in sorted_chunk_indices:
-            fmt_text_chunk = truncate_text(
-                self.index_struct.text_chunks[text_chunk_idx], 50
-            )
+            node = self.index_struct.text_chunks[text_chunk_idx]
+            fmt_text_chunk = truncate_text(node.get_text(), 50)
             print(f"> Querying with idx: {text_chunk_idx}: {fmt_text_chunk}")
-            result_response = self._query_with_chunk(
-                self.index_struct.text_chunks[text_chunk_idx],
+            result_response = self._query_node(
                 query_str,
-                result_response=result_response,
+                node,
+                text_qa_template=self.text_qa_template,
+                refine_template=self.refine_template,
+                response=result_response,
                 verbose=verbose,
             )
         return result_response or "Empty response"
@@ -115,7 +112,14 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
 class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
     """GPT Keyword Table Index Query.
 
-    Extracts keywords using GPT.
+    Extracts keywords using GPT. Set when `mode="default"` in `query` method of
+    `GPTKeywordTableIndex`.
+
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="default")
+
+    See BaseGPTKeywordTableQuery for arguments.
 
     """
 
@@ -133,7 +137,14 @@ class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
 class GPTKeywordTableSimpleQuery(BaseGPTKeywordTableQuery):
     """GPT Keyword Table Index Simple Query.
 
-    Extracts keywords using Simple keyword extractor.
+    Extracts keywords using simple regex-based keyword extractor.
+    Set when `mode="simple"` in `query` method of `GPTKeywordTableIndex`.
+
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="simple")
+
+    See BaseGPTKeywordTableQuery for arguments.
 
     """
 
@@ -148,6 +159,13 @@ class GPTKeywordTableRAKEQuery(BaseGPTKeywordTableQuery):
     """GPT Keyword Table Index RAKE Query.
 
     Extracts keywords using RAKE keyword extractor.
+    Set when `mode="rake"` in `query` method of `GPTKeywordTableIndex`.
+
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="rake")
+
+    See BaseGPTKeywordTableQuery for arguments.
 
     """
 
