@@ -17,6 +17,7 @@ from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.query.vector_store.faiss import GPTFaissIndexQuery
+from gpt_index.indices.query.vector_store.simple import GPTSimpleVectorIndexQuery
 
 MODE_TO_QUERY_MAP_TREE = {
     QueryMode.DEFAULT: GPTTreeIndexLeafQuery,
@@ -36,8 +37,12 @@ MODE_TO_QUERY_MAP_KEYWORD_TABLE = {
     QueryMode.RAKE: GPTKeywordTableSimpleQuery,
 }
 
-MODE_TO_QUERY_MAP_VECTOR = {
+MODE_TO_QUERY_MAP_FAISS = {
     QueryMode.DEFAULT: GPTFaissIndexQuery,
+}
+
+MODE_TO_QUERY_MAP_SIMPLE = {
+    QueryMode.DEFAULT: GPTSimpleVectorIndexQuery,
 }
 
 
@@ -52,6 +57,8 @@ def get_query_cls(
     elif index_struct_type == IndexStructType.KEYWORD_TABLE:
         return MODE_TO_QUERY_MAP_KEYWORD_TABLE[mode]
     elif index_struct_type == IndexStructType.DICT:
-        return MODE_TO_QUERY_MAP_VECTOR[mode]
+        return MODE_TO_QUERY_MAP_FAISS[mode]
+    elif index_struct_type == IndexStructType.SIMPLE_DICT:
+        return MODE_TO_QUERY_MAP_SIMPLE[mode]
     else:
         raise ValueError(f"Invalid index_struct_type: {index_struct_type}")

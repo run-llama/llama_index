@@ -1,6 +1,5 @@
 """Test list index."""
 
-from collections import defaultdict
 from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
@@ -107,21 +106,21 @@ def test_list_insert(
         assert node.ref_doc_id == "test_id"
 
 
-def _get_node_text_embedding_similarities(
-    query_embedding: List[float], nodes: List[Node]
-) -> List[float]:
+def _get_embeddings(
+    query_str: str, nodes: List[Node]
+) -> Tuple[List[float], List[List[float]]]:
     """Get node text embedding similarity."""
-    text_similarity_map = defaultdict(lambda: 0.0)
-    text_similarity_map["Hello world."] = 0.9
-    text_similarity_map["This is a test."] = 0.8
-    text_similarity_map["This is another test."] = 0.7
-    text_similarity_map["This is a test v2."] = 0.6
-
-    similarities = []
+    text_embed_map: Dict[str, List[float]] = {
+        "Hello world.": [1.0, 0.0, 0.0, 0.0, 0.0],
+        "This is a test.": [0.0, 1.0, 0.0, 0.0, 0.0],
+        "This is another test.": [0.0, 0.0, 1.0, 0.0, 0.0],
+        "This is a test v2.": [0.0, 0.0, 0.0, 1.0, 0.0],
+    }
+    node_embeddings = []
     for node in nodes:
-        similarities.append(text_similarity_map[node.get_text()])
+        node_embeddings.append(text_embed_map[node.get_text()])
 
-    return similarities
+    return [1.0, 0, 0, 0, 0], node_embeddings
 
 
 @patch_common
@@ -169,8 +168,8 @@ def test_query_with_keywords(
 @patch_common
 @patch.object(
     GPTListIndexEmbeddingQuery,
-    "_get_query_text_embedding_similarities",
-    side_effect=_get_node_text_embedding_similarities,
+    "_get_embeddings",
+    side_effect=_get_embeddings,
 )
 def test_embedding_query(
     _mock_similarity: Any,

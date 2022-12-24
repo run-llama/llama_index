@@ -1,4 +1,4 @@
-"""Vector store index.
+"""Faiss Vector store index.
 
 An index that that is built on top of an existing vector store.
 
@@ -13,14 +13,14 @@ from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.data_structs import IndexDict
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.utils import truncate_text
+from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 
 
-class GPTFaissIndex(BaseGPTIndex[IndexDict]):
+class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
     """GPT Faiss Index.
 
     The GPTFaissIndex is a data structure where nodes are keyed by
@@ -65,20 +65,17 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
         except ImportError:
             raise ValueError(import_err_msg)
 
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         if faiss_index is None:
             raise ValueError("faiss_index cannot be None.")
         faiss_index.reset()
         self._faiss_index = cast(faiss.Index, faiss_index)
-        self._embed_model = embed_model or OpenAIEmbedding()
         super().__init__(
             documents=documents,
             index_struct=index_struct,
+            text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
+            embed_model=embed_model,
             **kwargs,
-        )
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
         )
 
     def _add_document_to_index(
@@ -108,26 +105,6 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
         super()._preprocess_query(mode, query_kwargs)
         # pass along faiss_index
         query_kwargs["faiss_index"] = self._faiss_index
-
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
-    ) -> IndexDict:
-        """Build index from documents."""
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
-        )
-        index_struct = IndexDict()
-        for d in documents:
-            self._add_document_to_index(index_struct, d, text_splitter)
-        return index_struct
-
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
-        """Insert a document."""
-        self._add_document_to_index(self._index_struct, document, self._text_splitter)
-
-    def delete(self, document: BaseDocument) -> None:
-        """Delete a document."""
-        raise NotImplementedError("Delete not implemented for Faiss index.")
 
     @classmethod
     def load_from_disk(
