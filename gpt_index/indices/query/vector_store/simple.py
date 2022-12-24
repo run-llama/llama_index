@@ -1,4 +1,4 @@
-"""Default query for GPTFaissIndex."""
+"""Default query for GPTSimpleVectorIndex."""
 from typing import Any, List, Optional, cast
 
 import numpy as np
@@ -12,15 +12,15 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
-class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery):
-    """GPTFaissIndex query.
+class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery):
+    """GPTSimpleVectorIndex query.
 
-    An embedding-based query for GPTFaissIndex, which queries
-    an undelrying Faiss index to retrieve top-k nodes by
+    An embedding-based query for GPTSimpleVectorIndex, which queries
+    an underlying dict-based embedding store to retrieve top-k nodes by
     embedding similarity to the query.
 
     .. code-block:: python
@@ -32,7 +32,6 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery):
             (see :ref:`Prompt-Templates`).
         refine_template (Optional[RefinePrompt]): Refinement Prompt
             (see :ref:`Prompt-Templates`).
-        faiss_index (faiss.Index): A Faiss Index object (required)
         embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
             embedding similarity.
         similarity_top_k (int): Number of similar nodes to retrieve.
@@ -64,6 +63,22 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery):
         self._faiss_index = cast(Any, faiss_index)
         self._faiss_index = faiss_index
 
+    def _give_response_for_nodes(
+        self, query_str: str, nodes: List[Node], verbose: bool = False
+    ) -> str:
+        """Give response for nodes."""
+        response_builder = ResponseBuilder(
+            self._prompt_helper,
+            self._llm_predictor,
+            self.text_qa_template,
+            self.refine_template,
+        )
+        for node in nodes:
+            text = self._get_text_from_node(query_str, node, verbose=verbose)
+            response_builder.add_text_chunks([text])
+        response = response_builder.get_response(query_str, verbose=verbose)
+
+        return response or ""
 
     def _get_nodes_for_response(
         self, query_str: str, verbose: bool = False
@@ -80,4 +95,18 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery):
         node_idxs = list([str(i) for i in indices[0]])
         top_k_nodes = self._index_struct.get_nodes(node_idxs)
 
-        return node_idxs, top_k_nodes
+        # print verbose output
+        if verbose:
+            fmt_txts = []
+            for node_idx, node in zip(node_idxs, top_k_nodes):
+                fmt_txt = f"> [Node {node_idx}] {truncate_text(node.get_text(), 100)}"
+                fmt_txts.append(fmt_txt)
+            top_k_node_text = "\n".join(fmt_txts)
+            print(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
+        return top_k_nodes
+
+    def _query(self, query_str: str, verbose: bool = False) -> str:
+        """Answer a query."""
+        print(f"> Starting query: {query_str}")
+        nodes = self._get_nodes_for_response(query_str, verbose=verbose)
+        return self._give_response_for_nodes(query_str, nodes, verbose=verbose)
