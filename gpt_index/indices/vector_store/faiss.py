@@ -36,7 +36,8 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
-        faiss_index (faiss.Index): A Faiss Index object (required)
+        faiss_index (faiss.Index): A Faiss Index object (required). Note: the index
+            will be reset during index construction.
         embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
             embedding similarity.
     """
@@ -67,8 +68,8 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         if faiss_index is None:
             raise ValueError("faiss_index cannot be None.")
-        # NOTE: cast to Any for now
-        self._faiss_index = cast(Any, faiss_index)
+        faiss_index.reset()
+        self._faiss_index = cast(faiss.Index, faiss_index)
         self._embed_model = embed_model or OpenAIEmbedding()
         super().__init__(
             documents=documents,
@@ -96,7 +97,7 @@ class GPTFaissIndex(BaseGPTIndex[IndexDict]):
             # Faiss store
             text_embedding = self._embed_model.get_text_embedding(text_chunk)
             text_embedding_np = np.array(text_embedding)[np.newaxis, :]
-            new_id = self._faiss_index.ntotal
+            new_id = str(self._faiss_index.ntotal)
             self._faiss_index.add(text_embedding_np)
 
             # add to index

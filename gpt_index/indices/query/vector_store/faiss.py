@@ -89,7 +89,7 @@ class GPTFaissIndexQuery(BaseGPTIndexQuery[IndexDict]):
             return []
 
         # returned dimension is 1 x k
-        node_idxs = list(indices[0])
+        node_idxs = list([str(i) for i in indices[0]])
         top_k_nodes = self._index_struct.get_nodes(node_idxs)
 
         # print verbose output

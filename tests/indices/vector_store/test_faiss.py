@@ -62,6 +62,10 @@ class MockFaissIndex:
             new_id = len(self._index)
             self._index[new_id] = vec
 
+    def reset(self) -> None:
+        """Reset index."""
+        self._index = {}
+
     def search(self, vec: np.ndarray, k: int) -> Tuple[np.ndarray, np.ndarray]:
         """Search index."""
         # assume query vec is of the form 1 x k
@@ -124,10 +128,10 @@ def test_build_faiss(
     index = GPTFaissIndex(documents=documents, faiss_index=faiss_index, **index_kwargs)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
-    assert index.index_struct.get_node(0).text == "Hello world."
-    assert index.index_struct.get_node(1).text == "This is a test."
-    assert index.index_struct.get_node(2).text == "This is another test."
-    assert index.index_struct.get_node(3).text == "This is a test v2."
+    assert index.index_struct.get_node("0").text == "Hello world."
+    assert index.index_struct.get_node("1").text == "This is a test."
+    assert index.index_struct.get_node("2").text == "This is another test."
+    assert index.index_struct.get_node("3").text == "This is a test v2."
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -157,8 +161,8 @@ def test_faiss_insert(
     index.insert(Document(text="This is a test v3."))
 
     # check contenst of nodes
-    assert index.index_struct.get_node(3).text == "This is a test v2."
-    assert index.index_struct.get_node(4).text == "This is a test v3."
+    assert index.index_struct.get_node("3").text == "This is a test v2."
+    assert index.index_struct.get_node("4").text == "This is a test v3."
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
