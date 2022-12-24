@@ -6,7 +6,7 @@ import pytest
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
+from gpt_index.indices.response.builder import ResponseBuilder, TextChunk, ResponseMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
@@ -24,6 +24,12 @@ def documents() -> List[Document]:
         "This is a test v2."
     )
     return [Document(doc_text)]
+
+
+def mock_tokenizer(text: str) -> List[str]:
+    """Mock tokenizer."""
+    tokens = text.split(" ")
+    return tokens
 
 
 @patch_common
@@ -60,3 +66,35 @@ def test_give_response(
     )
     response = builder.get_response(query_str)
     assert response == "What is?:Hello world."
+
+
+@patch_common
+def test_compact_response(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+) -> None:
+    """Test give response."""
+    prompt_helper = PromptHelper(8, 0, 0, tokenizer=mock_tokenizer)
+    llm_predictor = LLMPredictor()
+    query_str = "What is?"
+
+    texts = [
+        TextChunk("This is a bar"), 
+        TextChunk("This is a test"), 
+        TextChunk("This is another test"), 
+        TextChunk("This is a foo")
+    ]
+
+    # test single line
+    builder = ResponseBuilder(
+        prompt_helper,
+        llm_predictor,
+        MOCK_TEXT_QA_PROMPT,
+        MOCK_REFINE_PROMPT,
+        texts=texts,
+    )
+    response = builder.get_response(query_str, mode=ResponseMode.COMPACT)
+    assert response == "What is?:This is a single line."
