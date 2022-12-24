@@ -143,9 +143,8 @@ class IndexList(IndexStruct):
         return cur_node.index
 
 
-# TODO: this should be specific to FAISS
 @dataclass
-class IndexDict(IndexStruct):
+class BaseIndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
     nodes_dict: Dict[int, Node] = field(default_factory=dict)
@@ -189,6 +188,43 @@ class IndexDict(IndexStruct):
     def get_node(self, text_id: str) -> Node:
         """Get node."""
         return self.get_nodes([text_id])[0]
+
+
+# TODO: this should be specific to FAISS
+@dataclass
+class IndexDict(BaseIndexDict):
+    """A dictionary of documents.
+
+    Note: this index structure is specifically used with the Faiss index.
+
+    """
+
+
+@dataclass
+class SimpleIndexDict(BaseIndexDict):
+    """A simple dictionary of documents.
+
+    This index structure also contains an internal in-memory 
+    embedding dict.
+
+    """
+    embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
+
+    def add_embedding(self, text_id: str, embedding: List[float]) -> None:
+        """Add embedding to dict."""
+        if text_id not in self.id_map:
+            raise ValueError("text_id not found in id_map")
+        elif not isinstance(text_id, str):
+            raise ValueError("text_id must be a string.")
+        self.embedding_dict[text_id] = embedding
+
+    def get_embedding(self, text_id: str) -> List[float]:
+        """Get embedding."""
+        if text_id not in self.embedding_dict:
+            raise ValueError("text_id not found in embedding_dict")
+        elif not isinstance(text_id, str):
+            raise ValueError("text_id must be a string.")
+        return self.embedding_dict[text_id]
 
 
 class IndexStructType(str, Enum):
