@@ -212,7 +212,6 @@ def test_build_simple(
     index = GPTSimpleVectorIndex(documents=documents, **index_kwargs)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
-    print(index.index_struct.id_map.keys())
     assert index.index_struct.get_node("0").text == "Hello world."
     assert index.index_struct.get_embedding("0") == [1, 0, 0, 0, 0]
     assert index.index_struct.get_node("1").text == "This is a test."
