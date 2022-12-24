@@ -14,7 +14,7 @@ from gpt_index.indices.keyword_table import (
 )
 from gpt_index.indices.list import GPTListIndex
 from gpt_index.indices.tree import GPTTreeIndex
-from gpt_index.indices.vector_store import GPTFaissIndex
+from gpt_index.indices.vector_store import GPTFaissIndex, GPTSimpleVectorIndex
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -54,6 +54,7 @@ __all__ = [
     "GPTListIndex",
     "GPTTreeIndex",
     "GPTFaissIndex",
+    "GPTSimpleVectorIndex",
     "Prompt",
     "SummaryPrompt",
     "TreeInsertPrompt",

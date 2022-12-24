@@ -74,7 +74,7 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
             # NOTE: embeddings won't be stored in Node but rather in underlying
             # Faiss store
             text_embedding = self._embed_model.get_text_embedding(text_chunk)
-            new_id = get_new_id(set(index_struct.nodes_dict.keys()))
+            new_id = str(len(index_struct.nodes_dict))
 
             # add to index
             index_struct.add_text(text_chunk, document.get_doc_id(), text_id=new_id)
