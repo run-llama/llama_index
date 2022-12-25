@@ -33,15 +33,16 @@ class GPTTreeIndexBuilder:
         self.summary_prompt = summary_prompt
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.summary_prompt, self.num_children
-        )
 
     def _get_nodes_from_document(
         self, start_idx: int, document: BaseDocument
     ) -> Dict[int, Node]:
         """Add document to index."""
-        text_chunks = self._text_splitter.split_text(document.get_text())
+        # NOTE: summary prompt does not need to be partially formatted
+        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.summary_prompt, self.num_children
+        )
+        text_chunks = text_splitter.split_text(document.get_text())
         doc_nodes = {
             (start_idx + i): Node(
                 text=t, index=(start_idx + i), ref_doc_id=document.get_doc_id()

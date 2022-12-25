@@ -71,15 +71,17 @@ class ResponseBuilder:
         fmt_text_chunk = truncate_text(text_chunk, 50)
         if verbose:
             print(f"> Refine context: {fmt_text_chunk}")
+        # NOTE: partial format refine template with query_str and existing_answer here
+        refine_template = self.refine_template.partial_format(
+            query_str=query_str, existing_answer=response
+        )
         refine_text_splitter = self.prompt_helper.get_text_splitter_given_prompt(
-            self.refine_template, 1
+            refine_template, 1
         )
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for cur_text_chunk in text_chunks:
             response, _ = self.llm_predictor.predict(
-                self.refine_template,
-                query_str=query_str,
-                existing_answer=response,
+                refine_template,
                 context_msg=cur_text_chunk,
             )
             if verbose:
@@ -93,8 +95,9 @@ class ResponseBuilder:
         verbose: bool = False,
     ) -> str:
         """Give response given a query and a corresponding text chunk."""
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         qa_text_splitter = self.prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
+            text_qa_template, 1
         )
         text_chunks = qa_text_splitter.split_text(text_chunk)
         response = None
@@ -102,8 +105,7 @@ class ResponseBuilder:
         for cur_text_chunk in text_chunks:
             if response is None:
                 response, _ = self.llm_predictor.predict(
-                    self.text_qa_template,
-                    query_str=query_str,
+                    text_qa_template,
                     context_str=cur_text_chunk,
                 )
                 if verbose:
@@ -204,12 +206,13 @@ class ResponseBuilder:
         )
         node_list = get_sorted_node_list(root_nodes)
         node_text = self.prompt_helper.get_text_from_nodes(
-            node_list, prompt=self.text_qa_template
+            node_list, prompt=text_qa_template
         )
-        print(node_text)
-        raise Exception
-        response = self.give_response_single(
-            query_str, node_text, verbose=verbose,
+        response = self.get_response_over_chunks(
+            query_str,
+            [TextChunk(node_text)],
+            prev_response=prev_response,
+            verbose=verbose,
         )
         return response or "Empty Response"
 

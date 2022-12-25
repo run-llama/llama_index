@@ -114,10 +114,14 @@ class PromptHelper:
     def _get_empty_prompt_txt(self, prompt: Prompt) -> str:
         """Get empty prompt text.
 
-        This is used to compute the initial tokens.
+        Substitute empty strings in parts of the prompt that have
+        not yet been filled out. Skip variables that have already
+        been partially formatted. This is used to compute the initial tokens.
 
         """
-        fmt_dict = {v: "" for v in prompt.input_variables}
+        fmt_dict = {
+            v: "" for v in prompt.input_variables if v not in prompt.partial_dict
+        }
         empty_prompt_txt = prompt.format(**fmt_dict)
         return empty_prompt_txt
 

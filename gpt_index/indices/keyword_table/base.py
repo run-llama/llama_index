@@ -59,10 +59,14 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
+        self.max_keywords_per_chunk = max_keywords_per_chunk
         self.keyword_extract_template = (
             keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
         )
-        self.max_keywords_per_chunk = max_keywords_per_chunk
+        # NOTE: Partially format keyword extract template here.
+        self.keyword_extract_template = self.keyword_extract_template.partial_format(
+            max_keywords=self.max_keywords_per_chunk
+        )
         super().__init__(
             documents=documents,
             index_struct=index_struct,
@@ -142,7 +146,6 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
         """Extract keywords from text."""
         response, _ = self._llm_predictor.predict(
             self.keyword_extract_template,
-            max_keywords=self.max_keywords_per_chunk,
             text=text,
         )
         keywords = extract_keywords_given_response(response)

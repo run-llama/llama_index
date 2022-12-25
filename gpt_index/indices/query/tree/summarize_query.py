@@ -3,16 +3,15 @@
 
 from typing import Any, Optional, cast
 
-from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
+from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
 class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
@@ -61,6 +60,9 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
             texts=sorted_node_txts,
         )
         response = response_builder.get_response(
-            query_str, verbose=verbose, mode="tree_summarize", num_children=self.num_children
+            query_str,
+            verbose=verbose,
+            mode=ResponseMode.TREE_SUMMARIZE,
+            num_children=self.num_children,
         )
         return response
