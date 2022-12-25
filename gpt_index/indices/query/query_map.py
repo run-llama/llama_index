@@ -33,8 +33,8 @@ MODE_TO_QUERY_MAP_LIST = {
 
 MODE_TO_QUERY_MAP_KEYWORD_TABLE = {
     QueryMode.DEFAULT: GPTKeywordTableGPTQuery,
-    QueryMode.SIMPLE: GPTKeywordTableRAKEQuery,
-    QueryMode.RAKE: GPTKeywordTableSimpleQuery,
+    QueryMode.SIMPLE: GPTKeywordTableSimpleQuery,
+    QueryMode.RAKE: GPTKeywordTableRAKEQuery,
 }
 
 MODE_TO_QUERY_MAP_FAISS = {
