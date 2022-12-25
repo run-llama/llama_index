@@ -141,10 +141,7 @@ def test_query(
 
     # try with filters
     doc_text = (
-        "Hello world\n"
-        "Hello foo\n"
-        "This is another test\n"
-        "This is a test v2"
+        "Hello world\n" "Hello foo\n" "This is another test\n" "This is a test v2"
     )
     documents2 = [Document(doc_text)]
     table2 = GPTSimpleKeywordTableIndex(documents2)
@@ -155,5 +152,3 @@ def test_query(
     # test exclude_keywords
     response = table2.query("Hello", mode="simple", exclude_keywords=["world"])
     assert response == "Hello:Hello foo"
-
-

@@ -78,9 +78,7 @@ class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[BID], Generic[BID]):
     def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
-        node_idxs, top_k_nodes = self.get_nodes_for_response(
-            query_str, verbose=verbose
-        )
+        node_idxs, top_k_nodes = self.get_nodes_for_response(query_str, verbose=verbose)
         # print verbose output
         if verbose:
             fmt_txts = []
