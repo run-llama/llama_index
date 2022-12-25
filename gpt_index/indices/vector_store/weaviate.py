@@ -8,10 +8,12 @@ from typing import Any, Optional, Sequence, cast
 
 import numpy as np
 
+from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.readers.weaviate.data_structs import WeaviateNode
+from gpt_index.readers.weaviate.data_structs import WeaviateNode, DEFAULT_CLASS_PREFIX
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.data_structs import IndexDict
+from gpt_index.data_structs import IndexDict, Node, WeaviateIndexStruct
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.utils import truncate_text
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
@@ -21,7 +23,7 @@ from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 
 
-class GPTWeaviateIndex(BaseGPTVectorStoreIndex[IndexDict]):
+class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
     """GPT Weaviate Index.
 
     The GPTWeaviateIndex is a data structure where nodes are keyed by
@@ -41,7 +43,7 @@ class GPTWeaviateIndex(BaseGPTVectorStoreIndex[IndexDict]):
             embedding similarity.
     """
 
-    index_struct_cls = IndexDict
+    index_struct_cls = WeaviateIndexStruct
 
     def __init__(
         self,
@@ -50,6 +52,8 @@ class GPTWeaviateIndex(BaseGPTVectorStoreIndex[IndexDict]):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
+        weaviate_client: Optional[Any] = None,
+        class_prefix: str = DEFAULT_CLASS_PREFIX,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -60,13 +64,23 @@ class GPTWeaviateIndex(BaseGPTVectorStoreIndex[IndexDict]):
         except ImportError:
             raise ValueError(import_err_msg)
 
+        self.client = cast(Client, weaviate_client)
+        self.class_prefix = class_prefix
+        # try to create schema
+        WeaviateNode.create_schema(self.client, class_prefix)
+
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self._embed_model = embed_model or OpenAIEmbedding()
         super().__init__(
             documents=documents,
             index_struct=index_struct,
-            text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
-            embed_model=embed_model,
             **kwargs,
+        )
+        # NOTE: when building the vector store index, text_qa_template is not partially
+        # formatted because we don't know the query ahead of time.
+        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.text_qa_template, 1
         )
 
     def _add_document_to_index(
@@ -84,78 +98,30 @@ class GPTWeaviateIndex(BaseGPTVectorStoreIndex[IndexDict]):
             # NOTE: embeddings won't be stored in Node but rather in underlying
             # Faiss store
             text_embedding = self._embed_model.get_text_embedding(text_chunk)
-            text_embedding_np = np.array(text_embedding)[np.newaxis, :]
-            new_id = str(self._faiss_index.ntotal)
-            self._faiss_index.add(text_embedding_np)
 
-            # add to index
-            index_struct.add_text(text_chunk, document.get_doc_id(), text_id=new_id)
+            node = Node(
+                text=text_chunk,
+                embedding=text_embedding
+            )
+            # serialize to gpt index
+            node_id = WeaviateNode.from_gpt_index(self.client, node, self.class_prefix)
 
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Query mode to class."""
-        super()._preprocess_query(mode, query_kwargs)
-        # pass along faiss_index
-        query_kwargs["faiss_index"] = self._faiss_index
+    def _build_index_from_documents(
+        self, documents: Sequence[BaseDocument], verbose: bool = False
+    ) -> WeaviateIndexStruct:
+        """Build index from documents."""
+        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.text_qa_template, 1
+        )
+        index_struct = self.index_struct_cls()
+        for d in documents:
+            self._add_document_to_index(index_struct, d, text_splitter)
+        return index_struct
 
-    @classmethod
-    def load_from_disk(
-        cls, save_path: str, faiss_index_save_path: Optional[str] = None, **kwargs: Any
-    ) -> "BaseGPTIndex":
-        """Load index from disk.
+    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+        """Insert a document."""
+        self._add_document_to_index(self._index_struct, document, self._text_splitter)
 
-        This method loads the index from a JSON file stored on disk. The index data
-        structure itself is preserved completely. If the index is defined over
-        subindices, those subindices will also be preserved (and subindices of
-        those subindices, etc.).
-        In GPTFaissIndex, we allow user to specify an additional
-        `faiss_index_save_path` to load faiss index from a file - that
-        way, the user does not have to recreate the faiss index outside
-        of this class.
-
-        Args:
-            save_path (str): The save_path of the file.
-            faiss_index_save_path (Optional[str]): The save_path of the
-                Faiss index file. If not specified, the Faiss index
-                will not be saved to disk.
-            **kwargs: Additional kwargs to pass to the index constructor.
-
-        Returns:
-            BaseGPTIndex: The loaded index.
-
-        """
-        if faiss_index_save_path is not None:
-            import faiss
-
-            faiss_index = faiss.read_index(faiss_index_save_path)
-            return super().load_from_disk(save_path, faiss_index=faiss_index, **kwargs)
-        else:
-            return super().load_from_disk(save_path, **kwargs)
-
-    def save_to_disk(
-        self,
-        save_path: str,
-        faiss_index_save_path: Optional[str] = None,
-        **save_kwargs: Any,
-    ) -> None:
-        """Save to file.
-
-        This method stores the index into a JSON file stored on disk.
-        In GPTFaissIndex, we allow user to specify an additional
-        `faiss_index_save_path` to save the faiss index to a file - that
-        way, the user can pass in the same argument in
-        `GPTFaissIndex.load_from_disk` without having to recreate
-        the Faiss index outside of this class.
-
-        Args:
-            save_path (str): The save_path of the file.
-            faiss_index_save_path (Optional[str]): The save_path of the
-                Faiss index file. If not specified, the Faiss index
-                will not be saved to disk.
-
-        """
-        super().save_to_disk(save_path, **save_kwargs)
-
-        if faiss_index_save_path is not None:
-            import faiss
-
-            faiss.write_index(self._faiss_index, faiss_index_save_path)
+    def delete(self, document: BaseDocument) -> None:
+        """Delete a document."""
+        raise NotImplementedError("Delete not implemented for Faiss index.")

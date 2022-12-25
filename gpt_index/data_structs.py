@@ -228,6 +228,17 @@ class SimpleIndexDict(BaseIndexDict):
         return self.embedding_dict[text_id]
 
 
+@dataclass
+class WeaviateIndexStruct(IndexStruct):
+    """A helper index struct for Weaviate.
+
+    In Weaviate, docs are stored in Weaviate directly.
+    This index struct helps to store the class name
+
+    """
+    class_name: Optional[str] = None
+
+
 class IndexStructType(str, Enum):
     """Index struct type."""
 
@@ -270,3 +281,4 @@ class IndexStructType(str, Enum):
             return cls.SIMPLE_DICT
         else:
             raise ValueError("Invalid index struct type.")
+
