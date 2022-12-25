@@ -92,6 +92,8 @@ def mock_get_text_embedding(text: str) -> List[float]:
         return [0, 0, 0, 1, 0]
     elif text == "This is a test v3.":
         return [0, 0, 0, 0, 1]
+    elif text == "This is bar test.":
+        return [0, 0, 1, 0, 0]
     else:
         raise ValueError("Invalid text for `mock_get_text_embedding`.")
 
@@ -274,3 +276,17 @@ def test_simple_query(
     query_str = "What is?"
     response = index.query(query_str, **query_kwargs)
     assert response == ("What is?:This is another test.")
+
+    # test with keyword filter (required)
+    query_kwargs_copy = query_kwargs.copy()
+    query_kwargs_copy["similarity_top_k"] = 5
+    response = index.query(query_str, **query_kwargs_copy, required_keywords=["Hello"])
+    assert response == ("What is?:Hello world.")
+
+    # test with keyword filter (exclude)
+    # insert into index
+    index.insert(Document(text="This is bar test."))
+    query_kwargs_copy = query_kwargs.copy()
+    query_kwargs_copy["similarity_top_k"] = 2
+    response = index.query(query_str, **query_kwargs_copy, exclude_keywords=["another"])
+    assert response == ("What is?:This is bar test.")

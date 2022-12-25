@@ -97,6 +97,9 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         sorted_nodes = [
             self.index_struct.text_chunks[idx] for idx in sorted_chunk_indices
         ]
+        # filter sorted nodes
+        sorted_nodes = [node for node in sorted_nodes if self._should_use_node(node)]
+
         response_builder = ResponseBuilder(
             self._prompt_helper,
             self._llm_predictor,
