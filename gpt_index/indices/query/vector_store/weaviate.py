@@ -15,7 +15,8 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.readers.weaviate.data_structs import DEFAULT_CLASS_PREFIX, WeaviateNode
+from gpt_index.readers.weaviate.data_structs import WeaviateNode
+from gpt_index.readers.weaviate.utils import get_default_class_prefix
 
 
 class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
@@ -29,7 +30,7 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
         weaviate_client: Optional[Any] = None,
-        class_prefix: str = DEFAULT_CLASS_PREFIX,
+        class_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -47,7 +48,7 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         except ImportError:
             raise ValueError(import_err_msg)
         self.client = cast(Client, weaviate_client)
-        self.class_prefix = class_prefix
+        self.class_prefix = class_prefix or get_default_class_prefix()
 
     def _give_response_for_nodes(
         self, query_str: str, nodes: List[Node], verbose: bool = False

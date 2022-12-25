@@ -1,6 +1,15 @@
 """Weaviate utils."""
 
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Set, cast
+
+from gpt_index.utils import get_new_id
+
+DEFAULT_CLASS_PREFIX_STUB = "Gpt_Index"
+
+
+def get_default_class_prefix(current_id_set: Set = set()) -> str:
+    """Get default class prefix."""
+    return DEFAULT_CLASS_PREFIX_STUB + "_" + get_new_id(current_id_set)
 
 
 def validate_client(client: Any) -> None:

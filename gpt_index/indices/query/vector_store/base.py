@@ -6,7 +6,7 @@ from typing import Any, Generic, List, Optional, Tuple, TypeVar
 
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.data_structs import BaseIndexDict, Node
+from gpt_index.data_structs import BaseIndexDict, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text

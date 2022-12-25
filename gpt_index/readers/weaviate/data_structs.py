@@ -15,8 +15,6 @@ from gpt_index.utils import get_new_id
 
 IS = TypeVar("IS", bound=IndexStruct)
 
-DEFAULT_CLASS_PREFIX = "Gpt_Index"
-
 
 class BaseWeaviateIndexStruct(Generic[IS]):
     """Base Weaviate index struct."""

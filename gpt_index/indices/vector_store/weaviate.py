@@ -19,7 +19,8 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.readers.weaviate.data_structs import DEFAULT_CLASS_PREFIX, WeaviateNode
+from gpt_index.readers.weaviate.data_structs import WeaviateNode
+from gpt_index.readers.weaviate.utils import get_default_class_prefix
 from gpt_index.schema import BaseDocument
 
 
@@ -53,7 +54,7 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         weaviate_client: Optional[Any] = None,
-        class_prefix: str = DEFAULT_CLASS_PREFIX,
+        class_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -67,7 +68,7 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
             raise ValueError(import_err_msg)
 
         self.client = cast(Client, weaviate_client)
-        self.class_prefix = class_prefix
+        self.class_prefix = class_prefix or get_default_class_prefix()
         # try to create schema
         WeaviateNode.create_schema(self.client, class_prefix)
 
