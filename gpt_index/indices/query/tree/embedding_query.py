@@ -53,12 +53,8 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         child_branch_factor: int = 1,
-<<<<<<< HEAD:gpt_index/indices/tree/embedding_query.py
         embed_model: Optional[BaseEmbedding] = None,
-=======
-        embed_model: Optional[OpenAIEmbedding] = None,
         **kwargs: Any,
->>>>>>> main:gpt_index/indices/query/tree/embedding_query.py
     ) -> None:
         """Initialize params."""
         super().__init__(
