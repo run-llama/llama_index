@@ -23,7 +23,7 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
             (see :ref:`Prompt-Templates`).
         refine_template (Optional[RefinePrompt]): Refinement Prompt
             (see :ref:`Prompt-Templates`).
-        embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
         similarity_top_k (int): Number of similar nodes to retrieve.
 

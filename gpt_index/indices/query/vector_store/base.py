@@ -4,6 +4,7 @@
 from abc import abstractmethod
 from typing import Any, Generic, List, Optional, Tuple, TypeVar
 
+from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import BaseIndexDict, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -26,7 +27,7 @@ class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[BID], Generic[BID]):
         index_struct: BID,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
-        embed_model: Optional[OpenAIEmbedding] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
         **kwargs: Any,
     ) -> None:

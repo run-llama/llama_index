@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Tuple, cast
 
 import numpy as np
 
-from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.data_structs import IndexDict, Node
 from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
@@ -26,7 +26,7 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         refine_template (Optional[RefinePrompt]): Refinement Prompt
             (see :ref:`Prompt-Templates`).
         faiss_index (faiss.Index): A Faiss Index object (required)
-        embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
         similarity_top_k (int): Number of similar nodes to retrieve.
 
@@ -38,7 +38,7 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         faiss_index: Optional[Any] = None,
-        embed_model: Optional[OpenAIEmbedding] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
         **kwargs: Any,
     ) -> None:

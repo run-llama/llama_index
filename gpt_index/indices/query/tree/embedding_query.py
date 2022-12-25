@@ -40,7 +40,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             If child_branch_factor is 1, then the query will only choose one child node
             to traverse for any given parent node.
             If child_branch_factor is 2, then the query will choose two child nodes.
-        embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
 
     """

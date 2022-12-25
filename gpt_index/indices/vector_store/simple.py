@@ -2,7 +2,7 @@
 
 from typing import Any, Optional, Sequence
 
-from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.data_structs import SimpleIndexDict
 from gpt_index.indices.utils import truncate_text
@@ -29,7 +29,7 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
-        embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
     """
 
@@ -41,7 +41,7 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
         index_struct: Optional[SimpleIndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[OpenAIEmbedding] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
