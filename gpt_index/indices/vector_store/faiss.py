@@ -8,7 +8,7 @@ from typing import Any, Optional, Sequence, cast
 
 import numpy as np
 
-from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.data_structs import IndexDict
 from gpt_index.indices.query.schema import QueryMode
@@ -38,7 +38,7 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
             (see :ref:`Prompt-Templates`).
         faiss_index (faiss.Index): A Faiss Index object (required). Note: the index
             will be reset during index construction.
-        embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
     """
 
@@ -51,7 +51,7 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         faiss_index: Optional[Any] = None,
-        embed_model: Optional[OpenAIEmbedding] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
