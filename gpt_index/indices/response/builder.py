@@ -10,12 +10,14 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
+from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
+from gpt_index.indices.data_structs import Node
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.utils import truncate_text
+from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
 from gpt_index.utils import temp_set_attrs
 
 
@@ -170,10 +172,46 @@ class ResponseBuilder:
         return response
 
     def _get_response_tree_summarize(
-        self, query_str: str, prev_response: Optional[str], verbose: bool = False
+        self,
+        query_str: str,
+        prev_response: Optional[str],
+        verbose: bool = False,
+        num_children: int = 10,
     ) -> str:
         """Get tree summarize response."""
-        raise NotImplementedError
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        summary_template = SummaryPrompt.from_prompt(text_qa_template)
+
+        # first join all the text chunks into a single text
+        all_text = "\n\n".join([t.text for t in self._texts])
+        # then get text splitter
+        text_splitter = self.prompt_helper.get_text_splitter_given_prompt(
+            summary_template, num_children
+        )
+        text_chunks = text_splitter.split_text(all_text)
+        all_nodes: Dict[int, Node] = {
+            i: Node(text=t) for i, t in enumerate(text_chunks)
+        }
+
+        index_builder = GPTTreeIndexBuilder(
+            num_children,
+            summary_template,
+            self.llm_predictor,
+            self.prompt_helper,
+        )
+        root_nodes = index_builder.build_index_from_nodes(
+            all_nodes, all_nodes, verbose=verbose
+        )
+        node_list = get_sorted_node_list(root_nodes)
+        node_text = self.prompt_helper.get_text_from_nodes(
+            node_list, prompt=self.text_qa_template
+        )
+        print(node_text)
+        raise Exception
+        response = self.give_response_single(
+            query_str, node_text, verbose=verbose,
+        )
+        return response or "Empty Response"
 
     def get_response(
         self,
@@ -181,6 +219,7 @@ class ResponseBuilder:
         prev_response: Optional[str] = None,
         mode: ResponseMode = ResponseMode.DEFAULT,
         verbose: bool = False,
+        **response_kwargs: Any,
     ) -> str:
         """Get response."""
         if mode == ResponseMode.DEFAULT:
@@ -189,7 +228,7 @@ class ResponseBuilder:
             return self._get_response_compact(query_str, prev_response, verbose=verbose)
         elif mode == ResponseMode.TREE_SUMMARIZE:
             return self._get_response_tree_summarize(
-                query_str, prev_response, verbose=verbose
+                query_str, prev_response, verbose=verbose, **response_kwargs
             )
         else:
             raise ValueError(f"Invalid mode: {mode}")
