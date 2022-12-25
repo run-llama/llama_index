@@ -2,7 +2,7 @@
 
 from typing import Type
 
-from gpt_index.indices.data_structs import IndexStructType
+from gpt_index.data_structs import IndexStructType
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.keyword_table.query import (
     GPTKeywordTableGPTQuery,
@@ -18,6 +18,7 @@ from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.query.vector_store.faiss import GPTFaissIndexQuery
 from gpt_index.indices.query.vector_store.simple import GPTSimpleVectorIndexQuery
+from gpt_index.indices.query.vector_store.weaviate import GPTWewaviateIndexQuery
 
 MODE_TO_QUERY_MAP_TREE = {
     QueryMode.DEFAULT: GPTTreeIndexLeafQuery,
@@ -37,12 +38,18 @@ MODE_TO_QUERY_MAP_KEYWORD_TABLE = {
     QueryMode.RAKE: GPTKeywordTableRAKEQuery,
 }
 
+
+# vector-based indices
 MODE_TO_QUERY_MAP_FAISS = {
     QueryMode.DEFAULT: GPTFaissIndexQuery,
 }
 
 MODE_TO_QUERY_MAP_SIMPLE = {
     QueryMode.DEFAULT: GPTSimpleVectorIndexQuery,
+}
+
+MODE_TO_QUERY_MAP_WEAVIATE = {
+    QueryMode.DEFAULT: GPTWewaviateIndexQuery,
 }
 
 
@@ -60,5 +67,7 @@ def get_query_cls(
         return MODE_TO_QUERY_MAP_FAISS[mode]
     elif index_struct_type == IndexStructType.SIMPLE_DICT:
         return MODE_TO_QUERY_MAP_SIMPLE[mode]
+    elif index_struct_type == IndexStructType.WEAVIATE:
+        return MODE_TO_QUERY_MAP_WEAVIATE[mode]
     else:
         raise ValueError(f"Invalid index_struct_type: {index_struct_type}")

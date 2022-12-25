@@ -71,17 +71,11 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
     ) -> Tuple[List[str], List[Node]]:
         """Get nodes for response."""
         query_embedding = self._embed_model.get_query_embedding(query_str)
-        query_embedding_np = np.array(query_embedding)[np.newaxis, :]
-        _, indices = self._faiss_index.search(query_embedding_np, self.similarity_top_k)
-        # if empty, then return an empty response
-        if len(indices) == 0:
-            return [], []
-
-        # returned dimension is 1 x k
-        node_idxs = list([str(i) for i in indices[0]])
-        top_k_nodes = self._index_struct.get_nodes(node_idxs)
-
-        return node_idxs, top_k_nodes
+        nodes = WeaviateNode.to_gpt_index_list(
+            self.client, self.class_prefix, vector=query_embedding, object_limit=self.similarity_top_k
+        )
+        nodes = nodes[:self.similarity_top_k]
+        return list(range(nodes)), nodes
 
     def get_nodes_for_response(
         self, query_str: str, verbose: bool = False

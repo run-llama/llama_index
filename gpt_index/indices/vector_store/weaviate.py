@@ -125,3 +125,10 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for Faiss index.")
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Query mode to class."""
+        super()._preprocess_query(mode, query_kwargs)
+        # pass along weaviate client and info
+        query_kwargs["weaviate_client"] = self.client
+        query_kwargs["class_prefix"] = self.class_prefix

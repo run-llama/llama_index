@@ -250,6 +250,8 @@ class IndexStructType(str, Enum):
     DICT = "dict"
     # for simple embedding index
     SIMPLE_DICT = "simple_dict"
+    # for weaviate index
+    WEAVIATE = "weaviate"
 
     def get_index_struct_cls(self) -> type:
         """Get index struct class."""
@@ -263,6 +265,8 @@ class IndexStructType(str, Enum):
             return IndexDict
         elif self == IndexStructType.SIMPLE_DICT:
             return SimpleIndexDict
+        elif self == IndexStructType.WEAVIATE:
+            return WeaviateIndexStruct
         else:
             raise ValueError("Invalid index struct type.")
 
@@ -279,6 +283,8 @@ class IndexStructType(str, Enum):
             return cls.DICT
         elif isinstance(index_struct, SimpleIndexDict):
             return cls.SIMPLE_DICT
+        elif isinstance(index_struct, WeaviateIndexStruct):
+            return cls.WEAVIATE
         else:
             raise ValueError("Invalid index struct type.")
 

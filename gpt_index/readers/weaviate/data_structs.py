@@ -85,7 +85,10 @@ class BaseWeaviateIndexStruct(Generic[IS]):
         """Convert to gpt index list."""
 
     @classmethod
-    def to_gpt_index_list(cls, client: Any, class_prefix: str, vector: Optional[List[float]] = None) -> List[IS]:
+    def to_gpt_index_list(
+        cls, client: Any, class_prefix: str, 
+        vector: Optional[List[float]] = None, object_limit: Optional[int] = None
+    ) -> List[IS]:
         """Convert to gpt index list."""
         validate_client(client)
         class_name = cls._class_name(class_prefix)
@@ -99,6 +102,8 @@ class BaseWeaviateIndexStruct(Generic[IS]):
             query = query.with_near_vector({
                 "vector": vector,
             })
+        if object_limit is not None:
+            query = query.with_object_limit(object_limit)
         query_result = query.do()
         parsed_result = parse_get_response(query_result)
         entries = parsed_result[class_name]
