@@ -3,7 +3,7 @@
 from abc import abstractmethod
 from typing import List
 
-from openai.embeddings_utils import cosine_similarity, get_embedding
+from openai.embeddings_utils import cosine_similarity
 
 # TODO: change to numpy array
 EMB_TYPE = List

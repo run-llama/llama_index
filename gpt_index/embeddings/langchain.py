@@ -9,7 +9,11 @@ from gpt_index.embeddings.base import BaseEmbedding
 
 
 class LangchainEmbedding(BaseEmbedding):
-    """External embeddings (taken from Langchain)."""
+    """External embeddings (taken from Langchain).
+
+    Args:
+        langchain_embedding (langchain.embeddings.Embeddings): Langchain embeddings class.
+    """
 
     def __init__(self, langchain_embedding: LCEmbeddings) -> None:
         """Init params."""

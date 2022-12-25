@@ -3,9 +3,9 @@
 from enum import Enum
 from typing import List
 
-from openai.embeddings_utils import cosine_similarity, get_embedding
+from openai.embeddings_utils import get_embedding
 
-from gpt_index.embeddings.base import EMB_TYPE, BaseEmbedding
+from gpt_index.embeddings.base import BaseEmbedding
 
 
 class OpenAIEmbeddingMode(str, Enum):
