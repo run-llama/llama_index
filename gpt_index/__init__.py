@@ -6,6 +6,10 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
     __version__ = _f.read().strip()
 
 
+# embeddings
+from gpt_index.embeddings.langchain import LangchainEmbedding
+from gpt_index.embeddings.openai import OpenAIEmbedding
+
 # indices
 from gpt_index.indices.keyword_table import (
     GPTKeywordTableIndex,
@@ -56,6 +60,8 @@ __all__ = [
     "GPTFaissIndex",
     "GPTSimpleVectorIndex",
     "Prompt",
+    "LangchainEmbedding",
+    "OpenAIEmbedding",
     "SummaryPrompt",
     "TreeInsertPrompt",
     "TreeSelectPrompt",

@@ -3,6 +3,8 @@
 from abc import abstractmethod
 from typing import List
 
+from openai.embeddings_utils import cosine_similarity
+
 # TODO: change to numpy array
 EMB_TYPE = List
 
@@ -15,9 +17,9 @@ class BaseEmbedding:
         """Get query embedding."""
 
     @abstractmethod
-    def get_text_embedding(self, query: str) -> List[float]:
+    def get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
 
-    @abstractmethod
-    def similarity(self, embedding1: EMB_TYPE, embedding_2: EMB_TYPE) -> float:
+    def similarity(self, embedding1: EMB_TYPE, embedding2: EMB_TYPE) -> float:
         """Get embedding similarity."""
+        return cosine_similarity(embedding1, embedding2)
