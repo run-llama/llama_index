@@ -72,6 +72,4 @@ response = new_index.query(
     embed_model=embed_model
 )
 print(response)
-
-
 ```
