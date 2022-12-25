@@ -112,3 +112,43 @@ def test_insert(
     assert table.index_struct.text_chunks[chunk_index1_2].ref_doc_id == "test_id1"
     assert table.index_struct.text_chunks[chunk_index2_1].ref_doc_id == "test_id2"
     assert table.index_struct.text_chunks[chunk_index2_2].ref_doc_id == "test_id2"
+
+
+@patch_common
+@patch(
+    "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
+    mock_extract_keywords,
+)
+@patch(
+    "gpt_index.indices.query.keyword_table.query.simple_extract_keywords",
+    mock_extract_keywords,
+)
+def test_query(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+) -> None:
+    """Test query."""
+    # test simple keyword table
+    # NOTE: here the keyword extraction isn't mocked because we're using
+    # the regex-based keyword extractor, not GPT
+    table = GPTSimpleKeywordTableIndex(documents)
+
+    response = table.query("Hello", mode="simple")
+    assert response == "Hello:Hello world."
+
+    # try with filters
+    doc_text = (
+        "Hello world\n" "Hello foo\n" "This is another test\n" "This is a test v2"
+    )
+    documents2 = [Document(doc_text)]
+    table2 = GPTSimpleKeywordTableIndex(documents2)
+    # NOTE: required keywords are somewhat redundant
+    response = table2.query("This", mode="simple", required_keywords=["v2"])
+    assert response == "This:This is a test v2"
+
+    # test exclude_keywords
+    response = table2.query("Hello", mode="simple", exclude_keywords=["world"])
+    assert response == "Hello:Hello foo"

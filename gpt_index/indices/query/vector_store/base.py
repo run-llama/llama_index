@@ -56,6 +56,19 @@ class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[BID], Generic[BID]):
 
         return response or ""
 
+    def get_nodes_for_response(
+        self, query_str: str, verbose: bool = False
+    ) -> Tuple[List[str], List[Node]]:
+        """Get nodes for response."""
+        ids, nodes = self._get_nodes_for_response(query_str, verbose=verbose)
+        filtered_ids = []
+        filtered_nodes = []
+        for id, node in zip(ids, nodes):
+            if self._should_use_node(node):
+                filtered_ids.append(id)
+                filtered_nodes.append(node)
+        return filtered_ids, filtered_nodes
+
     @abstractmethod
     def _get_nodes_for_response(
         self, query_str: str, verbose: bool = False
@@ -65,9 +78,7 @@ class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[BID], Generic[BID]):
     def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
-        node_idxs, top_k_nodes = self._get_nodes_for_response(
-            query_str, verbose=verbose
-        )
+        node_idxs, top_k_nodes = self.get_nodes_for_response(query_str, verbose=verbose)
         # print verbose output
         if verbose:
             fmt_txts = []
