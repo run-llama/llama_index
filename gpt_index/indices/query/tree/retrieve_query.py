@@ -48,8 +48,9 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         node_list = get_sorted_node_list(self.index_struct.root_nodes)
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         node_text = self._prompt_helper.get_text_from_nodes(
-            node_list, prompt=self.text_qa_template
+            node_list, prompt=text_qa_template
         )
         response_builder = ResponseBuilder(
             self._prompt_helper,

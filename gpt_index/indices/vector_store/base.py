@@ -47,6 +47,8 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
             llm_predictor=llm_predictor,
             **kwargs,
         )
+        # NOTE: when building the vector store index, text_qa_template is not partially
+        # formatted because we don't know the query ahead of time.
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.text_qa_template, 1
         )
