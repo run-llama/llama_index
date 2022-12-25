@@ -1,6 +1,7 @@
 """Embedding query for list index."""
 from typing import Any, List, Optional, Tuple
 
+from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.data_structs import IndexList, Node
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
@@ -30,7 +31,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         similarity_top_k: Optional[int] = 1,
-        embed_model: Optional[OpenAIEmbedding] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""

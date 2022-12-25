@@ -4,8 +4,6 @@ GPT Index provides support for embeddings in the following format:
 - Using a Vector Store as an underlying index (e.g. `GPTSimpleVectorIndex`, `GPTFaissIndex`)
 - Querying our list and tree indices with embeddings.
 
-NOTE: we currently support OpenAI embeddings. External embeddings are coming soon!
-
 ## Using a Vector Store as an Underlying Index
 
 <!-- Please see the corresponding section in our [Vector Stores](/how_to/vector_stores.md#loading-data-from-vector-stores-using-data-connector) -->
@@ -42,3 +40,36 @@ For the tree index (`GPTTreeIndex`):
 
 An example notebook is given [here](https://github.com/jerryjliu/gpt_index/blob/main/examples/test_wiki/TestNYC_Embeddings.ipynb).
 
+
+
+## Custom Embeddings
+
+GPT Index allows you to define custom embedding modules. By default, we use `text-embedding-ada-002` from OpenAI. 
+
+You can also choose to plug in embeddings from
+Langchain's [embeddings](https://langchain.readthedocs.io/en/latest/reference/modules/embeddings.html) module.
+We introduce a wrapper class, 
+[`LangchainEmbedding`](/reference/embeddings.rst), for integration into GPT Index.
+
+An example snippet is shown below (to use Huggingface embeddings):
+
+```python
+from gpt_index import GPTListIndex, SimpleDirectoryReader
+from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from gpt_index import LangchainEmbedding
+
+# load in HF embedding model from langchain
+embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
+
+# load index
+new_index = GPTListIndex.load_from_disk('index_list_emb.json')
+
+# query with embed_model specified
+response = new_index.query(
+    "<query_text>", 
+    mode="embedding", 
+    verbose=True, 
+    embed_model=embed_model
+)
+print(response)
+```

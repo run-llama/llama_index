@@ -3,9 +3,9 @@
 from enum import Enum
 from typing import List
 
-from openai.embeddings_utils import cosine_similarity, get_embedding
+from openai.embeddings_utils import get_embedding
 
-from gpt_index.embeddings.base import EMB_TYPE, BaseEmbedding
+from gpt_index.embeddings.base import BaseEmbedding
 
 
 class OpenAIEmbeddingMode(str, Enum):
@@ -96,7 +96,3 @@ class OpenAIEmbedding(BaseEmbedding):
             raise ValueError(f"Invalid mode, model combination: {key}")
         engine = _TEXT_MODE_MODEL_DICT[key]
         return get_embedding(text, engine=engine)
-
-    def similarity(self, embedding1: EMB_TYPE, embedding2: EMB_TYPE) -> float:
-        """Get embedding similarity."""
-        return cosine_similarity(embedding1, embedding2)
