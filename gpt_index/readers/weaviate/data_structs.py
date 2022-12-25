@@ -3,10 +3,10 @@ Contain conversion to and from dataclasses that GPT Index uses.
 """
 
 from abc import abstractmethod
-from typing import Any, Dict, Generic, List, TypeVar
+from typing import Any, Dict, Generic, List, TypeVar, Optional
 
 from gpt_index.data_structs import IndexStruct, Node
-from gpt_index.readers.weaviate.utils import get_by_id, validate_client
+from gpt_index.readers.weaviate.utils import get_by_id, validate_client, parse_get_response
 from gpt_index.utils import get_new_id
 
 IS = TypeVar("IS", bound=IndexStruct)
@@ -81,18 +81,33 @@ class BaseWeaviateIndexStruct(Generic[IS]):
 
     @classmethod
     @abstractmethod
-    def _to_gpt_index(cls, client: Any, object_id: str, class_prefix: str) -> IS:
-        """Convert to gpt index."""
+    def _entry_to_gpt_index(cls, entry: Dict) -> List[IS]:
+        """Convert to gpt index list."""
 
     @classmethod
-    def to_gpt_index(cls, client: Any, object_id: str, class_prefix: str) -> IS:
-        """Convert to gpt index."""
+    def to_gpt_index_list(cls, client: Any, class_prefix: str, vector: Optional[List[float]] = None) -> List[IS]:
+        """Convert to gpt index list."""
         validate_client(client)
-        result = cls._to_gpt_index(client, object_id, class_prefix)
-        # Delete existing class_name, object_id from Weaviate.
-        # NOTE: This is our current solution for preventing against duplicates.
-        client.data_object.delete(object_id, cls._class_name(class_prefix))
-        return result
+        class_name = cls._class_name(class_prefix)
+        properties = cls._get_common_properties() + cls._get_properties()
+        prop_names = [p["name"] for p in properties]
+        query = (
+            client.query.get(class_name, prop_names)
+            .with_additional(["id", "vector"])
+        )
+        if vector is not None:
+            query = query.with_near_vector({
+                "vector": vector,
+            })
+        query_result = query.do()
+        parsed_result = parse_get_response(query_result)
+        entries = parsed_result[class_name]
+
+        results: List[IS] = []
+        for entry in entries:
+            results.append(cls._entry_to_gpt_index(entry))
+
+        return results
 
     @classmethod
     @abstractmethod
@@ -140,9 +155,8 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         ]
 
     @classmethod
-    def _to_gpt_index(cls, client: Any, object_id: str, class_prefix: str) -> Node:
-        """Convert to gpt index."""
-        entry = cls._get_by_id(client, object_id, class_prefix)
+    def _entry_to_gpt_index(cls, entry: Dict) -> List[Node]:
+        """Convert to gpt index list."""
         return Node(
             text=entry["text"],
             doc_id=entry["doc_id"],
