@@ -7,6 +7,7 @@ An index that that is built on top of an existing vector store.
 from abc import abstractmethod
 from typing import Any, Generic, Optional, Sequence, TypeVar
 
+from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.data_structs import BaseIndexDict
@@ -25,7 +26,7 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
-        embed_model (Optional[OpenAIEmbedding]): Embedding model to use for
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
     """
 
@@ -35,7 +36,7 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
         index_struct: Optional[BID] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[OpenAIEmbedding] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""

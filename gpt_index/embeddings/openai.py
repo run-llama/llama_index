@@ -70,7 +70,25 @@ _TEXT_MODE_MODEL_DICT = {
 
 
 class OpenAIEmbedding(BaseEmbedding):
-    """OpenAI class for embeddings."""
+    """OpenAI class for embeddings.
+
+    Args:
+        mode (str): Mode for embedding.
+            Defaults to OpenAIEmbeddingMode.TEXT_SEARCH_MODE.
+            Options are:
+
+            - OpenAIEmbeddingMode.SIMILARITY_MODE
+            - OpenAIEmbeddingMode.TEXT_SEARCH_MODE
+
+        model (str): Model for embedding. Defaults to "text-embedding-ada-002".
+            Options are:
+
+            - "davinci"
+            - "curie"
+            - "babbage"
+            - "ada"
+            - "text-embedding-ada-002"
+    """
 
     def __init__(
         self,
