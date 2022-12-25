@@ -4,10 +4,13 @@ from typing import Any, Optional
 
 from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response_utils.response import give_response
+from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.indices.utils import get_sorted_node_list
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
+from gpt_index.prompts.default_prompts import (
+    DEFAULT_REFINE_PROMPT,
+    DEFAULT_TEXT_QA_PROMPT,
+)
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
 class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
@@ -33,25 +36,30 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
         self,
         index_struct: IndexGraph,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct, **kwargs)
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
 
     def _query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         node_list = get_sorted_node_list(self.index_struct.root_nodes)
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         node_text = self._prompt_helper.get_text_from_nodes(
-            node_list, prompt=self.text_qa_template
+            node_list, prompt=text_qa_template
         )
-        response = give_response(
+        response_builder = ResponseBuilder(
             self._prompt_helper,
             self._llm_predictor,
-            query_str,
-            node_text,
-            text_qa_template=self.text_qa_template,
-            verbose=verbose,
+            self.text_qa_template,
+            self.refine_template,
+            texts=[TextChunk(node_text)],
+        )
+        response = response_builder.get_response(
+            query_str, verbose=verbose, mode=self._response_mode
         )
         return response

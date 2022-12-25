@@ -9,12 +9,10 @@ import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.vector_store.faiss import GPTFaissIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.indices.vector_store.simple import GPTSimpleVectorIndex
 from gpt_index.readers.schema.base import Document
-from tests.mock_utils.mock_predict import mock_llmpredictor_predict
+from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
-from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
 @pytest.fixture
@@ -62,6 +60,10 @@ class MockFaissIndex:
             new_id = len(self._index)
             self._index[new_id] = vec
 
+    def reset(self) -> None:
+        """Reset index."""
+        self._index = {}
+
     def search(self, vec: np.ndarray, k: int) -> Tuple[np.ndarray, np.ndarray]:
         """Search index."""
         # assume query vec is of the form 1 x k
@@ -99,15 +101,14 @@ def mock_get_query_embedding(query: str) -> List[float]:
     return [0, 0, 1, 0, 0]
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 @patch.object(
     OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
 )
 def test_build_faiss(
     _mock_embed: Any,
     _mock_init: Any,
+    _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_splitter: Any,
     documents: List[Document],
@@ -124,21 +125,20 @@ def test_build_faiss(
     index = GPTFaissIndex(documents=documents, faiss_index=faiss_index, **index_kwargs)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
-    assert index.index_struct.get_node(0).text == "Hello world."
-    assert index.index_struct.get_node(1).text == "This is a test."
-    assert index.index_struct.get_node(2).text == "This is another test."
-    assert index.index_struct.get_node(3).text == "This is a test v2."
+    assert index.index_struct.get_node("0").text == "Hello world."
+    assert index.index_struct.get_node("1").text == "This is a test."
+    assert index.index_struct.get_node("2").text == "This is another test."
+    assert index.index_struct.get_node("3").text == "This is a test v2."
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch_common
 @patch.object(
     OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
 )
 def test_faiss_insert(
     _mock_embed: Any,
     _mock_init: Any,
+    _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_splitter: Any,
     documents: List[Document],
@@ -157,25 +157,22 @@ def test_faiss_insert(
     index.insert(Document(text="This is a test v3."))
 
     # check contenst of nodes
-    assert index.index_struct.get_node(3).text == "This is a test v2."
-    assert index.index_struct.get_node(4).text == "This is a test v3."
+    assert index.index_struct.get_node("3").text == "This is a test v2."
+    assert index.index_struct.get_node("4").text == "This is a test v3."
 
 
-@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
-@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
-@patch.object(LLMPredictor, "__init__", return_value=None)
-@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch_common
 @patch.object(
     OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
 )
 @patch.object(
     OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
 )
-def test_embedding_query(
+def test_faiss_query(
     _mock_query_embed: Any,
     _mock_text_embed: Any,
-    _mock_predict: Any,
     _mock_init: Any,
+    _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_split_text: Any,
     documents: List[Document],
@@ -189,6 +186,89 @@ def test_embedding_query(
 
     index_kwargs, query_kwargs = struct_kwargs
     index = GPTFaissIndex(documents, faiss_index=faiss_index, **index_kwargs)
+
+    # test embedding query
+    query_str = "What is?"
+    response = index.query(query_str, **query_kwargs)
+    assert response == ("What is?:This is another test.")
+
+
+@patch_common
+@patch.object(
+    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+)
+def test_build_simple(
+    _mock_embed: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_splitter: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test build GPTFaissIndex."""
+    index_kwargs, query_kwargs = struct_kwargs
+
+    index = GPTSimpleVectorIndex(documents=documents, **index_kwargs)
+    assert len(index.index_struct.nodes_dict) == 4
+    # check contents of nodes
+    assert index.index_struct.get_node("0").text == "Hello world."
+    assert index.index_struct.get_embedding("0") == [1, 0, 0, 0, 0]
+    assert index.index_struct.get_node("1").text == "This is a test."
+    assert index.index_struct.get_embedding("1") == [0, 1, 0, 0, 0]
+    assert index.index_struct.get_node("2").text == "This is another test."
+    assert index.index_struct.get_embedding("2") == [0, 0, 1, 0, 0]
+    assert index.index_struct.get_node("3").text == "This is a test v2."
+    assert index.index_struct.get_embedding("3") == [0, 0, 0, 1, 0]
+
+
+@patch_common
+@patch.object(
+    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+)
+def test_simple_insert(
+    _mock_embed: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_splitter: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test build GPTFaissIndex."""
+    index_kwargs, query_kwargs = struct_kwargs
+
+    index = GPTSimpleVectorIndex(documents=documents, **index_kwargs)
+    # insert into index
+    index.insert(Document(text="This is a test v3."))
+
+    # check contenst of nodes
+    assert index.index_struct.get_node("3").text == "This is a test v2."
+    assert index.index_struct.get_embedding("3") == [0, 0, 0, 1, 0]
+    assert index.index_struct.get_node("4").text == "This is a test v3."
+    assert index.index_struct.get_embedding("4") == [0, 0, 0, 0, 1]
+
+
+@patch_common
+@patch.object(
+    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_simple_query(
+    _mock_query_embed: Any,
+    _mock_text_embed: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test embedding query."""
+    index_kwargs, query_kwargs = struct_kwargs
+    index = GPTSimpleVectorIndex(documents, **index_kwargs)
 
     # test embedding query
     query_str = "What is?"

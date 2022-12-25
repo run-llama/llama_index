@@ -4,7 +4,7 @@ import random
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -143,28 +143,27 @@ class IndexList(IndexStruct):
         return cur_node.index
 
 
-# TODO: this should be specific to FAISS
 @dataclass
-class IndexDict(IndexStruct):
+class BaseIndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
     nodes_dict: Dict[int, Node] = field(default_factory=dict)
-    # TODO: allow users to pass in Hashable type
-    # currently Hashable doesn't play nice with dataclasses_json
-    id_map: Dict[Any, int] = field(default_factory=dict)
+    id_map: Dict[str, int] = field(default_factory=dict)
 
     def add_text(
         self,
         text_chunk: str,
         ref_doc_id: str,
-        text_id: Optional[Any] = None,
-    ) -> Any:
+        text_id: Optional[str] = None,
+    ) -> str:
         """Add text to table, return current position in list."""
+        int_id = get_new_int_id(set(self.nodes_dict.keys()))
         if text_id in self.id_map:
             raise ValueError("text_id cannot already exist in index.")
-        int_id = get_new_int_id(set(self.nodes_dict.keys()))
-        if text_id is None:
-            text_id = int_id
+        elif text_id is not None and not isinstance(text_id, str):
+            raise ValueError("text_id must be a string.")
+        elif text_id is None:
+            text_id = str(int_id)
         self.id_map[text_id] = int_id
 
         # don't worry about child indices for now, nodes are all in order
@@ -172,21 +171,61 @@ class IndexDict(IndexStruct):
         self.nodes_dict[int_id] = cur_node
         return text_id
 
-    def get_nodes(self, text_ids: List[Any]) -> List[Node]:
+    def get_nodes(self, text_ids: List[str]) -> List[Node]:
         """Get nodes."""
         nodes = []
         for text_id in text_ids:
             if text_id not in self.id_map:
                 raise ValueError("text_id not found in id_map")
+            elif not isinstance(text_id, str):
+                raise ValueError("text_id must be a string.")
             int_id = self.id_map[text_id]
             if int_id not in self.nodes_dict:
                 raise ValueError("int_id not found in nodes_dict")
             nodes.append(self.nodes_dict[int_id])
         return nodes
 
-    def get_node(self, text_id: Any) -> Node:
+    def get_node(self, text_id: str) -> Node:
         """Get node."""
         return self.get_nodes([text_id])[0]
+
+
+# TODO: this should be specific to FAISS
+@dataclass
+class IndexDict(BaseIndexDict):
+    """A dictionary of documents.
+
+    Note: this index structure is specifically used with the Faiss index.
+
+    """
+
+
+@dataclass
+class SimpleIndexDict(BaseIndexDict):
+    """A simple dictionary of documents.
+
+    This index structure also contains an internal in-memory
+    embedding dict.
+
+    """
+
+    embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
+
+    def add_embedding(self, text_id: str, embedding: List[float]) -> None:
+        """Add embedding to dict."""
+        if text_id not in self.id_map:
+            raise ValueError("text_id not found in id_map")
+        elif not isinstance(text_id, str):
+            raise ValueError("text_id must be a string.")
+        self.embedding_dict[text_id] = embedding
+
+    def get_embedding(self, text_id: str) -> List[float]:
+        """Get embedding."""
+        if text_id not in self.embedding_dict:
+            raise ValueError("text_id not found in embedding_dict")
+        elif not isinstance(text_id, str):
+            raise ValueError("text_id must be a string.")
+        return self.embedding_dict[text_id]
 
 
 class IndexStructType(str, Enum):
@@ -195,7 +234,11 @@ class IndexStructType(str, Enum):
     TREE = "tree"
     LIST = "list"
     KEYWORD_TABLE = "keyword_table"
+    # for Faiss
+    # TODO: rename
     DICT = "dict"
+    # for simple embedding index
+    SIMPLE_DICT = "simple_dict"
 
     def get_index_struct_cls(self) -> type:
         """Get index struct class."""
@@ -207,6 +250,8 @@ class IndexStructType(str, Enum):
             return KeywordTable
         elif self == IndexStructType.DICT:
             return IndexDict
+        elif self == IndexStructType.SIMPLE_DICT:
+            return SimpleIndexDict
         else:
             raise ValueError("Invalid index struct type.")
 
@@ -221,5 +266,7 @@ class IndexStructType(str, Enum):
             return cls.KEYWORD_TABLE
         elif isinstance(index_struct, IndexDict):
             return cls.DICT
+        elif isinstance(index_struct, SimpleIndexDict):
+            return cls.SIMPLE_DICT
         else:
             raise ValueError("Invalid index struct type.")

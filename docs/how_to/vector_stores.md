@@ -30,17 +30,23 @@ NOTE: Since Weaviate can store a hybrid of document and vector objects, the user
 
 ## Using a Vector Store as an Index
 
-GPT Index also supports using a vector store itself (specifically, Faiss) as an index. Similar to 
-any other index within GPT Index (tree, keyword table, list), this index can be constructed upon any collection
+GPT Index also supports using a vector store itself as an index. 
+These are found in the following classes:
+- `GPTSimpleVectorIndex`
+- `GPTFaissIndex`
+
+Similar to any other index within GPT Index (tree, keyword table, list), this index can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.
 
 Once constructed, the index can be used for querying.
 
-**Index Construction**
+**Faiss Index Construction**
 ![](/_static/vector_stores/faiss_index_0.png)
 
-**Index Querying**
+**Faiss Index Querying**
 ![](/_static/vector_stores/faiss_index_1.png)
 
+**Simple Index Construction/Querying**
+![](/_static/vector_stores/simple_index_0.png)
 
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).

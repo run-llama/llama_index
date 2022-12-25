@@ -59,20 +59,21 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
 
     """
     formatted_prompt = prompt.format(**prompt_args)
+    full_prompt_args = prompt.get_full_format_args(prompt_args)
     if prompt.prompt_type == PromptType.SUMMARY:
-        response = _mock_summary_predict(prompt_args)
+        response = _mock_summary_predict(full_prompt_args)
     elif prompt.prompt_type == PromptType.TREE_INSERT:
         response = _mock_insert_predict()
     elif prompt.prompt_type == PromptType.TREE_SELECT:
         response = _mock_query_select()
     elif prompt.prompt_type == PromptType.REFINE:
-        response = _mock_refine(prompt_args)
+        response = _mock_refine(full_prompt_args)
     elif prompt.prompt_type == PromptType.QUESTION_ANSWER:
-        response = _mock_answer(prompt_args)
+        response = _mock_answer(full_prompt_args)
     elif prompt.prompt_type == PromptType.KEYWORD_EXTRACT:
-        response = _mock_keyword_extract(prompt_args)
+        response = _mock_keyword_extract(full_prompt_args)
     elif prompt.prompt_type == PromptType.QUERY_KEYWORD_EXTRACT:
-        response = _mock_query_keyword_extract(prompt_args)
+        response = _mock_query_keyword_extract(full_prompt_args)
     else:
         raise ValueError("Invalid prompt to use with mocks.")
 

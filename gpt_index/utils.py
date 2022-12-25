@@ -3,7 +3,8 @@
 import random
 import sys
 import uuid
-from typing import Any, Callable, List, Optional, Set
+from contextlib import contextmanager
+from typing import Any, Callable, Generator, List, Optional, Set
 
 import nltk
 from transformers import GPT2TokenizerFast
@@ -118,3 +119,21 @@ def llm_token_counter(method_name_str: str) -> Callable:
         return wrapped_llm_predict
 
     return wrap
+
+
+@contextmanager
+def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
+    """Temporary setter.
+
+    Utility class for setting a temporary value for an attribute on a class.
+    Taken from: shorturl.at/fBFQ5.
+
+    """
+    prev_values = {k: getattr(obj, k) for k in kwargs}
+    for k, v in kwargs.items():
+        setattr(obj, k, v)
+    try:
+        yield
+    finally:
+        for k, v in prev_values.items():
+            setattr(obj, k, v)

@@ -23,6 +23,10 @@ DEFAULT_QUERY_CONFIGS = [
         index_struct_type=IndexStructType.KEYWORD_TABLE,
         query_mode=QueryMode.DEFAULT,
     ),
+    QueryConfig(index_struct_type=IndexStructType.DICT, query_mode=QueryMode.DEFAULT),
+    QueryConfig(
+        index_struct_type=IndexStructType.SIMPLE_DICT, query_mode=QueryMode.DEFAULT
+    ),
 ]
 
 

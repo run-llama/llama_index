@@ -56,9 +56,9 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    how_to/composability.md
    how_to/insert.md
    how_to/cost_analysis.md
-   how_to/embeddings.md
    how_to/custom_prompts.md
    how_to/custom_llms.md
+   how_to/embeddings.md
    how_to/vector_stores.md
 
 

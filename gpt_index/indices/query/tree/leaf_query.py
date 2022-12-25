@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, cast
 
 from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
@@ -85,14 +86,18 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
         """
         if len(selected_node.child_indices) == 0:
-            # call _query_node to get an answer from doc (either Document/IndexStruct)
-            cur_response = self._query_node(
-                query_str,
-                selected_node,
+            response_builder = ResponseBuilder(
+                self._prompt_helper,
+                self._llm_predictor,
                 self.text_qa_template,
                 self.refine_template,
-                verbose=verbose,
-                level=level,
+            )
+            # use response builder to get answer from node
+            node_text = self._get_text_from_node(
+                query_str, selected_node, verbose=verbose, level=level
+            )
+            cur_response = response_builder.get_response_over_chunks(
+                query_str, [node_text], prev_response=prev_response, verbose=verbose
             )
             if verbose:
                 print(f">[Level {level}] Current answer response: {cur_response} ")
@@ -134,25 +139,28 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         if self.child_branch_factor == 1:
+            query_template = self.query_template.partial_format(
+                num_chunks=len(cur_node_list), query_str=query_str
+            )
             numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
-                cur_node_list, prompt=self.query_template
+                cur_node_list, prompt=query_template
             )
             response, formatted_query_prompt = self._llm_predictor.predict(
-                self.query_template,
-                num_chunks=len(cur_node_list),
-                query_str=query_str,
+                query_template,
                 context_list=numbered_node_text,
             )
         else:
-            numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
-                cur_node_list, prompt=self.query_template_multiple
-            )
-            response, formatted_query_prompt = self._llm_predictor.predict(
-                self.query_template_multiple,
+            query_template_multiple = self.query_template_multiple.partial_format(
                 num_chunks=len(cur_node_list),
                 query_str=query_str,
-                context_list=numbered_node_text,
                 branching_factor=self.child_branch_factor,
+            )
+            numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
+                cur_node_list, prompt=query_template_multiple
+            )
+            response, formatted_query_prompt = self._llm_predictor.predict(
+                query_template_multiple,
+                context_list=numbered_node_text,
             )
 
         if verbose:
