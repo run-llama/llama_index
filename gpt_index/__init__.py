@@ -45,7 +45,7 @@ from gpt_index.readers.notion import NotionPageReader
 # allow importing Document at the top-level
 from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
-from gpt_index.readers.weaviate import WeaviateReader
+from gpt_index.readers.weaviate.reader import WeaviateReader
 from gpt_index.readers.wikipedia import WikipediaReader
 
 # token predictor
