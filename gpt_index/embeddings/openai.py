@@ -73,7 +73,8 @@ class OpenAIEmbedding(BaseEmbedding):
     """OpenAI class for embeddings.
 
     Args:
-        mode (str): Mode for embedding. Defaults to OpenAIEmbeddingMode.TEXT_SEARCH_MODE.
+        mode (str): Mode for embedding.
+            Defaults to OpenAIEmbeddingMode.TEXT_SEARCH_MODE.
             Options are:
 
             - OpenAIEmbeddingMode.SIMILARITY_MODE
