@@ -1,4 +1,4 @@
-"""External embeddings."""
+"""Langchain Embedding Wrapper Module."""
 
 
 from typing import List
@@ -12,7 +12,8 @@ class LangchainEmbedding(BaseEmbedding):
     """External embeddings (taken from Langchain).
 
     Args:
-        langchain_embedding (langchain.embeddings.Embeddings): Langchain embeddings class.
+        langchain_embedding (langchain.embeddings.Embeddings): Langchain
+            embeddings class.
     """
 
     def __init__(self, langchain_embedding: LCEmbeddings) -> None:

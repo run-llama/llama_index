@@ -49,13 +49,12 @@ GPT Index allows you to define custom embedding modules. By default, we use `tex
 You can also choose to plug in embeddings from
 Langchain's [embeddings](https://langchain.readthedocs.io/en/latest/reference/modules/embeddings.html) module.
 We introduce a wrapper class, 
-[`LangchainEmbedding`](/reference/embedding.rst), for integration into GPT Index.
+[`LangchainEmbedding`](/reference/embeddings.rst), for integration into GPT Index.
 
 An example snippet is shown below (to use Huggingface embeddings):
 
 ```python
 from gpt_index import GPTListIndex, SimpleDirectoryReader
-from IPython.display import Markdown
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from gpt_index import LangchainEmbedding
 
