@@ -139,25 +139,28 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         if self.child_branch_factor == 1:
+            query_template = self.query_template.partial_format(
+                num_chunks=len(cur_node_list), query_str=query_str
+            )
             numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
-                cur_node_list, prompt=self.query_template
+                cur_node_list, prompt=query_template
             )
             response, formatted_query_prompt = self._llm_predictor.predict(
-                self.query_template,
-                num_chunks=len(cur_node_list),
-                query_str=query_str,
+                query_template,
                 context_list=numbered_node_text,
             )
         else:
-            numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
-                cur_node_list, prompt=self.query_template_multiple
-            )
-            response, formatted_query_prompt = self._llm_predictor.predict(
-                self.query_template_multiple,
+            query_template_multiple = self.query_template_multiple.partial_format(
                 num_chunks=len(cur_node_list),
                 query_str=query_str,
-                context_list=numbered_node_text,
                 branching_factor=self.child_branch_factor,
+            )
+            numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
+                cur_node_list, prompt=query_template_multiple
+            )
+            response, formatted_query_prompt = self._llm_predictor.predict(
+                query_template_multiple,
+                context_list=numbered_node_text,
             )
 
         if verbose:

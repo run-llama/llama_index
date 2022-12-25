@@ -91,9 +91,10 @@ def test_compact_response(
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
     mock_qa_prompt = QuestionAnswerPrompt(mock_qa_prompt_tmpl)
 
-    # max input size is 9, padding is 1 --> 8 tokens
+    # max input size is 11, prompt is two tokens (the query) --> 9 tokens
+    # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        9, 0, 0, tokenizer=mock_tokenizer, separator="\n\n", chunk_size_limit=4
+        11, 0, 0, tokenizer=mock_tokenizer, separator="\n\n", chunk_size_limit=4
     )
     cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
     # outside of compact, assert that chunk size is 4
@@ -119,4 +120,53 @@ def test_compact_response(
     response = builder.get_response(query_str, mode=ResponseMode.COMPACT)
     assert response == (
         "What is?:" "This\n\nis\n\na\n\nbar\n\n" "This\n\nis\n\na\n\ntest"
+    )
+
+
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "__init__", return_value=None)
+def test_tree_summarize_response(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    documents: List[Document],
+) -> None:
+    """Test give response."""
+    # test response with ResponseMode.TREE_SUMMARIZE
+    # NOTE: here we want to guarante that prompts have 0 extra tokens
+    mock_refine_prompt_tmpl = "{query_str}{existing_answer}{context_msg}"
+    mock_refine_prompt = RefinePrompt(mock_refine_prompt_tmpl)
+
+    mock_qa_prompt_tmpl = "{context_str}{query_str}"
+    mock_qa_prompt = QuestionAnswerPrompt(mock_qa_prompt_tmpl)
+
+    # max input size is 12, prompt tokens is 2 (query_str)
+    # --> 10 tokens for 2 chunks -->
+    # 5 tokens per chunk, 1 is padding --> 4 tokens per chunk
+    prompt_helper = PromptHelper(12, 0, 0, tokenizer=mock_tokenizer, separator="\n\n")
+
+    # within tree_summarize, make sure that chunk size is 8
+    llm_predictor = LLMPredictor()
+    query_str = "What is?"
+    texts = [
+        TextChunk("This\n\nis\n\na\n\nbar"),
+        TextChunk("This\n\nis\n\na\n\ntest"),
+        TextChunk("This\n\nis\n\nanother\n\ntest"),
+        TextChunk("This\n\nis\n\na\n\nfoo"),
+    ]
+
+    builder = ResponseBuilder(
+        prompt_helper,
+        llm_predictor,
+        mock_qa_prompt,
+        mock_refine_prompt,
+        texts=texts,
+    )
+    response = builder.get_response(
+        query_str, mode=ResponseMode.TREE_SUMMARIZE, num_children=2
+    )
+    # TODO: fix this output, the \n join appends unnecessary results at the end
+    assert response == (
+        "What is?:This\n\nis\n\na\n\nbar\nThis\n" "This\n\nis\n\nanother\n\ntest\nThis"
     )
