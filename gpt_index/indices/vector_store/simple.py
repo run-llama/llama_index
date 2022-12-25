@@ -2,7 +2,6 @@
 
 from typing import Any, Optional, Sequence
 
-from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.data_structs import SimpleIndexDict
