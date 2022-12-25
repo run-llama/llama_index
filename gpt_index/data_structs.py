@@ -236,6 +236,7 @@ class WeaviateIndexStruct(IndexStruct):
     This index struct helps to store the class name
 
     """
+
     class_name: Optional[str] = None
 
 
@@ -287,4 +288,3 @@ class IndexStructType(str, Enum):
             return cls.WEAVIATE
         else:
             raise ValueError("Invalid index struct type.")
-

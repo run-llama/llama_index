@@ -4,10 +4,9 @@
 from abc import abstractmethod
 from typing import Any, Generic, List, Optional, Tuple, TypeVar, cast
 
+from gpt_index.data_structs import Node, WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.data_structs import Node, WeaviateIndexStruct
-from gpt_index.readers.weaviate.data_structs import WeaviateNode, DEFAULT_CLASS_PREFIX
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text
@@ -16,6 +15,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from gpt_index.readers.weaviate.data_structs import DEFAULT_CLASS_PREFIX, WeaviateNode
 
 
 class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
@@ -38,9 +38,11 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self._embed_model = embed_model or OpenAIEmbedding()
         self.similarity_top_k = similarity_top_k
-        import_err_msg = "`weaviate` package not found, please run `pip install weaviate-client`"
+        import_err_msg = (
+            "`weaviate` package not found, please run `pip install weaviate-client`"
+        )
         try:
-            import weaviate # noqa: F401
+            import weaviate  # noqa: F401
             from weaviate import Client  # noqa: F401
         except ImportError:
             raise ValueError(import_err_msg)
@@ -72,10 +74,14 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         """Get nodes for response."""
         query_embedding = self._embed_model.get_query_embedding(query_str)
         nodes = WeaviateNode.to_gpt_index_list(
-            self.client, self.class_prefix, vector=query_embedding, object_limit=self.similarity_top_k
+            self.client,
+            self.class_prefix,
+            vector=query_embedding,
+            object_limit=self.similarity_top_k,
         )
-        nodes = nodes[:self.similarity_top_k]
-        return list(range(nodes)), nodes
+        nodes = nodes[: self.similarity_top_k]
+        node_idxs = [str(i) for i in range(len(nodes))]
+        return node_idxs, nodes
 
     def get_nodes_for_response(
         self, query_str: str, verbose: bool = False

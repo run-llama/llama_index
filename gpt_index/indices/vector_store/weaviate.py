@@ -8,18 +8,18 @@ from typing import Any, Optional, Sequence, cast
 
 import numpy as np
 
-from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from gpt_index.data_structs import Node, WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.readers.weaviate.data_structs import WeaviateNode, DEFAULT_CLASS_PREFIX
+from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.data_structs import IndexDict, Node, WeaviateIndexStruct
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.utils import truncate_text
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
+from gpt_index.readers.weaviate.data_structs import DEFAULT_CLASS_PREFIX, WeaviateNode
 from gpt_index.schema import BaseDocument
 
 
@@ -48,7 +48,7 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
     def __init__(
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[IndexDict] = None,
+        index_struct: Optional[WeaviateIndexStruct] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
@@ -57,9 +57,11 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        import_err_msg = "`weaviate` package not found, please run `pip install weaviate-client`"
+        import_err_msg = (
+            "`weaviate` package not found, please run `pip install weaviate-client`"
+        )
         try:
-            import weaviate # noqa: F401
+            import weaviate  # noqa: F401
             from weaviate import Client  # noqa: F401
         except ImportError:
             raise ValueError(import_err_msg)
@@ -85,7 +87,7 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
 
     def _add_document_to_index(
         self,
-        index_struct: IndexDict,
+        index_struct: WeaviateIndexStruct,
         document: BaseDocument,
         text_splitter: TokenTextSplitter,
     ) -> None:
@@ -94,15 +96,10 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
         for _, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
-            # add to FAISS
-            # NOTE: embeddings won't be stored in Node but rather in underlying
-            # Faiss store
+            # add to Weaviate
             text_embedding = self._embed_model.get_text_embedding(text_chunk)
 
-            node = Node(
-                text=text_chunk,
-                embedding=text_embedding
-            )
+            node = Node(text=text_chunk, embedding=text_embedding)
             # serialize to gpt index
             node_id = WeaviateNode.from_gpt_index(self.client, node, self.class_prefix)
 
@@ -124,7 +121,7 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
 
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
-        raise NotImplementedError("Delete not implemented for Faiss index.")
+        raise NotImplementedError("Delete not implemented for Weaviate index.")
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Query mode to class."""

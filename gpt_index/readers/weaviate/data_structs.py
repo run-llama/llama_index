@@ -3,10 +3,14 @@ Contain conversion to and from dataclasses that GPT Index uses.
 """
 
 from abc import abstractmethod
-from typing import Any, Dict, Generic, List, TypeVar, Optional
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from gpt_index.data_structs import IndexStruct, Node
-from gpt_index.readers.weaviate.utils import get_by_id, validate_client, parse_get_response
+from gpt_index.readers.weaviate.utils import (
+    get_by_id,
+    parse_get_response,
+    validate_client,
+)
 from gpt_index.utils import get_new_id
 
 IS = TypeVar("IS", bound=IndexStruct)
@@ -81,27 +85,31 @@ class BaseWeaviateIndexStruct(Generic[IS]):
 
     @classmethod
     @abstractmethod
-    def _entry_to_gpt_index(cls, entry: Dict) -> List[IS]:
+    def _entry_to_gpt_index(cls, entry: Dict) -> IS:
         """Convert to gpt index list."""
 
     @classmethod
     def to_gpt_index_list(
-        cls, client: Any, class_prefix: str, 
-        vector: Optional[List[float]] = None, object_limit: Optional[int] = None
+        cls,
+        client: Any,
+        class_prefix: str,
+        vector: Optional[List[float]] = None,
+        object_limit: Optional[int] = None,
     ) -> List[IS]:
         """Convert to gpt index list."""
         validate_client(client)
         class_name = cls._class_name(class_prefix)
         properties = cls._get_common_properties() + cls._get_properties()
         prop_names = [p["name"] for p in properties]
-        query = (
-            client.query.get(class_name, prop_names)
-            .with_additional(["id", "vector"])
+        query = client.query.get(class_name, prop_names).with_additional(
+            ["id", "vector"]
         )
         if vector is not None:
-            query = query.with_near_vector({
-                "vector": vector,
-            })
+            query = query.with_near_vector(
+                {
+                    "vector": vector,
+                }
+            )
         if object_limit is not None:
             query = query.with_object_limit(object_limit)
         query_result = query.do()
@@ -160,7 +168,7 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         ]
 
     @classmethod
-    def _entry_to_gpt_index(cls, entry: Dict) -> List[Node]:
+    def _entry_to_gpt_index(cls, entry: Dict) -> Node:
         """Convert to gpt index list."""
         return Node(
             text=entry["text"],
