@@ -1,8 +1,7 @@
 """Weaviate vector store index query."""
 
 
-from abc import abstractmethod
-from typing import Any, Generic, List, Optional, Tuple, TypeVar, cast
+from typing import Any, List, Optional, Tuple, cast
 
 from gpt_index.data_structs import Node, WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
@@ -16,7 +15,6 @@ from gpt_index.prompts.default_prompts import (
 )
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
-from gpt_index.readers.weaviate.utils import get_default_class_prefix
 
 
 class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
@@ -74,7 +72,7 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         query_embedding = self._embed_model.get_query_embedding(query_str)
         nodes = WeaviateNode.to_gpt_index_list(
             self.client,
-            self._index_struct.class_prefix,
+            self._index_struct.get_class_prefix(),
             vector=query_embedding,
             object_limit=self.similarity_top_k,
         )

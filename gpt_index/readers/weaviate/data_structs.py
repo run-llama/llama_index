@@ -1,5 +1,7 @@
 """Weaviate-specific serializers for GPT Index data structures.
+
 Contain conversion to and from dataclasses that GPT Index uses.
+
 """
 
 from abc import abstractmethod
@@ -30,12 +32,12 @@ class BaseWeaviateIndexStruct(Generic[IS]):
         return [
             {
                 "dataType": ["string"],
-                "description": f"Text property",
+                "description": "Text property",
                 "name": "text",
             },
             {
                 "dataType": ["string"],
-                "description": f"Document id",
+                "description": "Document id",
                 "name": "doc_id",
             },
         ]
@@ -44,7 +46,9 @@ class BaseWeaviateIndexStruct(Generic[IS]):
     @abstractmethod
     def _get_properties(cls) -> List[Dict]:
         """Get properties specific to each index struct.
+
         Used in creating schema.
+
         """
 
     @classmethod

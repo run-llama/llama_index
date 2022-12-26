@@ -244,6 +244,12 @@ class WeaviateIndexStruct(IndexStruct):
         if self.class_prefix is None:
             raise ValueError("class_prefix must be provided.")
 
+    def get_class_prefix(self) -> str:
+        """Get class prefix."""
+        if self.class_prefix is None:
+            raise ValueError("class_prefix must be provided.")
+        return self.class_prefix
+
 
 class IndexStructType(str, Enum):
     """Index struct type."""

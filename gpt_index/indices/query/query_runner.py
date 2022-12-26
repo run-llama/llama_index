@@ -1,6 +1,6 @@
 """Query runner."""
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, cast
 
 from gpt_index.data_structs import IndexStruct, IndexStructType
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -52,11 +52,13 @@ class QueryRunner(BaseQueryRunner):
         """Init params."""
         config_dict: Dict[IndexStructType, QueryConfig] = {}
         if query_configs is None or len(query_configs) == 0:
-            query_config_objs = DEFAULT_QUERY_CONFIGS
-        elif isinstance(query_configs[0], dict):
-            query_config_objs = [QueryConfig.from_dict(qc) for qc in query_configs]
+            query_config_objs: List[QueryConfig] = DEFAULT_QUERY_CONFIGS
+        elif isinstance(query_configs[0], Dict):
+            query_config_objs = [
+                QueryConfig.from_dict(cast(Dict, qc)) for qc in query_configs
+            ]
         else:
-            query_config_objs = query_configs
+            query_config_objs = [cast(QueryConfig, q) for q in query_configs]
 
         for qc in query_config_objs:
             config_dict[qc.index_struct_type] = qc

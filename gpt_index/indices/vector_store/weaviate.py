@@ -6,15 +6,12 @@ An index that that is built on top of an existing vector store.
 
 from typing import Any, Optional, Sequence, cast
 
-import numpy as np
-
 from gpt_index.data_structs import Node, WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.utils import truncate_text
-from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -70,8 +67,10 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
         self.client = cast(Client, weaviate_client)
         if index_struct is not None:
             if class_prefix is not None:
-                raise ValueError("class_prefix must be None when index_struct is not None.")
-            self.class_prefix = index_struct.class_prefix
+                raise ValueError(
+                    "class_prefix must be None when index_struct is not None."
+                )
+            self.class_prefix = index_struct.get_class_prefix()
         else:
             self.class_prefix = class_prefix or get_default_class_prefix()
         # try to create schema
@@ -107,7 +106,9 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
 
             node = Node(text=text_chunk, embedding=text_embedding)
             # serialize to gpt index
-            node_id = WeaviateNode.from_gpt_index(self.client, node, index_struct.class_prefix)
+            WeaviateNode.from_gpt_index(
+                self.client, node, index_struct.get_class_prefix()
+            )
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False

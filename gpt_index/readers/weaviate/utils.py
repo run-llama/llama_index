@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Set, cast
 
-from gpt_index.utils import get_new_id, get_new_int_id
+from gpt_index.utils import get_new_int_id
 
 DEFAULT_CLASS_PREFIX_STUB = "Gpt_Index"
 
