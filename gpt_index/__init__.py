@@ -18,7 +18,11 @@ from gpt_index.indices.keyword_table import (
 )
 from gpt_index.indices.list import GPTListIndex
 from gpt_index.indices.tree import GPTTreeIndex
-from gpt_index.indices.vector_store import GPTFaissIndex, GPTSimpleVectorIndex
+from gpt_index.indices.vector_store import (
+    GPTFaissIndex,
+    GPTSimpleVectorIndex,
+    GPTWeaviateIndex,
+)
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -45,7 +49,7 @@ from gpt_index.readers.notion import NotionPageReader
 # allow importing Document at the top-level
 from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
-from gpt_index.readers.weaviate import WeaviateReader
+from gpt_index.readers.weaviate.reader import WeaviateReader
 from gpt_index.readers.wikipedia import WikipediaReader
 
 # token predictor
@@ -59,6 +63,7 @@ __all__ = [
     "GPTTreeIndex",
     "GPTFaissIndex",
     "GPTSimpleVectorIndex",
+    "GPTWeaviateIndex",
     "Prompt",
     "LangchainEmbedding",
     "OpenAIEmbedding",

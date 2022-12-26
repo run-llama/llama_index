@@ -3,7 +3,7 @@
 
 from typing import Dict, Sequence
 
-from gpt_index.indices.data_structs import IndexGraph, Node
+from gpt_index.data_structs import IndexGraph, Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor

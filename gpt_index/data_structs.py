@@ -228,6 +228,29 @@ class SimpleIndexDict(BaseIndexDict):
         return self.embedding_dict[text_id]
 
 
+@dataclass
+class WeaviateIndexStruct(IndexStruct):
+    """A helper index struct for Weaviate.
+
+    In Weaviate, docs are stored in Weaviate directly.
+    This index struct helps to store the class prefix
+
+    """
+
+    class_prefix: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        """Post init."""
+        if self.class_prefix is None:
+            raise ValueError("class_prefix must be provided.")
+
+    def get_class_prefix(self) -> str:
+        """Get class prefix."""
+        if self.class_prefix is None:
+            raise ValueError("class_prefix must be provided.")
+        return self.class_prefix
+
+
 class IndexStructType(str, Enum):
     """Index struct type."""
 
@@ -239,6 +262,8 @@ class IndexStructType(str, Enum):
     DICT = "dict"
     # for simple embedding index
     SIMPLE_DICT = "simple_dict"
+    # for weaviate index
+    WEAVIATE = "weaviate"
 
     def get_index_struct_cls(self) -> type:
         """Get index struct class."""
@@ -252,6 +277,8 @@ class IndexStructType(str, Enum):
             return IndexDict
         elif self == IndexStructType.SIMPLE_DICT:
             return SimpleIndexDict
+        elif self == IndexStructType.WEAVIATE:
+            return WeaviateIndexStruct
         else:
             raise ValueError("Invalid index struct type.")
 
@@ -268,5 +295,7 @@ class IndexStructType(str, Enum):
             return cls.DICT
         elif isinstance(index_struct, SimpleIndexDict):
             return cls.SIMPLE_DICT
+        elif isinstance(index_struct, WeaviateIndexStruct):
+            return cls.WEAVIATE
         else:
             raise ValueError("Invalid index struct type.")

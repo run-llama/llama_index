@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from gpt_index.indices.data_structs import IndexStruct, IndexStructType
+from gpt_index.data_structs import IndexStruct, IndexStructType
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
@@ -206,7 +206,7 @@ class BaseGPTIndex(Generic[IS]):
                 index_struct_type=IndexStructType.from_index_struct(self._index_struct),
                 query_mode=mode_enum,
                 query_kwargs=query_kwargs,
-            ).to_dict()
+            )
             query_runner = QueryRunner(
                 self._llm_predictor,
                 self._prompt_helper,

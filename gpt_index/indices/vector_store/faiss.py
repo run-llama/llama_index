@@ -8,9 +8,9 @@ from typing import Any, Optional, Sequence, cast
 
 import numpy as np
 
+from gpt_index.data_structs import IndexDict
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.indices.data_structs import IndexDict
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.utils import truncate_text
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex

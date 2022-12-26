@@ -2,9 +2,9 @@
 
 from typing import Any, Optional, Sequence
 
+from gpt_index.data_structs import IndexGraph
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
-from gpt_index.indices.data_structs import IndexGraph
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor

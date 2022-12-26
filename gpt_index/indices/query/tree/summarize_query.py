@@ -3,7 +3,7 @@
 
 from typing import Any, Optional, cast
 
-from gpt_index.indices.data_structs import IndexGraph
+from gpt_index.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.indices.utils import get_sorted_node_list
