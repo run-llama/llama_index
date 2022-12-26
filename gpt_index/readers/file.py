@@ -36,7 +36,7 @@ class SimpleDirectoryReader(BaseReader):
 
         self.input_files = self._add_files(self.input_dir)
 
-    def _add_files(self, input_dir: str) -> List[Path]:
+    def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
         input_files = sorted(input_dir.iterdir())
         dirs_to_remove = []

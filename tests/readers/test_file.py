@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 from gpt_index.readers.file import SimpleDirectoryReader
 
 
-def test_simple_directory_reader():
+def test_simple_directory_reader() -> None:
     """Test simple directory reader."""
     # test recursive
     with TemporaryDirectory() as tmp_dir:
