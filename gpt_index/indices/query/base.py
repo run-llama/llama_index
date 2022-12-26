@@ -5,7 +5,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Generic, List, Optional, TypeVar, cast
 
-from gpt_index.indices.data_structs import IndexStruct, Node
+from gpt_index.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseMode, TextChunk
 from gpt_index.indices.utils import truncate_text

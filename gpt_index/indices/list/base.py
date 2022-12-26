@@ -7,8 +7,8 @@ in sequence in order to answer a given query.
 
 from typing import Any, Optional, Sequence
 
+from gpt_index.data_structs import IndexList
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.indices.data_structs import IndexList
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter

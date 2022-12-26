@@ -1,7 +1,7 @@
 """Default query for GPTSimpleVectorIndex."""
 from typing import List, Tuple
 
-from gpt_index.indices.data_structs import Node, SimpleIndexDict
+from gpt_index.data_structs import Node, SimpleIndexDict
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
 from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
 from gpt_index.indices.utils import truncate_text

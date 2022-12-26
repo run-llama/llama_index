@@ -2,7 +2,7 @@
 import re
 from typing import Dict, List, Optional, Set
 
-from gpt_index.indices.data_structs import Node
+from gpt_index.data_structs import Node
 from gpt_index.utils import globals_helper
 
 

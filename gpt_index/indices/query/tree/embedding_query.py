@@ -2,9 +2,9 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
+from gpt_index.data_structs import IndexGraph, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.data_structs import IndexGraph, Node
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.prompts.prompts import (
