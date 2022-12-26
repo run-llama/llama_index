@@ -21,18 +21,37 @@ class SimpleDirectoryReader(BaseReader):
     """
 
     def __init__(
-        self, input_dir: str, exclude_hidden: bool = True, errors: str = "ignore"
+        self,
+        input_dir: str,
+        exclude_hidden: bool = True,
+        errors: str = "ignore",
+        recursive: bool = False,
     ) -> None:
         """Initialize with parameters."""
         self.input_dir = Path(input_dir)
         self.errors = errors
-        input_files = list(self.input_dir.iterdir())
-        if exclude_hidden:
+
+        self.recursive = recursive
+        self.exclude_hidden = exclude_hidden
+
+        self.input_files = self._add_files(self.input_dir)
+
+    def _add_files(self, input_dir: Path) -> List[Path]:
+        """Add files."""
+        input_files = sorted(input_dir.iterdir())
+        dirs_to_remove = []
+        if self.exclude_hidden:
             input_files = [f for f in input_files if not f.name.startswith(".")]
         for input_file in input_files:
-            if not input_file.is_file():
-                raise ValueError(f"Expected {input_file} to be a file.")
-        self.input_files = input_files
+            if input_file.is_dir():
+                sub_input_files = self._add_files(input_file)
+                input_files.extend(sub_input_files)
+                dirs_to_remove.append(input_file)
+
+        for dir in dirs_to_remove:
+            input_files.remove(dir)
+
+        return input_files
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory.
