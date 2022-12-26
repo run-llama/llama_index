@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 with open(Path(__file__).absolute().parents[0] / "gpt_index" / "VERSION") as _f:
     __version__ = _f.read().strip()
 
-with open("README.md", "r") as f:
+with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 install_requires = [
