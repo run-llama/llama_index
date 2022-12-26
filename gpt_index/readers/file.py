@@ -39,7 +39,6 @@ class SimpleDirectoryReader(BaseReader):
                 
         self.input_files = input_files
 
-
     def load_data(self, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory.
 
