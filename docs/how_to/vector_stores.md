@@ -3,7 +3,7 @@
 GPT Index offers multiple integration points with vector stores / vector databases: 
 
 1) GPT Index can load data from vector stores, similar to any other data connector. This data can then be used within GPT Index data structures.
-2) GPT Index can use a vector store itself (Faiss) as an index. Like any other index, this index can store documents and be used to answer queries.
+2) GPT Index can use a vector store itself as an index. Like any other index, this index can store documents and be used to answer queries.
 
 
 ## Loading Data from Vector Stores using Data Connector
@@ -34,19 +34,21 @@ GPT Index also supports using a vector store itself as an index.
 These are found in the following classes:
 - `GPTSimpleVectorIndex`
 - `GPTFaissIndex`
+- `GPTWeaviateIndex`
 
 Similar to any other index within GPT Index (tree, keyword table, list), this index can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.
 
 Once constructed, the index can be used for querying.
 
-**Faiss Index Construction**
+**Faiss Index Construction/Querying**
 ![](/_static/vector_stores/faiss_index_0.png)
-
-**Faiss Index Querying**
 ![](/_static/vector_stores/faiss_index_1.png)
 
 **Simple Index Construction/Querying**
 ![](/_static/vector_stores/simple_index_0.png)
+
+**Weaviate Index Construction/Querying**
+![](/_static/vector_stores/weaviate_index_0.png)
 
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).
