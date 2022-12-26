@@ -27,12 +27,18 @@ class SimpleDirectoryReader(BaseReader):
         self.input_dir = Path(input_dir)
         self.errors = errors
         input_files = list(self.input_dir.iterdir())
+        dirs_to_remove = []
         if exclude_hidden:
             input_files = [f for f in input_files if not f.name.startswith(".")]
         for input_file in input_files:
-            if not input_file.is_file():
-                raise ValueError(f"Expected {input_file} to be a file.")
+            if input_file.is_dir():
+                input_files.extend(list(input_file.iterdir()))
+                dirs_to_remove.append(input_file)
+        for dir in dirs_to_remove:
+            input_files.remove(dir)
+                
         self.input_files = input_files
+
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory.
