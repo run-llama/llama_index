@@ -1,6 +1,6 @@
 """Query runner."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from gpt_index.data_structs import IndexStruct, IndexStructType
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -29,6 +29,9 @@ DEFAULT_QUERY_CONFIGS = [
     ),
 ]
 
+# TMP: refactor query config type
+QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
+
 
 class QueryRunner(BaseQueryRunner):
     """Tool to take in a query request and perform a query with the right classes.
@@ -42,16 +45,18 @@ class QueryRunner(BaseQueryRunner):
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
         docstore: DocumentStore,
-        query_configs: Optional[List[Dict]] = None,
+        query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         verbose: bool = False,
         recursive: bool = False,
     ) -> None:
         """Init params."""
         config_dict: Dict[IndexStructType, QueryConfig] = {}
-        if query_configs is None:
+        if query_configs is None or len(query_configs) == 0:
             query_config_objs = DEFAULT_QUERY_CONFIGS
-        else:
+        elif isinstance(query_configs[0], dict):
             query_config_objs = [QueryConfig.from_dict(qc) for qc in query_configs]
+        else:
+            query_config_objs = query_configs
 
         for qc in query_config_objs:
             config_dict[qc.index_struct_type] = qc

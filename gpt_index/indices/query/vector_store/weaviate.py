@@ -30,7 +30,6 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
         weaviate_client: Optional[Any] = None,
-        class_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -48,7 +47,6 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         except ImportError:
             raise ValueError(import_err_msg)
         self.client = cast(Client, weaviate_client)
-        self.class_prefix = class_prefix or get_default_class_prefix()
 
     def _give_response_for_nodes(
         self, query_str: str, nodes: List[Node], verbose: bool = False
@@ -76,7 +74,7 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         query_embedding = self._embed_model.get_query_embedding(query_str)
         nodes = WeaviateNode.to_gpt_index_list(
             self.client,
-            self.class_prefix,
+            self._index_struct.class_prefix,
             vector=query_embedding,
             object_limit=self.similarity_top_k,
         )

@@ -68,9 +68,14 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
             raise ValueError(import_err_msg)
 
         self.client = cast(Client, weaviate_client)
-        self.class_prefix = class_prefix or get_default_class_prefix()
+        if index_struct is not None:
+            if class_prefix is not None:
+                raise ValueError("class_prefix must be None when index_struct is not None.")
+            self.class_prefix = index_struct.class_prefix
+        else:
+            self.class_prefix = class_prefix or get_default_class_prefix()
         # try to create schema
-        WeaviateNode.create_schema(self.client, class_prefix)
+        WeaviateNode.create_schema(self.client, self.class_prefix)
 
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._embed_model = embed_model or OpenAIEmbedding()
@@ -102,7 +107,7 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
 
             node = Node(text=text_chunk, embedding=text_embedding)
             # serialize to gpt index
-            node_id = WeaviateNode.from_gpt_index(self.client, node, self.class_prefix)
+            node_id = WeaviateNode.from_gpt_index(self.client, node, index_struct.class_prefix)
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False
@@ -111,7 +116,7 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.text_qa_template, 1
         )
-        index_struct = self.index_struct_cls()
+        index_struct = self.index_struct_cls(class_prefix=self.class_prefix)
         for d in documents:
             self._add_document_to_index(index_struct, d, text_splitter)
         return index_struct
@@ -129,4 +134,3 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
         super()._preprocess_query(mode, query_kwargs)
         # pass along weaviate client and info
         query_kwargs["weaviate_client"] = self.client
-        query_kwargs["class_prefix"] = self.class_prefix

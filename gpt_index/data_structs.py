@@ -233,11 +233,16 @@ class WeaviateIndexStruct(IndexStruct):
     """A helper index struct for Weaviate.
 
     In Weaviate, docs are stored in Weaviate directly.
-    This index struct helps to store the class name
+    This index struct helps to store the class prefix
 
     """
 
-    class_name: Optional[str] = None
+    class_prefix: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        """Post init."""
+        if self.class_prefix is None:
+            raise ValueError("class_prefix must be provided.")
 
 
 class IndexStructType(str, Enum):

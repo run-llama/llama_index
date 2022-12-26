@@ -109,7 +109,7 @@ class BaseWeaviateIndexStruct(Generic[IS]):
                 }
             )
         if object_limit is not None:
-            query = query.with_object_limit(object_limit)
+            query = query.with_limit(object_limit)
         query_result = query.do()
         parsed_result = parse_get_response(query_result)
         entries = parsed_result[class_name]
@@ -129,8 +129,6 @@ class BaseWeaviateIndexStruct(Generic[IS]):
     def from_gpt_index(cls, client: Any, index: IS, class_prefix: str) -> str:
         """Convert from gpt index."""
         validate_client(client)
-        # Create schema if doesn't exist
-        cls.create_schema(client, class_prefix)
         index_id = cls._from_gpt_index(client, index, class_prefix)
         client.batch.flush()
         return index_id
