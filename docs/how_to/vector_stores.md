@@ -48,7 +48,7 @@ Once constructed, the index can be used for querying.
 **Simple Index Construction/Querying**
 ![](/_static/vector_stores/simple_index_0.png)
 
-**Weaviate Index Construction Querying**
+**Weaviate Index Construction/Querying**
 ![](/_static/vector_stores/weaviate_index_0.png)
 
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).
