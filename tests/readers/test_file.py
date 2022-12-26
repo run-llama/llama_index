@@ -1,6 +1,7 @@
 """Test file reader."""
 
 from tempfile import TemporaryDirectory
+
 from gpt_index.readers.file import SimpleDirectoryReader
 
 
