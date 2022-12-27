@@ -35,11 +35,11 @@ This contains GPT Index examples around Paul Graham's essay, ["What I Worked On"
 Create a new `.py` file with the following:
 
 ```python
-from gpt_index import GPTTreeIndex, SimpleDirectoryReader
+from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 from IPython.display import Markdown, display
 
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTTreeIndex(documents)
+index = GPTSimpleVectorIndex(documents)
 ```
 
 This builds an index over the documents in the `data` folder (which in this case just consists of the essay text). We then run the following
@@ -58,7 +58,7 @@ To save to disk and load from disk, do
 # save to disk
 index.save_to_disk('index.json')
 # load from disk
-index = GPTTreeIndex.load_from_disk('index.json')
+index = GPTSimpleVectorIndex.load_from_disk('index.json')
 ```
 
 

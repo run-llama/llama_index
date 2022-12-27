@@ -48,7 +48,15 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
 
 .. toctree::
    :maxdepth: 1
-   :caption: How To
+   :caption: Guides
+
+   getting_started/installation.md
+   getting_started/starter_example.md
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Technical How To
 
    how_to/data_connectors.md
    how_to/composability.md
