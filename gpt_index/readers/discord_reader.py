@@ -16,7 +16,9 @@ from gpt_index.readers.schema.base import Document
 logger = logging.getLogger(__name__)
 
 
-async def read_channel(discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool) -> List[Document]:
+async def read_channel(
+    discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool
+) -> str:
     """Async read channel.
 
     Note: This is our hack to create a synchronous interface to the
@@ -24,30 +26,40 @@ async def read_channel(discord_token: str, channel_id: int, limit: Optional[int]
     this function with `asyncio.get_event_loop().run_until_complete`.
 
     """
-    import discord # noqa: F401
+    import discord  # noqa: F401
 
     messages: List[discord.Message] = []
+
     class CustomClient(discord.Client):
-        async def on_ready(self):
+        async def on_ready(self) -> None:
             try:
                 print(f"{self.user} has connected to Discord!")
                 channel = client.get_channel(channel_id)
+                # only work for text channels for now
+                if not isinstance(channel, discord.TextChannel):
+                    raise ValueError(
+                        f"Channel {channel_id} is not a text channel. "
+                        "Only text channels are supported for now."
+                    )
                 # thread_dict maps thread_id to thread
                 thread_dict = {}
                 for thread in channel.threads:
                     thread_dict[thread.id] = thread
 
-                async for msg in channel.history(limit=limit, oldest_first=oldest_first):
+                async for msg in channel.history(
+                    limit=limit, oldest_first=oldest_first
+                ):
                     messages.append(msg)
                     if msg.id in thread_dict:
                         thread = thread_dict[msg.id]
-                        async for thread_msg in thread.history(limit=limit, oldest_first=oldest_first):
+                        async for thread_msg in thread.history(
+                            limit=limit, oldest_first=oldest_first
+                        ):
                             messages.append(thread_msg)
             except Exception as e:
                 print("Encountered error: " + str(e))
             finally:
                 await self.close()
-                
 
     intents = discord.Intents.default()
     intents.message_content = True
@@ -73,7 +85,7 @@ class DiscordReader(BaseReader):
     def __init__(self, discord_token: Optional[str] = None) -> None:
         """Initialize with parameters."""
         try:
-            import discord # noqa: F401
+            import discord  # noqa: F401
         except ImportError:
             raise ValueError(
                 "`discord.py` package not found, please run `pip install discord.py`"
@@ -88,10 +100,14 @@ class DiscordReader(BaseReader):
 
         self.discord_token = discord_token
 
-    def _read_channel(self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True) -> str:
+    def _read_channel(
+        self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True
+    ) -> str:
         """Read channel."""
         result = asyncio.get_event_loop().run_until_complete(
-            read_channel(self.discord_token, channel_id, limit=limit, oldest_first=oldest_first)
+            read_channel(
+                self.discord_token, channel_id, limit=limit, oldest_first=oldest_first
+            )
         )
         return result
 
@@ -118,9 +134,12 @@ class DiscordReader(BaseReader):
         for channel_id in channel_ids:
             if not isinstance(channel_id, int):
                 raise ValueError(
-                    f"Channel id {channel_id} must be an integer, not {type(channel_id)}."
+                    f"Channel id {channel_id} must be an integer, "
+                    f"not {type(channel_id)}."
                 )
-            channel_content = self._read_channel(channel_id, limit=limit, oldest_first=oldest_first)
+            channel_content = self._read_channel(
+                channel_id, limit=limit, oldest_first=oldest_first
+            )
             results.append(
                 Document(channel_content, extra_info={"channel": channel_id})
             )
@@ -129,6 +148,6 @@ class DiscordReader(BaseReader):
 
 if __name__ == "__main__":
     reader = DiscordReader()
-    print('initialized reader')
+    print("initialized reader")
     output = reader.load_data(channel_ids=[1057178784895348746], limit=10)
     print(output)

@@ -42,18 +42,17 @@ from gpt_index.prompts.prompts import (
 
 # readers
 from gpt_index.readers import (
-    SimpleDirectoryReader,
+    DiscordReader,
+    Document,
+    FaissReader,
     GoogleDocsReader,
-    SimpleMongoReader,
     NotionPageReader,
+    PineconeReader,
+    SimpleDirectoryReader,
+    SimpleMongoReader,
     SlackReader,
     WeaviateReader,
     WikipediaReader,
-    FaissReader,
-    PineconeReader,
-    WeaviateReader,
-    DiscordReader,
-    Document
 )
 
 # token predictor

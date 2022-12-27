@@ -10,6 +10,7 @@ definition of a Document - the bare minimum is a `text` property.
 
 """
 
+from gpt_index.readers.discord_reader import DiscordReader
 from gpt_index.readers.faiss import FaissReader
 
 # readers
@@ -22,7 +23,6 @@ from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.weaviate.reader import WeaviateReader
 from gpt_index.readers.wikipedia import WikipediaReader
-from gpt_index.readers.discord_reader import DiscordReader
 
 __all__ = [
     "WikipediaReader",
