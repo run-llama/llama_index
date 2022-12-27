@@ -22,6 +22,7 @@ from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.weaviate.reader import WeaviateReader
 from gpt_index.readers.wikipedia import WikipediaReader
+from gpt_index.readers.discord_reader import DiscordReader
 
 __all__ = [
     "WikipediaReader",
@@ -29,6 +30,7 @@ __all__ = [
     "SimpleMongoReader",
     "NotionPageReader",
     "GoogleDocsReader",
+    "DiscordReader",
     "SlackReader",
     "WeaviateReader",
     "PineconeReader",
