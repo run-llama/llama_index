@@ -6,7 +6,8 @@
 Welcome to GPT Index!
 =====================================
 
-GPT Index is a project consisting of a set of data structures that are created using LLMs and can be traversed using LLMs in order to answer queries.
+GPT Index is a project consisting of a set of data structures designed to make it easier to 
+use large external knowledge bases with LLMs.
 
 The Github project page is here: https://github.com/jerryjliu/gpt_index.
 
@@ -50,8 +51,7 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    :maxdepth: 1
    :caption: Guides
 
-   getting_started/installation.md
-   getting_started/starter_example.md
+   guides/primer.md
 
 
 .. toctree::
