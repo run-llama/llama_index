@@ -41,16 +41,19 @@ from gpt_index.prompts.prompts import (
 )
 
 # readers
-from gpt_index.readers.file import SimpleDirectoryReader
-from gpt_index.readers.google.gdocs import GoogleDocsReader
-from gpt_index.readers.mongo import SimpleMongoReader
-from gpt_index.readers.notion import NotionPageReader
-
-# allow importing Document at the top-level
-from gpt_index.readers.schema.base import Document
-from gpt_index.readers.slack import SlackReader
-from gpt_index.readers.weaviate.reader import WeaviateReader
-from gpt_index.readers.wikipedia import WikipediaReader
+from gpt_index.readers import (
+    DiscordReader,
+    Document,
+    FaissReader,
+    GoogleDocsReader,
+    NotionPageReader,
+    PineconeReader,
+    SimpleDirectoryReader,
+    SimpleMongoReader,
+    SlackReader,
+    WeaviateReader,
+    WikipediaReader,
+)
 
 # token predictor
 from gpt_index.token_predictor.mock_chain_wrapper import MockLLMPredictor
@@ -83,6 +86,9 @@ __all__ = [
     "GoogleDocsReader",
     "SlackReader",
     "WeaviateReader",
+    "FaissReader",
+    "PineconeReader",
+    "DiscordReader",
     "LLMPredictor",
     "MockLLMPredictor",
 ]
