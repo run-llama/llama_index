@@ -3,6 +3,7 @@
 wikipedia
 pymongo
 slack_sdk
+discord.py
 
 # google
 google-api-python-client

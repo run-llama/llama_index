@@ -7,6 +7,9 @@ The API reference documentation can be found [here](/reference/readers.rst).
 - [Notion](https://developers.notion.com/) (`NotionPageReader`)
 - [Google Docs](https://developers.google.com/docs/api) (`GoogleDocsReader`)
 - [Slack](https://api.slack.com/) (`SlackReader`)
+- [Discord](https://discord.com/developers/docs/intro) (`DiscordReader`)
+    - Note: We use the [discord.py](https://github.com/Rapptz/discord.py) API wrapper for Discord. This is meant to be used
+    in an async setting; however, we adapt it to synchronous Document loading.
 - Wikipedia (`WikipediaReader`)
 
 #### Databases
