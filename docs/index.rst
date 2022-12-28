@@ -52,6 +52,7 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    :caption: Guides
 
    guides/primer.md
+   guides/usage_pattern.md
 
 
 .. toctree::

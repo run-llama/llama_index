@@ -51,7 +51,7 @@ Langchain's [embeddings](https://langchain.readthedocs.io/en/latest/reference/mo
 We introduce a wrapper class, 
 [`LangchainEmbedding`](/reference/embeddings.rst), for integration into GPT Index.
 
-An example snippet is shown below (to use Huggingface embeddings):
+An example snippet is shown below (to use Huggingface embeddings) on the GPTListIndex:
 
 ```python
 from gpt_index import GPTListIndex, SimpleDirectoryReader
@@ -70,6 +70,31 @@ response = new_index.query(
     mode="embedding", 
     verbose=True, 
     embed_model=embed_model
+)
+print(response)
+```
+
+Another example snippet is shown for GPTSimpleVectorIndex.
+
+```python
+from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from gpt_index import LangchainEmbedding
+
+# load in HF embedding model from langchain
+embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
+
+# load index
+new_index = GPTSimpleVectorIndex.load_from_disk(
+    'index_simple_vector.json', 
+    embed_model=embed_model
+)
+
+# query will use the same embed_model
+response = new_index.query(
+    "<query_text>", 
+    mode="embedding", 
+    verbose=True, 
 )
 print(response)
 ```

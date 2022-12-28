@@ -74,6 +74,11 @@ class BaseGPTIndex(Generic[IS]):
         """Get the docstore corresponding to the index."""
         return self._docstore
 
+    @property
+    def llm_predictor(self) -> LLMPredictor:
+        """Get the llm predictor."""
+        return self._llm_predictor
+
     def _process_documents(
         self, documents: Sequence[DOCUMENTS_INPUT], docstore: DocumentStore
     ) -> List[BaseDocument]:
