@@ -129,6 +129,11 @@ from gpt_index import GPTSimpleVectorIndex, GPTListIndex
 index1 = GPTSimpleVectorIndex(documents1)
 index2 = GPTSimpleVectorIndex(documents2)
 
+# set summary text
+# you can set the summary manually, 
+index1.set_summary("summary1")
+index2.set_summary("summary2")
+
 index3 = GPTListIndex([index1, index2])
 
 ```
@@ -174,6 +179,8 @@ response = index.query("What did the author do growing up?", mode="embedding")
 
 ### Setting `response_mode`
 
+Note: This option is not available/utilized in `GPTTreeIndex`.
+
 An index can also have the following response modes through `response_mode`:
 - `default`: For the given index, "create and refine" an answer by sequentially going through each Node; 
     make a separate LLM call per Node. Good for more detailed answers.
@@ -191,7 +198,7 @@ response = index.query("What did the author do growing up?", response_mode="defa
 # mode="compact"
 response = index.query("What did the author do growing up?", response_mode="compact")
 # mode="tree_summarize"
-response = index.query("What did the author do growing up?", response_mode="response_mode")
+response = index.query("What did the author do growing up?", response_mode="tree_summarize")
 ```
 
 

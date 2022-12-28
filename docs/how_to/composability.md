@@ -35,10 +35,20 @@ index1.set_text("<summary1>")
 index2.set_text("<summary2>")
 index3.set_text("<summary3>")
 ```
-If you do not specify summary text, and set `generate_summaries=True` during query-time (see below), 
-then we can also autogenerate the summary text for you and store it.
 
-If specified, this summary text for each index will be used to refine the answer during query-time.
+You may choose to manually specify the summary text, or use GPT Index itself to generate
+a summary, for instance with the following:
+
+```python
+index1.set_text(
+    index1.query(
+        "What is a summary of this document?", 
+        response_mode="tree_summarize"
+    )
+)
+```
+
+**If specified**, this summary text for each subindex will be used to refine the answer during query-time. **If not specified**, the summary text for each subindex will not be used during queries. Instead, an answer will be directly retrieved from the subindex itself.
 
 ### Defining a Top-Level Index
 

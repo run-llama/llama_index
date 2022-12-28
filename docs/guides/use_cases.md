@@ -1,5 +1,4 @@
 # GPT Index Use Cases
-
 GPT Index data structures and parameters offer distinct use cases and advantages.
 This guide should paint a picture of how you can use GPT Index to solve your own data needs. 
 We go through each use case, and describe the index tools you can use for each use case.
@@ -36,14 +35,25 @@ For instance, a summarization query could look like one of the following:
 - "What is a summary of this collection of text?"
 - "Give me a summary of person X's experience with the company."
 
-You can use most indices e.g. a [Vector Store Index](/how_to/vector_stores.md), a list index (`GPTListIndex`), or a Tree Index (`GPTTreeIndex`)
+You can use most indices e.g. a [Vector Store Index](/how_to/vector_stores.md), a list index (`GPTListIndex`)
 to construct a summary with `response_mode="tree_summarize"`. See [here](/guides/usage_pattern.md) for more details on response modes.
 
 ```python
 index = GPTListIndex(documents)
 
-index.query("<summarization_query>", response_mode="tree_summarize")
+response = index.query("<summarization_query>", response_mode="tree_summarize")
 ```
+
+You can also construct a summary using the tree index (`GPTTreeIndex`), but using the `mode` parameter instead:
+
+```python
+index = GPTTreeIndex(documents)
+
+response = index.query("<summarization_query>", mode="summarize")
+```
+
+This is because the "default" mode for a tree-based query is traversing from the top of the graph down to leaf nodes. For summarization purposes we will want
+to use `mode="summarize"` instead.
 
 
 ### Use Case: Combining information across multiple indices
