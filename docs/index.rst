@@ -51,7 +51,8 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    :maxdepth: 1
    :caption: Guides
 
-   guides/primer.md guides/usage_pattern.md
+   guides/primer.md 
+   guides/usage_pattern.md
    guides/use_cases.md
 
 
