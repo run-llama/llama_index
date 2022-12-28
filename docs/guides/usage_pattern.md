@@ -63,13 +63,25 @@ By default, we use OpenAI's `text-davinci-003` model. You may choose to use anot
 an index.
 
 ```python
-from gpt_index import LLMPredictor, GPTSimpleVectorIndex
+from gpt_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper
 
 ...
 
 # define LLM
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002"))
-index = GPTSimpleVectorIndex(documents, llm_predictor=llm_predictor)
+
+# define prompt helper
+# set maximum input size
+max_input_size = 4096
+# set number of output tokens
+num_output = 256
+# set maximum chunk overlap
+max_chunk_overlap = 20
+prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
+
+index = GPTSimpleVectorIndex(
+    documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper
+)
 ```
 
 See the [Custom LLM's How-To](/how_to/custom_llms.md) for more details.
@@ -107,7 +119,7 @@ index.save_to_disk('index.json')
 index = GPTSimpleVectorIndex.load_from_disk('index.json')
 ```
 
-### 3. [Optional, Advanced] Building indices on top of other indices
+## 3. [Optional, Advanced] Building indices on top of other indices
 
 You can build indices on top of other indices! 
 
@@ -124,7 +136,7 @@ index3 = GPTListIndex([index1, index2])
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
 see our [Use Cases Guide](/guides/use_cases.md). For technical details and examples, see our [Composability How-To](/how_to/composability.md).
 
-### 4. Query the index.
+## 4. Query the index.
 
 After building the index, you can now query it. Note that a "query" is simply an input to an LLM - 
 this means that you can use the index for question-answering, but you can also do more than that! 
