@@ -5,22 +5,18 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Generic, List, Optional, TypeVar, cast
 
-from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.builder import ResponseMode, TextChunk
+from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.schema import DocumentStore
-from gpt_index.utils import llm_token_counter
-from gpt_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-)
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from gpt_index.schema import DocumentStore
+from gpt_index.utils import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -164,12 +160,14 @@ class BaseGPTIndexQuery(Generic[IS]):
                 self._llm_predictor,
                 self.text_qa_template,
                 self.refine_template,
-                texts=[TextChunk(self._index_struct.get_text())]
+                texts=[TextChunk(self._index_struct.get_text())],
             )
             # NOTE: use create and refine for now (default response mode)
             response = response_builder.get_response(
-                query_str, verbose=verbose, mode=ResponseMode.DEFAULT,
-                prev_response=response
+                query_str,
+                verbose=verbose,
+                mode=ResponseMode.DEFAULT,
+                prev_response=response,
             )
 
         return response

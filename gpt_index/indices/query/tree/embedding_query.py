@@ -50,8 +50,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         index_struct: IndexGraph,
         query_template: Optional[TreeSelectPrompt] = None,
         query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
         child_branch_factor: int = 1,
         embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
@@ -61,8 +59,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             index_struct,
             query_template=query_template,
             query_template_multiple=query_template_multiple,
-            text_qa_template=text_qa_template,
-            refine_template=refine_template,
             child_branch_factor=child_branch_factor,
             **kwargs,
         )

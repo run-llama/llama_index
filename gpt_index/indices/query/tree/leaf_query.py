@@ -13,12 +13,8 @@ from gpt_index.indices.utils import (
 from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
     DEFAULT_QUERY_PROMPT_MULTIPLE,
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
 )
 from gpt_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
     TreeSelectMultiplePrompt,
     TreeSelectPrompt,
 )
@@ -40,10 +36,6 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         query_template_multiple (Optional[TreeSelectMultiplePrompt]): Tree Select
             Query Prompt (Multiple)
             (see :ref:`Prompt-Templates`).
-        text_qa_template (Optional[QuestionAnswerPrompt]): Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-        refine_template (Optional[RefinePrompt]): Refinement Prompt
-            (see :ref:`Prompt-Templates`).
         child_branch_factor (int): Number of child nodes to consider at each level.
             If child_branch_factor is 1, then the query will only choose one child node
             to traverse for any given parent node.
@@ -56,8 +48,6 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         index_struct: IndexGraph,
         query_template: Optional[TreeSelectPrompt] = None,
         query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
         child_branch_factor: int = 1,
         **kwargs: Any,
     ) -> None:
@@ -67,8 +57,6 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         self.query_template_multiple = (
             query_template_multiple or DEFAULT_QUERY_PROMPT_MULTIPLE
         )
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self.child_branch_factor = child_branch_factor
 
     def _query_with_selected_node(

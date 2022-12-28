@@ -35,8 +35,6 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
     def __init__(
         self,
         index_struct: IndexDict,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
         faiss_index: Optional[Any] = None,
         embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
@@ -45,8 +43,6 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         """Initialize params."""
         super().__init__(
             index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            refine_template=refine_template,
             embed_model=embed_model,
             similarity_top_k=similarity_top_k,
             **kwargs,

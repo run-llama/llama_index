@@ -34,15 +34,11 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
     def __init__(
         self,
         index_struct: IndexGraph,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
         num_children: int = 10,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct, **kwargs)
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self.num_children = num_children
 
     def _query(self, query_str: str, verbose: bool = False) -> str:

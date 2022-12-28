@@ -23,8 +23,6 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
     def __init__(
         self,
         index_struct: WeaviateIndexStruct,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
         embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
         weaviate_client: Optional[Any] = None,
@@ -32,8 +30,6 @@ class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct=index_struct, **kwargs)
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self._embed_model = embed_model or OpenAIEmbedding()
         self.similarity_top_k = similarity_top_k
         import_err_msg = (
