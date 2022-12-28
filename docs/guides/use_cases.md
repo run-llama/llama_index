@@ -26,7 +26,7 @@ For a more detailed/advanced treatment of different use cases and how they map t
 
 To connect GPT Index to a large external data source of documents, you will want to [use one of our data connectors](/how_to/data_connectors.md), or construct `Document` objects manually (see the [primer guide](/guides/primer.md) for how).
 
-Then you will want to use a [Vector Store Index](/how_to/vector_stores.md).
+Then you will likely want to use a [Vector Store Index](/how_to/vector_stores.md).
 
 
 ### Use Case: Summarization over Documents
@@ -63,14 +63,15 @@ index2 = GPTSimpleVectorIndex(slack_docs)
 
 index3 = GPTListIndex([index1, index2])
 
-response = index3.query("<query_str>")
+response = index3.query("<query_str>", mode="recursive", query_configs=...)
 
 ```
 
 
 ### Use Case: Routing a Query to the Right Index
 
-You want to "route" a query to an underlying Document or a subindex.
+You have a few disparate data sources, represented as Document objects
+or subindices. You want to "route" a query to an underlying Document or a subindex.
 Here you have three options: `GPTTreeIndex`, `GPTKeywordTableIndex`, or a
 [Vector Store Index](/how_to/vector_stores.md).
 
@@ -90,7 +91,11 @@ index2 = GPTSimpleVectorIndex(slack_docs)
 # tree index for routing
 tree_index = GPTTreeIndex([index1, index2])
 
-response = tree_index.query("In Notion, give me a summary of the product roadmap.")
+response = tree_index.query(
+    "In Notion, give me a summary of the product roadmap.",
+    mode="recursive",
+    query_configs=...
+)
 
 ```
 
@@ -108,7 +113,7 @@ See the [Usage Pattern Guide](/guides/usage_pattern.md) around querying with req
 
 You have a knowledge base that is organized in a hierarchy. For instance, you may have a book that is organized at the top-level by chapter, and then within each chapter there is a large body of text. Or you have an product roadmap document that is first organized by top-level goals, and then organized by project. You want your answer to include both high-level context as well as details within the lower-level text.
 
-You can do this by defining a subindex for each subsection, defining a *summary text* for that subindex, and [a higher order index](/guides/how_to/composability.md) to combine the subindices. You can stack this as many times as you wish. By defining summary text for each subsection, the higher order index will *refine* the answer synthesized through a subindex with the summary.
+You can do this by defining a subindex for each subsection, defining a *summary text* for that subindex, and [a higher order index](/how_to/composability.md) to combine the subindices. You can stack this as many times as you wish. By defining summary text for each subsection, the higher order index will *refine* the answer synthesized through a subindex with the summary.
 
 ```python
 from gpt_index import GPTTreeIndex, GPTSimpleVectorIndex
@@ -117,9 +122,14 @@ from gpt_index import GPTTreeIndex, GPTSimpleVectorIndex
 index1 = GPTSimpleVectorIndex(chapter1)
 index2 = GPTSimpleVectorIndex(chapter2)
 
+# optional: set summaries
+index1.set_text("<summary1>")
+index2.set_text("<summary2>")
+
+# build tree index
 index3 = GPTTreeIndex([index1, index2])
 
-response = index3.query("<query_str>")
+response = index3.query("<query_str>", mode="recursive", query_configs=...)
 
 ```
 

@@ -26,7 +26,7 @@ index2 = GPTTreeIndex(doc2)
 
 ![](/_static/composability/diagram_b1.png)
 
-### Defining Summary Text
+### [Optional] Defining Summary Text
 
 You can then choose to explicitly define *summary text* for each subindex if you wish, for instance as follows:
 
@@ -35,8 +35,8 @@ index1.set_text("<summary1>")
 index2.set_text("<summary2>")
 index3.set_text("<summary3>")
 ```
-If you do not specify summary text, and `generate_summaries=True`, then we can also autogenerate the summary
-text for you.
+If you do not specify summary text, and set `generate_summaries=True` during query-time (see below), 
+then we can also autogenerate the summary text for you and store it.
 
 If specified, this summary text for each index will be used to refine the answer during query-time.
 
@@ -54,9 +54,28 @@ list_index = GPTListIndex([index1, index2, index3])
 ### Querying the Top-Level Index
 
 During a query, we would start with the top-level list index. Each node in the list corresponds to an underlying tree index. 
+We want to make sure that we define a **recursive** query, as well as a **query config** list. If the query config list is not
+provided, a default set will be used.
+
 
 ```python
-response = list_index.query("Where did the author grow up?")
+# set query config. An example is provided below
+query_configs = [
+    {
+        "index_struct_type": "tree",
+        "query_mode": "default",
+        "query_kwargs": {
+            "child_branch_factor": 2
+        }
+    },
+    {
+        "index_struct_type": "keyword_table",
+        "query_mode": "simple",
+        "query_kwargs": {}
+    },
+    ...
+]
+response = list_index.query("Where did the author grow up?", mode="recursive", query_configs=query_configs)
 ```
 
 ![](/_static/composability/diagram_q1.png)
