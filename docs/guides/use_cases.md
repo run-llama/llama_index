@@ -24,7 +24,6 @@ For a more detailed/advanced treatment of different use cases and how they map t
 
 ### Use Case: Connecting GPT Index to an External Data Source of Documents
 
-
 To connect GPT Index to a large external data source of documents, you will want to [use one of our data connectors](/how_to/data_connectors.md), or construct `Document` objects manually (see the [primer guide](/guides/primer.md) for how).
 
 Then you will want to use a [Vector Store Index](/how_to/vector_stores.md).
@@ -32,12 +31,13 @@ Then you will want to use a [Vector Store Index](/how_to/vector_stores.md).
 
 ### Use Case: Summarization over Documents
 
-Say you want to perform a *summarization* query over your collection of documents. A summarization query requires GPT to iterate through many if not most documents in order to synthesize an answer.
+You want to perform a *summarization* query over your collection of documents. A summarization query requires GPT to iterate through many if not most documents in order to synthesize an answer.
 For instance, a summarization query could look like one of the following: 
 - "What is a summary of this collection of text?"
 - "Give me a summary of person X's experience with the company."
+
 You can use most indices e.g. a [Vector Store Index](/how_to/vector_stores.md), a list index (`GPTListIndex`), or a Tree Index (`GPTTreeIndex`)
-to construct a summary with `response_mode="tree_summarize"`.
+to construct a summary with `response_mode="tree_summarize"`. See [here](/guides/usage_pattern.md) for more details on response modes.
 
 ```python
 index = GPTListIndex(documents)
@@ -46,10 +46,9 @@ index.query("<summarization_query>", response_mode="tree_summarize")
 ```
 
 
-
 ### Use Case: Combining information across multiple indices
 
-Say you have information in two or more different data sources (e.g. Notion and Slack). 
+You have information in two or more different data sources (e.g. Notion and Slack). 
 You want to explicitly synthesize an answer combining information in these data sources.
 
 While a single vector store may implicitly do so (the top-k nearest neighbor text chunks could be from Notion or Slack), a better data structure for explicitly doing this would be the List Index `GPTListIndex`.
@@ -71,7 +70,7 @@ response = index3.query("<query_str>")
 
 ### Use Case: Routing a Query to the Right Index
 
-Say you want to "route" a query to an underlying Document or a subindex.
+You want to "route" a query to an underlying Document or a subindex.
 Here you have three options: `GPTTreeIndex`, `GPTKeywordTableIndex`, or a
 [Vector Store Index](/how_to/vector_stores.md).
 
@@ -95,6 +94,32 @@ response = tree_index.query("In Notion, give me a summary of the product roadmap
 
 ```
 
+
 ### Use Case: Using Keyword Filters
 
-See TODO: Primer link in order to use keyword filters.
+You want to explicitly filter nodes by keywords.
+You can set `required_keywords` and `exclude_keywords` on most of our indices (the only exclusion is the GPTTreeIndex). This will preemptively filter out nodes that do not contain `required_keywords` or contain `exclude_keywords`, reducing the search space
+and hence time/number of LLM calls/cost.
+
+See the [Usage Pattern Guide](/guides/usage_pattern.md) around querying with required_keywords and exclude_keywords.
+
+
+### Use Case: Including Hierarchical Context in your Answer
+
+You have a knowledge base that is organized in a hierarchy. For instance, you may have a book that is organized at the top-level by chapter, and then within each chapter there is a large body of text. Or you have an product roadmap document that is first organized by top-level goals, and then organized by project. You want your answer to include both high-level context as well as details within the lower-level text.
+
+You can do this by defining a subindex for each subsection, defining a *summary text* for that subindex, and [a higher order index](/guides/how_to/composability.md) to combine the subindices. You can stack this as many times as you wish. By defining summary text for each subsection, the higher order index will *refine* the answer synthesized through a subindex with the summary.
+
+```python
+from gpt_index import GPTTreeIndex, GPTSimpleVectorIndex
+
+
+index1 = GPTSimpleVectorIndex(chapter1)
+index2 = GPTSimpleVectorIndex(chapter2)
+
+index3 = GPTTreeIndex([index1, index2])
+
+response = index3.query("<query_str>")
+
+```
+

@@ -155,7 +155,7 @@ However, you also have a variety of keyword arguments at your disposal, dependin
 index being used. A full treatment of all the index-dependent query keyword arguments can be 
 found [here](/reference/query.rst).
 
-**Setting `mode`**
+### Setting `mode`
 
 An index can have a variety of query modes. For instance, you can choose to specify
 `mode="default"` or `mode="embedding"` for a list index. `mode="default"` will a
@@ -172,7 +172,7 @@ response = index.query("What did the author do growing up?", mode="embedding")
 
 ```
 
-**Setting `response_mode`**
+### Setting `response_mode`
 
 An index can also have the following response modes through `response_mode`:
 - `default`: For the given index, "create and refine" an answer by sequentially going through each Node; 
@@ -195,7 +195,7 @@ response = index.query("What did the author do growing up?", response_mode="resp
 ```
 
 
-**Setting `required_keywords` and `exclude_keywords`**
+### Setting `required_keywords` and `exclude_keywords`
 
 You can set `required_keywords` and `exclude_keywords` on most of our indices (the only exclusion is the GPTTreeIndex). This will preemptively filter out nodes that do not contain `required_keywords` or contain `exclude_keywords`, reducing the search space
 and hence time/number of LLM calls/cost.

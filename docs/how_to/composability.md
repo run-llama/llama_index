@@ -5,6 +5,7 @@ GPT Index offers **composability** of your indices, meaning that you can build i
 
 Composability allows you to to define lower-level indices for each document, and higher-order indices over a collection of documents. To see how this works, imagine defining 1) a tree index for the text within each document, and 2) a list index over each tree index (one document) within your collection.
 
+### Defining Subindices
 To see how this works, imagine you have 3 documents: `doc1`, `doc2`, and `doc3`.
 
 ```python
@@ -25,6 +26,22 @@ index2 = GPTTreeIndex(doc2)
 
 ![](/_static/composability/diagram_b1.png)
 
+### Defining Summary Text
+
+You can then choose to explicitly define *summary text* for each subindex if you wish, for instance as follows:
+
+```python
+index1.set_text("<summary1>")
+index2.set_text("<summary2>")
+index3.set_text("<summary3>")
+```
+If you do not specify summary text, and `generate_summaries=True`, then we can also autogenerate the summary
+text for you.
+
+If specified, this summary text for each index will be used to refine the answer during query-time.
+
+### Defining a Top-Level Index
+
 We can then create a list index on these 3 tree indices:
 
 ```python
@@ -32,6 +49,9 @@ list_index = GPTListIndex([index1, index2, index3])
 ```
 
 ![](/_static/composability/diagram.png)
+
+
+### Querying the Top-Level Index
 
 During a query, we would start with the top-level list index. Each node in the list corresponds to an underlying tree index. 
 
