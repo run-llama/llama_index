@@ -1,5 +1,4 @@
 """Init file of GPT Index."""
-
 from pathlib import Path
 
 with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
@@ -26,6 +25,9 @@ from gpt_index.indices.vector_store import (
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+
+# prompt helper
+from gpt_index.indices.prompt_helper import PromptHelper
 
 # prompts
 from gpt_index.prompts.base import Prompt
@@ -91,4 +93,5 @@ __all__ = [
     "DiscordReader",
     "LLMPredictor",
     "MockLLMPredictor",
+    "PromptHelper"
 ]

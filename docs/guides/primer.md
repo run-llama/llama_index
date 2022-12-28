@@ -16,27 +16,11 @@ Each data structure offers distinct use cases and a variety of customizable para
 - and more!
 
 This primer is intended to help you get the most out of GPT Index. It gives a high-level overview of the following: 
-1. How to quickly get started using GPT Index.
-2. The general usage pattern of GPT Index.
-3. Mapping Use Cases to GPT Index data Structures
-
-## 1. Quickly Getting Started with GPT Index
-To start with, you will mostly likely want to use a [Vector Store Index](/how_to/vector_stores.md). 
-Vector Store Indices
-are a simple and effective tool that allows you to answer a query over a large corpus of data.
-When you define a Vector Store Index over a collection of documents, it embeds each text chunk and stores the 
-embedding in an underlying vector store. To answer a query, the vector store index embedds the query, 
-fetches the top-k text chunks by embedding similarity, and runs the LLM over these chunks in order to synthesize the answer.
-
-[The starter example](/getting_started/starter_example.md) shows how to get started using a Vector Store Index
-(`GPTSimpleVectorIndex`). See [Embedding Support How-To](/how_to/embeddings.md) for a more detailed treatment of all vector
-store indices (e.g. using Faiss, Weaviate).
-
-Our Vector Store Indices are good to start with because they generalize to a broad variety of use cases. 
-For a more detailed/advanced treatment of different use cases and how they map to indices, please see below.
+1. The general usage pattern of GPT Index.
+2. Mapping Use Cases to GPT Index data Structures
 
 
-## 2. General Usage Pattern of GPT Index
+## 1. General Usage Pattern of GPT Index
 
 The general usage pattern of GPT Index is as follows:
 1. Load in documents (either manually, or through a data loader).
@@ -47,9 +31,18 @@ The general usage pattern of GPT Index is as follows:
 See our [Usage Pattern Guide](/guides/usage_pattern.md) for a guide
 on the overall steps involved with using GPT Index.
 
+If you are just starting out, take a look at the [Starter Example](/getting_started/starter_example.md) first.
 
-## 3. Mapping Use Cases to GPT Index Data Structures
 
+## 2. Mapping Use Cases to GPT Index Data Structures
+
+GPT Index data structures offer distinct use cases and advantages. For instance, the Vector Store-based indices e.g. `GPTSimpleVectorIndex` are a good general purpose tool for document retrieval. 
+The list index `GPTListIndex` is a good tool for combining answers across documents/nodes. 
+The tree index `GPTTreeIndex` and keyword indices can be used to "route" queries to the right subindices.
+
+[A complete guide on GPT Index use cases](/guides/use_cases.md). 
+
+This guide should paint a picture of how you can use GPT Index to solve your own data needs. 
 
 
 

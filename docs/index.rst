@@ -51,8 +51,8 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    :maxdepth: 1
    :caption: Guides
 
-   guides/primer.md
-   guides/usage_pattern.md
+   guides/primer.md guides/usage_pattern.md
+   guides/use_cases.md
 
 
 .. toctree::
@@ -79,5 +79,6 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    reference/prompts.rst
    reference/example_notebooks.rst
    reference/llm_predictor.rst
+   reference/prompt_helper.rst
    reference/embeddings.rst
 

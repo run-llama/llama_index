@@ -17,7 +17,7 @@ from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
 
 
-class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
+class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
     """Base vector store query."""
 
     def __init__(
