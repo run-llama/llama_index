@@ -29,7 +29,17 @@ class QueryMode(str, Enum):
 
 @dataclass
 class QueryConfig(DataClassJsonMixin):
-    """Query config."""
+    """Query config.
+
+    A list of query config objects is passed during a query call to define
+    configurations for each individual subindex within an overall composed index.
+
+    Args:
+        index_struct_type (IndexStructType): The type of index struct.
+        query_mode (QueryMode): The query mode.
+        query_kwargs (Dict[str, Any], optional): The query kwargs. Defaults to {}.
+
+    """
 
     index_struct_type: IndexStructType
     query_mode: QueryMode

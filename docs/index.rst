@@ -82,4 +82,3 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    reference/llm_predictor.rst
    reference/prompt_helper.rst
    reference/embeddings.rst
-

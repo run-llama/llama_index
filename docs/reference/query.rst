@@ -3,7 +3,8 @@
 Querying an Index
 =================
 
-This doc specifically shows the classes that are used to query indices.
+
+This section shows the classes that are used to query individual indices.
 
 .. toctree::
    :maxdepth: 1
@@ -13,3 +14,14 @@ This doc specifically shows the classes that are used to query indices.
    indices/table_query.rst
    indices/tree_query.rst
    indices/vector_store_query.rst
+
+
+This section shows how to define a query config in order to recursively query
+multiple indices that are `composed </how_to/composability.html>`_ together.
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Query Configs for Composed Indices
+
+   indices/composability_query.rst
