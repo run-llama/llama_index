@@ -67,6 +67,8 @@ list_index = GPTListIndex([index1, index2, index3])
 During a query, we would start with the top-level list index. Each node in the list corresponds to an underlying tree index. 
 We want to make sure that we define a **recursive** query, as well as a **query config** list. If the query config list is not
 provided, a default set will be used.
+Information on how to specify query configs (either as a list of JSON dicts or `QueryConfig` objects) can be found 
+[here](/reference/indices/composability_query.rst).
 
 
 ```python
