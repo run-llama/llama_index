@@ -119,7 +119,7 @@ class BaseGPTIndex(Generic[IS]):
         return self._index_struct
 
     def set_text(self, text: str) -> None:
-        """Set text for index struct.
+        """Set summary text for index struct.
 
         This allows index_struct_with_text to be used to compose indices
         with other indices.

@@ -152,7 +152,8 @@ class BaseGPTIndexQuery(Generic[IS]):
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
         response = self._query(query_str, verbose=verbose)
-        # if include_summary is True, then include summary in answer
+        # if include_summary is True, then include summary text in answer
+        # summary text is set through `set_text` on the underlying index.
         # TODO: refactor response builder to be in the __init__
         if self._include_summary:
             response_builder = ResponseBuilder(

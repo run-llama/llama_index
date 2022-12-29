@@ -62,6 +62,7 @@ class QueryRunner(BaseQueryRunner):
 
         for qc in query_config_objs:
             config_dict[qc.index_struct_type] = qc
+
         self._config_dict = config_dict
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
