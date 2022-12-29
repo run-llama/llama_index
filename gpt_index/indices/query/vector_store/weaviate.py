@@ -9,11 +9,6 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
-)
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
 
 

@@ -7,12 +7,7 @@ from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.utils import get_sorted_node_list
-from gpt_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    TreeSelectMultiplePrompt,
-    TreeSelectPrompt,
-)
+from gpt_index.prompts.prompts import TreeSelectMultiplePrompt, TreeSelectPrompt
 
 
 class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):

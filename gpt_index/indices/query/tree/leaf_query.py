@@ -14,10 +14,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
     DEFAULT_QUERY_PROMPT_MULTIPLE,
 )
-from gpt_index.prompts.prompts import (
-    TreeSelectMultiplePrompt,
-    TreeSelectPrompt,
-)
+from gpt_index.prompts.prompts import TreeSelectMultiplePrompt, TreeSelectPrompt
 
 
 class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):

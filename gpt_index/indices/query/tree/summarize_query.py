@@ -1,17 +1,12 @@
 """Summarize query."""
 
 
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.indices.utils import get_sorted_node_list
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
-)
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
 class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):

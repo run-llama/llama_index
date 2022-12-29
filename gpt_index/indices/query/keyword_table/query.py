@@ -15,15 +15,8 @@ from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
 )
-from gpt_index.prompts.prompts import (
-    KeywordExtractPrompt,
-    QueryKeywordExtractPrompt,
-    QuestionAnswerPrompt,
-    RefinePrompt,
-)
+from gpt_index.prompts.prompts import KeywordExtractPrompt, QueryKeywordExtractPrompt
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 

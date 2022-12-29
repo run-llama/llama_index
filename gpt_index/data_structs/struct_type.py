@@ -1,12 +1,15 @@
 """Index struct type."""
 
 from enum import Enum
+
 from gpt_index.data_structs.data_structs import (
-    IndexGraph, IndexList, KeywordTable,
     IndexDict,
+    IndexGraph,
+    IndexList,
+    IndexStruct,
+    KeywordTable,
     SimpleIndexDict,
     WeaviateIndexStruct,
-    IndexStruct
 )
 
 
