@@ -1,4 +1,4 @@
-"""Index struct type."""
+"""IndexStructType class."""
 
 from enum import Enum
 
@@ -14,7 +14,21 @@ from gpt_index.data_structs.data_structs import (
 
 
 class IndexStructType(str, Enum):
-    """Index struct type."""
+    """Index struct type. Identifier for a "type" of index.
+
+    Attributes:
+        TREE ("tree"): Tree index. See :ref:`Ref-Indices-Tree` for tree indices.
+        LIST: List index. See :ref:`Ref-Indices-List` for list indices.
+        KEYWORD_TABLE: Keyword table index. See :ref:`Ref-Indices-Table`
+            for keyword table indices.
+        DICT: Faiss Vector Store Index. See :ref:`Ref-Indices-VectorStore`
+            for more information on the Faiss vector store index.
+        SIMPLE_DICT: Simple Vector Store Index. See :ref:`Ref-Indices-VectorStore`
+            for more information on the simple vector store index.
+        WEAVIATE_DICT: Weaviate Vector Store Index. See :ref:`Ref-Indices-VectorStore`
+            for more information on the Weaviate vector store index.
+
+    """
 
     TREE = "tree"
     LIST = "list"

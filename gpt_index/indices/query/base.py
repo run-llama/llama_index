@@ -37,6 +37,26 @@ class BaseGPTIndexQuery(Generic[IS]):
     Helper class that is used to query an index. Can be called within `query`
     method of a BaseGPTIndex object, or instantiated independently.
 
+    Args:
+        llm_predictor (LLMPredictor): Optional LLMPredictor object. If not provided,
+            will use the default LLMPredictor (text-davinci-003)
+        prompt_helper (PromptHelper): Optional PromptHelper object. If not provided,
+            will use the default PromptHelper.
+        required_keywords (List[str]): Optional list of keywords that must be present
+            in nodes. Can be used to query most indices (tree index is an exception).
+        exclude_keywords (List[str]): Optional list of keywords that must not be
+            present in nodes. Can be used to query most indices (tree index is an 
+            exception).
+        response_mode (ResponseMode): Optional ResponseMode. If not provided, will
+            use the default ResponseMode.
+        text_qa_template (QuestionAnswerPrompt): Optional QuestionAnswerPrompt object.
+            If not provided, will use the default QuestionAnswerPrompt.
+        refine_template (RefinePrompt): Optional RefinePrompt object. If not provided,
+            will use the default RefinePrompt.
+        include_summary (bool): Optional bool. If True, will also use the summary 
+            text of the index when generating a response (the summary text can be set
+            through `index.set_text("<text>")`).
+    
     """
 
     def __init__(
