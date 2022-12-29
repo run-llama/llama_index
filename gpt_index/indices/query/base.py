@@ -45,7 +45,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         required_keywords (List[str]): Optional list of keywords that must be present
             in nodes. Can be used to query most indices (tree index is an exception).
         exclude_keywords (List[str]): Optional list of keywords that must not be
-            present in nodes. Can be used to query most indices (tree index is an 
+            present in nodes. Can be used to query most indices (tree index is an
             exception).
         response_mode (ResponseMode): Optional ResponseMode. If not provided, will
             use the default ResponseMode.
@@ -53,10 +53,10 @@ class BaseGPTIndexQuery(Generic[IS]):
             If not provided, will use the default QuestionAnswerPrompt.
         refine_template (RefinePrompt): Optional RefinePrompt object. If not provided,
             will use the default RefinePrompt.
-        include_summary (bool): Optional bool. If True, will also use the summary 
+        include_summary (bool): Optional bool. If True, will also use the summary
             text of the index when generating a response (the summary text can be set
             through `index.set_text("<text>")`).
-    
+
     """
 
     def __init__(
