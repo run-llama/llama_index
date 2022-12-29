@@ -7,3 +7,9 @@ Composable Queries
    :members:
    :inherited-members:
    :exclude-members: 
+
+
+.. automodule:: gpt_index.data_structs.struct_type
+   :members:
+   :inherited-members:
+   :exclude-members: 

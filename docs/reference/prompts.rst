@@ -4,11 +4,14 @@ Prompt Templates
 =================
 
 These are the reference prompt templates. 
-We then document all prompts, with their required variables.
+We first document all prompts, with their required variables.
 
 We then show the base prompt class, 
 derived from `Langchain <https://langchain.readthedocs.io/en/latest/modules/prompt.html>`_.
 
+
+Prompts
+^^^^^^^
 
 .. automodule:: gpt_index.prompts.prompts
    :members:
@@ -17,7 +20,8 @@ derived from `Langchain <https://langchain.readthedocs.io/en/latest/modules/prom
 
 
 
-**Base Prompt Class**
+Base Prompt Class
+^^^^^^^^^^^^^^^^^
 
 .. automodule:: gpt_index.prompts
    :members:

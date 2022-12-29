@@ -129,8 +129,9 @@ from gpt_index import GPTSimpleVectorIndex, GPTListIndex
 index1 = GPTSimpleVectorIndex(documents1)
 index2 = GPTSimpleVectorIndex(documents2)
 
-# set summary text
-# you can set the summary manually, 
+# Set summary text
+# you can set the summary manually, or you can
+# generate the summary itself using GPT Index
 index1.set_summary("summary1")
 index2.set_summary("summary2")
 
@@ -176,6 +177,8 @@ response = index.query("What did the author do growing up?", mode="default")
 response = index.query("What did the author do growing up?", mode="embedding")
 
 ```
+
+The full set of modes per index are documented in the [Query Reference](/reference/query.rst).
 
 ### Setting `response_mode`
 

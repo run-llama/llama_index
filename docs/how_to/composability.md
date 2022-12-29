@@ -26,9 +26,10 @@ index2 = GPTTreeIndex(doc2)
 
 ![](/_static/composability/diagram_b1.png)
 
-### [Optional] Defining Summary Text
+### Defining Summary Text
 
-You can then choose to explicitly define *summary text* for each subindex if you wish, for instance as follows:
+You then need to explicitly define *summary text* for each subindex. This allows  
+the subindices to be used as Documents for higher-level indices.
 
 ```python
 index1.set_text("<summary1>")
@@ -48,7 +49,7 @@ index1.set_text(
 )
 ```
 
-**If specified**, this summary text for each subindex will be used to refine the answer during query-time. **If not specified**, the summary text for each subindex will not be used during queries. Instead, an answer will be directly retrieved from the subindex itself.
+**If specified**, this summary text for each subindex can be used to refine the answer during query-time. 
 
 ### Defining a Top-Level Index
 

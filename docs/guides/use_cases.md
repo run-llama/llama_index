@@ -71,6 +71,12 @@ from gpt_index import GPTSimpleVectorIndex, GPTListIndex
 index1 = GPTSimpleVectorIndex(notion_docs)
 index2 = GPTSimpleVectorIndex(slack_docs)
 
+# Set summary text
+# you can set the summary manually, or you can
+# generate the summary itself using GPT Index
+index1.set_summary("summary1")
+index2.set_summary("summary2")
+
 index3 = GPTListIndex([index1, index2])
 
 response = index3.query("<query_str>", mode="recursive", query_configs=...)
@@ -97,6 +103,12 @@ from gpt_index import GPTTreeIndex, GPTSimpleVectorIndex
 # subindices
 index1 = GPTSimpleVectorIndex(notion_docs)
 index2 = GPTSimpleVectorIndex(slack_docs)
+
+# Set summary text
+# you can set the summary manually, or you can
+# generate the summary itself using GPT Index
+index1.set_summary("summary1")
+index2.set_summary("summary2")
 
 # tree index for routing
 tree_index = GPTTreeIndex([index1, index2])
@@ -132,9 +144,11 @@ from gpt_index import GPTTreeIndex, GPTSimpleVectorIndex
 index1 = GPTSimpleVectorIndex(chapter1)
 index2 = GPTSimpleVectorIndex(chapter2)
 
-# optional: set summaries
-index1.set_text("<summary1>")
-index2.set_text("<summary2>")
+# Set summary text
+# you can set the summary manually, or you can
+# generate the summary itself using GPT Index
+index1.set_summary("summary1")
+index2.set_summary("summary2")
 
 # build tree index
 index3 = GPTTreeIndex([index1, index2])

@@ -29,6 +29,11 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 # prompt helper
 from gpt_index.indices.prompt_helper import PromptHelper
 
+# for composability
+from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.data_structs.struct_type import IndexStructType
+
+
 # prompts
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.prompts import (
@@ -93,5 +98,8 @@ __all__ = [
     "DiscordReader",
     "LLMPredictor",
     "MockLLMPredictor",
-    "PromptHelper"
+    "PromptHelper",
+    "QueryConfig",
+    "QueryMode",
+    "IndexStructType",
 ]

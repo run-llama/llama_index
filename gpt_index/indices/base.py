@@ -30,7 +30,21 @@ DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
 
 
 class BaseGPTIndex(Generic[IS]):
-    """Base GPT Index."""
+    """Base GPT Index.
+
+    Args:
+        documents (Optional[Sequence[BaseDocument]]): List of documents to
+            build the index from. 
+        llm_predictor (LLMPredictor): Optional LLMPredictor object. If not provided,
+            will use the default LLMPredictor (text-davinci-003)
+        prompt_helper (PromptHelper): Optional PromptHelper object. If not provided,
+            will use the default PromptHelper.
+        chunk_size_limit (Optional[int]): Optional chunk size limit. If not provided,
+            will use the default chunk size limit (4096 max input size).
+        verbose (bool): Optional bool. If True, will print out additional information
+            during the index building process.
+    
+    """
 
     index_struct_cls: Type[IS]
 
@@ -117,6 +131,7 @@ class BaseGPTIndex(Generic[IS]):
         """
         # make sure that we generate text for index struct
         if self._index_struct.text is None:
+            # NOTE: set text to be empty string for now
             raise ValueError(
                 "Index must have text property set in order "
                 "to be composed with other indices. "

@@ -19,17 +19,16 @@ class QueryMode(str, Enum):
 
     Can be passed as the enum struct, or as the underlying string.
 
-    Values:
-
-    - QueryMode.DEFAULT ("default"): Default query mode.
-    - QueryMode.RETRIEVE ("retrieve"): Retrieve mode.
-    - QueryMode.EMBEDDING ("embedding"): Embedding mode.
-    - QueryMode.SUMMARIZE ("summarize"): Summarize mode. Used for hierarchical
-      summarization in the tree index.
-    - QueryMode.SIMPLE ("simple"): Simple mode. Used for keyword extraction.
-    - QueryMode.RAKE ("rake"): RAKE mode. Used for keyword extraction.
-    - QueryMode.RECURSIVE ("recursive"): Recursive mode. Used to recursively query
-      over composed indices.
+    Attributes:
+        DEFAULT ("default"): Default query mode.
+        RETRIEVE ("retrieve"): Retrieve mode.
+        EMBEDDING ("embedding"): Embedding mode.
+        SUMMARIZE ("summarize"): Summarize mode. Used for hierarchical
+            summarization in the tree index.
+        SIMPLE ("simple"): Simple mode. Used for keyword extraction.
+        RAKE ("rake"): RAKE mode. Used for keyword extraction.
+        RECURSIVE ("recursive"): Recursive mode. Used to recursively query
+            over composed indices.
 
     """
 
@@ -61,6 +60,7 @@ class QueryConfig(DataClassJsonMixin):
     or as a list of JSON dictionaries. For instance, the following are equivalent:
 
     .. code-block:: python
+
         # using JSON dictionaries
         query_configs = [
             {
@@ -75,6 +75,7 @@ class QueryConfig(DataClassJsonMixin):
         response = index.query("<query_str>", mode="recursive", query_configs=query_configs)
 
     .. code-block:: python
+
         query_configs = [
             QueryConfig(
                 index_struct_type=IndexStructType.TREE,
