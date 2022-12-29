@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from gpt_index.data_structs import Node
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text

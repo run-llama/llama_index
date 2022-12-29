@@ -1,12 +1,11 @@
 """Embedding query for list index."""
 from typing import Any, List, Optional, Tuple
 
-from gpt_index.data_structs import IndexList, Node
+from gpt_index.data_structs.data_structs import IndexList, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
 class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
@@ -28,8 +27,6 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     def __init__(
         self,
         index_struct: IndexList,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
         similarity_top_k: Optional[int] = 1,
         embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
@@ -37,8 +34,6 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         """Initialize params."""
         super().__init__(
             index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            refine_template=refine_template,
             **kwargs,
         )
         self._embed_model = embed_model or OpenAIEmbedding()

@@ -2,7 +2,7 @@
 
 from typing import Any, Optional, Sequence
 
-from gpt_index.data_structs import IndexGraph
+from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.query.schema import QueryMode

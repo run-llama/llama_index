@@ -4,17 +4,12 @@
 from abc import abstractmethod
 from typing import Any, Generic, List, Optional, Tuple, TypeVar
 
-from gpt_index.data_structs import BaseIndexDict, Node
+from gpt_index.data_structs.data_structs import BaseIndexDict, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
-)
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 BID = TypeVar("BID", bound=BaseIndexDict)
 
@@ -25,16 +20,12 @@ class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[BID], Generic[BID]):
     def __init__(
         self,
         index_struct: BID,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
         embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct=index_struct, **kwargs)
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self._embed_model = embed_model or OpenAIEmbedding()
         self.similarity_top_k = similarity_top_k
 

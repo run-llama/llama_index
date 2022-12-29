@@ -3,10 +3,9 @@ from typing import Any, List, Optional, Tuple, cast
 
 import numpy as np
 
-from gpt_index.data_structs import IndexDict, Node
+from gpt_index.data_structs.data_structs import IndexDict, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
 class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
@@ -35,8 +34,6 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
     def __init__(
         self,
         index_struct: IndexDict,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
         faiss_index: Optional[Any] = None,
         embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
@@ -45,8 +42,6 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         """Initialize params."""
         super().__init__(
             index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            refine_template=refine_template,
             embed_model=embed_model,
             similarity_top_k=similarity_top_k,
             **kwargs,

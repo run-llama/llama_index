@@ -5,11 +5,16 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Generic, List, Optional, TypeVar, cast
 
-from gpt_index.data_structs import IndexStruct, Node
+from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.builder import ResponseMode, TextChunk
+from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.prompts.default_prompts import (
+    DEFAULT_REFINE_PROMPT,
+    DEFAULT_TEXT_QA_PROMPT,
+)
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.schema import DocumentStore
 from gpt_index.utils import llm_token_counter
 
@@ -32,6 +37,26 @@ class BaseGPTIndexQuery(Generic[IS]):
     Helper class that is used to query an index. Can be called within `query`
     method of a BaseGPTIndex object, or instantiated independently.
 
+    Args:
+        llm_predictor (LLMPredictor): Optional LLMPredictor object. If not provided,
+            will use the default LLMPredictor (text-davinci-003)
+        prompt_helper (PromptHelper): Optional PromptHelper object. If not provided,
+            will use the default PromptHelper.
+        required_keywords (List[str]): Optional list of keywords that must be present
+            in nodes. Can be used to query most indices (tree index is an exception).
+        exclude_keywords (List[str]): Optional list of keywords that must not be
+            present in nodes. Can be used to query most indices (tree index is an
+            exception).
+        response_mode (ResponseMode): Optional ResponseMode. If not provided, will
+            use the default ResponseMode.
+        text_qa_template (QuestionAnswerPrompt): Optional QuestionAnswerPrompt object.
+            If not provided, will use the default QuestionAnswerPrompt.
+        refine_template (RefinePrompt): Optional RefinePrompt object. If not provided,
+            will use the default RefinePrompt.
+        include_summary (bool): Optional bool. If True, will also use the summary
+            text of the index when generating a response (the summary text can be set
+            through `index.set_text("<text>")`).
+
     """
 
     def __init__(
@@ -45,6 +70,9 @@ class BaseGPTIndexQuery(Generic[IS]):
         required_keywords: Optional[List[str]] = None,
         exclude_keywords: Optional[List[str]] = None,
         response_mode: ResponseMode = ResponseMode.DEFAULT,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
+        include_summary: bool = False,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -68,6 +96,10 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._required_keywords = required_keywords
         self._exclude_keywords = exclude_keywords
         self._response_mode = ResponseMode(response_mode)
+
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
+        self._include_summary = include_summary
 
     def _should_use_node(self, node: Node) -> bool:
         """Run node through filters to determine if it should be used."""
@@ -139,7 +171,27 @@ class BaseGPTIndexQuery(Generic[IS]):
     @llm_token_counter("query")
     def query(self, query_str: str, verbose: bool = False) -> str:
         """Answer a query."""
-        return self._query(query_str, verbose=verbose)
+        response = self._query(query_str, verbose=verbose)
+        # if include_summary is True, then include summary text in answer
+        # summary text is set through `set_text` on the underlying index.
+        # TODO: refactor response builder to be in the __init__
+        if self._include_summary:
+            response_builder = ResponseBuilder(
+                self._prompt_helper,
+                self._llm_predictor,
+                self.text_qa_template,
+                self.refine_template,
+                texts=[TextChunk(self._index_struct.get_text())],
+            )
+            # NOTE: use create and refine for now (default response mode)
+            response = response_builder.get_response(
+                query_str,
+                verbose=verbose,
+                mode=ResponseMode.DEFAULT,
+                prev_response=response,
+            )
+
+        return response
 
     def set_llm_predictor(self, llm_predictor: LLMPredictor) -> None:
         """Set LLM predictor."""

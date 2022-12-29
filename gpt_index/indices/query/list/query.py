@@ -1,15 +1,10 @@
 """Default query for GPTListIndex."""
 from abc import abstractmethod
-from typing import Any, List, Optional
+from typing import List
 
-from gpt_index.data_structs import IndexList, Node
+from gpt_index.data_structs.data_structs import IndexList, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
-)
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 
 class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
@@ -24,18 +19,6 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
             (see :ref:`Prompt-Templates`).
 
     """
-
-    def __init__(
-        self,
-        index_struct: IndexList,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize params."""
-        super().__init__(index_struct=index_struct, **kwargs)
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
 
     def _give_response_for_nodes(
         self, query_str: str, nodes: List[Node], verbose: bool = False
