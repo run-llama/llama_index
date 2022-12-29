@@ -1,7 +1,7 @@
 """Query Configuration Schema.
 
-This schema is used under the hood for all queries, but is primarily exposed for recursive
-queries over composable indices.
+This schema is used under the hood for all queries, but is primarily
+exposed for recursive queries over composable indices.
 
 """
 
@@ -51,9 +51,9 @@ class QueryMode(str, Enum):
 class QueryConfig(DataClassJsonMixin):
     """Query config.
 
-    Used under the hood for all queries. 
-    The user must explicitly specify a list of query config objects is passed during 
-    a query call to define configurations for each individual subindex within an 
+    Used under the hood for all queries.
+    The user must explicitly specify a list of query config objects is passed during
+    a query call to define configurations for each individual subindex within an
     overall composed index.
 
     The user may choose to specify either the query config objects directly,
@@ -72,7 +72,9 @@ class QueryConfig(DataClassJsonMixin):
             },
             ...
         ]
-        response = index.query("<query_str>", mode="recursive", query_configs=query_configs)
+        response = index.query(
+            "<query_str>", mode="recursive", query_configs=query_configs
+        )
 
     .. code-block:: python
 
@@ -86,7 +88,9 @@ class QueryConfig(DataClassJsonMixin):
             )
             ...
         ]
-        response = index.query("<query_str>", mode="recursive", query_configs=query_configs)
+        response = index.query(
+            "<query_str>", mode="recursive", query_configs=query_configs
+        )
 
 
     Args:

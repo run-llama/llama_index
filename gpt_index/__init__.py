@@ -5,6 +5,8 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
     __version__ = _f.read().strip()
 
 
+from gpt_index.data_structs.struct_type import IndexStructType
+
 # embeddings
 from gpt_index.embeddings.langchain import LangchainEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
@@ -16,6 +18,12 @@ from gpt_index.indices.keyword_table import (
     GPTSimpleKeywordTableIndex,
 )
 from gpt_index.indices.list import GPTListIndex
+
+# prompt helper
+from gpt_index.indices.prompt_helper import PromptHelper
+
+# for composability
+from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
     GPTFaissIndex,
@@ -25,14 +33,6 @@ from gpt_index.indices.vector_store import (
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-
-# prompt helper
-from gpt_index.indices.prompt_helper import PromptHelper
-
-# for composability
-from gpt_index.indices.query.schema import QueryConfig, QueryMode
-from gpt_index.data_structs.struct_type import IndexStructType
-
 
 # prompts
 from gpt_index.prompts.base import Prompt

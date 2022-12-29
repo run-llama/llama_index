@@ -19,14 +19,15 @@ class IndexStructType(str, Enum):
     Attributes:
         TREE ("tree"): Tree index. See :ref:`Ref-Indices-Tree` for tree indices.
         LIST ("list"): List index. See :ref:`Ref-Indices-List` for list indices.
-        KEYWORD_TABLE ("keyword_table"): Keyword table index. See :ref:`Ref-Indices-Table`
+        KEYWORD_TABLE ("keyword_table"): Keyword table index. See
+            :ref:`Ref-Indices-Table`
             for keyword table indices.
         DICT ("dict"): Faiss Vector Store Index. See :ref:`Ref-Indices-VectorStore`
             for more information on the Faiss vector store index.
-        SIMPLE_DICT ("simple_dict"): Simple Vector Store Index. See 
+        SIMPLE_DICT ("simple_dict"): Simple Vector Store Index. See
             :ref:`Ref-Indices-VectorStore`
             for more information on the simple vector store index.
-        WEAVIATE_DICT ("weaviate"): Weaviate Vector Store Index. 
+        WEAVIATE_DICT ("weaviate"): Weaviate Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Weaviate vector store index.
 

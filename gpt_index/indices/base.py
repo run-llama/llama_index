@@ -34,7 +34,7 @@ class BaseGPTIndex(Generic[IS]):
 
     Args:
         documents (Optional[Sequence[BaseDocument]]): List of documents to
-            build the index from. 
+            build the index from.
         llm_predictor (LLMPredictor): Optional LLMPredictor object. If not provided,
             will use the default LLMPredictor (text-davinci-003)
         prompt_helper (PromptHelper): Optional PromptHelper object. If not provided,
@@ -43,7 +43,7 @@ class BaseGPTIndex(Generic[IS]):
             will use the default chunk size limit (4096 max input size).
         verbose (bool): Optional bool. If True, will print out additional information
             during the index building process.
-    
+
     """
 
     index_struct_cls: Type[IS]
