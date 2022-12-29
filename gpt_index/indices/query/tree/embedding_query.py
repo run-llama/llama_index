@@ -2,17 +2,12 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from gpt_index.data_structs import IndexGraph, Node
+from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.utils import get_sorted_node_list
-from gpt_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    TreeSelectMultiplePrompt,
-    TreeSelectPrompt,
-)
+from gpt_index.prompts.prompts import TreeSelectMultiplePrompt, TreeSelectPrompt
 
 
 class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
@@ -50,8 +45,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         index_struct: IndexGraph,
         query_template: Optional[TreeSelectPrompt] = None,
         query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
         child_branch_factor: int = 1,
         embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
@@ -61,8 +54,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             index_struct,
             query_template=query_template,
             query_template_multiple=query_template_multiple,
-            text_qa_template=text_qa_template,
-            refine_template=refine_template,
             child_branch_factor=child_branch_factor,
             **kwargs,
         )

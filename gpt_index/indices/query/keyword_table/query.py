@@ -3,7 +3,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from gpt_index.data_structs import KeywordTable
+from gpt_index.data_structs.data_structs import KeywordTable
 from gpt_index.indices.keyword_table.utils import (
     extract_keywords_given_response,
     rake_extract_keywords,
@@ -15,15 +15,8 @@ from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
 )
-from gpt_index.prompts.prompts import (
-    KeywordExtractPrompt,
-    QueryKeywordExtractPrompt,
-    QuestionAnswerPrompt,
-    RefinePrompt,
-)
+from gpt_index.prompts.prompts import KeywordExtractPrompt, QueryKeywordExtractPrompt
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -54,8 +47,6 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         index_struct: KeywordTable,
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         **kwargs: Any,
@@ -68,8 +59,6 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
             keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
         )
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
-        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
 
     @abstractmethod
     def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:

@@ -11,7 +11,7 @@ existing keywords in the table.
 from abc import abstractmethod
 from typing import Any, Optional, Sequence, Set
 
-from gpt_index.data_structs import KeywordTable
+from gpt_index.data_structs.data_structs import KeywordTable
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.utils import truncate_text

@@ -1,3 +1,5 @@
+.. _Ref-Indices-VectorStore:
+
 Vector Store Index
 ==================
 

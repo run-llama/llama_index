@@ -1,3 +1,5 @@
+.. _Ref-Indices-Tree:
+
 Tree Index
 ==========
 
