@@ -1,6 +1,6 @@
 """Simple reader that ."""
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -19,6 +19,8 @@ class SimpleDirectoryReader(BaseReader):
               see https://docs.python.org/3/library/functions.html#open
         recursive (bool): Whether to recursively search in subdirectories.
             False by default.
+        required_exts (Optional[List[str]]): List of required extensions.
+            Default is None.
 
     """
 
@@ -28,6 +30,7 @@ class SimpleDirectoryReader(BaseReader):
         exclude_hidden: bool = True,
         errors: str = "ignore",
         recursive: bool = False,
+        required_exts: Optional[List[str]] = None,
     ) -> None:
         """Initialize with parameters."""
         self.input_dir = Path(input_dir)
@@ -35,6 +38,7 @@ class SimpleDirectoryReader(BaseReader):
 
         self.recursive = recursive
         self.exclude_hidden = exclude_hidden
+        self.required_exts = required_exts
 
         self.input_files = self._add_files(self.input_dir)
 
@@ -44,6 +48,8 @@ class SimpleDirectoryReader(BaseReader):
         dirs_to_remove = []
         if self.exclude_hidden:
             input_files = [f for f in input_files if not f.name.startswith(".")]
+        if self.required_exts is not None:
+            input_files = [f for f in input_files if f.suffix in self.required_exts]
         for input_file in input_files:
             if input_file.is_dir():
                 sub_input_files = self._add_files(input_file)
