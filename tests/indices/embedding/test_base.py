@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.data_structs import Node
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.tree.base import GPTTreeIndex

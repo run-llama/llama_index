@@ -2,7 +2,8 @@
 
 from typing import Dict, List, Optional, Union, cast
 
-from gpt_index.data_structs import IndexStruct, IndexStructType
+from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseQueryRunner
 from gpt_index.indices.query.query_map import get_query_cls

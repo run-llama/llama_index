@@ -3,7 +3,7 @@
 
 from typing import Any, List, Optional, Tuple, cast
 
-from gpt_index.data_structs import Node, WeaviateIndexStruct
+from gpt_index.data_structs.data_structs import Node, WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery

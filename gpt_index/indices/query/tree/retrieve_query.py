@@ -1,6 +1,6 @@
 """Retrieve query."""
 
-from gpt_index.data_structs import IndexGraph
+from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.indices.utils import get_sorted_node_list
