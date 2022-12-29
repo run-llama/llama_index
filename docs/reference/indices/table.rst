@@ -1,3 +1,5 @@
+.. _Ref-Indices-Table:
+
 Table Index
 ===========
 

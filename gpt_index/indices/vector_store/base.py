@@ -7,7 +7,7 @@ An index that that is built on top of an existing vector store.
 from abc import abstractmethod
 from typing import Any, Generic, Optional, Sequence, TypeVar
 
-from gpt_index.data_structs import BaseIndexDict
+from gpt_index.data_structs.data_structs import BaseIndexDict
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex

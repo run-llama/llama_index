@@ -7,7 +7,7 @@ Contain conversion to and from dataclasses that GPT Index uses.
 from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from gpt_index.data_structs import IndexStruct, Node
+from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.readers.weaviate.utils import (
     get_by_id,
     parse_get_response,
