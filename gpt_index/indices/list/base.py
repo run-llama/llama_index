@@ -61,18 +61,6 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             self.text_qa_template, 1
         )
 
-    def _add_document_to_index(
-        self,
-        index_struct: IndexList,
-        document: BaseDocument,
-        text_splitter: TokenTextSplitter,
-    ) -> None:
-        """Add document to index."""
-        text_chunks = text_splitter.split_text(document.get_text())
-        for _, text_chunk in enumerate(text_chunks):
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            print(f"> Adding chunk: {fmt_text_chunk}")
-            index_struct.add_text(text_chunk, document.get_doc_id())
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False
@@ -90,7 +78,9 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         )
         index_struct = IndexList()
         for d in documents:
-            self._add_document_to_index(index_struct, d, text_splitter)
+            nodes = self._get_nodes_from_document(d, text_splitter)
+            for n in nodes:
+                index_struct.add_node(n)
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:

@@ -20,6 +20,7 @@ class BaseDocument(ABC):
     # TODO: consolidate fields from Document/IndexStruct into base class
     text: Optional[str] = None
     doc_id: Optional[str] = None
+    embedding: Optional[List[float]] = None
 
     def get_text(self) -> str:
         """Get text."""
@@ -38,6 +39,15 @@ class BaseDocument(ABC):
         """Check if doc_id is None."""
         return self.doc_id is None
 
+    def get_embedding(self) -> List[float]:
+        """Get embedding.
+        
+        Errors if embedding is None.
+
+        """
+        if self.embedding is None:
+            raise ValueError("embedding not set.")
+        return self.embedding
 
 @dataclass
 class DocumentStore(DataClassJsonMixin):

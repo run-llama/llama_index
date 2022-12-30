@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner
@@ -22,6 +22,8 @@ from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import BaseDocument, DocumentStore
 from gpt_index.utils import llm_token_counter
+from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.indices.utils import truncate_text
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -147,6 +149,27 @@ class BaseGPTIndex(Generic[IS]):
 
         """
         self._index_struct.text = text
+
+    def _get_nodes_from_document(
+        self,
+        document: BaseDocument,
+        text_splitter: TokenTextSplitter,
+        start_idx: int = 0
+    ) -> List[Node]:
+        """Add document to index."""
+        text_chunks = text_splitter.split_text(document.get_text())
+        nodes = []
+        for i, text_chunk in enumerate(text_chunks):
+            fmt_text_chunk = truncate_text(text_chunk, 50)
+            print(f"> Adding chunk: {fmt_text_chunk}")
+            # if embedding specified in document, pass it to the Node
+            node = Node(
+                text=text_chunk,
+                index=start_idx+i,
+                ref_doc_id=document.get_doc_id(),
+                embedding=document.embedding,
+            )
+            nodes.append(node)
 
     @abstractmethod
     def _build_index_from_documents(

@@ -88,11 +88,19 @@ class WeaviateReader(BaseReader):
         entries = data_response["Get"][class_name]
         documents = []
         for entry in entries:
+            embedding = None
             # for each entry, join properties into <property>:<value>
             # separated by newlines
-            text_list = [f"{k}: {v}" for k, v in entry.items()]
+            text_list = []
+            for k, v in entry.items():
+                if k == "_additional":
+                    if "vector" in v:
+                        embedding = v["vector"]
+                    continue
+                text_list.append(f"{k}: {v}")
+
             text = "\n".join(text_list)
-            documents.append(Document(text=text))
+            documents.append(Document(text=text, embedding=embedding))
 
         if not separate_documents:
             # join all documents into one

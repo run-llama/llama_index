@@ -97,18 +97,17 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
         text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
-        text_chunks = text_splitter.split_text(document.get_text())
-        for _, text_chunk in enumerate(text_chunks):
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            print(f"> Adding chunk: {fmt_text_chunk}")
-            # add to Weaviate
-            text_embedding = self._embed_model.get_text_embedding(text_chunk)
-
-            node = Node(text=text_chunk, embedding=text_embedding)
-            # serialize to gpt index
+        nodes = self._get_nodes_from_document(document, text_splitter)
+        for n in nodes:
+            # add to in-memory dict
+            # NOTE: embeddings won't be stored in Node but rather in underlying
+            # Faiss store
+            if n.embedding is None:
+                n.embedding = self._embed_model.get_text_embedding(n.get_text())
             WeaviateNode.from_gpt_index(
-                self.client, node, index_struct.get_class_prefix()
+                self.client, n, index_struct.get_class_prefix()
             )
+
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False

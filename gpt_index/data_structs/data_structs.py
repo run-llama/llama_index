@@ -3,7 +3,8 @@
 import random
 import sys
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
+from abc import abstractmethod
+from typing import Dict, List, Optional, Set, Any
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -25,6 +26,7 @@ class IndexStruct(BaseDocument, DataClassJsonMixin):
     # Not all index_structs need to have a doc_id. Only index_structs that
     # represent a complete data structure (e.g. IndexGraph, IndexList),
     # and are used to compose a higher level index, will have a doc_id.
+
 
 
 @dataclass
@@ -101,14 +103,14 @@ class KeywordTable(IndexStruct):
                 break
         return idx
 
-    def add_text(self, keywords: List[str], text_chunk: str, ref_doc_id: str) -> int:
+    def add_node(self, keywords: List[str], node: Node) -> int:
         """Add text to table."""
         cur_idx = self._get_index()
         for keyword in keywords:
             if keyword not in self.table:
                 self.table[keyword] = set()
             self.table[keyword].add(cur_idx)
-        self.text_chunks[cur_idx] = Node(text_chunk, ref_doc_id=ref_doc_id)
+        self.text_chunks[cur_idx] = node
         return cur_idx
 
     def get_texts(self, keyword: str) -> List[str]:
@@ -134,12 +136,10 @@ class IndexList(IndexStruct):
 
     nodes: List[Node] = field(default_factory=list)
 
-    def add_text(self, text_chunk: str, ref_doc_id: str) -> int:
+    def add_node(self, node: Node) -> None:
         """Add text to table, return current position in list."""
         # don't worry about child indices for now, nodes are all in order
-        cur_node = Node(text_chunk, index=len(self.nodes), ref_doc_id=ref_doc_id)
-        self.nodes.append(cur_node)
-        return cur_node.index
+        self.nodes.append(node)
 
 
 @dataclass
@@ -149,10 +149,9 @@ class BaseIndexDict(IndexStruct):
     nodes_dict: Dict[int, Node] = field(default_factory=dict)
     id_map: Dict[str, int] = field(default_factory=dict)
 
-    def add_text(
+    def add_node(
         self,
-        text_chunk: str,
-        ref_doc_id: str,
+        node: Node,
         text_id: Optional[str] = None,
     ) -> str:
         """Add text to table, return current position in list."""
@@ -166,8 +165,7 @@ class BaseIndexDict(IndexStruct):
         self.id_map[text_id] = int_id
 
         # don't worry about child indices for now, nodes are all in order
-        cur_node = Node(text_chunk, index=int_id, ref_doc_id=ref_doc_id)
-        self.nodes_dict[int_id] = cur_node
+        self.nodes_dict[int_id] = node
         return text_id
 
     def get_nodes(self, text_ids: List[str]) -> List[Node]:

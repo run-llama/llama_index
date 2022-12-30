@@ -61,16 +61,17 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
         text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
-        text_chunks = text_splitter.split_text(document.get_text())
-        for _, text_chunk in enumerate(text_chunks):
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            print(f"> Adding chunk: {fmt_text_chunk}")
-            # add to FAISS
+        nodes = self._get_nodes_from_document(document, text_splitter)
+        for n in nodes:
+            # add to in-memory dict
             # NOTE: embeddings won't be stored in Node but rather in underlying
             # Faiss store
-            text_embedding = self._embed_model.get_text_embedding(text_chunk)
+            if n.embedding is None:
+                text_embedding = self._embed_model.get_text_embedding(n.get_text())
+            else:
+                text_embedding = n.embedding
             new_id = str(len(index_struct.nodes_dict))
 
             # add to index
-            index_struct.add_text(text_chunk, document.get_doc_id(), text_id=new_id)
+            index_struct.add_node(n, text_id=new_id)
             index_struct.add_embedding(new_id, text_embedding)
