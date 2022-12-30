@@ -45,7 +45,10 @@ class GPTTreeIndexBuilder:
         text_chunks = text_splitter.split_text(document.get_text())
         doc_nodes = {
             (start_idx + i): Node(
-                text=t, index=(start_idx + i), ref_doc_id=document.get_doc_id()
+                text=t,
+                index=(start_idx + i),
+                ref_doc_id=document.get_doc_id(),
+                embedding=document.embedding,
             )
             for i, t in enumerate(text_chunks)
         }
