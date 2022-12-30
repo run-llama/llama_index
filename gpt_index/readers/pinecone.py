@@ -34,7 +34,7 @@ class PineconeReader(BaseReader):
             index_name (str): Name of the index.
             id_to_text_map (Dict[str, str]): A map from ID's to text.
             separate_documents (Optional[bool]): Whether to return separate
-                documents per retrieved entry. Defaults to False.
+                documents per retrieved entry. Defaults to True.
             vector (List[float]): Query vector.
             top_k (int): Number of results to return.
             include_values (bool): Whether to include the embedding in the response.
@@ -63,7 +63,7 @@ class PineconeReader(BaseReader):
         top_k = load_kwargs.pop("top_k", None)
         if top_k is None:
             raise ValueError("Please provide a top_k value.")
-        separate_documents = load_kwargs.pop("separate_documents", False)
+        separate_documents = load_kwargs.pop("separate_documents", True)
 
         query_kwargs = load_kwargs
         index = pinecone.Index(index_name)
