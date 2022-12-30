@@ -37,6 +37,8 @@ class PineconeReader(BaseReader):
                 documents per retrieved entry. Defaults to False.
             vector (List[float]): Query vector.
             top_k (int): Number of results to return.
+            include_values (bool): Whether to include the embedding in the response.
+                Defaults to True.
             **query_kwargs: Keyword arguments to pass to the query.
                 Arguments are the exact same as those found in
                 Pinecone's reference documentation for the
@@ -65,6 +67,8 @@ class PineconeReader(BaseReader):
 
         query_kwargs = load_kwargs
         index = pinecone.Index(index_name)
+        if "include_values" not in query_kwargs:
+            query_kwargs["include_values"] = True
         response = index.query(top_k=top_k, vector=vector, **query_kwargs)
 
         documents = []
@@ -72,7 +76,10 @@ class PineconeReader(BaseReader):
             if match.id not in id_to_text_map:
                 raise ValueError("ID not found in id_to_text_map.")
             text = id_to_text_map[match.id]
-            documents.append(Document(text=text))
+            embedding = match.values
+            if len(embedding) == 0:
+                embedding = None
+            documents.append(Document(text=text, embedding=embedding))
 
         if not separate_documents:
             text_list = [doc.get_text() for doc in documents]

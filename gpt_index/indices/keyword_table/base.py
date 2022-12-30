@@ -14,9 +14,7 @@ from typing import Any, Optional, Sequence, Set
 from gpt_index.data_structs.data_structs import KeywordTable
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
@@ -81,26 +79,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
 
-    def _add_document_to_index(
-        self,
-        index_struct: KeywordTable,
-        document: BaseDocument,
-        text_splitter: TokenTextSplitter,
-    ) -> None:
-        """Add document to index."""
-        text_chunks = text_splitter.split_text(document.get_text())
-        for i, text_chunk in enumerate(text_chunks):
-            keywords = self._extract_keywords(text_chunk)
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            text_chunk_id = index_struct.add_text(
-                list(keywords), text_chunk, document.get_doc_id()
-            )
-            print(
-                f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
-                f"{fmt_text_chunk}"
-            )
-            print(f"> Keywords: {keywords}")
-
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False
     ) -> KeywordTable:
@@ -111,24 +89,19 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         # do simple concatenation
         index_struct = KeywordTable(table={})
         for d in documents:
-            self._add_document_to_index(index_struct, d, text_splitter)
+            nodes = self._get_nodes_from_document(d, text_splitter)
+            for n in nodes:
+                keywords = self._extract_keywords(n.get_text())
+                index_struct.add_node(list(keywords), n)
 
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        text_chunks = self._text_splitter.split_text(document.get_text())
-        for i, text_chunk in enumerate(text_chunks):
-            keywords = self._extract_keywords(text_chunk)
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            text_chunk_id = self._index_struct.add_text(
-                list(keywords), text_chunk, document.get_doc_id()
-            )
-            print(
-                f"> Processing chunk {i} of {len(text_chunks)}, id {text_chunk_id}: "
-                f"{fmt_text_chunk}"
-            )
-            print(f"> Keywords: {keywords}")
+        nodes = self._get_nodes_from_document(document, self._text_splitter)
+        for n in nodes:
+            keywords = self._extract_keywords(n.get_text())
+            self._index_struct.add_node(list(keywords), n)
 
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""

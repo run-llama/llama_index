@@ -215,13 +215,13 @@ def test_build_simple(
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
     assert index.index_struct.get_node("0").text == "Hello world."
-    assert index.index_struct.get_embedding("0") == [1, 0, 0, 0, 0]
+    assert index.index_struct.embedding_dict["0"] == [1, 0, 0, 0, 0]
     assert index.index_struct.get_node("1").text == "This is a test."
-    assert index.index_struct.get_embedding("1") == [0, 1, 0, 0, 0]
+    assert index.index_struct.embedding_dict["1"] == [0, 1, 0, 0, 0]
     assert index.index_struct.get_node("2").text == "This is another test."
-    assert index.index_struct.get_embedding("2") == [0, 0, 1, 0, 0]
+    assert index.index_struct.embedding_dict["2"] == [0, 0, 1, 0, 0]
     assert index.index_struct.get_node("3").text == "This is a test v2."
-    assert index.index_struct.get_embedding("3") == [0, 0, 0, 1, 0]
+    assert index.index_struct.embedding_dict["3"] == [0, 0, 0, 1, 0]
 
 
 @patch_common
@@ -246,9 +246,9 @@ def test_simple_insert(
 
     # check contenst of nodes
     assert index.index_struct.get_node("3").text == "This is a test v2."
-    assert index.index_struct.get_embedding("3") == [0, 0, 0, 1, 0]
+    assert index.index_struct.embedding_dict["3"] == [0, 0, 0, 1, 0]
     assert index.index_struct.get_node("4").text == "This is a test v3."
-    assert index.index_struct.get_embedding("4") == [0, 0, 0, 0, 1]
+    assert index.index_struct.embedding_dict["4"] == [0, 0, 0, 0, 1]
 
 
 @patch_common
