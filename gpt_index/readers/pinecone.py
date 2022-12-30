@@ -65,6 +65,8 @@ class PineconeReader(BaseReader):
 
         query_kwargs = load_kwargs
         index = pinecone.Index(index_name)
+        if "include_values" not in query_kwargs:
+            query_kwargs["include_values"] = True
         response = index.query(top_k=top_k, vector=vector, **query_kwargs)
 
         documents = []
@@ -72,7 +74,10 @@ class PineconeReader(BaseReader):
             if match.id not in id_to_text_map:
                 raise ValueError("ID not found in id_to_text_map.")
             text = id_to_text_map[match.id]
-            documents.append(Document(text=text))
+            embedding = match.values
+            if len(embedding) == 0:
+                embedding = None
+            documents.append(Document(text=text, embedding=embedding))
 
         if not separate_documents:
             text_list = [doc.get_text() for doc in documents]
