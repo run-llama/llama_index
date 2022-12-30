@@ -41,7 +41,7 @@ class FaissReader(BaseReader):
             id_to_text_map (Dict[str, str]): A map from ID's to text.
             k (int): Number of nearest neighbors to retrieve. Defaults to 4.
             separate_documents (Optional[bool]): Whether to return separate
-                documents. Defaults to False.
+                documents. Defaults to True.
         Returns:
             List[Document]: A list of documents.
 
@@ -56,7 +56,7 @@ class FaissReader(BaseReader):
         if query_vectors is None:
             raise ValueError("Please provide `query` as an argument.")
 
-        separate_documents = load_kwargs.pop("separate_documents", False)
+        separate_documents = load_kwargs.pop("separate_documents", True)
         k = load_kwargs.pop("k", 4)
 
         dists, indices = self._index.search(query_vectors, k)

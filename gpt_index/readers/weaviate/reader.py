@@ -48,13 +48,13 @@ class WeaviateReader(BaseReader):
             graphql_query (Optional[str]): Raw GraphQL Query.
                 We assume that the query is a Get query.
             separate_documents (Optional[bool]): Whether to return separate
-                documents. Defaults to False.
+                documents. Defaults to True.
 
         Returns:
             List[Document]: A list of documents.
 
         """
-        separate_documents = load_kwargs.get("separate_documents", False)
+        separate_documents = load_kwargs.get("separate_documents", True)
         class_name = None
         if "class_name" in load_kwargs and "properties" in load_kwargs:
             class_name = load_kwargs["class_name"]
