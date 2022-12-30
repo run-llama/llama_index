@@ -94,6 +94,40 @@ def test_build_tree(
 
 
 @patch_common
+def test_build_tree_with_embed(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test build tree."""
+    index_kwargs, _ = struct_kwargs
+    doc_text = (
+        "Hello world.\n"
+        "This is a test.\n"
+        "This is another test.\n"
+        "This is a test v2."
+    )
+    document = Document(doc_text, embedding=[0.1, 0.2, 0.3])
+    tree = GPTTreeIndex([document], **index_kwargs)
+    assert len(tree.index_struct.all_nodes) == 6
+    # check contents of nodes
+    assert tree.index_struct.all_nodes[0].text == "Hello world."
+    assert tree.index_struct.all_nodes[1].text == "This is a test."
+    assert tree.index_struct.all_nodes[2].text == "This is another test."
+    assert tree.index_struct.all_nodes[3].text == "This is a test v2."
+    # make sure all leaf nodes have embeddings
+    for i in range(4):
+        assert tree.index_struct.all_nodes[i].embedding == [0.1, 0.2, 0.3]
+    assert tree.index_struct.all_nodes[4].text == ("Hello world.\nThis is a test.")
+    assert tree.index_struct.all_nodes[5].text == (
+        "This is another test.\nThis is a test v2."
+    )
+
+
+@patch_common
 def test_build_tree_multiple(
     _mock_init: Any,
     _mock_predict: Any,
