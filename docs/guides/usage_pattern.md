@@ -96,7 +96,7 @@ See [Custom Prompts How-To](/how_to/custom_prompts.md) for more details on how t
 ### Customizing embeddings
 
 For embedding-based indices, you can choose to pass in a custom embedding model. See 
-[Custom Embeddings How-To](/how_to/embeddings.md#Custom-Embeddings) for more details.
+[Custom Embeddings How-To](custom-embeddings) for more details.
 
 
 ### Cost Predictor

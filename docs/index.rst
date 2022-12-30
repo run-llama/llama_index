@@ -36,7 +36,7 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
 
 - Uses a pre-trained LLM primarily for *reasoning*/*summarization* instead of prior knowledge.
 - Takes as input a large corpus of text data and build a structured index over it (using an LLM or heuristics).
-- Allow users to *query* the index in order to synthesize an answer to the question - this requires both *traversal* of the index as well as a synthesis of the answer.
+- Allow users to *query* the index by passing in an LLM prompt, and obtaining a response.
 
 
 .. toctree::

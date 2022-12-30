@@ -42,6 +42,7 @@ An example notebook is given [here](https://github.com/jerryjliu/gpt_index/blob/
 
 
 
+(custom-embeddings)=
 ## Custom Embeddings
 
 GPT Index allows you to define custom embedding modules. By default, we use `text-embedding-ada-002` from OpenAI. 
