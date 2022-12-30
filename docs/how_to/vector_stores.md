@@ -28,6 +28,7 @@ NOTE: Since Weaviate can store a hybrid of document and vector objects, the user
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/data_connectors).
 
 
+(vector-store-index)=
 ## Using a Vector Store as an Index
 
 GPT Index also supports using a vector store itself as an index. 

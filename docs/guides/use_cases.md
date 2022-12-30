@@ -6,7 +6,7 @@ We go through each use case, and describe the index tools you can use for each u
 ## By Use Cases
 
 ### Use Case: Just Starting Out
-To start with, you will mostly likely want to use a [Vector Store Index](/how_to/vector_stores.md). 
+To start with, you will mostly likely want to use a [Vector Store Index](vector-store-index). 
 Vector Store Indices
 are a simple and effective tool that allows you to answer a query over a large corpus of data.
 When you define a Vector Store Index over a collection of documents, it embeds each text chunk and stores the 
@@ -25,7 +25,7 @@ For a more detailed/advanced treatment of different use cases and how they map t
 
 To connect GPT Index to a large external data source of documents, you will want to [use one of our data connectors](/how_to/data_connectors.md), or construct `Document` objects manually (see the [primer guide](/guides/primer.md) for how).
 
-Then you will likely want to use a [Vector Store Index](/how_to/vector_stores.md).
+Then you will likely want to use a [Vector Store Index](vector-store-index).
 
 
 ### Use Case: Summarization over Documents
@@ -35,7 +35,7 @@ For instance, a summarization query could look like one of the following:
 - "What is a summary of this collection of text?"
 - "Give me a summary of person X's experience with the company."
 
-You can use most indices e.g. a [Vector Store Index](/how_to/vector_stores.md), a list index (`GPTListIndex`)
+You can use most indices e.g. a [Vector Store Index](vector-store-index), a list index (`GPTListIndex`)
 to construct a summary with `response_mode="tree_summarize"`. See [here](/guides/usage_pattern.md) for more details on response modes.
 
 ```python
@@ -89,7 +89,7 @@ response = index3.query("<query_str>", mode="recursive", query_configs=...)
 You have a few disparate data sources, represented as Document objects
 or subindices. You want to "route" a query to an underlying Document or a subindex.
 Here you have three options: `GPTTreeIndex`, `GPTKeywordTableIndex`, or a
-[Vector Store Index](/how_to/vector_stores.md).
+[Vector Store Index](vector-store-index).
 
 A `GPTTreeIndex` uses the LLM to select the child node(s) to send the query down to.
 A `GPTKeywordTableIndex` uses keyword matching, and a `GPTVectorStoreIndex` uses
