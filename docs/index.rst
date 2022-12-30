@@ -6,7 +6,8 @@
 Welcome to GPT Index!
 =====================================
 
-GPT Index is a project consisting of a set of data structures that are created using LLMs and can be traversed using LLMs in order to answer queries.
+GPT Index is a project consisting of a set of data structures designed to make it easier to 
+use large external knowledge bases with LLMs.
 
 The Github project page is here: https://github.com/jerryjliu/gpt_index.
 
@@ -42,16 +43,23 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    :maxdepth: 1
    :caption: Getting Started
 
-   getting_started/overview.rst
    getting_started/installation.md
    getting_started/starter_example.md
 
 
 .. toctree::
    :maxdepth: 1
-   :caption: How To
+   :caption: Guides
 
-   how_to/overview.rst
+   guides/primer.md 
+   guides/usage_pattern.md
+   guides/use_cases.md
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Technical How To
+
    how_to/data_connectors.md
    how_to/composability.md
    how_to/insert.md
@@ -66,12 +74,11 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
    :maxdepth: 1
    :caption: Reference
 
-   reference/overview.rst
    reference/indices.rst
    reference/query.rst
    reference/readers.rst
    reference/prompts.rst
-   reference/example_notebooks.rst
    reference/llm_predictor.rst
+   reference/prompt_helper.rst
    reference/embeddings.rst
-
+   reference/example_notebooks.rst

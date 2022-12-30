@@ -39,6 +39,11 @@ extensions = [
     "myst_parser",
 ]
 
+myst_heading_anchors = 4
+# TODO: Fix the non-consecutive header level in our docs, until then
+# disable the sphinx/myst warnings
+suppress_warnings = ["myst.header"]
+
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 

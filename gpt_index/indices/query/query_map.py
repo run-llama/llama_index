@@ -18,7 +18,7 @@ from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.query.vector_store.faiss import GPTFaissIndexQuery
 from gpt_index.indices.query.vector_store.simple import GPTSimpleVectorIndexQuery
-from gpt_index.indices.query.vector_store.weaviate import GPTWewaviateIndexQuery
+from gpt_index.indices.query.vector_store.weaviate import GPTWeaviateIndexQuery
 
 MODE_TO_QUERY_MAP_TREE = {
     QueryMode.DEFAULT: GPTTreeIndexLeafQuery,
@@ -49,7 +49,7 @@ MODE_TO_QUERY_MAP_SIMPLE = {
 }
 
 MODE_TO_QUERY_MAP_WEAVIATE = {
-    QueryMode.DEFAULT: GPTWewaviateIndexQuery,
+    QueryMode.DEFAULT: GPTWeaviateIndexQuery,
 }
 
 
