@@ -5,6 +5,7 @@ GPT Index offers **composability** of your indices, meaning that you can build i
 
 Composability allows you to to define lower-level indices for each document, and higher-order indices over a collection of documents. To see how this works, imagine defining 1) a tree index for the text within each document, and 2) a list index over each tree index (one document) within your collection.
 
+### Defining Subindices
 To see how this works, imagine you have 3 documents: `doc1`, `doc2`, and `doc3`.
 
 ```python
@@ -25,6 +26,33 @@ index2 = GPTTreeIndex(doc2)
 
 ![](/_static/composability/diagram_b1.png)
 
+### Defining Summary Text
+
+You then need to explicitly define *summary text* for each subindex. This allows  
+the subindices to be used as Documents for higher-level indices.
+
+```python
+index1.set_text("<summary1>")
+index2.set_text("<summary2>")
+index3.set_text("<summary3>")
+```
+
+You may choose to manually specify the summary text, or use GPT Index itself to generate
+a summary, for instance with the following:
+
+```python
+index1.set_text(
+    index1.query(
+        "What is a summary of this document?", 
+        response_mode="tree_summarize"
+    )
+)
+```
+
+**If specified**, this summary text for each subindex can be used to refine the answer during query-time. 
+
+### Defining a Top-Level Index
+
 We can then create a list index on these 3 tree indices:
 
 ```python
@@ -33,10 +61,34 @@ list_index = GPTListIndex([index1, index2, index3])
 
 ![](/_static/composability/diagram.png)
 
+
+### Querying the Top-Level Index
+
 During a query, we would start with the top-level list index. Each node in the list corresponds to an underlying tree index. 
+We want to make sure that we define a **recursive** query, as well as a **query config** list. If the query config list is not
+provided, a default set will be used.
+Information on how to specify query configs (either as a list of JSON dicts or `QueryConfig` objects) can be found 
+[here](/reference/indices/composability_query.rst).
+
 
 ```python
-response = list_index.query("Where did the author grow up?")
+# set query config. An example is provided below
+query_configs = [
+    {
+        "index_struct_type": "tree",
+        "query_mode": "default",
+        "query_kwargs": {
+            "child_branch_factor": 2
+        }
+    },
+    {
+        "index_struct_type": "keyword_table",
+        "query_mode": "simple",
+        "query_kwargs": {}
+    },
+    ...
+]
+response = list_index.query("Where did the author grow up?", mode="recursive", query_configs=query_configs)
 ```
 
 ![](/_static/composability/diagram_q1.png)

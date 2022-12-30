@@ -11,6 +11,11 @@ and [LLMChain](https://langchain.readthedocs.io/en/latest/modules/chains.html) m
 the underlying abstraction. We introduce a wrapper class, 
 [`LLMPredictor`](/reference/llm_predictor.rst), for integration into GPT Index.
 
+We also introduce a [`PromptHelper` class](/reference/prompt_helper.rst), to
+allow the user to explicitly set certain constraint parameters, such as 
+maximum input size (default is 4096 for davinci models), number of generated output
+tokens, maximum chunk overlap, and more.
+
 By default, we use OpenAI's `text-davinci-003` model. But you may choose to customize
 the underlying LLM being used.
 
@@ -25,19 +30,36 @@ you may plug in any LLM shown on Langchain's
 
 ```python
 
-from gpt_index import GPTKeywordTableIndex, SimpleDirectoryReader, LLMPredictor
+from gpt_index import (
+    GPTKeywordTableIndex, 
+    SimpleDirectoryReader, 
+    LLMPredictor,
+    PromptHelper
+)
 from langchain import OpenAI
 
 # define LLM
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002"))
 
+# define prompt helper
+# set maximum input size
+max_input_size = 4096
+# set number of output tokens
+num_output = 256
+# set maximum chunk overlap
+max_chunk_overlap = 20
+prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
+
 # load index from disk
-index = GPTKeywordTableIndex.load_from_disk('index_table.json', llm_predictor=llm_predictor)
+index = GPTKeywordTableIndex.load_from_disk(
+    'index_table.json', llm_predictor=llm_predictor, prompt_helper=prompt_helper
+)
 
 # get response from query
 response = index.query("What did the author do after his time at Y Combinator?")
 
 ```
 
-In this snipet, the index has already been created and saved to disk. We load
-the existing index, and swap in a new `LLMPredictor` that is used during query time.
+In this snippet, the index has already been created and saved to disk. We load
+the existing index. We then swap in a new `LLMPredictor` and `PromptHelper`
+to set both the new predictor as well as the new prompt parameters.

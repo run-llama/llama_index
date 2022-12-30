@@ -12,7 +12,7 @@ from gpt_index.indices.utils import truncate_text
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
 
 
-class GPTWewaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
+class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
     """Base vector store query."""
 
     def __init__(
