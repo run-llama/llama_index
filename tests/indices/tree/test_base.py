@@ -92,6 +92,7 @@ def test_build_tree(
         "This is another test.\nThis is a test v2."
     )
 
+
 @patch_common
 def test_build_tree_with_embed(
     _mock_init: Any,
