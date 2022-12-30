@@ -6,12 +6,11 @@ An index that that is built on top of an existing vector store.
 
 from typing import Any, Optional, Sequence, cast
 
-from gpt_index.data_structs.data_structs import Node, WeaviateIndexStruct
+from gpt_index.data_structs.data_structs import WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -97,18 +96,14 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
         text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
-        text_chunks = text_splitter.split_text(document.get_text())
-        for _, text_chunk in enumerate(text_chunks):
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            print(f"> Adding chunk: {fmt_text_chunk}")
-            # add to Weaviate
-            text_embedding = self._embed_model.get_text_embedding(text_chunk)
-
-            node = Node(text=text_chunk, embedding=text_embedding)
-            # serialize to gpt index
-            WeaviateNode.from_gpt_index(
-                self.client, node, index_struct.get_class_prefix()
-            )
+        nodes = self._get_nodes_from_document(document, text_splitter)
+        for n in nodes:
+            # add to in-memory dict
+            # NOTE: embeddings won't be stored in Node but rather in underlying
+            # Faiss store
+            if n.embedding is None:
+                n.embedding = self._embed_model.get_text_embedding(n.get_text())
+            WeaviateNode.from_gpt_index(self.client, n, index_struct.get_class_prefix())
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False

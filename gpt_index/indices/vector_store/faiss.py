@@ -12,7 +12,6 @@ from gpt_index.data_structs.data_structs import IndexDict
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.utils import truncate_text
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -85,20 +84,22 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
         text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
-        text_chunks = text_splitter.split_text(document.get_text())
-        for _, text_chunk in enumerate(text_chunks):
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            print(f"> Adding chunk: {fmt_text_chunk}")
+        nodes = self._get_nodes_from_document(document, text_splitter)
+        for n in nodes:
             # add to FAISS
             # NOTE: embeddings won't be stored in Node but rather in underlying
             # Faiss store
-            text_embedding = self._embed_model.get_text_embedding(text_chunk)
+            if n.embedding is None:
+                text_embedding = self._embed_model.get_text_embedding(n.get_text())
+            else:
+                text_embedding = n.embedding
+
             text_embedding_np = np.array(text_embedding)[np.newaxis, :]
             new_id = str(self._faiss_index.ntotal)
             self._faiss_index.add(text_embedding_np)
 
             # add to index
-            index_struct.add_text(text_chunk, document.get_doc_id(), text_id=new_id)
+            index_struct.add_node(n, text_id=new_id)
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Query mode to class."""

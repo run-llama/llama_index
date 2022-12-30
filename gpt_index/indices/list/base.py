@@ -9,9 +9,7 @@ from typing import Any, Optional, Sequence
 
 from gpt_index.data_structs.data_structs import IndexList
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
@@ -61,19 +59,6 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             self.text_qa_template, 1
         )
 
-    def _add_document_to_index(
-        self,
-        index_struct: IndexList,
-        document: BaseDocument,
-        text_splitter: TokenTextSplitter,
-    ) -> None:
-        """Add document to index."""
-        text_chunks = text_splitter.split_text(document.get_text())
-        for _, text_chunk in enumerate(text_chunks):
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            print(f"> Adding chunk: {fmt_text_chunk}")
-            index_struct.add_text(text_chunk, document.get_doc_id())
-
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False
     ) -> IndexList:
@@ -90,16 +75,16 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         )
         index_struct = IndexList()
         for d in documents:
-            self._add_document_to_index(index_struct, d, text_splitter)
+            nodes = self._get_nodes_from_document(d, text_splitter)
+            for n in nodes:
+                index_struct.add_node(n)
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        text_chunks = self._text_splitter.split_text(document.get_text())
-        for _, text_chunk in enumerate(text_chunks):
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            print(f"> Adding chunk: {fmt_text_chunk}")
-            self._index_struct.add_text(text_chunk, document.get_doc_id())
+        nodes = self._get_nodes_from_document(document, self._text_splitter)
+        for n in nodes:
+            self._index_struct.add_node(n)
 
     def delete(self, document: BaseDocument) -> None:
         """Delete a document."""
