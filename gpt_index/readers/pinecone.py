@@ -37,6 +37,8 @@ class PineconeReader(BaseReader):
                 documents per retrieved entry. Defaults to False.
             vector (List[float]): Query vector.
             top_k (int): Number of results to return.
+            include_values (bool): Whether to include the embedding in the response.
+                Defaults to True.
             **query_kwargs: Keyword arguments to pass to the query.
                 Arguments are the exact same as those found in
                 Pinecone's reference documentation for the
