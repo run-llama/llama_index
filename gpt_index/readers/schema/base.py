@@ -1,6 +1,6 @@
 """Base schema for readers."""
 from dataclasses import dataclass
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 
 from gpt_index.schema import BaseDocument
 

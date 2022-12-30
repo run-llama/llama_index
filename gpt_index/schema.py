@@ -41,13 +41,14 @@ class BaseDocument(ABC):
 
     def get_embedding(self) -> List[float]:
         """Get embedding.
-        
+
         Errors if embedding is None.
 
         """
         if self.embedding is None:
             raise ValueError("embedding not set.")
         return self.embedding
+
 
 @dataclass
 class DocumentStore(DataClassJsonMixin):

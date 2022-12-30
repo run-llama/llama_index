@@ -5,7 +5,6 @@ from typing import Any, Optional, Sequence
 from gpt_index.data_structs.data_structs import SimpleIndexDict
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT
-from gpt_index.indices.utils import truncate_text
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -74,4 +73,5 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
 
             # add to index
             index_struct.add_node(n, text_id=new_id)
-            index_struct.add_embedding(new_id, text_embedding)
+            # TODO: deprecate
+            index_struct.add_to_embedding_dict(new_id, text_embedding)

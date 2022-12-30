@@ -3,8 +3,7 @@
 import random
 import sys
 from dataclasses import dataclass, field
-from abc import abstractmethod
-from typing import Dict, List, Optional, Set, Any
+from typing import Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -26,7 +25,6 @@ class IndexStruct(BaseDocument, DataClassJsonMixin):
     # Not all index_structs need to have a doc_id. Only index_structs that
     # represent a complete data structure (e.g. IndexGraph, IndexList),
     # and are used to compose a higher level index, will have a doc_id.
-
 
 
 @dataclass
@@ -208,21 +206,13 @@ class SimpleIndexDict(BaseIndexDict):
 
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
 
-    def add_embedding(self, text_id: str, embedding: List[float]) -> None:
+    def add_to_embedding_dict(self, text_id: str, embedding: List[float]) -> None:
         """Add embedding to dict."""
         if text_id not in self.id_map:
             raise ValueError("text_id not found in id_map")
         elif not isinstance(text_id, str):
             raise ValueError("text_id must be a string.")
         self.embedding_dict[text_id] = embedding
-
-    def get_embedding(self, text_id: str) -> List[float]:
-        """Get embedding."""
-        if text_id not in self.embedding_dict:
-            raise ValueError("text_id not found in embedding_dict")
-        elif not isinstance(text_id, str):
-            raise ValueError("text_id must be a string.")
-        return self.embedding_dict[text_id]
 
 
 @dataclass
