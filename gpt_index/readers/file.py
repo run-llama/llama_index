@@ -67,12 +67,13 @@ class SimpleDirectoryReader(BaseReader):
 
         Args:
             concatenate (bool): whether to concatenate all files into one document.
+                False by default.
 
         Returns:
             List[Document]: A list of documents.
 
         """
-        concatenate = load_kwargs.get("concatenate", True)
+        concatenate = load_kwargs.get("concatenate", False)
         data = ""
         data_list = []
         for input_file in self.input_files:
