@@ -18,6 +18,7 @@ Each data structure offers distinct use cases and a variety of customizable para
 This primer is intended to help you get the most out of GPT Index. It gives a high-level overview of the following: 
 1. The general usage pattern of GPT Index.
 2. Mapping Use Cases to GPT Index data Structures
+3. How Each Index Works
 
 
 ## 1. General Usage Pattern of GPT Index
@@ -45,7 +46,9 @@ The tree index `GPTTreeIndex` and keyword indices can be used to "route" queries
 This guide should paint a picture of how you can use GPT Index to solve your own data needs. 
 
 
+## 3. How Each Index Works
 
+We explain how each index works with diagrams.
 
-
+[How Each Index Works](/guides/index_guide.md)
 
