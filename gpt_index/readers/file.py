@@ -45,33 +45,35 @@ class SimpleDirectoryReader(BaseReader):
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
         input_files = sorted(input_dir.iterdir())
-        dirs_to_remove = []
-        if self.exclude_hidden:
-            input_files = [f for f in input_files if not f.name.startswith(".")]
-        if self.required_exts is not None:
-            input_files = [f for f in input_files if f.suffix in self.required_exts]
+        new_input_files = []
         for input_file in input_files:
             if input_file.is_dir():
                 sub_input_files = self._add_files(input_file)
-                input_files.extend(sub_input_files)
-                dirs_to_remove.append(input_file)
+                new_input_files.extend(sub_input_files)
+            elif self.exclude_hidden and input_file.name.startswith("."):
+                continue
+            elif (
+                self.required_exts is not None
+                and input_file.suffix not in self.required_exts
+            ):
+                continue
+            else:
+                new_input_files.append(input_file)
 
-        for dir in dirs_to_remove:
-            input_files.remove(dir)
-
-        return input_files
+        return new_input_files
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory.
 
         Args:
             concatenate (bool): whether to concatenate all files into one document.
+                False by default.
 
         Returns:
             List[Document]: A list of documents.
 
         """
-        concatenate = load_kwargs.get("concatenate", True)
+        concatenate = load_kwargs.get("concatenate", False)
         data = ""
         data_list = []
         for input_file in self.input_files:
