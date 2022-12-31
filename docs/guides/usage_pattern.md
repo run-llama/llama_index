@@ -180,6 +180,7 @@ response = index.query("What did the author do growing up?", mode="embedding")
 
 The full set of modes per index are documented in the [Query Reference](/reference/query.rst).
 
+(setting-response-mode)=
 ### Setting `response_mode`
 
 Note: This option is not available/utilized in `GPTTreeIndex`.
