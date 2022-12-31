@@ -1,4 +1,5 @@
 -e .
-sphinx
-sphinx_rtd_theme
+sphinx>=4.3.0
+sphinx_rtd_theme>=0.5.1
+docutils<0.17
 myst-parser
