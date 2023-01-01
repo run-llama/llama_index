@@ -39,9 +39,6 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
             will be reset during index construction.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
-        reset_faiss_index (bool): Whether to reset the Faiss index during
-            index construction. Defaults to True.
-            NOTE: if load_from_disk is called, this value will be set to False.
     """
 
     index_struct_cls = IndexDict
