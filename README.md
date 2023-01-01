@@ -29,6 +29,10 @@ At the core of GPT Index is a **data structure**. Instead of relying on world kn
 - Takes as input a large corpus of text data and build a structured index over it (using an LLM or heuristics).
 - Allow users to *query* the index in order to synthesize an answer to the question - this requires both *traversal* of the index as well as a synthesis of the answer.
 
+## 💡 Contributing
+
+Interesting in Contributing? See our [Contribution Guide](CONTRIBUTING.md) for more details.
+
 ## 📄 Documentation
 
 Full documentation can be found here: https://gpt-index.readthedocs.io/en/latest/. 
