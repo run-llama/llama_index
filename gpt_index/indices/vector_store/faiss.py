@@ -39,6 +39,9 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
             will be reset during index construction.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
+        reset_faiss_index (bool): Whether to reset the Faiss index during
+            index construction. Defaults to True.
+            NOTE: if load_from_disk is called, this value will be set to False.
     """
 
     index_struct_cls = IndexDict
@@ -66,7 +69,10 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
 
         if faiss_index is None:
             raise ValueError("faiss_index cannot be None.")
-        faiss_index.reset()
+        if documents is not None and faiss_index.ntotal > 0:
+            raise ValueError(
+                "If building a GPTFaissIndex from scratch, faiss_index must be empty."
+            )
         self._faiss_index = cast(faiss.Index, faiss_index)
         super().__init__(
             documents=documents,
@@ -137,7 +143,9 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
             import faiss
 
             faiss_index = faiss.read_index(faiss_index_save_path)
-            return super().load_from_disk(save_path, faiss_index=faiss_index, **kwargs)
+            return super().load_from_disk(
+                save_path, faiss_index=faiss_index, **kwargs
+            )
         else:
             return super().load_from_disk(save_path, **kwargs)
 
