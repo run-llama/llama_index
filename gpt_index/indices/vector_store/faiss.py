@@ -143,9 +143,7 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
             import faiss
 
             faiss_index = faiss.read_index(faiss_index_save_path)
-            return super().load_from_disk(
-                save_path, faiss_index=faiss_index, **kwargs
-            )
+            return super().load_from_disk(save_path, faiss_index=faiss_index, **kwargs)
         else:
             return super().load_from_disk(save_path, **kwargs)
 
