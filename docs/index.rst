@@ -13,6 +13,8 @@ The Github project page is here: https://github.com/jerryjliu/gpt_index.
 
 The pypi package is here: https://pypi.org/project/gpt-index/.
 
+Join our Discord! https://discord.gg/dGcwcsnxhU
+
 
 🚀 Overview
 -----------
