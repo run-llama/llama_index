@@ -119,6 +119,42 @@ def test_insert(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
+def test_delete(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+) -> None:
+    """Test insert."""
+    new_documents = [
+        Document("Hello world.\nThis is a test.", doc_id="test_id_1"),
+        Document("This is another test.", doc_id="test_id_2"),
+        Document("This is a test v2.", doc_id="test_id_3"),
+    ]
+
+    # test delete
+    table = GPTSimpleKeywordTableIndex(new_documents)
+    table.delete("test_id_1")
+    assert len(table.index_struct.table.keys()) == 6
+    print(table.index_struct.table.keys())
+    assert len(table.index_struct.table["this"]) == 2
+    node_texts = {n.text for n in table.index_struct.text_chunks.values()}
+    assert node_texts == {"This is another test.", "This is a test v2."}
+
+    table = GPTSimpleKeywordTableIndex(new_documents)
+    table.delete("test_id_2")
+    assert len(table.index_struct.table.keys()) == 7
+    assert len(table.index_struct.table["this"]) == 2
+    node_texts = {n.text for n in table.index_struct.text_chunks.values()}
+    assert node_texts == {"Hello world.", "This is a test.", "This is a test v2."}
+
+
+@patch_common
+@patch(
+    "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
+    mock_extract_keywords,
+)
 @patch(
     "gpt_index.indices.query.keyword_table.query.simple_extract_keywords",
     mock_extract_keywords,

@@ -103,9 +103,29 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             keywords = self._extract_keywords(n.get_text())
             self._index_struct.add_node(list(keywords), n)
 
-    def delete(self, document: BaseDocument) -> None:
+    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
-        raise NotImplementedError("Delete not implemented for keyword table index.")
+        # get set of ids that correspond to node
+        node_idxs_to_delete = set()
+        for node_idx, node in self._index_struct.text_chunks.items():
+            if node.ref_doc_id != doc_id:
+                continue
+            node_idxs_to_delete.add(node_idx)
+        for node_idx in node_idxs_to_delete:
+            del self._index_struct.text_chunks[node_idx]
+
+        # delete node_idxs from keyword to node idxs mapping
+        keywords_to_delete = set()
+        for keyword, node_idxs in self._index_struct.table.items():
+            if node_idxs_to_delete.intersection(node_idxs):
+                self._index_struct.table[keyword] = node_idxs.difference(
+                    node_idxs_to_delete
+                )
+                if not self._index_struct.table[keyword]:
+                    keywords_to_delete.add(keyword)
+
+        for keyword in keywords_to_delete:
+            del self._index_struct.table[keyword]
 
 
 class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):

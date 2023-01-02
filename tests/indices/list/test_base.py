@@ -106,6 +106,47 @@ def test_list_insert(
         assert node.ref_doc_id == "test_id"
 
 
+@patch_common
+def test_list_delete(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_splitter: Any,
+    documents: List[Document],
+) -> None:
+    """Test insert to list and then delete."""
+    new_documents = [
+        Document("Hello world.\nThis is a test.", doc_id="test_id_1"),
+        Document("This is another test.", doc_id="test_id_2"),
+        Document("This is a test v2.", doc_id="test_id_3"),
+    ]
+
+    # delete from documents
+    list_index = GPTListIndex(new_documents)
+    # assert source doc is in docstore
+    source_doc = list_index.docstore.get_document("test_id_1")
+    assert source_doc is not None
+    list_index.delete("test_id_1")
+    assert len(list_index.index_struct.nodes) == 2
+    assert list_index.index_struct.nodes[0].ref_doc_id == "test_id_2"
+    assert list_index.index_struct.nodes[0].text == "This is another test."
+    assert list_index.index_struct.nodes[1].ref_doc_id == "test_id_3"
+    assert list_index.index_struct.nodes[1].text == "This is a test v2."
+    # check that not in docstore anymore
+    source_doc = list_index.docstore.get_document("test_id_1", raise_error=False)
+    assert source_doc is None
+
+    list_index = GPTListIndex(new_documents)
+    list_index.delete("test_id_2")
+    assert len(list_index.index_struct.nodes) == 3
+    assert list_index.index_struct.nodes[0].ref_doc_id == "test_id_1"
+    assert list_index.index_struct.nodes[0].text == "Hello world."
+    assert list_index.index_struct.nodes[1].ref_doc_id == "test_id_1"
+    assert list_index.index_struct.nodes[1].text == "This is a test."
+    assert list_index.index_struct.nodes[2].ref_doc_id == "test_id_3"
+    assert list_index.index_struct.nodes[2].text == "This is a test v2."
+
+
 def _get_embeddings(
     query_str: str, nodes: List[Node]
 ) -> Tuple[List[float], List[List[float]]]:
