@@ -11,7 +11,7 @@ Documentation: https://gpt-index.readthedocs.io/en/latest/.
 **NOTE**: This README is not updated as frequently as the documentation. Please check out the documentation above for the latest updates!
 
 #### Context
-- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning.
+- LLMs are a phenomenal piece of technology for knowledge generation and reasoning.
 - A big limitation of LLMs is context size (e.g. OpenAI's `davinci` model for GPT-3 has a [limit](https://openai.com/api/pricing/) of 4096 tokens. Large, but not infinite).
 - The ability to feed "knowledge" to LLMs is restricted to this limited prompt size and model weights.
 - **Thought**: What if LLMs can have access to potentially a much larger database of knowledge without retraining/finetuning? 
