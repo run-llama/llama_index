@@ -66,7 +66,10 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
 
         if faiss_index is None:
             raise ValueError("faiss_index cannot be None.")
-        faiss_index.reset()
+        if documents is not None and faiss_index.ntotal > 0:
+            raise ValueError(
+                "If building a GPTFaissIndex from scratch, faiss_index must be empty."
+            )
         self._faiss_index = cast(faiss.Index, faiss_index)
         super().__init__(
             documents=documents,
