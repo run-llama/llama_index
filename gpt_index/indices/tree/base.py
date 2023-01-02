@@ -111,6 +111,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         )
         inserter.insert(document)
 
-    def delete(self, document: BaseDocument) -> None:
+    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for tree index.")

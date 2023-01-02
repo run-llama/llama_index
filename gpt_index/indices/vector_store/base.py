@@ -78,7 +78,3 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
         self._add_document_to_index(self._index_struct, document, self._text_splitter)
-
-    def delete(self, document: BaseDocument) -> None:
-        """Delete a document."""
-        raise NotImplementedError("Delete not implemented for Faiss index.")

@@ -121,7 +121,7 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
         """Insert a document."""
         self._add_document_to_index(self._index_struct, document, self._text_splitter)
 
-    def delete(self, document: BaseDocument) -> None:
+    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for Weaviate index.")
 

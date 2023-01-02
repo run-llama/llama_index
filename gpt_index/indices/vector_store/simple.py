@@ -10,6 +10,7 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import get_new_id
 
 
 class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
@@ -69,9 +70,25 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
                 text_embedding = self._embed_model.get_text_embedding(n.get_text())
             else:
                 text_embedding = n.embedding
-            new_id = str(len(index_struct.nodes_dict))
+            new_id = get_new_id(set(index_struct.nodes_dict.keys()))
 
             # add to index
             index_struct.add_node(n, text_id=new_id)
             # TODO: deprecate
             index_struct.add_to_embedding_dict(new_id, text_embedding)
+
+    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a document."""
+        text_ids_to_delete = set()
+        int_ids_to_delete = set()
+        for text_id, int_id in self.index_struct.id_map.items():
+            node = self.index_struct.nodes_dict[int_id]
+            if node.ref_doc_id != doc_id:
+                continue
+            text_ids_to_delete.add(text_id)
+            int_ids_to_delete.add(int_id)
+
+        for int_id, text_id in zip(int_ids_to_delete, text_ids_to_delete):
+            del self.index_struct.nodes_dict[int_id]
+            del self.index_struct.id_map[text_id]
+            del self.index_struct.embedding_dict[text_id]

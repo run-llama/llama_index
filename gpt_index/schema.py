@@ -98,6 +98,15 @@ class DocumentStore(DataClassJsonMixin):
             raise ValueError(f"doc_id {doc_id} not found.")
         return doc
 
+    def delete_document(
+        self, doc_id: str, raise_error: bool = True
+    ) -> Optional[BaseDocument]:
+        """Delete a document from the store."""
+        doc = self.docs.pop(doc_id, None)
+        if doc is None and raise_error:
+            raise ValueError(f"doc_id {doc_id} not found.")
+        return doc
+
     def __len__(self) -> int:
         """Get length."""
         return len(self.docs.keys())
