@@ -103,7 +103,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             keywords = self._extract_keywords(n.get_text())
             self._index_struct.add_node(list(keywords), n)
 
-    def delete(self, document: BaseDocument) -> None:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for keyword table index.")
 

@@ -197,7 +197,7 @@ class BaseGPTIndex(Generic[IS]):
         self._insert(processed_doc, **insert_kwargs)
 
     @abstractmethod
-    def delete(self, document: BaseDocument) -> None:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:

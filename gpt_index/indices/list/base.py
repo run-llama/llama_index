@@ -86,6 +86,6 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         for n in nodes:
             self._index_struct.add_node(n)
 
-    def delete(self, document: BaseDocument) -> None:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for list index.")
