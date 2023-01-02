@@ -106,7 +106,6 @@ class DocumentStore(DataClassJsonMixin):
         if doc is None and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
         return doc
-    )
 
     def __len__(self) -> int:
         """Get length."""

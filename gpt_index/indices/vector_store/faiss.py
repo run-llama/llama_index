@@ -173,5 +173,3 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not yet implemented for Faiss index.")
-        
-        

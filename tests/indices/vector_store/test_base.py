@@ -94,6 +94,9 @@ def mock_get_text_embedding(text: str) -> List[float]:
         return [0, 0, 0, 0, 1]
     elif text == "This is bar test.":
         return [0, 0, 1, 0, 0]
+    elif text == "Hello world backup.":
+        # this is used when "Hello world." is deleted.
+        return [1, 0, 0, 0, 0]
     else:
         raise ValueError("Invalid text for `mock_get_text_embedding`.")
 
@@ -214,14 +217,16 @@ def test_build_simple(
     index = GPTSimpleVectorIndex(documents=documents, **index_kwargs)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
-    assert index.index_struct.get_node("0").text == "Hello world."
-    assert index.index_struct.embedding_dict["0"] == [1, 0, 0, 0, 0]
-    assert index.index_struct.get_node("1").text == "This is a test."
-    assert index.index_struct.embedding_dict["1"] == [0, 1, 0, 0, 0]
-    assert index.index_struct.get_node("2").text == "This is another test."
-    assert index.index_struct.embedding_dict["2"] == [0, 0, 1, 0, 0]
-    assert index.index_struct.get_node("3").text == "This is a test v2."
-    assert index.index_struct.embedding_dict["3"] == [0, 0, 0, 1, 0]
+    actual_node_tups = [
+        ("Hello world.", [1, 0, 0, 0, 0]),
+        ("This is a test.", [0, 1, 0, 0, 0]),
+        ("This is another test.", [0, 0, 1, 0, 0]),
+        ("This is a test v2.", [0, 0, 0, 1, 0]),
+    ]
+    for text_id in index.index_struct.id_map.keys():
+        node = index.index_struct.get_node(text_id)
+        embedding = index.index_struct.embedding_dict[text_id]
+        assert (node.text, embedding) in actual_node_tups
 
 
 @patch_common
@@ -245,10 +250,71 @@ def test_simple_insert(
     index.insert(Document(text="This is a test v3."))
 
     # check contenst of nodes
-    assert index.index_struct.get_node("3").text == "This is a test v2."
-    assert index.index_struct.embedding_dict["3"] == [0, 0, 0, 1, 0]
-    assert index.index_struct.get_node("4").text == "This is a test v3."
-    assert index.index_struct.embedding_dict["4"] == [0, 0, 0, 0, 1]
+    actual_node_tups = [
+        ("Hello world.", [1, 0, 0, 0, 0]),
+        ("This is a test.", [0, 1, 0, 0, 0]),
+        ("This is another test.", [0, 0, 1, 0, 0]),
+        ("This is a test v2.", [0, 0, 0, 1, 0]),
+        ("This is a test v3.", [0, 0, 0, 0, 1]),
+    ]
+    for text_id in index.index_struct.id_map.keys():
+        node = index.index_struct.get_node(text_id)
+        embedding = index.index_struct.embedding_dict[text_id]
+        assert (node.text, embedding) in actual_node_tups
+
+
+@patch_common
+@patch.object(
+    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+)
+def test_simple_delete(
+    _mock_embed: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_splitter: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test build GPTFaissIndex."""
+    index_kwargs, query_kwargs = struct_kwargs
+
+    new_documents = [
+        Document("Hello world.", doc_id="test_id_0"),
+        Document("This is a test.", doc_id="test_id_1"),
+        Document("This is another test.", doc_id="test_id_2"),
+        Document("This is a test v2.", doc_id="test_id_3"),
+    ]
+    index = GPTSimpleVectorIndex(documents=new_documents, **index_kwargs)
+
+    # test delete
+    index.delete("test_id_0")
+    assert len(index.index_struct.nodes_dict) == 3
+    assert len(index.index_struct.id_map) == 3
+    actual_node_tups = [
+        ("This is a test.", [0, 1, 0, 0, 0], "test_id_1"),
+        ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),
+        ("This is a test v2.", [0, 0, 0, 1, 0], "test_id_3"),
+    ]
+    for text_id in index.index_struct.id_map.keys():
+        node = index.index_struct.get_node(text_id)
+        embedding = index.index_struct.embedding_dict[text_id]
+        assert (node.text, embedding, node.ref_doc_id) in actual_node_tups
+
+    # test insert
+    index.insert(Document("Hello world backup.", doc_id="test_id_0"))
+    assert len(index.index_struct.nodes_dict) == 4
+    assert len(index.index_struct.id_map) == 4
+    actual_node_tups = [
+        ("Hello world backup.", [1, 0, 0, 0, 0], "test_id_0"),
+        ("This is a test.", [0, 1, 0, 0, 0], "test_id_1"),
+        ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),
+        ("This is a test v2.", [0, 0, 0, 1, 0], "test_id_3"),
+    ]
+    for text_id in index.index_struct.id_map.keys():
+        node = index.index_struct.get_node(text_id)
+        embedding = index.index_struct.embedding_dict[text_id]
+        assert (node.text, embedding, node.ref_doc_id) in actual_node_tups
 
 
 @patch_common
