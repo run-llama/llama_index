@@ -106,6 +106,35 @@ def test_list_insert(
         assert node.ref_doc_id == "test_id"
 
 
+@patch_common
+def test_list_insert_delete(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_splitter: Any,
+    documents: List[Document],
+) -> None:
+    """Test insert to list and then delete."""
+    list_index = GPTListIndex([])
+    assert len(list_index.index_struct.nodes) == 0
+    list_index.insert(documents[0])
+    # check contents of nodes
+    assert list_index.index_struct.nodes[0].text == "Hello world."
+    assert list_index.index_struct.nodes[1].text == "This is a test."
+    assert list_index.index_struct.nodes[2].text == "This is another test."
+    assert list_index.index_struct.nodes[3].text == "This is a test v2."
+
+    # test insert with ID
+    document = documents[0]
+    document.doc_id = "test_id"
+    list_index = GPTListIndex([])
+    list_index.insert(document)
+    # check contents of nodes
+    for node in list_index.index_struct.nodes:
+        assert node.ref_doc_id == "test_id"
+
+
+
 def _get_embeddings(
     query_str: str, nodes: List[Node]
 ) -> Tuple[List[float], List[List[float]]]:

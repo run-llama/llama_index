@@ -75,3 +75,15 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
             index_struct.add_node(n, text_id=new_id)
             # TODO: deprecate
             index_struct.add_to_embedding_dict(new_id, text_embedding)
+
+    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a document."""
+        for text_id, int_id in self.index_struct.id_map.items():
+            node = self.index_struct.nodes_dict[int_id]
+            if node.ref_doc_id != doc_id:
+                continue
+            del self.index_struct.nodes_dict[int_id]
+            del self.index_struct.id_map[text_id]
+            del self.index_struct.embedding_dict[text_id]
+        
+        
