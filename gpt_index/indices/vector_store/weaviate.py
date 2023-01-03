@@ -123,7 +123,7 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
-        raise NotImplementedError("Delete not implemented for Weaviate index.")
+        WeaviateNode.delete_document(self.client, doc_id, self.class_prefix)
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Query mode to class."""
