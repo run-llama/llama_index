@@ -10,7 +10,8 @@ from gpt_index.indices.keyword_table.utils import (
     simple_extract_keywords,
 )
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder
+from gpt_index.indices.response.builder import ResponseBuilder, ResponseSourceBuilder
+from gpt_index.indices.response.schema import Response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
@@ -64,7 +65,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
         """Extract keywords."""
 
-    def _query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         keywords = self._get_keywords(query_str, verbose=verbose)
@@ -104,7 +105,9 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
             query_str, verbose=verbose, mode=self._response_mode
         )
 
-        return result_response or "Empty response"
+        response_str = result_response or "Empty response"
+        source_nodes = ResponseSourceBuilder(sorted_nodes).get_sources()
+        return Response(response_str, source_nodes=source_nodes)
 
 
 class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):

@@ -4,7 +4,8 @@ from typing import List
 
 from gpt_index.data_structs.data_structs import IndexList, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder
+from gpt_index.indices.response.builder import ResponseBuilder, ResponseSourceBuilder
+from gpt_index.indices.response.schema import Response
 
 
 class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
@@ -53,11 +54,13 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
     ) -> List[Node]:
         """Get nodes for response."""
 
-    def _query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         nodes = self.get_nodes_for_response(query_str, verbose=verbose)
-        return self._give_response_for_nodes(query_str, nodes, verbose=verbose)
+        response_str = self._give_response_for_nodes(query_str, nodes, verbose=verbose)
+        sources = ResponseSourceBuilder(nodes).get_sources()
+        return Response(response_str, source_nodes=sources)
 
 
 class GPTListIndexQuery(BaseGPTListIndexQuery):

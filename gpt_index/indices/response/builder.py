@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.response.schema import Response, SourceNode
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
@@ -235,3 +236,21 @@ class ResponseBuilder:
             )
         else:
             raise ValueError(f"Invalid mode: {mode}")
+
+
+class ResponseSourceBuilder:
+    """Response source builder class."""
+
+    # TODO: consolidate with ResponseBuilder
+
+    def __init__(self, nodes: Optional[List[Node]] = None) -> None:
+        """Init params."""
+        self._nodes = nodes or []
+
+    def add_node(self, node: Node) -> None:
+        """Add node."""
+        self._nodes.append(node)
+
+    def get_sources(self) -> List[SourceNode]:
+        """Get sources."""
+        return SourceNode.from_nodes(self._nodes)

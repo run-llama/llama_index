@@ -5,7 +5,13 @@ from typing import Any, cast
 
 from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
+from gpt_index.indices.response.builder import (
+    ResponseBuilder,
+    ResponseMode,
+    ResponseSourceBuilder,
+    TextChunk,
+)
+from gpt_index.indices.response.schema import Response
 from gpt_index.indices.utils import get_sorted_node_list
 
 
@@ -36,7 +42,7 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
         super().__init__(index_struct, **kwargs)
         self.num_children = num_children
 
-    def _query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         index_struct = cast(IndexGraph, self._index_struct)
@@ -50,10 +56,11 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
             self.refine_template,
             texts=sorted_node_txts,
         )
-        response = response_builder.get_response(
+        response_str = response_builder.get_response(
             query_str,
             verbose=verbose,
             mode=ResponseMode.TREE_SUMMARIZE,
             num_children=self.num_children,
         )
-        return response
+        # TODO: add sources
+        return Response(response_str, source_nodes=[])

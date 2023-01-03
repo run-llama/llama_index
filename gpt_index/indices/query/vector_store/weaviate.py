@@ -7,7 +7,8 @@ from gpt_index.data_structs.data_structs import Node, WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder
+from gpt_index.indices.response.builder import ResponseBuilder, ResponseSourceBuilder
+from gpt_index.indices.response.schema import Response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
 
@@ -84,7 +85,7 @@ class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
                 filtered_nodes.append(node)
         return filtered_ids, filtered_nodes
 
-    def _query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         node_idxs, top_k_nodes = self.get_nodes_for_response(query_str, verbose=verbose)
@@ -96,4 +97,8 @@ class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
                 fmt_txts.append(fmt_txt)
             top_k_node_text = "\n".join(fmt_txts)
             print(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
-        return self._give_response_for_nodes(query_str, top_k_nodes, verbose=verbose)
+        response_str = self._give_response_for_nodes(
+            query_str, top_k_nodes, verbose=verbose
+        )
+        source_nodes = ResponseSourceBuilder(top_k_nodes).get_sources()
+        return Response(response_str, source_nodes=source_nodes)

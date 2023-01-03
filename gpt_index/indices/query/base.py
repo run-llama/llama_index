@@ -8,6 +8,7 @@ from typing import Generic, List, Optional, TypeVar, cast
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
+from gpt_index.indices.response.schema import Response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
@@ -165,11 +166,11 @@ class BaseGPTIndexQuery(Generic[IS]):
         pass
 
     @abstractmethod
-    def _query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
 
     @llm_token_counter("query")
-    def query(self, query_str: str, verbose: bool = False) -> str:
+    def query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         response = self._query(query_str, verbose=verbose)
         # if include_summary is True, then include summary text in answer
@@ -184,11 +185,11 @@ class BaseGPTIndexQuery(Generic[IS]):
                 texts=[TextChunk(self._index_struct.get_text())],
             )
             # NOTE: use create and refine for now (default response mode)
-            response = response_builder.get_response(
+            response.response = response_builder.get_response(
                 query_str,
                 verbose=verbose,
                 mode=ResponseMode.DEFAULT,
-                prev_response=response,
+                prev_response=response.response,
             )
 
         return response

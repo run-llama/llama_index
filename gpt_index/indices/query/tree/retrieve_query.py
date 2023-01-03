@@ -2,7 +2,12 @@
 
 from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
+from gpt_index.indices.response.builder import (
+    ResponseBuilder,
+    ResponseSourceBuilder,
+    TextChunk,
+)
+from gpt_index.indices.response.schema import Response
 from gpt_index.indices.utils import get_sorted_node_list
 
 
@@ -25,7 +30,7 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
 
     """
 
-    def _query(self, query_str: str, verbose: bool = False) -> str:
+    def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         print(f"> Starting query: {query_str}")
         node_list = get_sorted_node_list(self.index_struct.root_nodes)
@@ -40,7 +45,8 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
             self.refine_template,
             texts=[TextChunk(node_text)],
         )
-        response = response_builder.get_response(
+        response_str = response_builder.get_response(
             query_str, verbose=verbose, mode=self._response_mode
         )
-        return response
+        # TODO: add sources
+        return Response(response_str, source_nodes=[])
