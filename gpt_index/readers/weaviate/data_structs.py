@@ -195,19 +195,21 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
     def delete_document(cls, client: Any, ref_doc_id: str, class_prefix: str) -> None:
         """Delete entry."""
         validate_client(client)
-        # make sure that each entry 
+        # make sure that each entry
         class_name = cls._class_name(class_prefix)
         where_filter = {
             "path": ["ref_doc_id"],
             "operator": "Equal",
-            "valueString": ref_doc_id
+            "valueString": ref_doc_id,
         }
-        query = client.query.get(class_name)\
-            .with_additional(["id"]).with_where(where_filter)
+        query = (
+            client.query.get(class_name)
+            .with_additional(["id"])
+            .with_where(where_filter)
+        )
 
         query_result = query.do()
         parsed_result = parse_get_response(query_result)
         entries = parsed_result[class_name]
         for entry in entries:
             client.data_object.delete(entry["_additional"]["id"], class_name)
-

@@ -150,6 +150,25 @@ class BaseGPTIndex(Generic[IS]):
         """
         self._index_struct.text = text
 
+    def set_doc_id(self, doc_id: str) -> None:
+        """Set doc_id for index struct.
+
+        This is used to uniquely identify the index struct in the docstore.
+        If you wish to delete the index struct, you can use this doc_id.
+
+        """
+        self._index_struct.doc_id = doc_id
+
+    def get_doc_id(self) -> str:
+        """Get doc_id for index struct.
+
+        If doc_id not set, raise an error.
+
+        """
+        if self._index_struct.doc_id is None:
+            raise ValueError("Index must have doc_id property set.")
+        return self._index_struct.doc_id
+
     def _get_nodes_from_document(
         self,
         document: BaseDocument,
@@ -195,7 +214,7 @@ class BaseGPTIndex(Generic[IS]):
 
         Args:
             document (Union[BaseDocument, BaseGPTIndex]): document to insert
-        
+
         """
         processed_doc = self._process_documents([document], self._docstore)[0]
         self._validate_documents([processed_doc])
@@ -215,7 +234,7 @@ class BaseGPTIndex(Generic[IS]):
             full_delete (bool): whether to delete the document from the docstore.
                 By default this is True.
             verbose (bool): whether to print verbose output. By default this is False.
-            
+
         """
         verbose = delete_kwargs.pop("verbose", False)
         full_delete = delete_kwargs.pop("full_delete", True)
