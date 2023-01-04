@@ -1,5 +1,5 @@
-from abc import abstractmethod
-from typing import Any, Iterable, List
+"""Simple reader that turns an iterable of strings into a list of Documents."""
+from typing import Any, List
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -14,7 +14,8 @@ class StringIterableReader(BaseReader):
         .. code-block:: python
             from gpt_index import StringIterableReader, GPTTreeIndex
 
-            documents = StringIterableReader().load_data(texts=["I went to the store", "I bought an apple"]).load_data()
+            documents = StringIterableReader().load_data(
+                texts=["I went to the store", "I bought an apple"]).load_data()
             index = GPTTreeIndex(documents)
             index.query("what did I buy?")
 
@@ -22,9 +23,7 @@ class StringIterableReader(BaseReader):
     """
 
     def load_data(self, **load_kwargs: Any) -> List[Document]:
-        """
-        Load the data
-        """
+        """Load the data."""
         texts = load_kwargs.get("texts", list())
         results = []
         for text in texts:
