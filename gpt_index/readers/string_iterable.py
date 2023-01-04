@@ -7,7 +7,7 @@ from gpt_index.readers.schema.base import Document
 
 class StringIterableReader(BaseReader):
     """String Iterable Reader
-    
+
     Gets a list of documents, given an iterable (e.g. list) of strings
 
     Args:
