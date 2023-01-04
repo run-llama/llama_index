@@ -4,7 +4,7 @@ import random
 import sys
 import uuid
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, List, Optional, Set
+from typing import Any, Callable, Generator, List, Optional, Set, cast
 
 import nltk
 from transformers import GPT2TokenizerFast
@@ -36,7 +36,7 @@ class GlobalsHelper:
                 except ImportError:
                     raise ValueError(tiktoken_import_err)
                 enc = tiktoken.get_encoding("gpt2")
-                self._tokenizer = enc.encode
+                self._tokenizer = cast(Callable[[str], List], enc.encode)
             else:
                 tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 

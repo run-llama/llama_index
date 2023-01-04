@@ -1,5 +1,5 @@
 """Default query for GPTFaissIndex."""
-from typing import Any, List, Optional, Tuple, cast
+from typing import Any, List, Optional, cast
 
 import numpy as np
 
@@ -54,17 +54,17 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
 
     def _get_nodes_for_response(
         self, query_str: str, verbose: bool = False
-    ) -> Tuple[List[str], List[Node]]:
+    ) -> List[Node]:
         """Get nodes for response."""
         query_embedding = self._embed_model.get_query_embedding(query_str)
         query_embedding_np = np.array(query_embedding)[np.newaxis, :]
         _, indices = self._faiss_index.search(query_embedding_np, self.similarity_top_k)
         # if empty, then return an empty response
         if len(indices) == 0:
-            return [], []
+            return []
 
         # returned dimension is 1 x k
         node_idxs = list([str(i) for i in indices[0]])
         top_k_nodes = self._index_struct.get_nodes(node_idxs)
 
-        return node_idxs, top_k_nodes
+        return top_k_nodes

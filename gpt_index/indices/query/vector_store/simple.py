@@ -1,5 +1,5 @@
 """Default query for GPTSimpleVectorIndex."""
-from typing import List, Tuple
+from typing import List
 
 from gpt_index.data_structs.data_structs import Node, SimpleIndexDict
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
@@ -31,7 +31,7 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
 
     def _get_nodes_for_response(
         self, query_str: str, verbose: bool = False
-    ) -> Tuple[List[str], List[Node]]:
+    ) -> List[Node]:
         """Get nodes for response."""
         # TODO: consolidate with get_query_text_embedding_similarities
         query_embedding = self._embed_model.get_query_embedding(query_str)
@@ -56,4 +56,4 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
                 fmt_txts.append(fmt_txt)
             top_k_node_text = "\n".join(fmt_txts)
             print(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
-        return top_ids, top_k_nodes
+        return top_k_nodes

@@ -19,6 +19,7 @@ from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.response.schema import Response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -275,7 +276,7 @@ class BaseGPTIndex(Generic[IS]):
         verbose: bool = False,
         mode: str = QueryMode.DEFAULT,
         **query_kwargs: Any,
-    ) -> str:
+    ) -> Response:
         """Answer a query.
 
         When `query` is called, we query the index with the given `mode` and

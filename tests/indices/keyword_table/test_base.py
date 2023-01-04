@@ -173,7 +173,7 @@ def test_query(
     table = GPTSimpleKeywordTableIndex(documents)
 
     response = table.query("Hello", mode="simple")
-    assert response == "Hello:Hello world."
+    assert str(response) == "Hello:Hello world."
 
     # try with filters
     doc_text = (
@@ -183,8 +183,8 @@ def test_query(
     table2 = GPTSimpleKeywordTableIndex(documents2)
     # NOTE: required keywords are somewhat redundant
     response = table2.query("This", mode="simple", required_keywords=["v2"])
-    assert response == "This:This is a test v2"
+    assert str(response) == "This:This is a test v2"
 
     # test exclude_keywords
     response = table2.query("Hello", mode="simple", exclude_keywords=["world"])
-    assert response == "Hello:Hello foo"
+    assert str(response) == "Hello:Hello foo"

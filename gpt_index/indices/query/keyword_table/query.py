@@ -3,14 +3,13 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from gpt_index.data_structs.data_structs import KeywordTable
+from gpt_index.data_structs.data_structs import KeywordTable, Node
 from gpt_index.indices.keyword_table.utils import (
     extract_keywords_given_response,
     rake_extract_keywords,
     simple_extract_keywords,
 )
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
@@ -64,8 +63,10 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
         """Extract keywords."""
 
-    def _query(self, query_str: str, verbose: bool = False) -> str:
-        """Answer a query."""
+    def _get_nodes_for_response(
+        self, query_str: str, verbose: bool = False
+    ) -> List[Node]:
+        """Get nodes for response."""
         print(f"> Starting query: {query_str}")
         keywords = self._get_keywords(query_str, verbose=verbose)
         print(f"query keywords: {keywords}")
@@ -88,23 +89,12 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         ]
         # filter sorted nodes
         sorted_nodes = [node for node in sorted_nodes if self._should_use_node(node)]
+        if verbose:
+            for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
+                fmt_text_chunk = truncate_text(node.get_text(), 50)
+                print(f"> Querying with idx: {chunk_idx}: {fmt_text_chunk}")
 
-        response_builder = ResponseBuilder(
-            self._prompt_helper,
-            self._llm_predictor,
-            self.text_qa_template,
-            self.refine_template,
-        )
-        for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
-            fmt_text_chunk = truncate_text(node.get_text(), 50)
-            print(f"> Querying with idx: {chunk_idx}: {fmt_text_chunk}")
-            text = self._get_text_from_node(query_str, node, verbose=verbose)
-            response_builder.add_text_chunks([text])
-        result_response = response_builder.get_response(
-            query_str, verbose=verbose, mode=self._response_mode
-        )
-
-        return result_response or "Empty response"
+        return sorted_nodes
 
 
 class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):

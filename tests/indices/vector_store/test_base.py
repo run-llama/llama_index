@@ -195,7 +195,7 @@ def test_faiss_query(
     # test embedding query
     query_str = "What is?"
     response = index.query(query_str, **query_kwargs)
-    assert response == ("What is?:This is another test.")
+    assert str(response) == ("What is?:This is another test.")
 
 
 @patch_common
@@ -341,13 +341,13 @@ def test_simple_query(
     # test embedding query
     query_str = "What is?"
     response = index.query(query_str, **query_kwargs)
-    assert response == ("What is?:This is another test.")
+    assert str(response) == ("What is?:This is another test.")
 
     # test with keyword filter (required)
     query_kwargs_copy = query_kwargs.copy()
     query_kwargs_copy["similarity_top_k"] = 5
     response = index.query(query_str, **query_kwargs_copy, required_keywords=["Hello"])
-    assert response == ("What is?:Hello world.")
+    assert str(response) == ("What is?:Hello world.")
 
     # test with keyword filter (exclude)
     # insert into index
@@ -355,4 +355,4 @@ def test_simple_query(
     query_kwargs_copy = query_kwargs.copy()
     query_kwargs_copy["similarity_top_k"] = 2
     response = index.query(query_str, **query_kwargs_copy, exclude_keywords=["another"])
-    assert response == ("What is?:This is bar test.")
+    assert str(response) == ("What is?:This is bar test.")

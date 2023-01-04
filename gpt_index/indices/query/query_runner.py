@@ -8,6 +8,7 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseQueryRunner
 from gpt_index.indices.query.query_map import get_query_cls
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.response.schema import Response
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import DocumentStore
 
@@ -71,7 +72,7 @@ class QueryRunner(BaseQueryRunner):
         self._verbose = verbose
         self._recursive = recursive
 
-    def query(self, query_str: str, index_struct: IndexStruct) -> str:
+    def query(self, query_str: str, index_struct: IndexStruct) -> Response:
         """Run query."""
         index_struct_type = IndexStructType.from_index_struct(index_struct)
         if index_struct_type not in self._config_dict:

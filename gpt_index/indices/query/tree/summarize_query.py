@@ -1,11 +1,11 @@
 """Summarize query."""
 
 
-from typing import Any, cast
+from typing import Any, List, cast
 
-from gpt_index.data_structs.data_structs import IndexGraph
+from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
+from gpt_index.indices.response.builder import ResponseMode
 from gpt_index.indices.utils import get_sorted_node_list
 
 
@@ -33,27 +33,24 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct, **kwargs)
-        self.num_children = num_children
+        if "response_mode" in kwargs:
+            raise ValueError(
+                "response_mode should not be specified for summarize query"
+            )
+        response_kwargs = kwargs.pop("response_kwargs", {})
+        response_kwargs.update(num_children=num_children)
+        super().__init__(
+            index_struct,
+            response_mode=ResponseMode.TREE_SUMMARIZE,
+            response_kwargs=response_kwargs,
+            **kwargs,
+        )
 
-    def _query(self, query_str: str, verbose: bool = False) -> str:
-        """Answer a query."""
+    def _get_nodes_for_response(
+        self, query_str: str, verbose: bool = False
+    ) -> List[Node]:
+        """Get nodes for response."""
         print(f"> Starting query: {query_str}")
         index_struct = cast(IndexGraph, self._index_struct)
         sorted_node_list = get_sorted_node_list(index_struct.all_nodes)
-        sorted_node_txts = [TextChunk(n.get_text()) for n in sorted_node_list]
-
-        response_builder = ResponseBuilder(
-            self._prompt_helper,
-            self._llm_predictor,
-            self.text_qa_template,
-            self.refine_template,
-            texts=sorted_node_txts,
-        )
-        response = response_builder.get_response(
-            query_str,
-            verbose=verbose,
-            mode=ResponseMode.TREE_SUMMARIZE,
-            num_children=self.num_children,
-        )
-        return response
+        return sorted_node_list
