@@ -81,7 +81,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             )
             source_builder.add_node(selected_node)
             # use response builder to get answer from node
-            node_text = self._get_text_from_node(
+            node_text, _ = self._get_text_from_node(
                 query_str, selected_node, verbose=verbose, level=level
             )
             cur_response = response_builder.get_response_over_chunks(

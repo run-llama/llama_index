@@ -3,7 +3,7 @@
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Optional, TypeVar, cast
+from typing import Dict, Generic, List, Optional, Tuple, TypeVar, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -135,16 +135,13 @@ class BaseGPTIndexQuery(Generic[IS]):
         self,
         query_str: str,
         node: Node,
-        source_builder: Optional[ResponseSourceBuilder] = None,
         verbose: bool = False,
         level: Optional[int] = None,
-    ) -> TextChunk:
+    ) -> Tuple[TextChunk, Optional[Response]]:
         """Query a given node.
 
         If node references a given document, then return the document.
         If node references a given index, then query the index.
-
-        If source_builder is provided, then add relevant sources to the source_builder.
 
         """
         level_str = "" if level is None else f"[Level {level}]"
@@ -168,13 +165,10 @@ class BaseGPTIndexQuery(Generic[IS]):
         if is_index_struct:
             query_runner = cast(BaseQueryRunner, self._query_runner)
             response = query_runner.query(query_str, cast(IndexStruct, doc))
-            if source_builder is not None:
-                for source_node in response.source_nodes:
-                    source_builder.add_source_node(source_node)
-            return TextChunk(str(response), is_answer=True)
+            return TextChunk(str(response), is_answer=True), response
         else:
             text = node.get_text()
-            return TextChunk(text)
+            return TextChunk(text), None
 
     @property
     def index_struct(self) -> IS:
@@ -223,9 +217,11 @@ class BaseGPTIndexQuery(Generic[IS]):
         source_builder = ResponseSourceBuilder()
         node_texts = []
         for node in nodes:
-            text = self._get_text_from_node(
-                query_str, node, source_builder=source_builder, verbose=verbose
-            )
+            text, response = self._get_text_from_node(query_str, node, verbose=verbose)
+            source_builder.add_node(node)
+            if response is not None:
+                for source_node in response.source_nodes:
+                    source_builder.add_source_node(source_node)
             node_texts.append(text)
 
         if self._response_mode != ResponseMode.NO_TEXT:

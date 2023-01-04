@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from gpt_index.data_structs.data_structs import Node
+from gpt_index.indices.utils import truncate_text
 
 
 @dataclass
@@ -43,3 +44,12 @@ class Response:
     def __str__(self) -> str:
         """String representation of response."""
         return self.response or "None"
+
+    def get_formatted_sources(self) -> str:
+        """Get formatted sources text."""
+        texts = []
+        for source_node in self.source_nodes:
+            fmt_text_chunk = truncate_text(source_node.source_text, 100)
+            doc_id = source_node.doc_id or "None"
+            texts.append(f">Source (Doc id: {doc_id}): {fmt_text_chunk}")
+        return "\n\n".join(texts)
