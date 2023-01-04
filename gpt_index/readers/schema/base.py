@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 from gpt_index.schema import BaseDocument
+from langchain.docstore.document import Document as LCDocument
 
 
 @dataclass
@@ -19,3 +20,8 @@ class Document(BaseDocument):
         """Post init."""
         if self.text is None:
             raise ValueError("text field not set.")
+
+    def to_langchain_format(self):
+        """Convert struct to LangChain document format."""
+        metadata = self.extra_info or {}
+        return LCDocument(page_content=self.text, metadata=metadata)
