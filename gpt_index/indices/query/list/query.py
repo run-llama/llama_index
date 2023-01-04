@@ -1,11 +1,8 @@
 """Default query for GPTListIndex."""
-from abc import abstractmethod
 from typing import List
 
 from gpt_index.data_structs.data_structs import IndexList, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder, ResponseSourceBuilder
-from gpt_index.indices.response.schema import Response
 
 
 class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):

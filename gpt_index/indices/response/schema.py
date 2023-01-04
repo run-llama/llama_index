@@ -42,7 +42,7 @@ class Response:
     source_nodes: List[SourceNode] = field(default_factory=list)
 
     def __str__(self) -> str:
-        """String representation of response."""
+        """Convert to string representation."""
         return self.response or "None"
 
     def get_formatted_sources(self) -> str:

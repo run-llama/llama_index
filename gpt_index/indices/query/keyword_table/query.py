@@ -10,8 +10,6 @@ from gpt_index.indices.keyword_table.utils import (
     simple_extract_keywords,
 )
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder, ResponseSourceBuilder
-from gpt_index.indices.response.schema import Response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,

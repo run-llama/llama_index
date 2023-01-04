@@ -1,5 +1,5 @@
 """Default query for GPTFaissIndex."""
-from typing import Any, List, Optional, Tuple, cast
+from typing import Any, List, Optional, cast
 
 import numpy as np
 
