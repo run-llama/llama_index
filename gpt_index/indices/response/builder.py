@@ -28,6 +28,7 @@ class ResponseMode(str, Enum):
     DEFAULT = "default"
     COMPACT = "compact"
     TREE_SUMMARIZE = "tree_summarize"
+    NO_TEXT = "no_text"
 
 
 @dataclass
@@ -60,6 +61,10 @@ class ResponseBuilder:
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
         self._texts.extend(text_chunks)
+
+    def reset(self) -> None:
+        """Clear text chunks."""
+        self._texts = []
 
     def refine_response_single(
         self,
@@ -245,12 +250,17 @@ class ResponseSourceBuilder:
 
     def __init__(self, nodes: Optional[List[Node]] = None) -> None:
         """Init params."""
-        self._nodes = nodes or []
+        nodes = nodes or []
+        self._nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
 
     def add_node(self, node: Node) -> None:
         """Add node."""
-        self._nodes.append(node)
+        self._nodes.append(SourceNode.from_node(node))
+
+    def add_source_node(self, source_node: SourceNode) -> None:
+        """Add source node directly."""
+        self._nodes.append(source_node)
 
     def get_sources(self) -> List[SourceNode]:
         """Get sources."""
-        return SourceNode.from_nodes(self._nodes)
+        return self._nodes

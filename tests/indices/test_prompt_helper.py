@@ -152,7 +152,7 @@ def test_get_text_from_nodes() -> None:
     node2 = Node(text="Hello world bar foo")
 
     response = prompt_helper.get_text_from_nodes([node1, node2], prompt=test_prompt)
-    assert response == ("This is a test\n" "Hello world bar foo")
+    assert str(response) == ("This is a test\n" "Hello world bar foo")
 
 
 def test_get_numbered_text_from_nodes() -> None:
@@ -171,7 +171,7 @@ def test_get_numbered_text_from_nodes() -> None:
     response = prompt_helper.get_numbered_text_from_nodes(
         [node1, node2], prompt=test_prompt
     )
-    assert response == ("(1) This is a\n\n(2) Hello world bar")
+    assert str(response) == ("(1) This is a\n\n(2) Hello world bar")
 
 
 def test_compact_text() -> None:

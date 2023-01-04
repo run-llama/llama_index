@@ -202,6 +202,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
     def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
+        # NOTE: this overrides the _query method in the base class
         print(f"> Starting query: {query_str}")
         source_builder = ResponseSourceBuilder()
         response_str = self._query_level(

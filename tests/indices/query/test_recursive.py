@@ -137,12 +137,12 @@ def test_recursive_query_list_tree(
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
     response = tree.query(query_str, mode="recursive", query_configs=query_configs)
-    assert response == ("What is?:This is a test v2.")
+    assert str(response) == ("What is?:This is a test v2.")
 
     # Also test a non-recursive query. This should not go down into the list
     tree_query_kwargs = query_configs[0].query_kwargs
     response = tree.query(query_str, mode="default", **tree_query_kwargs)
-    assert response == ("What is?:summary1")
+    assert str(response) == ("What is?:summary1")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -177,12 +177,12 @@ def test_recursive_query_tree_list(
     response = list_index.query(
         query_str, mode="recursive", query_configs=query_configs
     )
-    assert response == ("What is?:This is a test.")
+    assert str(response) == ("What is?:This is a test.")
 
     # Also test a non-recursive query. This should not go down into the list
     list_query_kwargs = query_configs[1].query_kwargs
     response = list_index.query(query_str, mode="default", **list_query_kwargs)
-    assert response == ("What is?:tree_summary1")
+    assert str(response) == ("What is?:tree_summary1")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -213,13 +213,13 @@ def test_recursive_query_table_list(
     response = list_index.query(
         query_str, mode="recursive", query_configs=query_configs
     )
-    assert response == ("World?:Hello world.")
+    assert str(response) == ("World?:Hello world.")
 
     query_str = "Test?"
     response = list_index.query(
         query_str, mode="recursive", query_configs=query_configs
     )
-    assert response == ("Test?:This is a test.")
+    assert str(response) == ("Test?:This is a test.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -253,13 +253,13 @@ def test_recursive_query_list_table(
     table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
     query_str = "Foo?"
     response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert response == ("Foo?:This is a test v2.")
+    assert str(response) == ("Foo?:This is a test v2.")
     query_str = "Orange?"
     response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert response == ("Orange?:This is a test.")
+    assert str(response) == ("Orange?:This is a test.")
     query_str = "Cat?"
     response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert response == ("Cat?:This is another test.")
+    assert str(response) == ("Cat?:This is another test.")
 
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)

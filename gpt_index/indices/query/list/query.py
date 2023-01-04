@@ -21,47 +21,6 @@ class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
 
     """
 
-    def _give_response_for_nodes(
-        self, query_str: str, nodes: List[Node], verbose: bool = False
-    ) -> str:
-        """Give response for nodes."""
-        response_builder = ResponseBuilder(
-            self._prompt_helper,
-            self._llm_predictor,
-            self.text_qa_template,
-            self.refine_template,
-        )
-        for node in nodes:
-            text = self._get_text_from_node(query_str, node, verbose=verbose)
-            response_builder.add_text_chunks([text])
-        response = response_builder.get_response(
-            query_str, verbose=verbose, mode=self._response_mode
-        )
-
-        return response or ""
-
-    def get_nodes_for_response(
-        self, query_str: str, verbose: bool = False
-    ) -> List[Node]:
-        """Get nodes for response."""
-        nodes = self._get_nodes_for_response(query_str, verbose=verbose)
-        nodes = [node for node in nodes if self._should_use_node(node)]
-        return nodes
-
-    @abstractmethod
-    def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False
-    ) -> List[Node]:
-        """Get nodes for response."""
-
-    def _query(self, query_str: str, verbose: bool = False) -> Response:
-        """Answer a query."""
-        print(f"> Starting query: {query_str}")
-        nodes = self.get_nodes_for_response(query_str, verbose=verbose)
-        response_str = self._give_response_for_nodes(query_str, nodes, verbose=verbose)
-        sources = ResponseSourceBuilder(nodes).get_sources()
-        return Response(response_str, source_nodes=sources)
-
 
 class GPTListIndexQuery(BaseGPTListIndexQuery):
     """GPTListIndex query.

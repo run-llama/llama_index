@@ -104,7 +104,7 @@ def test_embedding_query(
     # test embedding query
     query_str = "What is?"
     response = tree.query(query_str, mode="embedding", **query_kwargs)
-    assert response == ("What is?:Hello world.")
+    assert str(response) == ("What is?:Hello world.")
 
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)

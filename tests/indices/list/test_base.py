@@ -179,7 +179,7 @@ def test_query(
 
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
-    assert response == ("What is?:Hello world.")
+    assert str(response) == ("What is?:Hello world.")
 
 
 @patch_common
@@ -199,11 +199,11 @@ def test_query_with_keywords(
     query_str = "What is?"
     query_kwargs.update({"required_keywords": ["test"]})
     response = index.query(query_str, mode="default", **query_kwargs)
-    assert response == ("What is?:This is a test.")
+    assert str(response) == ("What is?:This is a test.")
 
     query_kwargs.update({"exclude_keywords": ["Hello"]})
     response = index.query(query_str, mode="default", **query_kwargs)
-    assert response == ("What is?:This is a test.")
+    assert str(response) == ("What is?:This is a test.")
 
 
 @patch_common
@@ -230,4 +230,4 @@ def test_embedding_query(
     response = index.query(
         query_str, mode="embedding", similarity_top_k=1, **query_kwargs
     )
-    assert response == ("What is?:Hello world.")
+    assert str(response) == ("What is?:Hello world.")

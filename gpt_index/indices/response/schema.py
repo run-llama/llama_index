@@ -37,9 +37,9 @@ class Response:
 
     """
 
-    response: str
+    response: Optional[str]
     source_nodes: List[SourceNode] = field(default_factory=list)
 
     def __str__(self) -> str:
         """String representation of response."""
-        return self.response
+        return self.response or "None"
