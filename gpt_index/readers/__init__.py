@@ -23,6 +23,7 @@ from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.weaviate.reader import WeaviateReader
 from gpt_index.readers.wikipedia import WikipediaReader
+from gpt_index.readers.string_iterable import StringIterableReader
 
 __all__ = [
     "WikipediaReader",
@@ -36,4 +37,5 @@ __all__ = [
     "PineconeReader",
     "FaissReader",
     "Document",
+    "StringIterableReader",
 ]
