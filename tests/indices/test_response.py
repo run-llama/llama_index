@@ -59,7 +59,7 @@ def test_give_response(
         texts=[TextChunk("This is a single line.")],
     )
     response = builder.get_response(query_str)
-    assert response == "What is?:This is a single line."
+    assert str(response) == "What is?:This is a single line."
 
     # test multiple lines
     builder = ResponseBuilder(
@@ -70,7 +70,7 @@ def test_give_response(
         texts=[TextChunk(documents[0].get_text())],
     )
     response = builder.get_response(query_str)
-    assert response == "What is?:Hello world."
+    assert str(response) == "What is?:Hello world."
 
 
 @patch.object(LLMPredictor, "total_tokens_used", return_value=0)
@@ -118,7 +118,7 @@ def test_compact_response(
         texts=texts,
     )
     response = builder.get_response(query_str, mode=ResponseMode.COMPACT)
-    assert response == (
+    assert str(response) == (
         "What is?:" "This\n\nis\n\na\n\nbar\n\n" "This\n\nis\n\na\n\ntest"
     )
 
@@ -167,6 +167,6 @@ def test_tree_summarize_response(
         query_str, mode=ResponseMode.TREE_SUMMARIZE, num_children=2
     )
     # TODO: fix this output, the \n join appends unnecessary results at the end
-    assert response == (
+    assert str(response) == (
         "What is?:This\n\nis\n\na\n\nbar\nThis\n" "This\n\nis\n\nanother\n\ntest\nThis"
     )

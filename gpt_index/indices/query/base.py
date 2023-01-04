@@ -3,11 +3,17 @@
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Generic, List, Optional, TypeVar, cast
+from typing import Dict, Generic, List, Optional, Tuple, TypeVar, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
+from gpt_index.indices.response.builder import (
+    ResponseBuilder,
+    ResponseMode,
+    ResponseSourceBuilder,
+    TextChunk,
+)
+from gpt_index.indices.response.schema import Response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
@@ -26,7 +32,7 @@ class BaseQueryRunner:
     """Base query runner."""
 
     @abstractmethod
-    def query(self, query: str, index_struct: IndexStruct) -> str:
+    def query(self, query: str, index_struct: IndexStruct) -> Response:
         """Schedule a query."""
         raise NotImplementedError("Not implemented yet.")
 
@@ -73,6 +79,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         include_summary: bool = False,
+        response_kwargs: Optional[Dict] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -101,6 +108,14 @@ class BaseGPTIndexQuery(Generic[IS]):
         self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
         self._include_summary = include_summary
 
+        self._response_kwargs = response_kwargs or {}
+        self.response_builder = ResponseBuilder(
+            self._prompt_helper,
+            self._llm_predictor,
+            self.text_qa_template,
+            self.refine_template,
+        )
+
     def _should_use_node(self, node: Node) -> bool:
         """Run node through filters to determine if it should be used."""
         words = re.findall(r"\w+", node.get_text())
@@ -122,7 +137,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         node: Node,
         verbose: bool = False,
         level: Optional[int] = None,
-    ) -> TextChunk:
+    ) -> Tuple[TextChunk, Optional[Response]]:
         """Query a given node.
 
         If node references a given document, then return the document.
@@ -149,11 +164,11 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         if is_index_struct:
             query_runner = cast(BaseQueryRunner, self._query_runner)
-            text = query_runner.query(query_str, cast(IndexStruct, doc))
-            return TextChunk(text, is_answer=True)
+            response = query_runner.query(query_str, cast(IndexStruct, doc))
+            return TextChunk(str(response), is_answer=True), response
         else:
             text = node.get_text()
-            return TextChunk(text)
+            return TextChunk(text), None
 
     @property
     def index_struct(self) -> IS:
@@ -164,18 +179,68 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Validate the index struct."""
         pass
 
+    def _give_response_for_nodes(
+        self, query_str: str, text_chunks: List[TextChunk], verbose: bool = False
+    ) -> str:
+        """Give response for nodes."""
+        self.response_builder.reset()
+        for text in text_chunks:
+            self.response_builder.add_text_chunks([text])
+        response = self.response_builder.get_response(
+            query_str,
+            verbose=verbose,
+            mode=self._response_mode,
+            **self._response_kwargs,
+        )
+
+        return response or ""
+
+    def get_nodes_for_response(
+        self, query_str: str, verbose: bool = False
+    ) -> List[Node]:
+        """Get nodes for response."""
+        nodes = self._get_nodes_for_response(query_str, verbose=verbose)
+        nodes = [node for node in nodes if self._should_use_node(node)]
+        # TODO: create a `display` method to allow subclasses to print the Node
+        return nodes
+
     @abstractmethod
-    def _query(self, query_str: str, verbose: bool = False) -> str:
+    def _get_nodes_for_response(
+        self, query_str: str, verbose: bool = False
+    ) -> List[Node]:
+        """Get nodes for response."""
+
+    def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
+        # TODO: remove _query and just use query
+        nodes = self.get_nodes_for_response(query_str, verbose=verbose)
+        source_builder = ResponseSourceBuilder()
+        node_texts = []
+        for node in nodes:
+            text, response = self._get_text_from_node(query_str, node, verbose=verbose)
+            source_builder.add_node(node)
+            if response is not None:
+                for source_node in response.source_nodes:
+                    source_builder.add_source_node(source_node)
+            node_texts.append(text)
+
+        if self._response_mode != ResponseMode.NO_TEXT:
+            response_str = self._give_response_for_nodes(
+                query_str, node_texts, verbose=verbose
+            )
+        else:
+            response_str = None
+
+        return Response(response_str, source_nodes=source_builder.get_sources())
 
     @llm_token_counter("query")
-    def query(self, query_str: str, verbose: bool = False) -> str:
+    def query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         response = self._query(query_str, verbose=verbose)
         # if include_summary is True, then include summary text in answer
         # summary text is set through `set_text` on the underlying index.
         # TODO: refactor response builder to be in the __init__
-        if self._include_summary:
+        if self._response_mode != ResponseMode.NO_TEXT and self._include_summary:
             response_builder = ResponseBuilder(
                 self._prompt_helper,
                 self._llm_predictor,
@@ -184,11 +249,11 @@ class BaseGPTIndexQuery(Generic[IS]):
                 texts=[TextChunk(self._index_struct.get_text())],
             )
             # NOTE: use create and refine for now (default response mode)
-            response = response_builder.get_response(
+            response.response = response_builder.get_response(
                 query_str,
                 verbose=verbose,
-                mode=ResponseMode.DEFAULT,
-                prev_response=response,
+                mode=self._response_mode,
+                prev_response=response.response,
             )
 
         return response

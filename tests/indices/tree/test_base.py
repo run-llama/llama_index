@@ -167,7 +167,7 @@ def test_query(
     # test default query
     query_str = "What is?"
     response = tree.query(query_str, mode="default", **query_kwargs)
-    assert response == ("What is?:Hello world.")
+    assert str(response) == ("What is?:Hello world.")
 
 
 @patch_common
@@ -194,7 +194,7 @@ def test_summarize_query(
     }
     # TODO: fix unit test later
     response = tree.query(query_str, mode="summarize", **query_kwargs)
-    assert response == ("What is?:Hello world.")
+    assert str(response) == ("What is?:Hello world.")
 
     # test that default query fails
     with pytest.raises(ValueError):
