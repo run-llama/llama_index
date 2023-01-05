@@ -9,3 +9,6 @@ lint:
 	black . --check
 	isort . --check
 	flake8 .
+
+test:
+	pytest tests
