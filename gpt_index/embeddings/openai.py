@@ -3,7 +3,8 @@
 from enum import Enum
 from typing import List
 
-from openai.embeddings_utils import get_embedding
+import openai
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from gpt_index.embeddings.base import BaseEmbedding
 
@@ -67,6 +68,15 @@ _TEXT_MODE_MODEL_DICT = {
     (OAEM.TEXT_SEARCH_MODE, "ada"): TEXT_SEARCH_ADA_DOC,
     (OAEM.TEXT_SEARCH_MODE, "text-embedding-ada-002"): TEXT_EMBED_ADA_002,
 }
+
+
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+def get_embedding(
+    text: str,
+    engine: str = None,
+) -> List[float]:
+    text = text.replace("\n", " ")
+    return openai.Embedding.create(input=[text], engine=engine)["data"][0]["embedding"]
 
 
 class OpenAIEmbedding(BaseEmbedding):
