@@ -58,6 +58,7 @@ from gpt_index.readers import (
     SimpleDirectoryReader,
     SimpleMongoReader,
     SlackReader,
+    StringIterableReader,
     WeaviateReader,
     WikipediaReader,
 )
@@ -92,6 +93,7 @@ __all__ = [
     "NotionPageReader",
     "GoogleDocsReader",
     "SlackReader",
+    "StringIterableReader",
     "WeaviateReader",
     "FaissReader",
     "PineconeReader",

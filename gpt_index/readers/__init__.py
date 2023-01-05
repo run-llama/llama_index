@@ -21,6 +21,7 @@ from gpt_index.readers.notion import NotionPageReader
 from gpt_index.readers.pinecone import PineconeReader
 from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
+from gpt_index.readers.string_iterable import StringIterableReader
 from gpt_index.readers.weaviate.reader import WeaviateReader
 from gpt_index.readers.wikipedia import WikipediaReader
 
@@ -36,4 +37,5 @@ __all__ = [
     "PineconeReader",
     "FaissReader",
     "Document",
+    "StringIterableReader",
 ]
