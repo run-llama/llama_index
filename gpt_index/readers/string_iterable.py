@@ -15,7 +15,7 @@ class StringIterableReader(BaseReader):
             from gpt_index import StringIterableReader, GPTTreeIndex
 
             documents = StringIterableReader().load_data(
-                texts=["I went to the store", "I bought an apple"]).load_data()
+                texts=["I went to the store", "I bought an apple"])
             index = GPTTreeIndex(documents)
             index.query("what did I buy?")
 
