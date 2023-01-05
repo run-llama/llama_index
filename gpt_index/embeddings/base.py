@@ -3,7 +3,7 @@
 from abc import abstractmethod
 from typing import List
 
-from openai.embeddings_utils import cosine_similarity
+import numpy as np
 
 # TODO: change to numpy array
 EMB_TYPE = List
@@ -22,4 +22,6 @@ class BaseEmbedding:
 
     def similarity(self, embedding1: EMB_TYPE, embedding2: EMB_TYPE) -> float:
         """Get embedding similarity."""
-        return cosine_similarity(embedding1, embedding2)
+        product = np.dot(embedding1, embedding2)
+        norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
+        return product / norm
