@@ -7,7 +7,6 @@ from contextlib import contextmanager
 from typing import Any, Callable, Generator, List, Optional, Set, cast
 
 import nltk
-from transformers import GPT2TokenizerFast
 
 
 class GlobalsHelper:
@@ -38,7 +37,9 @@ class GlobalsHelper:
                 enc = tiktoken.get_encoding("gpt2")
                 self._tokenizer = cast(Callable[[str], List], enc.encode)
             else:
-                tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+                import transformers
+
+                tokenizer = transformers.GPT2TokenizerFast.from_pretrained("gpt2")
 
                 def tokenizer_fn(text: str) -> List:
                     return tokenizer(text)["input_ids"]
