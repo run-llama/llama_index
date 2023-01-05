@@ -9,6 +9,7 @@ from gpt_index.prompts.prompts import (
     TreeInsertPrompt,
     TreeSelectMultiplePrompt,
     TreeSelectPrompt,
+    SchemaExtractPrompt
 )
 
 ############################################
@@ -136,4 +137,27 @@ DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
 )
 DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = QueryKeywordExtractPrompt(
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL
+)
+
+
+############################################
+# Structured Store
+############################################
+
+DEFAULT_SCHEMA_EXTRACT_TMPL = (
+    "We wish to extract relevant fields from an unstructured text chunk into "
+    "a structured schema. We first provide the unstructured text, and then "
+    "we provide the schema that we wish to extract. "
+    "-----------text-----------\n"
+    "{text}\n"
+    "-----------schema-----------\n"
+    "{schema}\n"
+    "---------------------\n"
+    "Given the text and schema, extract the relevant fields from the text in "
+    "the following format: "
+    "field1: <value>, field2: <value>, ...\n"
+    "Fields: "
+)
+DEFAULT_SCHEMA_EXTRACT_PROMPT = QueryKeywordExtractPrompt(
+    DEFAULT_SCHEMA_EXTRACT_TMPL
 )

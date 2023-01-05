@@ -23,5 +23,8 @@ class PromptType(str, Enum):
     # query keyword extract
     QUERY_KEYWORD_EXTRACT = "query_keyword_extract"
 
+    # schema extract
+    SCHEMA_EXTRACT = "schema_extract"
+
     # custom (by default)
     CUSTOM = "custom"

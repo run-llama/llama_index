@@ -155,3 +155,19 @@ class QueryKeywordExtractPrompt(Prompt):
 
     prompt_type: PromptType = PromptType.QUERY_KEYWORD_EXTRACT
     input_variables: List[str] = ["question", "max_keywords"]
+
+
+class SchemaExtractPrompt(Prompt):
+    """Schema extract prompt.
+
+    Prompt to extract schema from unstructured text `text`.
+
+    Required template variables: `text`, `schema`
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+    prompt_type: PromptType = PromptType.SCHEMA_EXTRACT
+    input_variables: List[str] = ["fields"]
