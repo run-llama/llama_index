@@ -16,11 +16,8 @@ install_requires = [
     "dataclasses_json",
     "transformers",
     "nltk",
-    # for openAI embeddings
-    "matplotlib",
-    "plotly",
-    "scipy",
-    "scikit-learn",
+    "numpy",
+    "tenacity",
 ]
 
 # NOTE: if python version >= 3.9, install tiktoken
