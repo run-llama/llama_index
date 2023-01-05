@@ -1,7 +1,7 @@
 """OpenAI embeddings file."""
 
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
@@ -73,8 +73,17 @@ _TEXT_MODE_MODEL_DICT = {
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 def get_embedding(
     text: str,
-    engine: str = None,
+    engine: Optional[str] = None,
 ) -> List[float]:
+    """Get embedding.
+
+    NOTE: Copied from OpenAI's embedding utils:
+    https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
+
+    Copied here to avoid importing unnecessary dependencies
+    like matplotlib, plotly, scipy, sklearn.
+
+    """
     text = text.replace("\n", " ")
     return openai.Embedding.create(input=[text], engine=engine)["data"][0]["embedding"]
 
