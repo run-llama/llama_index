@@ -12,6 +12,10 @@ from gpt_index.indices.query.keyword_table.query import (
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.query.list.query import GPTListIndexQuery
 from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.query.struct_store.sql import (
+    GPTNLStructStoreIndexQuery,
+    GPTSQLStructStoreIndexQuery,
+)
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
@@ -52,6 +56,12 @@ MODE_TO_QUERY_MAP_WEAVIATE = {
     QueryMode.DEFAULT: GPTWeaviateIndexQuery,
 }
 
+# structured storage indices
+MODE_TO_QUERY_MAP_SQL = {
+    QueryMode.DEFAULT: GPTNLStructStoreIndexQuery,
+    QueryMode.SQL: GPTSQLStructStoreIndexQuery,
+}
+
 
 def get_query_cls(
     index_struct_type: IndexStructType, mode: QueryMode
@@ -69,5 +79,7 @@ def get_query_cls(
         return MODE_TO_QUERY_MAP_SIMPLE[mode]
     elif index_struct_type == IndexStructType.WEAVIATE:
         return MODE_TO_QUERY_MAP_WEAVIATE[mode]
+    elif index_struct_type == IndexStructType.SQL:
+        return MODE_TO_QUERY_MAP_SQL[mode]
     else:
         raise ValueError(f"Invalid index_struct_type: {index_struct_type}")

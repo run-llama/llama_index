@@ -236,4 +236,3 @@ class WeaviateIndexStruct(IndexStruct):
         if self.class_prefix is None:
             raise ValueError("class_prefix must be provided.")
         return self.class_prefix
-

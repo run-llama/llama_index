@@ -48,6 +48,9 @@ class QueryMode(str, Enum):
     # recursive queries (composable queries)
     RECURSIVE = "recursive"
 
+    # for sql queries
+    SQL = "sql"
+
 
 @dataclass
 class QueryConfig(DataClassJsonMixin):

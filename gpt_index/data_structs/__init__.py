@@ -1,17 +1,15 @@
 """Init file."""
 
 from gpt_index.data_structs.data_structs import (
-    Node,
-    IndexGraph,
-    KeywordTable,
-    IndexList,
     IndexDict,
-    SimpleIndexDict, 
-    WeaviateIndexStruct
+    IndexGraph,
+    IndexList,
+    KeywordTable,
+    Node,
+    SimpleIndexDict,
+    WeaviateIndexStruct,
 )
-
-from gpt_index.data_structs.table import StructDatapoint, StructValue
-
+from gpt_index.data_structs.table import StructDatapoint
 
 __all__ = [
     "Node",
@@ -22,5 +20,4 @@ __all__ = [
     "SimpleIndexDict",
     "WeaviateIndexStruct",
     "StructDatapoint",
-    "StructValue"
 ]

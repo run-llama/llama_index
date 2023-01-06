@@ -5,12 +5,12 @@ from gpt_index.prompts.prompts import (
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,
     RefinePrompt,
+    SchemaExtractPrompt,
     SummaryPrompt,
+    TextToSQLPrompt,
     TreeInsertPrompt,
     TreeSelectMultiplePrompt,
     TreeSelectPrompt,
-    SchemaExtractPrompt,
-    TextToSQLPrompt
 )
 
 ############################################
@@ -159,9 +159,7 @@ DEFAULT_SCHEMA_EXTRACT_TMPL = (
     "field1: <value>, field2: <value>, ...\n"
     "Fields: "
 )
-DEFAULT_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(
-    DEFAULT_SCHEMA_EXTRACT_TMPL
-)
+DEFAULT_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(DEFAULT_SCHEMA_EXTRACT_TMPL)
 
 # NOTE: taken from langchain and adapted
 # shorturl.at/nqyD1
@@ -169,10 +167,10 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
     "Given an input question, first create a syntactically correct SQL query "
     "to run, then look at the results of the query and return the answer.\n"
     "Use the following format:\n"
-    " Question: \"Question here\"\n"
-    "SQLQuery: \"SQL Query to run\"\n"
-    "SQLResult: \"Result of the SQLQuery\"\n"
-    "Answer: \"Final answer here\"\n"
+    ' Question: "Question here"\n'
+    'SQLQuery: "SQL Query to run"\n'
+    'SQLResult: "Result of the SQLQuery"\n'
+    'Answer: "Final answer here"\n'
     "The following is a schema of the table:\n"
     "---------------------\n"
     "{schema}\n"

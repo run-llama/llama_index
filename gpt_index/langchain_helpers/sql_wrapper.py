@@ -1,7 +1,8 @@
-from langchain.sql_database import SQLDatabase as LangchainSQLDatabase
-from sqlalchemy.engine import Engine
-from sqlalchemy import insert, MetaData
 from typing import Any, List
+
+from langchain.sql_database import SQLDatabase as LangchainSQLDatabase
+from sqlalchemy import MetaData, insert
+from sqlalchemy.engine import Engine
 
 
 class SQLDatabase(LangchainSQLDatabase):
@@ -21,12 +22,11 @@ class SQLDatabase(LangchainSQLDatabase):
         """Get table columns."""
         return self._inspector.get_columns(table_name)
 
-
     def get_single_table_info(self, table_name: str) -> str:
         """Get table info for a single table."""
         template = "Table '{table_name}' has columns: {columns}."
         columns = []
-        for column in self._inspector.get_columns(table_name, schema=self._schema):
+        for column in self._inspector.get_columns(table_name):
             columns.append(f"{column['name']} ({str(column['type'])})")
         column_str = ", ".join(columns)
         table_str = template.format(table_name=table_name, columns=column_str)
@@ -50,4 +50,3 @@ class SQLDatabase(LangchainSQLDatabase):
                 result = cursor.fetchall()
                 return str(result)
         return ""
-

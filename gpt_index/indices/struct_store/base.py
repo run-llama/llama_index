@@ -1,35 +1,42 @@
 """Struct store."""
 
 from abc import abstractmethod
-from typing import Any, Generic, Optional, Sequence, TypeVar, Callable, List
+from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar
 
-from gpt_index.data_structs.table import BaseStructTable
+from gpt_index.data_structs.table import BaseStructTable, StructDatapoint
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.data_structs.table import StructDatapoint, StructValue
+from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from gpt_index.prompts.prompts import SchemaExtractPrompt
 from gpt_index.schema import BaseDocument
-from gpt_index.indices.utils import truncate_text
 
 BST = TypeVar("BST", bound=BaseStructTable)
 
 
 def default_output_parser(output: str) -> Optional[StructDatapoint]:
     """Default output parser.
-    
+
     Attempt to parse the following format from the default prompt:
     field1: <value>, field2: <value>, ...
 
     """
-    tokens = output.split(",")
-    
-    for token in tokens:
-        if ":" in token:
-            return token.split(":")[1].strip()
+    tups = output.split(",")
+
+    fields = {}
+    for tup in tups:
+        if ":" in tup:
+            tokens = tup.split(":")
+            field = tokens[0].strip()
+            value = tokens[1].strip()
+            fields[field] = value
+    return StructDatapoint(fields)
+
+
+OUTPUT_PARSER_TYPE = Callable[[str], Optional[StructDatapoint]]
 
 
 class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
@@ -40,18 +47,23 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[BST] = None,
         schema_extract_prompt: Optional[SchemaExtractPrompt] = None,
-        output_parser: Optional[Callable[[str], str]] = None,
+        output_parser: Optional[OUTPUT_PARSER_TYPE] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self.schema_extract_prompt = schema_extract_prompt or DEFAULT_SCHEMA_EXTRACT_PROMPT
+        self.schema_extract_prompt = (
+            schema_extract_prompt or DEFAULT_SCHEMA_EXTRACT_PROMPT
+        )
         self.output_parser = output_parser or default_output_parser
         super().__init__(
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             **kwargs,
+        )
+        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.schema_extract_prompt, 1
         )
 
     @abstractmethod
@@ -98,3 +110,7 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
         self._add_document_to_index(self._index_struct, document, self._text_splitter)
+
+    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a document."""
+        raise NotImplementedError("Delete not implemented for Struct Store Index.")

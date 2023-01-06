@@ -11,6 +11,7 @@ from gpt_index.data_structs.data_structs import (
     SimpleIndexDict,
     WeaviateIndexStruct,
 )
+from gpt_index.data_structs.table import SQLStructTable
 
 
 class IndexStructType(str, Enum):
@@ -30,8 +31,13 @@ class IndexStructType(str, Enum):
         WEAVIATE_DICT ("weaviate"): Weaviate Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Weaviate vector store index.
+        SQL ("SQL"): SQL Structured Store Index.
+            See :ref:`Ref-Indices-StructStore`
+            for more information on the SQL vector store index.
 
     """
+
+    # TODO: refactor so these are properties on the base class
 
     TREE = "tree"
     LIST = "list"
@@ -43,6 +49,8 @@ class IndexStructType(str, Enum):
     SIMPLE_DICT = "simple_dict"
     # for weaviate index
     WEAVIATE = "weaviate"
+    # for SQL index
+    SQL = "sql"
 
     def get_index_struct_cls(self) -> type:
         """Get index struct class."""
@@ -58,6 +66,8 @@ class IndexStructType(str, Enum):
             return SimpleIndexDict
         elif self == IndexStructType.WEAVIATE:
             return WeaviateIndexStruct
+        elif self == IndexStructType.SQL:
+            return SQLStructTable
         else:
             raise ValueError("Invalid index struct type.")
 
@@ -76,5 +86,7 @@ class IndexStructType(str, Enum):
             return cls.SIMPLE_DICT
         elif isinstance(index_struct, WeaviateIndexStruct):
             return cls.WEAVIATE
+        elif isinstance(index_struct, SQLStructTable):
+            return cls.SQL
         else:
             raise ValueError("Invalid index struct type.")

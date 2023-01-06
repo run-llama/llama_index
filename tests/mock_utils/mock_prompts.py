@@ -5,6 +5,7 @@ from gpt_index.prompts.prompts import (
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,
     RefinePrompt,
+    SchemaExtractPrompt,
     SummaryPrompt,
     TreeInsertPrompt,
     TreeSelectPrompt,
@@ -37,3 +38,7 @@ MOCK_QUERY_KEYWORD_EXTRACT_PROMPT_TMPL = "{max_keywords}\n{question}\n"
 MOCK_QUERY_KEYWORD_EXTRACT_PROMPT = QueryKeywordExtractPrompt(
     MOCK_QUERY_KEYWORD_EXTRACT_PROMPT_TMPL
 )
+
+
+MOCK_SCHEMA_EXTRACT_PROMPT_TMPL = "{text}\n{schema}"
+MOCK_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(MOCK_SCHEMA_EXTRACT_PROMPT_TMPL)

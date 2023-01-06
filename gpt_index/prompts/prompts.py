@@ -169,6 +169,7 @@ class SchemaExtractPrompt(Prompt):
         **prompt_kwargs: Keyword arguments for the prompt.
 
     """
+
     prompt_type: PromptType = PromptType.SCHEMA_EXTRACT
     input_variables: List[str] = ["text", "schema"]
 
@@ -186,5 +187,6 @@ class TextToSQLPrompt(Prompt):
         **prompt_kwargs: Keyword arguments for the prompt.
 
     """
+
     prompt_type: PromptType = PromptType.SCHEMA_EXTRACT
     input_variables: List[str] = ["query_str", "schema"]
