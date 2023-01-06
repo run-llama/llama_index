@@ -33,7 +33,9 @@ class QueryMode(str, Enum):
     """
 
     DEFAULT = "default"
+    # a special "retrieve" query for tree index that retrieves that top nodes
     RETRIEVE = "retrieve"
+    # embedding-based query
     EMBEDDING = "embedding"
 
     # to hierarchically summarize using tree

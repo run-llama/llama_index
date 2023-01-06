@@ -1,29 +1,23 @@
 """Struct store schema."""
 
 from dataclasses import dataclass
-from typing import List, Optional
-
-
-@dataclass
-class StructValue:
-    """Struct output (single tuple)."""
-    
-    field: str
-    value: str
-    type: Optional[str] = None
+from typing import List, Optional, Dict, Any
 
 
 @dataclass
 class StructDatapoint:
     """Struct outputs."""
 
-    outputs: List[StructValue]
+    # map from field name to StructValue
+    fields: Dict[str, Any]
     
 @dataclass
-class StructTable:
+class BaseStructTable:
     """Struct outputs."""
 
-    outputs: List[StructValue]
-    
+@dataclass
+class SQLiteStructTable(BaseStructTable):
+    """SQLite struct outputs."""
+
     
 
