@@ -21,7 +21,7 @@ Now let's define a tree index for each document. In Python, we have:
 ```python
 index1 = GPTTreeIndex(doc1)
 index2 = GPTTreeIndex(doc2)
-index2 = GPTTreeIndex(doc2)
+index3 = GPTTreeIndex(doc3)
 ```
 
 ![](/_static/composability/diagram_b1.png)
