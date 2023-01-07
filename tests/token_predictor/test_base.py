@@ -15,7 +15,6 @@ from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 def test_token_predictor(mock_split: Any) -> None:
     """Test token predictor."""
-
     # here, just assert that token predictor runs (before checking behavior)
     # TODO: mock token counting a bit more carefully
     doc_text = (
