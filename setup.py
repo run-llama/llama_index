@@ -18,6 +18,7 @@ install_requires = [
     "nltk",
     "numpy",
     "tenacity",
+    "pandas",
 ]
 
 # NOTE: if python version >= 3.9, install tiktoken
