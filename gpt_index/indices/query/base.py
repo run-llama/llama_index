@@ -86,12 +86,6 @@ class BaseGPTIndexQuery(Generic[IS]):
             raise ValueError("index_struct must be provided.")
         self._validate_index_struct(index_struct)
         self._index_struct = index_struct
-        # create a _llm_predictor_set flag to get around mypy typing
-        # hassles of keeping _llm_predictor as optional type
-        if llm_predictor is None:
-            self._llm_predictor_set = False
-        else:
-            self._llm_predictor_set = True
         self._llm_predictor = llm_predictor or LLMPredictor()
         self._docstore = docstore
         self._query_runner = query_runner
@@ -257,17 +251,3 @@ class BaseGPTIndexQuery(Generic[IS]):
             )
 
         return response
-
-    def set_llm_predictor(self, llm_predictor: LLMPredictor) -> None:
-        """Set LLM predictor."""
-        self._llm_predictor = llm_predictor
-        self._llm_predictor_set = True
-
-    @property
-    def llm_predictor_set(self) -> bool:
-        """Get llm predictor set flag."""
-        return self._llm_predictor_set
-
-    def set_prompt_helper(self, prompt_helper: PromptHelper) -> None:
-        """Set prompt helper."""
-        self._prompt_helper = prompt_helper

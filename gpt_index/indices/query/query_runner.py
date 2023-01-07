@@ -1,6 +1,6 @@
 """Query runner."""
 
-from typing import Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.data_structs.struct_type import IndexStructType
@@ -72,6 +72,19 @@ class QueryRunner(BaseQueryRunner):
         self._verbose = verbose
         self._recursive = recursive
 
+    def _get_query_kwargs(self, config: QueryConfig) -> Dict[str, Any]:
+        """Get query kwargs.
+
+        Also update with default arugments if not present.
+
+        """
+        query_kwargs = {k: v for k, v in config.query_kwargs.items()}
+        if "prompt_helper" not in query_kwargs:
+            query_kwargs["prompt_helper"] = self._prompt_helper
+        if "llm_predictor" not in query_kwargs:
+            query_kwargs["llm_predictor"] = self._llm_predictor
+        return query_kwargs
+
     def query(self, query_str: str, index_struct: IndexStruct) -> Response:
         """Run query."""
         index_struct_type = IndexStructType.from_index_struct(index_struct)
@@ -82,17 +95,12 @@ class QueryRunner(BaseQueryRunner):
         query_cls = get_query_cls(index_struct_type, mode)
         # if recursive, pass self as query_runner to each individual query
         query_runner = self if self._recursive else None
+        query_kwargs = self._get_query_kwargs(config)
         query_obj = query_cls(
             index_struct,
-            prompt_helper=self._prompt_helper,
-            **config.query_kwargs,
+            **query_kwargs,
             query_runner=query_runner,
             docstore=self._docstore,
         )
-
-        # TODO: refactor this, so we can pass in during init
-        # set llm_predictor if exists
-        if not query_obj._llm_predictor_set:
-            query_obj.set_llm_predictor(self._llm_predictor)
 
         return query_obj.query(query_str, verbose=self._verbose)
