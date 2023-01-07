@@ -23,9 +23,23 @@ from gpt_index.schema import BaseDocument
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
     """Base GPT SQL Struct Store Index.
 
-    Uses a SQLAlchemy wrapper to connect to underlying storage.
+    The GPTSQLStructStoreIndex is an index that uses a SQL database
+    under the hood. During index construction, the data can be inferred
+    from unstructured  documents given a schema extract prompt,
+    or it can be pre-loaded in the database.
+
+    During query time, the user can either specify a raw SQL query
+    or a natural language query to retrieve their data.
+
+    Args:
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
+            embedding similarity.
 
     """
+
+    index_struct_cls = SQLStructTable
 
     def __init__(
         self,

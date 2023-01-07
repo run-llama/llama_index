@@ -26,5 +26,8 @@ class PromptType(str, Enum):
     # schema extract
     SCHEMA_EXTRACT = "schema_extract"
 
+    # text to sql
+    TEXT_TO_SQL = "text_to_sql"
+
     # custom (by default)
     CUSTOM = "custom"

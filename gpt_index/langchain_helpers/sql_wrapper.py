@@ -11,7 +11,9 @@ class SQLDatabase(LangchainSQLDatabase):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
-        self.metadata_obj = MetaData(bind=self._engine, reflect=True)
+        # self.metadata_obj = MetaData(bind=self._engine, reflect=True)
+        self.metadata_obj = MetaData(bind=self._engine)
+        self.metadata_obj.reflect()
 
     @property
     def engine(self) -> Engine:

@@ -188,5 +188,5 @@ class TextToSQLPrompt(Prompt):
 
     """
 
-    prompt_type: PromptType = PromptType.SCHEMA_EXTRACT
+    prompt_type: PromptType = PromptType.TEXT_TO_SQL
     input_variables: List[str] = ["query_str", "schema"]

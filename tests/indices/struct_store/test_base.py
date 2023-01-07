@@ -1,9 +1,18 @@
 """Test struct store indices."""
 
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 import pytest
-from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, select
+from sqlalchemy import (
+    Column,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    column,
+    create_engine,
+    select,
+)
 
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.readers.schema.base import Document
@@ -29,9 +38,16 @@ def struct_kwargs() -> Tuple[Dict, Dict]:
     return index_kwargs, query_kwargs
 
 
-def test_sql_index(struct_kwargs: Tuple[Dict, Dict]) -> None:
+@patch_common
+def test_sql_index(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_splitter: Any,
+    struct_kwargs: Tuple[Dict, Dict],
+) -> None:
     """Test GPTSQLStructStoreIndex."""
-    doc = Document(text="user_id:2,foo:bar")
+    docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     engine = create_engine("sqlite:///:memory:")
     metadata_obj = MetaData(bind=engine)
     table_name = "test_table"
@@ -45,13 +61,49 @@ def test_sql_index(struct_kwargs: Tuple[Dict, Dict]) -> None:
     # NOTE: we can use the default output parser for this
     index_kwargs, _ = struct_kwargs
     index = GPTSQLStructStoreIndex(
-        [doc], sql_engine=engine, table_name=table_name, **index_kwargs
+        docs, sql_engine=engine, table_name=table_name, **index_kwargs
     )
 
     # test that the document is inserted
-    stmt = select(["user_id", "foo"])
+    stmt = select([column("user_id"), column("foo")]).select_from(test_table)
     engine = index.sql_database.engine
     with engine.connect() as connection:
         results = connection.execute(stmt).fetchall()
-        print(results)
-        raise Exception
+        assert results == [(2, "bar"), (8, "hello")]
+
+
+@patch_common
+def test_sql_index_query(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_splitter: Any,
+    struct_kwargs: Tuple[Dict, Dict],
+) -> None:
+    """Test GPTSQLStructStoreIndex."""
+    index_kwargs, query_kwargs = struct_kwargs
+    docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj = MetaData(bind=engine)
+    table_name = "test_table"
+    test_table = Table(
+        table_name,
+        metadata_obj,
+        Column("user_id", Integer, primary_key=True),
+        Column("foo", String(16), nullable=False),
+    )
+    metadata_obj.create_all()
+    # NOTE: we can use the default output parser for this
+    index = GPTSQLStructStoreIndex(
+        docs, sql_engine=engine, table_name=table_name, **index_kwargs
+    )
+
+    # query the index with SQL
+    response = index.query(
+        "SELECT user_id, foo FROM test_table", mode="sql", **query_kwargs
+    )
+    assert response.response == "[(2, 'bar'), (8, 'hello')]"
+
+    # query the index with natural language
+    response = index.query("test_table:user_id,foo", mode="default", **query_kwargs)
+    assert response.response == "[(2, 'bar'), (8, 'hello')]"

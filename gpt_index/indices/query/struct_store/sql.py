@@ -101,5 +101,5 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         if verbose:
             print(f"> Predicted SQL query: {response_str}")
 
-        response = Response(response=self._sql_database.run(query_str))
+        response = Response(response=self._sql_database.run(response_str))
         return response
