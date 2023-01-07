@@ -30,6 +30,7 @@ from gpt_index.indices.vector_store import (
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
 )
+from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -75,6 +76,7 @@ __all__ = [
     "GPTFaissIndex",
     "GPTSimpleVectorIndex",
     "GPTWeaviateIndex",
+    "GPTSQLStructStoreIndex",
     "Prompt",
     "LangchainEmbedding",
     "OpenAIEmbedding",

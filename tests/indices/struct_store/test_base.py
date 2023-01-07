@@ -12,6 +12,7 @@ from sqlalchemy import (
     column,
     create_engine,
     select,
+    delete
 )
 
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
@@ -47,7 +48,6 @@ def test_sql_index(
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test GPTSQLStructStoreIndex."""
-    docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     engine = create_engine("sqlite:///:memory:")
     metadata_obj = MetaData(bind=engine)
     table_name = "test_table"
@@ -60,6 +60,7 @@ def test_sql_index(
     metadata_obj.create_all()
     # NOTE: we can use the default output parser for this
     index_kwargs, _ = struct_kwargs
+    docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     index = GPTSQLStructStoreIndex(
         docs, sql_engine=engine, table_name=table_name, **index_kwargs
     )
@@ -70,6 +71,22 @@ def test_sql_index(
     with engine.connect() as connection:
         results = connection.execute(stmt).fetchall()
         assert results == [(2, "bar"), (8, "hello")]
+
+    # try with documents with more text chunks
+    delete_stmt = delete(test_table)
+    with engine.connect() as connection:
+        connection.execute(delete_stmt)
+    docs = [Document(text="user_id:2\nfoo:bar"), Document(text="user_id:8\nfoo:hello")]
+    index = GPTSQLStructStoreIndex(
+        docs, sql_engine=engine, table_name=table_name, **index_kwargs
+    )
+    # test that the document is inserted
+    stmt = select([column("user_id"), column("foo")]).select_from(test_table)
+    engine = index.sql_database.engine
+    with engine.connect() as connection:
+        results = connection.execute(stmt).fetchall()
+        assert results == [(2, "bar"), (8, "hello")]
+    
 
 
 @patch_common

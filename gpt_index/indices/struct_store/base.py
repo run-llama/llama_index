@@ -1,7 +1,7 @@
 """Struct store."""
 
 from abc import abstractmethod
-from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar
+from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar, Dict
 
 from gpt_index.data_structs.table import BaseStructTable, StructDatapoint
 from gpt_index.embeddings.base import BaseEmbedding
@@ -17,7 +17,7 @@ from gpt_index.schema import BaseDocument
 BST = TypeVar("BST", bound=BaseStructTable)
 
 
-def default_output_parser(output: str) -> Optional[StructDatapoint]:
+def default_output_parser(output: str) -> Optional[Dict[str, Any]]:
     """Default output parser.
 
     Attempt to parse the following format from the default prompt:
@@ -33,7 +33,7 @@ def default_output_parser(output: str) -> Optional[StructDatapoint]:
             field = tokens[0].strip()
             value = tokens[1].strip()
             fields[field] = value
-    return StructDatapoint(fields)
+    return fields
 
 
 OUTPUT_PARSER_TYPE = Callable[[str], Optional[StructDatapoint]]
@@ -82,6 +82,7 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
     ) -> None:
         """Add document to index."""
         text_chunks = text_splitter.split_text(document.get_text())
+        fields = {}
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
@@ -91,9 +92,12 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
                 text=text_chunk,
                 schema=self._get_schema_text(),
             )
-            struct_datapoint = self.output_parser(response_str)
-            if struct_datapoint is not None:
-                self._insert_datapoint(struct_datapoint)
+            cur_fields = self.output_parser(response_str)
+            fields.update(cur_fields)
+
+        struct_datapoint = StructDatapoint(fields)
+        if struct_datapoint is not None:
+            self._insert_datapoint(struct_datapoint)
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False

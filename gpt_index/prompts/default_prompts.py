@@ -157,6 +157,8 @@ DEFAULT_SCHEMA_EXTRACT_TMPL = (
     "Given the text and schema, extract the relevant fields from the text in "
     "the following format: "
     "field1: <value>, field2: <value>, ...\n"
+    "If a field is not present in the text, don't include it in the output."
+    "If no fields are present in the text, return a blank string.\n"
     "Fields: "
 )
 DEFAULT_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(DEFAULT_SCHEMA_EXTRACT_TMPL)
@@ -167,7 +169,7 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
     "Given an input question, first create a syntactically correct SQL query "
     "to run, then look at the results of the query and return the answer.\n"
     "Use the following format:\n"
-    ' Question: "Question here"\n'
+    'Question: "Question here"\n'
     'SQLQuery: "SQL Query to run"\n'
     'SQLResult: "Result of the SQLQuery"\n'
     'Answer: "Final answer here"\n'
