@@ -14,8 +14,8 @@ from gpt_index.utils import globals_helper
 
 def _mock_summary_predict(max_tokens: int, prompt_args: Dict) -> str:
     """Mock summary predict."""
-    # tokens in response shouldn't be larger than tokens in `text`
-    num_text_tokens = len(globals_helper.tokenizer(prompt_args["text"]))
+    # tokens in response shouldn't be larger than tokens in `context_str`
+    num_text_tokens = len(globals_helper.tokenizer(prompt_args["context_str"]))
     token_limit = min(num_text_tokens, max_tokens)
     return " ".join(["summary"] * token_limit)
 
@@ -44,12 +44,17 @@ def _mock_answer(max_tokens: int, prompt_args: Dict) -> str:
     return " ".join(["answer"] * token_limit)
 
 
-def _mock_refine(max_tokens: int, prompt_args: Dict) -> str:
+def _mock_refine(max_tokens: int, prompt: Prompt, prompt_args: Dict) -> str:
     """Mock refine."""
     # tokens in response shouldn't be larger than tokens in
     # `existing_answer` + `context_msg`
+    # NOTE: if existing_answer is not in prompt_args, we need to get it from the prompt
+    if "existing_answer" not in prompt_args:
+        existing_answer = prompt.partial_dict["existing_answer"]
+    else:
+        existing_answer = prompt_args["existing_answer"]
     num_ctx_tokens = len(globals_helper.tokenizer(prompt_args["context_msg"]))
-    num_exist_tokens = len(globals_helper.tokenizer(prompt_args["existing_answer"]))
+    num_exist_tokens = len(globals_helper.tokenizer(existing_answer))
     token_limit = min(num_ctx_tokens + num_exist_tokens, max_tokens)
     return " ".join(["answer"] * token_limit)
 
@@ -87,7 +92,7 @@ class MockLLMPredictor(LLMPredictor):
         elif prompt_str == PromptType.TREE_SELECT_MULTIPLE:
             return _mock_query_select_multiple(prompt_args["num_chunks"])
         elif prompt_str == PromptType.REFINE:
-            return _mock_refine(self.max_tokens, prompt_args)
+            return _mock_refine(self.max_tokens, prompt, prompt_args)
         elif prompt_str == PromptType.QUESTION_ANSWER:
             return _mock_answer(self.max_tokens, prompt_args)
         elif prompt_str == PromptType.KEYWORD_EXTRACT:
