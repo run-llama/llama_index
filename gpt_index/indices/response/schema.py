@@ -1,7 +1,7 @@
 """Response schema."""
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.utils import truncate_text
@@ -40,6 +40,7 @@ class Response:
 
     response: Optional[str]
     source_nodes: List[SourceNode] = field(default_factory=list)
+    extra_info: Optional[Dict[str, Any]] = None
 
     def __str__(self) -> str:
         """Convert to string representation."""

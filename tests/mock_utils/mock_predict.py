@@ -52,6 +52,20 @@ def _mock_query_keyword_extract(prompt_args: Dict) -> str:
     return mock_extract_keywords_response(prompt_args["question"])
 
 
+def _mock_schema_extract(prompt_args: Dict) -> str:
+    """Mock schema extract."""
+    return prompt_args["text"]
+
+
+def _mock_text_to_sql(prompt_args: Dict) -> str:
+    """Mock text to sql."""
+    # assume it's a select query
+    tokens = prompt_args["query_str"].split(":")
+    table_name = tokens[0]
+    subtokens = tokens[1].split(",")
+    return "SELECT " + ", ".join(subtokens) + f" FROM {table_name}"
+
+
 def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
     """Mock predict method of LLMPredictor.
 
@@ -74,6 +88,10 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
         response = _mock_keyword_extract(full_prompt_args)
     elif prompt.prompt_type == PromptType.QUERY_KEYWORD_EXTRACT:
         response = _mock_query_keyword_extract(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SCHEMA_EXTRACT:
+        response = _mock_schema_extract(full_prompt_args)
+    elif prompt.prompt_type == PromptType.TEXT_TO_SQL:
+        response = _mock_text_to_sql(full_prompt_args)
     else:
         raise ValueError("Invalid prompt to use with mocks.")
 

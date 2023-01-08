@@ -5,7 +5,9 @@ from gpt_index.prompts.prompts import (
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,
     RefinePrompt,
+    SchemaExtractPrompt,
     SummaryPrompt,
+    TextToSQLPrompt,
     TreeInsertPrompt,
     TreeSelectMultiplePrompt,
     TreeSelectPrompt,
@@ -137,3 +139,44 @@ DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
 DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = QueryKeywordExtractPrompt(
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL
 )
+
+
+############################################
+# Structured Store
+############################################
+
+DEFAULT_SCHEMA_EXTRACT_TMPL = (
+    "We wish to extract relevant fields from an unstructured text chunk into "
+    "a structured schema. We first provide the unstructured text, and then "
+    "we provide the schema that we wish to extract. "
+    "-----------text-----------\n"
+    "{text}\n"
+    "-----------schema-----------\n"
+    "{schema}\n"
+    "---------------------\n"
+    "Given the text and schema, extract the relevant fields from the text in "
+    "the following format: "
+    "field1: <value>\nfield2: <value>\n...\n\n"
+    "If a field is not present in the text, don't include it in the output."
+    "If no fields are present in the text, return a blank string.\n"
+    "Fields: "
+)
+DEFAULT_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(DEFAULT_SCHEMA_EXTRACT_TMPL)
+
+# NOTE: taken from langchain and adapted
+# shorturl.at/nqyD1
+DEFAULT_TEXT_TO_SQL_TMPL = (
+    "Given an input question, first create a syntactically correct SQL query "
+    "to run, then look at the results of the query and return the answer.\n"
+    "Use the following format:\n"
+    'Question: "Question here"\n'
+    'SQLQuery: "SQL Query to run"\n'
+    "The following is a schema of the table:\n"
+    "---------------------\n"
+    "{schema}\n"
+    "---------------------\n"
+    "Question: {query_str}\n"
+    "SQLQuery: "
+)
+
+DEFAULT_TEXT_TO_SQL_PROMPT = TextToSQLPrompt(DEFAULT_TEXT_TO_SQL_TMPL)
