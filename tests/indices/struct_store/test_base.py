@@ -1,6 +1,7 @@
 """Test struct store indices."""
 
-from typing import Any, Dict, Tuple
+import re
+from typing import Any, Dict, Optional, Tuple
 
 import pytest
 from sqlalchemy import (
@@ -15,6 +16,7 @@ from sqlalchemy import (
     select,
 )
 
+from gpt_index.indices.struct_store.base import default_output_parser
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
@@ -25,12 +27,33 @@ from tests.mock_utils.mock_prompts import (
 )
 
 
+def _mock_output_parser(output: str) -> Optional[Dict[str, Any]]:
+    """Mock output parser.
+
+    Split via commas instead of newlines, in order to fit
+    the format of the mock test document (newlines create
+    separate text chunks in the testing code).
+
+    """
+    tups = output.split(",")
+
+    fields = {}
+    for tup in tups:
+        if ":" in tup:
+            tokens = tup.split(":")
+            field = re.sub(r"\W+", "", tokens[0])
+            value = re.sub(r"\W+", "", tokens[1])
+            fields[field] = value
+    return fields
+
+
 @pytest.fixture
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
     # NOTE: QuestionAnswer and Refine templates aren't technically used
     index_kwargs = {
         "schema_extract_prompt": MOCK_SCHEMA_EXTRACT_PROMPT,
+        "output_parser": _mock_output_parser,
     }
     query_kwargs = {
         "text_qa_template": MOCK_TEXT_QA_PROMPT,
@@ -124,3 +147,15 @@ def test_sql_index_query(
     # query the index with natural language
     response = index.query("test_table:user_id,foo", mode="default", **query_kwargs)
     assert response.response == "[(2, 'bar'), (8, 'hello')]"
+
+
+def test_default_output_parser() -> None:
+    """Test default output parser."""
+    test_str = "user_id:2\n" "foo:bar\n" ",,testing:testing2..\n" "number:123,456,789\n"
+    fields = default_output_parser(test_str)
+    assert fields == {
+        "user_id": "2",
+        "foo": "bar",
+        "testing": "testing2",
+        "number": "123456789",
+    }
