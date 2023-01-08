@@ -1,23 +1,15 @@
 """SQLite structured store."""
 
-from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar, cast
+from typing import Any, Dict, Optional, Sequence, cast
 
-from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine import Engine
 
 from gpt_index.data_structs.table import SQLStructTable, StructDatapoint
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
-from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
-from gpt_index.prompts.prompts import SchemaExtractPrompt
-from gpt_index.schema import BaseDocument
 
 
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
@@ -61,13 +53,17 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         self.sql_database = SQLDatabase(sql_engine)
         # if ref_doc_id_column is specified, then we need to check that
         # it is a valid column in the table
-        columns = self.sql_database.get_table_columns(table_name)
-        col_names = [col["name"] for col in columns]
+        table = self.sql_database.metadata_obj.tables[table_name]
+        col_names = [c.name for c in table.c]
         if ref_doc_id_column is not None and ref_doc_id_column not in col_names:
             raise ValueError(
                 f"ref_doc_id_column {ref_doc_id_column} not in table {table_name}"
             )
         self.ref_doc_id_column = ref_doc_id_column
+        # then store python types of each column
+        self._col_types_map: Dict[str, type] = {
+            c.name: table.c[c.name].type.python_type for c in table.c
+        }
 
         super().__init__(
             documents=documents,
@@ -75,6 +71,10 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             llm_predictor=llm_predictor,
             **kwargs,
         )
+
+    def _get_col_types_map(self) -> Dict[str, type]:
+        """Get col types map for schema."""
+        return self._col_types_map
 
     def _get_schema_text(self) -> str:
         """Insert datapoint into index."""

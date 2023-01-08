@@ -11,8 +11,8 @@ from sqlalchemy import (
     Table,
     column,
     create_engine,
+    delete,
     select,
-    delete
 )
 
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
@@ -86,7 +86,6 @@ def test_sql_index(
     with engine.connect() as connection:
         results = connection.execute(stmt).fetchall()
         assert results == [(2, "bar"), (8, "hello")]
-    
 
 
 @patch_common
@@ -103,7 +102,8 @@ def test_sql_index_query(
     engine = create_engine("sqlite:///:memory:")
     metadata_obj = MetaData(bind=engine)
     table_name = "test_table"
-    test_table = Table(
+    # NOTE: table is created by tying to metadata_obj
+    Table(
         table_name,
         metadata_obj,
         Column("user_id", Integer, primary_key=True),

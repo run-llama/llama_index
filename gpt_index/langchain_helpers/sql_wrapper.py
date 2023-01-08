@@ -1,4 +1,5 @@
-from typing import Any, List
+"""SQL wrapper around SQLDatabase in langchain."""
+from typing import Any, Dict, List, Tuple
 
 from langchain.sql_database import SQLDatabase as LangchainSQLDatabase
 from sqlalchemy import MetaData, insert
@@ -40,7 +41,7 @@ class SQLDatabase(LangchainSQLDatabase):
         stmt = insert(table).values(**data)
         self._engine.execute(stmt)
 
-    def run(self, command: str) -> str:
+    def run_sql(self, command: str) -> Tuple[str, Dict]:
         """Execute a SQL statement and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
@@ -50,5 +51,5 @@ class SQLDatabase(LangchainSQLDatabase):
             cursor = connection.exec_driver_sql(command)
             if cursor.returns_rows:
                 result = cursor.fetchall()
-                return str(result)
-        return ""
+                return str(result), {"result": result}
+        return "", {}

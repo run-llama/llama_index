@@ -1,14 +1,8 @@
 """Default query for GPTFaissIndex."""
-from typing import Any, List, Optional, cast
-
-import numpy as np
+from typing import Any, Optional
 
 from gpt_index.data_structs.table import SQLStructTable
-from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
-from gpt_index.indices.response.builder import ResponseMode, ResponseSourceBuilder
 from gpt_index.indices.response.schema import Response
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
@@ -51,14 +45,15 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     def query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         # NOTE: override query method in order to fetch the right results.
-        # NOTE: since the query_str is a SQL query, it doesn't make sense to use ResponseBuilder anywhere.
-        response = Response(response=self._sql_database.run(query_str))
+        # NOTE: since the query_str is a SQL query, it doesn't make sense
+        # to use ResponseBuilder anywhere.
+        response_str, extra_info = self._sql_database.run_sql(query_str)
+        response = Response(response=response_str, extra_info=extra_info)
         return response
 
 
 class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     """GPT natural language query over a structured database.
-
 
     Given a natural language query, we will extract the query to SQL.
     Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made here.
@@ -91,15 +86,23 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         self._ref_doc_id_column = ref_doc_id_column
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
 
+    def _parse_response_to_sql(self, response: str) -> str:
+        """Parse response to SQL."""
+        result_response = response.strip()
+        return result_response
+
     def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         table_info = self._sql_database.get_single_table_info(self._table_name)
         response_str, _ = self._llm_predictor.predict(
             self._text_to_sql_prompt, query_str=query_str, schema=table_info
         )
+
+        sql_query_str = self._parse_response_to_sql(response_str)
         # assume that it's a valid SQL query
         if verbose:
-            print(f"> Predicted SQL query: {response_str}")
+            print(f"> Predicted SQL query: {sql_query_str}")
 
-        response = Response(response=self._sql_database.run(response_str))
+        response_str, extra_info = self._sql_database.run_sql(sql_query_str)
+        response = Response(response=response_str, extra_info=extra_info)
         return response
