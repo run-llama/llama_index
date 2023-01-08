@@ -24,6 +24,7 @@ from gpt_index.indices.prompt_helper import PromptHelper
 
 # for composability
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
     GPTFaissIndex,
@@ -75,6 +76,7 @@ __all__ = [
     "GPTFaissIndex",
     "GPTSimpleVectorIndex",
     "GPTWeaviateIndex",
+    "GPTSQLStructStoreIndex",
     "Prompt",
     "LangchainEmbedding",
     "OpenAIEmbedding",

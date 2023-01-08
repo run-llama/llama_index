@@ -155,3 +155,38 @@ class QueryKeywordExtractPrompt(Prompt):
 
     prompt_type: PromptType = PromptType.QUERY_KEYWORD_EXTRACT
     input_variables: List[str] = ["question", "max_keywords"]
+
+
+class SchemaExtractPrompt(Prompt):
+    """Schema extract prompt.
+
+    Prompt to extract schema from unstructured text `text`.
+
+    Required template variables: `text`, `schema`
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+
+    prompt_type: PromptType = PromptType.SCHEMA_EXTRACT
+    input_variables: List[str] = ["text", "schema"]
+
+
+class TextToSQLPrompt(Prompt):
+    """Text to SQL prompt.
+
+    Prompt to translate a natural language query into SQL,
+    given a schema `schema`.
+
+    Required template variables: `query_str`, `schema`
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+
+    prompt_type: PromptType = PromptType.TEXT_TO_SQL
+    input_variables: List[str] = ["query_str", "schema"]

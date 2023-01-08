@@ -105,7 +105,14 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
             index_struct.add_node(n, text_id=new_id)
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Query mode to class."""
+        """Preprocess query.
+
+        This allows subclasses to pass in additional query kwargs
+        to query, for instance arguments that are shared between the
+        index and the query class. By default, this does nothing.
+        This also allows subclasses to do validation.
+
+        """
         super()._preprocess_query(mode, query_kwargs)
         # pass along faiss_index
         query_kwargs["faiss_index"] = self._faiss_index
