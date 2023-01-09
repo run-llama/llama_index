@@ -1,7 +1,7 @@
 """Slack reader."""
 import logging
 import os
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -103,7 +103,7 @@ class SlackReader(BaseReader):
 
         return "\n\n".join(result_messages)
 
-    def load_data(self, **load_kwargs: Any) -> List[Document]:
+    def load_data(self, channel_ids: List[str]) -> List[Document]:
         """Load data from the input directory.
 
         Args:
@@ -113,10 +113,6 @@ class SlackReader(BaseReader):
             List[Document]: List of documents.
 
         """
-        channel_ids = load_kwargs.pop("channel_ids", None)
-        if channel_ids is None:
-            raise ValueError('Must specify a "channel_id" in `load_kwargs`.')
-
         results = []
         for channel_id in channel_ids:
             channel_content = self._read_channel(channel_id)

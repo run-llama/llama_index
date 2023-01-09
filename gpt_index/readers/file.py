@@ -1,6 +1,6 @@
 """Simple reader that ."""
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -62,7 +62,7 @@ class SimpleDirectoryReader(BaseReader):
 
         return new_input_files
 
-    def load_data(self, **load_kwargs: Any) -> List[Document]:
+    def load_data(self, concatenate: bool = False) -> List[Document]:
         """Load data from the input directory.
 
         Args:
@@ -73,7 +73,6 @@ class SimpleDirectoryReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        concatenate = load_kwargs.get("concatenate", False)
         data = ""
         data_list = []
         for input_file in self.input_files:

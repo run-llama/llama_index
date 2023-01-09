@@ -1,5 +1,5 @@
 """Simple reader that turns an iterable of strings into a list of Documents."""
-from typing import Any, List
+from typing import List
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -22,9 +22,8 @@ class StringIterableReader(BaseReader):
             # response should be something like "You bought an apple."
     """
 
-    def load_data(self, **load_kwargs: Any) -> List[Document]:
+    def load_data(self, texts: List[str]) -> List[Document]:
         """Load the data."""
-        texts = load_kwargs.get("texts", list())
         results = []
         for text in texts:
             results.append(Document(text))
