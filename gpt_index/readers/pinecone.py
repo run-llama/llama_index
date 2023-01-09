@@ -1,6 +1,6 @@
 """Pinecone reader."""
 
-from typing import Any, List
+from typing import Any, Dict, List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -27,7 +27,16 @@ class PineconeReader(BaseReader):
         self._environment = environment
         pinecone.init(api_key=api_key, environment=environment)
 
-    def load_data(self, **load_kwargs: Any) -> List[Document]:
+    def load_data(
+        self,
+        index_name: str,
+        id_to_text_map: Dict[str, str],
+        vector: Optional[List[float]],
+        top_k: int,
+        separate_documents: bool = True,
+        include_values: bool = True,
+        **query_kwargs: Any
+    ) -> List[Document]:
         """Load data from Pinecone.
 
         Args:
@@ -49,23 +58,6 @@ class PineconeReader(BaseReader):
         """
         import pinecone
 
-        index_name = load_kwargs.pop("index_name", None)
-        if index_name is None:
-            raise ValueError("Please provide an index name.")
-        id_to_text_map = load_kwargs.pop("id_to_text_map", None)
-        if id_to_text_map is None:
-            raise ValueError(
-                "Please provide an id_to_text_map (a map from ID's to text)."
-            )
-        vector = load_kwargs.pop("vector", None)
-        if vector is None:
-            raise ValueError("Please provide a vector.")
-        top_k = load_kwargs.pop("top_k", None)
-        if top_k is None:
-            raise ValueError("Please provide a top_k value.")
-        separate_documents = load_kwargs.pop("separate_documents", True)
-
-        query_kwargs = load_kwargs
         index = pinecone.Index(index_name)
         if "include_values" not in query_kwargs:
             query_kwargs["include_values"] = True

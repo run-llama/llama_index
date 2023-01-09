@@ -1,6 +1,8 @@
 """Faiss reader."""
 
-from typing import Any, List
+from typing import Any, Dict, List
+
+import numpy as np
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -33,7 +35,13 @@ class FaissReader(BaseReader):
 
         self._index = index
 
-    def load_data(self, **load_kwargs: Any) -> List[Document]:
+    def load_data(
+        self,
+        query: np.ndarray,
+        id_to_text_map: Dict[str, str],
+        k: int = 4,
+        separate_documents: bool = True,
+    ) -> List[Document]:
         """Load data from Faiss.
 
         Args:
@@ -46,20 +54,7 @@ class FaissReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        id_to_text_map = load_kwargs.pop("id_to_text_map", None)
-        if id_to_text_map is None:
-            raise ValueError(
-                "Please provide an id_to_text_map (a map from ID's to text)."
-            )
-
-        query_vectors = load_kwargs.pop("query", None)
-        if query_vectors is None:
-            raise ValueError("Please provide `query` as an argument.")
-
-        separate_documents = load_kwargs.pop("separate_documents", True)
-        k = load_kwargs.pop("k", 4)
-
-        dists, indices = self._index.search(query_vectors, k)
+        dists, indices = self._index.search(query, k)
         documents = []
         for qidx in range(indices.shape[0]):
             for didx in range(indices.shape[1]):

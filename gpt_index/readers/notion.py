@@ -117,7 +117,7 @@ class NotionPageReader(BaseReader):
                 next_cursor = data["next_cursor"]
         return page_ids
 
-    def load_data(self, **load_kwargs: Any) -> List[Document]:
+    def load_data(self, page_ids: List[str]) -> List[Document]:
         """Load data from the input directory.
 
         Args:
@@ -127,10 +127,8 @@ class NotionPageReader(BaseReader):
             List[Document]: List of documents.
 
         """
-        if "page_ids" not in load_kwargs:
-            raise ValueError('Must specify a "page_ids" in `load_kwargs`.')
         docs = []
-        for page_id in load_kwargs["page_ids"]:
+        for page_id in page_ids:
             page_text = self.read_page(page_id)
             docs.append(Document(page_text, extra_info={"page_id": page_id}))
         return docs

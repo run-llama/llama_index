@@ -45,9 +45,12 @@ class GoogleDocsReader(BaseReader):
                 "google-auth-httplib2 google-auth-oauthlib`."
             )
 
-    def load_data(self, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory."""
-        document_ids: List[str] = load_kwargs.pop("document_ids", None)
+    def load_data(self, document_ids: List[str]) -> List[Document]:
+        """Load data from the input directory.
+
+        Args:
+            document_ids (List[str]): a list of document ids.
+        """
         if document_ids is None:
             raise ValueError('Must specify a "document_ids" in `load_kwargs`.')
 

@@ -8,7 +8,7 @@ discord.py module.
 import asyncio
 import logging
 import os
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -111,11 +111,16 @@ class DiscordReader(BaseReader):
         )
         return result
 
-    def load_data(self, **load_kwargs: Any) -> List[Document]:
+    def load_data(
+        self,
+        channel_ids: List[int],
+        limit: Optional[int] = None,
+        oldest_first: bool = True,
+    ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
-            channel_ids (List[str]): List of channel ids to read.
+            channel_ids (List[int]): List of channel ids to read.
             limit (Optional[int]): Maximum number of messages to read.
             oldest_first (bool): Whether to read oldest messages first.
                 Defaults to `True`.
@@ -124,13 +129,7 @@ class DiscordReader(BaseReader):
             List[Document]: List of documents.
 
         """
-        channel_ids = load_kwargs.pop("channel_ids", None)
-        if channel_ids is None:
-            raise ValueError('Must specify a "channel_id" in `load_kwargs`.')
-        limit = load_kwargs.pop("limit", None)
-        oldest_first = load_kwargs.pop("oldest_first", True)
-
-        results = []
+        results: List[Document] = []
         for channel_id in channel_ids:
             if not isinstance(channel_id, int):
                 raise ValueError(

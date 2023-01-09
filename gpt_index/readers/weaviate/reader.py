@@ -36,7 +36,13 @@ class WeaviateReader(BaseReader):
 
         self.client: Client = Client(host, auth_client_secret=auth_client_secret)
 
-    def load_data(self, **load_kwargs: Any) -> List[Document]:
+    def load_data(
+        self,
+        class_name: Optional[str] = None,
+        properties: Optional[List[str]] = None,
+        graphql_query: Optional[str] = None,
+        separate_documents: Optional[bool] = True,
+    ) -> List[Document]:
         """Load data from Weaviate.
 
         If `graphql_query` is not found in load_kwargs, we assume that
@@ -54,11 +60,7 @@ class WeaviateReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        separate_documents = load_kwargs.get("separate_documents", True)
-        class_name = None
-        if "class_name" in load_kwargs and "properties" in load_kwargs:
-            class_name = load_kwargs["class_name"]
-            properties = load_kwargs["properties"]
+        if class_name is not None and properties is not None:
             props_txt = "\n".join(properties)
             graphql_query = f"""
             {{
@@ -69,10 +71,13 @@ class WeaviateReader(BaseReader):
                 }}
             }}
             """
-        elif "graphql_query" in load_kwargs:
-            graphql_query = load_kwargs["graphql_query"]
+        elif graphql_query is not None:
+            pass
         else:
-            raise ValueError("`graphql_query` not found in load_kwargs.")
+            raise ValueError(
+                "Either `class_name` and `properties` must be specified, "
+                "or `graphql_query` must be specified."
+            )
 
         response = self.client.query.raw(graphql_query)
         if "errors" in response:

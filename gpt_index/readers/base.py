@@ -11,7 +11,7 @@ class BaseReader:
     """Utilities for loading data from a directory."""
 
     @abstractmethod
-    def load_data(self, **load_kwargs: Any) -> List[Document]:
+    def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
 
     def load_langchain_documents(self, **load_kwargs: Any) -> List[LCDocument]:
