@@ -132,8 +132,8 @@ index2 = GPTSimpleVectorIndex(documents2)
 # Set summary text
 # you can set the summary manually, or you can
 # generate the summary itself using GPT Index
-index1.set_summary("summary1")
-index2.set_summary("summary2")
+index1.set_text("summary1")
+index2.set_text("summary2")
 
 index3 = GPTListIndex([index1, index2])
 
