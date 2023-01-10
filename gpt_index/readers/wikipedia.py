@@ -1,5 +1,5 @@
 """Simple reader that reads wikipedia."""
-from typing import List
+from typing import Any, List
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -21,7 +21,7 @@ class WikipediaReader(BaseReader):
                 "`wikipedia` package not found, please run `pip install wikipedia`"
             )
 
-    def load_data(self, pages: List[str]) -> List[Document]:
+    def load_data(self, pages: List[str], **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory.
 
         Args:
@@ -32,6 +32,6 @@ class WikipediaReader(BaseReader):
 
         results = []
         for page in pages:
-            page_content = wikipedia.page(page).content
+            page_content = wikipedia.page(page, **load_kwargs).content
             results.append(Document(page_content))
         return results
