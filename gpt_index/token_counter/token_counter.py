@@ -3,6 +3,7 @@
 from typing import Any, Callable, cast
 
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.embeddings.base import BaseEmbedding
 
 
 def llm_token_counter(method_name_str: str) -> Callable:
@@ -38,11 +39,26 @@ def llm_token_counter(method_name_str: str) -> Callable:
                 )
             llm_predictor = cast(LLMPredictor, llm_predictor)
 
+            embed_model = getattr(_self, "_embed_model", None)
+            if embed_model is None:
+                raise ValueError(
+                    "Cannot use llm_token_counter on an instance without a _embed_model attribute."
+                )
+            embed_model = cast(BaseEmbedding, embed_model)
+
             start_token_ct = llm_predictor.total_tokens_used
+            start_embed_token_ct = embed_model.total_tokens_used
+
             f_return_val = f(_self, *args, **kwargs)
+
             net_tokens = llm_predictor.total_tokens_used - start_token_ct
             llm_predictor.last_token_usage = net_tokens
-            print(f"> [{method_name_str}] Total token usage: {net_tokens} tokens")
+            net_embed_tokens = embed_model.total_tokens_used - start_embed_token_ct
+            embed_model.last_token_usage = net_embed_tokens
+
+            # print outputs
+            print(f"> [{method_name_str}] Total LLM token usage: {net_tokens} tokens")
+            print(f"> [{method_name_str}] Total embedding token usage: {net_tokens} tokens")
 
             return f_return_val
 
