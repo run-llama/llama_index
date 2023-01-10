@@ -83,45 +83,6 @@ def get_new_int_id(d: Set) -> int:
     return new_id
 
 
-def llm_token_counter(method_name_str: str) -> Callable:
-    """
-    Use this as a decorator for methods in index/query classes that make calls to LLMs.
-
-    At the moment, this decorator can only be used on class instance methods with a
-    `_llm_predictor` attribute.
-
-    Do not use this on abstract methods.
-
-    For example, consider the class below:
-        .. code-block:: python
-            class GPTTreeIndexBuilder:
-            ...
-            @llm_token_counter("build_from_text")
-            def build_from_text(self, documents: Sequence[BaseDocument]) -> IndexGraph:
-                ...
-
-    If you run `build_from_text()`, it will print the output in the form below:
-
-    ```
-    [build_from_text] Total token usage: <some-number> tokens
-    ```
-    """
-
-    def wrap(f: Callable) -> Callable:
-        def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
-            start_token_ct = _self._llm_predictor.total_tokens_used
-            f_return_val = f(_self, *args, **kwargs)
-            net_tokens = _self._llm_predictor.total_tokens_used - start_token_ct
-            _self._llm_predictor.last_token_usage = net_tokens
-            print(f"> [{method_name_str}] Total token usage: {net_tokens} tokens")
-
-            return f_return_val
-
-        return wrapped_llm_predict
-
-    return wrap
-
-
 @contextmanager
 def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
     """Temporary setter.

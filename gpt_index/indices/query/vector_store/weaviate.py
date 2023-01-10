@@ -5,7 +5,6 @@ from typing import Any, List, Optional, cast
 
 from gpt_index.data_structs.data_structs import Node, WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.utils import truncate_text
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
@@ -23,8 +22,7 @@ class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, **kwargs)
-        self._embed_model = embed_model or OpenAIEmbedding()
+        super().__init__(index_struct=index_struct, embed_model=embed_model, **kwargs)
         self.similarity_top_k = similarity_top_k
         import_err_msg = (
             "`weaviate` package not found, please run `pip install weaviate-client`"

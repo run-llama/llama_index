@@ -3,7 +3,6 @@ from typing import Any, List, Optional, Tuple
 
 from gpt_index.data_structs.data_structs import IndexList, Node
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
 
@@ -34,9 +33,9 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         """Initialize params."""
         super().__init__(
             index_struct=index_struct,
+            embed_model=embed_model,
             **kwargs,
         )
-        self._embed_model = embed_model or OpenAIEmbedding()
         self.similarity_top_k = similarity_top_k
 
     def _get_nodes_for_response(

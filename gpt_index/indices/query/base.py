@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from typing import Dict, Generic, List, Optional, Tuple, TypeVar, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.embeddings.base import BaseEmbedding
+from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import (
     ResponseBuilder,
@@ -22,7 +24,7 @@ from gpt_index.prompts.default_prompts import (
 )
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.schema import DocumentStore
-from gpt_index.utils import llm_token_counter
+from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -71,6 +73,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         # TODO: pass from superclass
         llm_predictor: Optional[LLMPredictor] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         docstore: Optional[DocumentStore] = None,
         query_runner: Optional[BaseQueryRunner] = None,
         required_keywords: Optional[List[str]] = None,
@@ -87,6 +90,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._validate_index_struct(index_struct)
         self._index_struct = index_struct
         self._llm_predictor = llm_predictor or LLMPredictor()
+        # NOTE: the embed_model isn't used in all indices
+        self._embed_model = embed_model or OpenAIEmbedding()
         self._docstore = docstore
         self._query_runner = query_runner
         # TODO: make this a required param

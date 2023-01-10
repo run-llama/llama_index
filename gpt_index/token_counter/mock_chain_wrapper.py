@@ -6,7 +6,7 @@ from gpt_index.constants import NUM_OUTPUTS
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.prompt_type import PromptType
-from gpt_index.token_predictor.utils import mock_extract_keywords_response
+from gpt_index.token_counter.utils import mock_extract_keywords_response
 from gpt_index.utils import globals_helper
 
 # TODO: consolidate with unit tests in tests/mock_utils/mock_predict.py
