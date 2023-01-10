@@ -183,6 +183,7 @@ class PromptHelper:
                 else node.get_text()
             )
             results.append(text)
+
         return "\n".join(results)
 
     def get_numbered_text_from_nodes(

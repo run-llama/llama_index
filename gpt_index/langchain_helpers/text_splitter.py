@@ -39,7 +39,14 @@ class TokenTextSplitter(TextSplitter):
         current_doc: List[str] = []
         total = 0
         for d in splits:
-            num_tokens = len(self.tokenizer(d))
+            # NOTE: the 1 includes blank spaces
+            num_tokens = max(len(self.tokenizer(d)), 1)
+            if num_tokens > self._chunk_size:
+                raise ValueError(
+                    "A single term is larger than the allowed chunk size."
+                    f"Term size: {num_tokens}"
+                    f"Chunk size: {self._chunk_size}"
+                )
             # If the total tokens in current_doc exceeds the chunk size:
             # 1. Update the docs list
             if total + num_tokens > self._chunk_size:
@@ -47,8 +54,8 @@ class TokenTextSplitter(TextSplitter):
                 # 2. Shrink the current_doc (from the front) until it is gets smaller
                 # than the overlap size
                 while total > self._chunk_overlap:
-                    cur_tokens = self.tokenizer(current_doc[0])
-                    total -= len(cur_tokens)
+                    cur_num_tokens = max(len(self.tokenizer(current_doc[0])), 1)
+                    total -= cur_num_tokens
                     current_doc = current_doc[1:]
                 # 3. From here we can continue to build up the current_doc again
             # Build up the current_doc with term d, and update the total counter with
@@ -64,12 +71,13 @@ class TokenTextSplitter(TextSplitter):
             return ""
         # First we naively split the large input into a bunch of smaller ones.
         splits = text.split(self._separator)
-        # We now want to combine these smaller pieces into medium size
-        # chunks to send to the LLM.
+
         current_doc: List[str] = []
         total = 0
         for d in splits:
-            num_tokens = len(self.tokenizer(d))
+            # max 1 is because even a blank space counts as a token
+            # (e.g. 'hello  world' is 3 tokens, 'hello world' is 2 tokens)
+            num_tokens = max(len(self.tokenizer(d)), 1)
             if total + num_tokens > self._chunk_size:
                 break
             current_doc.append(d)
