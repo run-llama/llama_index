@@ -9,7 +9,6 @@ from typing import Any, Generic, Optional, Sequence, TypeVar
 
 from gpt_index.data_structs.data_structs import BaseIndexDict
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -41,11 +40,11 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
     ) -> None:
         """Initialize params."""
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        self._embed_model = embed_model or OpenAIEmbedding()
         super().__init__(
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
+            embed_model=embed_model,
             **kwargs,
         )
         # NOTE: when building the vector store index, text_qa_template is not partially

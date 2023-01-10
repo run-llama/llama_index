@@ -4,23 +4,13 @@ from typing import List
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.prompts.base import Prompt
+from tests.mock_utils.mock_utils import mock_tokenizer
 
 
 class TestPrompt(Prompt):
     """Test prompt class."""
 
     input_variables: List[str] = ["text"]
-
-
-def mock_tokenizer(text: str) -> List[str]:
-    """Mock tokenizer."""
-    tokens = text.split(" ")
-    result = []
-    for token in tokens:
-        if token.strip() == "":
-            continue
-        result.append(token.strip())
-    return result
 
 
 def test_get_chunk_size() -> None:

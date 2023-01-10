@@ -18,12 +18,13 @@ class LangchainEmbedding(BaseEmbedding):
 
     def __init__(self, langchain_embedding: LCEmbeddings) -> None:
         """Init params."""
+        super().__init__()
         self._langchain_embedding = langchain_embedding
 
-    def get_query_embedding(self, query: str) -> List[float]:
+    def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return self._langchain_embedding.embed_query(query)
 
-    def get_text_embedding(self, text: str) -> List[float]:
+    def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         return self._langchain_embedding.embed_documents([text])[0]

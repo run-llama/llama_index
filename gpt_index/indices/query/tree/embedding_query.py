@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.response.builder import ResponseSourceBuilder
 from gpt_index.indices.utils import get_sorted_node_list
@@ -56,9 +55,9 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             query_template=query_template,
             query_template_multiple=query_template_multiple,
             child_branch_factor=child_branch_factor,
+            embed_model=embed_model,
             **kwargs,
         )
-        self._embed_model = embed_model or OpenAIEmbedding()
         self.child_branch_factor = child_branch_factor
 
     def _query_level(

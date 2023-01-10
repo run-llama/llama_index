@@ -115,10 +115,11 @@ class OpenAIEmbedding(BaseEmbedding):
         model: str = "text-embedding-ada-002",
     ) -> None:
         """Init params."""
+        super().__init__()
         self.mode = OpenAIEmbeddingMode(mode)
         self.model = model
 
-    def get_query_embedding(self, query: str) -> List[float]:
+    def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         key = (self.mode, self.model)
         if key not in _QUERY_MODE_MODEL_DICT:
@@ -126,7 +127,7 @@ class OpenAIEmbedding(BaseEmbedding):
         engine = _QUERY_MODE_MODEL_DICT[key]
         return get_embedding(query, engine=engine)
 
-    def get_text_embedding(self, text: str) -> List[float]:
+    def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         key = (self.mode, self.model)
         if key not in _TEXT_MODE_MODEL_DICT:

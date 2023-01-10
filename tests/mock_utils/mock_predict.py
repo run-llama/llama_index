@@ -4,7 +4,7 @@ from typing import Any, Dict, Tuple
 
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.prompt_type import PromptType
-from gpt_index.token_predictor.utils import mock_extract_keywords_response
+from gpt_index.token_counter.utils import mock_extract_keywords_response
 
 
 def _mock_summary_predict(prompt_args: Dict) -> str:

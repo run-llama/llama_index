@@ -65,7 +65,7 @@ from gpt_index.readers import (
 )
 
 # token predictor
-from gpt_index.token_predictor.mock_chain_wrapper import MockLLMPredictor
+from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 
 __all__ = [
     "GPTKeywordTableIndex",
