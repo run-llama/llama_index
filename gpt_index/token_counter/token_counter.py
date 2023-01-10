@@ -35,14 +35,16 @@ def llm_token_counter(method_name_str: str) -> Callable:
             llm_predictor = getattr(_self, "_llm_predictor", None)
             if llm_predictor is None:
                 raise ValueError(
-                    "Cannot use llm_token_counter on an instance without a _llm_predictor attribute."
+                    "Cannot use llm_token_counter on an instance "
+                    "without a _llm_predictor attribute."
                 )
             llm_predictor = cast(LLMPredictor, llm_predictor)
 
             embed_model = getattr(_self, "_embed_model", None)
             if embed_model is None:
                 raise ValueError(
-                    "Cannot use llm_token_counter on an instance without a _embed_model attribute."
+                    "Cannot use llm_token_counter on an instance "
+                    "without a _embed_model attribute."
                 )
             embed_model = cast(BaseEmbedding, embed_model)
 
@@ -59,7 +61,8 @@ def llm_token_counter(method_name_str: str) -> Callable:
             # print outputs
             print(f"> [{method_name_str}] Total LLM token usage: {net_tokens} tokens")
             print(
-                f"> [{method_name_str}] Total embedding token usage: {net_embed_tokens} tokens"
+                f"> [{method_name_str}] Total embedding token usage: "
+                f"{net_embed_tokens} tokens"
             )
 
             return f_return_val

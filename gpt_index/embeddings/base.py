@@ -15,6 +15,7 @@ class BaseEmbedding:
     """Base class for embeddings."""
 
     def __init__(self) -> None:
+        """Init params."""
         self._total_tokens_used = 0
         self._last_token_usage: Optional[int] = None
         self._tokenizer: Callable = globals_helper.tokenizer
@@ -28,7 +29,6 @@ class BaseEmbedding:
         query_embedding = self._get_query_embedding(query)
         query_tokens_count = len(self._tokenizer(query))
         self._total_tokens_used += query_tokens_count
-        print('query tokens: ' + str((self._total_tokens_used, query)))
         return query_embedding
 
     @abstractmethod
@@ -40,7 +40,6 @@ class BaseEmbedding:
         text_embedding = self._get_text_embedding(text)
         text_tokens_count = len(self._tokenizer(text))
         self._total_tokens_used += text_tokens_count
-        print('text tokens: ' + str((self._total_tokens_used, text)))
         return text_embedding
 
     def similarity(self, embedding1: EMB_TYPE, embedding2: EMB_TYPE) -> float:

@@ -13,8 +13,6 @@ from gpt_index.indices.vector_store.simple import GPTSimpleVectorIndex
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
-from tests.mock_utils.mock_utils import mock_tokenizer
-from gpt_index.indices.prompt_helper import PromptHelper
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 """Mock utils."""
 
-from typing import Optional, Set, List
+from typing import List, Optional, Set
 
 from gpt_index.indices.keyword_table.utils import simple_extract_keywords
 

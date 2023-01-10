@@ -13,17 +13,6 @@ class TestPrompt(Prompt):
     input_variables: List[str] = ["text"]
 
 
-def mock_tokenizer(text: str) -> List[str]:
-    """Mock tokenizer."""
-    tokens = text.split(" ")
-    result = []
-    for token in tokens:
-        if token.strip() == "":
-            continue
-        result.append(token.strip())
-    return result
-
-
 def test_get_chunk_size() -> None:
     """Test get chunk size given prompt."""
     # test with 1 chunk
