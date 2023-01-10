@@ -59,7 +59,7 @@ def llm_token_counter(method_name_str: str) -> Callable:
             # print outputs
             print(f"> [{method_name_str}] Total LLM token usage: {net_tokens} tokens")
             print(
-                f"> [{method_name_str}] Total embedding token usage: {net_tokens} tokens"
+                f"> [{method_name_str}] Total embedding token usage: {net_embed_tokens} tokens"
             )
 
             return f_return_val

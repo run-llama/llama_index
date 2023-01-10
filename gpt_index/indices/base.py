@@ -102,6 +102,11 @@ class BaseGPTIndex(Generic[IS]):
         """Get the llm predictor."""
         return self._llm_predictor
 
+    @property
+    def embed_model(self) -> BaseEmbedding:
+        """Get the llm predictor."""
+        return self._embed_model
+
     def _process_documents(
         self, documents: Sequence[DOCUMENTS_INPUT], docstore: DocumentStore
     ) -> List[BaseDocument]:
@@ -302,6 +307,7 @@ class BaseGPTIndex(Generic[IS]):
             query_runner = QueryRunner(
                 self._llm_predictor,
                 self._prompt_helper,
+                self._embed_model,
                 self._docstore,
                 query_configs=query_configs,
                 verbose=verbose,
@@ -319,6 +325,7 @@ class BaseGPTIndex(Generic[IS]):
             query_runner = QueryRunner(
                 self._llm_predictor,
                 self._prompt_helper,
+                self._embed_model,
                 self._docstore,
                 query_configs=[query_config],
                 verbose=verbose,

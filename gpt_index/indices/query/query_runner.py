@@ -11,6 +11,7 @@ from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.response.schema import Response
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.schema import DocumentStore
+from gpt_index.embeddings.base import BaseEmbedding
 
 DEFAULT_QUERY_CONFIGS = [
     QueryConfig(
@@ -46,6 +47,7 @@ class QueryRunner(BaseQueryRunner):
         self,
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
+        embed_model: BaseEmbedding,
         docstore: DocumentStore,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         verbose: bool = False,
@@ -68,6 +70,7 @@ class QueryRunner(BaseQueryRunner):
         self._config_dict = config_dict
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
+        self._embed_model = embed_model
         self._docstore = docstore
         self._verbose = verbose
         self._recursive = recursive
@@ -83,6 +86,8 @@ class QueryRunner(BaseQueryRunner):
             query_kwargs["prompt_helper"] = self._prompt_helper
         if "llm_predictor" not in query_kwargs:
             query_kwargs["llm_predictor"] = self._llm_predictor
+        if "embed_model" not in query_kwargs:
+            query_kwargs["embed_model"] = self._embed_model
         return query_kwargs
 
     def query(self, query_str: str, index_struct: IndexStruct) -> Response:

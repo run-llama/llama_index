@@ -4,6 +4,7 @@ from typing import List
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.prompts.base import Prompt
+from tests.mock_utils.mock_utils import mock_tokenizer
 
 
 class TestPrompt(Prompt):
