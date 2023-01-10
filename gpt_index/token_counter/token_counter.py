@@ -2,8 +2,8 @@
 
 from typing import Any, Callable, cast
 
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.embeddings.base import BaseEmbedding
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
 
 def llm_token_counter(method_name_str: str) -> Callable:
@@ -58,7 +58,9 @@ def llm_token_counter(method_name_str: str) -> Callable:
 
             # print outputs
             print(f"> [{method_name_str}] Total LLM token usage: {net_tokens} tokens")
-            print(f"> [{method_name_str}] Total embedding token usage: {net_tokens} tokens")
+            print(
+                f"> [{method_name_str}] Total embedding token usage: {net_tokens} tokens"
+            )
 
             return f_return_val
 

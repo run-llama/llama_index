@@ -1,10 +1,11 @@
 """Base embeddings file."""
 
 from abc import abstractmethod
-from typing import List, Optional, Callable
-from gpt_index.utils import globals_helper
+from typing import Callable, List, Optional
 
 import numpy as np
+
+from gpt_index.utils import globals_helper
 
 # TODO: change to numpy array
 EMB_TYPE = List
@@ -12,6 +13,7 @@ EMB_TYPE = List
 
 class BaseEmbedding:
     """Base class for embeddings."""
+
     def __init__(self) -> None:
         self._total_tokens_used = 0
         self._last_token_usage: Optional[int] = None
@@ -44,3 +46,20 @@ class BaseEmbedding:
         product = np.dot(embedding1, embedding2)
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
         return product / norm
+
+    @property
+    def total_tokens_used(self) -> int:
+        """Get the total tokens used so far."""
+        return self._total_tokens_used
+
+    @property
+    def last_token_usage(self) -> int:
+        """Get the last token usage."""
+        if self._last_token_usage is None:
+            return 0
+        return self._last_token_usage
+
+    @last_token_usage.setter
+    def last_token_usage(self, value: int) -> None:
+        """Set the last token usage."""
+        self._last_token_usage = value
