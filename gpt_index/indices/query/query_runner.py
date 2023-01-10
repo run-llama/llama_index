@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.data_structs.struct_type import IndexStructType
+from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseQueryRunner
 from gpt_index.indices.query.query_map import get_query_cls
@@ -46,6 +47,7 @@ class QueryRunner(BaseQueryRunner):
         self,
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
+        embed_model: BaseEmbedding,
         docstore: DocumentStore,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         verbose: bool = False,
@@ -68,6 +70,7 @@ class QueryRunner(BaseQueryRunner):
         self._config_dict = config_dict
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
+        self._embed_model = embed_model
         self._docstore = docstore
         self._verbose = verbose
         self._recursive = recursive
@@ -83,6 +86,8 @@ class QueryRunner(BaseQueryRunner):
             query_kwargs["prompt_helper"] = self._prompt_helper
         if "llm_predictor" not in query_kwargs:
             query_kwargs["llm_predictor"] = self._llm_predictor
+        if "embed_model" not in query_kwargs:
+            query_kwargs["embed_model"] = self._embed_model
         return query_kwargs
 
     def query(self, query_str: str, index_struct: IndexStruct) -> Response:

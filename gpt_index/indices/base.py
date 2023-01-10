@@ -16,6 +16,8 @@ from typing import (
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.data_structs.struct_type import IndexStructType
+from gpt_index.embeddings.base import BaseEmbedding
+from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
@@ -24,7 +26,7 @@ from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.schema import BaseDocument, DocumentStore
-from gpt_index.utils import llm_token_counter
+from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -56,6 +58,7 @@ class BaseGPTIndex(Generic[IS]):
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[IS] = None,
         llm_predictor: Optional[LLMPredictor] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         docstore: Optional[DocumentStore] = None,
         prompt_helper: Optional[PromptHelper] = None,
         chunk_size_limit: Optional[int] = None,
@@ -68,6 +71,8 @@ class BaseGPTIndex(Generic[IS]):
             raise ValueError("Only one of documents or index_struct can be provided.")
 
         self._llm_predictor = llm_predictor or LLMPredictor()
+        # NOTE: the embed_model isn't used in all indices
+        self._embed_model = embed_model or OpenAIEmbedding()
 
         # TODO: move out of base if we need custom params per index
         self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
@@ -96,6 +101,11 @@ class BaseGPTIndex(Generic[IS]):
     def llm_predictor(self) -> LLMPredictor:
         """Get the llm predictor."""
         return self._llm_predictor
+
+    @property
+    def embed_model(self) -> BaseEmbedding:
+        """Get the llm predictor."""
+        return self._embed_model
 
     def _process_documents(
         self, documents: Sequence[DOCUMENTS_INPUT], docstore: DocumentStore
@@ -297,6 +307,7 @@ class BaseGPTIndex(Generic[IS]):
             query_runner = QueryRunner(
                 self._llm_predictor,
                 self._prompt_helper,
+                self._embed_model,
                 self._docstore,
                 query_configs=query_configs,
                 verbose=verbose,
@@ -314,6 +325,7 @@ class BaseGPTIndex(Generic[IS]):
             query_runner = QueryRunner(
                 self._llm_predictor,
                 self._prompt_helper,
+                self._embed_model,
                 self._docstore,
                 query_configs=[query_config],
                 verbose=verbose,

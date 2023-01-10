@@ -1,8 +1,19 @@
 """Mock utils."""
 
-from typing import Optional, Set
+from typing import List, Optional, Set
 
 from gpt_index.indices.keyword_table.utils import simple_extract_keywords
+
+
+def mock_tokenizer(text: str) -> List[str]:
+    """Mock tokenizer."""
+    tokens = text.split(" ")
+    result = []
+    for token in tokens:
+        if token.strip() == "":
+            continue
+        result.append(token.strip())
+    return result
 
 
 def mock_extract_keywords(
