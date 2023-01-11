@@ -78,7 +78,7 @@ class QueryRunner(BaseQueryRunner):
     def _get_query_kwargs(self, config: QueryConfig) -> Dict[str, Any]:
         """Get query kwargs.
 
-        Also update with default arugments if not present.
+        Also update with default arguments if not present.
 
         """
         query_kwargs = {k: v for k, v in config.query_kwargs.items()}
