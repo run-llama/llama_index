@@ -55,7 +55,7 @@ documents = SimpleDirectoryReader('data').load_data()
 index = GPTTreeIndex(documents)
 ```
 
-To save to disk and load from disk:
+To save to and load from disk:
 ```python
 # save to disk
 index.save_to_disk('index.json')
