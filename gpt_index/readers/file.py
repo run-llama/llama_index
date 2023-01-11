@@ -1,6 +1,7 @@
 """Simple reader that ."""
 from pathlib import Path
 from typing import List, Optional
+import PyPDF2
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -62,6 +63,25 @@ class SimpleDirectoryReader(BaseReader):
 
         return new_input_files
 
+    def pdf_reader(self, input_file: Path) -> str:
+        """Extract text from PDF"""
+        text = []
+        with open(input_file, 'rb', errors=self.errors) as file:
+            # Create a PDF object
+            pdf = PyPDF2.PdfReader(file)
+
+            # Get the number of pages in the PDF document
+            num_pages = len(pdf.pages)
+
+            # Iterate over every page
+            for page in range(num_pages):
+                # Extract the text from the page
+                page_text = pdf.pages[page].extract_text()
+                text.append(page_text)
+        text = "\n".join(text)
+
+        return text
+
     def load_data(self, concatenate: bool = False) -> List[Document]:
         """Load data from the input directory.
 
@@ -76,9 +96,13 @@ class SimpleDirectoryReader(BaseReader):
         data = ""
         data_list = []
         for input_file in self.input_files:
-            with open(input_file, "r", errors=self.errors) as f:
-                data = f.read()
-                data_list.append(data)
+
+            if input_file.name.endswith('.pdf'):
+                data = self.pdf_reader(input_file)
+            else:
+                with open(input_file, "r", errors=self.errors) as f:
+                    data = f.read()
+            data_list.append(data)
 
         if concatenate:
             return [Document("\n".join(data_list))]
