@@ -76,7 +76,7 @@ class SimpleDirectoryReader(BaseReader):
         input_files = sorted(input_dir.iterdir())
         new_input_files = []
         for input_file in input_files:
-            if input_file.is_dir():
+            if input_file.is_dir() and self.recursive:
                 sub_input_files = self._add_files(input_file)
                 new_input_files.extend(sub_input_files)
             elif self.exclude_hidden and input_file.name.startswith("."):
