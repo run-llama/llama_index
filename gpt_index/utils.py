@@ -2,9 +2,11 @@
 
 import random
 import sys
+import time
+import traceback
 import uuid
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, List, Optional, Set, cast
+from typing import Any, Callable, Generator, List, Optional, Set, Type, cast
 
 import nltk
 
@@ -99,3 +101,37 @@ def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
     finally:
         for k, v in prev_values.items():
             setattr(obj, k, v)
+
+
+def retry_on_exceptions_with_backoff(
+    lambda_fn: Callable,
+    exception_classes: List[Type[Exception]],
+    max_tries: int = 10,
+    min_backoff_secs: float = 0.5,
+    max_backoff_secs: float = 60.0,
+) -> Any:
+    """Execute lambda function with retries and exponential backoff.
+
+    Args:
+        lambda_fn (Callable): Function to be called and output we want.
+        exception_classes (List[Type[Exception]]): List of exception classes to retry.
+        max_tries (int): Maximum number of tries, including the first. Defaults to 10.
+        min_backoff_secs (float): Minimum amount of backoff time between attempts.
+            Defaults to 0.5.
+        max_backoff_secs (float): Maximum amount of backoff time between attempts.
+            Defaults to 60.
+
+    """
+    exception_class_tuples = tuple(exception_classes)
+    backoff_secs = min_backoff_secs
+    tries = 0
+    while True:
+        try:
+            return lambda_fn()
+        except exception_class_tuples:
+            traceback.print_exc()
+            tries += 1
+            if tries >= max_tries:
+                raise
+            time.sleep(backoff_secs)
+            backoff_secs = min(backoff_secs * 2, max_backoff_secs)
