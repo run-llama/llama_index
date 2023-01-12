@@ -110,7 +110,18 @@ def retry_on_exceptions_with_backoff(
     min_backoff_secs: float = 0.5,
     max_backoff_secs: float = 60.0,
 ) -> Any:
-    """Execute lambda function with retries and exponential backoff."""
+    """Execute lambda function with retries and exponential backoff.
+
+    Args:
+        lambda_fn (Callable): Function to be called and output we want.
+        exception_classes (List[Type[Exception]]): List of exception classes to retry.
+        max_tries (int): Maximum number of tries, including the first. Defaults to 10.
+        min_backoff_secs (float): Minimum amount of backoff time between attempts.
+            Defaults to 0.5.
+        max_backoff_secs (float): Maximum amount of backoff time between attempts.
+            Defaults to 60.
+
+    """
     exception_class_tuples = tuple(exception_classes)
     backoff_secs = min_backoff_secs
     tries = 0
