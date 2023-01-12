@@ -3,13 +3,14 @@
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
+import openai
 from langchain import Cohere, LLMChain, OpenAI
 from langchain.llms import AI21
 from langchain.llms.base import BaseLLM
 
 from gpt_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.prompts.base import Prompt
-from gpt_index.utils import globals_helper
+from gpt_index.utils import globals_helper, retry_on_exceptions_with_backoff
 
 
 @dataclass
@@ -55,11 +56,17 @@ class LLMPredictor:
             <https://langchain.readthedocs.io/en/latest/modules/llms.html>`_
             for more details.
 
+        retry_on_throttling (bool): Whether to retry on rate limit errors.
+            Defaults to true.
+
     """
 
-    def __init__(self, llm: Optional[BaseLLM] = None) -> None:
+    def __init__(
+        self, llm: Optional[BaseLLM] = None, retry_on_throttling: bool = True
+    ) -> None:
         """Initialize params."""
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
+        self.retry_on_throttling = retry_on_throttling
         self._total_tokens_used = 0
         self.flag = True
         self._last_token_usage: Optional[int] = None
@@ -73,13 +80,23 @@ class LLMPredictor:
             return LLMMetadata()
 
     def _predict(self, prompt: Prompt, **prompt_args: Any) -> str:
-        """Inner predict function."""
+        """Inner predict function.
+
+        If retry_on_throttling is true, we will retry on rate limit errors.
+
+        """
         llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm)
 
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
         full_prompt_args = prompt.get_full_format_args(prompt_args)
-        llm_prediction = llm_chain.predict(**full_prompt_args)
+        if self.retry_on_throttling:
+            llm_prediction = retry_on_exceptions_with_backoff(
+                lambda: llm_chain.predict(**full_prompt_args),
+                [openai.error.RateLimitError],
+            )
+        else:
+            llm_prediction = llm_chain.predict(**full_prompt_args)
         return llm_prediction
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
