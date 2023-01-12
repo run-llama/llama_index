@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, Optional, Sequence, cast
 
+from sqlalchemy import Table
 from sqlalchemy.engine import Engine
 
 from gpt_index.data_structs.table import SQLStructTable, StructDatapoint
@@ -40,20 +41,22 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         llm_predictor: Optional[LLMPredictor] = None,
         sql_engine: Optional[Engine] = None,
         table_name: Optional[str] = None,
+        table: Optional[Table] = None,
         ref_doc_id_column: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         # currently the user must specify a table info
-        if table_name is None:
+        if table_name is None and table is None:
             raise ValueError("table_name must be specified")
-        self.table_name = table_name
+        self.table_name = table_name or cast(Table, table).name
         if sql_engine is None:
             raise ValueError("sql_engine must be specified")
         self.sql_database = SQLDatabase(sql_engine)
         # if ref_doc_id_column is specified, then we need to check that
         # it is a valid column in the table
-        table = self.sql_database.metadata_obj.tables[table_name]
+        if table is None:
+            table = self.sql_database.metadata_obj.tables[table_name]
         col_names = [c.name for c in table.c]
         if ref_doc_id_column is not None and ref_doc_id_column not in col_names:
             raise ValueError(
