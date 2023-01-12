@@ -3,13 +3,14 @@
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
+import openai
 from langchain import Cohere, LLMChain, OpenAI
 from langchain.llms import AI21
 from langchain.llms.base import BaseLLM
 
 from gpt_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.prompts.base import Prompt
-from gpt_index.utils import globals_helper
+from gpt_index.utils import globals_helper, retry_on_exceptions_with_backoff
 
 
 @dataclass
@@ -79,7 +80,10 @@ class LLMPredictor:
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
         full_prompt_args = prompt.get_full_format_args(prompt_args)
-        llm_prediction = llm_chain.predict(**full_prompt_args)
+        llm_prediction = retry_on_exceptions_with_backoff(
+            lambda: llm_chain.predict(**full_prompt_args),
+            [openai.error.RateLimitError],
+        )
         return llm_prediction
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
