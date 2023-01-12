@@ -79,10 +79,11 @@ class SimpleDirectoryReader(BaseReader):
         """Add files."""
         input_files = sorted(input_dir.iterdir())
         new_input_files = []
+        dirs_to_explore = []
         for input_file in input_files:
-            if input_file.is_dir() and self.recursive:
-                sub_input_files = self._add_files(input_file)
-                new_input_files.extend(sub_input_files)
+            if input_file.is_dir():
+                if self.recursive:
+                    dirs_to_explore.append(input_file)
             elif self.exclude_hidden and input_file.name.startswith("."):
                 continue
             elif (
@@ -91,10 +92,14 @@ class SimpleDirectoryReader(BaseReader):
             ):
                 continue
             else:
-                new_input_files = [input_file] + new_input_files
+                new_input_files.append(input_file)
+
+        for dir_to_explore in dirs_to_explore:
+            sub_input_files = self._add_files(dir_to_explore)
+            new_input_files.extend(sub_input_files)
 
         if self.num_files_limit is not None and self.num_files_limit > 0:
-            new_input_files = new_input_files[0:self.num_files_limit]
+            new_input_files = new_input_files[0 : self.num_files_limit]
 
         return new_input_files
 
