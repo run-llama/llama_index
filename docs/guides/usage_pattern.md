@@ -220,7 +220,9 @@ index.query(
 
 
 
+## 5. Parsing the response
 
+The object returned is a [`Response` object](/reference/response.rst)
 
 
 
