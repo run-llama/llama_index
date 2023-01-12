@@ -59,6 +59,7 @@ class SimpleDirectoryReader(BaseReader):
         recursive: bool = False,
         required_exts: Optional[List[str]] = None,
         file_extractor: Optional[Dict[str, Callable]] = None,
+        num_files_limit: Optional[int] = None,
     ) -> None:
         """Initialize with parameters."""
         self.input_dir = Path(input_dir)
@@ -70,6 +71,7 @@ class SimpleDirectoryReader(BaseReader):
 
         self.input_files = self._add_files(self.input_dir)
         self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
+        self.num_files_limit = num_files_limit
 
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
@@ -87,8 +89,11 @@ class SimpleDirectoryReader(BaseReader):
             ):
                 continue
             else:
-                new_input_files.append(input_file)
+                new_input_files = [input_file] + new_input_files
 
+        if self.num_files_limit is not None and self.num_files_limit > 0:
+            new_input_files = new_input_files[0:self.num_files_limit]
+            
         return new_input_files
 
     def load_data(self, concatenate: bool = False) -> List[Document]:
