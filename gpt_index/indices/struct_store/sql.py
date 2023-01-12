@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, Optional, Sequence, cast
 
-from sqlalchemy.engine import Engine
 from sqlalchemy import Table
+from sqlalchemy.engine import Engine
 
 from gpt_index.data_structs.table import SQLStructTable, StructDatapoint
 from gpt_index.indices.base import DOCUMENTS_INPUT
@@ -49,7 +49,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         # currently the user must specify a table info
         if table_name is None and table is None:
             raise ValueError("table_name must be specified")
-        self.table_name = table_name or table.name
+        self.table_name = table_name or cast(Table, table).name
         if sql_engine is None:
             raise ValueError("sql_engine must be specified")
         self.sql_database = SQLDatabase(sql_engine)
