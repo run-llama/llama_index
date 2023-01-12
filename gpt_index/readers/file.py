@@ -48,6 +48,8 @@ class SimpleDirectoryReader(BaseReader):
             False by default.
         required_exts (Optional[List[str]]): List of required extensions.
             Default is None.
+        num_files_limit (Optional[int]): Maximum number of files to read.
+            Default is None.
 
     """
 
@@ -93,7 +95,7 @@ class SimpleDirectoryReader(BaseReader):
 
         if self.num_files_limit is not None and self.num_files_limit > 0:
             new_input_files = new_input_files[0:self.num_files_limit]
-            
+
         return new_input_files
 
     def load_data(self, concatenate: bool = False) -> List[Document]:
