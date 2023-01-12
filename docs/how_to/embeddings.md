@@ -1,8 +1,18 @@
 # Embedding support
 
 GPT Index provides support for embeddings in the following format:
+- Adding embeddings to Document objects
 - Using a Vector Store as an underlying index (e.g. `GPTSimpleVectorIndex`, `GPTFaissIndex`)
 - Querying our list and tree indices with embeddings.
+
+## Adding embeddings to Document objects
+
+You can pass in user-specified embeddings when constructing an index. This gives you control
+in specifying embeddings per Document instead of having us determine embeddings for your text (see below).
+
+Simply specify the `embedding` field when creating a Document:
+
+![](/_static/embeddings/doc_example.jpeg)
 
 ## Using a Vector Store as an Underlying Index
 

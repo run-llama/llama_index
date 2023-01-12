@@ -55,7 +55,7 @@ for doc in documents:
 
 ```
 
-See the [Insert How-To](/how_to/insert.md) for details and an example notebook.
+See the [Update Index How-To](/how_to/update.md) for details and an example notebook.
 
 ### Customizing LLM's
 
@@ -220,9 +220,26 @@ index.query(
 
 
 
+## 5. Parsing the response
 
+The object returned is a [`Response` object](/reference/response.rst).
+The object contains both the response text as well as the "sources" of the response:
 
+```python
+response = index.query("<query_str>")
 
+# get response
+# response.response
+str(response)
+
+# get sources
+response.source_nodes
+# formatted sources
+response.get_formatted_sources()
+```
+
+An example is shown below. 
+![](/_static/response/response_1.jpeg)
 
 
 
