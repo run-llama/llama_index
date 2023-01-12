@@ -70,10 +70,10 @@ class SimpleDirectoryReader(BaseReader):
         self.recursive = recursive
         self.exclude_hidden = exclude_hidden
         self.required_exts = required_exts
+        self.num_files_limit = num_files_limit
 
         self.input_files = self._add_files(self.input_dir)
         self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
-        self.num_files_limit = num_files_limit
 
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
