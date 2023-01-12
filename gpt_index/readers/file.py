@@ -48,6 +48,8 @@ class SimpleDirectoryReader(BaseReader):
             False by default.
         required_exts (Optional[List[str]]): List of required extensions.
             Default is None.
+        num_files_limit (Optional[int]): Maximum number of files to read.
+            Default is None.
 
     """
 
@@ -59,6 +61,7 @@ class SimpleDirectoryReader(BaseReader):
         recursive: bool = False,
         required_exts: Optional[List[str]] = None,
         file_extractor: Optional[Dict[str, Callable]] = None,
+        num_files_limit: Optional[int] = None,
     ) -> None:
         """Initialize with parameters."""
         self.input_dir = Path(input_dir)
@@ -67,6 +70,7 @@ class SimpleDirectoryReader(BaseReader):
         self.recursive = recursive
         self.exclude_hidden = exclude_hidden
         self.required_exts = required_exts
+        self.num_files_limit = num_files_limit
 
         self.input_files = self._add_files(self.input_dir)
         self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
@@ -75,10 +79,11 @@ class SimpleDirectoryReader(BaseReader):
         """Add files."""
         input_files = sorted(input_dir.iterdir())
         new_input_files = []
+        dirs_to_explore = []
         for input_file in input_files:
             if input_file.is_dir():
-                sub_input_files = self._add_files(input_file)
-                new_input_files.extend(sub_input_files)
+                if self.recursive:
+                    dirs_to_explore.append(input_file)
             elif self.exclude_hidden and input_file.name.startswith("."):
                 continue
             elif (
@@ -88,6 +93,13 @@ class SimpleDirectoryReader(BaseReader):
                 continue
             else:
                 new_input_files.append(input_file)
+
+        for dir_to_explore in dirs_to_explore:
+            sub_input_files = self._add_files(dir_to_explore)
+            new_input_files.extend(sub_input_files)
+
+        if self.num_files_limit is not None and self.num_files_limit > 0:
+            new_input_files = new_input_files[0 : self.num_files_limit]
 
         return new_input_files
 
