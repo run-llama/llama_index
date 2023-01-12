@@ -1,9 +1,36 @@
 """Simple reader that ."""
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, Dict, List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
+
+
+def _pdf_reader(input_file: Path, errors: str) -> str:
+    """Extract text from PDF."""
+    try:
+        import PyPDF2
+    except ImportError:
+        raise ValueError("PyPDF2 is required to read PDF files.")
+    text_list = []
+    with open(input_file, "rb") as file:
+        # Create a PDF object
+        pdf = PyPDF2.PdfReader(file)
+
+        # Get the number of pages in the PDF document
+        num_pages = len(pdf.pages)
+
+        # Iterate over every page
+        for page in range(num_pages):
+            # Extract the text from the page
+            page_text = pdf.pages[page].extract_text()
+            text_list.append(page_text)
+    text = "\n".join(text_list)
+
+    return text
+
+
+DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {".pdf": _pdf_reader}
 
 
 class SimpleDirectoryReader(BaseReader):
@@ -31,6 +58,7 @@ class SimpleDirectoryReader(BaseReader):
         errors: str = "ignore",
         recursive: bool = False,
         required_exts: Optional[List[str]] = None,
+        file_extractor: Optional[Dict[str, Callable]] = None,
     ) -> None:
         """Initialize with parameters."""
         self.input_dir = Path(input_dir)
@@ -41,6 +69,7 @@ class SimpleDirectoryReader(BaseReader):
         self.required_exts = required_exts
 
         self.input_files = self._add_files(self.input_dir)
+        self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
 
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
@@ -76,9 +105,13 @@ class SimpleDirectoryReader(BaseReader):
         data = ""
         data_list = []
         for input_file in self.input_files:
-            with open(input_file, "r", errors=self.errors) as f:
-                data = f.read()
-                data_list.append(data)
+            if input_file.suffix in self.file_extractor:
+                data = self.file_extractor[input_file.suffix](input_file, self.errors)
+            else:
+                # do standard read
+                with open(input_file, "r", errors=self.errors) as f:
+                    data = f.read()
+            data_list.append(data)
 
         if concatenate:
             return [Document("\n".join(data_list))]
