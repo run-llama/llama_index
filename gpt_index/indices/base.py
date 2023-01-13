@@ -48,6 +48,8 @@ class BaseGPTIndex(Generic[IS]):
             will use the default chunk size limit (4096 max input size).
         verbose (bool): Optional bool. If True, will print out additional information
             during the index building process.
+        include_extra_info (bool): Optional bool. If True, extra info (i.e. metadata)
+            of each Document will be prepended to its text to help with queries.
 
     """
 
@@ -63,6 +65,7 @@ class BaseGPTIndex(Generic[IS]):
         prompt_helper: Optional[PromptHelper] = None,
         chunk_size_limit: Optional[int] = None,
         verbose: bool = False,
+        include_extra_info: bool = False
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
@@ -73,6 +76,7 @@ class BaseGPTIndex(Generic[IS]):
         self._llm_predictor = llm_predictor or LLMPredictor()
         # NOTE: the embed_model isn't used in all indices
         self._embed_model = embed_model or OpenAIEmbedding()
+        self._include_extra_info = include_extra_info
 
         # TODO: move out of base if we need custom params per index
         self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
@@ -108,7 +112,9 @@ class BaseGPTIndex(Generic[IS]):
         return self._embed_model
 
     def _process_documents(
-        self, documents: Sequence[DOCUMENTS_INPUT], docstore: DocumentStore
+        self,
+        documents: Sequence[DOCUMENTS_INPUT],
+        docstore: DocumentStore,
     ) -> List[BaseDocument]:
         """Process documents."""
         results = []
@@ -187,7 +193,18 @@ class BaseGPTIndex(Generic[IS]):
         start_idx: int = 0,
     ) -> List[Node]:
         """Add document to index."""
-        text_chunks = text_splitter.split_text(document.get_text())
+
+        text = document.get_text()
+        if self._include_extra_info and document.extra_info is not None:
+            # NOTE: We can consider adding more context here in the
+            # future to improve performance, or propagate this info
+            # down to each node
+            extra_info_text = ""
+            for key in document.extra_info:
+                extra_info_text += f"{key}: {document.extra_info[key]}\n"
+            text = extra_info_text + text
+
+        text_chunks = text_splitter.split_text(text)
         nodes = []
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
