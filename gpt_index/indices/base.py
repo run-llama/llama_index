@@ -215,6 +215,7 @@ class BaseGPTIndex(Generic[IS]):
                 index=start_idx + i,
                 ref_doc_id=document.get_doc_id(),
                 embedding=document.embedding,
+                extra_info=document.extra_info
             )
             nodes.append(node)
         return nodes
