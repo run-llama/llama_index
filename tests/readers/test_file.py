@@ -1,6 +1,7 @@
 """Test file reader."""
 
 from tempfile import TemporaryDirectory
+from typing import Dict,  Any
 
 from gpt_index.readers.file import SimpleDirectoryReader
 
@@ -193,7 +194,7 @@ def test_file_metadata() -> None:
 
         test_author = "Bruce Wayne"
 
-        def filename_to_metadata(filename):
+        def filename_to_metadata(filename: str) -> Dict[str, Any]:
             return {
                 "filename": filename,
                 "author": test_author
