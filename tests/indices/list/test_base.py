@@ -252,13 +252,12 @@ def test_extra_info(
     new_document = Document(doc_text, extra_info=extra_info)
     list_index = GPTListIndex(documents=[new_document])
     assert list_index.index_struct.nodes[0].get_text() == (
-        "extra_info:extra_info\n"
-        "foo:bar\n\n"
+        "extra_info: extra_info\n"
+        "foo: bar\n\n"
         "Hello world."
     )
     assert list_index.index_struct.nodes[3].get_text() == (
-        "extra_info:extra_info\n"
-        "foo:bar\n\n"
+        "extra_info: extra_info\n"
+        "foo: bar\n\n"
         "This is a test v2."
     )
-
