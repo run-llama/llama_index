@@ -6,6 +6,18 @@ from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
 
 
+def _docx_reader(input_file: Path, errors: str) -> str:
+    """Extract text from Microsoft Word."""
+    try:
+        import docx2txt
+    except ImportError:
+        raise ValueError("docx2txt is required to read Microsoft Word files.")
+
+    text = docx2txt.process(input_file)
+
+    return text
+
+
 def _pdf_reader(input_file: Path, errors: str) -> str:
     """Extract text from PDF."""
     try:
@@ -30,7 +42,10 @@ def _pdf_reader(input_file: Path, errors: str) -> str:
     return text
 
 
-DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {".pdf": _pdf_reader}
+DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {
+    ".pdf": _pdf_reader,
+    ".docx": _docx_reader
+}
 
 
 class SimpleDirectoryReader(BaseReader):
