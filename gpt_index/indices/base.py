@@ -50,6 +50,7 @@ class BaseGPTIndex(Generic[IS]):
             during the index building process.
         include_extra_info (bool): Optional bool. If True, extra info (i.e. metadata)
             of each Document will be prepended to its text to help with queries.
+            Default is True.
 
     """
 
@@ -65,7 +66,7 @@ class BaseGPTIndex(Generic[IS]):
         prompt_helper: Optional[PromptHelper] = None,
         chunk_size_limit: Optional[int] = None,
         verbose: bool = False,
-        include_extra_info: bool = False
+        include_extra_info: bool = True
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
