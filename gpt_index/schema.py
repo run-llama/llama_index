@@ -1,7 +1,7 @@
 """Base schema for data structures."""
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -21,6 +21,10 @@ class BaseDocument(ABC):
     text: Optional[str] = None
     doc_id: Optional[str] = None
     embedding: Optional[List[float]] = None
+
+    # extra fields
+    extra_info: Optional[Dict[str, Any]] = None
+
 
     def get_text(self) -> str:
         """Get text."""
