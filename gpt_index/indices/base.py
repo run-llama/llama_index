@@ -194,17 +194,7 @@ class BaseGPTIndex(Generic[IS]):
     ) -> List[Node]:
         """Add document to index."""
 
-        text = document.get_text()
-        if self._include_extra_info and document.extra_info is not None:
-            # NOTE: We can consider adding more context here in the
-            # future to improve performance, or propagate this info
-            # down to each node
-            extra_info_text = ""
-            for key in document.extra_info:
-                extra_info_text += f"{key}: {document.extra_info[key]}\n"
-            text = extra_info_text + text
-
-        text_chunks = text_splitter.split_text(text)
+        text_chunks = text_splitter.split_text(document.get_text())
         nodes = []
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
@@ -215,7 +205,7 @@ class BaseGPTIndex(Generic[IS]):
                 index=start_idx + i,
                 ref_doc_id=document.get_doc_id(),
                 embedding=document.embedding,
-                extra_info=document.extra_info
+                extra_info=document.extra_info if self._include_extra_info else None
             )
             nodes.append(node)
         return nodes
