@@ -50,7 +50,9 @@ class SimpleDirectoryReader(BaseReader):
             Default is None.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
-
+        file_metadata (Optional[Callable]): A function that takes in a 
+            filename and returns a Dict of metadata for the Document.
+            Default is None.
     """
 
     def __init__(
@@ -62,6 +64,7 @@ class SimpleDirectoryReader(BaseReader):
         required_exts: Optional[List[str]] = None,
         file_extractor: Optional[Dict[str, Callable]] = None,
         num_files_limit: Optional[int] = None,
+        file_metadata: Optional[Callable] = None,
     ) -> None:
         """Initialize with parameters."""
         self.input_dir = Path(input_dir)
@@ -74,6 +77,7 @@ class SimpleDirectoryReader(BaseReader):
 
         self.input_files = self._add_files(self.input_dir)
         self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
+        self.file_metadata = file_metadata
 
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
@@ -99,7 +103,10 @@ class SimpleDirectoryReader(BaseReader):
             new_input_files.extend(sub_input_files)
 
         if self.num_files_limit is not None and self.num_files_limit > 0:
-            new_input_files = new_input_files[0 : self.num_files_limit]
+            new_input_files = new_input_files[0: self.num_files_limit]
+
+        # print total number of files added
+        print(f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}")
 
         return new_input_files
 
@@ -108,6 +115,7 @@ class SimpleDirectoryReader(BaseReader):
 
         Args:
             concatenate (bool): whether to concatenate all files into one document.
+                If set to True, file metadata is ignored.
                 False by default.
 
         Returns:
@@ -116,6 +124,7 @@ class SimpleDirectoryReader(BaseReader):
         """
         data = ""
         data_list = []
+        metadata_list = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
                 data = self.file_extractor[input_file.suffix](input_file, self.errors)
@@ -124,8 +133,12 @@ class SimpleDirectoryReader(BaseReader):
                 with open(input_file, "r", errors=self.errors) as f:
                     data = f.read()
             data_list.append(data)
+            if self.file_metadata is not None:
+                metadata_list.append(self.file_metadata(str(input_file)))
 
         if concatenate:
             return [Document("\n".join(data_list))]
+        elif self.file_metadata is not None:
+            return [Document(d, extra_info=m) for d, m in zip(data_list, metadata_list)]
         else:
             return [Document(d) for d in data_list]

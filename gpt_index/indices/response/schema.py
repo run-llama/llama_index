@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from gpt_index.data_structs.data_structs import Node
+from gpt_index.readers.schema.base import Document
 from gpt_index.indices.utils import truncate_text
 
 
@@ -46,11 +47,19 @@ class Response:
         """Convert to string representation."""
         return self.response or "None"
 
-    def get_formatted_sources(self) -> str:
+    def get_formatted_sources(self, documents: Optional[List[Document]] = None) -> str:
         """Get formatted sources text."""
         texts = []
         for source_node in self.source_nodes:
             fmt_text_chunk = truncate_text(source_node.source_text, 100)
             doc_id = source_node.doc_id or "None"
-            texts.append(f">Source (Doc id: {doc_id}): {fmt_text_chunk}")
+            source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
+
+            # If `documents` exists, add some helpful info about the document
+            if documents is not None:
+                source_document = next(
+                    (d for d in documents if d.doc_id == doc_id), None)
+                if source_document is not None and source_document.extra_info is not None:
+                    source_text += f"\nMetadata: {source_document.extra_info}"
+            texts.append(source_text)
         return "\n\n".join(texts)
