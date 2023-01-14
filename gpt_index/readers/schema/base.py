@@ -1,6 +1,5 @@
 """Base schema for readers."""
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
 
 from langchain.docstore.document import Document as LCDocument
 

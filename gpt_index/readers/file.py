@@ -64,11 +64,11 @@ class SimpleDirectoryReader(BaseReader):
         required_exts (Optional[List[str]]): List of required extensions.
             Default is None.
         file_extractor (Optional[Dict[str, Callable]]): A mapping of file
-            extension to a function that specifies how to convert that file 
+            extension to a function that specifies how to convert that file
             to text. See DEFAULT_FILE_EXTRACTOR.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
-        file_metadata (Optional[Callable[str, Dict]]): A function that takes 
+        file_metadata (Optional[Callable[str, Dict]]): A function that takes
             in a filename and returns a Dict of metadata for the Document.
             Default is None.
     """
@@ -83,7 +83,7 @@ class SimpleDirectoryReader(BaseReader):
         file_extractor: Optional[Dict[str, Callable]] = None,
         num_files_limit: Optional[int] = None,
         file_metadata: Optional[Callable[[str], Dict]] = None,
-        verbose: Optional[bool] = False
+        verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
         super().__init__(verbose=verbose)
@@ -126,9 +126,10 @@ class SimpleDirectoryReader(BaseReader):
             new_input_files = new_input_files[0 : self.num_files_limit]
 
         # print total number of files added
-        if (self.verbose):
+        if self.verbose:
             print(
-                f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}")
+                f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}"
+            )
 
         return new_input_files
 

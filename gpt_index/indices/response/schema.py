@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.utils import truncate_text
-from gpt_index.readers.schema.base import Document
 
 
 @dataclass

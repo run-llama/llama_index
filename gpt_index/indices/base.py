@@ -194,7 +194,6 @@ class BaseGPTIndex(Generic[IS]):
         start_idx: int = 0,
     ) -> List[Node]:
         """Add document to index."""
-
         text_chunks = text_splitter.split_text(document.get_text())
         nodes = []
         for i, text_chunk in enumerate(text_chunks):

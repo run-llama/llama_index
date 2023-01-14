@@ -11,6 +11,7 @@ class BaseReader:
     """Utilities for loading data from a directory."""
 
     def __init__(self, verbose: bool = False):
+        """Init params."""
         self.verbose = verbose
 
     @abstractmethod
