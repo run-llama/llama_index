@@ -46,14 +46,17 @@ MODE_TO_QUERY_MAP_KEYWORD_TABLE = {
 # vector-based indices
 MODE_TO_QUERY_MAP_FAISS = {
     QueryMode.DEFAULT: GPTFaissIndexQuery,
+    QueryMode.EMBEDDING: GPTFaissIndexQuery,
 }
 
 MODE_TO_QUERY_MAP_SIMPLE = {
     QueryMode.DEFAULT: GPTSimpleVectorIndexQuery,
+    QueryMode.EMBEDDING: GPTSimpleVectorIndexQuery,
 }
 
 MODE_TO_QUERY_MAP_WEAVIATE = {
     QueryMode.DEFAULT: GPTWeaviateIndexQuery,
+    QueryMode.EMBEDDING: GPTWeaviateIndexQuery,
 }
 
 # structured storage indices

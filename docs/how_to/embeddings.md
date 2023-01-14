@@ -104,7 +104,7 @@ new_index = GPTSimpleVectorIndex.load_from_disk(
 # query will use the same embed_model
 response = new_index.query(
     "<query_text>", 
-    mode="embedding", 
+    mode="default",
     verbose=True, 
 )
 print(response)
