@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from gpt_index.data_structs.data_structs import Node
-from gpt_index.readers.schema.base import Document
 from gpt_index.indices.utils import truncate_text
+from gpt_index.readers.schema.base import Document
 
 
 @dataclass
@@ -58,8 +58,12 @@ class Response:
             # If `documents` exists, add some helpful info about the document
             if documents is not None:
                 source_document = next(
-                    (d for d in documents if d.doc_id == doc_id), None)
-                if source_document is not None and source_document.extra_info is not None:
+                    (d for d in documents if d.doc_id == doc_id), None
+                )
+                if (
+                    source_document is not None
+                    and source_document.extra_info is not None
+                ):
                     source_text += f"\nMetadata: {source_document.extra_info}"
             texts.append(source_text)
         return "\n\n".join(texts)

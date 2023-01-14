@@ -1,7 +1,7 @@
 """Test file reader."""
 
 from tempfile import TemporaryDirectory
-from typing import Dict,  Any
+from typing import Any, Dict
 
 from gpt_index.readers.file import SimpleDirectoryReader
 
@@ -195,22 +195,17 @@ def test_file_metadata() -> None:
         test_author = "Bruce Wayne"
 
         def filename_to_metadata(filename: str) -> Dict[str, Any]:
-            return {
-                "filename": filename,
-                "author": test_author
-            }
+            return {"filename": filename, "author": test_author}
 
-        reader = SimpleDirectoryReader(
-            tmp_dir, file_metadata=filename_to_metadata
-        )
+        reader = SimpleDirectoryReader(tmp_dir, file_metadata=filename_to_metadata)
 
         documents = reader.load_data()
 
         for d in documents:
-            assert (d.extra_info is not None and d.extra_info["author"] == test_author)
+            assert d.extra_info is not None and d.extra_info["author"] == test_author
 
         # There should be no metadata if we choose to concatenate files
         documents = reader.load_data(concatenate=True)
 
         for d in documents:
-            assert (d.extra_info is None)
+            assert d.extra_info is None

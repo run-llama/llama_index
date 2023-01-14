@@ -50,8 +50,11 @@ class GPTIndexInserter:
         """
         # perform insertion
         text_node = Node(
-            text=text_chunk, index=self.index_graph.size, ref_doc_id=doc.get_doc_id(),
-            embedding=doc.embedding, extra_info=doc.extra_info,
+            text=text_chunk,
+            index=self.index_graph.size,
+            ref_doc_id=doc.get_doc_id(),
+            embedding=doc.embedding,
+            extra_info=doc.extra_info,
         )
         self.index_graph.insert_under_parent(text_node, parent_node)
 
@@ -129,14 +132,10 @@ class GPTIndexInserter:
             numbers = extract_numbers_given_response(response)
             if numbers is None or len(numbers) == 0:
                 # NOTE: if we can't extract a number, then we just insert under parent
-                self._insert_under_parent_and_consolidate(
-                    text_chunk, doc, parent_node
-                )
+                self._insert_under_parent_and_consolidate(text_chunk, doc, parent_node)
             elif int(numbers[0]) > len(cur_graph_node_list):
                 # NOTE: if number is out of range, then we just insert under parent
-                self._insert_under_parent_and_consolidate(
-                    text_chunk, doc, parent_node
-                )
+                self._insert_under_parent_and_consolidate(text_chunk, doc, parent_node)
             else:
                 selected_node = cur_graph_node_list[int(numbers[0]) - 1]
                 self._insert_node(text_chunk, doc, selected_node)

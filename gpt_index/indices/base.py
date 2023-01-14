@@ -66,7 +66,7 @@ class BaseGPTIndex(Generic[IS]):
         prompt_helper: Optional[PromptHelper] = None,
         chunk_size_limit: Optional[int] = None,
         verbose: bool = False,
-        include_extra_info: bool = True
+        include_extra_info: bool = True,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
@@ -206,7 +206,7 @@ class BaseGPTIndex(Generic[IS]):
                 index=start_idx + i,
                 ref_doc_id=document.get_doc_id(),
                 embedding=document.embedding,
-                extra_info=document.extra_info if self._include_extra_info else None
+                extra_info=document.extra_info if self._include_extra_info else None,
             )
             nodes.append(node)
         return nodes

@@ -44,7 +44,7 @@ def _pdf_reader(input_file: Path, errors: str) -> str:
 
 DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {
     ".pdf": _pdf_reader,
-    ".docx": _docx_reader
+    ".docx": _docx_reader,
 }
 
 
@@ -65,7 +65,7 @@ class SimpleDirectoryReader(BaseReader):
             Default is None.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
-        file_metadata (Optional[Callable]): A function that takes in a 
+        file_metadata (Optional[Callable]): A function that takes in a
             filename and returns a Dict of metadata for the Document.
             Default is None.
     """
@@ -118,7 +118,7 @@ class SimpleDirectoryReader(BaseReader):
             new_input_files.extend(sub_input_files)
 
         if self.num_files_limit is not None and self.num_files_limit > 0:
-            new_input_files = new_input_files[0: self.num_files_limit]
+            new_input_files = new_input_files[0 : self.num_files_limit]
 
         # print total number of files added
         print(f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}")
