@@ -10,6 +10,9 @@ from gpt_index.readers.schema.base import Document
 class BaseReader:
     """Utilities for loading data from a directory."""
 
+    def __init__(self, verbose: bool = False):
+        self.verbose = verbose
+
     @abstractmethod
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
