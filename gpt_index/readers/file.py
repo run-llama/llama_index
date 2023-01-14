@@ -6,6 +6,18 @@ from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
 
 
+def _docx_reader(input_file: Path, errors: str) -> str:
+    """Extract text from Microsoft Word."""
+    try:
+        import docx2txt
+    except ImportError:
+        raise ValueError("docx2txt is required to read Microsoft Word files.")
+
+    text = docx2txt.process(input_file)
+
+    return text
+
+
 def _pdf_reader(input_file: Path, errors: str) -> str:
     """Extract text from PDF."""
     try:
@@ -30,7 +42,10 @@ def _pdf_reader(input_file: Path, errors: str) -> str:
     return text
 
 
-DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {".pdf": _pdf_reader}
+DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {
+    ".pdf": _pdf_reader,
+    ".docx": _docx_reader,
+}
 
 
 class SimpleDirectoryReader(BaseReader):
@@ -48,9 +63,14 @@ class SimpleDirectoryReader(BaseReader):
             False by default.
         required_exts (Optional[List[str]]): List of required extensions.
             Default is None.
+        file_extractor (Optional[Dict[str, Callable]]): A mapping of file
+            extension to a function that specifies how to convert that file
+            to text. See DEFAULT_FILE_EXTRACTOR.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
-
+        file_metadata (Optional[Callable[str, Dict]]): A function that takes
+            in a filename and returns a Dict of metadata for the Document.
+            Default is None.
     """
 
     def __init__(
@@ -62,8 +82,11 @@ class SimpleDirectoryReader(BaseReader):
         required_exts: Optional[List[str]] = None,
         file_extractor: Optional[Dict[str, Callable]] = None,
         num_files_limit: Optional[int] = None,
+        file_metadata: Optional[Callable[[str], Dict]] = None,
+        verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
+        super().__init__(verbose=verbose)
         self.input_dir = Path(input_dir)
         self.errors = errors
 
@@ -74,6 +97,7 @@ class SimpleDirectoryReader(BaseReader):
 
         self.input_files = self._add_files(self.input_dir)
         self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
+        self.file_metadata = file_metadata
 
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
@@ -101,6 +125,12 @@ class SimpleDirectoryReader(BaseReader):
         if self.num_files_limit is not None and self.num_files_limit > 0:
             new_input_files = new_input_files[0 : self.num_files_limit]
 
+        # print total number of files added
+        if self.verbose:
+            print(
+                f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}"
+            )
+
         return new_input_files
 
     def load_data(self, concatenate: bool = False) -> List[Document]:
@@ -108,6 +138,7 @@ class SimpleDirectoryReader(BaseReader):
 
         Args:
             concatenate (bool): whether to concatenate all files into one document.
+                If set to True, file metadata is ignored.
                 False by default.
 
         Returns:
@@ -116,6 +147,7 @@ class SimpleDirectoryReader(BaseReader):
         """
         data = ""
         data_list = []
+        metadata_list = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
                 data = self.file_extractor[input_file.suffix](input_file, self.errors)
@@ -124,8 +156,12 @@ class SimpleDirectoryReader(BaseReader):
                 with open(input_file, "r", errors=self.errors) as f:
                     data = f.read()
             data_list.append(data)
+            if self.file_metadata is not None:
+                metadata_list.append(self.file_metadata(str(input_file)))
 
         if concatenate:
             return [Document("\n".join(data_list))]
+        elif self.file_metadata is not None:
+            return [Document(d, extra_info=m) for d, m in zip(data_list, metadata_list)]
         else:
             return [Document(d) for d in data_list]

@@ -52,5 +52,6 @@ class Response:
         for source_node in self.source_nodes:
             fmt_text_chunk = truncate_text(source_node.source_text, 100)
             doc_id = source_node.doc_id or "None"
-            texts.append(f">Source (Doc id: {doc_id}): {fmt_text_chunk}")
+            source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
+            texts.append(source_text)
         return "\n\n".join(texts)
