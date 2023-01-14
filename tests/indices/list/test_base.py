@@ -231,3 +231,29 @@ def test_embedding_query(
         query_str, mode="embedding", similarity_top_k=1, **query_kwargs
     )
     assert str(response) == ("What is?:Hello world.")
+
+
+@patch_common
+def test_extra_info(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_splitter: Any,
+    documents: List[Document],
+) -> None:
+    """Test build/query with extra info."""
+    doc_text = (
+        "Hello world.\n"
+        "This is a test.\n"
+        "This is another test.\n"
+        "This is a test v2."
+    )
+    extra_info = {"extra_info": "extra_info", "foo": "bar"}
+    new_document = Document(doc_text, extra_info=extra_info)
+    list_index = GPTListIndex(documents=[new_document])
+    assert list_index.index_struct.nodes[0].get_text() == (
+        "extra_info: extra_info\n" "foo: bar\n\n" "Hello world."
+    )
+    assert list_index.index_struct.nodes[3].get_text() == (
+        "extra_info: extra_info\n" "foo: bar\n\n" "This is a test v2."
+    )

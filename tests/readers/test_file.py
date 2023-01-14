@@ -1,6 +1,7 @@
 """Test file reader."""
 
 from tempfile import TemporaryDirectory
+from typing import Any, Dict
 
 from gpt_index.readers.file import SimpleDirectoryReader
 
@@ -178,3 +179,33 @@ def test_num_files_limit() -> None:
                         "test3.txt",
                         "test4.txt",
                     }
+
+
+def test_file_metadata() -> None:
+    """Test if file metadata is added to Document."""
+    # test file_metadata
+    with TemporaryDirectory() as tmp_dir:
+        with open(f"{tmp_dir}/test1.txt", "w") as f:
+            f.write("test1")
+        with open(f"{tmp_dir}/test2.txt", "w") as f:
+            f.write("test2")
+        with open(f"{tmp_dir}/test3.txt", "w") as f:
+            f.write("test3")
+
+        test_author = "Bruce Wayne"
+
+        def filename_to_metadata(filename: str) -> Dict[str, Any]:
+            return {"filename": filename, "author": test_author}
+
+        reader = SimpleDirectoryReader(tmp_dir, file_metadata=filename_to_metadata)
+
+        documents = reader.load_data()
+
+        for d in documents:
+            assert d.extra_info is not None and d.extra_info["author"] == test_author
+
+        # There should be no metadata if we choose to concatenate files
+        documents = reader.load_data(concatenate=True)
+
+        for d in documents:
+            assert d.extra_info is None

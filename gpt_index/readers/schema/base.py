@@ -1,6 +1,5 @@
 """Base schema for readers."""
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 from langchain.docstore.document import Document as LCDocument
 
@@ -14,8 +13,6 @@ class Document(BaseDocument):
     This document connects to data sources.
 
     """
-
-    extra_info: Optional[Dict] = None
 
     def __post_init__(self) -> None:
         """Post init."""
