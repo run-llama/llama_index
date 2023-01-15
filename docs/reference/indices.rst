@@ -17,6 +17,7 @@ parameters and methods common to all indices.
    indices/table.rst
    indices/tree.rst
    indices/vector_store.rst
+   indices/struct_store.rst
 
 
 Base Index Class
