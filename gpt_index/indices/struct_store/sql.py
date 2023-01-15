@@ -107,5 +107,5 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         super()._preprocess_query(mode, query_kwargs)
         # pass along sql_database, table_name
         query_kwargs["sql_database"] = self.sql_database
-        query_kwargs["table_name"] = self.table_name
-        query_kwargs["ref_doc_id_column"] = self.ref_doc_id_column
+        if mode == QueryMode.DEFAULT:
+            query_kwargs["ref_doc_id_column"] = self.ref_doc_id_column

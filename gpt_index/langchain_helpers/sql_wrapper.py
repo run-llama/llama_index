@@ -11,8 +11,7 @@ class SQLDatabase(LangchainSQLDatabase):
 
     Wrapper around SQLDatabase object from langchain. Offers
     some helper utilities for insertion and querying.
-    See langchain documentation for more details:
-    shorturl.at/mITZ0
+    See `langchain documentation <shorturl.at/mITZ0>`_ for more details:
 
     Args:
         *args: Arguments to pass to langchain SQLDatabase.
