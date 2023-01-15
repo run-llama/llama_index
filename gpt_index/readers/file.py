@@ -54,7 +54,7 @@ def _image_parser(input_file: Path, errors: str) -> str:
     except ImportError:
         raise ValueError("transformers is required for using DONUT model.")
     try:
-        import sentencepiece
+        import sentencepiece  # noqa: F401
     except ImportError:
         raise ValueError("sentencepiece is required for using DONUT model.")
     try:
@@ -62,8 +62,12 @@ def _image_parser(input_file: Path, errors: str) -> str:
     except ImportError:
         raise ValueError("PIL is required to read image files.")
 
-    processor = DonutProcessor.from_pretrained("naver-clova-ix/donut-base-finetuned-cord-v2")
-    model = VisionEncoderDecoderModel.from_pretrained("naver-clova-ix/donut-base-finetuned-cord-v2")
+    processor = DonutProcessor.from_pretrained(
+        "naver-clova-ix/donut-base-finetuned-cord-v2"
+    )
+    model = VisionEncoderDecoderModel.from_pretrained(
+        "naver-clova-ix/donut-base-finetuned-cord-v2"
+    )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
@@ -72,7 +76,9 @@ def _image_parser(input_file: Path, errors: str) -> str:
 
     # prepare decoder inputs
     task_prompt = "<s_cord-v2>"
-    decoder_input_ids = processor.tokenizer(task_prompt, add_special_tokens=False, return_tensors="pt").input_ids
+    decoder_input_ids = processor.tokenizer(
+        task_prompt, add_special_tokens=False, return_tensors="pt"
+    ).input_ids
 
     pixel_values = processor(image, return_tensors="pt").pixel_values
 
@@ -90,18 +96,21 @@ def _image_parser(input_file: Path, errors: str) -> str:
     )
 
     sequence = processor.batch_decode(outputs.sequences)[0]
-    sequence = sequence.replace(processor.tokenizer.eos_token, "").replace(processor.tokenizer.pad_token, "")
+    sequence = sequence.replace(processor.tokenizer.eos_token, "").replace(
+        processor.tokenizer.pad_token, ""
+    )
     # remove first task start token
-    sequence = re.sub(r"<.*?>", "", sequence, count=1).strip()  
+    sequence = re.sub(r"<.*?>", "", sequence, count=1).strip()
 
     return sequence
+
 
 DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {
     ".pdf": _pdf_reader,
     ".docx": _docx_reader,
-    ".jpg": _image_parser, 
-    ".png": _image_parser, 
-    ".jpeg": _image_parser
+    ".jpg": _image_parser,
+    ".png": _image_parser,
+    ".jpeg": _image_parser,
 }
 
 
