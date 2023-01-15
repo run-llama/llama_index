@@ -16,9 +16,9 @@ from sqlalchemy import (
     select,
 )
 
-from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.indices.struct_store.base import default_output_parser
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
+from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import (
