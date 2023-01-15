@@ -1,4 +1,5 @@
 """Simple reader that ."""
+import re
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
@@ -42,9 +43,74 @@ def _pdf_reader(input_file: Path, errors: str) -> str:
     return text
 
 
+def _image_parser(input_file: Path, errors: str) -> str:
+    """Extract text from images using DONUT."""
+    try:
+        import torch
+    except ImportError:
+        raise ValueError("install pytorch to use the model")
+    try:
+        from transformers import DonutProcessor, VisionEncoderDecoderModel
+    except ImportError:
+        raise ValueError("transformers is required for using DONUT model.")
+    try:
+        import sentencepiece  # noqa: F401
+    except ImportError:
+        raise ValueError("sentencepiece is required for using DONUT model.")
+    try:
+        from PIL import Image
+    except ImportError:
+        raise ValueError("PIL is required to read image files.")
+
+    processor = DonutProcessor.from_pretrained(
+        "naver-clova-ix/donut-base-finetuned-cord-v2"
+    )
+    model = VisionEncoderDecoderModel.from_pretrained(
+        "naver-clova-ix/donut-base-finetuned-cord-v2"
+    )
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.to(device)
+    # load document image
+    image = Image.open(input_file)
+
+    # prepare decoder inputs
+    task_prompt = "<s_cord-v2>"
+    decoder_input_ids = processor.tokenizer(
+        task_prompt, add_special_tokens=False, return_tensors="pt"
+    ).input_ids
+
+    pixel_values = processor(image, return_tensors="pt").pixel_values
+
+    outputs = model.generate(
+        pixel_values.to(device),
+        decoder_input_ids=decoder_input_ids.to(device),
+        max_length=model.decoder.config.max_position_embeddings,
+        early_stopping=True,
+        pad_token_id=processor.tokenizer.pad_token_id,
+        eos_token_id=processor.tokenizer.eos_token_id,
+        use_cache=True,
+        num_beams=1,
+        bad_words_ids=[[processor.tokenizer.unk_token_id]],
+        return_dict_in_generate=True,
+    )
+
+    sequence = processor.batch_decode(outputs.sequences)[0]
+    sequence = sequence.replace(processor.tokenizer.eos_token, "").replace(
+        processor.tokenizer.pad_token, ""
+    )
+    # remove first task start token
+    sequence = re.sub(r"<.*?>", "", sequence, count=1).strip()
+
+    return sequence
+
+
 DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {
     ".pdf": _pdf_reader,
     ".docx": _docx_reader,
+    ".jpg": _image_parser,
+    ".png": _image_parser,
+    ".jpeg": _image_parser,
 }
 
 
