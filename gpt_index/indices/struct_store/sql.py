@@ -26,7 +26,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
     Args:
         sql_database (Optional[SQLDatabase]): SQL database to use,
             including table names to specify.
-            See :ref:`Ref-SQL-Database` for more details.
+            See :ref:`Ref-Struct-Store` for more details.
         table_name (Optional[str]): Name of the table to use
             for extracting data.
             Either table_name or table must be specified.
