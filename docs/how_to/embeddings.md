@@ -62,7 +62,7 @@ Langchain's [embeddings](https://langchain.readthedocs.io/en/latest/reference/mo
 We introduce a wrapper class, 
 [`LangchainEmbedding`](/reference/embeddings.rst), for integration into GPT Index.
 
-An example snippet is shown below (to use Huggingface embeddings) on the GPTListIndex:
+An example snippet is shown below (to use Hugging Face embeddings) on the GPTListIndex:
 
 ```python
 from gpt_index import GPTListIndex, SimpleDirectoryReader
