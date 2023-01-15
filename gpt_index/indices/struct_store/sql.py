@@ -3,7 +3,6 @@
 from typing import Any, Dict, Optional, Sequence, cast
 
 from sqlalchemy import Table
-from sqlalchemy.engine import Engine
 
 from gpt_index.data_structs.table import SQLStructTable, StructDatapoint
 from gpt_index.indices.base import DOCUMENTS_INPUT
@@ -18,17 +17,23 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
 
     The GPTSQLStructStoreIndex is an index that uses a SQL database
     under the hood. During index construction, the data can be inferred
-    from unstructured  documents given a schema extract prompt,
+    from unstructured documents given a schema extract prompt,
     or it can be pre-loaded in the database.
 
     During query time, the user can either specify a raw SQL query
     or a natural language query to retrieve their data.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        sql_database (Optional[SQLDatabase]): SQL database to use,
+            including table names to specify.
+            See :ref:`Ref-Struct-Store` for more details.
+        table_name (Optional[str]): Name of the table to use
+            for extracting data.
+            Either table_name or table must be specified.
+        table (Optional[Table]): SQLAlchemy Table object to use.
+            Specifying the Table object explicitly, instead of
+            the table name, allows you to pass in a view.
+            Either table_name or table must be specified.
 
     """
 
@@ -39,7 +44,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         index_struct: Optional[SQLStructTable] = None,
         llm_predictor: Optional[LLMPredictor] = None,
-        sql_engine: Optional[Engine] = None,
+        sql_database: Optional[SQLDatabase] = None,
         table_name: Optional[str] = None,
         table: Optional[Table] = None,
         ref_doc_id_column: Optional[str] = None,
@@ -50,13 +55,13 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         if table_name is None and table is None:
             raise ValueError("table_name must be specified")
         self.table_name = table_name or cast(Table, table).name
-        if sql_engine is None:
-            raise ValueError("sql_engine must be specified")
-        self.sql_database = SQLDatabase(sql_engine)
-        # if ref_doc_id_column is specified, then we need to check that
-        # it is a valid column in the table
+        if sql_database is None:
+            raise ValueError("sql_database must be specified")
+        self.sql_database = sql_database
         if table is None:
             table = self.sql_database.metadata_obj.tables[table_name]
+        # if ref_doc_id_column is specified, then we need to check that
+        # it is a valid column in the table
         col_names = [c.name for c in table.c]
         if ref_doc_id_column is not None and ref_doc_id_column not in col_names:
             raise ValueError(
@@ -102,5 +107,5 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         super()._preprocess_query(mode, query_kwargs)
         # pass along sql_database, table_name
         query_kwargs["sql_database"] = self.sql_database
-        query_kwargs["table_name"] = self.table_name
-        query_kwargs["ref_doc_id_column"] = self.ref_doc_id_column
+        if mode == QueryMode.DEFAULT:
+            query_kwargs["ref_doc_id_column"] = self.ref_doc_id_column

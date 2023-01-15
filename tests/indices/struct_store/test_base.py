@@ -18,6 +18,7 @@ from sqlalchemy import (
 
 from gpt_index.indices.struct_store.base import default_output_parser
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
+from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import (
@@ -84,8 +85,9 @@ def test_sql_index(
     # NOTE: we can use the default output parser for this
     index_kwargs, _ = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
+    sql_database = SQLDatabase(engine)
     index = GPTSQLStructStoreIndex(
-        docs, sql_engine=engine, table_name=table_name, **index_kwargs
+        docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
 
     # test that the document is inserted
@@ -101,7 +103,7 @@ def test_sql_index(
         connection.execute(delete_stmt)
     docs = [Document(text="user_id:2\nfoo:bar"), Document(text="user_id:8\nfoo:hello")]
     index = GPTSQLStructStoreIndex(
-        docs, sql_engine=engine, table_name=table_name, **index_kwargs
+        docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
     # test that the document is inserted
     stmt = select([column("user_id"), column("foo")]).select_from(test_table)
@@ -133,9 +135,10 @@ def test_sql_index_query(
         Column("foo", String(16), nullable=False),
     )
     metadata_obj.create_all()
+    sql_database = SQLDatabase(engine)
     # NOTE: we can use the default output parser for this
     index = GPTSQLStructStoreIndex(
-        docs, sql_engine=engine, table_name=table_name, **index_kwargs
+        docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
 
     # query the index with SQL

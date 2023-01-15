@@ -7,12 +7,21 @@ from sqlalchemy.engine import Engine
 
 
 class SQLDatabase(LangchainSQLDatabase):
-    """SQL Database."""
+    """SQL Database.
+
+    Wrapper around SQLDatabase object from langchain. Offers
+    some helper utilities for insertion and querying.
+    See `langchain documentation <http://shorturl.at/mITZ0>`_ for more details:
+
+    Args:
+        *args: Arguments to pass to langchain SQLDatabase.
+        **kwargs: Keyword arguments to pass to langchain SQLDatabase.
+
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
-        # self.metadata_obj = MetaData(bind=self._engine, reflect=True)
         self.metadata_obj = MetaData(bind=self._engine)
         self.metadata_obj.reflect()
 
@@ -27,6 +36,7 @@ class SQLDatabase(LangchainSQLDatabase):
 
     def get_single_table_info(self, table_name: str) -> str:
         """Get table info for a single table."""
+        # same logic as table_info, but with specific table names
         template = "Table '{table_name}' has columns: {columns}."
         columns = []
         for column in self._inspector.get_columns(table_name):

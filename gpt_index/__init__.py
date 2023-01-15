@@ -34,6 +34,7 @@ from gpt_index.indices.vector_store import (
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 
 # prompts
 from gpt_index.prompts.base import Prompt
@@ -106,6 +107,7 @@ __all__ = [
     "TrafilaturaWebReader",
     "LLMPredictor",
     "MockLLMPredictor",
+    "SQLDatabase",
     "PromptHelper",
     "QueryConfig",
     "QueryMode",

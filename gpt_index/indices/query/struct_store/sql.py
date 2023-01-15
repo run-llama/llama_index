@@ -27,8 +27,6 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         self,
         index_struct: SQLStructTable,
         sql_database: Optional[SQLDatabase] = None,
-        table_name: Optional[str] = None,
-        ref_doc_id_column: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -36,10 +34,6 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         if sql_database is None:
             raise ValueError("sql_database must be provided.")
         self._sql_database = sql_database
-        if table_name is None:
-            raise ValueError("table_name must be provided.")
-        self._table_name = table_name
-        self._ref_doc_id_column = ref_doc_id_column
 
     @llm_token_counter("query")
     def query(self, query_str: str, verbose: bool = False) -> Response:
@@ -70,7 +64,6 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         self,
         index_struct: SQLStructTable,
         sql_database: Optional[SQLDatabase] = None,
-        table_name: Optional[str] = None,
         ref_doc_id_column: Optional[str] = None,
         text_to_sql_prompt: Optional[TextToSQLPrompt] = None,
         **kwargs: Any,
@@ -80,9 +73,6 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         if sql_database is None:
             raise ValueError("sql_database must be provided.")
         self._sql_database = sql_database
-        if table_name is None:
-            raise ValueError("table_name must be provided.")
-        self._table_name = table_name
         self._ref_doc_id_column = ref_doc_id_column
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
 
@@ -93,7 +83,7 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
 
     def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
-        table_info = self._sql_database.get_single_table_info(self._table_name)
+        table_info = self._sql_database.table_info
         response_str, _ = self._llm_predictor.predict(
             self._text_to_sql_prompt, query_str=query_str, schema=table_info
         )
