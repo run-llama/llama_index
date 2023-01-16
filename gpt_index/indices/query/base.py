@@ -15,7 +15,6 @@ from gpt_index.indices.response.builder import (
     ResponseSourceBuilder,
     TextChunk,
 )
-from gpt_index.indices.response.schema import Response
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
@@ -23,6 +22,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from gpt_index.response.schema import Response
 from gpt_index.schema import DocumentStore
 from gpt_index.token_counter.token_counter import llm_token_counter
 
