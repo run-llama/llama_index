@@ -24,7 +24,6 @@ Context
 - LLMs are a phenomenonal piece of technology for knowledge generation and reasoning.
 - A big limitation of LLMs is context size (e.g. Davinci's limit is 4096 tokens. Large, but not infinite).
 - The ability to feed "knowledge" to LLMs is restricted to this limited prompt size and model weights.
-- **Thought**: What if LLMs can have access to potentially a much larger database of knowledge without retraining/finetuning? 
 
 Proposed Solution
 ^^^^^^^^^^^^^^^^^
