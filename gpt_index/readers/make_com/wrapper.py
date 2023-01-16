@@ -18,7 +18,7 @@ class MakeWrapper(BaseReader):
 
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory.
-        
+
         NOTE: This is not implemented.
 
         """
@@ -33,7 +33,7 @@ class MakeWrapper(BaseReader):
             webhook_url (str): Webhook URL.
             response (Response): Response object.
             query (Optional[str]): Query. Defaults to None.
-        
+
         """
         response_text = response.response
         source_nodes = [n.to_dict() for n in response.source_nodes]
