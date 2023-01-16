@@ -15,10 +15,10 @@ from typing import Any, Dict, List, Optional
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.schema import SourceNode
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
+from gpt_index.response.schema import SourceNode
 from gpt_index.utils import temp_set_attrs
 
 

@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional, cast
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.response.builder import ResponseBuilder, ResponseSourceBuilder
-from gpt_index.indices.response.schema import Response
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
@@ -16,6 +15,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT_MULTIPLE,
 )
 from gpt_index.prompts.prompts import TreeSelectMultiplePrompt, TreeSelectPrompt
+from gpt_index.response.schema import Response
 
 
 class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):

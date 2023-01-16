@@ -3,12 +3,14 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from dataclasses_json import DataClassJsonMixin
+
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.utils import truncate_text
 
 
 @dataclass
-class SourceNode:
+class SourceNode(DataClassJsonMixin):
     """Source node.
 
     User-facing class containing the source text and the corresponding document id.
@@ -46,11 +48,11 @@ class Response:
         """Convert to string representation."""
         return self.response or "None"
 
-    def get_formatted_sources(self) -> str:
+    def get_formatted_sources(self, length: int = 100) -> str:
         """Get formatted sources text."""
         texts = []
         for source_node in self.source_nodes:
-            fmt_text_chunk = truncate_text(source_node.source_text, 100)
+            fmt_text_chunk = truncate_text(source_node.source_text, length)
             doc_id = source_node.doc_id or "None"
             source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
             texts.append(source_text)

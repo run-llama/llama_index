@@ -9,8 +9,8 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseQueryRunner
 from gpt_index.indices.query.query_map import get_query_cls
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
-from gpt_index.indices.response.schema import Response
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.response.schema import Response
 from gpt_index.schema import DocumentStore
 
 DEFAULT_QUERY_CONFIGS = [
