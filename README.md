@@ -18,17 +18,22 @@ Discord: https://discord.gg/dGcwcsnxhU.
 - The ability to feed "knowledge" to LLMs is restricted to this limited prompt size and model weights.
 
 #### Proposed Solution
-That's where the **GPT Index** comes in. GPT Index is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
 
-- Provides simple data structures to resolve prompt size limitations.
-- Offers data connectors to your external data sources.
-- Offers you a comprehensive toolset trading off cost and performance.
+At its core, GPT Index contains a toolkit of **index data structures** designed to easily connect LLM's with your external data.
+GPT Index helps to provide the following advantages:
+- Remove concerns over prompt size limitations.
+- Abstract common usage patterns to reduce boilerplate code in your LLM app.
+- Provide data connectors to your common data sources (Google Docs, Slack, etc.).
+- Provide cost transparency + tools that reduce cost while increasing performance.
 
-At the core of GPT Index is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
 
-- Uses a pre-trained LLM primarily for *reasoning*/*summarization* instead of prior knowledge.
-- Takes as input a large corpus of text data and build a structured index over it (using an LLM or heuristics).
-- Allow users to *query* the index by passing in an LLM prompt, and obtaining a response.
+Each data structure offers distinct use cases and a variety of customizable parameters. These indices can then be 
+*queried* in a general purpose manner, in order to achieve any task that you would typically achieve with an LLM:
+- Question-Answering
+- Summarization
+- Text Generation (Stories, TODO's, emails, etc.)
+- and more!
+
 
 ## 💡 Contributing
 
