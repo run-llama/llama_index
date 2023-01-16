@@ -44,7 +44,7 @@ a summary, for instance with the following:
 index1.set_text(
     index1.query(
         "What is a summary of this document?", 
-        response_mode="tree_summarize"
+        mode="summarize"
     )
 )
 ```
