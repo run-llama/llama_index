@@ -3,6 +3,6 @@
 Response
 =================
 
-.. automodule:: gpt_index.indices.response.schema
+.. automodule:: gpt_index.response.schema
    :members:
    :inherited-members:

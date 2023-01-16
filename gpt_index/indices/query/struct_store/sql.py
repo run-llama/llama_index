@@ -3,10 +3,10 @@ from typing import Any, Optional
 
 from gpt_index.data_structs.table import SQLStructTable
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.schema import Response
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from gpt_index.prompts.prompts import TextToSQLPrompt
+from gpt_index.response.schema import Response
 from gpt_index.token_counter.token_counter import llm_token_counter
 
 
