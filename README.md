@@ -6,28 +6,29 @@ PyPi: https://pypi.org/project/gpt-index/.
 
 Documentation: https://gpt-index.readthedocs.io/en/latest/.
 
+Discord: https://discord.gg/dGcwcsnxhU.
+
 ## 🚀 Overview
 
 **NOTE**: This README is not updated as frequently as the documentation. Please check out the documentation above for the latest updates!
 
 #### Context
-- LLMs are a phenomenal piece of technology for knowledge generation and reasoning.
-- A big limitation of LLMs is context size (e.g. OpenAI's `davinci` model for GPT-3 has a [limit](https://openai.com/api/pricing/) of 4096 tokens. Large, but not infinite).
+- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning.
+- A big limitation of LLMs is context size (e.g. Davinci's limit is 4096 tokens. Large, but not infinite).
 - The ability to feed "knowledge" to LLMs is restricted to this limited prompt size and model weights.
-- **Thought**: what if LLMs could have access to potentially a much larger database of knowledge without retraining/finetuning? 
 
 #### Proposed Solution
-That's where **GPT Index** comes in. GPT Index is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
+That's where the **GPT Index** comes in. GPT Index is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
 
 - Provides simple data structures to resolve prompt size limitations.
 - Offers data connectors to your external data sources.
 - Offers you a comprehensive toolset trading off cost and performance.
 
-At the core of GPT Index is a **data structure**. Instead of relying on world knowledge encoded in model weights, a GPT Index data structure does the following:
+At the core of GPT Index is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
 
 - Uses a pre-trained LLM primarily for *reasoning*/*summarization* instead of prior knowledge.
-- Takes a large corpus of text data as input and builds a structured index over it (using an LLM or heuristics).
-- Allow users to *query* the index in order to synthesize an answer to the question - this requires both *traversal* of the index as well as a synthesis of the answer.
+- Takes as input a large corpus of text data and build a structured index over it (using an LLM or heuristics).
+- Allow users to *query* the index by passing in an LLM prompt, and obtaining a response.
 
 ## 💡 Contributing
 
@@ -48,11 +49,11 @@ pip install gpt-index
 
 Examples are in the `examples` folder. Indices are in the `indices` folder (see list of indices below).
 
-To build a tree index:
+To build a simple vector store index:
 ```python
-from gpt_index import GPTTreeIndex, SimpleDirectoryReader
+from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTTreeIndex(documents)
+index = GPTSimpleVectorIndex(documents)
 ```
 
 To save to and load from disk:
@@ -60,7 +61,7 @@ To save to and load from disk:
 # save to disk
 index.save_to_disk('index.json')
 # load from disk
-index = GPTTreeIndex.load_from_disk('index.json')
+index = GPTSimpleVectorIndex.load_from_disk('index.json')
 ```
 
 To query:
