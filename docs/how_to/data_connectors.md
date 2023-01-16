@@ -11,6 +11,7 @@ The API reference documentation can be found [here](/reference/readers.rst).
     - Note: We use the [discord.py](https://github.com/Rapptz/discord.py) API wrapper for Discord. This is meant to be used
     in an async setting; however, we adapt it to synchronous Document loading.
 - Wikipedia (`WikipediaReader`)
+- Web (`SimpleWebPageReader`, `TrafilaturaWebReader`)
 
 #### Databases
 - MongoDB (`SimpleMongoReader`)
@@ -22,6 +23,10 @@ See [How to use Vector Stores with GPT Index](vector_stores.md) for a more thoro
 - Weaviate (`WeaviateReader`)
 - Pinecone (`PineconeReader`)
 - Faiss (`FaissReader`)
+
+### Workflow Automation
+
+- Make.com (`MakeWrapper`). NOTE: `load_data` is not supported. See `pass_response_to_webhook` in the [reference documentation](/reference/readers.rst) instead.
 
 #### File
 - local file directory (`SimpleDirectoryReader`)
