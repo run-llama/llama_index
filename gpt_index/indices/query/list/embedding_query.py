@@ -57,7 +57,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         top_k_nodes = [nodes[i] for i in top_idxs]
         if verbose:
             top_k_node_text = "\n".join([n.get_text() for n in top_k_nodes])
-            print(f"Top {len(top_idxs)} nodes:\n{top_k_node_text}")
+            print(f"> Top {len(top_idxs)} nodes:\n{top_k_node_text}")
         return top_k_nodes
 
     def _get_embeddings(

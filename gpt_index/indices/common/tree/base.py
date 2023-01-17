@@ -95,7 +95,6 @@ class GPTTreeIndexBuilder:
             f"> Building index from nodes: {len(cur_nodes) // self.num_children} chunks"
         )
         for i in range(0, len(cur_node_list), self.num_children):
-            print(f"{i}/{len(cur_nodes)}")
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
             text_chunk = self._prompt_helper.get_text_from_nodes(
                 cur_nodes_chunk, prompt=self.summary_prompt
