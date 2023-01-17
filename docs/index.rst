@@ -9,11 +9,10 @@ Welcome to GPT Index!
 GPT Index is a project consisting of a set of data structures designed to make it easier to 
 use large external knowledge bases with LLMs.
 
-The Github project page is here: https://github.com/jerryjliu/gpt_index.
-
-The pypi package is here: https://pypi.org/project/gpt-index/.
-
-Join our Discord! https://discord.gg/dGcwcsnxhU
+- Github: https://github.com/jerryjliu/gpt_index
+- PyPi: https://pypi.org/project/gpt-index/
+- Twitter: https://twitter.com/gpt_index
+- Discord https://discord.gg/dGcwcsnxhU
 
 
 🚀 Overview
