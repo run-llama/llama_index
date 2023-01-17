@@ -6,6 +6,10 @@ PyPi: https://pypi.org/project/gpt-index/.
 
 Documentation: https://gpt-index.readthedocs.io/en/latest/.
 
+Twitter: https://twitter.com/gpt_index.
+
+Discord: https://discord.gg/dGcwcsnxhU.
+
 ## 🚀 Overview
 
 **NOTE**: This README is not updated as frequently as the documentation. Please check out the documentation above for the latest updates!
