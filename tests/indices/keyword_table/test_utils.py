@@ -22,7 +22,7 @@ def test_expand_tokens_with_subtokens() -> None:
 def test_extract_keywords_with_start_delimiter() -> None:
     """Test extract keywords with start delimiter."""
     response = "KEYWORDS: foo, bar, foobar"
-    keywords = extract_keywords_given_response(response, start_token='KEYWORDS:')
+    keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
     assert keywords == {
         "foo",
         "bar",
