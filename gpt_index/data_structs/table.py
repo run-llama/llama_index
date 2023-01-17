@@ -1,7 +1,7 @@
 """Struct store schema."""
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -24,3 +24,5 @@ class BaseStructTable(IndexStruct):
 @dataclass
 class SQLStructTable(BaseStructTable):
     """SQL struct outputs."""
+
+    context_dict: Optional[Dict[str, str]] = None

@@ -29,5 +29,8 @@ class PromptType(str, Enum):
     # text to sql
     TEXT_TO_SQL = "text_to_sql"
 
+    # table context
+    TABLE_CONTEXT = "table_context"
+
     # custom (by default)
     CUSTOM = "custom"

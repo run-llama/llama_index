@@ -190,3 +190,39 @@ class TextToSQLPrompt(Prompt):
 
     prompt_type: PromptType = PromptType.TEXT_TO_SQL
     input_variables: List[str] = ["query_str", "schema"]
+
+
+class TableContextPrompt(Prompt):
+    """Table context prompt.
+    
+    Prompt to generate a table context given a table schema `schema`,
+    as well as unstructured text context `context_str`, and
+    a task `query_str`.
+    This includes both a high-level description of the table
+    as well as a description of each column in the table.
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+    prompt_type: PromptType = PromptType.TABLE_CONTEXT
+    input_variables: List[str] = ["schema", "context_str", "query_str"]
+
+
+class RefineTableContextPrompt(Prompt):
+    """Refine Table context prompt.
+    
+    Prompt to refine a table context given a table schema `schema`,
+    as well as unstructured text context `context_str`, and
+    a task `query_str`.
+    This includes both a high-level description of the table
+    as well as a description of each column in the table.
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+    prompt_type: PromptType = PromptType.TABLE_CONTEXT
+    input_variables: List[str] = ["schema", "context_str", "query_str", "existing_answer"]
