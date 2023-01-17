@@ -118,7 +118,7 @@ class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
             max_keywords=self.max_keywords_per_query,
             question=query_str,
         )
-        keywords = extract_keywords_given_response(response)
+        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
         return list(keywords)
 
 
