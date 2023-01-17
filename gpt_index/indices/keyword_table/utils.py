@@ -43,7 +43,7 @@ def rake_extract_keywords(
         return set(keywords)
 
 
-def extract_keywords_given_response(response: str, lowercase: bool = True, start_token: str = 'KEYWORDS: ') -> Set[str]:
+def extract_keywords_given_response(response: str, lowercase: bool = True, start_token: str = '') -> Set[str]:
     """Extract keywords given the GPT-generated response.
 
     Used by keyword table indices. Parses <start_token>: <word1>, <word2>, ... into [word1, word2, ...]
@@ -54,8 +54,6 @@ def extract_keywords_given_response(response: str, lowercase: bool = True, start
 
     if response.startswith(start_token):
         response = response[len(start_token):]
-    else:
-        raise Exception(f"Invalid format, response starts with {response[:len(start_token)]}, not {start_token}")
 
     keywords = response.split(",")
     for k in keywords:
