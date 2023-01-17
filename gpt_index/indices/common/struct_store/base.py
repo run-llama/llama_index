@@ -48,13 +48,25 @@ class SQLContextBuilder:
         )
         self._table_context_task = table_context_task or DEFAULT_TABLE_CONTEXT_QUERY
 
-    def build_context_from_documents(
+
+    def build_all_context_from_documents(
+        self, documents: DOCUMENTS_INPUT, verbose: bool = False
+    ) -> Dict[str, str]:
+        """Build context for all tables in the database."""
+        context_dict = {}
+        for table_name in self._sql_database.get_table_names():
+            context_dict[table_name] = self.build_table_context_from_documents(
+                documents, table_name, verbose=verbose
+            )
+        return context_dict
+
+    def build_table_context_from_documents(
         self, 
         documents: DOCUMENTS_INPUT, 
         table_name: str, 
         verbose: bool = False
     ) -> str:
-        """Build context from documents."""
+        """Build context from documents for a single table."""
         schema = self._sql_database.get_single_table_info(table_name)
         prompt_with_schema = self._table_context_prompt.partial_format(
             schema=schema
