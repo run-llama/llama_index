@@ -86,14 +86,8 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         tables_desc = []
         for table_name in self._sql_database.get_table_names():
             table_desc = self._sql_database.get_single_table_info(table_name)
-            table_text = (
-                f"Schema of table {table_name}:\n"
-                f"{table_desc}\n"
-            )
-            if (
-                self._index_struct.context_dict is not None 
-                and table_name in self._index_struct.context_dict
-            ):
+            table_text = f"Schema of table {table_name}:\n" f"{table_desc}\n"
+            if table_name in self._index_struct.context_dict:
                 table_text += f"Context of table {table_name}:\n"
                 table_text += self._index_struct.context_dict[table_name]
             tables_desc.append(table_text)

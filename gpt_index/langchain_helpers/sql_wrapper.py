@@ -1,5 +1,5 @@
 """SQL wrapper around SQLDatabase in langchain."""
-from typing import Any, Dict, List, Tuple, Iterable
+from typing import Any, Dict, Iterable, List, Tuple
 
 from langchain.sql_database import SQLDatabase as LangchainSQLDatabase
 from sqlalchemy import MetaData, insert

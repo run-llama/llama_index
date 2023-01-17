@@ -6,11 +6,12 @@ from sqlalchemy import Table
 
 from gpt_index.data_structs.table import SQLStructTable, StructDatapoint
 from gpt_index.indices.base import DOCUMENTS_INPUT
+from gpt_index.indices.common.struct_store.base import SQLContextBuilder
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.indices.common.struct_store.base import SQLContextBuilder
+from gpt_index.schema import BaseDocument
 
 
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
@@ -43,9 +44,9 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             context for the specified table, which will then be used during
             query-time. Also if specified, context_documents must be specified,
             and table_context cannot be specified.
-        context_documents_dict (Optional[Dict[str, Sequence[DOCUMENTS_INPUT]]]):
+        context_documents_dict (Optional[Dict[str, Sequence[BaseDocument]]]):
             Optional context
-            documents to inform the sql_context_builder. Must be specified if 
+            documents to inform the sql_context_builder. Must be specified if
             sql_context_builder is specified. Cannot be specified if table_context
             is specified.
 
@@ -64,7 +65,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         ref_doc_id_column: Optional[str] = None,
         table_context_dict: Optional[Dict[str, str]] = None,
         sql_context_builder: Optional[SQLContextBuilder] = None,
-        context_document_dict: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        context_document_dict: Optional[Dict[str, Sequence[BaseDocument]]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -106,24 +107,29 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
                 "sql_context_builder/context_document_dict"
             )
         if sql_context_builder is not None:
-            context_dict: Dict[str, str] = self._sql_context_builder.\
-                build_all_context_from_documents()
+            context_document_dict = cast(
+                Dict[str, Sequence[BaseDocument]], context_document_dict
+            )
+            context_dict: Dict[
+                str, str
+            ] = sql_context_builder.build_all_context_from_documents(
+                context_document_dict
+            )
         elif table_context_dict is not None:
             context_dict = table_context_dict
         else:
-            context_dict = None
+            context_dict = {}
+
         # validate context_dict keys are valid table names
-        if context_dict is not None:
-            context_keys = set(context_dict.keys())
-            if not context_keys.issubset(set(self.sql_database.get_table_names())):
-                raise ValueError(
-                    "Invalid context table names: "
-                    f"{context_keys - self.sql_database.get_table_names()}}"
-                )
+        context_keys = set(context_dict.keys())
+        if not context_keys.issubset(set(self.sql_database.get_table_names())):
+            raise ValueError(
+                "Invalid context table names: "
+                f"{context_keys - set(self.sql_database.get_table_names())}"
+            )
 
         self._index_struct.context_dict.update(context_dict)
         self._sql_context_builder = sql_context_builder
-
 
     def _get_col_types_map(self) -> Dict[str, type]:
         """Get col types map for schema."""

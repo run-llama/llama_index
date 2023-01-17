@@ -5,14 +5,14 @@ from gpt_index.prompts.prompts import (
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,
     RefinePrompt,
+    RefineTableContextPrompt,
     SchemaExtractPrompt,
     SummaryPrompt,
+    TableContextPrompt,
     TextToSQLPrompt,
     TreeInsertPrompt,
     TreeSelectMultiplePrompt,
     TreeSelectPrompt,
-    TableContextPrompt,
-    RefineTableContextPrompt
 )
 
 ############################################
@@ -199,7 +199,7 @@ DEFAULT_TABLE_CONTEXT_TMPL = (
 )
 
 DEFAULT_TABLE_CONTEXT_QUERY = (
-    "Provide a high-level description of the table, " 
+    "Provide a high-level description of the table, "
     "as well as a description of each column in the table. "
     "Provide answers in the following format:\n"
     "TableDescription: <description>\n"
@@ -227,4 +227,6 @@ DEFAULT_REFINE_TABLE_CONTEXT_TMPL = (
     "answer the question. "
     "If the context isn't useful, return the original answer."
 )
-DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = RefineTableContextPrompt(DEFAULT_TABLE_CONTEXT_TMPL)
+DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = RefineTableContextPrompt(
+    DEFAULT_TABLE_CONTEXT_TMPL
+)
