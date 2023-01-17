@@ -111,7 +111,16 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         elif table_context_dict is not None:
             context_dict = table_context_dict
         else:
-            context_dict = {}
+            context_dict = None
+        # validate context_dict keys are valid table names
+        if context_dict is not None:
+            context_keys = set(context_dict.keys())
+            if not context_keys.issubset(set(self.sql_database.get_table_names())):
+                raise ValueError(
+                    "Invalid context table names: "
+                    f"{context_keys - self.sql_database.get_table_names()}}"
+                )
+
         self._index_struct.context_dict.update(context_dict)
         self._sql_context_builder = sql_context_builder
 
