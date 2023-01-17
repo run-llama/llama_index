@@ -128,12 +128,8 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
             if cur_fields is None:
                 continue
             # validate fields with col_types_map
-            print(f"cur fields: {cur_fields}")
             new_cur_fields = self._clean_and_validate_fields(cur_fields)
-            print(f"new_cur_fields: {new_cur_fields}")
             fields.update(new_cur_fields)
-
-        print(fields)
 
         struct_datapoint = StructDatapoint(fields)
         if struct_datapoint is not None:
