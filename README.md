@@ -1,6 +1,7 @@
 # 🗂️ ️GPT Index
 
-GPT Index is a project consisting of a set of *data structures* that are created using LLMs and can be traversed using LLMs in order to answer queries.
+GPT Index is a project consisting of a set of data structures designed to make it easier to 
+use large external knowledge bases with LLMs.
 
 PyPi: https://pypi.org/project/gpt-index/.
 
