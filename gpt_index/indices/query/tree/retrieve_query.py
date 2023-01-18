@@ -1,6 +1,6 @@
 """Retrieve query."""
 
-from typing import List
+from typing import List, Any
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -27,7 +27,7 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
     """
 
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False
+        self, query_str: str, verbose: bool = False, **nodes_kwargs: Any
     ) -> List[Node]:
         """Get nodes for response."""
         print(f"> Starting query: {query_str}")

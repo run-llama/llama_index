@@ -1,5 +1,5 @@
 """Default query for GPTSimpleVectorIndex."""
-from typing import List, Optional
+from typing import List, Any
 
 from gpt_index.data_structs.data_structs import Node, SimpleIndexDict
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings, SimilarityTracker
@@ -30,7 +30,7 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
     """
 
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False, similarity_tracker: Optional[SimilarityTracker] = None
+        self, query_str: str, verbose: bool = False, **nodes_kwargs: Any
     ) -> List[Node]:
         """Get nodes for response."""
         # TODO: consolidate with get_query_text_embedding_similarities
@@ -48,7 +48,8 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
         )
         top_k_nodes = self._index_struct.get_nodes(top_ids)
 
-        if similarity_tracker is not None:
+        similarity_tracker = nodes_kwargs.pop('similarity_tracker', None)
+        if similarity_tracker is not None and isinstance(similarity_tracker, SimilarityTracker):
             for node, similarity in zip(top_k_nodes, top_similarities):
                 similarity_tracker.add(node, similarity)
 

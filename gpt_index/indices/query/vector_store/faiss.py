@@ -55,7 +55,7 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         self._faiss_index = faiss_index
 
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False, similarity_tracker: Optional[SimilarityTracker] = None
+        self, query_str: str, verbose: bool = False, **nodes_kwargs: Any
     ) -> List[Node]:
         """Get nodes for response."""
         query_embedding = self._embed_model.get_query_embedding(query_str)
@@ -70,7 +70,8 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         node_idxs = list([str(i) for i in indices[0]])
         top_k_nodes = self._index_struct.get_nodes(node_idxs)
 
-        if similarity_tracker is not None:
+        similarity_tracker = nodes_kwargs.pop('similarity_tracker', None)
+        if similarity_tracker is not None and isinstance(similarity_tracker, SimilarityTracker):
             for node, similarity in zip(top_k_nodes, dists):
                 similarity_tracker.add(node, similarity)
 

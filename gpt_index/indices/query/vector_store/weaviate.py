@@ -35,7 +35,7 @@ class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         self.client = cast(Client, weaviate_client)
 
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False
+        self, query_str: str, verbose: bool = False, **nodes_kwargs: Any
     ) -> List[Node]:
         """Get nodes for response."""
         query_embedding = self._embed_model.get_query_embedding(query_str)

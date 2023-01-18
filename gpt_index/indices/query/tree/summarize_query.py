@@ -47,7 +47,7 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
         )
 
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False
+        self, query_str: str, verbose: bool = False, **nodes_kwargs: Any
     ) -> List[Node]:
         """Get nodes for response."""
         print(f"> Starting query: {query_str}")
