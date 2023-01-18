@@ -64,7 +64,8 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
             for node_idx, node_similarity, node in zip(
                 top_ids, top_similarities, top_k_nodes
             ):
-                fmt_txt = f"> [Node {node_idx}] [Similarity score: {node_similarity:.6}] {truncate_text(node.get_text(), 100)}"
+                fmt_txt = f"> [Node {node_idx}] [Similarity score: \
+                    {node_similarity:.6}] {truncate_text(node.get_text(), 100)}"
                 fmt_txts.append(fmt_txt)
             top_k_node_text = "\n".join(fmt_txts)
             print(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
