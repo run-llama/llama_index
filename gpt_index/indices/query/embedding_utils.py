@@ -41,23 +41,23 @@ class SimilarityTracker:
     lookup: Dict[str, float] = {}
 
     def _hash(self, node: Node) -> str:
-        """Generate a unique key for each node"""
+        """Generate a unique key for each node."""
         # TODO: Better way to get unique identifier of a node
         return str(abs(hash(node.get_text())))
 
     def add(self, node: Node, similarity: float) -> None:
-        """Add a node and its similarity score"""
+        """Add a node and its similarity score."""
         node_hash = self._hash(node)
         self.lookup[node_hash] = similarity
 
     def find(self, node: Node) -> Optional[float]:
-        """Find a node's similarity score"""
+        """Find a node's similarity score."""
         node_hash = self._hash(node)
         if node_hash not in self.lookup:
             return None
         return self.lookup[node_hash]
 
     def get_zipped_nodes(self, nodes: List[Node]) -> List[Tuple[Node, Optional[float]]]:
-        """Get a zipped list of nodes and their corresponding scores"""
+        """Get a zipped list of nodes and their corresponding scores."""
         similarities = [self.find(node) for node in nodes]
         return list(zip(nodes, similarities))
