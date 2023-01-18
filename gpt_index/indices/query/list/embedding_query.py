@@ -4,8 +4,8 @@ from typing import Any, List, Optional, Tuple
 from gpt_index.data_structs.data_structs import IndexList, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.embedding_utils import (
-    get_top_k_embeddings,
     SimilarityTracker,
+    get_top_k_embeddings,
 )
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
 

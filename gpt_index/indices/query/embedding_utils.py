@@ -1,9 +1,9 @@
 """Embedding utils for queries."""
 
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 
-from gpt_index.embeddings.openai import BaseEmbedding
 from gpt_index.data_structs.data_structs import Node
+from gpt_index.embeddings.openai import BaseEmbedding
 
 
 def get_top_k_embeddings(

@@ -1,6 +1,6 @@
 """Retrieve query."""
 
-from typing import List, Any
+from typing import Any, List
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery

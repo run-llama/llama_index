@@ -3,12 +3,13 @@
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Optional, Tuple, TypeVar, cast, Any
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.response.builder import (
     ResponseBuilder,
     ResponseMode,
@@ -25,7 +26,6 @@ from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.response.schema import Response
 from gpt_index.schema import DocumentStore
 from gpt_index.token_counter.token_counter import llm_token_counter
-from gpt_index.indices.query.embedding_utils import SimilarityTracker
 
 IS = TypeVar("IS", bound=IndexStruct)
 

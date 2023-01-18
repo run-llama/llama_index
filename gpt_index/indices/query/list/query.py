@@ -1,5 +1,5 @@
 """Default query for GPTListIndex."""
-from typing import List, Any
+from typing import Any, List
 
 from gpt_index.data_structs.data_structs import IndexList, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
