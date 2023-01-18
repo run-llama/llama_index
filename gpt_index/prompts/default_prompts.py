@@ -108,6 +108,18 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
 DEFAULT_TEXT_QA_PROMPT = QuestionAnswerPrompt(DEFAULT_TEXT_QA_PROMPT_TMPL)
 
 
+DEFAULT_TEXT_QA_PROMPT_W_KNOWLEDGE_TMPL = (
+    "Context information is below. \n"
+    "---------------------\n"
+    "{context_str}"
+    "\n---------------------\n"
+    "Given the context information and all your prior knowledge, "
+    "answer the question: {query_str}\n"
+)
+DEFAULT_TEXT_QA_W_KNOWLEDGE_PROMPT = QuestionAnswerPrompt(
+    DEFAULT_TEXT_QA_PROMPT_W_KNOWLEDGE_TMPL)
+
+
 ############################################
 # Keyword Table
 ############################################

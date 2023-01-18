@@ -19,11 +19,15 @@ class SourceNode(DataClassJsonMixin):
 
     source_text: str
     doc_id: Optional[str]
+    extra_info: Optional[Dict[str, Any]] = None
+
+    # distance score between node and query, if applicable
+    similarity_to_query: Optional[float] = None
 
     @classmethod
-    def from_node(cls, node: Node) -> "SourceNode":
+    def from_node(cls, node: Node, similarity_to_query: float = None) -> "SourceNode":
         """Create a SourceNode from a Node."""
-        return cls(source_text=node.get_text(), doc_id=node.ref_doc_id)
+        return cls(source_text=node.get_text(), doc_id=node.ref_doc_id, extra_info=node.extra_info, similarity_to_query=similarity_to_query)
 
     @classmethod
     def from_nodes(cls, nodes: List[Node]) -> List["SourceNode"]:

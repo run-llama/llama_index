@@ -1,8 +1,9 @@
 """Embedding utils for queries."""
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 from gpt_index.embeddings.openai import BaseEmbedding
+from gpt_index.data_structs.data_structs import Node
 
 
 def get_top_k_embeddings(
@@ -31,3 +32,29 @@ def get_top_k_embeddings(
     result_ids = [n for _, n in result_tups]
 
     return result_similarities, result_ids
+
+
+class SimilarityTracker:
+    """Helper class to manage node similarities 
+    during lifecycle of a single query."""
+
+    # TODO: smarter way to store this information
+    lookup: Dict[str, float] = {}
+
+    def _hash(self, node: Node):
+        # TODO: Better way to get unique identifier of a node
+        return abs(hash(node.get_text()))
+
+    def add(self, node: Node, similarity: float):
+        node_hash = self._hash(node)
+        self.lookup[node_hash] = similarity
+
+    def find(self, node: Node):
+        node_hash = self._hash(node)
+        if node_hash not in self.lookup:
+            return None
+        return self.lookup[node_hash]
+
+    def get_zipped_nodes(self, nodes: List[Node]):
+        similarities = [self.find(node) for node in nodes]
+        return zip(nodes, similarities)
