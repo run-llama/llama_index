@@ -9,3 +9,7 @@ Below, we provide a reference of the classes that are used to configure our stru
 .. automodule:: gpt_index.langchain_helpers.sql_wrapper
    :members:
    :inherited-members:
+
+.. automodule:: gpt_index.indices.common.struct_store.base
+   :members:
+   :inherited-members:

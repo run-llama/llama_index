@@ -25,8 +25,8 @@ from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import (
     MOCK_REFINE_PROMPT,
     MOCK_SCHEMA_EXTRACT_PROMPT,
+    MOCK_TABLE_CONTEXT_PROMPT,
     MOCK_TEXT_QA_PROMPT,
-    MOCK_TABLE_CONTEXT_PROMPT
 )
 
 
@@ -139,11 +139,11 @@ def test_sql_index_with_context(
     index_kwargs, _ = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     sql_database = SQLDatabase(engine)
-    table_context_dict = {
-        "test_table": "test_table_context"
-    }
+    table_context_dict = {"test_table": "test_table_context"}
     index = GPTSQLStructStoreIndex(
-        docs, sql_database=sql_database, table_name=table_name, 
+        docs,
+        sql_database=sql_database,
+        table_name=table_name,
         table_context_dict=table_context_dict,
         **index_kwargs
     )
@@ -156,14 +156,15 @@ def test_sql_index_with_context(
     sql_database = SQLDatabase(engine)
     # this should cause the mock QuestionAnswer prompt to run
     sql_context_builder = SQLContextBuilder(
-        sql_database, table_context_prompt=MOCK_TABLE_CONTEXT_PROMPT,
-        table_context_task="extract_test"
+        sql_database,
+        table_context_prompt=MOCK_TABLE_CONTEXT_PROMPT,
+        table_context_task="extract_test",
     )
-    context_document_dict = {
-        "test_table": [Document("test_table_context")]
-    }
+    context_document_dict = {"test_table": [Document("test_table_context")]}
     index = GPTSQLStructStoreIndex(
-        docs, sql_database=sql_database, table_name=table_name, 
+        docs,
+        sql_database=sql_database,
+        table_name=table_name,
         sql_context_builder=sql_context_builder,
         context_document_dict=context_document_dict,
         **index_kwargs
@@ -171,7 +172,7 @@ def test_sql_index_with_context(
     assert index._index_struct.context_dict == {
         "test_table": "extract_test:test_table_context"
     }
-    
+
     # test error if both are set
     # TODO:
 

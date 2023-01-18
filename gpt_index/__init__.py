@@ -11,6 +11,9 @@ from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.embeddings.langchain import LangchainEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 
+# structured
+from gpt_index.indices.common.struct_store.base import SQLContextBuilder
+
 # indices
 from gpt_index.indices.keyword_table import (
     GPTKeywordTableIndex,
@@ -35,9 +38,6 @@ from gpt_index.indices.vector_store import (
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-
-# structured
-from gpt_index.indices.common.struct_store.base import SQLContextBuilder
 
 # prompts
 from gpt_index.prompts.base import Prompt

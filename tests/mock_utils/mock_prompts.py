@@ -7,10 +7,10 @@ from gpt_index.prompts.prompts import (
     RefinePrompt,
     SchemaExtractPrompt,
     SummaryPrompt,
+    TableContextPrompt,
     TextToSQLPrompt,
     TreeInsertPrompt,
     TreeSelectPrompt,
-    TableContextPrompt
 )
 
 MOCK_SUMMARY_PROMPT_TMPL = "{context_str}\n"

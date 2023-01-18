@@ -35,6 +35,7 @@ class SQLDatabase(LangchainSQLDatabase):
         return self._inspector.get_columns(table_name)
 
     def get_table_names(self) -> Iterable[str]:
+        """Get table names."""
         return super()._get_table_names()
 
     def get_single_table_info(self, table_name: str) -> str:

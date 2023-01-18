@@ -99,6 +99,7 @@ class RefinePrompt(Prompt):
         **prompt_kwargs: Keyword arguments for the prompt.
 
     """
+
     # TODO: rename context_msg to context_str
 
     prompt_type: PromptType = PromptType.REFINE
@@ -226,6 +227,7 @@ class RefineTableContextPrompt(Prompt):
         **prompt_kwargs: Keyword arguments for the prompt.
 
     """
+
     # TODO: rename context_msg to context_str
 
     prompt_type: PromptType = PromptType.TABLE_CONTEXT

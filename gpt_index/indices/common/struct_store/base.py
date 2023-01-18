@@ -2,7 +2,6 @@
 
 from typing import Dict, Optional, Sequence
 
-from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
