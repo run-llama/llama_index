@@ -11,6 +11,9 @@ from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.embeddings.langchain import LangchainEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 
+# structured
+from gpt_index.indices.common.struct_store.base import SQLContextBuilder
+
 # indices
 from gpt_index.indices.keyword_table import (
     GPTKeywordTableIndex,
@@ -108,6 +111,7 @@ __all__ = [
     "LLMPredictor",
     "MockLLMPredictor",
     "SQLDatabase",
+    "SQLContextBuilder",
     "PromptHelper",
     "QueryConfig",
     "QueryMode",

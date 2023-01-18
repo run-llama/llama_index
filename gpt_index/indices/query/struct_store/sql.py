@@ -81,11 +81,24 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         result_response = response.strip()
         return result_response
 
+    def _get_all_tables_desc(self) -> str:
+        """Get tables schema + optional context as a single string."""
+        tables_desc = []
+        for table_name in self._sql_database.get_table_names():
+            table_desc = self._sql_database.get_single_table_info(table_name)
+            table_text = f"Schema of table {table_name}:\n" f"{table_desc}\n"
+            if table_name in self._index_struct.context_dict:
+                table_text += f"Context of table {table_name}:\n"
+                table_text += self._index_struct.context_dict[table_name]
+            tables_desc.append(table_text)
+        return "\n\n".join(tables_desc)
+
     def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
-        table_info = self._sql_database.table_info
+        table_desc_str = self._get_all_tables_desc()
+        print(f"table desc str: {table_desc_str}")
         response_str, _ = self._llm_predictor.predict(
-            self._text_to_sql_prompt, query_str=query_str, schema=table_info
+            self._text_to_sql_prompt, query_str=query_str, schema=table_desc_str
         )
 
         sql_query_str = self._parse_response_to_sql(response_str)
