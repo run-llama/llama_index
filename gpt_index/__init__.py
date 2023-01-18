@@ -54,6 +54,7 @@ from gpt_index.prompts.prompts import (
 
 # readers
 from gpt_index.readers import (
+    BeautifulSoupWebReader,
     DiscordReader,
     Document,
     FaissReader,
@@ -107,6 +108,7 @@ __all__ = [
     "PineconeReader",
     "DiscordReader",
     "SimpleWebPageReader",
+    "BeautifulSoupWebReader",
     "TrafilaturaWebReader",
     "LLMPredictor",
     "MockLLMPredictor",

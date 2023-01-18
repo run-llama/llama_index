@@ -3,7 +3,10 @@ from typing import Any, List, Optional, Tuple
 
 from gpt_index.data_structs.data_structs import IndexList, Node
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
+from gpt_index.indices.query.embedding_utils import (
+    SimilarityTracker,
+    get_top_k_embeddings,
+)
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
 
 
@@ -39,14 +42,17 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         self.similarity_top_k = similarity_top_k
 
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False
+        self,
+        query_str: str,
+        verbose: bool = False,
+        similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
         nodes = self.index_struct.nodes
         # top k nodes
         query_embedding, node_embeddings = self._get_embeddings(query_str, nodes)
 
-        _, top_idxs = get_top_k_embeddings(
+        top_similarities, top_idxs = get_top_k_embeddings(
             self._embed_model,
             query_embedding,
             node_embeddings,
@@ -55,6 +61,11 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         )
 
         top_k_nodes = [nodes[i] for i in top_idxs]
+
+        if similarity_tracker is not None:
+            for node, similarity in zip(top_k_nodes, top_similarities):
+                similarity_tracker.add(node, similarity)
+
         if verbose:
             top_k_node_text = "\n".join([n.get_text() for n in top_k_nodes])
             print(f"> Top {len(top_idxs)} nodes:\n{top_k_node_text}")

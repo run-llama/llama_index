@@ -6,6 +6,7 @@ from typing import Any, List, Optional, cast
 from gpt_index.data_structs.data_structs import Node, WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.utils import truncate_text
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
 
@@ -35,7 +36,10 @@ class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         self.client = cast(Client, weaviate_client)
 
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False
+        self,
+        query_str: str,
+        verbose: bool = False,
+        similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
         query_embedding = self._embed_model.get_query_embedding(query_str)
