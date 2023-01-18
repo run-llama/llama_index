@@ -1,5 +1,5 @@
 """SQL wrapper around SQLDatabase in langchain."""
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from langchain.sql_database import SQLDatabase as LangchainSQLDatabase
 from sqlalchemy import MetaData, insert
@@ -33,10 +33,6 @@ class SQLDatabase(LangchainSQLDatabase):
     def get_table_columns(self, table_name: str) -> List[dict]:
         """Get table columns."""
         return self._inspector.get_columns(table_name)
-
-    def get_table_names(self) -> Iterable[str]:
-        """Get table names."""
-        return super()._get_table_names()
 
     def get_single_table_info(self, table_name: str) -> str:
         """Get table info for a single table."""
