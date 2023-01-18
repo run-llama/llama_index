@@ -1,7 +1,7 @@
 """Test struct store indices."""
 
 import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
 from sqlalchemy import (
@@ -21,6 +21,7 @@ from gpt_index.indices.struct_store.base import default_output_parser
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.schema.base import Document
+from gpt_index.schema import BaseDocument
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import (
     MOCK_REFINE_PROMPT,
@@ -160,13 +161,15 @@ def test_sql_index_with_context(
         table_context_prompt=MOCK_TABLE_CONTEXT_PROMPT,
         table_context_task="extract_test",
     )
-    context_document_dict = {"test_table": [Document("test_table_context")]}
+    context_documents_dict: Dict[str, List[BaseDocument]] = {
+        "test_table": [Document("test_table_context")]
+    }
     index = GPTSQLStructStoreIndex(
         docs,
         sql_database=sql_database,
         table_name=table_name,
         sql_context_builder=sql_context_builder,
-        context_document_dict=context_document_dict,
+        context_documents_dict=context_documents_dict,
         **index_kwargs
     )
     assert index._index_struct.context_dict == {

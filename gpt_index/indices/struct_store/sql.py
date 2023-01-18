@@ -1,6 +1,6 @@
 """SQLite structured store."""
 
-from typing import Any, Dict, Optional, Sequence, cast
+from typing import Any, Dict, List, Optional, Sequence, cast
 
 from sqlalchemy import Table
 
@@ -44,7 +44,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             context for the specified table, which will then be used during
             query-time. Also if specified, context_documents must be specified,
             and table_context cannot be specified.
-        context_documents_dict (Optional[Dict[str, Sequence[BaseDocument]]]):
+        context_documents_dict (Optional[Dict[str, List[BaseDocument]]]):
             Optional context
             documents to inform the sql_context_builder. Must be specified if
             sql_context_builder is specified. Cannot be specified if table_context
@@ -65,7 +65,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         ref_doc_id_column: Optional[str] = None,
         table_context_dict: Optional[Dict[str, str]] = None,
         sql_context_builder: Optional[SQLContextBuilder] = None,
-        context_documents_dict: Optional[Dict[str, Sequence[BaseDocument]]] = None,
+        context_documents_dict: Optional[Dict[str, List[BaseDocument]]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -113,7 +113,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
                     "sql_context_builder is specified"
                 )
             context_documents_dict = cast(
-                Dict[str, Sequence[BaseDocument]], context_documents_dict
+                Dict[str, List[BaseDocument]], context_documents_dict
             )
             context_dict: Dict[
                 str, str

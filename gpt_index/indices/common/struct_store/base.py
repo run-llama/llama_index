@@ -1,6 +1,6 @@
 """Common classes for structured operations."""
 
-from typing import Dict, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
@@ -57,7 +57,7 @@ class SQLContextBuilder:
 
     def build_all_context_from_documents(
         self,
-        documents_dict: Dict[str, Sequence[BaseDocument]],
+        documents_dict: Dict[str, List[BaseDocument]],
         verbose: bool = False,
     ) -> Dict[str, str]:
         """Build context for all tables in the database."""
