@@ -42,7 +42,10 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         self.similarity_top_k = similarity_top_k
 
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False, **nodes_kwargs: Any
+        self,
+        query_str: str,
+        verbose: bool = False,
+        similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
         nodes = self.index_struct.nodes
@@ -59,10 +62,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
 
         top_k_nodes = [nodes[i] for i in top_idxs]
 
-        similarity_tracker = nodes_kwargs.pop("similarity_tracker", None)
-        if similarity_tracker is not None and isinstance(
-            similarity_tracker, SimilarityTracker
-        ):
+        if similarity_tracker is not None:
             for node, similarity in zip(top_k_nodes, top_similarities):
                 similarity_tracker.add(node, similarity)
 

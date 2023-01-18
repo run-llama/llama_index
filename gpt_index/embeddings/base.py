@@ -60,13 +60,13 @@ class BaseEmbedding:
         """Get embedding similarity."""
         if mode == SimilarityMode.EUCLIDEAN:
             return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
-
-        product = np.dot(embedding1, embedding2)
-        norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
-        if mode == SimilarityMode.DOT_PRODUCT:
+        elif mode == SimilarityMode.DOT_PRODUCT:
+            product = np.dot(embedding1, embedding2)
             return product
-
-        return product / norm
+        else:
+            product = np.dot(embedding1, embedding2)
+            norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
+            return product / norm
 
     @property
     def total_tokens_used(self) -> int:
