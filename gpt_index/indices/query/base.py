@@ -201,12 +201,13 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Get list of tuples of node and similarity for response.
 
         First part of the tuple is the node.
-        Second part of tuple is the distance from query to the node. 
+        Second part of tuple is the distance from query to the node.
         If not applicable, it's None.
         """
         similarity_tracker = SimilarityTracker()
         nodes = self._get_nodes_for_response(
-            query_str, similarity_tracker=similarity_tracker, verbose=verbose)
+            query_str, similarity_tracker=similarity_tracker, verbose=verbose
+        )
         nodes = [node for node in nodes if self._should_use_node(node)]
 
         # TODO: create a `display` method to allow subclasses to print the Node
@@ -222,7 +223,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Answer a query."""
         # TODO: remove _query and just use query
         tuples = self.get_nodes_and_similarities_for_response(
-            query_str, verbose=verbose)
+            query_str, verbose=verbose
+        )
         source_builder = ResponseSourceBuilder()
         node_texts = []
         for node, similarity in tuples:

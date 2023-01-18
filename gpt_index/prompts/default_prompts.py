@@ -117,7 +117,8 @@ DEFAULT_TEXT_QA_PROMPT_W_KNOWLEDGE_TMPL = (
     "answer the question: {query_str}\n"
 )
 DEFAULT_TEXT_QA_W_KNOWLEDGE_PROMPT = QuestionAnswerPrompt(
-    DEFAULT_TEXT_QA_PROMPT_W_KNOWLEDGE_TMPL)
+    DEFAULT_TEXT_QA_PROMPT_W_KNOWLEDGE_TMPL
+)
 
 
 ############################################

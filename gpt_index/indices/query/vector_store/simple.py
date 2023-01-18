@@ -2,7 +2,10 @@
 from typing import List, Any
 
 from gpt_index.data_structs.data_structs import Node, SimpleIndexDict
-from gpt_index.indices.query.embedding_utils import get_top_k_embeddings, SimilarityTracker
+from gpt_index.indices.query.embedding_utils import (
+    get_top_k_embeddings,
+    SimilarityTracker,
+)
 from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
 from gpt_index.indices.utils import truncate_text
 
@@ -48,15 +51,19 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
         )
         top_k_nodes = self._index_struct.get_nodes(top_ids)
 
-        similarity_tracker = nodes_kwargs.pop('similarity_tracker', None)
-        if similarity_tracker is not None and isinstance(similarity_tracker, SimilarityTracker):
+        similarity_tracker = nodes_kwargs.pop("similarity_tracker", None)
+        if similarity_tracker is not None and isinstance(
+            similarity_tracker, SimilarityTracker
+        ):
             for node, similarity in zip(top_k_nodes, top_similarities):
                 similarity_tracker.add(node, similarity)
 
         # print verbose output
         if verbose:
             fmt_txts = []
-            for node_idx, node_similarity, node in zip(top_ids, top_similarities, top_k_nodes):
+            for node_idx, node_similarity, node in zip(
+                top_ids, top_similarities, top_k_nodes
+            ):
                 fmt_txt = f"> [Node {node_idx}] [Similarity score: {node_similarity:.6}] {truncate_text(node.get_text(), 100)}"
                 fmt_txts.append(fmt_txt)
             top_k_node_text = "\n".join(fmt_txts)

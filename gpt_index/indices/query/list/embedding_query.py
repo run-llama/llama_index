@@ -3,7 +3,10 @@ from typing import Any, List, Optional, Tuple
 
 from gpt_index.data_structs.data_structs import IndexList, Node
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.query.embedding_utils import get_top_k_embeddings, SimilarityTracker
+from gpt_index.indices.query.embedding_utils import (
+    get_top_k_embeddings,
+    SimilarityTracker,
+)
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
 
 
@@ -56,8 +59,10 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
 
         top_k_nodes = [nodes[i] for i in top_idxs]
 
-        similarity_tracker = nodes_kwargs.pop('similarity_tracker', None)
-        if similarity_tracker is not None and isinstance(similarity_tracker, SimilarityTracker):
+        similarity_tracker = nodes_kwargs.pop("similarity_tracker", None)
+        if similarity_tracker is not None and isinstance(
+            similarity_tracker, SimilarityTracker
+        ):
             for node, similarity in zip(top_k_nodes, top_similarities):
                 similarity_tracker.add(node, similarity)
 

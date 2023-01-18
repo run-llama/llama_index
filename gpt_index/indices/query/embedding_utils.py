@@ -35,7 +35,7 @@ def get_top_k_embeddings(
 
 
 class SimilarityTracker:
-    """Helper class to manage node similarities 
+    """Helper class to manage node similarities
     during lifecycle of a single query."""
 
     # TODO: smarter way to store this information

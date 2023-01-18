@@ -61,7 +61,8 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         query_embedding = self._embed_model.get_query_embedding(query_str)
         query_embedding_np = np.array(query_embedding)[np.newaxis, :]
         dists, indices = self._faiss_index.search(
-            query_embedding_np, self.similarity_top_k)
+            query_embedding_np, self.similarity_top_k
+        )
         # if empty, then return an empty response
         if len(indices) == 0:
             return []
@@ -70,8 +71,10 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         node_idxs = list([str(i) for i in indices[0]])
         top_k_nodes = self._index_struct.get_nodes(node_idxs)
 
-        similarity_tracker = nodes_kwargs.pop('similarity_tracker', None)
-        if similarity_tracker is not None and isinstance(similarity_tracker, SimilarityTracker):
+        similarity_tracker = nodes_kwargs.pop("similarity_tracker", None)
+        if similarity_tracker is not None and isinstance(
+            similarity_tracker, SimilarityTracker
+        ):
             for node, similarity in zip(top_k_nodes, dists):
                 similarity_tracker.add(node, similarity)
 

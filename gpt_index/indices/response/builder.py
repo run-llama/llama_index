@@ -255,8 +255,7 @@ class ResponseSourceBuilder:
 
     def add_node(self, node: Node, similarity: Optional[float] = None) -> None:
         """Add node."""
-        self._nodes.append(SourceNode.from_node(
-            node, similarity=similarity))
+        self._nodes.append(SourceNode.from_node(node, similarity=similarity))
 
     def add_source_node(self, source_node: SourceNode) -> None:
         """Add source node directly."""

@@ -51,7 +51,12 @@ class BaseEmbedding:
         self._total_tokens_used += text_tokens_count
         return text_embedding
 
-    def similarity(self, embedding1: EMB_TYPE, embedding2: EMB_TYPE, mode: SimilarityMode = SimilarityMode.DEFAULT) -> float:
+    def similarity(
+        self,
+        embedding1: EMB_TYPE,
+        embedding2: EMB_TYPE,
+        mode: SimilarityMode = SimilarityMode.DEFAULT,
+    ) -> float:
         """Get embedding similarity."""
         if mode == SimilarityMode.EUCLIDEAN:
             return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
