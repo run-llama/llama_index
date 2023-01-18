@@ -1,15 +1,17 @@
 """SQLite structured store."""
 
-from typing import Any, Dict, Optional, Sequence, cast
+from typing import Any, Dict, List, Optional, Sequence, cast
 
 from sqlalchemy import Table
 
 from gpt_index.data_structs.table import SQLStructTable, StructDatapoint
 from gpt_index.indices.base import DOCUMENTS_INPUT
+from gpt_index.indices.common.struct_store.base import SQLContextBuilder
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
+from gpt_index.schema import BaseDocument
 
 
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
@@ -34,6 +36,19 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             Specifying the Table object explicitly, instead of
             the table name, allows you to pass in a view.
             Either table_name or table must be specified.
+        table_context_dict (Optional[Dict[str, str]]): Optional table context to use.
+            If specified,
+            sql_context_builder and context_documents cannot be specified.
+        sql_context_builder (Optional[SQLContextBuilder]): SQL context builder.
+            If specified, the context builder will be used to build
+            context for the specified table, which will then be used during
+            query-time. Also if specified, context_documents must be specified,
+            and table_context cannot be specified.
+        context_documents_dict (Optional[Dict[str, List[BaseDocument]]]):
+            Optional context
+            documents to inform the sql_context_builder. Must be specified if
+            sql_context_builder is specified. Cannot be specified if table_context
+            is specified.
 
     """
 
@@ -48,6 +63,9 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         table_name: Optional[str] = None,
         table: Optional[Table] = None,
         ref_doc_id_column: Optional[str] = None,
+        table_context_dict: Optional[Dict[str, str]] = None,
+        sql_context_builder: Optional[SQLContextBuilder] = None,
+        context_documents_dict: Optional[Dict[str, List[BaseDocument]]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -79,6 +97,44 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             llm_predictor=llm_predictor,
             **kwargs,
         )
+
+        # if context builder is specified, then add to context_dict
+        if table_context_dict is not None and (
+            sql_context_builder is not None or context_documents_dict is not None
+        ):
+            raise ValueError(
+                "Cannot specify both table_context_dict and "
+                "sql_context_builder/context_documents_dict"
+            )
+        if sql_context_builder is not None:
+            if context_documents_dict is None:
+                raise ValueError(
+                    "context_documents_dict must be specified if "
+                    "sql_context_builder is specified"
+                )
+            context_documents_dict = cast(
+                Dict[str, List[BaseDocument]], context_documents_dict
+            )
+            context_dict: Dict[
+                str, str
+            ] = sql_context_builder.build_all_context_from_documents(
+                context_documents_dict
+            )
+        elif table_context_dict is not None:
+            context_dict = table_context_dict
+        else:
+            context_dict = {}
+
+        # validate context_dict keys are valid table names
+        context_keys = set(context_dict.keys())
+        if not context_keys.issubset(set(self.sql_database.get_table_names())):
+            raise ValueError(
+                "Invalid context table names: "
+                f"{context_keys - set(self.sql_database.get_table_names())}"
+            )
+
+        self._index_struct.context_dict.update(context_dict)
+        self._sql_context_builder = sql_context_builder
 
     def _get_col_types_map(self) -> Dict[str, type]:
         """Get col types map for schema."""

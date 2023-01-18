@@ -1,6 +1,6 @@
 """Struct store schema."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict
 
 from dataclasses_json import DataClassJsonMixin
@@ -24,3 +24,5 @@ class BaseStructTable(IndexStruct):
 @dataclass
 class SQLStructTable(BaseStructTable):
     """SQL struct outputs."""
+
+    context_dict: Dict[str, str] = field(default_factory=dict)

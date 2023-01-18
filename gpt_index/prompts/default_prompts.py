@@ -5,8 +5,10 @@ from gpt_index.prompts.prompts import (
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,
     RefinePrompt,
+    RefineTableContextPrompt,
     SchemaExtractPrompt,
     SummaryPrompt,
+    TableContextPrompt,
     TextToSQLPrompt,
     TreeInsertPrompt,
     TreeSelectMultiplePrompt,
@@ -164,7 +166,7 @@ DEFAULT_SCHEMA_EXTRACT_TMPL = (
 DEFAULT_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(DEFAULT_SCHEMA_EXTRACT_TMPL)
 
 # NOTE: taken from langchain and adapted
-# shorturl.at/nqyD1
+# shorturl.at/nqyD1gT
 DEFAULT_TEXT_TO_SQL_TMPL = (
     "Given an input question, first create a syntactically correct SQL query "
     "to run, then look at the results of the query and return the answer.\n"
@@ -180,3 +182,51 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
 )
 
 DEFAULT_TEXT_TO_SQL_PROMPT = TextToSQLPrompt(DEFAULT_TEXT_TO_SQL_TMPL)
+
+
+# NOTE: by partially filling schema, we can reduce to a QuestionAnswer prompt
+# that we can feed to ur table
+DEFAULT_TABLE_CONTEXT_TMPL = (
+    "We have provided a table schema below. "
+    "---------------------\n"
+    "{schema}\n"
+    "---------------------\n"
+    "We have also provided context information below. "
+    "{context_str}\n"
+    "---------------------\n"
+    "Given the context information and the table schema, "
+    "give a response to the following task: {query_str}"
+)
+
+DEFAULT_TABLE_CONTEXT_QUERY = (
+    "Provide a high-level description of the table, "
+    "as well as a description of each column in the table. "
+    "Provide answers in the following format:\n"
+    "TableDescription: <description>\n"
+    "Column1Description: <description>\n"
+    "Column2Description: <description>\n"
+    "...\n\n"
+)
+
+DEFAULT_TABLE_CONTEXT_PROMPT = TableContextPrompt(DEFAULT_TABLE_CONTEXT_TMPL)
+
+# NOTE: by partially filling schema, we can reduce to a RefinePrompt
+# that we can feed to ur table
+DEFAULT_REFINE_TABLE_CONTEXT_TMPL = (
+    "We have provided a table schema below. "
+    "---------------------\n"
+    "{schema}\n"
+    "---------------------\n"
+    "We have also provided some context information below. "
+    "{context_msg}\n"
+    "---------------------\n"
+    "Given the context information and the table schema, "
+    "give a response to the following task: {query_str}\n"
+    "We have provided an existing answer: {existing_answer}\n"
+    "Given the new context, refine the original answer to better "
+    "answer the question. "
+    "If the context isn't useful, return the original answer."
+)
+DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = RefineTableContextPrompt(
+    DEFAULT_REFINE_TABLE_CONTEXT_TMPL
+)
