@@ -5,7 +5,9 @@ import numpy as np
 
 from gpt_index.data_structs.data_structs import IndexDict, Node
 from gpt_index.embeddings.base import BaseEmbedding
+from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
+from gpt_index.indices.utils import truncate_text
 
 
 class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
@@ -53,12 +55,17 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         self._faiss_index = faiss_index
 
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False
+        self,
+        query_str: str,
+        verbose: bool = False,
+        similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
         query_embedding = self._embed_model.get_query_embedding(query_str)
         query_embedding_np = np.array(query_embedding)[np.newaxis, :]
-        _, indices = self._faiss_index.search(query_embedding_np, self.similarity_top_k)
+        dists, indices = self._faiss_index.search(
+            query_embedding_np, self.similarity_top_k
+        )
         # if empty, then return an empty response
         if len(indices) == 0:
             return []
@@ -66,5 +73,19 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         # returned dimension is 1 x k
         node_idxs = list([str(i) for i in indices[0]])
         top_k_nodes = self._index_struct.get_nodes(node_idxs)
+
+        if similarity_tracker is not None:
+            for node, similarity in zip(top_k_nodes, dists):
+                similarity_tracker.add(node, similarity)
+
+        # print verbose output
+        if verbose:
+            fmt_txts = []
+            for node_idx, node_similarity, node in zip(node_idxs, dists, top_k_nodes):
+                fmt_txt = f"> [Node {node_idx}] [Similarity score: \
+                    {node_similarity:.6}] {truncate_text(node.get_text(), 100)}"
+                fmt_txts.append(fmt_txt)
+            top_k_node_text = "\n".join(fmt_txts)
+            print(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
 
         return top_k_nodes

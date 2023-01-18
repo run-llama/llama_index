@@ -1,4 +1,4 @@
-"""Simple reader that ."""
+"""Simple reader for files."""
 import re
 from pathlib import Path
 from typing import Callable, Dict, List, Optional

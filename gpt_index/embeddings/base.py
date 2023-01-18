@@ -1,6 +1,7 @@
 """Base embeddings file."""
 
 from abc import abstractmethod
+from enum import Enum
 from typing import Callable, List, Optional
 
 import numpy as np
@@ -9,6 +10,14 @@ from gpt_index.utils import globals_helper
 
 # TODO: change to numpy array
 EMB_TYPE = List
+
+
+class SimilarityMode(str, Enum):
+    """Modes for similarity/distance."""
+
+    DEFAULT = "cosine"
+    DOT_PRODUCT = "dot_product"
+    EUCLIDEAN = "euclidean"
 
 
 class BaseEmbedding:
@@ -42,11 +51,22 @@ class BaseEmbedding:
         self._total_tokens_used += text_tokens_count
         return text_embedding
 
-    def similarity(self, embedding1: EMB_TYPE, embedding2: EMB_TYPE) -> float:
+    def similarity(
+        self,
+        embedding1: EMB_TYPE,
+        embedding2: EMB_TYPE,
+        mode: SimilarityMode = SimilarityMode.DEFAULT,
+    ) -> float:
         """Get embedding similarity."""
-        product = np.dot(embedding1, embedding2)
-        norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
-        return product / norm
+        if mode == SimilarityMode.EUCLIDEAN:
+            return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
+        elif mode == SimilarityMode.DOT_PRODUCT:
+            product = np.dot(embedding1, embedding2)
+            return product
+        else:
+            product = np.dot(embedding1, embedding2)
+            norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
+            return product / norm
 
     @property
     def total_tokens_used(self) -> int:
