@@ -54,7 +54,7 @@ class BaseEmbedding:
     def similarity(self, embedding1: EMB_TYPE, embedding2: EMB_TYPE, mode: SimilarityMode = SimilarityMode.DEFAULT) -> float:
         """Get embedding similarity."""
         if mode == SimilarityMode.EUCLIDEAN:
-            return np.linalg.norm(embedding1 - embedding2)
+            return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
 
         product = np.dot(embedding1, embedding2)
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)

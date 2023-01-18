@@ -214,7 +214,7 @@ class BaseGPTIndexQuery(Generic[IS]):
 
     @abstractmethod
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False, similarity_tracker: Optional[SimilarityTracker] = None
+        self, query_str: str, verbose: bool = False
     ) -> List[Node]:
         """Get nodes for response."""
 
@@ -227,7 +227,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         node_texts = []
         for node, similarity in tuples:
             text, response = self._get_text_from_node(query_str, node, verbose=verbose)
-            source_builder.add_node(node, similarity_to_query=similarity)
+            source_builder.add_node(node, similarity=similarity)
             if response is not None:
                 # these are source nodes from within this node (when it's an index)
                 for source_node in response.source_nodes:
