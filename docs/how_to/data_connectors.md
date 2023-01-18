@@ -4,16 +4,18 @@ We currently offer connectors into the following data sources. External data sou
 The API reference documentation can be found [here](/reference/readers.rst).
 
 #### External API's
+
 - [Notion](https://developers.notion.com/) (`NotionPageReader`)
 - [Google Docs](https://developers.google.com/docs/api) (`GoogleDocsReader`)
 - [Slack](https://api.slack.com/) (`SlackReader`)
 - [Discord](https://discord.com/developers/docs/intro) (`DiscordReader`)
-    - Note: We use the [discord.py](https://github.com/Rapptz/discord.py) API wrapper for Discord. This is meant to be used
+  - Note: We use the [discord.py](https://github.com/Rapptz/discord.py) API wrapper for Discord. This is meant to be used
     in an async setting; however, we adapt it to synchronous Document loading.
 - Wikipedia (`WikipediaReader`)
-- Web (`SimpleWebPageReader`, `TrafilaturaWebReader`)
+- Web (`SimpleWebPageReader`, `BeautifulSoupWebReader`, `TrafilaturaWebReader`)
 
 #### Databases
+
 - MongoDB (`SimpleMongoReader`)
 
 #### Vector Stores
@@ -29,6 +31,7 @@ See [How to use Vector Stores with GPT Index](vector_stores.md) for a more thoro
 - Make.com (`MakeWrapper`). NOTE: `load_data` is not supported. See `pass_response_to_webhook` in the [reference documentation](/reference/readers.rst) instead.
 
 #### File
+
 - local file directory (`SimpleDirectoryReader`)
 
 We offer [example notebooks of connecting to different data sources](https://github.com/jerryjliu/gpt_index/tree/main/examples/data_connectors). Please check them out!
