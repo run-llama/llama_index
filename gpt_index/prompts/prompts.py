@@ -99,6 +99,7 @@ class RefinePrompt(Prompt):
         **prompt_kwargs: Keyword arguments for the prompt.
 
     """
+    # TODO: rename context_msg to context_str
 
     prompt_type: PromptType = PromptType.REFINE
     input_variables: List[str] = ["query_str", "existing_answer", "context_msg"]
@@ -215,7 +216,7 @@ class RefineTableContextPrompt(Prompt):
     """Refine Table context prompt.
 
     Prompt to refine a table context given a table schema `schema`,
-    as well as unstructured text context `context_str`, and
+    as well as unstructured text context `context_msg`, and
     a task `query_str`.
     This includes both a high-level description of the table
     as well as a description of each column in the table.
@@ -225,11 +226,12 @@ class RefineTableContextPrompt(Prompt):
         **prompt_kwargs: Keyword arguments for the prompt.
 
     """
+    # TODO: rename context_msg to context_str
 
     prompt_type: PromptType = PromptType.TABLE_CONTEXT
     input_variables: List[str] = [
         "schema",
-        "context_str",
+        "context_msg",
         "query_str",
         "existing_answer",
     ]

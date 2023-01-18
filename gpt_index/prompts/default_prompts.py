@@ -218,7 +218,7 @@ DEFAULT_REFINE_TABLE_CONTEXT_TMPL = (
     "{schema}\n"
     "---------------------\n"
     "We have also provided some context information below. "
-    "{context_str}\n"
+    "{context_msg}\n"
     "---------------------\n"
     "Given the context information and the table schema, "
     "give a response to the following task: {query_str}\n"
@@ -228,5 +228,5 @@ DEFAULT_REFINE_TABLE_CONTEXT_TMPL = (
     "If the context isn't useful, return the original answer."
 )
 DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = RefineTableContextPrompt(
-    DEFAULT_TABLE_CONTEXT_TMPL
+    DEFAULT_REFINE_TABLE_CONTEXT_TMPL
 )

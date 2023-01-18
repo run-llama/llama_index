@@ -65,7 +65,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         ref_doc_id_column: Optional[str] = None,
         table_context_dict: Optional[Dict[str, str]] = None,
         sql_context_builder: Optional[SQLContextBuilder] = None,
-        context_document_dict: Optional[Dict[str, Sequence[BaseDocument]]] = None,
+        context_documents_dict: Optional[Dict[str, Sequence[BaseDocument]]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -100,20 +100,25 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
 
         # if context builder is specified, then add to context_dict
         if table_context_dict is not None and (
-            sql_context_builder is not None or context_document_dict is not None
+            sql_context_builder is not None or context_documents_dict is not None
         ):
             raise ValueError(
                 "Cannot specify both table_context_dict and "
-                "sql_context_builder/context_document_dict"
+                "sql_context_builder/context_documents_dict"
             )
         if sql_context_builder is not None:
-            context_document_dict = cast(
-                Dict[str, Sequence[BaseDocument]], context_document_dict
+            if context_documents_dict is None:
+                raise ValueError(
+                    "context_documents_dict must be specified if "
+                    "sql_context_builder is specified"
+                )
+            context_documents_dict = cast(
+                Dict[str, Sequence[BaseDocument]], context_documents_dict
             )
             context_dict: Dict[
                 str, str
             ] = sql_context_builder.build_all_context_from_documents(
-                context_document_dict
+                context_documents_dict
             )
         elif table_context_dict is not None:
             context_dict = table_context_dict

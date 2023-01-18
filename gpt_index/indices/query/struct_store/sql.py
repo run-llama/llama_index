@@ -96,6 +96,7 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         table_desc_str = self._get_all_tables_desc()
+        print(f'table desc str: {table_desc_str}')
         response_str, _ = self._llm_predictor.predict(
             self._text_to_sql_prompt, query_str=query_str, schema=table_desc_str
         )

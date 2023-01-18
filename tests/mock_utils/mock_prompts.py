@@ -10,6 +10,7 @@ from gpt_index.prompts.prompts import (
     TextToSQLPrompt,
     TreeInsertPrompt,
     TreeSelectPrompt,
+    TableContextPrompt
 )
 
 MOCK_SUMMARY_PROMPT_TMPL = "{context_str}\n"
@@ -46,3 +47,7 @@ MOCK_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(MOCK_SCHEMA_EXTRACT_PROMPT_TMPL
 
 MOCK_TEXT_TO_SQL_PROMPT_TMPL = "{schema}\n{query_str}"
 MOCK_TEXT_TO_SQL_PROMPT = TextToSQLPrompt(MOCK_TEXT_TO_SQL_PROMPT_TMPL)
+
+
+MOCK_TABLE_CONTEXT_PROMPT_TMPL = "{schema}\n{context_str}\n{query_str}"
+MOCK_TABLE_CONTEXT_PROMPT = TableContextPrompt(MOCK_TABLE_CONTEXT_PROMPT_TMPL)
