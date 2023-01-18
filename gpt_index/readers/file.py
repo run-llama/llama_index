@@ -7,7 +7,7 @@ from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
 
 
-def _docx_reader(input_file: Path, errors: str) -> str:
+def _docx_reader(input_file: Path, errors: str, model: None) -> str:
     """Extract text from Microsoft Word."""
     try:
         import docx2txt
@@ -19,7 +19,7 @@ def _docx_reader(input_file: Path, errors: str) -> str:
     return text
 
 
-def _pdf_reader(input_file: Path, errors: str) -> str:
+def _pdf_reader(input_file: Path, errors: str, model: None) -> str:
     """Extract text from PDF."""
     try:
         import PyPDF2
@@ -42,8 +42,7 @@ def _pdf_reader(input_file: Path, errors: str) -> str:
 
     return text
 
-
-def _image_parser(input_file: Path, errors: str) -> str:
+def _image_parser(input_file: Path, errors: str, model: None) -> str:
     """Extract text from images using DONUT."""
     try:
         import torch
@@ -104,6 +103,30 @@ def _image_parser(input_file: Path, errors: str) -> str:
 
     return sequence
 
+def _video_audio_reader(input_file: Path, errors: str, model: None) -> str:
+    """Extract text from video/ audio files."""
+
+    if input_file.name.endswith("mp4"):
+        
+        try:
+            from pydub import AudioSegment
+        except ImportError:
+            raise ValueError("Please install pydub 'pip install pydub' ")
+        # open file
+        video = AudioSegment.from_file(input_file, format="mp4")
+
+        # Extract audio from video
+        audio = video.split_to_mono()[0]
+
+        input_file = str(input_file)[:-4] + ".mp3"
+        # export file
+        audio.export(input_file, format="mp3")
+
+    result = model.transcribe(input_file)
+
+    transcript = result["text"]
+
+    return transcript
 
 DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {
     ".pdf": _pdf_reader,
@@ -111,6 +134,8 @@ DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {
     ".jpg": _image_parser,
     ".png": _image_parser,
     ".jpeg": _image_parser,
+    ".mp3": _video_audio_reader,
+    ".mp4": _video_audio_reader,
 }
 
 
@@ -150,6 +175,8 @@ class SimpleDirectoryReader(BaseReader):
         num_files_limit: Optional[int] = None,
         file_metadata: Optional[Callable[[str], Dict]] = None,
         verbose: bool = False,
+        video_audio_files: bool = False,
+        model_version: str = "base",
     ) -> None:
         """Initialize with parameters."""
         super().__init__(verbose=verbose)
@@ -164,6 +191,24 @@ class SimpleDirectoryReader(BaseReader):
         self.input_files = self._add_files(self.input_dir)
         self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
         self.file_metadata = file_metadata
+
+        self.model = None
+
+        if video_audio_files:
+            self.model = self._download_whisper(model_version)
+
+    def _download_whisper(self, model_version: str):
+        """Download whisper model"""
+        try:
+            import whisper
+        except ImportError:
+            raise ValueError(
+                "Please install OpenAI whisper model 'pip install git+https://github.com/openai/whisper.git' to use the model"
+            )
+
+        model = whisper.load_model(model_version)
+
+        return model
 
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
@@ -216,7 +261,7 @@ class SimpleDirectoryReader(BaseReader):
         metadata_list = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
-                data = self.file_extractor[input_file.suffix](input_file, self.errors)
+                data = self.file_extractor[input_file.suffix](input_file, self.errors, self.model)
             else:
                 # do standard read
                 with open(input_file, "r", errors=self.errors) as f:
