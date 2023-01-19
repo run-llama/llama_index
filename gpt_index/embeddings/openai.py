@@ -108,15 +108,16 @@ class OpenAIEmbedding(BaseEmbedding):
             - "ada"
             - "text-embedding-ada-002"
         
-        deployment_name (str): Deployment of model for AzureOpenAI. Defaults to None.
+        deployment_name (Optional[str]): Optional deployment of model. Defaults to None.
             If this value is not None, mode and model will be ignored.
+            Only available for using AzureOpenAI.
     """
 
     def __init__(
         self,
         mode: str = OpenAIEmbeddingMode.TEXT_SEARCH_MODE,
         model: str = "text-embedding-ada-002",
-        deployment_name: str = None
+        deployment_name: Optional[str] = None
     ) -> None:
         """Init params."""
         super().__init__()
