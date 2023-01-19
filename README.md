@@ -89,12 +89,11 @@ All requirements should be contained within the `setup.py` file. To run the pack
 Reference to cite if you use GPT Index in a paper:
 
 ```
-@misc{Liu2022,
-  author = {Liu, Jerry},
-  title = {GPT Index},
-  year = {2022},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/jerryjliu/gpt_index}},
+@software{Liu_GPT_Index_2022,
+author = {Liu, Jerry},
+doi = {10.5281/zenodo.1234},
+month = {11},
+title = {{GPT Index}},
+url = {https://github.com/jerryjliu/gpt_index},year = {2022}
 }
 ```
