@@ -4,6 +4,7 @@ Contain conversion to and from dataclasses that GPT Index uses.
 
 """
 
+import json
 from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
@@ -39,6 +40,11 @@ class BaseWeaviateIndexStruct(Generic[IS]):
                 "dataType": ["string"],
                 "description": "Document id",
                 "name": "doc_id",
+            },
+            {
+                "dataType": ["string"],
+                "description": "extra_info (in JSON)",
+                "name": "extra_info",
             },
         ]
 
@@ -170,6 +176,11 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
     @classmethod
     def _entry_to_gpt_index(cls, entry: Dict) -> Node:
         """Convert to gpt index list."""
+        extra_info_str = entry["extra_info"]
+        if extra_info_str == "":
+            extra_info = None
+        else:
+            extra_info = json.loads(extra_info_str)
         return Node(
             text=entry["text"],
             doc_id=entry["doc_id"],
@@ -177,6 +188,7 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
             child_indices=entry["child_indices"],
             ref_doc_id=entry["ref_doc_id"],
             embedding=entry["_additional"]["vector"],
+            extra_info=extra_info,
         )
 
     @classmethod
@@ -184,6 +196,13 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         """Convert from gpt index."""
         node_dict = node.to_dict()
         vector = node_dict.pop("embedding")
+        extra_info = node_dict.pop("extra_info")
+        # json-serialize the extra_info
+        extra_info_str = ""
+        if extra_info is not None:
+            extra_info_str = json.dumps(extra_info)
+        node_dict["extra_info"] = extra_info_str
+
         # TODO: account for existing nodes that are stored
         node_id = get_new_id(set())
         class_name = cls._class_name(class_prefix)
