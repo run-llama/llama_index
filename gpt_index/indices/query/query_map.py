@@ -21,6 +21,7 @@ from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.query.vector_store.faiss import GPTFaissIndexQuery
+from gpt_index.indices.query.vector_store.pinecone import GPTPineconeIndexQuery
 from gpt_index.indices.query.vector_store.simple import GPTSimpleVectorIndexQuery
 from gpt_index.indices.query.vector_store.weaviate import GPTWeaviateIndexQuery
 
@@ -59,6 +60,11 @@ MODE_TO_QUERY_MAP_WEAVIATE = {
     QueryMode.EMBEDDING: GPTWeaviateIndexQuery,
 }
 
+MODE_TO_QUERY_MAP_PINECONE = {
+    QueryMode.DEFAULT: GPTPineconeIndexQuery,
+    QueryMode.EMBEDDING: GPTPineconeIndexQuery,
+}
+
 # structured storage indices
 MODE_TO_QUERY_MAP_SQL = {
     QueryMode.DEFAULT: GPTNLStructStoreIndexQuery,
@@ -82,6 +88,8 @@ def get_query_cls(
         return MODE_TO_QUERY_MAP_SIMPLE[mode]
     elif index_struct_type == IndexStructType.WEAVIATE:
         return MODE_TO_QUERY_MAP_WEAVIATE[mode]
+    elif index_struct_type == IndexStructType.PINECONE:
+        return MODE_TO_QUERY_MAP_PINECONE[mode]
     elif index_struct_type == IndexStructType.SQL:
         return MODE_TO_QUERY_MAP_SQL[mode]
     else:
