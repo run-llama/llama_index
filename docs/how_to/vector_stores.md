@@ -36,6 +36,7 @@ These are found in the following classes:
 - `GPTSimpleVectorIndex`
 - `GPTFaissIndex`
 - `GPTWeaviateIndex`
+- `GPTPineconeIndex`
 
 Similar to any other index within GPT Index (tree, keyword table, list), this index can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.
@@ -51,5 +52,8 @@ Once constructed, the index can be used for querying.
 
 **Weaviate Index Construction/Querying**
 ![](/_static/vector_stores/weaviate_index_0.png)
+
+**Pinecone Index Construction/Querying**
+![](/_static/vector_stores/pinecone_index_0.png)
 
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).
