@@ -84,3 +84,17 @@ The main third-party package requirements are `tiktoken`, `openai`, and `langcha
 All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply run `pip install -r requirements.txt`. 
 
 
+## 📖 Citation
+
+Reference to cite if you use GPT Index in a paper:
+
+```
+@misc{Liu2022,
+  author = {Liu, Jerry},
+  title = {GPT Index},
+  year = {2022},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/jerryjliu/gpt_index}},
+}
+```
