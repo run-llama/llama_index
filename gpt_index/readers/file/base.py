@@ -1,116 +1,22 @@
-"""Simple reader for files."""
-import re
+"""Simple reader that reads files of different formats from a directory."""
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 from gpt_index.readers.base import BaseReader
+from gpt_index.readers.file.base_parser import BaseParser
+from gpt_index.readers.file.docs_parser import DocxParser, PDFParser
+from gpt_index.readers.file.image_parser import ImageParser
+from gpt_index.readers.file.video_audio import VideoAudioParser
 from gpt_index.readers.schema.base import Document
 
-
-def _docx_reader(input_file: Path, errors: str) -> str:
-    """Extract text from Microsoft Word."""
-    try:
-        import docx2txt
-    except ImportError:
-        raise ValueError("docx2txt is required to read Microsoft Word files.")
-
-    text = docx2txt.process(input_file)
-
-    return text
-
-
-def _pdf_reader(input_file: Path, errors: str) -> str:
-    """Extract text from PDF."""
-    try:
-        import PyPDF2
-    except ImportError:
-        raise ValueError("PyPDF2 is required to read PDF files.")
-    text_list = []
-    with open(input_file, "rb") as file:
-        # Create a PDF object
-        pdf = PyPDF2.PdfReader(file)
-
-        # Get the number of pages in the PDF document
-        num_pages = len(pdf.pages)
-
-        # Iterate over every page
-        for page in range(num_pages):
-            # Extract the text from the page
-            page_text = pdf.pages[page].extract_text()
-            text_list.append(page_text)
-    text = "\n".join(text_list)
-
-    return text
-
-
-def _image_parser(input_file: Path, errors: str) -> str:
-    """Extract text from images using DONUT."""
-    try:
-        import torch
-    except ImportError:
-        raise ValueError("install pytorch to use the model")
-    try:
-        from transformers import DonutProcessor, VisionEncoderDecoderModel
-    except ImportError:
-        raise ValueError("transformers is required for using DONUT model.")
-    try:
-        import sentencepiece  # noqa: F401
-    except ImportError:
-        raise ValueError("sentencepiece is required for using DONUT model.")
-    try:
-        from PIL import Image
-    except ImportError:
-        raise ValueError("PIL is required to read image files.")
-
-    processor = DonutProcessor.from_pretrained(
-        "naver-clova-ix/donut-base-finetuned-cord-v2"
-    )
-    model = VisionEncoderDecoderModel.from_pretrained(
-        "naver-clova-ix/donut-base-finetuned-cord-v2"
-    )
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model.to(device)
-    # load document image
-    image = Image.open(input_file)
-
-    # prepare decoder inputs
-    task_prompt = "<s_cord-v2>"
-    decoder_input_ids = processor.tokenizer(
-        task_prompt, add_special_tokens=False, return_tensors="pt"
-    ).input_ids
-
-    pixel_values = processor(image, return_tensors="pt").pixel_values
-
-    outputs = model.generate(
-        pixel_values.to(device),
-        decoder_input_ids=decoder_input_ids.to(device),
-        max_length=model.decoder.config.max_position_embeddings,
-        early_stopping=True,
-        pad_token_id=processor.tokenizer.pad_token_id,
-        eos_token_id=processor.tokenizer.eos_token_id,
-        use_cache=True,
-        num_beams=1,
-        bad_words_ids=[[processor.tokenizer.unk_token_id]],
-        return_dict_in_generate=True,
-    )
-
-    sequence = processor.batch_decode(outputs.sequences)[0]
-    sequence = sequence.replace(processor.tokenizer.eos_token, "").replace(
-        processor.tokenizer.pad_token, ""
-    )
-    # remove first task start token
-    sequence = re.sub(r"<.*?>", "", sequence, count=1).strip()
-
-    return sequence
-
-
-DEFAULT_FILE_EXTRACTOR: Dict[str, Callable[[Path, str], str]] = {
-    ".pdf": _pdf_reader,
-    ".docx": _docx_reader,
-    ".jpg": _image_parser,
-    ".png": _image_parser,
-    ".jpeg": _image_parser,
+DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
+    ".pdf": PDFParser(),
+    ".docx": DocxParser(),
+    ".jpg": ImageParser(),
+    ".png": ImageParser(),
+    ".jpeg": ImageParser(),
+    ".mp3": VideoAudioParser(),
+    ".mp4": VideoAudioParser(),
 }
 
 
@@ -129,8 +35,8 @@ class SimpleDirectoryReader(BaseReader):
             False by default.
         required_exts (Optional[List[str]]): List of required extensions.
             Default is None.
-        file_extractor (Optional[Dict[str, Callable]]): A mapping of file
-            extension to a function that specifies how to convert that file
+        file_extractor (Optional[Dict[str, BaseParser]]): A mapping of file
+            extension to a BaseParser class that specifies how to convert that file
             to text. See DEFAULT_FILE_EXTRACTOR.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
@@ -146,7 +52,7 @@ class SimpleDirectoryReader(BaseReader):
         errors: str = "ignore",
         recursive: bool = False,
         required_exts: Optional[List[str]] = None,
-        file_extractor: Optional[Dict[str, Callable]] = None,
+        file_extractor: Optional[Dict[str, BaseParser]] = None,
         num_files_limit: Optional[int] = None,
         file_metadata: Optional[Callable[[str], Dict]] = None,
         verbose: bool = False,
@@ -216,7 +122,10 @@ class SimpleDirectoryReader(BaseReader):
         metadata_list = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
-                data = self.file_extractor[input_file.suffix](input_file, self.errors)
+                parser = self.file_extractor[input_file.suffix]
+                if not parser.parser_config_set:
+                    parser.init_parser()
+                data = parser.parse_file(input_file, errors=self.errors)
             else:
                 # do standard read
                 with open(input_file, "r", errors=self.errors) as f:
