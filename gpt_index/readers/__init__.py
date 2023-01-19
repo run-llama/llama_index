@@ -14,7 +14,7 @@ from gpt_index.readers.discord_reader import DiscordReader
 from gpt_index.readers.faiss import FaissReader
 
 # readers
-from gpt_index.readers.file import SimpleDirectoryReader
+from gpt_index.readers.file.base import SimpleDirectoryReader
 from gpt_index.readers.google.gdocs import GoogleDocsReader
 from gpt_index.readers.make_com.wrapper import MakeWrapper
 from gpt_index.readers.mongo import SimpleMongoReader
