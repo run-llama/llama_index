@@ -1,8 +1,6 @@
 """Pinecone vector store index query."""
 from typing import Any, Dict, List, Optional, cast
 
-import numpy as np
-
 from gpt_index.data_structs.data_structs import IndexDict, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.embedding_utils import SimilarityTracker

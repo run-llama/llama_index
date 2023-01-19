@@ -129,5 +129,5 @@ class GPTPineconeIndex(BaseGPTIndex[PineconeIndexStruct]):
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Query mode to class."""
         super()._preprocess_query(mode, query_kwargs)
-        # pass along weaviate client and info
+        # pass along pinecone client and info
         query_kwargs["pinecone_index"] = self._pinecone_index

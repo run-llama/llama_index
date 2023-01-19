@@ -31,9 +31,9 @@ from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
     GPTFaissIndex,
+    GPTPineconeIndex,
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
-    GPTPineconeIndex,
 )
 
 # langchain helper
