@@ -8,6 +8,7 @@ from gpt_index.data_structs.data_structs import (
     IndexList,
     IndexStruct,
     KeywordTable,
+    PineconeIndexStruct,
     SimpleIndexDict,
     WeaviateIndexStruct,
 )
@@ -28,9 +29,13 @@ class IndexStructType(str, Enum):
         SIMPLE_DICT ("simple_dict"): Simple Vector Store Index. See
             :ref:`Ref-Indices-VectorStore`
             for more information on the simple vector store index.
-        WEAVIATE_DICT ("weaviate"): Weaviate Vector Store Index.
+        WEAVIATE ("weaviate"): Weaviate Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Weaviate vector store index.
+        PINECONE ("pinecone"): Pinecone Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Pinecone vector store index.
+
         SQL ("SQL"): SQL Structured Store Index.
             See :ref:`Ref-Indices-StructStore`
             for more information on the SQL vector store index.
@@ -49,6 +54,8 @@ class IndexStructType(str, Enum):
     SIMPLE_DICT = "simple_dict"
     # for weaviate index
     WEAVIATE = "weaviate"
+    # for pinecone index
+    PINECONE = "pinecone"
     # for SQL index
     SQL = "sql"
 
@@ -66,6 +73,8 @@ class IndexStructType(str, Enum):
             return SimpleIndexDict
         elif self == IndexStructType.WEAVIATE:
             return WeaviateIndexStruct
+        elif self == IndexStructType.PINECONE:
+            return PineconeIndexStruct
         elif self == IndexStructType.SQL:
             return SQLStructTable
         else:
@@ -86,6 +95,8 @@ class IndexStructType(str, Enum):
             return cls.SIMPLE_DICT
         elif isinstance(index_struct, WeaviateIndexStruct):
             return cls.WEAVIATE
+        elif isinstance(index_struct, PineconeIndexStruct):
+            return cls.PINECONE
         elif isinstance(index_struct, SQLStructTable):
             return cls.SQL
         else:
