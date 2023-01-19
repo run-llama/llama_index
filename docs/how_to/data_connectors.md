@@ -34,4 +34,7 @@ See [How to use Vector Stores with GPT Index](vector_stores.md) for a more thoro
 
 - local file directory (`SimpleDirectoryReader`)
 
+The `SimpleDirectoryReader` can support parsing a wide range of file types: `.pdf`, `.jpg`, `.png`, `.docx`, `.mp3`, `.mp4`.
+Each of these file types may require additional dependencies to be installed.
+
 We offer [example notebooks of connecting to different data sources](https://github.com/jerryjliu/gpt_index/tree/main/examples/data_connectors). Please check them out!
