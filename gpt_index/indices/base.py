@@ -200,15 +200,19 @@ class BaseGPTIndex(Generic[IS]):
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
-            index_pos_info = {"start": index_counter, "end": index_counter + len(text_chunk)}
-            index_counter += len(text_chunk)
+            index_pos_info = {
+                "start": index_counter,  # NOTE: start is inclusive
+                "end": index_counter + len(text_chunk),  # NOTE: end is exclusive
+            }
+            index_counter += len(text_chunk) + 1
             # if embedding specified in document, pass it to the Node
             node = Node(
                 text=text_chunk,
                 index=start_idx + i,
                 ref_doc_id=document.get_doc_id(),
                 embedding=document.embedding,
-                extra_info=document.extra_info.update(index_pos_info) if (document.extra_info and self._include_extra_info)  else index_pos_info,
+                extra_info=document.extra_info if self._include_extra_info else None,
+                node_info=index_pos_info,
             )
             nodes.append(node)
         return nodes
