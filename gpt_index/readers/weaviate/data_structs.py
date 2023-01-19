@@ -4,9 +4,9 @@ Contain conversion to and from dataclasses that GPT Index uses.
 
 """
 
+import json
 from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
-import json
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.readers.weaviate.utils import (
@@ -45,7 +45,7 @@ class BaseWeaviateIndexStruct(Generic[IS]):
                 "dataType": ["string"],
                 "description": "extra_info (in JSON)",
                 "name": "extra_info",
-            }
+            },
         ]
 
     @classmethod
@@ -188,7 +188,7 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
             child_indices=entry["child_indices"],
             ref_doc_id=entry["ref_doc_id"],
             embedding=entry["_additional"]["vector"],
-            extra_info=extra_info
+            extra_info=extra_info,
         )
 
     @classmethod
