@@ -31,6 +31,7 @@ from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
     GPTFaissIndex,
+    GPTPineconeIndex,
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
 )
@@ -54,6 +55,7 @@ from gpt_index.prompts.prompts import (
 
 # readers
 from gpt_index.readers import (
+    BeautifulSoupWebReader,
     DiscordReader,
     Document,
     FaissReader,
@@ -82,6 +84,7 @@ __all__ = [
     "GPTFaissIndex",
     "GPTSimpleVectorIndex",
     "GPTWeaviateIndex",
+    "GPTPineconeIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",
     "LangchainEmbedding",
@@ -107,6 +110,7 @@ __all__ = [
     "PineconeReader",
     "DiscordReader",
     "SimpleWebPageReader",
+    "BeautifulSoupWebReader",
     "TrafilaturaWebReader",
     "LLMPredictor",
     "MockLLMPredictor",

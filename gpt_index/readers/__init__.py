@@ -24,7 +24,11 @@ from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.string_iterable import StringIterableReader
 from gpt_index.readers.weaviate.reader import WeaviateReader
-from gpt_index.readers.web import SimpleWebPageReader, TrafilaturaWebReader
+from gpt_index.readers.web import (
+    BeautifulSoupWebReader,
+    SimpleWebPageReader,
+    TrafilaturaWebReader,
+)
 from gpt_index.readers.wikipedia import WikipediaReader
 
 __all__ = [
@@ -41,6 +45,7 @@ __all__ = [
     "Document",
     "StringIterableReader",
     "SimpleWebPageReader",
+    "BeautifulSoupWebReader",
     "TrafilaturaWebReader",
     "MakeWrapper",
 ]

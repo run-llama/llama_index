@@ -9,6 +9,7 @@ from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.response.builder import (
     ResponseBuilder,
     ResponseMode,
@@ -194,31 +195,46 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         return response or ""
 
-    def get_nodes_for_response(
+    def get_nodes_and_similarities_for_response(
         self, query_str: str, verbose: bool = False
-    ) -> List[Node]:
-        """Get nodes for response."""
-        nodes = self._get_nodes_for_response(query_str, verbose=verbose)
+    ) -> List[Tuple[Node, Optional[float]]]:
+        """Get list of tuples of node and similarity for response.
+
+        First part of the tuple is the node.
+        Second part of tuple is the distance from query to the node.
+        If not applicable, it's None.
+        """
+        similarity_tracker = SimilarityTracker()
+        nodes = self._get_nodes_for_response(
+            query_str, similarity_tracker=similarity_tracker, verbose=verbose
+        )
         nodes = [node for node in nodes if self._should_use_node(node)]
+
         # TODO: create a `display` method to allow subclasses to print the Node
-        return nodes
+        return similarity_tracker.get_zipped_nodes(nodes)
 
     @abstractmethod
     def _get_nodes_for_response(
-        self, query_str: str, verbose: bool = False
+        self,
+        query_str: str,
+        verbose: bool = False,
+        similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
 
     def _query(self, query_str: str, verbose: bool = False) -> Response:
         """Answer a query."""
         # TODO: remove _query and just use query
-        nodes = self.get_nodes_for_response(query_str, verbose=verbose)
+        tuples = self.get_nodes_and_similarities_for_response(
+            query_str, verbose=verbose
+        )
         source_builder = ResponseSourceBuilder()
         node_texts = []
-        for node in nodes:
+        for node, similarity in tuples:
             text, response = self._get_text_from_node(query_str, node, verbose=verbose)
-            source_builder.add_node(node)
+            source_builder.add_node(node, similarity=similarity)
             if response is not None:
+                # these are source nodes from within this node (when it's an index)
                 for source_node in response.source_nodes:
                     source_builder.add_source_node(source_node)
             node_texts.append(text)

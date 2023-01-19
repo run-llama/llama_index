@@ -1,6 +1,7 @@
 # 🗂️ ️GPT Index
 
-GPT Index is a project consisting of a set of *data structures* that are created using LLMs and can be traversed using LLMs in order to answer queries.
+GPT Index is a project consisting of a set of data structures designed to make it easier to 
+use large external knowledge bases with LLMs.
 
 PyPi: https://pypi.org/project/gpt-index/.
 
@@ -83,3 +84,16 @@ The main third-party package requirements are `tiktoken`, `openai`, and `langcha
 All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply run `pip install -r requirements.txt`. 
 
 
+## 📖 Citation
+
+Reference to cite if you use GPT Index in a paper:
+
+```
+@software{Liu_GPT_Index_2022,
+author = {Liu, Jerry},
+doi = {10.5281/zenodo.1234},
+month = {11},
+title = {{GPT Index}},
+url = {https://github.com/jerryjliu/gpt_index},year = {2022}
+}
+```
