@@ -110,6 +110,9 @@ class LLMPredictor:
         self._chat_history = chat_history
         if chat_history > 0:
             self.history = []
+            
+    def clear_chat_history(self):
+        self.history = []
         
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
