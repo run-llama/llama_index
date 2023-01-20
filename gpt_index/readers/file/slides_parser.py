@@ -4,6 +4,7 @@ Contains parsers for .pptx files.
 
 """
 
+import os
 from pathlib import Path
 from typing import Dict
 
@@ -105,11 +106,13 @@ class PptxParser(BaseParser):
                     image = shape.image
                     # get image "file" contents
                     image_bytes = image.blob
-                    # ---make up a name for the file, e.g. 'image.jpg'---
-                    image_filename = "image.%s" % image.ext
+                    # make up a name for the file
+                    image_filename = "tmp_image.%s" % image.ext
                     with open(image_filename, "wb") as f:
                         f.write(image_bytes)
                     result += f"\n Image: {self.caption_image(image_filename)}\n\n"
+
+                    os.remove(image_filename)
                 if hasattr(shape, "text"):
                     result += f"{shape.text}\n"
 
