@@ -107,30 +107,42 @@ class OpenAIEmbedding(BaseEmbedding):
             - "babbage"
             - "ada"
             - "text-embedding-ada-002"
+
+        deployment_name (Optional[str]): Optional deployment of model. Defaults to None.
+            If this value is not None, mode and model will be ignored.
+            Only available for using AzureOpenAI.
     """
 
     def __init__(
         self,
         mode: str = OpenAIEmbeddingMode.TEXT_SEARCH_MODE,
         model: str = "text-embedding-ada-002",
+        deployment_name: Optional[str] = None,
     ) -> None:
         """Init params."""
         super().__init__()
         self.mode = OpenAIEmbeddingMode(mode)
         self.model = model
+        self.deployment_name = deployment_name
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        key = (self.mode, self.model)
-        if key not in _QUERY_MODE_MODEL_DICT:
-            raise ValueError(f"Invalid mode, model combination: {key}")
-        engine = _QUERY_MODE_MODEL_DICT[key]
+        if self.deployment_name is not None:
+            engine = self.deployment_name
+        else:
+            key = (self.mode, self.model)
+            if key not in _QUERY_MODE_MODEL_DICT:
+                raise ValueError(f"Invalid mode, model combination: {key}")
+            engine = _QUERY_MODE_MODEL_DICT[key]
         return get_embedding(query, engine=engine)
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        key = (self.mode, self.model)
-        if key not in _TEXT_MODE_MODEL_DICT:
-            raise ValueError(f"Invalid mode, model combination: {key}")
-        engine = _TEXT_MODE_MODEL_DICT[key]
+        if self.deployment_name is not None:
+            engine = self.deployment_name
+        else:
+            key = (self.mode, self.model)
+            if key not in _TEXT_MODE_MODEL_DICT:
+                raise ValueError(f"Invalid mode, model combination: {key}")
+            engine = _TEXT_MODE_MODEL_DICT[key]
         return get_embedding(text, engine=engine)
