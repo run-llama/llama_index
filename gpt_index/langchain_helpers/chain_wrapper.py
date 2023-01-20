@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Dict
 
 import openai
-from langchain import Cohere, LLMChain, OpenAI, ConversationChain
+from langchain import Cohere, LLMChain, OpenAI
 from langchain.llms import AI21
 from langchain.llms.base import BaseLLM
 
