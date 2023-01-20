@@ -12,7 +12,7 @@ from gpt_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.prompts.base import Prompt
 from gpt_index.utils import globals_helper, retry_on_exceptions_with_backoff
 
-# lcw
+# for chat history support
 from typing import List
 
 from gpt_index.prompts.base import Prompt
@@ -33,7 +33,6 @@ class QuestionAnswerWithHistoryPrompt(Prompt):
 
     prompt_type: PromptType = PromptType.QUESTION_ANSWER
     input_variables: List[str] = ["context_str", "history", "query_str"]
-
 
 DEFAULT_TEXT_QA_PROMPT_WITH_HISTORY_TMPL = (
     "Context information is below. \n"
@@ -129,22 +128,21 @@ class LLMPredictor:
         if self._chat_history:
             print(f'===prompt===\n{prompt}')
             print(f'===prompt_args===\n{prompt_args}')
-            prompt_with_history = DEFAULT_TEXT_QA_WITH_HISTORY_PROMPT    #lcw
-            llm_chain = LLMChain(prompt=prompt_with_history.get_langchain_prompt(), llm=self._llm, verbose=True) # lcw
+            prompt_with_history = DEFAULT_TEXT_QA_WITH_HISTORY_PROMPT   
+            llm_chain = LLMChain(prompt=prompt_with_history.get_langchain_prompt(), llm=self._llm, verbose=True) 
         else:
-            llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm, verbose=True) # lcw
+            llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm) 
 
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
         full_prompt_args = prompt.get_full_format_args(prompt_args)
 
-        if self._chat_history > 0:  # lcw
+        if self._chat_history > 0:  
             history_text = ""
             for ht in self.history:
                 history_text += f"{ht}\n"
             partial_dict: Dict[str, Any] = {"history": history_text}
             full_prompt_args.update(partial_dict)
-            print(f'===full_prompt_args===\n{full_prompt_args}')
 
         if self.retry_on_throttling:
             llm_prediction = retry_on_exceptions_with_backoff(
@@ -154,7 +152,6 @@ class LLMPredictor:
         else:
             llm_prediction = llm_chain.predict(**full_prompt_args)
 
-        # lcw
         if self._chat_history > 0:
             q = full_prompt_args["query_str"]
             a = llm_prediction.strip()
