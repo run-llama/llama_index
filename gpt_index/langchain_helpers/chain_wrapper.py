@@ -1,16 +1,54 @@
 """Wrapper functions around an LLM chain."""
 
 from dataclasses import dataclass
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Dict
 
 import openai
-from langchain import Cohere, LLMChain, OpenAI
+from langchain import Cohere, LLMChain, OpenAI, ConversationChain
 from langchain.llms import AI21
 from langchain.llms.base import BaseLLM
 
 from gpt_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.prompts.base import Prompt
 from gpt_index.utils import globals_helper, retry_on_exceptions_with_backoff
+
+# lcw
+from typing import List
+
+from gpt_index.prompts.base import Prompt
+from gpt_index.prompts.prompt_type import PromptType
+
+class QuestionAnswerWithHistoryPrompt(Prompt):
+    """Question Answer prompt.
+
+    Prompt to answer a question `query_str` given a context `context_str`.
+
+    Required template variables: `context_str`, `query_str`
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+
+    prompt_type: PromptType = PromptType.QUESTION_ANSWER
+    input_variables: List[str] = ["context_str", "history", "query_str"]
+
+
+DEFAULT_TEXT_QA_PROMPT_WITH_HISTORY_TMPL = (
+    "Context information is below. \n"
+    "---------------------\n"
+    "{context_str}"
+    "\n---------------------\n"
+    "chat history.\n"
+    "---------------------\n"
+    "{history}"
+    "\n---------------------\n"
+    "Given the context information or chat history and not prior knowledge, "
+    "answer the question as honest and faithful personal counselor: {query_str}\n"
+    "if context information or chat history don't have answer, you may use prior knowledge.\n"
+)
+DEFAULT_TEXT_QA_WITH_HISTORY_PROMPT = QuestionAnswerWithHistoryPrompt(DEFAULT_TEXT_QA_PROMPT_WITH_HISTORY_TMPL)
 
 
 @dataclass
@@ -62,7 +100,7 @@ class LLMPredictor:
     """
 
     def __init__(
-        self, llm: Optional[BaseLLM] = None, retry_on_throttling: bool = True
+        self, llm: Optional[BaseLLM] = None, retry_on_throttling: bool = True, chat_history: int = 0
     ) -> None:
         """Initialize params."""
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
@@ -70,7 +108,10 @@ class LLMPredictor:
         self._total_tokens_used = 0
         self.flag = True
         self._last_token_usage: Optional[int] = None
-
+        self._chat_history = chat_history
+        if chat_history > 0:
+            self.history = []
+        
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         # TODO: refactor mocks in unit tests, this is a stopgap solution
@@ -85,11 +126,26 @@ class LLMPredictor:
         If retry_on_throttling is true, we will retry on rate limit errors.
 
         """
-        llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm)
+        if self._chat_history:
+            print(f'===prompt===\n{prompt}')
+            print(f'===prompt_args===\n{prompt_args}')
+            prompt_with_history = DEFAULT_TEXT_QA_WITH_HISTORY_PROMPT    #lcw
+            llm_chain = LLMChain(prompt=prompt_with_history.get_langchain_prompt(), llm=self._llm, verbose=True) # lcw
+        else:
+            llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm, verbose=True) # lcw
 
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
         full_prompt_args = prompt.get_full_format_args(prompt_args)
+
+        if self._chat_history > 0:  # lcw
+            history_text = ""
+            for ht in self.history:
+                history_text += f"{ht}\n"
+            partial_dict: Dict[str, Any] = {"history": history_text}
+            full_prompt_args.update(partial_dict)
+            print(f'===full_prompt_args===\n{full_prompt_args}')
+
         if self.retry_on_throttling:
             llm_prediction = retry_on_exceptions_with_backoff(
                 lambda: llm_chain.predict(**full_prompt_args),
@@ -97,6 +153,14 @@ class LLMPredictor:
             )
         else:
             llm_prediction = llm_chain.predict(**full_prompt_args)
+
+        # lcw
+        if self._chat_history > 0:
+            q = full_prompt_args["query_str"]
+            a = llm_prediction.strip()
+            self.history.append(f"Customer:{q}\nCounselor:{a}")
+            while len(self.history) > self._chat_history:
+                self.history.pop(0)
         return llm_prediction
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
