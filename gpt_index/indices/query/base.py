@@ -133,7 +133,7 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         if similarity_tracker is not None:
             similarity = similarity_tracker.find(node)
-            if similarity < similarity_tracker.similarity_cutoff:
+            if similarity is not None and similarity < similarity_tracker.similarity_cutoff:
                 return False
 
         return True
