@@ -25,6 +25,6 @@ class CSVParser(BaseParser):
             csv_reader = csv.reader(fp)
             for row in csv_reader:
                 text_list.append(", ".join(row))
-        text = ";\n".join(text_list)
+        text = "\n".join(text_list)
 
         return text
