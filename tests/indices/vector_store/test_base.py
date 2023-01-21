@@ -456,5 +456,4 @@ def test_query_and_similarity_scores_with_cutoff(
     # test embedding query
     query_str = "What is?"
     response = index.query(query_str, similarity_cutoff=1.1, **query_kwargs)
-    print("what is the response", response)
     assert len(response.source_nodes) == 0
