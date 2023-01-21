@@ -19,9 +19,8 @@ class JSONParser(BaseParser):
         try:
             import json
         except ImportError:
-            raise ValueError("json is required to read PDF files.")
+            raise ValueError("json is required to read JSON files.")
         with open(file, "r") as f:
             json_data = json.load(f)
             text = json.dumps(json_data)
-
         return text
