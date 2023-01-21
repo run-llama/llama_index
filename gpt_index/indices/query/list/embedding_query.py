@@ -30,16 +30,16 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         self,
         index_struct: IndexList,
         similarity_top_k: Optional[int] = 1,
+        similarity_cutoff: Optional[float] = None,
         embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
-            index_struct=index_struct,
-            embed_model=embed_model,
-            **kwargs,
+            index_struct=index_struct, embed_model=embed_model, **kwargs,
         )
         self.similarity_top_k = similarity_top_k
+        self.similarity_cutoff = similarity_cutoff
 
     def _get_nodes_for_response(
         self,
@@ -63,6 +63,9 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         top_k_nodes = [nodes[i] for i in top_idxs]
 
         if similarity_tracker is not None:
+            if self.similarity_cutoff:
+                similarity_tracker.set_similarity_cutoff(self.similarity_cutoff)
+
             for node, similarity in zip(top_k_nodes, top_similarities):
                 similarity_tracker.add(node, similarity)
 

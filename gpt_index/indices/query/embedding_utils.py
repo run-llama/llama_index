@@ -39,6 +39,7 @@ class SimilarityTracker:
 
     # TODO: smarter way to store this information
     lookup: Dict[str, float] = {}
+    similarity_cutoff: Optional[float] = None
 
     def _hash(self, node: Node) -> str:
         """Generate a unique key for each node."""
@@ -61,3 +62,6 @@ class SimilarityTracker:
         """Get a zipped list of nodes and their corresponding scores."""
         similarities = [self.find(node) for node in nodes]
         return list(zip(nodes, similarities))
+
+    def set_similarity_cutoff(self, cutoff: float):
+        self.similarity_cutoff = cutoff

@@ -55,6 +55,9 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
         top_k_nodes = self._index_struct.get_nodes(top_ids)
 
         if similarity_tracker is not None:
+            if self.similarity_cutoff:
+                similarity_tracker.set_similarity_cutoff(self.similarity_cutoff)
+
             for node, similarity in zip(top_k_nodes, top_similarities):
                 similarity_tracker.add(node, similarity)
 

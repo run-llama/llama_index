@@ -18,8 +18,10 @@ class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[BID], Generic[BID]):
         index_struct: BID,
         embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
+        similarity_cutoff: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct=index_struct, embed_model=embed_model, **kwargs)
         self.similarity_top_k = similarity_top_k
+        self.similarity_cutoff = similarity_cutoff
