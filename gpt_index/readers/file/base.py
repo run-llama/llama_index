@@ -6,6 +6,7 @@ from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.base_parser import BaseParser
 from gpt_index.readers.file.docs_parser import DocxParser, PDFParser
 from gpt_index.readers.file.image_parser import ImageParser
+from gpt_index.readers.file.hash_tables_parser import JSONParser
 from gpt_index.readers.file.video_audio import VideoAudioParser
 from gpt_index.readers.schema.base import Document
 
@@ -17,6 +18,7 @@ DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
     ".jpeg": ImageParser(),
     ".mp3": VideoAudioParser(),
     ".mp4": VideoAudioParser(),
+    ".json": JSONParser()
 }
 
 
