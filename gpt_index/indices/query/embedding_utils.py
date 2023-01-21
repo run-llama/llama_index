@@ -62,7 +62,3 @@ class SimilarityTracker:
         """Get a zipped list of nodes and their corresponding scores."""
         similarities = [self.find(node) for node in nodes]
         return list(zip(nodes, similarities))
-
-    def set_similarity_cutoff(self, cutoff: float) -> None:
-        """Set the similarity cutoff."""
-        self.similarity_cutoff = cutoff

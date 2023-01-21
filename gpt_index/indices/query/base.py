@@ -65,6 +65,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         include_summary (bool): Optional bool. If True, will also use the summary
             text of the index when generating a response (the summary text can be set
             through `index.set_text("<text>")`).
+        similarity_cutoff (float): Optional float. If set, will filter out nodes with
+            similarity below this cutoff threshold when computing the response
 
     """
 
@@ -84,6 +86,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         refine_template: Optional[RefinePrompt] = None,
         include_summary: bool = False,
         response_kwargs: Optional[Dict] = None,
+        similarity_cutoff: Optional[float] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -116,6 +119,8 @@ class BaseGPTIndexQuery(Generic[IS]):
             self.refine_template,
         )
 
+        self.similarity_cutoff = similarity_cutoff
+
     def _should_use_node(
         self, node: Node, similarity_tracker: Optional[SimilarityTracker] = None
     ) -> bool:
@@ -131,16 +136,15 @@ class BaseGPTIndexQuery(Generic[IS]):
                 if w in words:
                     return False
 
-        if (
-            similarity_tracker is not None
-            and similarity_tracker.similarity_cutoff is not None
-        ):
+        sim_cutoff_exists = (
+            similarity_tracker is not None and self.similarity_cutoff is not None
+        )
 
-            similarity = similarity_tracker.find(node)
-            if (
-                similarity is not None
-                and similarity < similarity_tracker.similarity_cutoff
-            ):
+        if sim_cutoff_exists:
+            similarity = cast(SimilarityTracker, similarity_tracker).find(node)
+            if similarity is None:
+                raise ValueError("Similarity is None but similarity_cutoff exists")
+            if cast(float, similarity) < cast(float, self.similarity_cutoff):
                 return False
 
         return True
