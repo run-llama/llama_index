@@ -106,8 +106,8 @@ class PptxParser(BaseParser):
                     image = shape.image
                     # get image "file" contents
                     image_bytes = image.blob
-                    # make up a name for the file
-                    image_filename = "tmp_image.%s" % image.ext
+                    # temporarily save the image to feed into model
+                    image_filename = f"tmp_image.{image.ext}"
                     with open(image_filename, "wb") as f:
                         f.write(image_bytes)
                     result += f"\n Image: {self.caption_image(image_filename)}\n\n"
