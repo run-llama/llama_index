@@ -180,6 +180,11 @@ def test_query(
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
     assert str(response) == ("What is?:Hello world.")
+    node_info = (
+        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+    )
+    assert node_info["start"] == 0
+    assert node_info["end"] == 12
 
 
 @patch_common
