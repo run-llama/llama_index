@@ -65,6 +65,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         include_summary (bool): Optional bool. If True, will also use the summary
             text of the index when generating a response (the summary text can be set
             through `index.set_text("<text>")`).
+        similarity_cutoff (float): Optional float. If set, will filter out nodes with
+            similarity below this cutoff threshold when computing the response
 
     """
 
@@ -84,6 +86,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         refine_template: Optional[RefinePrompt] = None,
         include_summary: bool = False,
         response_kwargs: Optional[Dict] = None,
+        similarity_cutoff: Optional[float] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -116,7 +119,11 @@ class BaseGPTIndexQuery(Generic[IS]):
             self.refine_template,
         )
 
-    def _should_use_node(self, node: Node) -> bool:
+        self.similarity_cutoff = similarity_cutoff
+
+    def _should_use_node(
+        self, node: Node, similarity_tracker: Optional[SimilarityTracker] = None
+    ) -> bool:
         """Run node through filters to determine if it should be used."""
         words = re.findall(r"\w+", node.get_text())
         if self._required_keywords is not None:
@@ -128,6 +135,17 @@ class BaseGPTIndexQuery(Generic[IS]):
             for w in self._exclude_keywords:
                 if w in words:
                     return False
+
+        sim_cutoff_exists = (
+            similarity_tracker is not None and self.similarity_cutoff is not None
+        )
+
+        if sim_cutoff_exists:
+            similarity = cast(SimilarityTracker, similarity_tracker).find(node)
+            if similarity is None:
+                return False
+            if cast(float, similarity) < cast(float, self.similarity_cutoff):
+                return False
 
         return True
 
@@ -208,7 +226,9 @@ class BaseGPTIndexQuery(Generic[IS]):
         nodes = self._get_nodes_for_response(
             query_str, similarity_tracker=similarity_tracker, verbose=verbose
         )
-        nodes = [node for node in nodes if self._should_use_node(node)]
+        nodes = [
+            node for node in nodes if self._should_use_node(node, similarity_tracker)
+        ]
 
         # TODO: create a `display` method to allow subclasses to print the Node
         return similarity_tracker.get_zipped_nodes(nodes)

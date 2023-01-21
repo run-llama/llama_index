@@ -53,7 +53,6 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
             embedding_ids=node_ids,
         )
         top_k_nodes = self._index_struct.get_nodes(top_ids)
-
         if similarity_tracker is not None:
             for node, similarity in zip(top_k_nodes, top_similarities):
                 similarity_tracker.add(node, similarity)
