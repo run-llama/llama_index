@@ -143,7 +143,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         if sim_cutoff_exists:
             similarity = cast(SimilarityTracker, similarity_tracker).find(node)
             if similarity is None:
-                raise ValueError("Similarity is None but similarity_cutoff exists")
+                return False
             if cast(float, similarity) < cast(float, self.similarity_cutoff):
                 return False
 

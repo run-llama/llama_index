@@ -453,7 +453,12 @@ def test_query_and_similarity_scores_with_cutoff(
     index_kwargs, query_kwargs = struct_kwargs
     index = GPTSimpleVectorIndex([document], **index_kwargs)
 
-    # test embedding query
+    # test embedding query - no nodes
     query_str = "What is?"
     response = index.query(query_str, similarity_cutoff=1.1, **query_kwargs)
     assert len(response.source_nodes) == 0
+
+    # test embedding query - 1 node
+    query_str = "What is?"
+    response = index.query(query_str, similarity_cutoff=0.9, **query_kwargs)
+    assert len(response.source_nodes) == 1
