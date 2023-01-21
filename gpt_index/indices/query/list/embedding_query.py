@@ -36,7 +36,9 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     ) -> None:
         """Initialize params."""
         super().__init__(
-            index_struct=index_struct, embed_model=embed_model, **kwargs,
+            index_struct=index_struct,
+            embed_model=embed_model,
+            **kwargs,
         )
         self.similarity_top_k = similarity_top_k
         self.similarity_cutoff = similarity_cutoff

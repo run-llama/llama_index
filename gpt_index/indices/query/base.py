@@ -131,9 +131,16 @@ class BaseGPTIndexQuery(Generic[IS]):
                 if w in words:
                     return False
 
-        if similarity_tracker is not None:
+        if (
+            similarity_tracker is not None
+            and similarity_tracker.similarity_cutoff is not None
+        ):
+
             similarity = similarity_tracker.find(node)
-            if similarity is not None and similarity < similarity_tracker.similarity_cutoff:
+            if (
+                similarity is not None
+                and similarity < similarity_tracker.similarity_cutoff
+            ):
                 return False
 
         return True
