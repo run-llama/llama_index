@@ -1,7 +1,8 @@
 """Langchain memory wrapper (for GPT Index)."""
 
+from typing import Any, Dict, List, Optional
+
 from langchain.chains.base import Memory
-from typing import List, Dict, Any, Optional
 from pydantic import Field
 
 from gpt_index.indices.base import BaseGPTIndex
@@ -9,6 +10,11 @@ from gpt_index.readers.schema.base import Document
 
 
 def get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -> str:
+    """Get prompt input key.
+
+    Copied over from langchain.
+    
+    """
     # "stop" is a special key that can be passed as input but is not used to
     # format the prompt.
     prompt_input_keys = list(set(inputs).difference(memory_variables + ["stop"]))
