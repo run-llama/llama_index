@@ -17,6 +17,7 @@ The API reference documentation can be found [here](/reference/readers.rst).
 #### Databases
 
 - MongoDB (`SimpleMongoReader`)
+- PostgreSQL (`PostgreSQLReader`)
 
 #### Vector Stores
 
