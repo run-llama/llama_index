@@ -30,13 +30,9 @@ class YoutubeTranscriptReader(BaseReader):
         results = []
         for link in ytlinks:
             video_id = link.split("?v=")[-1]
-            try:
-                srt = YouTubeTranscriptApi.get_transcript(video_id)
-                transcript = ""
-                for chunk in srt:
-                    transcript = transcript + chunk["text"] + "\n"
-                results.append(Document(transcript))
-            except Exception as e:
-                print(e)
-                continue
+            srt = YouTubeTranscriptApi.get_transcript(video_id)
+            transcript = ""
+            for chunk in srt:
+                transcript = transcript + chunk["text"] + "\n"
+            results.append(Document(transcript))
         return results
