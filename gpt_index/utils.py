@@ -6,6 +6,7 @@ import time
 import traceback
 import uuid
 from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Any, Callable, Generator, List, Optional, Set, Type, cast
 
 import nltk
@@ -103,9 +104,25 @@ def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
             setattr(obj, k, v)
 
 
+@dataclass
+class ErrorToRetry:
+    """Exception types that should be retried.
+
+    Args:
+        exception_cls (Type[Exception]): Class of exception.
+        check_fn (Optional[Callable[[Any]], bool]]):
+            A function that takes an exception instance as input and returns
+            whether to retry.
+
+    """
+
+    exception_cls: Type[Exception]
+    check_fn: Optional[Callable[[Any], bool]] = None
+
+
 def retry_on_exceptions_with_backoff(
     lambda_fn: Callable,
-    exception_classes: List[Type[Exception]],
+    errors_to_retry: List[ErrorToRetry],
     max_tries: int = 10,
     min_backoff_secs: float = 0.5,
     max_backoff_secs: float = 60.0,
@@ -114,7 +131,8 @@ def retry_on_exceptions_with_backoff(
 
     Args:
         lambda_fn (Callable): Function to be called and output we want.
-        exception_classes (List[Type[Exception]]): List of exception classes to retry.
+        errors_to_retry (List[ErrorToRetry]): List of errors to retry.
+            At least one needs to be provided.
         max_tries (int): Maximum number of tries, including the first. Defaults to 10.
         min_backoff_secs (float): Minimum amount of backoff time between attempts.
             Defaults to 0.5.
@@ -122,16 +140,28 @@ def retry_on_exceptions_with_backoff(
             Defaults to 60.
 
     """
-    exception_class_tuples = tuple(exception_classes)
+    if not errors_to_retry:
+        raise ValueError("At least one error to retry needs to be provided")
+
+    error_checks = {
+        error_to_retry.exception_cls: error_to_retry.check_fn
+        for error_to_retry in errors_to_retry
+    }
+    exception_class_tuples = tuple(error_checks.keys())
+
     backoff_secs = min_backoff_secs
     tries = 0
+
     while True:
         try:
             return lambda_fn()
-        except exception_class_tuples:
+        except exception_class_tuples as e:
             traceback.print_exc()
             tries += 1
             if tries >= max_tries:
+                raise
+            check_fn = error_checks.get(e.__class__)
+            if check_fn and not check_fn(e):
                 raise
             time.sleep(backoff_secs)
             backoff_secs = min(backoff_secs * 2, max_backoff_secs)
