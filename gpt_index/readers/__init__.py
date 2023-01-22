@@ -30,9 +30,11 @@ from gpt_index.readers.web import (
     TrafilaturaWebReader,
 )
 from gpt_index.readers.wikipedia import WikipediaReader
+from gpt_index.readers.youtube_transcript import YoutubeTranscriptReader
 
 __all__ = [
     "WikipediaReader",
+    "YoutubeTranscriptReader",
     "SimpleDirectoryReader",
     "SimpleMongoReader",
     "NotionPageReader",
