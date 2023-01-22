@@ -13,7 +13,7 @@ def get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) ->
     """Get prompt input key.
 
     Copied over from langchain.
-    
+
     """
     # "stop" is a special key that can be passed as input but is not used to
     # format the prompt.
