@@ -180,6 +180,11 @@ def test_query(
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
     assert str(response) == ("What is?:Hello world.")
+    node_info = (
+        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+    )
+    assert node_info["start"] == 0
+    assert node_info["end"] == 12
 
 
 @patch_common
@@ -257,3 +262,21 @@ def test_extra_info(
     assert list_index.index_struct.nodes[3].get_text() == (
         "extra_info: extra_info\n" "foo: bar\n\n" "This is a test v2."
     )
+
+
+@patch_common
+def test_node_indices(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test Node start and end indices info."""
+    index_kwargs, query_kwargs = struct_kwargs
+    index = GPTListIndex(documents, **index_kwargs)
+
+    assert index.index_struct.nodes[0].node_info == {"start": 0, "end": 12}
+    assert index.index_struct.nodes[1].node_info == {"start": 13, "end": 28}
+    assert index.index_struct.nodes[2].node_info == {"start": 29, "end": 50}

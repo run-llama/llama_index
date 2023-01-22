@@ -3,7 +3,7 @@
 import random
 import sys
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -50,6 +50,9 @@ class Node(IndexStruct):
 
     # reference document id
     ref_doc_id: Optional[str] = None
+
+    # extra node info
+    node_info: Optional[Dict[str, Any]] = None
 
     def get_text(self) -> str:
         """Get text."""

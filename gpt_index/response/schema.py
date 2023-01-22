@@ -20,6 +20,7 @@ class SourceNode(DataClassJsonMixin):
     source_text: str
     doc_id: Optional[str]
     extra_info: Optional[Dict[str, Any]] = None
+    node_info: Optional[Dict[str, Any]] = None
 
     # distance score between node and query, if applicable
     similarity: Optional[float] = None
@@ -31,6 +32,7 @@ class SourceNode(DataClassJsonMixin):
             source_text=node.get_text(),
             doc_id=node.ref_doc_id,
             extra_info=node.extra_info,
+            node_info=node.node_info,
             similarity=similarity,
         )
 

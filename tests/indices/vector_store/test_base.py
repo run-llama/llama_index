@@ -424,3 +424,41 @@ def test_query_and_similarity_scores(
     response = index.query(query_str, **query_kwargs)
     assert len(response.source_nodes) > 0
     assert response.source_nodes[0].similarity is not None
+
+
+@patch_common
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_query_and_similarity_scores_with_cutoff(
+    _mock_query_embed: Any,
+    _mock_text_embed: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    struct_kwargs: Dict,
+) -> None:
+    """Test that sources nodes have similarity scores."""
+    doc_text = (
+        "Hello world.\n"
+        "This is a test.\n"
+        "This is another test.\n"
+        "This is a test v2."
+    )
+    document = Document(doc_text)
+    index_kwargs, query_kwargs = struct_kwargs
+    index = GPTSimpleVectorIndex([document], **index_kwargs)
+
+    # test embedding query - no nodes
+    query_str = "What is?"
+    response = index.query(query_str, similarity_cutoff=1.1, **query_kwargs)
+    assert len(response.source_nodes) == 0
+
+    # test embedding query - 1 node
+    query_str = "What is?"
+    response = index.query(query_str, similarity_cutoff=0.9, **query_kwargs)
+    assert len(response.source_nodes) == 1
