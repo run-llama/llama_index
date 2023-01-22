@@ -10,7 +10,11 @@ from langchain.llms.base import BaseLLM
 
 from gpt_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.prompts.base import Prompt
-from gpt_index.utils import globals_helper, retry_on_exceptions_with_backoff
+from gpt_index.utils import (
+    ErrorToRetry,
+    globals_helper,
+    retry_on_exceptions_with_backoff,
+)
 
 
 @dataclass
@@ -93,7 +97,14 @@ class LLMPredictor:
         if self.retry_on_throttling:
             llm_prediction = retry_on_exceptions_with_backoff(
                 lambda: llm_chain.predict(**full_prompt_args),
-                [openai.error.RateLimitError],
+                [
+                    ErrorToRetry(openai.error.RateLimitError),
+                    ErrorToRetry(openai.error.ServiceUnavailableError),
+                    ErrorToRetry(openai.error.TryAgain),
+                    ErrorToRetry(
+                        openai.error.APIConnectionError, lambda e: e.should_retry
+                    ),
+                ],
             )
         else:
             llm_prediction = llm_chain.predict(**full_prompt_args)
