@@ -74,7 +74,7 @@ index = GPTSimpleVectorIndex.load_from_disk('index.json')
 
 To query:
 ```python
-index.query("<question_text>?", child_branch_factor=1)
+index.query("<question_text>?")
 ```
 
 ## 🔧 Dependencies
