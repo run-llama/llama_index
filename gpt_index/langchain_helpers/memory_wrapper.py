@@ -34,7 +34,7 @@ class GPTIndexMemory(Memory):
         query_kwargs (Dict[str, Any]): Keyword arguments for GPT Index query.
         input_key (Optional[str]): Input key. Defaults to None.
         output_key (Optional[str]): Output key. Defaults to None.
-    
+
     """
 
     human_prefix: str = "Human"
