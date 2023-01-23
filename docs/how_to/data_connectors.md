@@ -3,6 +3,8 @@
 We currently offer connectors into the following data sources. External data sources are retrieved through their APIs + corresponding authentication token.
 The API reference documentation can be found [here](/reference/readers.rst).
 
+All readers can be imported through `from gpt_index.readers import ...`. A subset can be imported directly through `from gpt_index import ...`
+
 #### External API's
 
 - [Notion](https://developers.notion.com/) (`NotionPageReader`)
@@ -12,6 +14,7 @@ The API reference documentation can be found [here](/reference/readers.rst).
   - Note: We use the [discord.py](https://github.com/Rapptz/discord.py) API wrapper for Discord. This is meant to be used
     in an async setting; however, we adapt it to synchronous Document loading.
 - Wikipedia (`WikipediaReader`)
+- YouTube (`YoutubeTranscriptReader`)
 - Web (`SimpleWebPageReader`, `BeautifulSoupWebReader`, `TrafilaturaWebReader`)
 
 #### Databases
