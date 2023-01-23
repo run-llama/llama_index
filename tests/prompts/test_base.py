@@ -3,6 +3,7 @@
 from typing import List
 
 import pytest
+from langchain import PromptTemplate
 
 from gpt_index.prompts.base import Prompt
 
@@ -57,3 +58,28 @@ def test_from_prompt() -> None:
     assert isinstance(prompt_new, TestPromptTextOnly)
 
     assert prompt_new.format(text="world2") == "hello world2 bar"
+
+
+def test_from_langchain_prompt() -> None:
+    """Test from langchain prompt."""
+    prompt_txt = "hello {text} {foo}"
+    prompt = PromptTemplate(input_variables=["text", "foo"], template=prompt_txt)
+    prompt_new = TestPrompt.from_langchain_prompt(prompt)
+
+    assert isinstance(prompt_new, TestPrompt)
+    assert prompt_new.prompt == prompt
+    assert prompt_new.format(text="world2", foo="bar") == "hello world2 bar"
+
+    # test errors if langchain prompt input var doesn't match
+    with pytest.raises(ValueError):
+        prompt_txt = "hello {text} {foo} {tmp}"
+        prompt = PromptTemplate(
+            input_variables=["text", "foo", "tmp"], template=prompt_txt
+        )
+        TestPrompt.from_langchain_prompt(prompt)
+
+    # test errors if we specify both template and langchain prompt
+    with pytest.raises(ValueError):
+        prompt_txt = "hello {text} {foo}"
+        prompt = PromptTemplate(input_variables=["text", "foo"], template=prompt_txt)
+        TestPrompt(template=prompt_txt, langchain_prompt=prompt)

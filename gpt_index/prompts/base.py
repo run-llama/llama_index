@@ -1,9 +1,9 @@
 """Base module for prompts."""
 from copy import deepcopy
 from string import Formatter
-from typing import Any, Dict, List, Type, TypeVar
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
-from langchain import Prompt as LangchainPrompt
+from langchain import PromptTemplate as LangchainPrompt
 
 from gpt_index.prompts.prompt_type import PromptType
 
@@ -22,21 +22,52 @@ class Prompt:
     input_variables: List[str]
     prompt_type: PromptType = PromptType.CUSTOM
 
-    def __init__(self, template: str, **prompt_kwargs: Any) -> None:
+    def __init__(
+        self,
+        template: Optional[str] = None,
+        langchain_prompt: Optional[LangchainPrompt] = None,
+        **prompt_kwargs: Any,
+    ) -> None:
         """Init params."""
-        # validate
-        tmpl_vars = {v for _, v, _, _ in Formatter().parse(template) if v is not None}
-        if tmpl_vars != set(self.input_variables):
-            raise ValueError(
-                f"Invalid template: {template}, variables do not match the "
-                f"required input_variables: {self.input_variables}"
-            )
+        if langchain_prompt is None:
+            if template is None:
+                raise ValueError(
+                    "`template` must be specified if `langchain_prompt` is None"
+                )
+            # validate
+            tmpl_vars = {
+                v for _, v, _, _ in Formatter().parse(template) if v is not None
+            }
+            if tmpl_vars != set(self.input_variables):
+                raise ValueError(
+                    f"Invalid template: {template}, variables do not match the "
+                    f"required input_variables: {self.input_variables}"
+                )
 
-        self.prompt: LangchainPrompt = LangchainPrompt(
-            input_variables=self.input_variables, template=template, **prompt_kwargs
-        )
+            self.prompt: LangchainPrompt = LangchainPrompt(
+                input_variables=self.input_variables, template=template, **prompt_kwargs
+            )
+        else:
+            if template:
+                raise ValueError(
+                    f"Both template ({template}) and langchain_prompt "
+                    f"({langchain_prompt}) are provided, only one should be."
+                )
+            if set(langchain_prompt.input_variables) != set(self.input_variables):
+                raise ValueError(
+                    f"Invalid prompt: {langchain_prompt}, variables do not match the "
+                    f"required input_variables: {self.input_variables}"
+                )
+            self.prompt = langchain_prompt
         self.partial_dict: Dict[str, Any] = {}
         self.prompt_kwargs = prompt_kwargs
+
+    @classmethod
+    def from_langchain_prompt(
+        cls: Type[PMT], prompt: LangchainPrompt, **kwargs: Any
+    ) -> PMT:
+        """Load prompt from LangChain prompt."""
+        return cls(langchain_prompt=prompt, **kwargs)
 
     def partial_format(self: PMT, **kwargs: Any) -> PMT:
         """Format the prompt partially.
