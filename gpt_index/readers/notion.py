@@ -9,6 +9,7 @@ from gpt_index.readers.schema.base import Document
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
 BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
+DATABASE_URL_TMPL = "https://api.notion.com/v1/databases/{database_id}/query"
 SEARCH_URL = "https://api.notion.com/v1/search"
 
 
@@ -93,6 +94,23 @@ class NotionPageReader(BaseReader):
         """Read a page."""
         return self._read_block(page_id)
 
+    def query_database(
+        self, database_id: str, query_dict: Dict[str, Any] = {}
+    ) -> List[str]:
+        """Get all the pages from a Notion database."""
+        res = requests.post(
+            DATABASE_URL_TMPL.format(database_id=database_id),
+            headers=self.headers,
+            json=query_dict,
+        )
+        data = res.json()
+        page_ids = []
+        for result in data["results"]:
+            page_id = result["id"]
+            page_ids.append(page_id)
+
+        return page_ids
+
     def search(self, query: str) -> List[str]:
         """Search Notion page given a text query."""
         done = False
@@ -117,7 +135,9 @@ class NotionPageReader(BaseReader):
                 next_cursor = data["next_cursor"]
         return page_ids
 
-    def load_data(self, page_ids: List[str]) -> List[Document]:
+    def load_data(
+        self, page_ids: List[str] = [], database_id: Optional[str] = None
+    ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
@@ -127,10 +147,20 @@ class NotionPageReader(BaseReader):
             List[Document]: List of documents.
 
         """
+        if not page_ids and not database_id:
+            raise ValueError("Must specify either `page_ids` or `database_id`.")
         docs = []
-        for page_id in page_ids:
-            page_text = self.read_page(page_id)
-            docs.append(Document(page_text, extra_info={"page_id": page_id}))
+        if database_id is not None:
+            # get all the pages in the database
+            page_ids = self.query_database(database_id)
+            for page_id in page_ids:
+                page_text = self.read_page(page_id)
+                docs.append(Document(page_text, extra_info={"page_id": page_id}))
+        else:
+            for page_id in page_ids:
+                page_text = self.read_page(page_id)
+                docs.append(Document(page_text, extra_info={"page_id": page_id}))
+
         return docs
 
 
