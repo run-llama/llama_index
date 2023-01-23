@@ -24,7 +24,18 @@ def get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) ->
 
 
 class GPTIndexMemory(Memory):
-    """Langchain memory wrapper (for GPT Index)."""
+    """Langchain memory wrapper (for GPT Index).
+
+    Args:
+        human_prefix (str): Prefix for human input. Defaults to "Human".
+        ai_prefix (str): Prefix for AI output. Defaults to "AI".
+        memory_key (str): Key for memory. Defaults to "history".
+        index (BaseGPTIndex): GPT Index instance.
+        query_kwargs (Dict[str, Any]): Keyword arguments for GPT Index query.
+        input_key (Optional[str]): Input key. Defaults to None.
+        output_key (Optional[str]): Output key. Defaults to None.
+
+    """
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
