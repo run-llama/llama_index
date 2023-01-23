@@ -1,32 +1,49 @@
 """Database Reader."""
 
 from typing import List, Optional
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
 
+from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 
-class DatabaseReader(SQLDatabase):
+
+class DatabaseReader(BaseReader):
     """Simple Database reader.
 
     Concatenates each row into Document used by GPT Index.
 
     Args:
-        uri (str): uri of the database connection.
+        sql_database (Optional[SQLDatabase]): SQL database to use,
+            including table names to specify.
+            See :ref:`Ref-Struct-Store` for more details.
+        
+        OR
+
+        engine (Optional[Engine]): SQLAlchemy Engine object of the database connection.
 
         OR
 
-        scheme (str): scheme of the database connection.
-        host (str): host of the database connection.
-        port (int): port of the database connection.
-        user (str): user of the database connection.
-        password (str): password of the database connection.
-        dbname (str): dbname of the database connection.
-        
+        uri (Optional[str]): uri of the database connection.
+
+        OR
+
+        scheme (Optional[str]): scheme of the database connection.
+        host (Optional[str]): host of the database connection.
+        port (Optional[int]): port of the database connection.
+        user (Optional[str]): user of the database connection.
+        password (Optional[str]): password of the database connection.
+        dbname (Optional[str]): dbname of the database connection.
+
+    Returns:
+        DatabaseReader: A DatabaseReader object.
     """
 
     def __init__(
         self,
+        sql_database: Optional[SQLDatabase] = None,
+        engine: Optional[Engine] = None,
         uri: Optional[str] = None,
         scheme: Optional[str] = None,
         host: Optional[str] = None,
@@ -34,29 +51,36 @@ class DatabaseReader(SQLDatabase):
         user: Optional[str] = None,
         password: Optional[str] = None,
         dbname: Optional[str] = None,
+        *args: Optional[any],
+        **kwargs: Optional[any],
     ) -> None:
         """Initialize with parameters."""
-
-        if uri:
-            self._engine = create_engine(uri)
+        if sql_database:
+            self.sql_database = sql_database
+        elif engine:
+            self.sql_database = SQLDatabase(engine=engine, *args, **kwargs)
+        elif uri:
+            self.uri = uri
+            self.sql_database = SQLDatabase.from_uri(uri, *args, **kwargs)
+        elif scheme and host and port and user and password and dbname:
+            uri=f"{scheme}://{user}:{password}@{host}:{port}/{dbname}"
+            self.uri = uri
+            self.sql_database = SQLDatabase.from_uri(uri, *args, **kwargs)
         else:
-            if scheme and host and port and user and password and dbname:
-                self._engine = create_engine(f"{scheme}://{user}:{password}@{host}:{port}/{dbname}")
-            else:
-                raise ValueError("You must provide a valid connection URI or a valid set of credentials")
+            raise ValueError("You must provide either a SQLDatabase, a SQL Alchemy Engine, a valid connection URI, or a valid set of credentials.")
+        
 
     def load_data(self, query: str) -> List[Document]:
         """Query and load data from the Database, returning a list of Documents.
 
         Args:
-            query (str): Query parameter to filter rows.
+            query (str): Query parameter to filter tables and rows.
 
         Returns:
-            List[Document]: A list of documents.
-
+            List[Document]: A list of Document objects.
         """
         documents = []
-        with self.engine.connect() as connection:
+        with self.sql_database.engine.connect() as connection:
             if query is None:
                 raise ValueError("A query parameter is necessary to filter the data")
             else:
