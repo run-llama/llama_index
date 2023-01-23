@@ -39,6 +39,7 @@ from gpt_index.indices.vector_store import (
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
+from gpt_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 
 # prompts
 from gpt_index.prompts.base import Prompt
@@ -115,6 +116,7 @@ __all__ = [
     "LLMPredictor",
     "MockLLMPredictor",
     "SQLDatabase",
+    "GPTIndexMemory",
     "SQLContextBuilder",
     "PromptHelper",
     "QueryConfig",
