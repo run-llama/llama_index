@@ -1,18 +1,20 @@
 """Mock embedding model."""
 
+from typing import Any, List
+
 from gpt_index.embeddings.base import BaseEmbedding
-from typing import List, Any
 
 
 class MockEmbedding(BaseEmbedding):
     """Mock embedding.
-    
+
     Used for token prediction.
 
     Args:
         embed_dim (int): embedding dimension
 
     """
+
     def __init__(self, embed_dim: int, *args: Any, **kwargs: Any) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
