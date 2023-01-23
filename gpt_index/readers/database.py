@@ -1,12 +1,13 @@
 """Database Reader."""
 
-from typing import List, Optional
+from typing import Any, List, Optional
+
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
+from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
-from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 
 
 class DatabaseReader(BaseReader):
@@ -18,7 +19,7 @@ class DatabaseReader(BaseReader):
         sql_database (Optional[SQLDatabase]): SQL database to use,
             including table names to specify.
             See :ref:`Ref-Struct-Store` for more details.
-        
+
         OR
 
         engine (Optional[Engine]): SQLAlchemy Engine object of the database connection.
@@ -51,24 +52,27 @@ class DatabaseReader(BaseReader):
         user: Optional[str] = None,
         password: Optional[str] = None,
         dbname: Optional[str] = None,
-        *args: Optional[any],
-        **kwargs: Optional[any],
+        *args: Optional[Any],
+        **kwargs: Optional[Any],
     ) -> None:
         """Initialize with parameters."""
         if sql_database:
             self.sql_database = sql_database
         elif engine:
-            self.sql_database = SQLDatabase(engine=engine, *args, **kwargs)
+            self.sql_database = SQLDatabase(engine, *args, **kwargs)
         elif uri:
             self.uri = uri
             self.sql_database = SQLDatabase.from_uri(uri, *args, **kwargs)
         elif scheme and host and port and user and password and dbname:
-            uri=f"{scheme}://{user}:{password}@{host}:{port}/{dbname}"
+            uri = f"{scheme}://{user}:{password}@{host}:{port}/{dbname}"
             self.uri = uri
             self.sql_database = SQLDatabase.from_uri(uri, *args, **kwargs)
         else:
-            raise ValueError("You must provide either a SQLDatabase, a SQL Alchemy Engine, a valid connection URI, or a valid set of credentials.")
-        
+            raise ValueError(
+                "You must provide either a SQLDatabase, "
+                "a SQL Alchemy Engine, a valid connection URI, or a valid "
+                "set of credentials."
+            )
 
     def load_data(self, query: str) -> List[Document]:
         """Query and load data from the Database, returning a list of Documents.

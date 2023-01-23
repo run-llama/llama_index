@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Tuple
 
 from langchain.sql_database import SQLDatabase as LangchainSQLDatabase
-from sqlalchemy import MetaData, insert
+from sqlalchemy import MetaData, create_engine, insert
 from sqlalchemy.engine import Engine
 
 
@@ -29,6 +29,11 @@ class SQLDatabase(LangchainSQLDatabase):
     def engine(self) -> Engine:
         """Return SQL Alchemy engine."""
         return self._engine
+
+    @classmethod
+    def from_uri(cls, database_uri: str, **kwargs: Any) -> "SQLDatabase":
+        """Construct a SQLAlchemy engine from URI."""
+        return cls(create_engine(database_uri), **kwargs)
 
     def get_table_columns(self, table_name: str) -> List[dict]:
         """Get table columns."""
