@@ -20,6 +20,7 @@ All readers can be imported through `from gpt_index.readers import ...`. A subse
 #### Databases
 
 - MongoDB (`SimpleMongoReader`)
+- SQL Databases (`DatabaseReader`)
 
 #### Vector Stores
 
