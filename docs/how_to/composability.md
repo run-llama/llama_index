@@ -41,12 +41,10 @@ You may choose to manually specify the summary text, or use GPT Index itself to 
 a summary, for instance with the following:
 
 ```python
-index1.set_text(
-    index1.query(
-        "What is a summary of this document?", 
-        mode="summarize"
-    )
+summary = index1.query(
+    "What is a summary of this document?", mode="summarize"
 )
+index1.set_text(str(summary))
 ```
 
 **If specified**, this summary text for each subindex can be used to refine the answer during query-time. 
