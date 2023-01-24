@@ -44,10 +44,13 @@ Here are some notes regarding each of the indices:
 
 ### Token Predictor Usage
 
-GPT Index offers a token predictor, allowing you to estimate your costs during 1) index construction, and 2) index querying, before
+GPT Index offers token **predictors** to predict token usage of LLM and embedding calls.
+This allows you to estimate your costs during 1) index construction, and 2) index querying, before
 any respective LLM calls are made.
 
-To do this, import and instantiate the MockLLMPredictor with the following:
+#### Using MockLLMPredictor
+
+To predict token usage of LLM calls, import and instantiate the MockLLMPredictor with the following:
 ```python
 from gpt_index import MockLLMPredictor
 
@@ -57,12 +60,53 @@ llm_predictor = MockLLMPredictor(max_tokens=256)
 You can then use this predictor during both index construction and querying. Examples are given below.
 
 **Index Construction**
+```python
+from gpt_index import GPTTreeIndex, MockLLMPredictor, SimpleDirectoryReader
 
-![](/_static/cost_analysis/build.png)
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+# the "mock" llm predictor is our token counter
+llm_predictor = MockLLMPredictor(max_tokens=256)
+# pass the "mock" llm_predictor into GPTTreeIndex during index construction
+index = GPTTreeIndex(documents, llm_predictor=llm_predictor)
+
+# get number of tokens used
+print(llm_predictor.last_token_usage)
+```
 
 **Index Querying**
 
-![](/_static/cost_analysis/query.png)
+```python
+response = index.query("What did the author do growing up?", llm_predictor=llm_predictor)
+
+# get number of tokens used
+print(llm_predictor.last_token_usage)
+```
+
+#### Using MockEmbedding
+
+You may also predict the token usage of embedding calls with `MockEmbedding`. 
+You can use it in tandem with `MockLLMPredictor`.
+
+```python
+from gpt_index import (
+    GPTSimpleVectorIndex, 
+    MockLLMPredictor, 
+    MockEmbedding, 
+    SimpleDirectoryReader
+)
+
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTSimpleVectorIndex.load_from_disk('../paul_graham_essay/index_simple_vec.json')
+
+# specify both a MockLLMPredictor as wel as MockEmbedding
+llm_predictor = MockLLMPredictor(max_tokens=256)
+embed_model = MockEmbedding(embed_dim=1536)
+response = index.query(
+    "What did the author do after his time at Y Combinator?",
+    llm_predictor=llm_predictor,
+    embed_model=embed_model
+)
+```
 
 
 [Here is an example notebook](https://github.com/jerryjliu/gpt_index/blob/main/examples/cost_analysis/TokenPredictor.ipynb).

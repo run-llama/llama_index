@@ -24,6 +24,6 @@ class MockEmbedding(BaseEmbedding):
         """Get query embedding."""
         return [0.5] * self.embed_dim
 
-    def get_text_embedding(self, text: str) -> List[float]:
+    def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         return [0.5] * self.embed_dim
