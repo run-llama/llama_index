@@ -39,6 +39,16 @@ def documents() -> List[Document]:
     return [Document(doc_text)]
 
 
+@pytest.fixture
+def documents_with_overlap() -> List[Document]:
+    """Documents with text overlap between two lines."""
+    doc_text = (
+        "Hello world. This is a test 1. This is a test 1.\n"
+        "This is a test 1. This is a test 1. This is a test 2.\n"
+    )
+    return [Document(doc_text)]
+
+
 @patch_common
 def test_build_list(
     _mock_init: Any,
@@ -185,6 +195,34 @@ def test_query(
     )
     assert node_info["start"] == 0
     assert node_info["end"] == 12
+
+
+@patch_common
+def test_index_overlap(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text: Any,
+    documents_with_overlap: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test node info calculation with overlapping node text."""
+    index_kwargs, query_kwargs = struct_kwargs
+    index = GPTListIndex(documents_with_overlap, **index_kwargs)
+
+    query_str = "What is?"
+    response = index.query(query_str, mode="default", **query_kwargs)
+    node_info_0 = (
+        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+    )
+    assert node_info_0["start"] == 0
+    assert node_info_0["end"] == 48
+
+    node_info_1 = (
+        response.source_nodes[1].node_info if response.source_nodes[1].node_info else {}
+    )
+    assert node_info_1["start"] == 14
+    assert node_info_1["end"] == 102
 
 
 @patch_common

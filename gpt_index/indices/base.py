@@ -200,8 +200,17 @@ class BaseGPTIndex(Generic[IS]):
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
+            # calculate the overlap between the current and previous chunk
+            STRING_OVERLAP_TEST_SIZE = 20  # chosen arbitrarily
+            string_overlap = 0
+            if i > 0:
+                string_overlap_pos = text_chunks[i - 1].find(
+                    text_chunk[:STRING_OVERLAP_TEST_SIZE]
+                )
+                if string_overlap_pos != -1:
+                    string_overlap = len(text_chunks[i - 1]) - string_overlap_pos
             index_pos_info = {
-                "start": index_counter,  # NOTE: start is inclusive
+                "start": index_counter - string_overlap,  # NOTE: start is inclusive
                 "end": index_counter + len(text_chunk),  # NOTE: end is exclusive
             }
             index_counter += len(text_chunk) + 1
