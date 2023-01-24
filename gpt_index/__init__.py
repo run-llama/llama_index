@@ -69,6 +69,7 @@ from gpt_index.readers import (
     SlackReader,
     StringIterableReader,
     TrafilaturaWebReader,
+    TwitterTweetReader,
     WeaviateReader,
     WikipediaReader,
 )
@@ -122,4 +123,5 @@ __all__ = [
     "QueryConfig",
     "QueryMode",
     "IndexStructType",
+    "TwitterTweetReader",
 ]

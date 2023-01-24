@@ -23,6 +23,7 @@ from gpt_index.readers.pinecone import PineconeReader
 from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.string_iterable import StringIterableReader
+from gpt_index.readers.twitter import TwitterTweetReader
 from gpt_index.readers.weaviate.reader import WeaviateReader
 from gpt_index.readers.web import (
     BeautifulSoupWebReader,
@@ -50,4 +51,5 @@ __all__ = [
     "BeautifulSoupWebReader",
     "TrafilaturaWebReader",
     "MakeWrapper",
+    "TwitterTweetReader",
 ]
