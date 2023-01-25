@@ -2,9 +2,10 @@
 
 
 from typing import List
+
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.data_structs.data_structs import Node
 from gpt_index.schema import BaseDocument
 
 
@@ -16,7 +17,7 @@ def get_nodes_from_document(
 ) -> List[Node]:
     """Add document to index."""
     text_chunks = text_splitter.split_text(
-        document.get_text(), 
+        document.get_text(),
         extra_info_str=document.extra_info_str if include_extra_info else None,
     )
     nodes = []

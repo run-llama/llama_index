@@ -57,7 +57,9 @@ class Node(IndexStruct):
     def get_text(self) -> str:
         """Get text."""
         text = super().get_text()
-        result_text = text if self.extra_info_str is None else f"{self.extra_info_str}\n\n{text}"
+        result_text = (
+            text if self.extra_info_str is None else f"{self.extra_info_str}\n\n{text}"
+        )
         return result_text
 
 

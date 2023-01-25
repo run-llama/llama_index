@@ -93,16 +93,18 @@ class TokenTextSplitter(TextSplitter):
         """Split incoming text and return chunks."""
         if text == "":
             return []
-        
+
         # NOTE: Consider extra info str that will be added to the chunk at query time
         #       This reduces the effective chunk size that we can have
         if extra_info_str is not None:
             # NOTE: extra 2 newline chars for formatting when prepending in query
             num_extra_tokens = len(self.tokenizer(f"{extra_info_str}\n\n")) + 1
             effective_chunk_size = self._chunk_size - num_extra_tokens
-            
+
             if effective_chunk_size <= 0:
-                raise ValueError(f'Effective chunk size is non positive after considering extra_info')
+                raise ValueError(
+                    f"Effective chunk size is non positive after considering extra_info"
+                )
         else:
             effective_chunk_size = self._chunk_size
 

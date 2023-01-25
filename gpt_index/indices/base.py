@@ -197,7 +197,7 @@ class BaseGPTIndex(Generic[IS]):
             document=document,
             text_splitter=text_splitter,
             start_idx=start_idx,
-            include_extra_info=self._include_extra_info
+            include_extra_info=self._include_extra_info,
         )
 
     @abstractmethod
