@@ -75,6 +75,7 @@ from gpt_index.readers import (
 
 # token predictor
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
+from gpt_index.token_counter.mock_embed_model import MockEmbedding
 
 __all__ = [
     "GPTKeywordTableIndex",
@@ -115,6 +116,7 @@ __all__ = [
     "TrafilaturaWebReader",
     "LLMPredictor",
     "MockLLMPredictor",
+    "MockEmbedding",
     "SQLDatabase",
     "GPTIndexMemory",
     "SQLContextBuilder",
