@@ -15,6 +15,7 @@ All readers can be imported through `from gpt_index.readers import ...`. A subse
     in an async setting; however, we adapt it to synchronous Document loading.
 - Wikipedia (`WikipediaReader`)
 - YouTube (`YoutubeTranscriptReader`)
+- Twitter (`TwitterTweetReader`)
 - Web (`SimpleWebPageReader`, `BeautifulSoupWebReader`, `TrafilaturaWebReader`)
 
 #### Databases
