@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from pathlib import Path
-from typing import Dict, Optional, List, Union
+from typing import Dict, List, Optional, Union
 
 
 class BaseParser:

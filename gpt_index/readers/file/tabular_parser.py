@@ -4,7 +4,7 @@ Contains parsers for tabular data files.
 
 """
 from pathlib import Path
-from typing import Dict, List, Union, Any
+from typing import Any, Dict, List, Union
 
 from gpt_index.readers.file.base_parser import BaseParser
 
@@ -30,7 +30,7 @@ class CSVParser(BaseParser):
                 True by default.
 
         Returns:
-            Union[str, List[str]]: a string or a List of strings if concatenate is set to False.
+            Union[str, List[str]]: a string or a List of strings.
 
         """
         try:

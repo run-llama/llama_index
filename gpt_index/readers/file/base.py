@@ -1,6 +1,6 @@
 """Simple reader that reads files of different formats from a directory."""
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.base_parser import BaseParser
@@ -121,8 +121,8 @@ class SimpleDirectoryReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        data = ""
-        data_list = []
+        data: Union[str, List[str]] = ""
+        data_list: List[str] = []
         metadata_list = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
@@ -137,7 +137,7 @@ class SimpleDirectoryReader(BaseReader):
             if type(data) is list:
                 data_list.extend(data)
             else:
-                data_list.append(data)
+                data_list.append(str(data))
             if self.file_metadata is not None:
                 metadata_list.append(self.file_metadata(str(input_file)))
 
