@@ -1,9 +1,23 @@
 """Text splitter implementations."""
+from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from langchain.text_splitter import TextSplitter
 
 from gpt_index.utils import globals_helper
+
+
+@dataclass
+class TextSplit:
+    """Text split with overlap.
+
+    Attributes:
+        text_chunk: The text string.
+        num_char_overlap: The number of overlapping characters with the previous chunk.
+    """
+
+    text_chunk: str
+    num_char_overlap: int
 
 
 class TokenTextSplitter(TextSplitter):
@@ -91,6 +105,11 @@ class TokenTextSplitter(TextSplitter):
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
+        text_slits = self.split_text_with_overlaps(text)
+        return [text_split.text_chunk for text_split in text_slits]
+
+    def split_text_with_overlaps(self, text: str) -> List[TextSplit]:
+        """Split incoming text and return chunks with overlap size."""
         if text == "":
             return []
         # First we naively split the large input into a bunch of smaller ones.
@@ -103,6 +122,7 @@ class TokenTextSplitter(TextSplitter):
         start_idx = 0
         cur_idx = 0
         cur_total = 0
+        prev_idx = 0  # store the previous end index
         while cur_idx < len(splits):
             cur_token = splits[cur_idx]
             num_cur_tokens = max(len(self.tokenizer(cur_token)), 1)
@@ -112,7 +132,6 @@ class TokenTextSplitter(TextSplitter):
                     f"Term size: {num_cur_tokens}\n"
                     f"Chunk size: {self._chunk_size}"
                 )
-
             # If adding token to current_doc would exceed the chunk size:
             # 1. First verify with tokenizer that current_doc
             # 1. Update the docs list
@@ -121,7 +140,15 @@ class TokenTextSplitter(TextSplitter):
                 # run tokenizer across all of current_doc first. If
                 # the chunk is too big, then we will reduce text in pieces
                 cur_idx = self._reduce_chunk_size(start_idx, cur_idx, splits)
-                docs.append(self._separator.join(splits[start_idx:cur_idx]))
+                overlap = 0
+                # after first round, check if last chunk ended after this chunk begins
+                if prev_idx > 0 and prev_idx > start_idx:
+                    overlap = sum([len(splits[i]) for i in range(start_idx, prev_idx)])
+                    print("overlap:" + str(overlap))
+                docs.append(
+                    TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap)
+                )
+                prev_idx = cur_idx
                 # 2. Shrink the current_doc (from the front) until it is gets smaller
                 # than the overlap size
                 while cur_total > self._chunk_overlap:
@@ -138,7 +165,14 @@ class TokenTextSplitter(TextSplitter):
 
             cur_total += num_cur_tokens
             cur_idx += 1
-        docs.append(self._separator.join(splits[start_idx:cur_idx]))
+        overlap = 0
+        # after first round, check if last chunk ended after this chunk begins
+        if prev_idx > start_idx:
+            overlap = sum([len(splits[i]) for i in range(start_idx, prev_idx)]) + len(
+                range(start_idx, prev_idx)
+            )
+            print("overlap:" + str(overlap))
+        docs.append(TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap))
         return docs
 
     def truncate_text(self, text: str) -> str:
