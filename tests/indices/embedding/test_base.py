@@ -93,6 +93,7 @@ def test_embedding_query(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
     _mock_split_text: Any,
     struct_kwargs: Dict,
     documents: List[Document],

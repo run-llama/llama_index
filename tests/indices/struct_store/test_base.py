@@ -71,7 +71,8 @@ def test_sql_index(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
-    _mock_splitter: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test GPTSQLStructStoreIndex."""
@@ -121,7 +122,8 @@ def test_sql_index_with_context(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
-    _mock_splitter: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test GPTSQLStructStoreIndex."""
@@ -185,7 +187,8 @@ def test_sql_index_query(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
-    _mock_splitter: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test GPTSQLStructStoreIndex."""
