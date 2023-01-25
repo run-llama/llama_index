@@ -171,6 +171,11 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
                 "description": "The ref_doc_id of the Node",
                 "name": "ref_doc_id",
             },
+            {
+                "dataType": ["string"],
+                "description": "node_info (in JSON)",
+                "name": "node_info",
+            },
         ]
 
     @classmethod
@@ -181,6 +186,12 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
             extra_info = None
         else:
             extra_info = json.loads(extra_info_str)
+
+        node_info_str = entry["node_info"]
+        if node_info_str == "":
+            node_info = None
+        else:
+            node_info = json.loads(node_info_str)
         return Node(
             text=entry["text"],
             doc_id=entry["doc_id"],
@@ -189,6 +200,7 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
             ref_doc_id=entry["ref_doc_id"],
             embedding=entry["_additional"]["vector"],
             extra_info=extra_info,
+            node_info=node_info,
         )
 
     @classmethod
@@ -202,6 +214,12 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         if extra_info is not None:
             extra_info_str = json.dumps(extra_info)
         node_dict["extra_info"] = extra_info_str
+        # json-serialize the node_info
+        node_info = node_dict.pop("node_info")
+        node_info_str = ""
+        if node_info is not None:
+            node_info_str = json.dumps(node_info)
+        node_dict["node_info"] = node_info_str
 
         # TODO: account for existing nodes that are stored
         node_id = get_new_id(set())
