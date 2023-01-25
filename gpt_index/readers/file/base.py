@@ -81,11 +81,11 @@ class SimpleDirectoryReader(BaseReader):
         new_input_files = []
         dirs_to_explore = []
         for input_file in input_files:
-            if self.exclude_hidden and input_file.stem.startswith("."):
-                continue
-            elif input_file.is_dir():
+            if input_file.is_dir():
                 if self.recursive:
                     dirs_to_explore.append(input_file)
+            elif self.exclude_hidden and input_file.name.startswith("."):
+                continue
             elif (
                 self.required_exts is not None
                 and input_file.suffix not in self.required_exts
@@ -134,7 +134,10 @@ class SimpleDirectoryReader(BaseReader):
                 # do standard read
                 with open(input_file, "r", errors=self.errors) as f:
                     data = f.read()
-            data_list.append(data)
+            if type(data) is list:
+                data_list.extend(data)
+            else:
+                data_list.append(data)
             if self.file_metadata is not None:
                 metadata_list.append(self.file_metadata(str(input_file)))
 

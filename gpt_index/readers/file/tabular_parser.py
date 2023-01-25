@@ -4,7 +4,7 @@ Contains parsers for tabular data files.
 
 """
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Union, Any
 
 from gpt_index.readers.file.base_parser import BaseParser
 
@@ -12,12 +12,27 @@ from gpt_index.readers.file.base_parser import BaseParser
 class CSVParser(BaseParser):
     """CSV parser."""
 
+    def __init__(self, *args: Any, concatenate: bool = True, **kwargs: Any) -> None:
+        """Init params."""
+        super().__init__(*args, **kwargs)
+        self._concat = concatenate
+
     def _init_parser(self) -> Dict:
         """Init parser."""
-        return {}
+        return {"concatenate": self._concat}
 
-    def parse_file(self, file: Path, errors: str = "ignore") -> str:
-        """Parse file."""
+    def parse_file(self, file: Path, errors: str = "ignore") -> Union[str, List[str]]:
+        """Parse file.
+
+        Args:
+            concatenate (bool): whether to concatenate all rows into one document.
+                If set to False, a Document will be created for each row.
+                True by default.
+
+        Returns:
+            Union[str, List[str]]: a string or a List of strings if concatenate is set to False.
+
+        """
         try:
             import csv
         except ImportError:
@@ -27,6 +42,7 @@ class CSVParser(BaseParser):
             csv_reader = csv.reader(fp)
             for row in csv_reader:
                 text_list.append(", ".join(row))
-        text = "\n".join(text_list)
-
-        return text
+        if self.parser_config["concatenate"] is True:
+            return "\n".join(text_list)
+        else:
+            return text_list
