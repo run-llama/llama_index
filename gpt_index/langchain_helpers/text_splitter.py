@@ -94,6 +94,8 @@ class TokenTextSplitter(TextSplitter):
         if text == "":
             return []
         
+        # NOTE: Consider extra info str that will be added to the chunk at query time
+        #       This reduces the effective chunk size that we can have
         if extra_info_str is not None:
             num_extra_tokens = len(self.tokenizer(extra_info_str))
             effective_chunk_size = self._chunk_size - num_extra_tokens
