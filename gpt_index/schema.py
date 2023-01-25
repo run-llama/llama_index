@@ -51,6 +51,15 @@ class BaseDocument(ABC):
         if self.embedding is None:
             raise ValueError("embedding not set.")
         return self.embedding
+    
+    @property
+    def extra_info_str(self) -> Optional[str]:
+        if self.extra_info is None:
+            return None
+
+        return "\n".join(
+            [f"{k}: {str(v)}" for k, v in self.extra_info.items()]
+        )
 
 
 @dataclass
