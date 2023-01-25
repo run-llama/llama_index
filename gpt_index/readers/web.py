@@ -91,7 +91,11 @@ class TrafilaturaWebReader(BaseReader):
         documents = []
         for url in urls:
             downloaded = trafilatura.fetch_url(url)
+            if not downloaded:
+                continue
             response = trafilatura.extract(downloaded)
+            if not response:
+                continue
             documents.append(Document(response))
 
         return documents
