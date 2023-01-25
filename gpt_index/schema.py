@@ -54,6 +54,7 @@ class BaseDocument(ABC):
 
     @property
     def extra_info_str(self) -> Optional[str]:
+        """Extra info string."""
         if self.extra_info is None:
             return None
 

@@ -103,7 +103,7 @@ class TokenTextSplitter(TextSplitter):
 
             if effective_chunk_size <= 0:
                 raise ValueError(
-                    f"Effective chunk size is non positive after considering extra_info"
+                    "Effective chunk size is non positive after considering extra_info"
                 )
         else:
             effective_chunk_size = self._chunk_size

@@ -1,4 +1,4 @@
-"""General node utils"""
+"""General node utils."""
 
 
 from typing import List

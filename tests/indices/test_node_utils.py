@@ -1,4 +1,4 @@
-"""Test node utils"""
+"""Test node utils."""
 
 from typing import List
 
@@ -11,6 +11,7 @@ from gpt_index.readers.schema.base import Document
 
 @pytest.fixture
 def text_splitter() -> TokenTextSplitter:
+    """Get text splitter."""
     return TokenTextSplitter(chunk_size=20, chunk_overlap=0)
 
 
@@ -32,6 +33,7 @@ def documents() -> List[Document]:
 def test_get_nodes_from_document(
     documents: List[Document], text_splitter: TokenTextSplitter
 ) -> None:
+    """Test get nodes from document have desired chunk size."""
     nodes = get_nodes_from_document(
         documents[0],
         text_splitter,
@@ -50,6 +52,7 @@ def test_get_nodes_from_document(
 def test_get_nodes_from_document_with_extra_info(
     documents: List[Document], text_splitter: TokenTextSplitter
 ) -> None:
+    """Test get nodes from document with extra info have desired chunk size."""
     nodes = get_nodes_from_document(
         documents[0],
         text_splitter,
