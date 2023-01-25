@@ -194,24 +194,19 @@ class BaseGPTIndex(Generic[IS]):
         start_idx: int = 0,
     ) -> List[Node]:
         """Add document to index."""
-        text_chunks = text_splitter.split_text(document.get_text())
+        text_chunks_with_overlap = text_splitter.split_text_with_overlaps(
+            document.get_text()
+        )
         nodes = []
         index_counter = 0
-        for i, text_chunk in enumerate(text_chunks):
+        for i, text_split in enumerate(text_chunks_with_overlap):
+            text_chunk = text_split.text_chunk
             fmt_text_chunk = truncate_text(text_chunk, 50)
             print(f"> Adding chunk: {fmt_text_chunk}")
-            # calculate the overlap between the current and previous chunk
-            STRING_OVERLAP_TEST_SIZE = 20  # chosen arbitrarily
-            string_overlap = 0
-            if i > 0:
-                string_overlap_pos = text_chunks[i - 1].find(
-                    text_chunk[:STRING_OVERLAP_TEST_SIZE]
-                )
-                if string_overlap_pos != -1:
-                    string_overlap = len(text_chunks[i - 1]) - string_overlap_pos
             index_pos_info = {
-                "start": index_counter - string_overlap,  # NOTE: start is inclusive
-                "end": index_counter + len(text_chunk),  # NOTE: end is exclusive
+                # NOTE: start is inclusive, end is exclusive
+                "start": index_counter - text_split.num_char_overlap,
+                "end": index_counter - text_split.num_char_overlap + len(text_chunk),
             }
             index_counter += len(text_chunk) + 1
             # if embedding specified in document, pass it to the Node
