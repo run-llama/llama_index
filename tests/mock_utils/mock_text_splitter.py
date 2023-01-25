@@ -1,6 +1,7 @@
 """Mock text splitter."""
 
 from typing import List
+
 from gpt_index.langchain_helpers.text_splitter import TextSplit
 
 

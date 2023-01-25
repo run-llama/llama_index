@@ -1,23 +1,22 @@
 """Test list index."""
 
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import patch
 
 import pytest
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
-from gpt_index.readers.schema.base import Document
-from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
-
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from tests.mock_utils.mock_predict import mock_llmpredictor_predict
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt
+from gpt_index.readers.schema.base import Document
 from gpt_index.utils import globals_helper
+from tests.mock_utils.mock_decorator import patch_common
+from tests.mock_utils.mock_predict import mock_llmpredictor_predict
+from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 
 @pytest.fixture
@@ -42,16 +41,6 @@ def documents() -> List[Document]:
         "This is a test.\n"
         "This is another test.\n"
         "This is a test v2."
-    )
-    return [Document(doc_text)]
-
-
-@pytest.fixture
-def documents_with_overlap() -> List[Document]:
-    """Documents with text overlap between two lines."""
-    doc_text = (
-        "Hello world. This is a test 1. This is a test 2."
-        + " This is a test 3. This is a test 4. This is a test 5.\n"
     )
     return [Document(doc_text)]
 
@@ -209,50 +198,64 @@ def test_query(
     assert node_info["end"] == 12
 
 
-def mock_text_splitter(
-    prompt: Prompt, num_chunks: int, padding: Optional[int] = 1
-) -> TokenTextSplitter:
-    """Mock text splitter."""
-    return TokenTextSplitter(
-        separator=" ",
-        chunk_size=30,
-        chunk_overlap=10,
-        tokenizer=globals_helper.tokenizer,
-    )
-
-
 @patch.object(LLMPredictor, "total_tokens_used", return_value=0)
 @patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
 @patch.object(LLMPredictor, "__init__", return_value=None)
-@patch.object(
-    PromptHelper, "get_text_splitter_given_prompt", side_effect=mock_text_splitter
-)
 def test_index_overlap(
-    _mock_token_text_splitter: Any,
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
-    documents_with_overlap: List[Document],
     struct_kwargs: Dict,
 ) -> None:
     """Test node info calculation with overlapping node text."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents_with_overlap, **index_kwargs)
 
-    query_str = "What is?"
-    response = index.query(query_str, mode="default", **query_kwargs)
-    print(response.source_nodes)
-    node_info_0 = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
-    )
-    assert node_info_0["start"] == 0
-    assert node_info_0["end"] == 94
+    documents = [
+        Document(
+            "Hello world. This is a test 1. This is a test 2."
+            + " This is a test 3. This is a test 4. This is a test 5.\n"
+        )
+    ]
 
-    node_info_1 = (
-        response.source_nodes[1].node_info if response.source_nodes[1].node_info else {}
-    )
-    assert node_info_1["start"] == 67
-    assert node_info_1["end"] == 103
+    def _mock_text_splitter_with_space(
+        prompt: Prompt, num_chunks: int, padding: Optional[int] = 1
+    ) -> TokenTextSplitter:
+        """Mock text splitter."""
+        return TokenTextSplitter(
+            separator=" ",
+            chunk_size=30,
+            chunk_overlap=10,
+            tokenizer=globals_helper.tokenizer,
+        )
+
+    with patch.object(
+        PromptHelper,
+        "get_text_splitter_given_prompt",
+        side_effect=_mock_text_splitter_with_space,
+    ):
+
+        index = GPTListIndex(documents, **index_kwargs)
+
+        query_str = "What is?"
+        response = index.query(query_str, mode="default", **query_kwargs)
+        node_info_0 = (
+            response.source_nodes[0].node_info
+            if response.source_nodes[0].node_info
+            else {}
+        )
+        # First chunk: 'Hello world. This is a test 1. This is a test 2.
+        # This is a test 3. This is a test 4. This is a'
+        assert node_info_0["start"] == 0  # start at the start
+        assert node_info_0["end"] == 94  # Length of first chunk.
+
+        node_info_1 = (
+            response.source_nodes[1].node_info
+            if response.source_nodes[1].node_info
+            else {}
+        )
+        # Second chunk: 'This is a test 4. This is a test 5.\n'
+        assert node_info_1["start"] == 67  # Position of second chunk relative to start
+        assert node_info_1["end"] == 103  # End index
 
 
 @patch_common

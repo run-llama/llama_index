@@ -7,8 +7,8 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from tests.mock_utils.mock_predict import mock_llmpredictor_predict
 from tests.mock_utils.mock_text_splitter import (
+    mock_token_splitter_newline,
     mock_token_splitter_newline_with_overlaps,
-    mock_token_splitter_newline
 )
 
 
