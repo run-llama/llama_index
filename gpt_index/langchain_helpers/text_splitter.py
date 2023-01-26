@@ -105,10 +105,12 @@ class TokenTextSplitter(TextSplitter):
 
     def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
-        text_slits = self.split_text_with_overlaps(text)
+        text_slits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
         return [text_split.text_chunk for text_split in text_slits]
 
-    def split_text_with_overlaps(self, text: str) -> List[TextSplit]:
+    def split_text_with_overlaps(
+        self, text: str, extra_info_str: Optional[str] = None
+    ) -> List[TextSplit]:
         """Split incoming text and return chunks with overlap size."""
         if text == "":
             return []
