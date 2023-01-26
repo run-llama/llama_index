@@ -98,12 +98,12 @@ class TrafilaturaWebReader(BaseReader):
             downloaded = trafilatura.fetch_url(url)
             if not downloaded:
                 if self.error_on_missing:
-                    raise ValueError(f"Trafilura fails to get string from url: {url}")
+                    raise ValueError(f"Trafilatura fails to get string from url: {url}")
                 continue
             response = trafilatura.extract(downloaded)
             if not response:
                 if self.error_on_missing:
-                    raise ValueError(f"Trafilura fails to parse page: {url}")
+                    raise ValueError(f"Trafilatura fails to parse page: {url}")
                 continue
             documents.append(Document(response))
 
