@@ -97,7 +97,7 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
             else:
                 text_embedding = n.embedding
 
-            text_embedding_np = np.array(text_embedding)[np.newaxis, :]
+            text_embedding_np = np.array(text_embedding, dtype="float32")[np.newaxis, :]
             new_id = str(self._faiss_index.ntotal)
             self._faiss_index.add(text_embedding_np)
 
