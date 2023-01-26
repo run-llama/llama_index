@@ -27,9 +27,9 @@ from gpt_index.readers.twitter import TwitterTweetReader
 from gpt_index.readers.weaviate.reader import WeaviateReader
 from gpt_index.readers.web import (
     BeautifulSoupWebReader,
+    RssReader,
     SimpleWebPageReader,
     TrafilaturaWebReader,
-    RssReader
 )
 from gpt_index.readers.wikipedia import WikipediaReader
 from gpt_index.readers.youtube_transcript import YoutubeTranscriptReader

@@ -186,8 +186,6 @@ class BeautifulSoupWebReader(BaseReader):
         return documents
 
 
-
-
 class RssReader(BaseReader):
     """RSS reader.
 
@@ -203,9 +201,9 @@ class RssReader(BaseReader):
             raise ValueError(
                 "`feedparser` package not found, please run `pip install feedparser`"
             )
-        
+
     def load_data(self, urls: List[str]) -> List[Document]:
-        """Load data from RSS feeds
+        """Load data from RSS feeds.
 
         Args:
             urls (List[str]): List of RSS URLs to load.
@@ -215,21 +213,20 @@ class RssReader(BaseReader):
 
         """
         import feedparser
+
         if not isinstance(urls, list):
             raise ValueError("urls must be a list of strings.")
-        
+
         documents = []
-        
+
         for url in urls:
             parsed = feedparser.parse(url)
             for entry in parsed.entries:
-                data = entry.description or entry.content or entry.summary 
+                data = entry.description or entry.content or entry.summary
                 extra_info = {"title": entry.title, "link": entry.link}
                 documents.append(Document(data, extra_info=extra_info))
 
         return documents
-
-
 
 
 if __name__ == "__main__":

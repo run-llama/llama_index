@@ -114,6 +114,7 @@ __all__ = [
     "PineconeReader",
     "DiscordReader",
     "SimpleWebPageReader",
+    "RssReader",
     "BeautifulSoupWebReader",
     "TrafilaturaWebReader",
     "LLMPredictor",
