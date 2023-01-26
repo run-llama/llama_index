@@ -65,8 +65,13 @@ class TrafilaturaWebReader(BaseReader):
 
     """
 
-    def __init__(self) -> None:
-        """Initialize with parameters."""
+    def __init__(self, error_on_missing: bool=False) -> None:
+        """Initialize with parameters.
+
+        Args:
+            error_on_missing (bool): Throw an error when data cannot be parsed
+        """
+        self.error_on_missing = error_on_missing
         try:
             import trafilatura  # noqa: F401
         except ImportError:
@@ -92,9 +97,13 @@ class TrafilaturaWebReader(BaseReader):
         for url in urls:
             downloaded = trafilatura.fetch_url(url)
             if not downloaded:
+                if self.error_on_missing:
+                    raise ValueError(f"Trafilura fails to get string from url: {url}")
                 continue
             response = trafilatura.extract(downloaded)
             if not response:
+                if self.error_on_missing:
+                    raise ValueError(f"Trafilura fails to parse page: {url}")
                 continue
             documents.append(Document(response))
 
