@@ -151,7 +151,11 @@ class TokenTextSplitter(TextSplitter):
                 prev_idx = cur_idx
                 # 2. Shrink the current_doc (from the front) until it is gets smaller
                 # than the overlap size
-                while cur_total > self._chunk_overlap:
+                # NOTE: because counting tokens individually is an imperfect
+                # proxy (but much faster proxy) for the total number of tokens consumed,
+                # we need to enforce that start_idx <= cur_idx, otherwise
+                # start_idx has a chance of going out of bounds.
+                while cur_total > self._chunk_overlap and start_idx < cur_idx:
                     cur_num_tokens = max(len(self.tokenizer(splits[start_idx])), 1)
                     cur_total -= cur_num_tokens
                     start_idx += 1
