@@ -29,6 +29,7 @@ from gpt_index.readers.web import (
     BeautifulSoupWebReader,
     SimpleWebPageReader,
     TrafilaturaWebReader,
+    RssReader
 )
 from gpt_index.readers.wikipedia import WikipediaReader
 from gpt_index.readers.youtube_transcript import YoutubeTranscriptReader
@@ -50,6 +51,7 @@ __all__ = [
     "SimpleWebPageReader",
     "BeautifulSoupWebReader",
     "TrafilaturaWebReader",
+    "RssReader",
     "MakeWrapper",
     "TwitterTweetReader",
 ]

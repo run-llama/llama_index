@@ -63,6 +63,7 @@ from gpt_index.readers import (
     GoogleDocsReader,
     NotionPageReader,
     PineconeReader,
+    RssReader,
     SimpleDirectoryReader,
     SimpleMongoReader,
     SimpleWebPageReader,
