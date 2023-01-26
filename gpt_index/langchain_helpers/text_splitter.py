@@ -162,7 +162,6 @@ class TokenTextSplitter(TextSplitter):
                 # after first round, check if last chunk ended after this chunk begins
                 if prev_idx > 0 and prev_idx > start_idx:
                     overlap = sum([len(splits[i]) for i in range(start_idx, prev_idx)])
-                    print("overlap:" + str(overlap))
                 docs.append(
                     TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap)
                 )
@@ -193,7 +192,6 @@ class TokenTextSplitter(TextSplitter):
             overlap = sum([len(splits[i]) for i in range(start_idx, prev_idx)]) + len(
                 range(start_idx, prev_idx)
             )
-            print("overlap:" + str(overlap))
         docs.append(TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap))
         return docs
 
