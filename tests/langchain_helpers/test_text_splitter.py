@@ -37,3 +37,17 @@ def test_split_long_token() -> None:
     chunks = text_splitter.split_text(token)
     assert len(chunks[0]) == 49
     assert len(chunks[1]) == 50
+
+
+def test_split_with_extra_info_str() -> None:
+    """Test split while taking into account chunk size used by extra info str."""
+    text = " ".join(["foo"] * 20)
+    extra_info_str = "test_extra_info_str"
+
+    text_splitter = TokenTextSplitter(chunk_size=20, chunk_overlap=0)
+    chunks = text_splitter.split_text(text)
+    assert len(chunks) == 1
+
+    text_splitter = TokenTextSplitter(chunk_size=20, chunk_overlap=0)
+    chunks = text_splitter.split_text(text, extra_info_str=extra_info_str)
+    assert len(chunks) == 2
