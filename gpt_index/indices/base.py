@@ -16,6 +16,7 @@ from typing import (
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.data_structs.struct_type import IndexStructType
+from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.node_utils import get_nodes_from_document
@@ -25,7 +26,7 @@ from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.response.schema import Response
-from gpt_index.schema import BaseDocument, DocumentStore
+from gpt_index.schema import BaseDocument
 from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
