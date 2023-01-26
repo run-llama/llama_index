@@ -1,15 +1,13 @@
 """Base schema for data structures."""
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from abc import abstractmethod
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.utils import get_new_id
-
 
 @dataclass
-class BaseDocument(ABC):
+class BaseDocument(DataClassJsonMixin):
     """Base document.
 
     Generic abstract interfaces that captures both index structs
@@ -24,6 +22,10 @@ class BaseDocument(ABC):
 
     # extra fields
     extra_info: Optional[Dict[str, Any]] = None
+
+    @abstractmethod
+    def get_type(self) -> str:
+        """Get Document type."""
 
     def get_text(self) -> str:
         """Get text."""
@@ -59,4 +61,3 @@ class BaseDocument(ABC):
             return None
 
         return "\n".join([f"{k}: {str(v)}" for k, v in self.extra_info.items()])
-
