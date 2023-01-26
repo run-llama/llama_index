@@ -16,18 +16,20 @@ def get_nodes_from_document(
     include_extra_info: bool = True,
 ) -> List[Node]:
     """Add document to index."""
-    text_chunks = text_splitter.split_text(
+    text_chunks_with_overlap = text_splitter.split_text_with_overlaps(
         document.get_text(),
         extra_info_str=document.extra_info_str if include_extra_info else None,
     )
     nodes = []
     index_counter = 0
-    for i, text_chunk in enumerate(text_chunks):
+    for i, text_split in enumerate(text_chunks_with_overlap):
+        text_chunk = text_split.text_chunk
         fmt_text_chunk = truncate_text(text_chunk, 50)
         print(f"> Adding chunk: {fmt_text_chunk}")
         index_pos_info = {
-            "start": index_counter,  # NOTE: start is inclusive
-            "end": index_counter + len(text_chunk),  # NOTE: end is exclusive
+            # NOTE: start is inclusive, end is exclusive
+            "start": index_counter - text_split.num_char_overlap,
+            "end": index_counter - text_split.num_char_overlap + len(text_chunk),
         }
         index_counter += len(text_chunk) + 1
         # if embedding specified in document, pass it to the Node
