@@ -351,7 +351,7 @@ class BaseGPTIndex(Generic[IS]):
         with open(save_path, "r") as f:
             result_dict = json.load(f)
             index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])
-            docstore = DocumentStore.from_dict(result_dict["docstore"])
+            docstore = DocumentStore.load_from_dict(result_dict["docstore"])
             return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 
     def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
@@ -365,7 +365,7 @@ class BaseGPTIndex(Generic[IS]):
         """
         out_dict: Dict[str, dict] = {
             "index_struct": self.index_struct.to_dict(),
-            "docstore": self.docstore.to_dict(),
+            "docstore": self.docstore.serialize_to_dict(),
         }
         with open(save_path, "w") as f:
             json.dump(out_dict, f)

@@ -1,6 +1,6 @@
 """Document store."""
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from dataclasses_json import DataClassJsonMixin
@@ -26,16 +26,16 @@ class DocumentStore(DataClassJsonMixin):
         """Serialize to dict."""
         docs_dict = {}
         for doc_id, doc in self.docs.items():
-            doc_dict = asdict(doc)
+            doc_dict = doc.to_dict()
             doc_dict[TYPE_KEY] = doc.get_type()
             docs_dict[doc_id] = doc_dict
-        return docs_dict
+        return {"docs": docs_dict}
 
     @classmethod
     def load_from_dict(cls, docs_dict: Dict[str, Any]) -> "DocumentStore":
         """Load from dict."""
         docs_obj_dict = {}
-        for doc_id, doc_dict in docs_dict.items():
+        for doc_id, doc_dict in docs_dict["docs"].items():
             doc_type = doc_dict.pop(TYPE_KEY, None)
             if doc_type == "Document" or doc_type is None:
                 doc: DOC_TYPE = Document.from_dict(doc_dict)
