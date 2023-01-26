@@ -103,15 +103,32 @@ class TokenTextSplitter(TextSplitter):
                 new_splits.extend(cur_splits2)
         return new_splits
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
-        text_slits = self.split_text_with_overlaps(text)
+        text_slits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
         return [text_split.text_chunk for text_split in text_slits]
 
-    def split_text_with_overlaps(self, text: str) -> List[TextSplit]:
+    def split_text_with_overlaps(
+        self, text: str, extra_info_str: Optional[str] = None
+    ) -> List[TextSplit]:
         """Split incoming text and return chunks with overlap size."""
         if text == "":
             return []
+
+        # NOTE: Consider extra info str that will be added to the chunk at query time
+        #       This reduces the effective chunk size that we can have
+        if extra_info_str is not None:
+            # NOTE: extra 2 newline chars for formatting when prepending in query
+            num_extra_tokens = len(self.tokenizer(f"{extra_info_str}\n\n")) + 1
+            effective_chunk_size = self._chunk_size - num_extra_tokens
+
+            if effective_chunk_size <= 0:
+                raise ValueError(
+                    "Effective chunk size is non positive after considering extra_info"
+                )
+        else:
+            effective_chunk_size = self._chunk_size
+
         # First we naively split the large input into a bunch of smaller ones.
         splits = text.split(self._separator)
         splits = self._process_splits(splits)
@@ -126,16 +143,17 @@ class TokenTextSplitter(TextSplitter):
         while cur_idx < len(splits):
             cur_token = splits[cur_idx]
             num_cur_tokens = max(len(self.tokenizer(cur_token)), 1)
-            if num_cur_tokens > self._chunk_size:
+            if num_cur_tokens > effective_chunk_size:
                 raise ValueError(
                     "A single term is larger than the allowed chunk size.\n"
                     f"Term size: {num_cur_tokens}\n"
                     f"Chunk size: {self._chunk_size}"
+                    f"Effective chunk size: {effective_chunk_size}"
                 )
             # If adding token to current_doc would exceed the chunk size:
             # 1. First verify with tokenizer that current_doc
             # 1. Update the docs list
-            if cur_total + num_cur_tokens > self._chunk_size:
+            if cur_total + num_cur_tokens > effective_chunk_size:
                 # NOTE: since we use a proxy for counting tokens, we want to
                 # run tokenizer across all of current_doc first. If
                 # the chunk is too big, then we will reduce text in pieces
