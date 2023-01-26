@@ -26,3 +26,8 @@ class SQLStructTable(BaseStructTable):
     """SQL struct outputs."""
 
     context_dict: Dict[str, str] = field(default_factory=dict)
+
+    def get_type(self) -> str:
+        """Get type."""
+        # TODO: consolidate with IndexStructType
+        return "sql"

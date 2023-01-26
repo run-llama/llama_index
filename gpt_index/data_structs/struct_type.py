@@ -8,6 +8,7 @@ from gpt_index.data_structs.data_structs import (
     IndexList,
     IndexStruct,
     KeywordTable,
+    Node,
     PineconeIndexStruct,
     SimpleIndexDict,
     WeaviateIndexStruct,
@@ -44,6 +45,7 @@ class IndexStructType(str, Enum):
 
     # TODO: refactor so these are properties on the base class
 
+    NODE = "node"
     TREE = "tree"
     LIST = "list"
     KEYWORD_TABLE = "keyword_table"
@@ -61,7 +63,9 @@ class IndexStructType(str, Enum):
 
     def get_index_struct_cls(self) -> type:
         """Get index struct class."""
-        if self == IndexStructType.TREE:
+        if self == IndexStructType.NODE:
+            return Node
+        elif self == IndexStructType.TREE:
             return IndexGraph
         elif self == IndexStructType.LIST:
             return IndexList
@@ -83,7 +87,9 @@ class IndexStructType(str, Enum):
     @classmethod
     def from_index_struct(cls, index_struct: IndexStruct) -> "IndexStructType":
         """Get index enum from index struct class."""
-        if isinstance(index_struct, IndexGraph):
+        if isinstance(index_struct, Node):
+            return cls.NODE
+        elif isinstance(index_struct, IndexGraph):
             return cls.TREE
         elif isinstance(index_struct, IndexList):
             return cls.LIST

@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.data_structs.struct_type import IndexStructType
+from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseQueryRunner
@@ -11,7 +12,6 @@ from gpt_index.indices.query.query_map import get_query_cls
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
-from gpt_index.schema import DocumentStore
 
 DEFAULT_QUERY_CONFIGS = [
     QueryConfig(

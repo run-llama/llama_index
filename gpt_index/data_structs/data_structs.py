@@ -62,6 +62,11 @@ class Node(IndexStruct):
         )
         return result_text
 
+    def get_type(self) -> str:
+        """Get type."""
+        # TODO: consolidate with IndexStructType
+        return "node"
+
 
 @dataclass
 class IndexGraph(IndexStruct):
@@ -94,6 +99,10 @@ class IndexGraph(IndexStruct):
             parent_node.child_indices.add(node.index)
 
         self.all_nodes[node.index] = node
+
+    def get_type(self) -> str:
+        """Get type."""
+        return "tree"
 
 
 @dataclass
@@ -138,6 +147,10 @@ class KeywordTable(IndexStruct):
         """Get the size of the table."""
         return len(self.table)
 
+    def get_type(self) -> str:
+        """Get type."""
+        return "keyword_table"
+
 
 @dataclass
 class IndexList(IndexStruct):
@@ -149,6 +162,10 @@ class IndexList(IndexStruct):
         """Add text to table, return current position in list."""
         # don't worry about child indices for now, nodes are all in order
         self.nodes.append(node)
+
+    def get_type(self) -> str:
+        """Get type."""
+        return "list"
 
 
 @dataclass
@@ -195,6 +212,10 @@ class BaseIndexDict(IndexStruct):
         """Get node."""
         return self.get_nodes([text_id])[0]
 
+    def get_type(self) -> str:
+        """Get type."""
+        return "dict"
+
 
 # TODO: this should be specific to FAISS
 @dataclass
@@ -204,6 +225,10 @@ class IndexDict(BaseIndexDict):
     Note: this index structure is specifically used with the Faiss index.
 
     """
+
+    def get_type(self) -> str:
+        """Get type."""
+        return "dict"
 
 
 @dataclass
@@ -224,6 +249,10 @@ class SimpleIndexDict(BaseIndexDict):
         elif not isinstance(text_id, str):
             raise ValueError("text_id must be a string.")
         self.embedding_dict[text_id] = embedding
+
+    def get_type(self) -> str:
+        """Get type."""
+        return "simple_dict"
 
 
 @dataclass
@@ -248,6 +277,10 @@ class WeaviateIndexStruct(IndexStruct):
             raise ValueError("class_prefix must be provided.")
         return self.class_prefix
 
+    def get_type(self) -> str:
+        """Get type."""
+        return "weaviate"
+
 
 @dataclass
 class PineconeIndexStruct(IndexStruct):
@@ -256,3 +289,7 @@ class PineconeIndexStruct(IndexStruct):
     Docs are stored in Pinecone directly.
 
     """
+
+    def get_type(self) -> str:
+        """Get type."""
+        return "pinecone"
