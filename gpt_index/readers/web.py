@@ -65,7 +65,7 @@ class TrafilaturaWebReader(BaseReader):
 
     """
 
-    def __init__(self, error_on_missing: bool=False) -> None:
+    def __init__(self, error_on_missing: bool = False) -> None:
         """Initialize with parameters.
 
         Args:
