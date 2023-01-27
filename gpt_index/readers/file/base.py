@@ -134,7 +134,7 @@ class SimpleDirectoryReader(BaseReader):
                 # do standard read
                 with open(input_file, "r", errors=self.errors) as f:
                     data = f.read()
-            if type(data) is list:
+            if isinstance(data, List):
                 data_list.extend(data)
             else:
                 data_list.append(str(data))

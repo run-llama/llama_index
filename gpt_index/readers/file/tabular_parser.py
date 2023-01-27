@@ -12,14 +12,14 @@ from gpt_index.readers.file.base_parser import BaseParser
 class CSVParser(BaseParser):
     """CSV parser."""
 
-    def __init__(self, *args: Any, concatenate: bool = True, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, concat_rows: bool = True, **kwargs: Any) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
-        self._concat = concatenate
+        self._concat_rows = concat_rows
 
     def _init_parser(self) -> Dict:
         """Init parser."""
-        return {"concatenate": self._concat}
+        return {}
 
     def parse_file(self, file: Path, errors: str = "ignore") -> Union[str, List[str]]:
         """Parse file.
@@ -42,7 +42,7 @@ class CSVParser(BaseParser):
             csv_reader = csv.reader(fp)
             for row in csv_reader:
                 text_list.append(", ".join(row))
-        if self.parser_config["concatenate"] is True:
+        if self._concat_rows:
             return "\n".join(text_list)
         else:
             return text_list
