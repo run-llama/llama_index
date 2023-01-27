@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Union
 
 
 class BaseParser:
@@ -34,5 +34,5 @@ class BaseParser:
         """Initialize the parser with the config."""
 
     @abstractmethod
-    def parse_file(self, file: Path, errors: str = "ignore") -> str:
+    def parse_file(self, file: Path, errors: str = "ignore") -> Union[str, List[str]]:
         """Parse file."""
