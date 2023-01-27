@@ -1,6 +1,7 @@
 """Slack reader."""
 import logging
 import os
+import time
 from typing import List, Optional
 
 from gpt_index.readers.base import BaseReader
@@ -48,12 +49,12 @@ class SlackReader(BaseReader):
         messages_text = []
         next_cursor = None
         while True:
-            # https://slack.com/api/conversations.replies
-            # List all replies to a message, including the message itself.
-            result = self.client.conversations_replies(
-                channel=channel_id, ts=message_ts, cursor=next_cursor
-            )
             try:
+                # https://slack.com/api/conversations.replies
+                # List all replies to a message, including the message itself.
+                result = self.client.conversations_replies(
+                    channel=channel_id, ts=message_ts, cursor=next_cursor
+                )
                 messages = result["messages"]
                 for message in messages:
                     messages_text.append(message["text"])
@@ -64,6 +65,8 @@ class SlackReader(BaseReader):
                 next_cursor = result["response_metadata"]["next_cursor"]
             except SlackApiError as e:
                 logger.error("Error parsing conversation replies: {}".format(e))
+                print("Rate Limit Reached waiting for 20 seconds")
+                time.sleep(20)
 
         return "\n\n".join(messages_text)
 
@@ -75,15 +78,14 @@ class SlackReader(BaseReader):
         result_messages = []
         next_cursor = None
         while True:
-            result = self.client.conversations_history(
-                channel=channel_id, cursor=next_cursor
-            )
             try:
                 # Call the conversations.history method using the WebClient
                 # conversations.history returns the first 100 messages by default
                 # These results are paginated,
                 # see: https://api.slack.com/methods/conversations.history$pagination
-                result = self.client.conversations_history(channel=channel_id)
+                result = self.client.conversations_history(
+                    channel=channel_id, cursor=next_cursor
+                )
                 conversation_history = result["messages"]
                 # Print results
                 logger.info(
@@ -100,6 +102,8 @@ class SlackReader(BaseReader):
 
             except SlackApiError as e:
                 logger.error("Error creating conversation: {}".format(e))
+                print("Rate Limit Reached waiting for 20 seconds")
+                time.sleep(20)
 
         return "\n\n".join(result_messages)
 
