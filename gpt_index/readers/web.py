@@ -206,14 +206,29 @@ class RssReader(BaseReader):
 
     """
 
-    def __init__(self) -> None:
-        """Initialize with parameters."""
+    def __init__(self, html_to_text: bool = False) -> None:
+        """Initialize with parameters.
+
+        Args:
+            html_to_text (bool): Whether to convert HTML to text.
+                Requires `html2text` package.
+
+        """
         try:
             import feedparser  # noqa: F401
         except ImportError:
             raise ValueError(
                 "`feedparser` package not found, please run `pip install feedparser`"
             )
+
+        if html_to_text:
+            try:
+                import html2text  # noqa: F401
+            except ImportError:
+                raise ValueError(
+                    "`html2text` package not found, please run `pip install html2text`"
+                )
+        self._html_to_text = html_to_text
 
     def load_data(self, urls: List[str]) -> List[Document]:
         """Load data from RSS feeds.
@@ -235,7 +250,17 @@ class RssReader(BaseReader):
         for url in urls:
             parsed = feedparser.parse(url)
             for entry in parsed.entries:
-                data = entry.description or entry.content or entry.summary
+
+                if entry.content:
+                    data = entry.content[0].value
+                else:
+                    data = entry.description or entry.summary
+
+                if self._html_to_text:
+                    import html2text
+
+                    data = html2text.html2text(data)
+
                 extra_info = {"title": entry.title, "link": entry.link}
                 documents.append(Document(data, extra_info=extra_info))
 
