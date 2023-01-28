@@ -140,7 +140,7 @@ class BaseGPTIndex(Generic[IS]):
         self._index_registry.type_to_query[cur_type] = self.get_query_map()
 
         # update docstore with current struct
-        self._docstore.add_documents([self.index_struct_with_text])
+        self._docstore.add_documents([self.index_struct])
 
     def _process_documents(
         self,
@@ -166,12 +166,20 @@ class BaseGPTIndex(Generic[IS]):
                 index_registry.update(doc.index_registry)
                 # results.append(sub_index_struct)
                 docstore.update_docstore(doc.docstore)
+                # assert that the doc exists within the docstore
+                sub_index_struct = doc.index_struct_with_text
+                if not docstore.document_exists(sub_index_struct.get_doc_id()):
+                    raise ValueError(
+                        "The index struct of the sub-index must exist in the docstore. "
+                        f"Invalid doc ID: {sub_index_struct.get_doc_id()}"
+                    )
+                results.append(sub_index_struct)
             elif isinstance(doc, (Document, IndexStruct)):
                 results.append(doc)
+                # update docstore
+                docstore.add_documents([doc])
             else:
                 raise ValueError(f"Invalid document type: {type(doc)}.")
-        # update docstore
-        docstore.add_documents(results)
         return cast(List[BaseDocument], results)
 
     def _validate_documents(self, documents: Sequence[BaseDocument]) -> None:

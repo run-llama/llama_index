@@ -99,6 +99,9 @@ class DocumentStore(DataClassJsonMixin):
             raise ValueError(f"doc_id {doc_id} not found.")
         return doc
 
+    def document_exists(self, doc_id: str) -> bool:
+        return doc_id in self.docs
+
     def delete_document(
         self, doc_id: str, raise_error: bool = True
     ) -> Optional[DOC_TYPE]:
