@@ -2,6 +2,7 @@
 
 import random
 import sys
+from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
@@ -62,7 +63,8 @@ class Node(IndexStruct):
         )
         return result_text
 
-    def get_type(self) -> str:
+    @classmethod
+    def get_type(cls) -> str:
         """Get type."""
         # TODO: consolidate with IndexStructType
         return "node"
@@ -100,7 +102,8 @@ class IndexGraph(IndexStruct):
 
         self.all_nodes[node.index] = node
 
-    def get_type(self) -> str:
+    @classmethod
+    def get_type(cls) -> str:
         """Get type."""
         return "tree"
 
@@ -147,7 +150,8 @@ class KeywordTable(IndexStruct):
         """Get the size of the table."""
         return len(self.table)
 
-    def get_type(self) -> str:
+    @classmethod
+    def get_type(cls) -> str:
         """Get type."""
         return "keyword_table"
 
@@ -163,7 +167,8 @@ class IndexList(IndexStruct):
         # don't worry about child indices for now, nodes are all in order
         self.nodes.append(node)
 
-    def get_type(self) -> str:
+    @classmethod
+    def get_type(cls) -> str:
         """Get type."""
         return "list"
 
@@ -212,7 +217,8 @@ class BaseIndexDict(IndexStruct):
         """Get node."""
         return self.get_nodes([text_id])[0]
 
-    def get_type(self) -> str:
+    @classmethod
+    def get_type(cls) -> str:
         """Get type."""
         return "dict"
 
@@ -226,7 +232,8 @@ class IndexDict(BaseIndexDict):
 
     """
 
-    def get_type(self) -> str:
+    @classmethod
+    def get_type(cls) -> str:
         """Get type."""
         return "dict"
 
@@ -250,7 +257,8 @@ class SimpleIndexDict(BaseIndexDict):
             raise ValueError("text_id must be a string.")
         self.embedding_dict[text_id] = embedding
 
-    def get_type(self) -> str:
+    @classmethod
+    def get_type(cls) -> str:
         """Get type."""
         return "simple_dict"
 
@@ -277,7 +285,8 @@ class WeaviateIndexStruct(IndexStruct):
             raise ValueError("class_prefix must be provided.")
         return self.class_prefix
 
-    def get_type(self) -> str:
+    @classmethod
+    def get_type(cls) -> str:
         """Get type."""
         return "weaviate"
 
@@ -290,6 +299,7 @@ class PineconeIndexStruct(IndexStruct):
 
     """
 
-    def get_type(self) -> str:
+    @classmethod
+    def get_type(cls) -> str:
         """Get type."""
         return "pinecone"

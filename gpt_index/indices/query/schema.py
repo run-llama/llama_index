@@ -105,6 +105,7 @@ class QueryConfig(DataClassJsonMixin):
 
     """
 
-    index_struct_type: IndexStructType
+    # index_struct_type: IndexStructType
+    index_struct_type: str
     query_mode: QueryMode
     query_kwargs: Dict[str, Any] = field(default_factory=dict)

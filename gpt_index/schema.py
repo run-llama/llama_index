@@ -23,8 +23,9 @@ class BaseDocument(DataClassJsonMixin):
     # extra fields
     extra_info: Optional[Dict[str, Any]] = None
 
+    @classmethod
     @abstractmethod
-    def get_type(self) -> str:
+    def get_type(cls) -> str:
         """Get Document type."""
 
     def get_text(self) -> str:

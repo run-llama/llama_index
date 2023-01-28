@@ -32,7 +32,11 @@ class DocumentStore(DataClassJsonMixin):
         return {"docs": docs_dict}
 
     @classmethod
-    def load_from_dict(cls, docs_dict: Dict[str, Any]) -> "DocumentStore":
+    def load_from_dict(
+        cls,
+        docs_dict: Dict[str, Any],
+        type_to_struct: Dict[str, Type[IndexStruct]],
+    ) -> "DocumentStore":
         """Load from dict."""
         docs_obj_dict = {}
         for doc_id, doc_dict in docs_dict["docs"].items():
@@ -41,11 +45,17 @@ class DocumentStore(DataClassJsonMixin):
                 doc: DOC_TYPE = Document.from_dict(doc_dict)
             else:
                 # try using IndexStructType to retrieve documents
-                index_struct_type = IndexStructType(doc_type)
-                index_struct_cls = cast(
-                    Type[IndexStruct], index_struct_type.get_index_struct_cls()
-                )
-                doc = index_struct_cls.from_dict(doc_dict)
+                # index_struct_type = IndexStructType(doc_type)
+                # index_struct_cls = cast(
+                #     Type[IndexStruct], index_struct_type.get_index_struct_cls()
+                # )
+                if doc_type not in type_to_struct:
+                    raise ValueError(
+                        f"doc_type {doc_type} not found in type_to_struct. "
+                        "Make sure that it was registered in the index registry."
+                    )
+                doc = type_to_struct[doc_type].from_dict(doc_dict)
+                # doc = index_struct_cls.from_dict(doc_dict)
             docs_obj_dict[doc_id] = doc
         return cls(docs=docs_obj_dict)
 
