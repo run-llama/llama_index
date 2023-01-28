@@ -19,7 +19,8 @@ class Document(BaseDocument):
         if self.text is None:
             raise ValueError("text field not set.")
 
-    def get_type(self) -> str:
+    @classmethod
+    def get_type(cls) -> str:
         """Get Document type."""
         return "Document"
 

@@ -16,7 +16,7 @@ from typing import (
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import DOC_TYPE, DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.node_utils import get_nodes_from_document
@@ -27,6 +27,7 @@ from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.readers.schema.base import Document
 from gpt_index.response.schema import Response
 from gpt_index.schema import BaseDocument
 from gpt_index.token_counter.token_counter import llm_token_counter
@@ -91,10 +92,6 @@ class BaseGPTIndex(Generic[IS]):
         # build index struct in the init function
         self._docstore = docstore or DocumentStore()
         self._index_registry = index_registry or IndexRegistry()
-        # update index registry with current struct
-        cur_type = self.index_struct_cls.get_type()
-        self._index_registry.type_to_struct[cur_type] = self.index_struct_cls
-        self._index_registry.type_to_query[cur_type] = self.get_query_map()
 
         if index_struct is not None:
             self._index_struct = index_struct
@@ -108,6 +105,7 @@ class BaseGPTIndex(Generic[IS]):
             self._index_struct = self.build_index_from_documents(
                 documents, verbose=verbose
             )
+            self._update_index_registry_and_docstore()
 
     @property
     def prompt_helper(self) -> PromptHelper:
@@ -134,6 +132,16 @@ class BaseGPTIndex(Generic[IS]):
         """Get the llm predictor."""
         return self._embed_model
 
+    def _update_index_registry_and_docstore(self) -> None:
+        """Update index registry and docstore."""
+        # update index registry with current struct
+        cur_type = self.index_struct_cls.get_type()
+        self._index_registry.type_to_struct[cur_type] = self.index_struct_cls
+        self._index_registry.type_to_query[cur_type] = self.get_query_map()
+
+        # update docstore with current struct
+        self._docstore.add_documents([self.index_struct_with_text])
+
     def _process_documents(
         self,
         documents: Sequence[DOCUMENTS_INPUT],
@@ -141,7 +149,7 @@ class BaseGPTIndex(Generic[IS]):
         index_registry: IndexRegistry,
     ) -> List[BaseDocument]:
         """Process documents."""
-        results = []
+        results: List[DOC_TYPE] = []
         for doc in documents:
             if isinstance(doc, BaseGPTIndex):
                 # if user passed in another index, we need to do the following:
@@ -149,20 +157,22 @@ class BaseGPTIndex(Generic[IS]):
                 # - extract the index struct
                 # - update docstore with the docstore in the index
                 # query_map = doc.get_query_map()
-                sub_index_struct = doc.index_struct_with_text
+                # sub_index_struct = doc.index_struct_with_text
                 # struct_type = sub_index_struct.get_type()
                 # self._index_registry.type_to_query[struct_type] = query_map
                 # self._index_registry.type_to_struct[struct_type] = type(
                 #     sub_index_struct
                 # )
                 index_registry.update(doc.index_registry)
-                results.append(sub_index_struct)
+                # results.append(sub_index_struct)
                 docstore.update_docstore(doc.docstore)
-            else:
+            elif isinstance(doc, (Document, IndexStruct)):
                 results.append(doc)
+            else:
+                raise ValueError(f"Invalid document type: {type(doc)}.")
         # update docstore
         docstore.add_documents(results)
-        return results
+        return cast(List[BaseDocument], results)
 
     def _validate_documents(self, documents: Sequence[BaseDocument]) -> None:
         """Validate documents."""
@@ -259,7 +269,9 @@ class BaseGPTIndex(Generic[IS]):
             document (Union[BaseDocument, BaseGPTIndex]): document to insert
 
         """
-        processed_doc = self._process_documents([document], self._docstore)[0]
+        processed_doc = self._process_documents(
+            [document], self._docstore, self._index_registry
+        )[0]
         self._validate_documents([processed_doc])
         self._insert(processed_doc, **insert_kwargs)
 
@@ -341,6 +353,7 @@ class BaseGPTIndex(Generic[IS]):
                 self._prompt_helper,
                 self._embed_model,
                 self._docstore,
+                self._index_registry,
                 query_configs=query_configs,
                 verbose=verbose,
                 recursive=True,
@@ -413,7 +426,7 @@ class BaseGPTIndex(Generic[IS]):
         """
         out_dict: Dict[str, dict] = {
             "index_struct": self.index_struct.to_dict(),
-            # "docstore": self.docstore.serialize_to_dict(),
+            "docstore": self.docstore.serialize_to_dict(),
         }
         with open(save_path, "w") as f:
             json.dump(out_dict, f)

@@ -8,7 +8,6 @@ from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseQueryRunner
-from gpt_index.indices.query.query_map import get_query_cls
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -56,7 +55,7 @@ class QueryRunner(BaseQueryRunner):
         recursive: bool = False,
     ) -> None:
         """Init params."""
-        config_dict: Dict[IndexStructType, QueryConfig] = {}
+        config_dict: Dict[str, QueryConfig] = {}
         if query_configs is None or len(query_configs) == 0:
             query_config_objs: List[QueryConfig] = DEFAULT_QUERY_CONFIGS
         elif isinstance(query_configs[0], Dict):
