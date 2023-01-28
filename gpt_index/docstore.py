@@ -45,10 +45,6 @@ class DocumentStore(DataClassJsonMixin):
                 doc: DOC_TYPE = Document.from_dict(doc_dict)
             else:
                 # try using IndexStructType to retrieve documents
-                # index_struct_type = IndexStructType(doc_type)
-                # index_struct_cls = cast(
-                #     Type[IndexStruct], index_struct_type.get_index_struct_cls()
-                # )
                 if doc_type not in type_to_struct:
                     raise ValueError(
                         f"doc_type {doc_type} not found in type_to_struct. "

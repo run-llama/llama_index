@@ -361,32 +361,32 @@ class BaseGPTIndex(Generic[IS]):
             )
             return query_runner.query(query_str, self._index_struct)
         else:
-            query_map = self.get_query_map()
-            query_cls = query_map[mode_enum]
-            query_obj = query_cls(
-                self._index_struct,
-                **query_kwargs,
-                query_runner=None,
-                docstore=self._docstore,
+            # query_map = self.get_query_map()
+            # query_cls = query_map[mode_enum]
+            # query_obj = query_cls(
+            #     self._index_struct,
+            #     **query_kwargs,
+            #     query_runner=None,
+            #     docstore=self._docstore,
+            # )
+            # return query_obj.query(query_str, verbose=verbose)
+            self._preprocess_query(mode_enum, query_kwargs)
+            # TODO: pass in query config directly
+            query_config = QueryConfig(
+                index_struct_type=self._index_struct.get_type(),
+                query_mode=mode_enum,
+                query_kwargs=query_kwargs,
             )
-            return query_obj.query(query_str, verbose=verbose)
-            # self._preprocess_query(mode_enum, query_kwargs)
-            # # TODO: pass in query config directly
-            # query_config = QueryConfig(
-            #     index_struct_type=IndexStructType.from_index_struct(self._index_struct),
-            #     query_mode=mode_enum,
-            #     query_kwargs=query_kwargs,
-            # )
-            # query_runner = QueryRunner(
-            #     self._llm_predictor,
-            #     self._prompt_helper,
-            #     self._embed_model,
-            #     self._docstore,
-            #     query_configs=[query_config],
-            #     verbose=verbose,
-            #     recursive=False,
-            # )
-            # return query_runner.query(query_str, self._index_struct)
+            query_runner = QueryRunner(
+                self._llm_predictor,
+                self._prompt_helper,
+                self._embed_model,
+                self._docstore,
+                query_configs=[query_config],
+                verbose=verbose,
+                recursive=False,
+            )
+            return query_runner.query(query_str, self._index_struct)
 
     @classmethod
     @abstractmethod
