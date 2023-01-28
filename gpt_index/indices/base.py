@@ -153,18 +153,11 @@ class BaseGPTIndex(Generic[IS]):
         for doc in documents:
             if isinstance(doc, BaseGPTIndex):
                 # if user passed in another index, we need to do the following:
-                # - add index to index registry
-                # - extract the index struct
                 # - update docstore with the docstore in the index
-                # query_map = doc.get_query_map()
-                # sub_index_struct = doc.index_struct_with_text
-                # struct_type = sub_index_struct.get_type()
-                # self._index_registry.type_to_query[struct_type] = query_map
-                # self._index_registry.type_to_struct[struct_type] = type(
-                #     sub_index_struct
-                # )
+                # - validate that the index is in the docstore
+                # - update the index registry
+
                 index_registry.update(doc.index_registry)
-                # results.append(sub_index_struct)
                 docstore.update_docstore(doc.docstore)
                 # assert that the doc exists within the docstore
                 sub_index_struct = doc.index_struct_with_text
