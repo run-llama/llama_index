@@ -52,8 +52,8 @@ class SimpleDirectoryReader(BaseReader):
 
     def __init__(
         self,
-        input_dir: str = None,
-        input_files: List = None,
+        input_dir: Optional[str] = None,
+        input_files: Optional[List] = None,
         exclude_hidden: bool = True,
         errors: str = "ignore",
         recursive: bool = False,
