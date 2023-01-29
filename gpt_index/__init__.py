@@ -73,6 +73,7 @@ from gpt_index.readers import (
     TwitterTweetReader,
     WeaviateReader,
     WikipediaReader,
+    ObsidianReader,
 )
 
 # token predictor
@@ -102,6 +103,7 @@ __all__ = [
     "KeywordExtractPrompt",
     "QueryKeywordExtractPrompt",
     "WikipediaReader",
+    "ObsidianReader",
     "Document",
     "SimpleDirectoryReader",
     "SimpleMongoReader",
