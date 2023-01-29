@@ -105,7 +105,8 @@ class BaseGPTIndex(Generic[IS]):
             self._index_struct = self.build_index_from_documents(
                 documents, verbose=verbose
             )
-            self._update_index_registry_and_docstore()
+        # update index registry and docstore with index_struct
+        self._update_index_registry_and_docstore()
 
     @property
     def prompt_helper(self) -> PromptHelper:
@@ -403,6 +404,10 @@ class BaseGPTIndex(Generic[IS]):
         subindices, those subindices will also be preserved (and subindices of
         those subindices, etc.).
 
+        NOTE: load_from_disk should not be used for indices composed on top
+        of other indices. Please define a `ComposableGraph` and use
+        `save_to_disk` and `load_from_disk` on that instead.
+
         Args:
             save_path (str): The save_path of the file.
 
@@ -413,19 +418,34 @@ class BaseGPTIndex(Generic[IS]):
         with open(save_path, "r") as f:
             result_dict = json.load(f)
             index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])
-            # docstore = DocumentStore.load_from_dict(result_dict["docstore"])
-            # return cls(index_struct=index_struct, docstore=docstore, **kwargs)
-            return cls(index_struct=index_struct, **kwargs)
+            type_to_struct = {index_struct.get_type(): type(index_struct)}
+            docstore = DocumentStore.load_from_dict(
+                result_dict["docstore"],
+                type_to_struct=type_to_struct,
+            )
+            return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 
     def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
         """Save to file.
 
         This method stores the index into a JSON file stored on disk.
 
+        NOTE: save_to_disk should not be used for indices composed on top
+        of other indices. Please define a `ComposableGraph` and use
+        `save_to_disk` and `load_from_disk` on that instead.
+
         Args:
             save_path (str): The save_path of the file.
 
         """
+        if self.docstore.contains_index_struct(
+            exclude_ids=[self.index_struct.get_doc_id()]
+        ):
+            raise ValueError(
+                "Cannot call `save_to_disk` on index if index is composed on top of "
+                "other indices. Please define a `ComposableGraph` and use "
+                "`save_to_disk` and `load_from_disk` on that instead."
+            )
         out_dict: Dict[str, dict] = {
             "index_struct": self.index_struct.to_dict(),
             "docstore": self.docstore.serialize_to_dict(),

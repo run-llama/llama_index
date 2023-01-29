@@ -31,11 +31,18 @@ class DocumentStore(DataClassJsonMixin):
             docs_dict[doc_id] = doc_dict
         return {"docs": docs_dict}
 
+    def contains_index_struct(self, exclude_ids: Optional[List[str]] = None) -> bool:
+        """Check if contains index struct."""
+        for doc in self.docs.values():
+            if isinstance(doc, IndexStruct) and doc.get_doc_id() not in exclude_ids:
+                return True
+        return False
+
     @classmethod
     def load_from_dict(
         cls,
         docs_dict: Dict[str, Any],
-        type_to_struct: Dict[str, Type[IndexStruct]],
+        type_to_struct: Optional[Dict[str, Type[IndexStruct]]] = None,
     ) -> "DocumentStore":
         """Load from dict."""
         docs_obj_dict = {}
@@ -44,6 +51,10 @@ class DocumentStore(DataClassJsonMixin):
             if doc_type == "Document" or doc_type is None:
                 doc: DOC_TYPE = Document.from_dict(doc_dict)
             else:
+                if type_to_struct is None:
+                    raise ValueError(
+                        "type_to_struct must be provided if type is index struct."
+                    )
                 # try using IndexStructType to retrieve documents
                 if doc_type not in type_to_struct:
                     raise ValueError(
