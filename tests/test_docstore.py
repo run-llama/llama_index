@@ -1,6 +1,8 @@
 """Test docstore."""
 
-from gpt_index.data_structs.data_structs import Node
+from typing import Dict, Type
+
+from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.readers.schema.base import Document
 
@@ -10,7 +12,7 @@ def test_docstore() -> None:
     doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
     node = Node("my node", doc_id="d2", node_info={"node": "info"})
 
-    type_to_struct = {"node": Node}
+    type_to_struct: Dict[str, Type[IndexStruct]] = {"node": Node}
 
     # test get document
     docstore = DocumentStore.from_documents([doc, node])

@@ -1,12 +1,11 @@
 """Document store."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, List, Optional, Type, Union
 
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.data_structs import IndexStruct
-from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.readers.schema.base import Document
 from gpt_index.utils import get_new_id
 
@@ -33,6 +32,7 @@ class DocumentStore(DataClassJsonMixin):
 
     def contains_index_struct(self, exclude_ids: Optional[List[str]] = None) -> bool:
         """Check if contains index struct."""
+        exclude_ids = exclude_ids or []
         for doc in self.docs.values():
             if isinstance(doc, IndexStruct) and doc.get_doc_id() not in exclude_ids:
                 return True
@@ -107,6 +107,7 @@ class DocumentStore(DataClassJsonMixin):
         return doc
 
     def document_exists(self, doc_id: str) -> bool:
+        """Check if document exists."""
         return doc_id in self.docs
 
     def delete_document(

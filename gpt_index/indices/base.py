@@ -15,7 +15,6 @@ from typing import (
 )
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
-from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DOC_TYPE, DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
@@ -362,15 +361,6 @@ class BaseGPTIndex(Generic[IS]):
             )
             return query_runner.query(query_str, self._index_struct)
         else:
-            # query_map = self.get_query_map()
-            # query_cls = query_map[mode_enum]
-            # query_obj = query_cls(
-            #     self._index_struct,
-            #     **query_kwargs,
-            #     query_runner=None,
-            #     docstore=self._docstore,
-            # )
-            # return query_obj.query(query_str, verbose=verbose)
             self._preprocess_query(mode_enum, query_kwargs)
             # TODO: pass in query config directly
             query_config = QueryConfig(

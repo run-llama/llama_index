@@ -96,6 +96,7 @@ class ComposableGraph:
         query_configs: Optional[List[QUERY_CONFIG_TYPE]],
         verbose: bool = False,
     ) -> Response:
+        """Query the index."""
         # go over all the indices and create a registry
         query_runner = QueryRunner(
             self._llm_predictor,

@@ -95,9 +95,6 @@ class QueryRunner(BaseQueryRunner):
     def query(self, query_str: str, index_struct: IndexStruct) -> Response:
         """Run query."""
         index_struct_type = index_struct.get_type()
-        # index_struct_type = IndexStructType.from_index_struct(index_struct)
-        # if index_struct_type not in self._config_dict:
-        #     raise ValueError(f"IndexStructType {index_struct_type} not in config_dict")
         config = self._config_dict[index_struct_type]
         mode = config.query_mode
 

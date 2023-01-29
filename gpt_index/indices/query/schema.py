@@ -11,8 +11,6 @@ from typing import Any, Dict
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.data_structs.struct_type import IndexStructType
-
 
 class QueryMode(str, Enum):
     """Query mode enum.

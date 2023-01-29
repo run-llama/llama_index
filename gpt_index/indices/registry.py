@@ -3,20 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, Type
 
-from dataclasses_json import DataClassJsonMixin
-
-from gpt_index.data_structs.data_structs import (
-    IndexDict,
-    IndexGraph,
-    IndexList,
-    IndexStruct,
-    KeywordTable,
-    PineconeIndexStruct,
-    SimpleIndexDict,
-    WeaviateIndexStruct,
-)
-from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.data_structs.table import SQLStructTable
+from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 
 # map from mode to query class
