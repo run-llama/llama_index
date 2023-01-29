@@ -57,18 +57,15 @@ class NotionPageReader(BaseReader):
             for result in data["results"]:
                 result_type = result["type"]
                 result_obj = result[result_type]
-                # NOTE: Notion reader doesn't support all block objects atm, only
-                # block objects with rich text.
-                if "rich_text" not in result_obj:
-                    continue
 
                 cur_result_text_arr = []
-                for rich_text in result_obj["rich_text"]:
-                    # skip if doesn't have text object
-                    if "text" in rich_text:
-                        text = rich_text["text"]["content"]
-                        prefix = "\t" * num_tabs
-                        cur_result_text_arr.append(prefix + text)
+                if "rich_text" in result_obj:
+                    for rich_text in result_obj["rich_text"]:
+                        # skip if doesn't have text object
+                        if "text" in rich_text:
+                            text = rich_text["text"]["content"]
+                            prefix = "\t" * num_tabs
+                            cur_result_text_arr.append(prefix + text)
 
                 result_block_id = result["id"]
                 has_children = result["has_children"]
