@@ -46,6 +46,7 @@ class QueryMode(str, Enum):
     RAKE = "rake"
 
     # recursive queries (composable queries)
+    # NOTE: deprecated
     RECURSIVE = "recursive"
 
     # for sql queries

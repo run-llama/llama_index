@@ -1,6 +1,5 @@
 """Struct store schema."""
 
-from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Dict
 
@@ -29,7 +28,6 @@ class SQLStructTable(BaseStructTable):
     context_dict: Dict[str, str] = field(default_factory=dict)
 
     @classmethod
-    @abstractmethod
     def get_type(cls) -> str:
         """Get type."""
         # TODO: consolidate with IndexStructType

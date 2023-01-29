@@ -382,6 +382,7 @@ class BaseGPTIndex(Generic[IS]):
                 self._prompt_helper,
                 self._embed_model,
                 self._docstore,
+                self._index_registry,
                 query_configs=[query_config],
                 verbose=verbose,
                 recursive=False,
