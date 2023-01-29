@@ -226,13 +226,10 @@ def test_recursive_query_table_list(
 
     # test serialize and then back
     with TemporaryDirectory() as tmpdir:
-        list_index.save_to_disk(str(Path(tmpdir) / "tmp.json"))
-        list_index = cast(
-            GPTListIndex, GPTListIndex.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        )
-        response = list_index.query(
-            query_str, mode="recursive", query_configs=query_configs
-        )
+        graph = ComposableGraph.build_from_index(list_index)
+        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
+        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
+        response = graph.query(query_str, query_configs=query_configs)
         assert str(response) == ("Test?:This is a test.")
 
 
