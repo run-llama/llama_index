@@ -64,9 +64,15 @@ class SlackReader(BaseReader):
 
                 next_cursor = result["response_metadata"]["next_cursor"]
             except SlackApiError as e:
-                logger.error("Error parsing conversation replies: {}".format(e))
-                print("Rate Limit Reached waiting for 20 seconds")
-                time.sleep(20)
+                if e.response["error"] == "ratelimited":
+                    logger.error(
+                        "Rate limit error reached, sleeping for: {} seconds".format(
+                            e.response.headers["retry-after"]
+                        )
+                    )
+                    time.sleep(int(e.response.headers["retry-after"]))
+                else:
+                    logger.error("Error parsing conversation replies: {}".format(e))
 
         return "\n\n".join(messages_text)
 
@@ -101,9 +107,15 @@ class SlackReader(BaseReader):
                 next_cursor = result["response_metadata"]["next_cursor"]
 
             except SlackApiError as e:
-                logger.error("Error creating conversation: {}".format(e))
-                print("Rate Limit Reached waiting for 20 seconds")
-                time.sleep(20)
+                if e.response["error"] == "ratelimited":
+                    logger.error(
+                        "Rate limit error reached, sleeping for: {} seconds".format(
+                            e.response.headers["retry-after"]
+                        )
+                    )
+                    time.sleep(int(e.response.headers["retry-after"]))
+                else:
+                    logger.error("Error parsing conversation replies: {}".format(e))
 
         return "\n\n".join(result_messages)
 
