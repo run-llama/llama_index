@@ -34,6 +34,7 @@ from gpt_index.indices.vector_store import (
     GPTPineconeIndex,
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
+    GPTQdrantIndex,
 )
 
 # langchain helper
@@ -89,6 +90,7 @@ __all__ = [
     "GPTSimpleVectorIndex",
     "GPTWeaviateIndex",
     "GPTPineconeIndex",
+    "GPTQdrantIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",
     "LangchainEmbedding",

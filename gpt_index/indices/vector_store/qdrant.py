@@ -1,12 +1,18 @@
-from typing import Any, Sequence, Optional, cast
+from typing import Any, Sequence, Optional, cast, Type, Dict
 
-from gpt_index import LLMPredictor, QuestionAnswerPrompt
+from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.vector_store.qdrant import GPTQdrantIndexQuery
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.data_structs.data_structs import QdrantIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
+from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import get_new_id
 
 
 class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
@@ -44,9 +50,9 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
         collection_name: Optional[str] = None,
         **kwargs: Any
     ) -> None:
-        import_err_msg = """
-            `qdrant-client` package not found. Please run `pip install qdrant-client`
-        """
+        import_err_msg = (
+            "`qdrant-client` package not found, please run `pip install qdrant-client`"
+        )
         try:
             import qdrant_client  # noqa: F401
         except ImportError:
@@ -57,7 +63,9 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
 
         self._client = cast(qdrant_client.QdrantClient, client)
         self._collection_name = collection_name
+        self._collection_initialized = self._collection_exists(collection_name)
 
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         super().__init__(
             documents,
             index_struct,
@@ -66,6 +74,31 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
             embed_model,
             **kwargs
         )
+        # NOTE: when building the vector store index, text_qa_template is not partially
+        # formatted because we don't know the query ahead of time.
+        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.text_qa_template, 1
+        )
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTQdrantIndexQuery,
+            QueryMode.EMBEDDING: GPTQdrantIndexQuery,
+        }
+
+    def _build_index_from_documents(
+        self, documents: Sequence[BaseDocument], verbose: bool = False
+    ) -> QdrantIndexStruct:
+        """Build index from documents."""
+        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.text_qa_template, 1
+        )
+        index_struct = self.index_struct_cls(collection_name=self._collection_name)
+        for d in documents:
+            self._add_document_to_index(index_struct, d, text_splitter)
+        return index_struct
 
     def _add_document_to_index(
         self,
@@ -73,11 +106,89 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
         document: BaseDocument,
         text_splitter: TokenTextSplitter,
     ) -> None:
-        pass
+        """Add document to index."""
+        from qdrant_client.http import models as rest
+        from qdrant_client.http.exceptions import UnexpectedResponse
+
+        nodes = self._get_nodes_from_document(document, text_splitter)
+        for n in nodes:
+            if n.embedding is None:
+                text_embedding = self._embed_model.get_text_embedding(n.get_text())
+            else:
+                text_embedding = n.embedding
+
+            collection_name = index_struct.get_collection_name()
+
+            # Create the Qdrant collection, if it does not exist yet
+            if not self._collection_initialized:
+                self._create_collection(
+                    collection_name=collection_name,
+                    vector_size=len(text_embedding),
+                )
+
+            while True:
+                new_id = get_new_id(set())
+                try:
+                    self._client.http.points_api.get_point(
+                        collection_name=collection_name, id=new_id
+                    )
+                except UnexpectedResponse:
+                    break
+
+            payload = {
+                "doc_id": document.get_doc_id(),
+                "text": n.get_text(),
+            }
+
+            self._client.upsert(
+                collection_name=collection_name,
+                points=[
+                    rest.PointStruct(
+                        id=new_id,
+                        vector=text_embedding,
+                        payload=payload,
+                    )
+                ],
+            )
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        # TODO: should we allow putting doc_id as any string?
+        """Delete a document."""
+        from qdrant_client.http import models as rest
+
         self._client.delete(
             collection_name=self._collection_name,
-            points_selector=[doc_id],
+            points_selector=rest.Filter(
+                should=[
+                    rest.FieldCondition(
+                        key="doc_id", match=rest.MatchValue(value=doc_id)
+                    )
+                ]
+            ),
         )
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Query mode to class."""
+        super()._preprocess_query(mode, query_kwargs)
+        # Pass along Qdrant client instance
+        query_kwargs["client"] = self._client
+
+    def _create_collection(self, collection_name: str, vector_size: int):
+        """Create a Qdrant collection."""
+        from qdrant_client.http import models as rest
+
+        self._client.recreate_collection(
+            collection_name=collection_name,
+            vectors_config=rest.VectorParams(
+                size=vector_size,
+                distance=rest.Distance.COSINE,
+            ),
+        )
+
+    def _collection_exists(self, collection_name: str) -> bool:
+        from qdrant_client.http.exceptions import UnexpectedResponse
+
+        try:
+            response = self._client.http.collections_api.get_collection(collection_name)
+            return response.result is not None
+        except UnexpectedResponse:
+            return False
