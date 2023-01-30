@@ -115,7 +115,8 @@ def test_build_faiss(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
-    _mock_splitter: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
 ) -> None:
@@ -145,7 +146,8 @@ def test_faiss_insert(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
-    _mock_splitter: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
 ) -> None:
@@ -179,6 +181,7 @@ def test_faiss_query(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
     _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
@@ -207,7 +210,8 @@ def test_build_simple(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
-    _mock_splitter: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
 ) -> None:
@@ -238,7 +242,8 @@ def test_simple_insert(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
-    _mock_splitter: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
 ) -> None:
@@ -272,6 +277,7 @@ def test_simple_delete(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
+    _mock_splitter_overlap: Any,
     _mock_splitter: Any,
     documents: List[Document],
     struct_kwargs: Dict,
@@ -330,6 +336,7 @@ def test_simple_query(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
     _mock_split_text: Any,
     documents: List[Document],
     struct_kwargs: Dict,
@@ -371,6 +378,7 @@ def test_query_and_count_tokens(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
     _mock_split_text: Any,
     struct_kwargs: Dict,
 ) -> None:
@@ -405,6 +413,7 @@ def test_query_and_similarity_scores(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
     _mock_split_text: Any,
     struct_kwargs: Dict,
 ) -> None:
@@ -439,6 +448,7 @@ def test_query_and_similarity_scores_with_cutoff(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
     _mock_split_text: Any,
     struct_kwargs: Dict,
 ) -> None:

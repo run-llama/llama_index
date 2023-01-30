@@ -9,11 +9,18 @@ existing keywords in the table.
 """
 
 from abc import abstractmethod
-from typing import Any, Optional, Sequence, Set
+from typing import Any, Dict, Optional, Sequence, Set, Type
 
 from gpt_index.data_structs.data_structs import KeywordTable
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
+from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.keyword_table.query import (
+    GPTKeywordTableGPTQuery,
+    GPTKeywordTableRAKEQuery,
+    GPTKeywordTableSimpleQuery,
+)
+from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
@@ -74,6 +81,15 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.keyword_extract_template, 1
         )
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTKeywordTableGPTQuery,
+            QueryMode.SIMPLE: GPTKeywordTableSimpleQuery,
+            QueryMode.RAKE: GPTKeywordTableRAKEQuery,
+        }
 
     @abstractmethod
     def _extract_keywords(self, text: str) -> Set[str]:

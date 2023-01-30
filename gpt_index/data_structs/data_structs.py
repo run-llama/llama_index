@@ -57,14 +57,16 @@ class Node(IndexStruct):
     def get_text(self) -> str:
         """Get text."""
         text = super().get_text()
-        if self.extra_info is not None:
-            extra_info_str = "\n".join(
-                [f"{k}: {str(v)}" for k, v in self.extra_info.items()]
-            )
-        else:
-            extra_info_str = None
-        result_text = text if extra_info_str is None else f"{extra_info_str}\n\n{text}"
+        result_text = (
+            text if self.extra_info_str is None else f"{self.extra_info_str}\n\n{text}"
+        )
         return result_text
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        # TODO: consolidate with IndexStructType
+        return "node"
 
 
 @dataclass
@@ -98,6 +100,11 @@ class IndexGraph(IndexStruct):
             parent_node.child_indices.add(node.index)
 
         self.all_nodes[node.index] = node
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "tree"
 
 
 @dataclass
@@ -142,6 +149,11 @@ class KeywordTable(IndexStruct):
         """Get the size of the table."""
         return len(self.table)
 
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "keyword_table"
+
 
 @dataclass
 class IndexList(IndexStruct):
@@ -153,6 +165,11 @@ class IndexList(IndexStruct):
         """Add text to table, return current position in list."""
         # don't worry about child indices for now, nodes are all in order
         self.nodes.append(node)
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "list"
 
 
 @dataclass
@@ -199,6 +216,11 @@ class BaseIndexDict(IndexStruct):
         """Get node."""
         return self.get_nodes([text_id])[0]
 
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "dict"
+
 
 # TODO: this should be specific to FAISS
 @dataclass
@@ -208,6 +230,11 @@ class IndexDict(BaseIndexDict):
     Note: this index structure is specifically used with the Faiss index.
 
     """
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "dict"
 
 
 @dataclass
@@ -228,6 +255,11 @@ class SimpleIndexDict(BaseIndexDict):
         elif not isinstance(text_id, str):
             raise ValueError("text_id must be a string.")
         self.embedding_dict[text_id] = embedding
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "simple_dict"
 
 
 @dataclass
@@ -252,6 +284,11 @@ class WeaviateIndexStruct(IndexStruct):
             raise ValueError("class_prefix must be provided.")
         return self.class_prefix
 
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "weaviate"
+
 
 @dataclass
 class PineconeIndexStruct(IndexStruct):
@@ -261,6 +298,11 @@ class PineconeIndexStruct(IndexStruct):
 
     """
 
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "pinecone"
+
 
 @dataclass
 class QdrantIndexStruct(IndexStruct):
@@ -269,3 +311,8 @@ class QdrantIndexStruct(IndexStruct):
     Docs are stored in Qdrant directly
 
     """
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "qdrant"

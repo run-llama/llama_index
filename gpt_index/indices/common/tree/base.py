@@ -42,7 +42,9 @@ class GPTTreeIndexBuilder:
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.summary_prompt, self.num_children
         )
-        text_chunks = text_splitter.split_text(document.get_text())
+        text_chunks = text_splitter.split_text(
+            document.get_text(), extra_info_str=document.extra_info_str
+        )
         doc_nodes = {
             (start_idx + i): Node(
                 text=t,

@@ -63,18 +63,21 @@ from gpt_index.readers import (
     GoogleDocsReader,
     NotionPageReader,
     PineconeReader,
+    RssReader,
     SimpleDirectoryReader,
     SimpleMongoReader,
     SimpleWebPageReader,
     SlackReader,
     StringIterableReader,
     TrafilaturaWebReader,
+    TwitterTweetReader,
     WeaviateReader,
     WikipediaReader,
 )
 
 # token predictor
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
+from gpt_index.token_counter.mock_embed_model import MockEmbedding
 
 __all__ = [
     "GPTKeywordTableIndex",
@@ -111,10 +114,12 @@ __all__ = [
     "PineconeReader",
     "DiscordReader",
     "SimpleWebPageReader",
+    "RssReader",
     "BeautifulSoupWebReader",
     "TrafilaturaWebReader",
     "LLMPredictor",
     "MockLLMPredictor",
+    "MockEmbedding",
     "SQLDatabase",
     "GPTIndexMemory",
     "SQLContextBuilder",
@@ -122,4 +127,5 @@ __all__ = [
     "QueryConfig",
     "QueryMode",
     "IndexStructType",
+    "TwitterTweetReader",
 ]

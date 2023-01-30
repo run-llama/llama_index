@@ -65,8 +65,13 @@ class TrafilaturaWebReader(BaseReader):
 
     """
 
-    def __init__(self) -> None:
-        """Initialize with parameters."""
+    def __init__(self, error_on_missing: bool = False) -> None:
+        """Initialize with parameters.
+
+        Args:
+            error_on_missing (bool): Throw an error when data cannot be parsed
+        """
+        self.error_on_missing = error_on_missing
         try:
             import trafilatura  # noqa: F401
         except ImportError:
@@ -91,7 +96,15 @@ class TrafilaturaWebReader(BaseReader):
         documents = []
         for url in urls:
             downloaded = trafilatura.fetch_url(url)
+            if not downloaded:
+                if self.error_on_missing:
+                    raise ValueError(f"Trafilatura fails to get string from url: {url}")
+                continue
             response = trafilatura.extract(downloaded)
+            if not response:
+                if self.error_on_missing:
+                    raise ValueError(f"Trafilatura fails to parse page: {url}")
+                continue
             documents.append(Document(response))
 
         return documents
@@ -182,6 +195,74 @@ class BeautifulSoupWebReader(BaseReader):
                 data = soup.getText()
 
             documents.append(Document(data, extra_info=extra_info))
+
+        return documents
+
+
+class RssReader(BaseReader):
+    """RSS reader.
+
+    Reads content from an RSS feed.
+
+    """
+
+    def __init__(self, html_to_text: bool = False) -> None:
+        """Initialize with parameters.
+
+        Args:
+            html_to_text (bool): Whether to convert HTML to text.
+                Requires `html2text` package.
+
+        """
+        try:
+            import feedparser  # noqa: F401
+        except ImportError:
+            raise ValueError(
+                "`feedparser` package not found, please run `pip install feedparser`"
+            )
+
+        if html_to_text:
+            try:
+                import html2text  # noqa: F401
+            except ImportError:
+                raise ValueError(
+                    "`html2text` package not found, please run `pip install html2text`"
+                )
+        self._html_to_text = html_to_text
+
+    def load_data(self, urls: List[str]) -> List[Document]:
+        """Load data from RSS feeds.
+
+        Args:
+            urls (List[str]): List of RSS URLs to load.
+
+        Returns:
+            List[Document]: List of documents.
+
+        """
+        import feedparser
+
+        if not isinstance(urls, list):
+            raise ValueError("urls must be a list of strings.")
+
+        documents = []
+
+        for url in urls:
+            parsed = feedparser.parse(url)
+            for entry in parsed.entries:
+
+                if entry.content:
+                    data = entry.content[0].value
+                else:
+                    data = entry.description or entry.summary
+
+                if self._html_to_text:
+                    import html2text
+
+                    data = html2text.html2text(data)
+
+                extra_info = {"title": entry.title, "link": entry.link}
+                documents.append(Document(data, extra_info=extra_info))
 
         return documents
 

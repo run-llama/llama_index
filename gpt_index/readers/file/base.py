@@ -1,6 +1,6 @@
 """Simple reader that reads files of different formats from a directory."""
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.base_parser import BaseParser
@@ -32,6 +32,7 @@ class SimpleDirectoryReader(BaseReader):
 
     Args:
         input_dir (str): Path to the directory.
+        input_files (List): List of file paths to read (Optional; overrides input_dir)
         exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
         errors (str): how encoding and decoding errors are to be handled,
               see https://docs.python.org/3/library/functions.html#open
@@ -51,7 +52,8 @@ class SimpleDirectoryReader(BaseReader):
 
     def __init__(
         self,
-        input_dir: str,
+        input_dir: Optional[str] = None,
+        input_files: Optional[List] = None,
         exclude_hidden: bool = True,
         errors: str = "ignore",
         recursive: bool = False,
@@ -63,7 +65,10 @@ class SimpleDirectoryReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         super().__init__(verbose=verbose)
-        self.input_dir = Path(input_dir)
+
+        if not input_dir and not input_files:
+            raise ValueError("Must provide either `input_dir` or `input_files`.")
+
         self.errors = errors
 
         self.recursive = recursive
@@ -71,7 +76,15 @@ class SimpleDirectoryReader(BaseReader):
         self.required_exts = required_exts
         self.num_files_limit = num_files_limit
 
-        self.input_files = self._add_files(self.input_dir)
+        if input_files:
+            self.input_files = []
+            for path in input_files:
+                input_file = Path(path)
+                self.input_files.append(input_file)
+        elif input_dir:
+            self.input_dir = Path(input_dir)
+            self.input_files = self._add_files(self.input_dir)
+
         self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
         self.file_metadata = file_metadata
 
@@ -121,8 +134,8 @@ class SimpleDirectoryReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        data = ""
-        data_list = []
+        data: Union[str, List[str]] = ""
+        data_list: List[str] = []
         metadata_list = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
@@ -134,7 +147,10 @@ class SimpleDirectoryReader(BaseReader):
                 # do standard read
                 with open(input_file, "r", errors=self.errors) as f:
                     data = f.read()
-            data_list.append(data)
+            if isinstance(data, List):
+                data_list.extend(data)
+            else:
+                data_list.append(str(data))
             if self.file_metadata is not None:
                 metadata_list.append(self.file_metadata(str(input_file)))
 

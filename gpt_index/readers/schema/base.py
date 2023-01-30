@@ -19,6 +19,11 @@ class Document(BaseDocument):
         if self.text is None:
             raise ValueError("text field not set.")
 
+    @classmethod
+    def get_type(cls) -> str:
+        """Get Document type."""
+        return "Document"
+
     def to_langchain_format(self) -> LCDocument:
         """Convert struct to LangChain document format."""
         metadata = self.extra_info or {}
