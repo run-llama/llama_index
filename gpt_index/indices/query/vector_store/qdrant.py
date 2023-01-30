@@ -10,6 +10,35 @@ from gpt_index.indices.utils import truncate_text
 
 
 class GPTQdrantIndexQuery(BaseGPTVectorStoreIndexQuery[QdrantIndexStruct]):
+    def __init__(
+        self,
+        index_struct: QdrantIndexStruct,
+        embed_model: Optional[BaseEmbedding] = None,
+        similarity_top_k: Optional[int] = 1,
+        client: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize params."""
+        super().__init__(
+            index_struct=index_struct,
+            embed_model=embed_model,
+            similarity_top_k=similarity_top_k,
+            **kwargs,
+        )
+
+        import_err_msg = (
+            "`qdrant-client` package not found, please run `pip install qdrant-client`"
+        )
+        try:
+            import qdrant_client  # noqa: F401
+        except ImportError:
+            raise ValueError(import_err_msg)
+
+        if client is None:
+            raise ValueError("client cannot be None.")
+
+        self._client = cast(qdrant_client.QdrantClient, client)
+
     def _get_nodes_for_response(
         self,
         query_str: str,
@@ -47,32 +76,3 @@ class GPTQdrantIndexQuery(BaseGPTVectorStoreIndexQuery[QdrantIndexStruct]):
                 )
 
         return nodes
-
-    def __init__(
-        self,
-        index_struct: QdrantIndexStruct,
-        embed_model: Optional[BaseEmbedding] = None,
-        similarity_top_k: Optional[int] = 1,
-        client: Optional[Any] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize params."""
-        super().__init__(
-            index_struct=index_struct,
-            embed_model=embed_model,
-            similarity_top_k=similarity_top_k,
-            **kwargs,
-        )
-
-        import_err_msg = (
-            "`qdrant-client` package not found, please run `pip install qdrant-client`"
-        )
-        try:
-            import qdrant_client  # noqa: F401
-        except ImportError:
-            raise ValueError(import_err_msg)
-
-        if client is None:
-            raise ValueError("client cannot be None.")
-
-        self._client = cast(qdrant_client.QdrantClient, client)
