@@ -260,3 +260,12 @@ class PineconeIndexStruct(IndexStruct):
     Docs are stored in Pinecone directly.
 
     """
+
+
+@dataclass
+class QdrantIndexStruct(IndexStruct):
+    """And index struct for Qdrant
+
+    Docs are stored in Qdrant directly
+
+    """
