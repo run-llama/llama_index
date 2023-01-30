@@ -15,16 +15,18 @@ from typing import (
 )
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
-from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import DOC_TYPE, DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.node_utils import get_nodes_from_document
 from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.readers.schema.base import Document
 from gpt_index.response.schema import Response
 from gpt_index.schema import BaseDocument
 from gpt_index.token_counter.token_counter import llm_token_counter
@@ -64,6 +66,7 @@ class BaseGPTIndex(Generic[IS]):
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         docstore: Optional[DocumentStore] = None,
+        index_registry: Optional[IndexRegistry] = None,
         prompt_helper: Optional[PromptHelper] = None,
         chunk_size_limit: Optional[int] = None,
         verbose: bool = False,
@@ -87,21 +90,37 @@ class BaseGPTIndex(Generic[IS]):
 
         # build index struct in the init function
         self._docstore = docstore or DocumentStore()
+        self._index_registry = index_registry or IndexRegistry()
+
         if index_struct is not None:
             self._index_struct = index_struct
         else:
             documents = cast(Sequence[DOCUMENTS_INPUT], documents)
-            documents = self._process_documents(documents, self._docstore)
+            documents = self._process_documents(
+                documents, self._docstore, self._index_registry
+            )
             self._validate_documents(documents)
             # TODO: introduce document store outside __init__ function
             self._index_struct = self.build_index_from_documents(
                 documents, verbose=verbose
             )
+        # update index registry and docstore with index_struct
+        self._update_index_registry_and_docstore()
+
+    @property
+    def prompt_helper(self) -> PromptHelper:
+        """Get the prompt helper corresponding to the index."""
+        return self._prompt_helper
 
     @property
     def docstore(self) -> DocumentStore:
         """Get the docstore corresponding to the index."""
         return self._docstore
+
+    @property
+    def index_registry(self) -> IndexRegistry:
+        """Get the index registry corresponding to the index."""
+        return self._index_registry
 
     @property
     def llm_predictor(self) -> LLMPredictor:
@@ -113,23 +132,48 @@ class BaseGPTIndex(Generic[IS]):
         """Get the llm predictor."""
         return self._embed_model
 
+    def _update_index_registry_and_docstore(self) -> None:
+        """Update index registry and docstore."""
+        # update index registry with current struct
+        cur_type = self.index_struct_cls.get_type()
+        self._index_registry.type_to_struct[cur_type] = self.index_struct_cls
+        self._index_registry.type_to_query[cur_type] = self.get_query_map()
+
+        # update docstore with current struct
+        self._docstore.add_documents([self.index_struct])
+
     def _process_documents(
         self,
         documents: Sequence[DOCUMENTS_INPUT],
         docstore: DocumentStore,
+        index_registry: IndexRegistry,
     ) -> List[BaseDocument]:
         """Process documents."""
-        results = []
+        results: List[DOC_TYPE] = []
         for doc in documents:
             if isinstance(doc, BaseGPTIndex):
-                # if user passed in another index, we need to extract the index struct,
-                # and also update docstore with the docstore in the index
-                results.append(doc.index_struct_with_text)
+                # if user passed in another index, we need to do the following:
+                # - update docstore with the docstore in the index
+                # - validate that the index is in the docstore
+                # - update the index registry
+
+                index_registry.update(doc.index_registry)
                 docstore.update_docstore(doc.docstore)
-            else:
+                # assert that the doc exists within the docstore
+                sub_index_struct = doc.index_struct_with_text
+                if not docstore.document_exists(sub_index_struct.get_doc_id()):
+                    raise ValueError(
+                        "The index struct of the sub-index must exist in the docstore. "
+                        f"Invalid doc ID: {sub_index_struct.get_doc_id()}"
+                    )
+                results.append(sub_index_struct)
+            elif isinstance(doc, (Document, IndexStruct)):
                 results.append(doc)
-        docstore.add_documents(results)
-        return results
+                # update docstore
+                docstore.add_documents([doc])
+            else:
+                raise ValueError(f"Invalid document type: {type(doc)}.")
+        return cast(List[BaseDocument], results)
 
     def _validate_documents(self, documents: Sequence[BaseDocument]) -> None:
         """Validate documents."""
@@ -226,7 +270,9 @@ class BaseGPTIndex(Generic[IS]):
             document (Union[BaseDocument, BaseGPTIndex]): document to insert
 
         """
-        processed_doc = self._process_documents([document], self._docstore)[0]
+        processed_doc = self._process_documents(
+            [document], self._docstore, self._index_registry
+        )[0]
         self._validate_documents([processed_doc])
         self._insert(processed_doc, **insert_kwargs)
 
@@ -298,8 +344,8 @@ class BaseGPTIndex(Generic[IS]):
 
         """
         mode_enum = QueryMode(mode)
-        # TODO: remove _mode_to_query and consolidate with query_runner
         if mode_enum == QueryMode.RECURSIVE:
+            # TODO: deprecated, use ComposableGraph instead.
             if "query_configs" not in query_kwargs:
                 raise ValueError("query_configs must be provided for recursive mode.")
             query_configs = query_kwargs["query_configs"]
@@ -308,6 +354,7 @@ class BaseGPTIndex(Generic[IS]):
                 self._prompt_helper,
                 self._embed_model,
                 self._docstore,
+                self._index_registry,
                 query_configs=query_configs,
                 verbose=verbose,
                 recursive=True,
@@ -317,7 +364,7 @@ class BaseGPTIndex(Generic[IS]):
             self._preprocess_query(mode_enum, query_kwargs)
             # TODO: pass in query config directly
             query_config = QueryConfig(
-                index_struct_type=IndexStructType.from_index_struct(self._index_struct),
+                index_struct_type=self._index_struct.get_type(),
                 query_mode=mode_enum,
                 query_kwargs=query_kwargs,
             )
@@ -326,11 +373,17 @@ class BaseGPTIndex(Generic[IS]):
                 self._prompt_helper,
                 self._embed_model,
                 self._docstore,
+                self._index_registry,
                 query_configs=[query_config],
                 verbose=verbose,
                 recursive=False,
             )
             return query_runner.query(query_str, self._index_struct)
+
+    @classmethod
+    @abstractmethod
+    def get_query_map(cls) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
 
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "BaseGPTIndex":
@@ -340,6 +393,10 @@ class BaseGPTIndex(Generic[IS]):
         structure itself is preserved completely. If the index is defined over
         subindices, those subindices will also be preserved (and subindices of
         those subindices, etc.).
+
+        NOTE: load_from_disk should not be used for indices composed on top
+        of other indices. Please define a `ComposableGraph` and use
+        `save_to_disk` and `load_from_disk` on that instead.
 
         Args:
             save_path (str): The save_path of the file.
@@ -351,7 +408,11 @@ class BaseGPTIndex(Generic[IS]):
         with open(save_path, "r") as f:
             result_dict = json.load(f)
             index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])
-            docstore = DocumentStore.load_from_dict(result_dict["docstore"])
+            type_to_struct = {index_struct.get_type(): type(index_struct)}
+            docstore = DocumentStore.load_from_dict(
+                result_dict["docstore"],
+                type_to_struct=type_to_struct,
+            )
             return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 
     def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
@@ -359,10 +420,22 @@ class BaseGPTIndex(Generic[IS]):
 
         This method stores the index into a JSON file stored on disk.
 
+        NOTE: save_to_disk should not be used for indices composed on top
+        of other indices. Please define a `ComposableGraph` and use
+        `save_to_disk` and `load_from_disk` on that instead.
+
         Args:
             save_path (str): The save_path of the file.
 
         """
+        if self.docstore.contains_index_struct(
+            exclude_ids=[self.index_struct.get_doc_id()]
+        ):
+            raise ValueError(
+                "Cannot call `save_to_disk` on index if index is composed on top of "
+                "other indices. Please define a `ComposableGraph` and use "
+                "`save_to_disk` and `load_from_disk` on that instead."
+            )
         out_dict: Dict[str, dict] = {
             "index_struct": self.index_struct.to_dict(),
             "docstore": self.docstore.serialize_to_dict(),

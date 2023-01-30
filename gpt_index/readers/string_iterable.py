@@ -12,6 +12,7 @@ class StringIterableReader(BaseReader):
 
     Example:
         .. code-block:: python
+
             from gpt_index import StringIterableReader, GPTTreeIndex
 
             documents = StringIterableReader().load_data(

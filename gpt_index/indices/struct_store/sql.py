@@ -1,13 +1,18 @@
 """SQLite structured store."""
 
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import Any, Dict, List, Optional, Sequence, Type, cast
 
 from sqlalchemy import Table
 
 from gpt_index.data_structs.table import SQLStructTable, StructDatapoint
 from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.common.struct_store.base import SQLContextBuilder
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.query.struct_store.sql import (
+    GPTNLStructStoreIndexQuery,
+    GPTSQLStructStoreIndexQuery,
+)
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
@@ -135,6 +140,14 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
 
         self._index_struct.context_dict.update(context_dict)
         self._sql_context_builder = sql_context_builder
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTNLStructStoreIndexQuery,
+            QueryMode.SQL: GPTSQLStructStoreIndexQuery,
+        }
 
     def _get_col_types_map(self) -> Dict[str, type]:
         """Get col types map for schema."""
