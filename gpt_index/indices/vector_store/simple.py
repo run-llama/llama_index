@@ -1,10 +1,13 @@
 """Simple vector store index."""
 
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Type
 
 from gpt_index.data_structs.data_structs import SimpleIndexDict
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT
+from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.query.vector_store.simple import GPTSimpleVectorIndexQuery
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -53,6 +56,14 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
             embed_model=embed_model,
             **kwargs,
         )
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTSimpleVectorIndexQuery,
+            QueryMode.EMBEDDING: GPTSimpleVectorIndexQuery,
+        }
 
     def _add_document_to_index(
         self,
