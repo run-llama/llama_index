@@ -4,7 +4,7 @@ Here is a sample of some of the incredible applications and tools built on top o
 
 ###### Meru - Dense Data Retrieval API
 
-Hosted service built on top of GPT Index where users can upload their documents and query them.
+Hosted API service. Includes a "Dense Data Retrieval" API built on top of GPT Index where users can upload their documents and query them.
 [[Website]](https://www.usemeru.com/densedataretrieval)
 
 ###### ChatGPT GPT Index
@@ -24,16 +24,18 @@ Feed any of the following content into GPT to give it deep customized knowledge:
 - Substack Articles
 - Podcasts
 - Github Repos
-and more!
+and more.
 
 [[Tweet thread]](https://twitter.com/thejessezhang/status/1615390646763945991?s=20&t=eHvhmIaaaoYFyPSzDRNGtA)
 [[Website]](https://jessezhang.org/llmdemo)
 
-###### VideoQues
+###### VideoQues + DocsQues
 
-A tool that answers your queries on YouTube videos. 
-[[LinkedIn post here]](https://www.linkedin.com/posts/ravidesetty_ai-ml-dl-activity-7020599110953050112-EJA_/?utm_source=share&utm_medium=member_desktop)
+**VideoQues**: A tool that answers your queries on YouTube videos. 
+[[LinkedIn post here]](https://www.linkedin.com/posts/ravidesetty_ai-ml-dl-activity-7020599110953050112-EJA_/?utm_source=share&utm_medium=member_desktop).
 
+**DocsQues**: A tool that answers your questions on longer documents (including .pdfs!)
+[[LinkedIn post here]](https://www.linkedin.com/posts/ravidesetty_artificialintelligence-machinelearning-recruiters-activity-7016972785293946880-rhKC?utm_source=share&utm_medium=member_desktop).
 
 ###### PaperBrain
 
