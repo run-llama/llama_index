@@ -38,6 +38,7 @@ See [How to use Vector Stores with GPT Index](vector_stores.md) for a more thoro
 #### File
 
 - local file directory (`SimpleDirectoryReader`)
+- Obsidian Reader (`ObsidianReader`)
 
 The `SimpleDirectoryReader` can support parsing a wide range of file types: `.pdf`, `.jpg`, `.png`, `.docx`, `.mp3`, `.mp4`.
 Each of these file types may require additional dependencies to be installed.
