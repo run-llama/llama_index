@@ -126,6 +126,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
             payload = {
                 "doc_id": document.get_doc_id(),
                 "text": n.get_text(),
+                "index": n.index,
             }
 
             self._client.upsert(
