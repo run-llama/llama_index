@@ -62,6 +62,7 @@ from gpt_index.readers import (
     FaissReader,
     GoogleDocsReader,
     NotionPageReader,
+    ObsidianReader,
     PineconeReader,
     RssReader,
     SimpleDirectoryReader,
@@ -73,7 +74,6 @@ from gpt_index.readers import (
     TwitterTweetReader,
     WeaviateReader,
     WikipediaReader,
-    ObsidianReader,
 )
 
 # token predictor

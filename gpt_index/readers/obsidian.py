@@ -1,15 +1,17 @@
 """Base reader class."""
+import os
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, List
-import os
 
 from langchain.docstore.document import Document as LCDocument
 
-from gpt_index.readers.schema.base import Document
+from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.markdown_parser import MarkdownParser
+from gpt_index.readers.schema.base import Document
 
-class ObsidianReader:
+
+class ObsidianReader(BaseReader):
     """Utilities for loading data from a directory."""
 
     def __init__(self, input_dir: str, verbose: bool = False):
@@ -17,18 +19,17 @@ class ObsidianReader:
         self.verbose = verbose
         self.input_dir = Path(input_dir)
 
-    @abstractmethod
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
         try:
             import re
         except ImportError:
             raise ValueError("re module is required to read Markdown files.")
-        docs = []
+        docs: List[str] = []
         for (dirpath, dirnames, filenames) in os.walk(self.input_dir):
-            dirnames[:] = [d for d in dirnames if not d.startswith('.')]
+            dirnames[:] = [d for d in dirnames if not d.startswith(".")]
             for filename in filenames:
-                if filename.endswith('.md'):
+                if filename.endswith(".md"):
                     filepath = os.path.join(dirpath, filename)
                     content = MarkdownParser().parse_file(Path(filepath))
                     pieces = content.values()
