@@ -68,7 +68,7 @@ from gpt_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper
 ...
 
 # define LLM
-llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002"))
+llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-003"))
 
 # define prompt helper
 # set maximum input size
