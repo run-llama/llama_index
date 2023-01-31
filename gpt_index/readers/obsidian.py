@@ -1,9 +1,11 @@
 """Obsidian reader class.
-Pass in the path to an Obsidian vault and it will parse all markdown files into a List of Documents,
+
+Pass in the path to an Obsidian vault and it will parse all markdown
+files into a List of Documents,
 with each Document containing text from under an Obsidian header.
+
 """
 import os
-from abc import abstractmethod
 from pathlib import Path
 from typing import Any, List
 
@@ -16,8 +18,10 @@ from gpt_index.readers.schema.base import Document
 
 class ObsidianReader(BaseReader):
     """Utilities for loading data from an Obsidian Vault.
+
     Args:
         input_dir (str): Path to the vault.
+
     """
 
     def __init__(self, input_dir: str, verbose: bool = False):
@@ -27,10 +31,6 @@ class ObsidianReader(BaseReader):
 
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
-        try:
-            import re
-        except ImportError:
-            raise ValueError("re module is required to read Markdown files.")
         docs: List[str] = []
         for (dirpath, dirnames, filenames) in os.walk(self.input_dir):
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
@@ -38,8 +38,7 @@ class ObsidianReader(BaseReader):
                 if filename.endswith(".md"):
                     filepath = os.path.join(dirpath, filename)
                     content = MarkdownParser().parse_file(Path(filepath))
-                    pieces = content.values()
-                    docs.extend(pieces)
+                    docs.extend(content)
         return [Document(d) for d in docs]
 
     def load_langchain_documents(self, **load_kwargs: Any) -> List[LCDocument]:
