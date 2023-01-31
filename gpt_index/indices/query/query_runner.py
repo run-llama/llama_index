@@ -8,8 +8,8 @@ from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseQueryRunner
-from gpt_index.indices.query.query_map import get_query_cls
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
 
@@ -49,12 +49,13 @@ class QueryRunner(BaseQueryRunner):
         prompt_helper: PromptHelper,
         embed_model: BaseEmbedding,
         docstore: DocumentStore,
+        index_registry: IndexRegistry,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         verbose: bool = False,
         recursive: bool = False,
     ) -> None:
         """Init params."""
-        config_dict: Dict[IndexStructType, QueryConfig] = {}
+        config_dict: Dict[str, QueryConfig] = {}
         if query_configs is None or len(query_configs) == 0:
             query_config_objs: List[QueryConfig] = DEFAULT_QUERY_CONFIGS
         elif isinstance(query_configs[0], Dict):
@@ -72,6 +73,7 @@ class QueryRunner(BaseQueryRunner):
         self._prompt_helper = prompt_helper
         self._embed_model = embed_model
         self._docstore = docstore
+        self._index_registry = index_registry
         self._verbose = verbose
         self._recursive = recursive
 
@@ -92,12 +94,11 @@ class QueryRunner(BaseQueryRunner):
 
     def query(self, query_str: str, index_struct: IndexStruct) -> Response:
         """Run query."""
-        index_struct_type = IndexStructType.from_index_struct(index_struct)
-        if index_struct_type not in self._config_dict:
-            raise ValueError(f"IndexStructType {index_struct_type} not in config_dict")
+        index_struct_type = index_struct.get_type()
         config = self._config_dict[index_struct_type]
         mode = config.query_mode
-        query_cls = get_query_cls(index_struct_type, mode)
+
+        query_cls = self._index_registry.type_to_query[index_struct_type][mode]
         # if recursive, pass self as query_runner to each individual query
         query_runner = self if self._recursive else None
         query_kwargs = self._get_query_kwargs(config)
