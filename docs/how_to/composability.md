@@ -71,7 +71,7 @@ This wrapper allows us to query, save, and load the graph to/from disk.
 
 from gpt_index.composability import ComposableGraph
 
-graph = ComposableGraph(list_index)
+graph = ComposableGraph.build_from_index(list_index)
 
 # [Optional] save to disk
 graph.save_to_disk("save_path.json")
