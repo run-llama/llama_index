@@ -19,6 +19,7 @@ from gpt_index.readers.google.gdocs import GoogleDocsReader
 from gpt_index.readers.make_com.wrapper import MakeWrapper
 from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
+from gpt_index.readers.obsidian import ObsidianReader
 from gpt_index.readers.pinecone import PineconeReader
 from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
@@ -54,4 +55,5 @@ __all__ = [
     "RssReader",
     "MakeWrapper",
     "TwitterTweetReader",
+    "ObsidianReader",
 ]
