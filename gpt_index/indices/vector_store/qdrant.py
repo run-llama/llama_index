@@ -88,18 +88,6 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
             QueryMode.EMBEDDING: GPTQdrantIndexQuery,
         }
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
-    ) -> QdrantIndexStruct:
-        """Build index from documents."""
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
-        )
-        index_struct = self.index_struct_cls(collection_name=self._collection_name)
-        for d in documents:
-            self._add_document_to_index(index_struct, d, text_splitter)
-        return index_struct
-
     def _add_document_to_index(
         self,
         index_struct: QdrantIndexStruct,
@@ -151,6 +139,22 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
                 ],
             )
 
+    def _build_index_from_documents(
+        self, documents: Sequence[BaseDocument], verbose: bool = False
+    ) -> QdrantIndexStruct:
+        """Build index from documents."""
+        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+            self.text_qa_template, 1
+        )
+        index_struct = self.index_struct_cls(collection_name=self._collection_name)
+        for d in documents:
+            self._add_document_to_index(index_struct, d, text_splitter)
+        return index_struct
+
+    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+        """Insert a document."""
+        self._add_document_to_index(self.index_struct, document, self._text_splitter)
+
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         from qdrant_client.http import models as rest
@@ -172,7 +176,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
         # Pass along Qdrant client instance
         query_kwargs["client"] = self._client
 
-    def _create_collection(self, collection_name: str, vector_size: int):
+    def _create_collection(self, collection_name: str, vector_size: int) -> None:
         """Create a Qdrant collection."""
         from qdrant_client.http import models as rest
 
