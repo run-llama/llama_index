@@ -9,6 +9,7 @@ GPT Index offers multiple integration points with vector stores / vector databas
 ## Loading Data from Vector Stores using Data Connector
 GPT Index supports loading data from the following sources. See [Data Connectors](data_connectors.md) for more details and API documentation.
 
+- Qdrant (`QdrantReader`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - Weaviate (`WeaviateReader`). [Installation](https://weaviate.io/developers/weaviate/current/getting-started/installation.html). [Python Client](https://weaviate.io/developers/weaviate/current/client-libraries/python.html).
 - Pinecone (`PineconeReader`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
@@ -37,6 +38,7 @@ These are found in the following classes:
 - `GPTFaissIndex`
 - `GPTWeaviateIndex`
 - `GPTPineconeIndex`
+- `GPTQdrantIndex`
 
 Similar to any other index within GPT Index (tree, keyword table, list), this index can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.

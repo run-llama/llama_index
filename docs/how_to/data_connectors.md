@@ -27,6 +27,7 @@ All readers can be imported through `from gpt_index.readers import ...`. A subse
 
 See [How to use Vector Stores with GPT Index](vector_stores.md) for a more thorough guide on integrating vector stores with GPT Index.
 
+- Qdrant (`QdrantReader`)
 - Weaviate (`WeaviateReader`)
 - Pinecone (`PineconeReader`)
 - Faiss (`FaissReader`)
