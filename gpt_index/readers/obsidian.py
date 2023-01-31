@@ -1,4 +1,7 @@
-"""Base reader class."""
+"""Obsidian reader class.
+Pass in the path to an Obsidian vault and it will parse all markdown files into a List of Documents,
+with each Document containing text from under an Obsidian header.
+"""
 import os
 from abc import abstractmethod
 from pathlib import Path
@@ -12,7 +15,10 @@ from gpt_index.readers.schema.base import Document
 
 
 class ObsidianReader(BaseReader):
-    """Utilities for loading data from a directory."""
+    """Utilities for loading data from an Obsidian Vault.
+    Args:
+        input_dir (str): Path to the vault.
+    """
 
     def __init__(self, input_dir: str, verbose: bool = False):
         """Init params."""
