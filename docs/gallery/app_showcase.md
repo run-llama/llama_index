@@ -7,6 +7,12 @@ Here is a sample of some of the incredible applications and tools built on top o
 Hosted API service. Includes a "Dense Data Retrieval" API built on top of GPT Index where users can upload their documents and query them.
 [[Website]](https://www.usemeru.com/densedataretrieval)
 
+###### Algovera
+
+Build AI workflows using building blocks. Many workflows built on top of GPT Index.
+
+[[Website]](https://app.algovera.ai/workflows).
+
 ###### ChatGPT GPT Index
 
 Interface that allows users to upload long docs and chat with the bot.
