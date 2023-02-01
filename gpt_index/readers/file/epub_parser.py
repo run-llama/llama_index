@@ -16,9 +16,6 @@ class EpubParser(BaseParser):
         """Init parser."""
         return {}
 
-    def check_tag(self, text, blacklist=['[document]']):
-        return text.parent.name not in blacklist
-
     def parse_file(self, file: Path, errors: str = "ignore") -> str:
         """Parse file."""
         try:
