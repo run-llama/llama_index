@@ -30,7 +30,8 @@ def test_split_long_token() -> None:
     # tiktoken will say length is ~5k
     token = "a" * 100
     text_splitter = TokenTextSplitter(chunk_size=20, chunk_overlap=0)
-    text_splitter.split_text(token)
+    splits = text_splitter.split_text(token)
+    assert [len(s) == 20 for s in splits]
 
     token = ("a" * 49) + "\n" + ("a" * 50)
     text_splitter = TokenTextSplitter(chunk_size=20, chunk_overlap=0)
