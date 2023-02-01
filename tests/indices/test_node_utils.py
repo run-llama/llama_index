@@ -66,3 +66,4 @@ def test_get_nodes_from_document_with_extra_info(
     assert all(
         chunk_size <= text_splitter._chunk_size for chunk_size in actual_chunk_sizes
     )
+    assert all(["test_key: test_val" in n.get_text() for n in nodes])

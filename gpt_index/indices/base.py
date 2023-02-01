@@ -213,6 +213,16 @@ class BaseGPTIndex(Generic[IS]):
         """
         self._index_struct.text = text
 
+    def set_extra_info(self, extra_info: Dict[str, Any]) -> None:
+        """Set extra info (metadata) for index struct.
+
+        If this index is used as a subindex for a parent index, the metadata
+        will be propagated to all nodes derived from this subindex, in the
+        parent index.
+
+        """
+        self._index_struct.extra_info = extra_info
+
     def set_doc_id(self, doc_id: str) -> None:
         """Set doc_id for index struct.
 
