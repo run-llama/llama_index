@@ -1,7 +1,9 @@
-from typing import Any, List, Optional
+"""Qdrant reader."""
 
-from gpt_index import Document
+from typing import List, Optional, cast
+
 from gpt_index.readers.base import BaseReader
+from gpt_index.readers.schema.base import Document
 
 
 class QdrantReader(BaseReader):
@@ -18,7 +20,8 @@ class QdrantReader(BaseReader):
         api_key: API key for authentication in Qdrant Cloud. Default: `None`
         prefix:
             If not `None` - add `prefix` to the REST URL path.
-            Example: `service/v1` will result in `http://localhost:6333/service/v1/{qdrant-endpoint}` for REST API.
+            Example: `service/v1` will result in
+            `http://localhost:6333/service/v1/{qdrant-endpoint}` for REST API.
             Default: `None`
         timeout:
             Timeout for REST and gRPC API requests.
@@ -44,7 +47,7 @@ class QdrantReader(BaseReader):
             "`qdrant-client` package not found, please run `pip install qdrant-client`"
         )
         try:
-            import qdrant_client # noqa: F401
+            import qdrant_client  # noqa: F401
         except ImportError:
             raise ValueError(import_err_msg)
 
@@ -75,6 +78,8 @@ class QdrantReader(BaseReader):
         Returns:
             List[Document]: A list of documents.
         """
+        from qdrant_client.http.models.models import Payload
+
         response = self._client.search(
             collection_name=collection_name,
             query_vector=query_vector,
@@ -85,10 +90,15 @@ class QdrantReader(BaseReader):
 
         documents = []
         for point in response:
+            payload = cast(Payload, point)
+            try:
+                vector = cast(List[float], point.vector)
+            except ValueError as e:
+                raise ValueError("Could not cast vector to List[float].") from e
             document = Document(
-                doc_id=point.payload.get("doc_id"),
-                text=point.payload.get("text"),
-                embedding=point.vector
+                doc_id=payload.get("doc_id"),
+                text=payload.get("text"),
+                embedding=vector,
             )
             documents.append(document)
 

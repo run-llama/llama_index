@@ -1,16 +1,21 @@
-from typing import Any, Sequence, Optional, cast, Type, Dict
+"""Qdrant vector store index.
 
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.vector_store.qdrant import GPTQdrantIndexQuery
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
+An index that is built on top of an existing Qdrant collection.
+
+"""
+from typing import Any, Dict, Optional, Sequence, Type, cast
+
 from gpt_index.data_structs.data_structs import QdrantIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.base import DOCUMENTS_INPUT
+from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.query.vector_store.qdrant import GPTQdrantIndexQuery
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
 
@@ -50,6 +55,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
         collection_name: Optional[str] = None,
         **kwargs: Any
     ) -> None:
+        """Init params."""
         import_err_msg = (
             "`qdrant-client` package not found, please run `pip install qdrant-client`"
         )
@@ -60,6 +66,8 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
 
         if client is None:
             raise ValueError("client cannot be None.")
+        if collection_name is None:
+            raise ValueError("collection_name cannot be None.")
 
         self._client = cast(qdrant_client.QdrantClient, client)
         self._collection_name = collection_name

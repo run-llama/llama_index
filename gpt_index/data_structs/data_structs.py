@@ -306,7 +306,7 @@ class PineconeIndexStruct(IndexStruct):
 
 @dataclass
 class QdrantIndexStruct(IndexStruct):
-    """And index struct for Qdrant
+    """And index struct for Qdrant.
 
     Docs are stored in Qdrant directly.
     This index struct helps to store the collection name
