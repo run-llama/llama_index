@@ -32,6 +32,7 @@ from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
     GPTFaissIndex,
     GPTPineconeIndex,
+    GPTQdrantIndex,
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
 )
@@ -64,6 +65,7 @@ from gpt_index.readers import (
     NotionPageReader,
     ObsidianReader,
     PineconeReader,
+    QdrantReader,
     RssReader,
     SimpleDirectoryReader,
     SimpleMongoReader,
@@ -90,6 +92,7 @@ __all__ = [
     "GPTSimpleVectorIndex",
     "GPTWeaviateIndex",
     "GPTPineconeIndex",
+    "GPTQdrantIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",
     "LangchainEmbedding",
@@ -114,6 +117,7 @@ __all__ = [
     "WeaviateReader",
     "FaissReader",
     "PineconeReader",
+    "QdrantReader",
     "DiscordReader",
     "SimpleWebPageReader",
     "RssReader",

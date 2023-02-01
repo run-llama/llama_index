@@ -3,11 +3,11 @@
 
 from typing import Any, Generic, Optional, TypeVar
 
-from gpt_index.data_structs.data_structs import BaseIndexDict
+from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 
-BID = TypeVar("BID", bound=BaseIndexDict)
+BID = TypeVar("BID", bound=IndexStruct)
 
 
 class BaseGPTVectorStoreIndexQuery(BaseGPTIndexQuery[BID], Generic[BID]):
