@@ -23,6 +23,9 @@ class IndexStructType(str, Enum):
         PINECONE ("pinecone"): Pinecone Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Pinecone vector store index.
+        QDRANT ("qdrant"): Qdrant Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Qdrant vector store index.
 
         SQL ("SQL"): SQL Structured Store Index.
             See :ref:`Ref-Indices-StructStore`
@@ -45,5 +48,7 @@ class IndexStructType(str, Enum):
     WEAVIATE = "weaviate"
     # for pinecone index
     PINECONE = "pinecone"
+    # for qdrant index
+    QDRANT = "qdrant"
     # for SQL index
     SQL = "sql"

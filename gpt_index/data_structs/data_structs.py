@@ -302,3 +302,31 @@ class PineconeIndexStruct(IndexStruct):
     def get_type(cls) -> str:
         """Get type."""
         return "pinecone"
+
+
+@dataclass
+class QdrantIndexStruct(IndexStruct):
+    """And index struct for Qdrant.
+
+    Docs are stored in Qdrant directly.
+    This index struct helps to store the collection name
+
+    """
+
+    collection_name: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        """Post init."""
+        if self.collection_name is None:
+            raise ValueError("collection_name must be provided.")
+
+    def get_collection_name(self) -> str:
+        """Get class prefix."""
+        if self.collection_name is None:
+            raise ValueError("collection_name must be provided.")
+        return self.collection_name
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "qdrant"
