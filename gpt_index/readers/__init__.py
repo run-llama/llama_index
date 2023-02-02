@@ -19,7 +19,9 @@ from gpt_index.readers.google.gdocs import GoogleDocsReader
 from gpt_index.readers.make_com.wrapper import MakeWrapper
 from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
+from gpt_index.readers.obsidian import ObsidianReader
 from gpt_index.readers.pinecone import PineconeReader
+from gpt_index.readers.qdrant import QdrantReader
 from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
 from gpt_index.readers.string_iterable import StringIterableReader
@@ -45,6 +47,7 @@ __all__ = [
     "SlackReader",
     "WeaviateReader",
     "PineconeReader",
+    "QdrantReader",
     "FaissReader",
     "Document",
     "StringIterableReader",
@@ -54,4 +57,5 @@ __all__ = [
     "RssReader",
     "MakeWrapper",
     "TwitterTweetReader",
+    "ObsidianReader",
 ]

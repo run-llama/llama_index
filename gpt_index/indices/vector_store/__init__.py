@@ -2,6 +2,7 @@
 
 from gpt_index.indices.vector_store.faiss import GPTFaissIndex
 from gpt_index.indices.vector_store.pinecone import GPTPineconeIndex
+from gpt_index.indices.vector_store.qdrant import GPTQdrantIndex
 from gpt_index.indices.vector_store.simple import GPTSimpleVectorIndex
 from gpt_index.indices.vector_store.weaviate import GPTWeaviateIndex
 
@@ -10,4 +11,5 @@ __all__ = [
     "GPTSimpleVectorIndex",
     "GPTWeaviateIndex",
     "GPTPineconeIndex",
+    "GPTQdrantIndex",
 ]

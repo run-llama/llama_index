@@ -1,4 +1,5 @@
 """Default query for GPTFaissIndex."""
+
 from typing import Any, List, Optional, cast
 
 import numpy as np
@@ -66,6 +67,7 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         dists, indices = self._faiss_index.search(
             query_embedding_np, self.similarity_top_k
         )
+        dists = [d[0] for d in dists]
         # if empty, then return an empty response
         if len(indices) == 0:
             return []
@@ -83,7 +85,7 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
             fmt_txts = []
             for node_idx, node_similarity, node in zip(node_idxs, dists, top_k_nodes):
                 fmt_txt = f"> [Node {node_idx}] [Similarity score: \
-                    {node_similarity:.6}] {truncate_text(node.get_text(), 100)}"
+                    {float(node_similarity):.6}] {truncate_text(node.get_text(), 100)}"
                 fmt_txts.append(fmt_txt)
             top_k_node_text = "\n".join(fmt_txts)
             print(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
