@@ -9,7 +9,7 @@ from gpt_index.readers.file.epub_parser import EpubParser
 from gpt_index.readers.file.image_parser import ImageParser
 from gpt_index.readers.file.markdown_parser import MarkdownParser
 from gpt_index.readers.file.slides_parser import PptxParser
-from gpt_index.readers.file.tabular_parser import CSVParser
+from gpt_index.readers.file.tabular_parser import PandasCSVParser
 from gpt_index.readers.file.video_audio import VideoAudioParser
 from gpt_index.readers.schema.base import Document
 
@@ -22,7 +22,7 @@ DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
     ".jpeg": ImageParser(),
     ".mp3": VideoAudioParser(),
     ".mp4": VideoAudioParser(),
-    ".csv": CSVParser(),
+    ".csv": PandasCSVParser(),
     ".epub": EpubParser(),
     ".md": MarkdownParser(),
 }
