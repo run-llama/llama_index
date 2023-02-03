@@ -54,6 +54,16 @@ def _get_default_index_registry() -> IndexRegistry:
     return index_registry
 
 
+def _safe_get_index_struct(
+    docstore: DocumentStore, index_struct_id: str
+) -> IndexStruct:
+    """Try get index struct."""
+    index_struct = docstore.get_document(index_struct_id)
+    if not isinstance(index_struct, IndexStruct):
+        raise ValueError("Invalid `index_struct_id` - must be an IndexStruct")
+    return index_struct
+
+
 class ComposableGraph:
     """Composable graph."""
 
@@ -112,6 +122,18 @@ class ComposableGraph:
         )
         return query_runner.query(query_str, self._index_struct)
 
+    def get_index(
+        self, index_struct_id: str, index_cls: Type[BaseGPTIndex], **kwargs: Any
+    ) -> BaseGPTIndex:
+        """Get index."""
+        index_struct = _safe_get_index_struct(self._docstore, index_struct_id)
+        return index_cls(
+            index_struct=index_struct,
+            docstore=self._docstore,
+            index_registry=self._index_registry,
+            **kwargs
+        )
+
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "ComposableGraph":
         """Load index from disk.
@@ -135,9 +157,9 @@ class ComposableGraph:
             docstore = DocumentStore.load_from_dict(
                 result_dict["docstore"], index_registry.type_to_struct
             )
-            index_struct = docstore.get_document(result_dict["index_struct_id"])
-            if not isinstance(index_struct, IndexStruct):
-                raise ValueError("Invalid `index_struct_id` - must be an IndexStruct")
+            index_struct = _safe_get_index_struct(
+                docstore, result_dict["index_struct_id"]
+            )
             return cls(docstore, index_registry, index_struct, **kwargs)
 
     def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:

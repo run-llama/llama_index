@@ -93,6 +93,10 @@ class BaseGPTIndex(Generic[IS]):
         self._index_registry = index_registry or IndexRegistry()
 
         if index_struct is not None:
+            if not isinstance(index_struct, self.index_struct_cls):
+                raise ValueError(
+                    f"index_struct must be of type {self.index_struct_cls}"
+                )
             self._index_struct = index_struct
         else:
             documents = cast(Sequence[DOCUMENTS_INPUT], documents)
@@ -230,7 +234,11 @@ class BaseGPTIndex(Generic[IS]):
         If you wish to delete the index struct, you can use this doc_id.
 
         """
+        old_doc_id = self._index_struct.get_doc_id()
         self._index_struct.doc_id = doc_id
+        # Note: we also need to delete old doc_id, and update docstore
+        self._docstore.delete_document(old_doc_id)
+        self._docstore.add_documents([self._index_struct])
 
     def get_doc_id(self) -> str:
         """Get doc_id for index struct.

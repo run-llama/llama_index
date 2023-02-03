@@ -210,6 +210,8 @@ def test_recursive_query_table_list(
     table2 = GPTSimpleKeywordTableIndex(documents[2:3], **table_kwargs)
     table1.set_text("table_summary1")
     table2.set_text("table_summary2")
+    table1.set_doc_id("table1")
+    table2.set_doc_id("table2")
 
     list_index = GPTListIndex([table1, table2], **list_kwargs)
     query_str = "World?"
@@ -231,6 +233,11 @@ def test_recursive_query_table_list(
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         response = graph.query(query_str, query_configs=query_configs)
         assert str(response) == ("Test?:This is a test.")
+
+        # test graph.get_index
+        test_table1 = graph.get_index("table1", GPTSimpleKeywordTableIndex)
+        response = test_table1.query("Hello")
+        assert str(response) == ("Hello:Hello world.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
