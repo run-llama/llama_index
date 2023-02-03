@@ -1,3 +1,5 @@
+"""Download loader from the Loader Hub."""
+
 import json
 import os
 from importlib import util
@@ -12,7 +14,7 @@ LOADER_HUB_URL = (
 
 
 def download_loader(loaderClassName: str) -> BaseReader:
-    """Download a loader from the Loader Hub
+    """Download a single loader from the Loader Hub.
 
     Args:
         loaderClassName: The name of the loader class you want to download,
