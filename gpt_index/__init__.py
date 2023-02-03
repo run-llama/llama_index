@@ -77,6 +77,7 @@ from gpt_index.readers import (
     WeaviateReader,
     WikipediaReader,
 )
+from gpt_index.readers.download import download_loader
 
 # token predictor
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
@@ -134,4 +135,5 @@ __all__ = [
     "QueryMode",
     "IndexStructType",
     "TwitterTweetReader",
+    "download_loader",
 ]
