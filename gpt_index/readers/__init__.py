@@ -15,7 +15,7 @@ from gpt_index.readers.faiss import FaissReader
 
 # readers
 from gpt_index.readers.file.base import SimpleDirectoryReader
-from gpt_index.readers.google.gdocs import GoogleDocsReader
+from gpt_index.readers.google_readers.gdocs import GoogleDocsReader
 from gpt_index.readers.make_com.wrapper import MakeWrapper
 from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
