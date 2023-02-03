@@ -1,3 +1,4 @@
+import json
 import os
 from importlib import util
 
@@ -19,7 +20,12 @@ def download_loader(loaderClassName: str) -> BaseReader:
     Returns:
         A Loader.
     """
-    loader_id = "web/simple_web"
+    requests = RequestsWrapper()
+    response = requests.run(f"{LOADER_HUB_URL}/library.json")
+    library = json.loads(response)
+
+    # Look up the loader id (e.g. `web/simple_web`)
+    loader_id = library[loaderClassName]["id"]
     dirpath = ".modules"
     loader_filename = loader_id.replace("/", "-")
     loader_path = f"{dirpath}/{loader_filename}.py"
@@ -29,7 +35,6 @@ def download_loader(loaderClassName: str) -> BaseReader:
         os.makedirs(dirpath)
 
     if not os.path.exists(loader_path):
-        requests = RequestsWrapper()
         response = requests.run(f"{LOADER_HUB_URL}/{loader_id}/base.py")
         with open(loader_path, "w") as f:
             f.write(response)
