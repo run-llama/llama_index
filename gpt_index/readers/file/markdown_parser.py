@@ -103,5 +103,11 @@ class MarkdownParser(BaseParser):
     ) -> Union[str, List[str]]:
         """Parse file into string."""
         tups = self.parse_tups(filepath, errors=errors)
+        results = []
         # TODO: don't include headers right now
-        return [value for _, value in tups]
+        for header, value in tups:
+            if header is None:
+                results.append(value)
+            else:
+                results.append(f"\n\n{header}\n{value}")
+        return results
