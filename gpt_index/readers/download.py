@@ -5,8 +5,11 @@ import os
 import subprocess
 import sys
 from importlib import util
+from pathlib import Path
 
+import pkg_resources
 import requests
+from pkg_resources import DistributionNotFound
 
 from gpt_index.readers.base import BaseReader
 
@@ -49,11 +52,17 @@ def download_loader(loader_class: str) -> BaseReader:
             with open(requirements_path, "w") as f:
                 f.write(response.text)
 
-    # Install dependencies if there are any
+    # Install dependencies if there are any and not already installed
     if os.path.exists(requirements_path):
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "-r", requirements_path]
-        )
+        try:
+            requirements = pkg_resources.parse_requirements(
+                Path(requirements_path).open()
+            )
+            pkg_resources.require([str(r) for r in requirements])
+        except DistributionNotFound:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "-r", requirements_path]
+            )
 
     spec = util.spec_from_file_location("custom_loader", location=loader_path)
     if spec is None:
