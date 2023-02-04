@@ -6,7 +6,7 @@ import subprocess
 import sys
 from importlib import util
 
-from langchain.utilities import RequestsWrapper
+import requests
 
 from gpt_index.readers.base import BaseReader
 
@@ -15,21 +15,20 @@ LOADER_HUB_URL = (
 )
 
 
-def download_loader(loaderClassName: str) -> BaseReader:
+def download_loader(loader_class: str) -> BaseReader:
     """Download a single loader from the Loader Hub.
 
     Args:
-        loaderClassName: The name of the loader class you want to download,
+        loader_class: The name of the loader class you want to download,
             such as `SimpleWebPageReader`.
     Returns:
         A Loader.
     """
-    requests = RequestsWrapper()
-    response = requests.run(f"{LOADER_HUB_URL}/library.json")
-    library = json.loads(response)
+    response = requests.get(f"{LOADER_HUB_URL}/library.json")
+    library = json.loads(response.text)
 
     # Look up the loader id (e.g. `web/simple_web`)
-    loader_id = library[loaderClassName]["id"]
+    loader_id = library[loader_class]["id"]
     dirpath = ".modules"
     loader_filename = loader_id.replace("/", "-")
     loader_path = f"{dirpath}/{loader_filename}.py"
@@ -40,17 +39,15 @@ def download_loader(loaderClassName: str) -> BaseReader:
         os.makedirs(dirpath)
 
     if not os.path.exists(loader_path):
-        response = requests.run(f"{LOADER_HUB_URL}/{loader_id}/base.py")
+        response = requests.get(f"{LOADER_HUB_URL}/{loader_id}/base.py")
         with open(loader_path, "w") as f:
-            f.write(response)
+            f.write(response.text)
 
     if not os.path.exists(requirements_path):
-        try:
-            response = requests.run(f"{LOADER_HUB_URL}/{loader_id}/requirements.txt")
+        response = requests.get(f"{LOADER_HUB_URL}/{loader_id}/requirements.txt")
+        if response.status_code == 200:
             with open(requirements_path, "w") as f:
-                f.write(response)
-        except Exception:
-            pass
+                f.write(response.text)
 
     # Install dependencies if there are any
     if os.path.exists(requirements_path):
@@ -64,4 +61,4 @@ def download_loader(loaderClassName: str) -> BaseReader:
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore
 
-    return getattr(module, loaderClassName)
+    return getattr(module, loader_class)
