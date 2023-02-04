@@ -49,7 +49,7 @@ def download_loader(loaderClassName: str) -> BaseReader:
             response = requests.run(f"{LOADER_HUB_URL}/{loader_id}/requirements.txt")
             with open(requirements_path, "w") as f:
                 f.write(response)
-        except:
+        except Exception:
             pass
 
     # Install dependencies if there are any
