@@ -2,6 +2,8 @@
 
 import json
 import os
+import subprocess
+import sys
 from importlib import util
 
 from langchain.utilities import RequestsWrapper
@@ -31,6 +33,7 @@ def download_loader(loaderClassName: str) -> BaseReader:
     dirpath = ".modules"
     loader_filename = loader_id.replace("/", "-")
     loader_path = f"{dirpath}/{loader_filename}.py"
+    requirements_path = f"{dirpath}/{loader_filename}_requirements.txt"
 
     if not os.path.exists(dirpath):
         # Create a new directory because it does not exist
@@ -40,6 +43,20 @@ def download_loader(loaderClassName: str) -> BaseReader:
         response = requests.run(f"{LOADER_HUB_URL}/{loader_id}/base.py")
         with open(loader_path, "w") as f:
             f.write(response)
+
+    if not os.path.exists(requirements_path):
+        try:
+            response = requests.run(f"{LOADER_HUB_URL}/{loader_id}/requirements.txt")
+            with open(requirements_path, "w") as f:
+                f.write(response)
+        except:
+            pass
+
+    # Install dependencies if there are any
+    if os.path.exists(requirements_path):
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "-r", requirements_path]
+        )
 
     spec = util.spec_from_file_location("custom_loader", location=loader_path)
     if spec is None:
