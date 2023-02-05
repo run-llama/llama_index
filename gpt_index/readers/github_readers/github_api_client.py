@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -153,3 +153,33 @@ class GithubClient:
 
     def get_all_endpoints(self) -> Dict[str, str]:
         return {**self.__endpoints}
+
+    async def request(
+        self,
+        endpoint: str,
+        method: str,
+        headers: Dict[str, Any] = {},
+        **kwargs,
+    ) -> Any:
+        try:
+            import httpx
+        except ImportError:
+            raise ImportError(
+                "Please install httpx to use the GithubReader. "
+                "You can do so by running `pip install httpx`."
+            )
+
+        _headers = {**self.headers, **headers}
+
+        client: httpx.AsyncClient
+        async with httpx.AsyncClient(
+            headers=_headers, base_url=self.base_url
+        ) as client:
+            try:
+                response = await client.request(
+                    method, url=self.__endpoints[endpoint].format(**kwargs)
+                )
+            except httpx.HTTPError as excp:
+                print(f"HTTP Exception for {excp.request.url} - {excp}")
+                raise excp
+            return response
