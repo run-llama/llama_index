@@ -92,6 +92,8 @@ class BaseGPTIndex(Generic[IS]):
         self._docstore = docstore or DocumentStore()
         self._index_registry = index_registry or IndexRegistry()
 
+        self._verbose = verbose
+
         if index_struct is not None:
             if not isinstance(index_struct, self.index_struct_cls):
                 raise ValueError(
@@ -261,6 +263,7 @@ class BaseGPTIndex(Generic[IS]):
             text_splitter=text_splitter,
             start_idx=start_idx,
             include_extra_info=self._include_extra_info,
+            verbose=self._verbose,
         )
 
     @abstractmethod
