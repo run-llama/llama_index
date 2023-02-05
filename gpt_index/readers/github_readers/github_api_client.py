@@ -67,3 +67,26 @@ class GitBlobResponseModel(DataClassJsonMixin):
     sha: str
     size: int
     node_id: str
+
+
+@dataclass
+class GitCommitResponseModel(DataClassJsonMixin):
+    """
+    Dataclass for the response from the Github API's getCommit endpoint.
+
+    Attributes:
+        - tree (Tree): Tree object for the commit.
+    """
+
+    @dataclass
+    class Tree(DataClassJsonMixin):
+        """
+        Dataclass for the tree object in the commit.
+
+        Attributes:
+            - sha (str): SHA for the commit
+        """
+
+        sha: str
+
+    tree: Tree
