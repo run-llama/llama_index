@@ -1,11 +1,12 @@
 import asyncio
 import os
-from typing import List, Optional
+from typing import Any, List, Optional, Tuple
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.github_readers.github_api_client import (
     GitBranchResponseModel,
     GitCommitResponseModel,
+    GitTreeResponseModel,
 )
 from gpt_index.readers.github_readers.utils import print_if_verbose
 from gpt_index.readers.schema.base import Document
@@ -14,8 +15,8 @@ from gpt_index.readers.schema.base import Document
 class GithubRepositoryReader(BaseReader):
     """
     Github repository reader.
-    
-    Retrieves the contents of a Github repository and returns a list of documents. 
+
+    Retrieves the contents of a Github repository and returns a list of documents.
     The documents are either the contents of the files in the repository or the text extracted from the files using the parser.
 
 
@@ -110,3 +111,42 @@ class GithubRepositoryReader(BaseReader):
             return self.__load_data_from_branch(branch)
 
         raise ValueError("You must specify one of commit or branch.")
+
+    async def recurse_tree(
+        self, tree_sha: str, current_path: str = "", current_depth: int = 0
+    ) -> Any:
+        """
+        Recursively get all files in a tree and construct their full path in the repo relative to the root of the repo
+
+        :param `tree_sha`: sha of the tree to recurse
+        :param `current_path`: current path of the tree
+        :param `current_depth`: current depth of the tree
+        :return: list of tuples of (tree object, file's full path in the repo realtive to the root of the repo)
+
+        """
+        blobs_and_full_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]] = []
+        print_if_verbose(
+            self.verbose, "\t" * current_depth + f"current path: {current_path}"
+        )
+
+        tree_data: GitTreeResponseModel = await self.__client.get_tree(
+            self.owner, self.repo, tree_sha
+        )
+        print_if_verbose(
+            self.verbose, "\t" * current_depth + f"processing tree {tree_sha}"
+        )
+        for tree in tree_data.tree:
+            file_path = os.path.join(current_path, tree.path)
+            if tree.type == "tree":
+                print_if_verbose(
+                    self.verbose, "\t" * current_depth + f"recursing into {tree.path}"
+                )
+                blobs_and_full_paths.extend(
+                    await self.recurse_tree(tree.sha, file_path, current_depth + 1)
+                )
+            elif tree.type == "blob":
+                print_if_verbose(
+                    self.verbose, "\t" * current_depth + f"found blob {tree.path}"
+                )
+                blobs_and_full_paths.append((tree, file_path))
+        return blobs_and_full_paths
