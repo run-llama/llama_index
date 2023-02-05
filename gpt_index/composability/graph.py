@@ -179,7 +179,7 @@ class ComposableGraph:
             file_contents = f.read()
             return cls.load_from_string(file_contents, **kwargs)
 
-    def save_to_string(self, **save_kwargs: Any) -> None:
+    def save_to_string(self, **save_kwargs: Any) -> str:
         """Save to string.
 
         This method stores the index into a JSON file stored on disk.

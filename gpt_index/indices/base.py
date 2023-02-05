@@ -477,7 +477,11 @@ class BaseGPTIndex(Generic[IS]):
                 "other indices. Please define a `ComposableGraph` and use "
                 "`save_to_string` and `load_from_string` on that instead."
             )
-        return json.dumps(self.to_dict(), **save_kwargs)
+        out_dict: Dict[str, dict] = {
+            "index_struct": self.index_struct.to_dict(),
+            "docstore": self.docstore.serialize_to_dict(),
+        }
+        return json.dumps(out_dict, **save_kwargs)
 
     def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
         """Save to file.
