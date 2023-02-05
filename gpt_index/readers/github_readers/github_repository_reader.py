@@ -1,4 +1,6 @@
 import asyncio
+import base64
+import binascii
 import os
 from typing import Any, List, Optional, Tuple
 
@@ -8,7 +10,10 @@ from gpt_index.readers.github_readers.github_api_client import (
     GitCommitResponseModel,
     GitTreeResponseModel,
 )
-from gpt_index.readers.github_readers.utils import print_if_verbose
+from gpt_index.readers.github_readers.utils import (
+    BufferedGitBlobDataIterator,
+    print_if_verbose,
+)
 from gpt_index.readers.schema.base import Document
 
 
@@ -150,3 +155,62 @@ class GithubRepositoryReader(BaseReader):
                 )
                 blobs_and_full_paths.append((tree, file_path))
         return blobs_and_full_paths
+
+    async def __generate_documents(
+        self, blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]]
+    ):
+        buffered_iterator = BufferedGitBlobDataIterator(
+            blobs_and_paths=blobs_and_paths,
+            github_client=self.__client,
+            owner=self.owner,
+            repo=self.repo,
+            loop=self.loop,
+            buffer_size=2,  # TODO: make this configurable
+        )
+
+        documents = []
+        async for blob_data, full_path in buffered_iterator:
+            print(f"generating document for {full_path}")
+            assert (
+                blob_data.encoding == "base64"
+            ), f"blob encoding {blob_data.encoding} not supported"
+            decoded_bytes = None
+            try:
+                decoded_bytes = base64.b64decode(blob_data.content)
+                del blob_data.content
+            except binascii.Error:
+                print(f"could not decode {full_path} as base64")
+                continue
+
+            if self.use_parser:
+                document = self.__parse_supported_file(
+                    file_path=full_path,
+                    file_content=decoded_bytes,
+                    tree_sha=blob_data.sha,
+                    tree_path=full_path,
+                )
+                if document is not None:
+                    documents.append(document)
+                else:
+                    continue
+
+            try:
+                if decoded_bytes is None:
+                    raise ValueError("decoded_bytes is None")
+                decoded_text = decoded_bytes.decode("utf-8")
+            except UnicodeDecodeError:
+                print(f"could not decode {full_path} as utf-8")
+                continue
+            print(
+                f"got {len(decoded_text)} characters - adding to documents - {full_path}"
+            )
+            document = Document(
+                text=decoded_text,
+                doc_id=blob_data.sha,
+                extra_info={
+                    "file_path": full_path,
+                    "file_name": full_path.split("/")[-1],
+                },
+            )
+            documents.append(document)
+        return documents
