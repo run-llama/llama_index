@@ -159,6 +159,12 @@ class GithubRepositoryReader(BaseReader):
     async def __generate_documents(
         self, blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]]
     ):
+        """
+        Generate documents from a list of blobs and their full paths in the repo relative to the root of the repo
+
+        :param `blobs_and_paths`: list of tuples of (tree object, file's full path in the repo realtive to the root of the repo)
+        :return: list of documents
+        """
         buffered_iterator = BufferedGitBlobDataIterator(
             blobs_and_paths=blobs_and_paths,
             github_client=self.__client,
