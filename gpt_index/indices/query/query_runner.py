@@ -13,25 +13,6 @@ from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
 
-# DEFAULT_QUERY_CONFIGS = [
-#     QueryConfig(
-#         index_struct_type=IndexStructType.TREE,
-#         query_mode=QueryMode.DEFAULT,
-#     ),
-#     QueryConfig(
-#         index_struct_type=IndexStructType.LIST,
-#         query_mode=QueryMode.DEFAULT,
-#     ),
-#     QueryConfig(
-#         index_struct_type=IndexStructType.KEYWORD_TABLE,
-#         query_mode=QueryMode.DEFAULT,
-#     ),
-#     QueryConfig(index_struct_type=IndexStructType.DICT, query_mode=QueryMode.DEFAULT),
-#     QueryConfig(
-#         index_struct_type=IndexStructType.SIMPLE_DICT, query_mode=QueryMode.DEFAULT
-#     ),
-# ]
-
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
 
@@ -57,7 +38,6 @@ class QueryRunner(BaseQueryRunner):
         """Init params."""
         config_dict: Dict[str, QueryConfig] = {}
         if query_configs is None or len(query_configs) == 0:
-            # query_config_objs: List[QueryConfig] = DEFAULT_QUERY_CONFIGS
             query_config_objs: List[QueryConfig] = []
         elif isinstance(query_configs[0], Dict):
             query_config_objs = [
