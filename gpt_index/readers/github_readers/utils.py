@@ -16,6 +16,17 @@ def print_if_verbose(verbose: bool, message: str):
 
 
 class BufferedAsyncIterator(ABC):
+    """
+    Base class for buffered async iterators.
+
+    This class is to be used as a base class for async iterators that need to buffer the results of an async operation.
+    The async operation is defined in the _fill_buffer method. The _fill_buffer method is called when the buffer is empty.
+
+    Args:
+        - buffer_size (int): Size of the buffer.
+
+    """
+
     def __init__(self, buffer_size):
         self.buffer_size = buffer_size
         self.buffer: List[Tuple[GitBlobResponseModel, str]] = []
@@ -41,6 +52,23 @@ class BufferedAsyncIterator(ABC):
 
 
 class BufferedGitBlobDataIterator(BufferedAsyncIterator):
+    """
+    Buffered async iterator for Git blobs.
+
+    This class is an async iterator that buffers the results of the get_blob operation. It is used to retrieve the contents of the files in a Github repository.
+    getBlob endpoint supports up to 100 megabytes of content for blobs. This concrete implementation of BufferedAsyncIterator allows you to lazily retrieve
+    the contents of the files in a Github repository. Otherwise you would have to retrieve all the contents of the files in the repository at once, which would
+    be problematic if the repository is large.
+
+    Args:
+        - blobs_and_paths (List[Tuple[GitTreeResponseModel.GitTreeObject, str]]): List of tuples containing the blob and the path of the file.
+        - github_client (GithubClient): Github client.
+        - owner (str): Owner of the repository.
+        - repo (str): Name of the repository.
+        - loop (asyncio.AbstractEventLoop): Event loop.
+        - buffer_size (int): Size of the buffer.
+    """
+
     def __init__(
         self,
         blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]],
