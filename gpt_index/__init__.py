@@ -61,6 +61,7 @@ from gpt_index.readers import (
     DiscordReader,
     Document,
     FaissReader,
+    GithubRepositoryReader,
     GoogleDocsReader,
     NotionPageReader,
     ObsidianReader,
@@ -136,4 +137,5 @@ __all__ = [
     "IndexStructType",
     "TwitterTweetReader",
     "download_loader",
+    "GithubRepositoryReader",
 ]
