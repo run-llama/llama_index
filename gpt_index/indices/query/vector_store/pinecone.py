@@ -6,6 +6,7 @@ from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
 from gpt_index.indices.utils import truncate_text
+from gpt_index.prompts.prompts import SummaryPrompt
 
 
 class GPTPineconeIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
@@ -38,6 +39,7 @@ class GPTPineconeIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
         pinecone_kwargs: Optional[Dict] = None,
+        hyde: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -52,6 +54,7 @@ class GPTPineconeIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         # NOTE: cast to Any for now
         self._pinecone_index = cast(Any, pinecone_index)
         self._pinecone_index = pinecone_index
+        self._hyde = hyde
 
         self._pinecone_kwargs = pinecone_kwargs or {}
 
@@ -62,6 +65,22 @@ class GPTPineconeIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
+        # # If the kwargs contain "hyde" = True, then we need to use the hyde prompt
+        if self._hyde:
+            hyde_template = (
+                "Please write a passage to answer the question\n"
+                "Try to include as many key details as possible.\n"
+                "\n"
+                "\n"
+                "{context_str}\n"
+                "\n"
+                "\n"
+                'Passage:"""\n'
+            )
+
+            hyde_prompt = SummaryPrompt(hyde_template)
+            hypothetical_doc, prompt = self._llm_predictor.predict(hyde_prompt, context_str=query_str)
+            query_str = hypothetical_doc
         query_embedding = self._embed_model.get_query_embedding(query_str)
 
         response = self._pinecone_index.query(
