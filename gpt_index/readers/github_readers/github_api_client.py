@@ -254,3 +254,28 @@ class GithubClient:
                 )
             ).text
         )
+
+    async def get_blob(
+        self, owner: str, repo: str, file_sha: str
+    ) -> GitBlobResponseModel:
+        """
+        Get information about a blob. (Github API endpoint: getBlob)
+
+        Args:
+            - `owner (str)`: Owner of the repository.
+            - `repo (str)`: Name of the repository.
+            - `file_sha (str)`: SHA of the file.
+
+        Returns:
+            - `blob_info (GitBlobResponseModel)`: Information about the blob.
+
+        Examples:
+            >>> blob_info = client.get_blob("owner", "repo", "file_sha")
+        """
+        return GitBlobResponseModel.from_json(
+            (
+                await self.request(
+                    "getBlob", "GET", owner=owner, repo=repo, file_sha=file_sha
+                )
+            ).text
+        )
