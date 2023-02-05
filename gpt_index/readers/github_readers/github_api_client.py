@@ -90,3 +90,27 @@ class GitCommitResponseModel(DataClassJsonMixin):
         sha: str
 
     tree: Tree
+
+
+@dataclass
+class GitBranchResponseModel(DataClassJsonMixin):
+    """
+    Dataclass for the response from the Github API's getBranch endpoint.
+
+    Attributes:
+        - commit (Commit): Commit object for the branch.
+    """
+
+    @dataclass
+    class Commit(DataClassJsonMixin):
+        @dataclass
+        class Commit(DataClassJsonMixin):
+            @dataclass
+            class Tree(DataClassJsonMixin):
+                sha: str
+
+            tree: Tree
+
+        commit: Commit
+
+    commit: Commit
