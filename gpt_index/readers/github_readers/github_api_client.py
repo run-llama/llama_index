@@ -161,6 +161,27 @@ class GithubClient:
         headers: Dict[str, Any] = {},
         **kwargs,
     ) -> Any:
+        """
+        Make an API request to the Github API.
+
+        This method is used for making API requests to the Github API. It is used internally by the other methods in the client.
+
+        Args:
+            - `endpoint (str)`: Name of the endpoint to make the request to.
+            - `method (str)`: HTTP method to use for the request.
+            - `headers (dict)`: HTTP headers to include in the request.
+            - `**kwargs`: Keyword arguments to pass to the endpoint URL.
+
+        Returns:
+            - `response (httpx.Response)`: Response from the API request.
+
+        Raises:
+            - ImportError: If the `httpx` library is not installed.
+            - httpx.HTTPError: If the API request fails.
+
+        Examples:
+            >>> response = client.request("getTree", "GET", owner="owner", repo="repo", tree_sha="tree_sha")
+        """
         try:
             import httpx
         except ImportError:
