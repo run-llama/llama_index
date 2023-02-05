@@ -11,6 +11,7 @@ from gpt_index.readers.file.base import DEFAULT_FILE_EXTRACTOR
 from gpt_index.readers.github_readers.github_api_client import (
     GitBranchResponseModel,
     GitCommitResponseModel,
+    GithubClient,
     GitTreeResponseModel,
 )
 from gpt_index.readers.github_readers.utils import (
@@ -42,7 +43,7 @@ class GithubRepositoryReader(BaseReader):
     Examples:
         >>> reader = GithubRepositoryReader("owner", "repo")
         >>> branch_documents = reader.load_data(branch="branch")
-        >>> commit_documents = reader.load_data(commit="commit")
+        >>> commit_documents = reader.load_data(commit_sha="commit_sha")
 
     """
 
@@ -77,7 +78,7 @@ class GithubRepositoryReader(BaseReader):
 
         self.__client = GithubClient(github_token)  # type: ignore
 
-    def __load_data_from_commit(self, commit: str) -> List[Document]:
+    def __load_data_from_commit(self, commit_sha: str) -> List[Document]:
         """
         Load data from a commit
 
@@ -89,7 +90,7 @@ class GithubRepositoryReader(BaseReader):
         """
 
         commit_response: GitCommitResponseModel = self.loop.run_until_complete(
-            self.__client.get_commit(self.owner, self.repo, commit)
+            self.__client.get_commit(self.owner, self.repo, commit_sha)
         )
 
         tree_sha = commit_response.tree.sha
@@ -126,7 +127,7 @@ class GithubRepositoryReader(BaseReader):
 
     def load_data(
         self,
-        commit: Optional[str] = None,
+        commit_sha: Optional[str] = None,
         branch: Optional[str] = None,
     ) -> List[Document]:
         """
@@ -139,14 +140,14 @@ class GithubRepositoryReader(BaseReader):
 
         :return: list of documents
         """
-        if commit is not None and branch is not None:
+        if commit_sha is not None and branch is not None:
             raise ValueError("You can only specify one of commit or branch.")
 
-        if commit is None and branch is None:
+        if commit_sha is None and branch is None:
             raise ValueError("You must specify one of commit or branch.")
 
-        if commit is not None:
-            return self.__load_data_from_commit(commit)
+        if commit_sha is not None:
+            return self.__load_data_from_commit(commit_sha)
 
         if branch is not None:
             return self.__load_data_from_branch(branch)
@@ -157,7 +158,8 @@ class GithubRepositoryReader(BaseReader):
         self, tree_sha: str, current_path: str = "", current_depth: int = 0
     ) -> Any:
         """
-        Recursively get all files in a tree and construct their full path in the repo relative to the root of the repo
+        Recursively get all blob tree objects (see GitTreeResponseModel.GitTreeObject in github_api_client.py for more information)
+        in a tree and construct their full path relative to the root of the repo
 
         :param `tree_sha`: sha of the tree to recurse
         :param `current_path`: current path of the tree
@@ -196,7 +198,7 @@ class GithubRepositoryReader(BaseReader):
         self, blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]]
     ):
         """
-        Generate documents from a list of blobs and their full paths in the repo relative to the root of the repo
+        Generate documents from a list of blobs and their full paths relative to the root of the repo
 
         :param `blobs_and_paths`: list of tuples of (tree object, file's full path in the repo realtive to the root of the repo)
         :return: list of documents
@@ -212,7 +214,7 @@ class GithubRepositoryReader(BaseReader):
 
         documents = []
         async for blob_data, full_path in buffered_iterator:
-            print(f"generating document for {full_path}")
+            print_if_verbose(self.verbose, f"generating document for {full_path}")
             assert (
                 blob_data.encoding == "base64"
             ), f"blob encoding {blob_data.encoding} not supported"
@@ -221,7 +223,9 @@ class GithubRepositoryReader(BaseReader):
                 decoded_bytes = base64.b64decode(blob_data.content)
                 del blob_data.content
             except binascii.Error:
-                print(f"could not decode {full_path} as base64")
+                print_if_verbose(
+                    self.verbose, f"could not decode {full_path} as base64"
+                )
                 continue
 
             if self.use_parser:
@@ -241,10 +245,11 @@ class GithubRepositoryReader(BaseReader):
                     raise ValueError("decoded_bytes is None")
                 decoded_text = decoded_bytes.decode("utf-8")
             except UnicodeDecodeError:
-                print(f"could not decode {full_path} as utf-8")
+                print_if_verbose(self.verbose, f"could not decode {full_path} as utf-8")
                 continue
-            print(
-                f"got {len(decoded_text)} characters - adding to documents - {full_path}"
+            print_if_verbose(
+                self.verbose,
+                f"got {len(decoded_text)} characters - adding to documents - {full_path}",
             )
             document = Document(
                 text=decoded_text,
@@ -317,18 +322,35 @@ class GithubRepositoryReader(BaseReader):
 if __name__ == "__main__":
     import time
 
-    start = time.time()
+    def timeit(func):
+        def wrapper(*args, **kwargs):
+            start = time.time()
+            func(*args, **kwargs)
+            end = time.time()
+            print(f"Time taken: {end - start} seconds for {func.__name__}")
+
+        return wrapper
+
     reader = GithubRepositoryReader(
         github_token=os.environ["GITHUB_TOKEN"],
         owner="jerryjliu",
         repo="gpt_index",
         use_parser=False,
+        verbose=True,
     )
 
-    documents: List[Document] = reader.load_data(branch="main")
+    @timeit
+    def load_data_from_commit():
+        documents = reader.load_data(
+            commit_sha="22e198b3b166b5facd2843d6a62ac0db07894a13"
+        )
+        for document in documents:
+            print(document.extra_info)
 
-    end = time.time()
-    print(f"Time taken: {end - start} seconds")
-    for document in documents:
-        print(document.text)
-        input(f"{document.extra_info} - Press enter to continue...")
+    @timeit
+    def load_data_from_branch():
+        documents = reader.load_data(branch="main")
+        for document in documents:
+            print(document.extra_info)
+
+    load_data_from_branch()
