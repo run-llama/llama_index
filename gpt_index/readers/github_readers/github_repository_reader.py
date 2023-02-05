@@ -1,10 +1,13 @@
 import asyncio
 import base64
 import binascii
+import logging
 import os
+import tempfile
 from typing import Any, List, Optional, Tuple
 
 from gpt_index.readers.base import BaseReader
+from gpt_index.readers.file.base import DEFAULT_FILE_EXTRACTOR
 from gpt_index.readers.github_readers.github_api_client import (
     GitBranchResponseModel,
     GitCommitResponseModel,
@@ -12,9 +15,13 @@ from gpt_index.readers.github_readers.github_api_client import (
 )
 from gpt_index.readers.github_readers.utils import (
     BufferedGitBlobDataIterator,
+    get_file_extension,
     print_if_verbose,
 )
 from gpt_index.readers.schema.base import Document
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class GithubRepositoryReader(BaseReader):
@@ -220,3 +227,52 @@ class GithubRepositoryReader(BaseReader):
             )
             documents.append(document)
         return documents
+
+    def __parse_supported_file(
+        self, file_path: str, file_content: str, tree_sha: str, tree_path: str
+    ) -> Optional[Document]:
+        file_extension = get_file_extension(file_path)
+        if (parser := DEFAULT_FILE_EXTRACTOR.get(file_extension)) is not None:
+            parser.init_parser()
+            print_if_verbose(
+                self.verbose,
+                f"parsing {file_path} as {file_extension} with {parser.__class__.__name__}",
+            )
+            with tempfile.TemporaryDirectory() as tmpdirname:
+                with tempfile.NamedTemporaryFile(
+                    dir=tmpdirname,
+                    suffix=f".{file_extension}",
+                    mode="w+b",
+                    delete=False,
+                ) as tmpfile:
+                    print_if_verbose(
+                        self.verbose,
+                        f"created a temporary file {tmpfile.name} for parsing {file_path}",
+                    )
+                    tmpfile.write(file_content)
+                    tmpfile.flush()
+                    tmpfile.close()
+                    try:
+                        parsed_file = parser.parse_file(tmpfile.name)
+                        parsed_file = "\n\n".join(parsed_file)
+                    except Exception as e:
+                        print_if_verbose(
+                            self.verbose, f"error while parsing {file_path}"
+                        )
+                        logger.error(
+                            f"Error while parsing {file_path} with {parser.__class__.__name__}:\n{e}"
+                        )
+                        parsed_file = None
+                    finally:
+                        os.remove(tmpfile.name)
+                    if parsed_file is None:
+                        return None
+                    return Document(
+                        text=parsed_file,
+                        doc_id=tree_sha,
+                        extra_info={
+                            "file_path": file_path,
+                            "file_name": tree_path,
+                        },
+                    )
+        return None
