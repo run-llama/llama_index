@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -150,3 +150,6 @@ class GithubClient:
             "Authorization": f"Bearer {self.github_token}",
             "X-GitHub-Api-Version": f"{self.api_version}",
         }
+
+    def get_all_endpoints(self) -> Dict[str, str]:
+        return {**self.__endpoints}
