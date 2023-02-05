@@ -77,7 +77,17 @@ class GithubRepositoryReader(BaseReader):
 
         self.__client = GithubClient(github_token)  # type: ignore
 
-    def __load_data_from_commit(self, commit: str, depth: int = 1) -> List[Document]:
+    def __load_data_from_commit(self, commit: str) -> List[Document]:
+        """
+        Load data from a commit
+
+        Loads github repository data from a specific commit sha.
+
+        :param `commit`: commit sha
+
+        :return: list of documents
+        """
+
         commit_response: GitCommitResponseModel = self.loop.run_until_complete(
             self.__client.get_commit(self.owner, self.repo, commit)
         )
@@ -91,7 +101,16 @@ class GithubRepositoryReader(BaseReader):
             self.__generate_documents(blobs_and_paths=blobs_and_paths)
         )
 
-    def __load_data_from_branch(self, branch: str, depth: int = 1) -> List[Document]:
+    def __load_data_from_branch(self, branch: str) -> List[Document]:
+        """
+        Load data from a branch
+
+        Loads github repository data from a specific branch.
+
+        :param `branch`: branch name
+
+        :return: list of documents
+        """
         branch_data: GitBranchResponseModel = self.loop.run_until_complete(
             self.__client.get_branch(self.owner, self.repo, branch)
         )
@@ -110,6 +129,16 @@ class GithubRepositoryReader(BaseReader):
         commit: Optional[str] = None,
         branch: Optional[str] = None,
     ) -> List[Document]:
+        """
+        Load data from a commit or a branch
+
+        Loads github repository data from a specific commit sha or a branch.
+
+        :param `commit`: commit sha
+        :param `branch`: branch name
+
+        :return: list of documents
+        """
         if commit is not None and branch is not None:
             raise ValueError("You can only specify one of commit or branch.")
 
@@ -231,6 +260,13 @@ class GithubRepositoryReader(BaseReader):
     def __parse_supported_file(
         self, file_path: str, file_content: str, tree_sha: str, tree_path: str
     ) -> Optional[Document]:
+        """
+        Parse a file if it is supported by a parser
+
+        :param `file_path`: path of the file in the repo
+        :param `file_content`: content of the file
+        :return: Document if the file is supported by a parser, None otherwise
+        """
         file_extension = get_file_extension(file_path)
         if (parser := DEFAULT_FILE_EXTRACTOR.get(file_extension)) is not None:
             parser.init_parser()
@@ -276,3 +312,23 @@ class GithubRepositoryReader(BaseReader):
                         },
                     )
         return None
+
+
+if __name__ == "__main__":
+    import time
+
+    start = time.time()
+    reader = GithubRepositoryReader(
+        github_token=os.environ["GITHUB_TOKEN"],
+        owner="jerryjliu",
+        repo="gpt_index",
+        use_parser=False,
+    )
+
+    documents: List[Document] = reader.load_data(branch="main")
+
+    end = time.time()
+    print(f"Time taken: {end - start} seconds")
+    for document in documents:
+        print(document.text)
+        input(f"{document.extra_info} - Press enter to continue...")
