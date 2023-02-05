@@ -1,6 +1,8 @@
 """Test list index."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Any, Dict, List, Optional, Tuple, cast
 from unittest.mock import patch
 
 import pytest
@@ -336,3 +338,49 @@ def test_extra_info(
     assert list_index.index_struct.nodes[3].get_text() == (
         "extra_info: extra_info\n" "foo: bar\n\n" "This is a test v2."
     )
+
+
+@patch_common
+def test_to_from_disk(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+) -> None:
+    """Test saving to disk and from disk."""
+    list_index = GPTListIndex(documents=documents)
+    with TemporaryDirectory() as tmp_dir:
+        list_index.save_to_disk(str(Path(tmp_dir) / "tmp.json"))
+        new_list_index = cast(
+            GPTListIndex, GPTListIndex.load_from_disk(str(Path(tmp_dir) / "tmp.json"))
+        )
+        assert len(new_list_index.index_struct.nodes) == 4
+        # check contents of nodes
+        assert new_list_index.index_struct.nodes[0].text == "Hello world."
+        assert new_list_index.index_struct.nodes[1].text == "This is a test."
+        assert new_list_index.index_struct.nodes[2].text == "This is another test."
+        assert new_list_index.index_struct.nodes[3].text == "This is a test v2."
+
+
+@patch_common
+def test_to_from_string(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+) -> None:
+    """Test saving to disk and from disk."""
+    list_index = GPTListIndex(documents=documents)
+    new_list_index = cast(
+        GPTListIndex, GPTListIndex.load_from_string(list_index.save_to_string())
+    )
+    assert len(new_list_index.index_struct.nodes) == 4
+    # check contents of nodes
+    assert new_list_index.index_struct.nodes[0].text == "Hello world."
+    assert new_list_index.index_struct.nodes[1].text == "This is a test."
+    assert new_list_index.index_struct.nodes[2].text == "This is another test."
+    assert new_list_index.index_struct.nodes[3].text == "This is a test v2."

@@ -135,6 +135,31 @@ class ComposableGraph:
         )
 
     @classmethod
+    def load_from_string(cls, index_string: str, **kwargs: Any) -> "ComposableGraph":
+        """Load index from string (in JSON-format).
+
+        This method loads the index from a JSON string. The index data
+        structure itself is preserved completely. If the index is defined over
+        subindices, those subindices will also be preserved (and subindices of
+        those subindices, etc.).
+
+        Args:
+            save_path (str): The save_path of the file.
+
+        Returns:
+            BaseGPTIndex: The loaded index.
+
+        """
+        result_dict = json.loads(index_string)
+        # TODO: this is hardcoded for now, allow it to be specified by the user
+        index_registry = _get_default_index_registry()
+        docstore = DocumentStore.load_from_dict(
+            result_dict["docstore"], index_registry.type_to_struct
+        )
+        index_struct = _safe_get_index_struct(docstore, result_dict["index_struct_id"])
+        return cls(docstore, index_registry, index_struct, **kwargs)
+
+    @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "ComposableGraph":
         """Load index from disk.
 
@@ -151,19 +176,11 @@ class ComposableGraph:
 
         """
         with open(save_path, "r") as f:
-            result_dict = json.load(f)
-            # TODO: this is hardcoded for now, allow it to be specified by the user
-            index_registry = _get_default_index_registry()
-            docstore = DocumentStore.load_from_dict(
-                result_dict["docstore"], index_registry.type_to_struct
-            )
-            index_struct = _safe_get_index_struct(
-                docstore, result_dict["index_struct_id"]
-            )
-            return cls(docstore, index_registry, index_struct, **kwargs)
+            file_contents = f.read()
+            return cls.load_from_string(file_contents, **kwargs)
 
-    def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
-        """Save to file.
+    def save_to_string(self, **save_kwargs: Any) -> str:
+        """Save to string.
 
         This method stores the index into a JSON file stored on disk.
 
@@ -175,5 +192,17 @@ class ComposableGraph:
             "index_struct_id": self._index_struct.get_doc_id(),
             "docstore": self._docstore.serialize_to_dict(),
         }
+        return json.dumps(out_dict)
+
+    def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
+        """Save to file.
+
+        This method stores the index into a JSON file stored on disk.
+
+        Args:
+            save_path (str): The save_path of the file.
+
+        """
+        index_string = self.save_to_string(**save_kwargs)
         with open(save_path, "w") as f:
-            json.dump(out_dict, f)
+            f.write(index_string)
