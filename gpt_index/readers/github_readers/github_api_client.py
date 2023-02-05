@@ -304,3 +304,24 @@ class GithubClient:
                 )
             ).text
         )
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    async def main():
+        client = GithubClient()
+        response = await client.get_tree(
+            owner="ahmetkca", repo="CommitAI", tree_sha="with-body"
+        )
+
+        for obj in response.tree:
+            if obj.type == "blob":
+                print(obj.path)
+                print(obj.sha)
+                blob_response = await client.get_blob(
+                    owner="ahmetkca", repo="CommitAI", file_sha=obj.sha
+                )
+                print(blob_response.content)
+
+    asyncio.run(main())
