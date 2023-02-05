@@ -1,12 +1,11 @@
 """Document store."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, List, Optional, Type, Union
 
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.data_structs import IndexStruct
-from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.readers.schema.base import Document
 from gpt_index.utils import get_new_id
 
@@ -31,8 +30,20 @@ class DocumentStore(DataClassJsonMixin):
             docs_dict[doc_id] = doc_dict
         return {"docs": docs_dict}
 
+    def contains_index_struct(self, exclude_ids: Optional[List[str]] = None) -> bool:
+        """Check if contains index struct."""
+        exclude_ids = exclude_ids or []
+        for doc in self.docs.values():
+            if isinstance(doc, IndexStruct) and doc.get_doc_id() not in exclude_ids:
+                return True
+        return False
+
     @classmethod
-    def load_from_dict(cls, docs_dict: Dict[str, Any]) -> "DocumentStore":
+    def load_from_dict(
+        cls,
+        docs_dict: Dict[str, Any],
+        type_to_struct: Optional[Dict[str, Type[IndexStruct]]] = None,
+    ) -> "DocumentStore":
         """Load from dict."""
         docs_obj_dict = {}
         for doc_id, doc_dict in docs_dict["docs"].items():
@@ -40,12 +51,18 @@ class DocumentStore(DataClassJsonMixin):
             if doc_type == "Document" or doc_type is None:
                 doc: DOC_TYPE = Document.from_dict(doc_dict)
             else:
+                if type_to_struct is None:
+                    raise ValueError(
+                        "type_to_struct must be provided if type is index struct."
+                    )
                 # try using IndexStructType to retrieve documents
-                index_struct_type = IndexStructType(doc_type)
-                index_struct_cls = cast(
-                    Type[IndexStruct], index_struct_type.get_index_struct_cls()
-                )
-                doc = index_struct_cls.from_dict(doc_dict)
+                if doc_type not in type_to_struct:
+                    raise ValueError(
+                        f"doc_type {doc_type} not found in type_to_struct. "
+                        "Make sure that it was registered in the index registry."
+                    )
+                doc = type_to_struct[doc_type].from_dict(doc_dict)
+                # doc = index_struct_cls.from_dict(doc_dict)
             docs_obj_dict[doc_id] = doc
         return cls(docs=docs_obj_dict)
 
@@ -88,6 +105,10 @@ class DocumentStore(DataClassJsonMixin):
         if doc is None and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
         return doc
+
+    def document_exists(self, doc_id: str) -> bool:
+        """Check if document exists."""
+        return doc_id in self.docs
 
     def delete_document(
         self, doc_id: str, raise_error: bool = True

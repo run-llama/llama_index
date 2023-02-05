@@ -14,6 +14,7 @@ def get_nodes_from_document(
     text_splitter: TokenTextSplitter,
     start_idx: int = 0,
     include_extra_info: bool = True,
+    verbose: bool = False,
 ) -> List[Node]:
     """Add document to index."""
     text_chunks_with_overlap = text_splitter.split_text_with_overlaps(
@@ -25,7 +26,8 @@ def get_nodes_from_document(
     for i, text_split in enumerate(text_chunks_with_overlap):
         text_chunk = text_split.text_chunk
         fmt_text_chunk = truncate_text(text_chunk, 50)
-        print(f"> Adding chunk: {fmt_text_chunk}")
+        if verbose:
+            print(f"> Adding chunk: {fmt_text_chunk}")
         index_pos_info = {
             # NOTE: start is inclusive, end is exclusive
             "start": index_counter - text_split.num_char_overlap,

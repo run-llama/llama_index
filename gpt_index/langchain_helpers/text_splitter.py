@@ -65,7 +65,7 @@ class TokenTextSplitter(TextSplitter):
             )
         return cur_idx
 
-    def _process_splits(self, splits: List[str]) -> List[str]:
+    def _process_splits(self, splits: List[str], chunk_size: int) -> List[str]:
         """Process splits.
 
         Specifically search for tokens that are too large for chunk size,
@@ -76,7 +76,7 @@ class TokenTextSplitter(TextSplitter):
         new_splits = []
         for split in splits:
             num_cur_tokens = len(self.tokenizer(split))
-            if num_cur_tokens <= self._chunk_size:
+            if num_cur_tokens <= chunk_size:
                 new_splits.append(split)
             else:
                 cur_splits = []
@@ -91,12 +91,12 @@ class TokenTextSplitter(TextSplitter):
                 cur_splits2 = []
                 for cur_split in cur_splits:
                     num_cur_tokens = len(self.tokenizer(cur_split))
-                    if num_cur_tokens <= self._chunk_size:
+                    if num_cur_tokens <= chunk_size:
                         cur_splits2.extend([cur_split])
                     else:
                         cur_split_chunks = [
-                            cur_split[i : i + self._chunk_size]
-                            for i in range(0, len(cur_split), self._chunk_size)
+                            cur_split[i : i + chunk_size]
+                            for i in range(0, len(cur_split), chunk_size)
                         ]
                         cur_splits2.extend(cur_split_chunks)
 
@@ -131,7 +131,7 @@ class TokenTextSplitter(TextSplitter):
 
         # First we naively split the large input into a bunch of smaller ones.
         splits = text.split(self._separator)
-        splits = self._process_splits(splits)
+        splits = self._process_splits(splits, effective_chunk_size)
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         docs = []
@@ -201,7 +201,7 @@ class TokenTextSplitter(TextSplitter):
             return ""
         # First we naively split the large input into a bunch of smaller ones.
         splits = text.split(self._separator)
-        splits = self._process_splits(splits)
+        splits = self._process_splits(splits, self._chunk_size)
 
         start_idx = 0
         cur_idx = 0

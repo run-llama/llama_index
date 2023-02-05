@@ -5,10 +5,14 @@ in sequence in order to answer a given query.
 
 """
 
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Type
 
 from gpt_index.data_structs.data_structs import IndexList
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.query.list.query import GPTListIndexQuery
+from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
@@ -58,6 +62,14 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.text_qa_template, 1
         )
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTListIndexQuery,
+            QueryMode.EMBEDDING: GPTListIndexEmbeddingQuery,
+        }
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument], verbose: bool = False

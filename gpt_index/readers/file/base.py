@@ -1,13 +1,15 @@
 """Simple reader that reads files of different formats from a directory."""
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.base_parser import BaseParser
 from gpt_index.readers.file.docs_parser import DocxParser, PDFParser
+from gpt_index.readers.file.epub_parser import EpubParser
 from gpt_index.readers.file.image_parser import ImageParser
+from gpt_index.readers.file.markdown_parser import MarkdownParser
 from gpt_index.readers.file.slides_parser import PptxParser
-from gpt_index.readers.file.tabular_parser import CSVParser
+from gpt_index.readers.file.tabular_parser import PandasCSVParser
 from gpt_index.readers.file.video_audio import VideoAudioParser
 from gpt_index.readers.schema.base import Document
 
@@ -20,7 +22,9 @@ DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
     ".jpeg": ImageParser(),
     ".mp3": VideoAudioParser(),
     ".mp4": VideoAudioParser(),
-    ".csv": CSVParser(),
+    ".csv": PandasCSVParser(),
+    ".epub": EpubParser(),
+    ".md": MarkdownParser(),
 }
 
 
@@ -32,6 +36,7 @@ class SimpleDirectoryReader(BaseReader):
 
     Args:
         input_dir (str): Path to the directory.
+        input_files (List): List of file paths to read (Optional; overrides input_dir)
         exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
         errors (str): how encoding and decoding errors are to be handled,
               see https://docs.python.org/3/library/functions.html#open
@@ -51,7 +56,8 @@ class SimpleDirectoryReader(BaseReader):
 
     def __init__(
         self,
-        input_dir: str,
+        input_dir: Optional[str] = None,
+        input_files: Optional[List] = None,
         exclude_hidden: bool = True,
         errors: str = "ignore",
         recursive: bool = False,
@@ -63,7 +69,10 @@ class SimpleDirectoryReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         super().__init__(verbose=verbose)
-        self.input_dir = Path(input_dir)
+
+        if not input_dir and not input_files:
+            raise ValueError("Must provide either `input_dir` or `input_files`.")
+
         self.errors = errors
 
         self.recursive = recursive
@@ -71,7 +80,15 @@ class SimpleDirectoryReader(BaseReader):
         self.required_exts = required_exts
         self.num_files_limit = num_files_limit
 
-        self.input_files = self._add_files(self.input_dir)
+        if input_files:
+            self.input_files = []
+            for path in input_files:
+                input_file = Path(path)
+                self.input_files.append(input_file)
+        elif input_dir:
+            self.input_dir = Path(input_dir)
+            self.input_files = self._add_files(self.input_dir)
+
         self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
         self.file_metadata = file_metadata
 
@@ -81,11 +98,11 @@ class SimpleDirectoryReader(BaseReader):
         new_input_files = []
         dirs_to_explore = []
         for input_file in input_files:
-            if self.exclude_hidden and input_file.stem.startswith("."):
-                continue
-            elif input_file.is_dir():
+            if input_file.is_dir():
                 if self.recursive:
                     dirs_to_explore.append(input_file)
+            elif self.exclude_hidden and input_file.name.startswith("."):
+                continue
             elif (
                 self.required_exts is not None
                 and input_file.suffix not in self.required_exts
@@ -121,8 +138,8 @@ class SimpleDirectoryReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        data = ""
-        data_list = []
+        data: Union[str, List[str]] = ""
+        data_list: List[str] = []
         metadata_list = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
@@ -134,7 +151,10 @@ class SimpleDirectoryReader(BaseReader):
                 # do standard read
                 with open(input_file, "r", errors=self.errors) as f:
                     data = f.read()
-            data_list.append(data)
+            if isinstance(data, List):
+                data_list.extend(data)
+            else:
+                data_list.append(str(data))
             if self.file_metadata is not None:
                 metadata_list.append(self.file_metadata(str(input_file)))
 

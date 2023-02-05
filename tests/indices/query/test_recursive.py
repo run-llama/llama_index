@@ -2,11 +2,12 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
 
+from gpt_index.composability.graph import ComposableGraph
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.list.base import GPTListIndex
@@ -209,6 +210,8 @@ def test_recursive_query_table_list(
     table2 = GPTSimpleKeywordTableIndex(documents[2:3], **table_kwargs)
     table1.set_text("table_summary1")
     table2.set_text("table_summary2")
+    table1.set_doc_id("table1")
+    table2.set_doc_id("table2")
 
     list_index = GPTListIndex([table1, table2], **list_kwargs)
     query_str = "World?"
@@ -225,14 +228,16 @@ def test_recursive_query_table_list(
 
     # test serialize and then back
     with TemporaryDirectory() as tmpdir:
-        list_index.save_to_disk(str(Path(tmpdir) / "tmp.json"))
-        list_index = cast(
-            GPTListIndex, GPTListIndex.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        )
-        response = list_index.query(
-            query_str, mode="recursive", query_configs=query_configs
-        )
+        graph = ComposableGraph.build_from_index(list_index)
+        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
+        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
+        response = graph.query(query_str, query_configs=query_configs)
         assert str(response) == ("Test?:This is a test.")
+
+        # test graph.get_index
+        test_table1 = graph.get_index("table1", GPTSimpleKeywordTableIndex)
+        response = test_table1.query("Hello")
+        assert str(response) == ("Hello:Hello world.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -275,13 +280,12 @@ def test_recursive_query_list_table(
     assert str(response) == ("Cat?:This is another test.")
 
     # test serialize and then back
+    # use composable graph struct
     with TemporaryDirectory() as tmpdir:
-        table.save_to_disk(str(Path(tmpdir) / "tmp.json"))
-        table = cast(
-            GPTSimpleKeywordTableIndex,
-            GPTSimpleKeywordTableIndex.load_from_disk(str(Path(tmpdir) / "tmp.json")),
-        )
-        response = table.query(query_str, mode="recursive", query_configs=query_configs)
+        graph = ComposableGraph.build_from_index(table)
+        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
+        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
+        response = graph.query(query_str, query_configs=query_configs)
         assert str(response) == ("Cat?:This is another test.")
 
 

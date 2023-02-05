@@ -60,6 +60,28 @@ list_index = GPTListIndex([index1, index2, index3])
 ![](/_static/composability/diagram.png)
 
 
+### Defining a Graph Structure
+
+
+Finally, we define a `ComposableGraph` to "wrap" the composed index graph.
+We can do this by simply feeding in the top-level index.
+This wrapper allows us to query, save, and load the graph to/from disk.
+
+```python
+
+from gpt_index.composability import ComposableGraph
+
+graph = ComposableGraph.build_from_index(list_index)
+
+# [Optional] save to disk
+graph.save_to_disk("save_path.json")
+
+# [Optional] load from disk
+graph = ComposableGraph.load_from_disk("save_path.json")
+
+```
+
+
 ### Querying the Top-Level Index
 
 During a query, we would start with the top-level list index. Each node in the list corresponds to an underlying tree index. 
@@ -86,7 +108,7 @@ query_configs = [
     },
     ...
 ]
-response = list_index.query("Where did the author grow up?", mode="recursive", query_configs=query_configs)
+response = graph.query("Where did the author grow up?", query_configs=query_configs)
 ```
 
 ![](/_static/composability/diagram_q1.png)

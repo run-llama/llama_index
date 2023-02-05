@@ -11,8 +11,6 @@ from typing import Any, Dict
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.data_structs.struct_type import IndexStructType
-
 
 class QueryMode(str, Enum):
     """Query mode enum.
@@ -46,6 +44,7 @@ class QueryMode(str, Enum):
     RAKE = "rake"
 
     # recursive queries (composable queries)
+    # NOTE: deprecated
     RECURSIVE = "recursive"
 
     # for sql queries
@@ -105,6 +104,7 @@ class QueryConfig(DataClassJsonMixin):
 
     """
 
-    index_struct_type: IndexStructType
+    # index_struct_type: IndexStructType
+    index_struct_type: str
     query_mode: QueryMode
     query_kwargs: Dict[str, Any] = field(default_factory=dict)

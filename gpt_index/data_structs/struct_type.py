@@ -2,19 +2,6 @@
 
 from enum import Enum
 
-from gpt_index.data_structs.data_structs import (
-    IndexDict,
-    IndexGraph,
-    IndexList,
-    IndexStruct,
-    KeywordTable,
-    Node,
-    PineconeIndexStruct,
-    SimpleIndexDict,
-    WeaviateIndexStruct,
-)
-from gpt_index.data_structs.table import SQLStructTable
-
 
 class IndexStructType(str, Enum):
     """Index struct type. Identifier for a "type" of index.
@@ -36,6 +23,9 @@ class IndexStructType(str, Enum):
         PINECONE ("pinecone"): Pinecone Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Pinecone vector store index.
+        QDRANT ("qdrant"): Qdrant Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Qdrant vector store index.
 
         SQL ("SQL"): SQL Structured Store Index.
             See :ref:`Ref-Indices-StructStore`
@@ -58,52 +48,7 @@ class IndexStructType(str, Enum):
     WEAVIATE = "weaviate"
     # for pinecone index
     PINECONE = "pinecone"
+    # for qdrant index
+    QDRANT = "qdrant"
     # for SQL index
     SQL = "sql"
-
-    def get_index_struct_cls(self) -> type:
-        """Get index struct class."""
-        if self == IndexStructType.NODE:
-            return Node
-        elif self == IndexStructType.TREE:
-            return IndexGraph
-        elif self == IndexStructType.LIST:
-            return IndexList
-        elif self == IndexStructType.KEYWORD_TABLE:
-            return KeywordTable
-        elif self == IndexStructType.DICT:
-            return IndexDict
-        elif self == IndexStructType.SIMPLE_DICT:
-            return SimpleIndexDict
-        elif self == IndexStructType.WEAVIATE:
-            return WeaviateIndexStruct
-        elif self == IndexStructType.PINECONE:
-            return PineconeIndexStruct
-        elif self == IndexStructType.SQL:
-            return SQLStructTable
-        else:
-            raise ValueError("Invalid index struct type.")
-
-    @classmethod
-    def from_index_struct(cls, index_struct: IndexStruct) -> "IndexStructType":
-        """Get index enum from index struct class."""
-        if isinstance(index_struct, Node):
-            return cls.NODE
-        elif isinstance(index_struct, IndexGraph):
-            return cls.TREE
-        elif isinstance(index_struct, IndexList):
-            return cls.LIST
-        elif isinstance(index_struct, KeywordTable):
-            return cls.KEYWORD_TABLE
-        elif isinstance(index_struct, IndexDict):
-            return cls.DICT
-        elif isinstance(index_struct, SimpleIndexDict):
-            return cls.SIMPLE_DICT
-        elif isinstance(index_struct, WeaviateIndexStruct):
-            return cls.WEAVIATE
-        elif isinstance(index_struct, PineconeIndexStruct):
-            return cls.PINECONE
-        elif isinstance(index_struct, SQLStructTable):
-            return cls.SQL
-        else:
-            raise ValueError("Invalid index struct type.")

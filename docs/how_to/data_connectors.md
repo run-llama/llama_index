@@ -27,6 +27,7 @@ All readers can be imported through `from gpt_index.readers import ...`. A subse
 
 See [How to use Vector Stores with GPT Index](vector_stores.md) for a more thorough guide on integrating vector stores with GPT Index.
 
+- Qdrant (`QdrantReader`)
 - Weaviate (`WeaviateReader`)
 - Pinecone (`PineconeReader`)
 - Faiss (`FaissReader`)
@@ -38,6 +39,7 @@ See [How to use Vector Stores with GPT Index](vector_stores.md) for a more thoro
 #### File
 
 - local file directory (`SimpleDirectoryReader`)
+- Obsidian Reader (`ObsidianReader`)
 
 The `SimpleDirectoryReader` can support parsing a wide range of file types: `.pdf`, `.jpg`, `.png`, `.docx`, `.mp3`, `.mp4`.
 Each of these file types may require additional dependencies to be installed.

@@ -32,6 +32,7 @@ from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
     GPTFaissIndex,
     GPTPineconeIndex,
+    GPTQdrantIndex,
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
 )
@@ -62,7 +63,9 @@ from gpt_index.readers import (
     FaissReader,
     GoogleDocsReader,
     NotionPageReader,
+    ObsidianReader,
     PineconeReader,
+    QdrantReader,
     RssReader,
     SimpleDirectoryReader,
     SimpleMongoReader,
@@ -74,6 +77,7 @@ from gpt_index.readers import (
     WeaviateReader,
     WikipediaReader,
 )
+from gpt_index.readers.download import download_loader
 
 # token predictor
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
@@ -89,6 +93,7 @@ __all__ = [
     "GPTSimpleVectorIndex",
     "GPTWeaviateIndex",
     "GPTPineconeIndex",
+    "GPTQdrantIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",
     "LangchainEmbedding",
@@ -102,6 +107,7 @@ __all__ = [
     "KeywordExtractPrompt",
     "QueryKeywordExtractPrompt",
     "WikipediaReader",
+    "ObsidianReader",
     "Document",
     "SimpleDirectoryReader",
     "SimpleMongoReader",
@@ -112,6 +118,7 @@ __all__ = [
     "WeaviateReader",
     "FaissReader",
     "PineconeReader",
+    "QdrantReader",
     "DiscordReader",
     "SimpleWebPageReader",
     "RssReader",
@@ -128,4 +135,5 @@ __all__ = [
     "QueryMode",
     "IndexStructType",
     "TwitterTweetReader",
+    "download_loader",
 ]
