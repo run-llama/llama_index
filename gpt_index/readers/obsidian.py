@@ -32,7 +32,7 @@ class ObsidianReader(BaseReader):
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
         docs: List[str] = []
-        for (dirpath, dirnames, filenames) in os.walk(self.input_dir):
+        for dirpath, dirnames, filenames in os.walk(self.input_dir):
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
             for filename in filenames:
                 if filename.endswith(".md"):

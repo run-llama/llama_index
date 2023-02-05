@@ -235,7 +235,6 @@ def test_index_overlap(
         "get_text_splitter_given_prompt",
         side_effect=_mock_text_splitter_with_space,
     ):
-
         index = GPTListIndex(documents, **index_kwargs)
 
         query_str = "What is?"

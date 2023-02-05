@@ -68,7 +68,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         level: int = 0,
         verbose: bool = False,
     ) -> str:
-
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         # Get the node with the highest similarity to the query
