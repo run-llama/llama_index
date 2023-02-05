@@ -3,7 +3,6 @@
 from typing import Any, Dict, List, Optional, Union, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct
-from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -12,25 +11,6 @@ from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
-
-DEFAULT_QUERY_CONFIGS = [
-    QueryConfig(
-        index_struct_type=IndexStructType.TREE,
-        query_mode=QueryMode.DEFAULT,
-    ),
-    QueryConfig(
-        index_struct_type=IndexStructType.LIST,
-        query_mode=QueryMode.DEFAULT,
-    ),
-    QueryConfig(
-        index_struct_type=IndexStructType.KEYWORD_TABLE,
-        query_mode=QueryMode.DEFAULT,
-    ),
-    QueryConfig(index_struct_type=IndexStructType.DICT, query_mode=QueryMode.DEFAULT),
-    QueryConfig(
-        index_struct_type=IndexStructType.SIMPLE_DICT, query_mode=QueryMode.DEFAULT
-    ),
-]
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
@@ -57,7 +37,7 @@ class QueryRunner(BaseQueryRunner):
         """Init params."""
         config_dict: Dict[str, QueryConfig] = {}
         if query_configs is None or len(query_configs) == 0:
-            query_config_objs: List[QueryConfig] = DEFAULT_QUERY_CONFIGS
+            query_config_objs: List[QueryConfig] = []
         elif isinstance(query_configs[0], Dict):
             query_config_objs = [
                 QueryConfig.from_dict(cast(Dict, qc)) for qc in query_configs
@@ -95,7 +75,12 @@ class QueryRunner(BaseQueryRunner):
     def query(self, query_str: str, index_struct: IndexStruct) -> Response:
         """Run query."""
         index_struct_type = index_struct.get_type()
-        config = self._config_dict[index_struct_type]
+        if index_struct_type not in self._config_dict:
+            config = QueryConfig(
+                index_struct_type=index_struct_type, query_mode=QueryMode.DEFAULT
+            )
+        else:
+            config = self._config_dict[index_struct_type]
         mode = config.query_mode
 
         query_cls = self._index_registry.type_to_query[index_struct_type][mode]

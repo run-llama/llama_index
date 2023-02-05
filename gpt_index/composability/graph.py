@@ -105,7 +105,7 @@ class ComposableGraph:
     def query(
         self,
         query_str: str,
-        query_configs: Optional[List[QUERY_CONFIG_TYPE]],
+        query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         verbose: bool = False,
     ) -> Response:
         """Query the index."""
