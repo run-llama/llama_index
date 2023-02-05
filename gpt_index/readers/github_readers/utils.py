@@ -1,4 +1,5 @@
 import asyncio
+import os
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
@@ -13,6 +14,11 @@ def print_if_verbose(verbose: bool, message: str):
     """Log message if verbose is True."""
     if verbose:
         print(message)
+
+
+def get_file_extension(filename: str) -> str:
+    """Get file extension."""
+    return f".{os.path.splitext(filename)[1][1:].lower()}"
 
 
 class BufferedAsyncIterator(ABC):
