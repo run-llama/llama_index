@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -114,3 +115,38 @@ class GitBranchResponseModel(DataClassJsonMixin):
         commit: Commit
 
     commit: Commit
+
+
+class GithubClient:
+    DEFAULT_BASE_URL = "https://api.github.com"
+    DEFAULT_API_VERSION = "2022-11-28"
+
+    def __init__(
+        self,
+        github_token: Optional[str] = None,
+        base_url: str = DEFAULT_BASE_URL,
+        api_version: str = DEFAULT_API_VERSION,
+    ) -> None:
+        if github_token is None:
+            self.github_token = os.getenv("GITHUB_TOKEN")
+            if self.github_token is None:
+                raise ValueError(
+                    "Please provide a Github token. You can do so by passing it as an argument to the GithubReader, or by setting the GITHUB_TOKEN environment variable."
+                )
+        else:
+            self.github_token = github_token
+        self.base_url = base_url
+        self.api_version = api_version
+
+        self.__endpoints = {
+            "getTree": "/repos/{owner}/{repo}/git/trees/{tree_sha}",
+            "getBranch": "/repos/{owner}/{repo}/branches/{branch}",
+            "getBlob": "/repos/{owner}/{repo}/git/blobs/{file_sha}",
+            "getCommit": "/repos/{owner}/{repo}/commits/{commit_sha}",
+        }
+
+        self.__headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {self.github_token}",
+            "X-GitHub-Api-Version": f"{self.api_version}",
+        }
