@@ -229,3 +229,28 @@ class GithubClient:
                 )
             ).text
         )
+
+    async def get_tree(
+        self, owner: str, repo: str, tree_sha: str
+    ) -> GitTreeResponseModel:
+        """
+        Get information about a tree. (Github API endpoint: getTree)
+
+        Args:
+            - `owner (str)`: Owner of the repository.
+            - `repo (str)`: Name of the repository.
+            - `tree_sha (str)`: SHA of the tree.
+
+        Returns:
+            - `tree_info (GitTreeResponseModel)`: Information about the tree.
+
+        Examples:
+            >>> tree_info = client.get_tree("owner", "repo", "tree_sha")
+        """
+        return GitTreeResponseModel.from_json(
+            (
+                await self.request(
+                    "getTree", "GET", owner=owner, repo=repo, tree_sha=tree_sha
+                )
+            ).text
+        )
