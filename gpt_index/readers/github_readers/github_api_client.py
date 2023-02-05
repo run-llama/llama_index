@@ -279,3 +279,28 @@ class GithubClient:
                 )
             ).text
         )
+
+    async def get_commit(
+        self, owner: str, repo: str, commit_sha: str
+    ) -> GitCommitResponseModel:
+        """
+        Get information about a commit. (Github API endpoint: getCommit)
+
+        Args:
+            - `owner (str)`: Owner of the repository.
+            - `repo (str)`: Name of the repository.
+            - `commit_sha (str)`: SHA of the commit.
+
+        Returns:
+            - `commit_info (GitCommitResponseModel)`: Information about the commit.
+
+        Examples:
+            >>> commit_info = client.get_commit("owner", "repo", "commit_sha")
+        """
+        return GitCommitResponseModel.from_json(
+            (
+                await self.request(
+                    "getCommit", "GET", owner=owner, repo=repo, commit_sha=commit_sha
+                )
+            ).text
+        )
