@@ -204,3 +204,28 @@ class GithubClient:
                 print(f"HTTP Exception for {excp.request.url} - {excp}")
                 raise excp
             return response
+
+    async def get_branch(
+        self, owner: str, repo: str, branch: str
+    ) -> GitBranchResponseModel:
+        """
+        Get information about a branch. (Github API endpoint: getBranch)
+
+        Args:
+            - `owner (str)`: Owner of the repository.
+            - `repo (str)`: Name of the repository.
+            - `branch (str)`: Name of the branch.
+
+        Returns:
+            - `branch_info (GitBranchResponseModel)`: Information about the branch.
+
+        Examples:
+            >>> branch_info = client.get_branch("owner", "repo", "branch")
+        """
+        return GitBranchResponseModel.from_json(
+            (
+                await self.request(
+                    "getBranch", "GET", owner=owner, repo=repo, branch=branch
+                )
+            ).text
+        )
