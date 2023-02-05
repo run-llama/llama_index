@@ -47,10 +47,7 @@ class MboxParser(BaseParser):
             )
         return {}
 
-    def __join_results(self, results: List[str]) -> str:
-        return "\n\n".join(results)
-
-    def parse_file(self, filepath: Path, errors: str = "ignore") -> str:
+    def parse_file(self, filepath: Path, errors: str = "ignore") -> List[str]:
         """Parse file into string."""
         # Import required libraries
         import mailbox
@@ -96,5 +93,5 @@ class MboxParser(BaseParser):
             # Increment counter and return if max count is met
             i += 1
             if self.max_count > 0 and i >= self.max_count:
-                return self.__join_results(results)
-        return self.__join_results(results)
+                return results
+        return results
