@@ -186,18 +186,18 @@ class GithubClient:
             import httpx
         except ImportError:
             raise ImportError(
-                "Please install httpx to use the GithubReader. "
+                "Please install httpx to use the GithubRepositoryReader. "
                 "You can do so by running `pip install httpx`."
             )
 
-        _headers = {**self.headers, **headers}
+        _headers = {**self.__headers, **headers}
 
-        client: httpx.AsyncClient
+        _client: httpx.AsyncClient
         async with httpx.AsyncClient(
             headers=_headers, base_url=self.base_url
-        ) as client:
+        ) as _client:
             try:
-                response = await client.request(
+                response = await _client.request(
                     method, url=self.__endpoints[endpoint].format(**kwargs)
                 )
             except httpx.HTTPError as excp:
