@@ -29,11 +29,10 @@ class BufferedAsyncIterator(ABC):
     The async operation is defined in the _fill_buffer method. The _fill_buffer method is called when the buffer is empty.
 
     Args:
-        - buffer_size (int): Size of the buffer.
-
+        - `buffer_size (int)`: Size of the buffer. It is also the number of items that will be retrieved from the async operation at once. see _fill_buffer. Defaults to 1 (the default value is eqivalent to synchronous iterators).
     """
 
-    def __init__(self, buffer_size):
+    def __init__(self, buffer_size=1):
         self.buffer_size = buffer_size
         self.buffer: List[Tuple[GitBlobResponseModel, str]] = []
         self.index = 0
@@ -46,6 +45,15 @@ class BufferedAsyncIterator(ABC):
         return self
 
     async def __anext__(self) -> Tuple[GitBlobResponseModel, str]:
+        """
+        Get next item.
+
+        Returns:
+            - `item (Tuple[GitBlobResponseModel, str])`: Next item.
+
+        Raises:
+            - `StopAsyncIteration`: If there are no more items.
+        """
         if not self.buffer:
             await self._fill_buffer()
 
@@ -95,6 +103,11 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
                 raise ValueError("No event loop found")
 
     async def _fill_buffer(self):
+        """
+        Fill the buffer with the results of the get_blob operation.
+        The get_blob operation is called for each blob in the blobs_and_paths list.
+        The blobs are retrieved in batches of size buffer_size.
+        """
         del self.buffer[:]
         self.buffer = []
         start = self.index
@@ -106,7 +119,9 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
         results: List[GitBlobResponseModel] = await asyncio.gather(
             *[
                 self.github_client.get_blob(self.owner, self.repo, blob.sha)
-                for blob, _ in self.blobs_and_paths[start:end]
+                for blob, _ in self.blobs_and_paths[
+                    start:end
+                ]  # TODO: use batch_size instead of buffer_size for concurrent requests
             ]
         )
 
