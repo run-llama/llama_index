@@ -12,6 +12,27 @@ from gpt_index.readers.schema.base import Document
 
 
 class GithubRepositoryReader(BaseReader):
+    """
+    Github repository reader.
+    
+    Retrieves the contents of a Github repository and returns a list of documents. 
+    The documents are either the contents of the files in the repository or the text extracted from the files using the parser.
+
+
+    Args:
+        - owner (str): Owner of the repository.
+        - repo (str): Name of the repository.
+        - use_parser (bool): Whether to use the parser to extract the text from the files.
+        - verbose (bool): Whether to print verbose messages.
+        - github_token (str): Github token. If not provided, it will be read from the GITHUB_TOKEN environment variable.
+
+    Examples:
+        >>> reader = GithubRepositoryReader("owner", "repo")
+        >>> branch_documents = reader.load_data(branch="branch")
+        >>> commit_documents = reader.load_data(commit="commit")
+
+    """
+
     def __init__(
         self,
         owner: str,
