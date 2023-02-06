@@ -82,7 +82,7 @@ class GPTQdrantIndexQuery(BaseGPTVectorStoreIndexQuery[QdrantIndexStruct]):
 
         nodes = []
         for point in response:
-            payload = cast(Payload, point)
+            payload = cast(Payload, point.payload)
             node = Node(
                 doc_id=payload.get("doc_id"),
                 text=payload.get("text"),
