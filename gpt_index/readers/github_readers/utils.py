@@ -3,9 +3,9 @@ Github readers utils.
 
 This module contains utility functions for the Github readers.
 """
-
 import asyncio
 import os
+import time
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
@@ -97,12 +97,14 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
         repo: str,
         loop: asyncio.AbstractEventLoop,
         buffer_size: int,
+        verbose: bool = False,
     ):
         super().__init__(buffer_size)
         self.blobs_and_paths = blobs_and_paths
         self.github_client = github_client
         self.owner = owner
         self.repo = repo
+        self.verbose = verbose
         if loop is None:
             loop = asyncio.get_event_loop()
             if loop is None:
@@ -122,9 +124,8 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
         if start >= end:
             return
 
-        import time
-
-        start_t = time.time()
+        if self.verbose:
+            start_t = time.time()
         results: List[GitBlobResponseModel] = await asyncio.gather(
             *[
                 self.github_client.get_blob(self.owner, self.repo, blob.sha)
@@ -133,10 +134,11 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
                 ]  # TODO: use batch_size instead of buffer_size for concurrent requests
             ]
         )
-        end_t = time.time()
-        print(
-            f"Time to get blobs ({[(blob.path, blob.size) for blob, _ in self.blobs_and_paths[start:end]]}): {end_t - start_t:.2f} seconds"
-        )
+        if self.verbose:
+            end_t = time.time()
+            print(
+                f"Time to get blobs ({[(blob.path, blob.size) for blob, _ in self.blobs_and_paths[start:end]]}): {end_t - start_t:.2f} seconds"
+            )
 
         self.buffer = [
             (result, path)

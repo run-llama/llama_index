@@ -228,6 +228,7 @@ class GithubRepositoryReader(BaseReader):
             repo=self.repo,
             loop=self.loop,
             buffer_size=1,  # TODO: make this configurable
+            verbose=self.verbose,
         )
 
         documents = []
