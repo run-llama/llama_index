@@ -66,6 +66,9 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
 
         if client is None:
             raise ValueError("client cannot be None.")
+
+        if collection_name is None and index_struct is not None:
+            collection_name = index_struct.collection_name
         if collection_name is None:
             raise ValueError("collection_name cannot be None.")
 
