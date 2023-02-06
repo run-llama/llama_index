@@ -18,17 +18,19 @@ class MboxParser(BaseParser):
 
     """
 
+    DEFAULT_MESSAGE_FORMAT: str = (
+        "Date: {_date}\n"
+        "From: {_from}\n"
+        "To: {_to}\n"
+        "Subject: {_subject}\n"
+        "Content: {_content}"
+    )
+
     def __init__(
         self,
         *args: Any,
         max_count: int = 0,
-        message_format: str = (
-            "Date: {_date}\n"
-            "From: {_from}\n"
-            "To: {_to}\n"
-            "Subject: {_subject}\n"
-            "Content: {_content}"
-        ),
+        message_format: str = DEFAULT_MESSAGE_FORMAT,
         **kwargs: Any
     ) -> None:
         """Init params."""
@@ -93,5 +95,5 @@ class MboxParser(BaseParser):
             # Increment counter and return if max count is met
             i += 1
             if self.max_count > 0 and i >= self.max_count:
-                return results
+                break
         return results
