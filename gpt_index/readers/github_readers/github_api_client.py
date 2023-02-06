@@ -1,3 +1,10 @@
+"""
+Github API client for the GPT-Index library.
+
+This module contains the Github API client for the GPT-Index library.
+It is used by the Github readers to retrieve the data from Github.
+"""
+
 import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
@@ -104,10 +111,16 @@ class GitBranchResponseModel(DataClassJsonMixin):
 
     @dataclass
     class Commit(DataClassJsonMixin):
+        """Dataclass for the commit object in the branch. (commit.commit)."""
+
         @dataclass
         class Commit(DataClassJsonMixin):
+            """Dataclass for the commit object in the commit. (commit.commit.tree)."""
+
             @dataclass
             class Tree(DataClassJsonMixin):
+                """Dataclass for the tree object in the commit. (commit.commit.tree.sha)."""
+
                 sha: str
 
             tree: Tree
@@ -118,6 +131,20 @@ class GitBranchResponseModel(DataClassJsonMixin):
 
 
 class GithubClient:
+    """
+    An asynchronous client for interacting with the Github API.
+
+    This client is used for making API requests to Github.
+    It provides methods for accessing the Github API endpoints.
+    The client requires a Github token for authentication,
+    which can be passed as an argument or set as an environment variable.
+    If no Github token is provided, the client will raise a ValueError.
+
+    Examples:
+        >>> client = GithubClient("my_github_token")
+        >>> branch_info = client.get_branch("owner", "repo", "branch")
+    """
+
     DEFAULT_BASE_URL = "https://api.github.com"
     DEFAULT_API_VERSION = "2022-11-28"
 
@@ -127,11 +154,24 @@ class GithubClient:
         base_url: str = DEFAULT_BASE_URL,
         api_version: str = DEFAULT_API_VERSION,
     ) -> None:
+        """
+        Initialize the GithubClient.
+
+        Args:
+            - github_token (str): Github token for authentication. If not provided, the client will try to get it from the GITHUB_TOKEN environment variable.
+            - base_url (str): Base URL for the Github API (defaults to "https://api.github.com").
+            - api_version (str): Github API version (defaults to "2022-11-28").
+
+        Raises:
+            ValueError: If no Github token is provided.
+        """
         if github_token is None:
             self.github_token = os.getenv("GITHUB_TOKEN")
             if self.github_token is None:
                 raise ValueError(
-                    "Please provide a Github token. You can do so by passing it as an argument to the GithubReader, or by setting the GITHUB_TOKEN environment variable."
+                    "Please provide a Github token. "
+                    + "You can do so by passing it as an argument to the GithubReader,"
+                    + "or by setting the GITHUB_TOKEN environment variable."
                 )
         else:
             self.github_token = github_token
@@ -152,6 +192,7 @@ class GithubClient:
         }
 
     def get_all_endpoints(self) -> Dict[str, str]:
+        """Get all available endpoints."""
         return {**self.__endpoints}
 
     async def request(
@@ -159,12 +200,13 @@ class GithubClient:
         endpoint: str,
         method: str,
         headers: Dict[str, Any] = {},
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         """
         Make an API request to the Github API.
 
-        This method is used for making API requests to the Github API. It is used internally by the other methods in the client.
+        This method is used for making API requests to the Github API.
+        It is used internally by the other methods in the client.
 
         Args:
             - `endpoint (str)`: Name of the endpoint to make the request to.
@@ -209,7 +251,7 @@ class GithubClient:
         self, owner: str, repo: str, branch: str
     ) -> GitBranchResponseModel:
         """
-        Get information about a branch. (Github API endpoint: getBranch)
+        Get information about a branch. (Github API endpoint: getBranch).
 
         Args:
             - `owner (str)`: Owner of the repository.
@@ -234,7 +276,7 @@ class GithubClient:
         self, owner: str, repo: str, tree_sha: str
     ) -> GitTreeResponseModel:
         """
-        Get information about a tree. (Github API endpoint: getTree)
+        Get information about a tree. (Github API endpoint: getTree).
 
         Args:
             - `owner (str)`: Owner of the repository.
@@ -259,7 +301,7 @@ class GithubClient:
         self, owner: str, repo: str, file_sha: str
     ) -> GitBlobResponseModel:
         """
-        Get information about a blob. (Github API endpoint: getBlob)
+        Get information about a blob. (Github API endpoint: getBlob).
 
         Args:
             - `owner (str)`: Owner of the repository.
@@ -284,7 +326,7 @@ class GithubClient:
         self, owner: str, repo: str, commit_sha: str
     ) -> GitCommitResponseModel:
         """
-        Get information about a commit. (Github API endpoint: getCommit)
+        Get information about a commit. (Github API endpoint: getCommit).
 
         Args:
             - `owner (str)`: Owner of the repository.
@@ -309,7 +351,8 @@ class GithubClient:
 if __name__ == "__main__":
     import asyncio
 
-    async def main():
+    async def main() -> None:
+        """Test the GithubClient."""
         client = GithubClient()
         response = await client.get_tree(
             owner="ahmetkca", repo="CommitAI", tree_sha="with-body"

@@ -1,10 +1,19 @@
+"""
+Github repository reader.
+
+Retrieves the contents of a Github repository and returns a list of documents.
+The documents are either the contents of the files in the repository or 
+the text extracted from the files using the parser.
+"""
+
 import asyncio
 import base64
 import binascii
 import logging
 import os
+import pathlib
 import tempfile
-from typing import Any, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.base import DEFAULT_FILE_EXTRACTOR
@@ -30,15 +39,8 @@ class GithubRepositoryReader(BaseReader):
     Github repository reader.
 
     Retrieves the contents of a Github repository and returns a list of documents.
-    The documents are either the contents of the files in the repository or the text extracted from the files using the parser.
-
-
-    Args:
-        - owner (str): Owner of the repository.
-        - repo (str): Name of the repository.
-        - use_parser (bool): Whether to use the parser to extract the text from the files.
-        - verbose (bool): Whether to print verbose messages.
-        - github_token (str): Github token. If not provided, it will be read from the GITHUB_TOKEN environment variable.
+    The documents are either the contents of the files in the repository or the text
+    extracted from the files using the parser.
 
     Examples:
         >>> reader = GithubRepositoryReader("owner", "repo")
@@ -55,13 +57,27 @@ class GithubRepositoryReader(BaseReader):
         verbose: bool = False,
         github_token: Optional[str] = None,
     ):
+        """
+        Initialize params.
+
+        Args:
+            - owner (str): Owner of the repository.
+            - repo (str): Name of the repository.
+            - use_parser (bool): Whether to use the parser to extract the text from the files.
+            - verbose (bool): Whether to print verbose messages.
+            - github_token (str): Github token. If not provided, it will be read from the GITHUB_TOKEN environment variable.
+
+        Raises:
+            - `ValueError`: If the github_token is not provided and the GITHUB_TOKEN environment variable is not set.
+        """
         super().__init__(verbose)
         if github_token is None:
             self.github_token = os.getenv("GITHUB_TOKEN")
             if self.github_token is None:
                 raise ValueError(
                     "Please provide a Github token. "
-                    "You can do so by passing it as an argument or by setting the GITHUB_TOKEN environment variable."
+                    "You can do so by passing it as an argument or"
+                    + "by setting the GITHUB_TOKEN environment variable."
                 )
         else:
             self.github_token = github_token
@@ -76,11 +92,11 @@ class GithubRepositoryReader(BaseReader):
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
 
-        self.__client = GithubClient(github_token)  # type: ignore
+        self.__client = GithubClient(github_token)
 
     def __load_data_from_commit(self, commit_sha: str) -> List[Document]:
         """
-        Load data from a commit
+        Load data from a commit.
 
         Loads github repository data from a specific commit sha.
 
@@ -104,7 +120,7 @@ class GithubRepositoryReader(BaseReader):
 
     def __load_data_from_branch(self, branch: str) -> List[Document]:
         """
-        Load data from a branch
+        Load data from a branch.
 
         Loads github repository data from a specific branch.
 
@@ -131,7 +147,7 @@ class GithubRepositoryReader(BaseReader):
         branch: Optional[str] = None,
     ) -> List[Document]:
         """
-        Load data from a commit or a branch
+        Load data from a commit or a branch.
 
         Loads github repository data from a specific commit sha or a branch.
 
@@ -158,8 +174,10 @@ class GithubRepositoryReader(BaseReader):
         self, tree_sha: str, current_path: str = "", current_depth: int = 0
     ) -> Any:
         """
-        Recursively get all blob tree objects (see GitTreeResponseModel.GitTreeObject in github_api_client.py for more information)
-        in a tree and construct their full path relative to the root of the repo
+        Recursively get all blob tree objects in a tree.
+        And construct their full path relative to the root of the repository.
+        (see GitTreeResponseModel.GitTreeObject in github_api_client.py for more information)
+
 
         :param `tree_sha`: sha of the tree to recurse
         :param `current_path`: current path of the tree
@@ -196,9 +214,9 @@ class GithubRepositoryReader(BaseReader):
 
     async def __generate_documents(
         self, blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]]
-    ):
+    ) -> List[Document]:
         """
-        Generate documents from a list of blobs and their full paths relative to the root of the repo
+        Generate documents from a list of blobs and their full paths relative to the root of the repo.
 
         :param `blobs_and_paths`: list of tuples of (tree object, file's full path in the repo realtive to the root of the repo)
         :return: list of documents
@@ -209,7 +227,7 @@ class GithubRepositoryReader(BaseReader):
             owner=self.owner,
             repo=self.repo,
             loop=self.loop,
-            buffer_size=2,  # TODO: make this configurable
+            buffer_size=1,  # TODO: make this configurable
         )
 
         documents = []
@@ -263,10 +281,10 @@ class GithubRepositoryReader(BaseReader):
         return documents
 
     def __parse_supported_file(
-        self, file_path: str, file_content: str, tree_sha: str, tree_path: str
+        self, file_path: str, file_content: bytes, tree_sha: str, tree_path: str
     ) -> Optional[Document]:
         """
-        Parse a file if it is supported by a parser
+        Parse a file if it is supported by a parser.
 
         :param `file_path`: path of the file in the repo
         :param `file_content`: content of the file
@@ -294,7 +312,7 @@ class GithubRepositoryReader(BaseReader):
                     tmpfile.flush()
                     tmpfile.close()
                     try:
-                        parsed_file = parser.parse_file(tmpfile.name)
+                        parsed_file = parser.parse_file(pathlib.Path(tmpfile.name))
                         parsed_file = "\n\n".join(parsed_file)
                     except Exception as e:
                         print_if_verbose(
@@ -322,8 +340,11 @@ class GithubRepositoryReader(BaseReader):
 if __name__ == "__main__":
     import time
 
-    def timeit(func):
-        def wrapper(*args, **kwargs):
+    def timeit(func: Callable) -> Callable:
+        """Decorator to time a function."""
+
+        def wrapper(*args: Any, **kwargs: Any) -> None:
+            """Wrapper function."""
             start = time.time()
             func(*args, **kwargs)
             end = time.time()
@@ -340,7 +361,8 @@ if __name__ == "__main__":
     )
 
     @timeit
-    def load_data_from_commit():
+    def load_data_from_commit() -> None:
+        """Load data from a commit."""
         documents = reader.load_data(
             commit_sha="22e198b3b166b5facd2843d6a62ac0db07894a13"
         )
@@ -348,7 +370,8 @@ if __name__ == "__main__":
             print(document.extra_info)
 
     @timeit
-    def load_data_from_branch():
+    def load_data_from_branch() -> None:
+        """Load data from a branch."""
         documents = reader.load_data(branch="main")
         for document in documents:
             print(document.extra_info)
