@@ -1,4 +1,5 @@
 """Embedding query for list index."""
+import logging
 from typing import Any, List, Optional, Tuple
 
 from gpt_index.data_structs.data_structs import IndexList, Node
@@ -44,7 +45,6 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
@@ -66,9 +66,9 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
             for node, similarity in zip(top_k_nodes, top_similarities):
                 similarity_tracker.add(node, similarity)
 
-        if verbose:
-            top_k_node_text = "\n".join([n.get_text() for n in top_k_nodes])
-            print(f"> Top {len(top_idxs)} nodes:\n{top_k_node_text}")
+        logging.debug(f"> Top {len(top_idxs)} nodes:\n")
+        nl = "\n"
+        logging.debug(f"{ nl.join([n.get_text() for n in top_k_nodes]) }")
         return top_k_nodes
 
     def _get_embeddings(

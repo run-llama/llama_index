@@ -31,7 +31,6 @@ class QueryRunner(BaseQueryRunner):
         docstore: DocumentStore,
         index_registry: IndexRegistry,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
-        verbose: bool = False,
         recursive: bool = False,
     ) -> None:
         """Init params."""
@@ -54,7 +53,6 @@ class QueryRunner(BaseQueryRunner):
         self._embed_model = embed_model
         self._docstore = docstore
         self._index_registry = index_registry
-        self._verbose = verbose
         self._recursive = recursive
 
     def _get_query_kwargs(self, config: QueryConfig) -> Dict[str, Any]:
@@ -94,4 +92,4 @@ class QueryRunner(BaseQueryRunner):
             docstore=self._docstore,
         )
 
-        return query_obj.query(query_str, verbose=self._verbose)
+        return query_obj.query(query_str)

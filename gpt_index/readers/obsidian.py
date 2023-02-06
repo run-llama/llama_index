@@ -24,9 +24,8 @@ class ObsidianReader(BaseReader):
 
     """
 
-    def __init__(self, input_dir: str, verbose: bool = False):
+    def __init__(self, input_dir: str):
         """Init params."""
-        self.verbose = verbose
         self.input_dir = Path(input_dir)
 
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
