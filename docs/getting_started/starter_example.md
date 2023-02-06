@@ -63,7 +63,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 ```
 
-You can set the level to `DEBUG` for verbose output, or to `INFO` for less.
+You can set the level to `DEBUG` for verbose output, or use `level=logging.INFO` for less.
 
 ### Saving and Loading
 
