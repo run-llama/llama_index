@@ -62,6 +62,7 @@ To build a simple vector store index:
 from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
 index = GPTSimpleVectorIndex(documents)
+os.environ["OPENAI_API_KEY"] = 'YOUR_OPENAI_API_KEY'
 ```
 
 To save to and load from disk:
