@@ -39,9 +39,9 @@ class BufferedAsyncIterator(ABC):
     """
 
     def __init__(self, buffer_size: int = 2):
-        self.buffer_size = buffer_size
-        self.buffer: List[Tuple[GitBlobResponseModel, str]] = []
-        self.index = 0
+        self._buffer_size = buffer_size
+        self._buffer: List[Tuple[GitBlobResponseModel, str]] = []
+        self._index = 0
 
     @abstractmethod
     async def _fill_buffer(self) -> None:
@@ -60,14 +60,14 @@ class BufferedAsyncIterator(ABC):
         Raises:
             - `StopAsyncIteration`: If there are no more items.
         """
-        if not self.buffer:
+        if not self._buffer:
             await self._fill_buffer()
 
-        if not self.buffer:
+        if not self._buffer:
             raise StopAsyncIteration
 
-        item = self.buffer.pop(0)
-        self.index += 1
+        item = self._buffer.pop(0)
+        self._index += 1
         return item
 
 
@@ -100,11 +100,11 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
         verbose: bool = False,
     ):
         super().__init__(buffer_size)
-        self.blobs_and_paths = blobs_and_paths
-        self.github_client = github_client
-        self.owner = owner
-        self.repo = repo
-        self.verbose = verbose
+        self._blobs_and_paths = blobs_and_paths
+        self._github_client = github_client
+        self._owner = owner
+        self._repo = repo
+        self._verbose = verbose
         if loop is None:
             loop = asyncio.get_event_loop()
             if loop is None:
@@ -116,31 +116,31 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
         The get_blob operation is called for each blob in the blobs_and_paths list.
         The blobs are retrieved in batches of size buffer_size.
         """
-        del self.buffer[:]
-        self.buffer = []
-        start = self.index
-        end = min(start + self.buffer_size, len(self.blobs_and_paths))
+        del self._buffer[:]
+        self._buffer = []
+        start = self._index
+        end = min(start + self._buffer_size, len(self._blobs_and_paths))
 
         if start >= end:
             return
 
-        if self.verbose:
+        if self._verbose:
             start_t = time.time()
         results: List[GitBlobResponseModel] = await asyncio.gather(
             *[
-                self.github_client.get_blob(self.owner, self.repo, blob.sha)
-                for blob, _ in self.blobs_and_paths[
+                self._github_client.get_blob(self._owner, self._repo, blob.sha)
+                for blob, _ in self._blobs_and_paths[
                     start:end
                 ]  # TODO: use batch_size instead of buffer_size for concurrent requests
             ]
         )
-        if self.verbose:
+        if self._verbose:
             end_t = time.time()
             print(
-                f"Time to get blobs ({[(blob.path, blob.size) for blob, _ in self.blobs_and_paths[start:end]]}): {end_t - start_t:.2f} seconds"
+                f"Time to get blobs ({[(blob.path, blob.size) for blob, _ in self._blobs_and_paths[start:end]]}): {end_t - start_t:.2f} seconds"
             )
 
-        self.buffer = [
+        self._buffer = [
             (result, path)
-            for result, (_, path) in zip(results, self.blobs_and_paths[start:end])
+            for result, (_, path) in zip(results, self._blobs_and_paths[start:end])
         ]
