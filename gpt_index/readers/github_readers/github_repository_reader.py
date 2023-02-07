@@ -72,29 +72,30 @@ class GithubRepositoryReader(BaseReader):
         """
         super().__init__(verbose)
         if github_token is None:
-            self.github_token = os.getenv("GITHUB_TOKEN")
-            if self.github_token is None:
+            github_token = os.getenv("GITHUB_TOKEN")
+            if github_token is None:
                 raise ValueError(
                     "Please provide a Github token. "
                     "You can do so by passing it as an argument or"
                     + "by setting the GITHUB_TOKEN environment variable."
                 )
-        else:
-            self.github_token = github_token
 
-        self.owner = owner
-        self.repo = repo
-        self.use_parser = use_parser
+        self._owner = owner
+        self._repo = repo
+        self._use_parser = use_parser
+        self._verbose = verbose
 
+        # Set up the event loop
         try:
-            self.loop = asyncio.get_running_loop()
+            self._loop = asyncio.get_running_loop()
         except RuntimeError:
-            self.loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self.loop)
+            # If there is no running loop, create a new one
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
 
-        self.__client = GithubClient(github_token)
+        self._client = GithubClient(github_token)
 
-    def __load_data_from_commit(self, commit_sha: str) -> List[Document]:
+    def _load_data_from_commit(self, commit_sha: str) -> List[Document]:
         """
         Load data from a commit.
 
@@ -106,19 +107,19 @@ class GithubRepositoryReader(BaseReader):
         """
 
         commit_response: GitCommitResponseModel = self.loop.run_until_complete(
-            self.__client.get_commit(self.owner, self.repo, commit_sha)
+            self._client.get_commit(self._owner, self._repo, commit_sha)
         )
 
         tree_sha = commit_response.tree.sha
-        blobs_and_paths = self.loop.run_until_complete(self.recurse_tree(tree_sha))
+        blobs_and_paths = self._loop.run_until_complete(self._recurse_tree(tree_sha))
 
-        print_if_verbose(self.verbose, f"got {len(blobs_and_paths)} blobs")
+        print_if_verbose(self._verbose, f"got {len(blobs_and_paths)} blobs")
 
-        return self.loop.run_until_complete(
-            self.__generate_documents(blobs_and_paths=blobs_and_paths)
+        return self._loop.run_until_complete(
+            self._generate_documents(blobs_and_paths=blobs_and_paths)
         )
 
-    def __load_data_from_branch(self, branch: str) -> List[Document]:
+    def _load_data_from_branch(self, branch: str) -> List[Document]:
         """
         Load data from a branch.
 
@@ -128,17 +129,17 @@ class GithubRepositoryReader(BaseReader):
 
         :return: list of documents
         """
-        branch_data: GitBranchResponseModel = self.loop.run_until_complete(
-            self.__client.get_branch(self.owner, self.repo, branch)
+        branch_data: GitBranchResponseModel = self._loop.run_until_complete(
+            self._client.get_branch(self._owner, self._repo, branch)
         )
 
         tree_sha = branch_data.commit.commit.tree.sha
-        blobs_and_paths = self.loop.run_until_complete(self.recurse_tree(tree_sha))
+        blobs_and_paths = self._loop.run_until_complete(self._recurse_tree(tree_sha))
 
-        print_if_verbose(self.verbose, f"got {len(blobs_and_paths)} blobs")
+        print_if_verbose(self._verbose, f"got {len(blobs_and_paths)} blobs")
 
-        return self.loop.run_until_complete(
-            self.__generate_documents(blobs_and_paths=blobs_and_paths)
+        return self._loop.run_until_complete(
+            self._generate_documents(blobs_and_paths=blobs_and_paths)
         )
 
     def load_data(
@@ -163,14 +164,14 @@ class GithubRepositoryReader(BaseReader):
             raise ValueError("You must specify one of commit or branch.")
 
         if commit_sha is not None:
-            return self.__load_data_from_commit(commit_sha)
+            return self._load_data_from_commit(commit_sha)
 
         if branch is not None:
-            return self.__load_data_from_branch(branch)
+            return self._load_data_from_branch(branch)
 
         raise ValueError("You must specify one of commit or branch.")
 
-    async def recurse_tree(
+    async def _recurse_tree(
         self, tree_sha: str, current_path: str = "", current_depth: int = 0
     ) -> Any:
         """
@@ -187,32 +188,32 @@ class GithubRepositoryReader(BaseReader):
         """
         blobs_and_full_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]] = []
         print_if_verbose(
-            self.verbose, "\t" * current_depth + f"current path: {current_path}"
+            self._verbose, "\t" * current_depth + f"current path: {current_path}"
         )
 
-        tree_data: GitTreeResponseModel = await self.__client.get_tree(
-            self.owner, self.repo, tree_sha
+        tree_data: GitTreeResponseModel = await self._client.get_tree(
+            self._owner, self._repo, tree_sha
         )
         print_if_verbose(
-            self.verbose, "\t" * current_depth + f"processing tree {tree_sha}"
+            self._verbose, "\t" * current_depth + f"processing tree {tree_sha}"
         )
         for tree in tree_data.tree:
             file_path = os.path.join(current_path, tree.path)
             if tree.type == "tree":
                 print_if_verbose(
-                    self.verbose, "\t" * current_depth + f"recursing into {tree.path}"
+                    self._verbose, "\t" * current_depth + f"recursing into {tree.path}"
                 )
                 blobs_and_full_paths.extend(
-                    await self.recurse_tree(tree.sha, file_path, current_depth + 1)
+                    await self._recurse_tree(tree.sha, file_path, current_depth + 1)
                 )
             elif tree.type == "blob":
                 print_if_verbose(
-                    self.verbose, "\t" * current_depth + f"found blob {tree.path}"
+                    self._verbose, "\t" * current_depth + f"found blob {tree.path}"
                 )
                 blobs_and_full_paths.append((tree, file_path))
         return blobs_and_full_paths
 
-    async def __generate_documents(
+    async def _generate_documents(
         self, blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]]
     ) -> List[Document]:
         """
@@ -223,17 +224,17 @@ class GithubRepositoryReader(BaseReader):
         """
         buffered_iterator = BufferedGitBlobDataIterator(
             blobs_and_paths=blobs_and_paths,
-            github_client=self.__client,
-            owner=self.owner,
-            repo=self.repo,
-            loop=self.loop,
-            buffer_size=1,  # TODO: make this configurable
-            verbose=self.verbose,
+            github_client=self._client,
+            owner=self._owner,
+            repo=self._repo,
+            loop=self._loop,
+            buffer_size=5,  # TODO: make this configurable
+            verbose=self._verbose,
         )
 
         documents = []
         async for blob_data, full_path in buffered_iterator:
-            print_if_verbose(self.verbose, f"generating document for {full_path}")
+            print_if_verbose(self._verbose, f"generating document for {full_path}")
             assert (
                 blob_data.encoding == "base64"
             ), f"blob encoding {blob_data.encoding} not supported"
@@ -243,12 +244,12 @@ class GithubRepositoryReader(BaseReader):
                 del blob_data.content
             except binascii.Error:
                 print_if_verbose(
-                    self.verbose, f"could not decode {full_path} as base64"
+                    self._verbose, f"could not decode {full_path} as base64"
                 )
                 continue
 
-            if self.use_parser:
-                document = self.__parse_supported_file(
+            if self._use_parser:
+                document = self._parse_supported_file(
                     file_path=full_path,
                     file_content=decoded_bytes,
                     tree_sha=blob_data.sha,
@@ -264,10 +265,12 @@ class GithubRepositoryReader(BaseReader):
                     raise ValueError("decoded_bytes is None")
                 decoded_text = decoded_bytes.decode("utf-8")
             except UnicodeDecodeError:
-                print_if_verbose(self.verbose, f"could not decode {full_path} as utf-8")
+                print_if_verbose(
+                    self._verbose, f"could not decode {full_path} as utf-8"
+                )
                 continue
             print_if_verbose(
-                self.verbose,
+                self._verbose,
                 f"got {len(decoded_text)} characters - adding to documents - {full_path}",
             )
             document = Document(
@@ -281,7 +284,7 @@ class GithubRepositoryReader(BaseReader):
             documents.append(document)
         return documents
 
-    def __parse_supported_file(
+    def _parse_supported_file(
         self, file_path: str, file_content: bytes, tree_sha: str, tree_path: str
     ) -> Optional[Document]:
         """
@@ -295,7 +298,7 @@ class GithubRepositoryReader(BaseReader):
         if (parser := DEFAULT_FILE_EXTRACTOR.get(file_extension)) is not None:
             parser.init_parser()
             print_if_verbose(
-                self.verbose,
+                self._verbose,
                 f"parsing {file_path} as {file_extension} with {parser.__class__.__name__}",
             )
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -306,7 +309,7 @@ class GithubRepositoryReader(BaseReader):
                     delete=False,
                 ) as tmpfile:
                     print_if_verbose(
-                        self.verbose,
+                        self._verbose,
                         f"created a temporary file {tmpfile.name} for parsing {file_path}",
                     )
                     tmpfile.write(file_content)
@@ -317,7 +320,7 @@ class GithubRepositoryReader(BaseReader):
                         parsed_file = "\n\n".join(parsed_file)
                     except Exception as e:
                         print_if_verbose(
-                            self.verbose, f"error while parsing {file_path}"
+                            self._verbose, f"error while parsing {file_path}"
                         )
                         logger.error(
                             f"Error while parsing {file_path} with {parser.__class__.__name__}:\n{e}"
@@ -353,7 +356,7 @@ if __name__ == "__main__":
 
         return wrapper
 
-    reader = GithubRepositoryReader(
+    reader1 = GithubRepositoryReader(
         github_token=os.environ["GITHUB_TOKEN"],
         owner="jerryjliu",
         repo="gpt_index",
@@ -364,7 +367,7 @@ if __name__ == "__main__":
     @timeit
     def load_data_from_commit() -> None:
         """Load data from a commit."""
-        documents = reader.load_data(
+        documents = reader1.load_data(
             commit_sha="22e198b3b166b5facd2843d6a62ac0db07894a13"
         )
         for document in documents:
@@ -373,7 +376,7 @@ if __name__ == "__main__":
     @timeit
     def load_data_from_branch() -> None:
         """Load data from a branch."""
-        documents = reader.load_data(branch="main")
+        documents = reader1.load_data(branch="main")
         for document in documents:
             print(document.extra_info)
 

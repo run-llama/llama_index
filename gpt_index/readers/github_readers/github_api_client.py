@@ -119,7 +119,11 @@ class GitBranchResponseModel(DataClassJsonMixin):
 
             @dataclass
             class Tree(DataClassJsonMixin):
-                """Dataclass for the tree object in the commit. (commit.commit.tree.sha)."""
+                """
+                Dataclass for the tree object in the commit.
+
+                Usage: commit.commit.tree.sha
+                """
 
                 sha: str
 
@@ -158,7 +162,9 @@ class GithubClient:
         Initialize the GithubClient.
 
         Args:
-            - github_token (str): Github token for authentication. If not provided, the client will try to get it from the GITHUB_TOKEN environment variable.
+            - github_token (str): Github token for authentication.
+                If not provided, the client will try to get it from
+                the GITHUB_TOKEN environment variable.
             - base_url (str): Base URL for the Github API (defaults to "https://api.github.com").
             - api_version (str): Github API version (defaults to "2022-11-28").
 
@@ -166,34 +172,33 @@ class GithubClient:
             ValueError: If no Github token is provided.
         """
         if github_token is None:
-            self.github_token = os.getenv("GITHUB_TOKEN")
-            if self.github_token is None:
+            github_token = os.getenv("GITHUB_TOKEN")
+            if github_token is None:
                 raise ValueError(
                     "Please provide a Github token. "
                     + "You can do so by passing it as an argument to the GithubReader,"
                     + "or by setting the GITHUB_TOKEN environment variable."
                 )
-        else:
-            self.github_token = github_token
-        self.base_url = base_url
-        self.api_version = api_version
 
-        self.__endpoints = {
+        self._base_url = base_url
+        self._api_version = api_version
+
+        self._endpoints = {
             "getTree": "/repos/{owner}/{repo}/git/trees/{tree_sha}",
             "getBranch": "/repos/{owner}/{repo}/branches/{branch}",
             "getBlob": "/repos/{owner}/{repo}/git/blobs/{file_sha}",
             "getCommit": "/repos/{owner}/{repo}/commits/{commit_sha}",
         }
 
-        self.__headers = {
+        self._headers = {
             "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {self.github_token}",
-            "X-GitHub-Api-Version": f"{self.api_version}",
+            "Authorization": f"Bearer {github_token}",
+            "X-GitHub-Api-Version": f"{self._api_version}",
         }
 
     def get_all_endpoints(self) -> Dict[str, str]:
         """Get all available endpoints."""
-        return {**self.__endpoints}
+        return {**self._endpoints}
 
     async def request(
         self,
@@ -222,7 +227,9 @@ class GithubClient:
             - httpx.HTTPError: If the API request fails.
 
         Examples:
-            >>> response = client.request("getTree", "GET", owner="owner", repo="repo", tree_sha="tree_sha")
+            >>> response = client.request("getTree", "GET",
+                                owner="owner", repo="repo",
+                                tree_sha="tree_sha")
         """
         try:
             import httpx
@@ -232,15 +239,15 @@ class GithubClient:
                 "You can do so by running `pip install httpx`."
             )
 
-        _headers = {**self.__headers, **headers}
+        _headers = {**self._headers, **headers}
 
         _client: httpx.AsyncClient
         async with httpx.AsyncClient(
-            headers=_headers, base_url=self.base_url
+            headers=_headers, base_url=self._base_url
         ) as _client:
             try:
                 response = await _client.request(
-                    method, url=self.__endpoints[endpoint].format(**kwargs)
+                    method, url=self._endpoints[endpoint].format(**kwargs)
                 )
             except httpx.HTTPError as excp:
                 print(f"HTTP Exception for {excp.request.url} - {excp}")
