@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
-from gpt_index.indices.response.builder import ResponseSourceBuilder
 from gpt_index.indices.utils import get_sorted_node_list
 from gpt_index.prompts.prompts import TreeSelectMultiplePrompt, TreeSelectPrompt
 
@@ -64,7 +63,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         self,
         cur_nodes: Dict[int, Node],
         query_str: str,
-        source_builder: ResponseSourceBuilder,
         level: int = 0,
         verbose: bool = False,
     ) -> str:
@@ -83,7 +81,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
 
         # Get the response for the selected node
         response = self._query_with_selected_node(
-            selected_node, query_str, source_builder, level=level, verbose=verbose
+            selected_node, query_str, level=level, verbose=verbose
         )
 
         return response

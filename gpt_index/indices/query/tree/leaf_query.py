@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, cast
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder, ResponseSourceBuilder
+from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
@@ -61,7 +61,6 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         self,
         selected_node: Node,
         query_str: str,
-        source_builder: ResponseSourceBuilder,
         prev_response: Optional[str] = None,
         level: int = 0,
         verbose: bool = False,
@@ -79,7 +78,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                 self.text_qa_template,
                 self.refine_template,
             )
-            source_builder.add_node(selected_node)
+            self.response_builder.add_node(selected_node)
             # use response builder to get answer from node
             node_text, _ = self._get_text_from_node(
                 query_str, selected_node, verbose=verbose, level=level
@@ -96,7 +95,6 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                     for i in selected_node.child_indices
                 },
                 query_str,
-                source_builder,
                 level=level + 1,
                 verbose=verbose,
             )
@@ -121,7 +119,6 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         self,
         cur_nodes: Dict[int, Node],
         query_str: str,
-        source_builder: ResponseSourceBuilder,
         level: int = 0,
         verbose: bool = False,
     ) -> str:
@@ -192,7 +189,6 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             result_response = self._query_with_selected_node(
                 selected_node,
                 query_str,
-                source_builder,
                 prev_response=result_response,
                 level=level,
                 verbose=verbose,
@@ -204,12 +200,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         """Answer a query."""
         # NOTE: this overrides the _query method in the base class
         print(f"> Starting query: {query_str}")
-        source_builder = ResponseSourceBuilder()
         response_str = self._query_level(
             self.index_struct.root_nodes,
             query_str,
-            source_builder,
             level=0,
             verbose=verbose,
         ).strip()
-        return Response(response_str, source_nodes=source_builder.get_sources())
+        return Response(response_str, source_nodes=self.response_builder.get_sources())
