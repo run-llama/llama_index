@@ -122,7 +122,6 @@ class LLMPredictor:
 
         """
         formatted_prompt = prompt.format(**prompt_args)
-        logging.debug(formatted_prompt)
         llm_prediction = self._predict(prompt, **prompt_args)
         logging.debug(llm_prediction)
 
