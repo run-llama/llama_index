@@ -52,7 +52,7 @@ class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         nodes = nodes[: self.similarity_top_k]
         node_idxs = [str(i) for i in range(len(nodes))]
 
-        if logging.logger.getEffectiveLevel() == logging.DEBUG:
+        if logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG:
             fmt_txts = []
             for node_idx, node in zip(node_idxs, nodes):
                 fmt_txt = f"> [Node {node_idx}] {truncate_text(node.get_text(), 100)}"

@@ -84,7 +84,7 @@ class GPTPineconeIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
             if similarity_tracker is not None:
                 similarity_tracker.add(node, match.score)
 
-        if logging.logger.getEffectiveLevel() == logging.DEBUG:
+        if logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG:
             fmt_txts = []
             for node_idx, node_similarity, node in zip(
                 top_k_ids, top_k_scores, top_k_nodes
