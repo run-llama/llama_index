@@ -24,15 +24,14 @@ class ObsidianReader(BaseReader):
 
     """
 
-    def __init__(self, input_dir: str, verbose: bool = False):
+    def __init__(self, input_dir: str):
         """Init params."""
-        self.verbose = verbose
         self.input_dir = Path(input_dir)
 
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
         docs: List[str] = []
-        for (dirpath, dirnames, filenames) in os.walk(self.input_dir):
+        for dirpath, dirnames, filenames in os.walk(self.input_dir):
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
             for filename in filenames:
                 if filename.endswith(".md"):

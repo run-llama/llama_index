@@ -1,4 +1,5 @@
 """Query for GPTKeywordTableIndex."""
+import logging
 from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
@@ -61,24 +62,23 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
 
     @abstractmethod
-    def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
+    def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
 
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        print(f"> Starting query: {query_str}")
-        keywords = self._get_keywords(query_str, verbose=verbose)
-        print(f"query keywords: {keywords}")
+        logging.info(f"> Starting query: {query_str}")
+        keywords = self._get_keywords(query_str)
+        logging.info(f"query keywords: {keywords}")
 
         # go through text chunks in order of most matching keywords
         chunk_indices_count: Dict[int, int] = defaultdict(int)
         keywords = [k for k in keywords if k in self.index_struct.keywords]
-        print(f"Extracted keywords: {keywords}")
+        logging.info(f"Extracted keywords: {keywords}")
         for k in keywords:
             for text_chunk_idx in self.index_struct.table[k]:
                 chunk_indices_count[text_chunk_idx] += 1
@@ -93,10 +93,13 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         ]
         # filter sorted nodes
         sorted_nodes = [node for node in sorted_nodes if self._should_use_node(node)]
-        if verbose:
+
+        if logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG:
             for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
-                fmt_text_chunk = truncate_text(node.get_text(), 50)
-                print(f"> Querying with idx: {chunk_idx}: {fmt_text_chunk}")
+                logging.debug(
+                    f"> Querying with idx: {chunk_idx}: "
+                    f"{truncate_text(node.get_text(), 50)}"
+                )
 
         return sorted_nodes
 
@@ -115,7 +118,7 @@ class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
 
     """
 
-    def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
+    def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
         response, _ = self._llm_predictor.predict(
             self.query_keyword_extract_template,
@@ -140,7 +143,7 @@ class GPTKeywordTableSimpleQuery(BaseGPTKeywordTableQuery):
 
     """
 
-    def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
+    def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
         return list(
             simple_extract_keywords(query_str, max_keywords=self.max_keywords_per_query)
@@ -161,7 +164,7 @@ class GPTKeywordTableRAKEQuery(BaseGPTKeywordTableQuery):
 
     """
 
-    def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
+    def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
         return list(
             rake_extract_keywords(query_str, max_keywords=self.max_keywords_per_query)

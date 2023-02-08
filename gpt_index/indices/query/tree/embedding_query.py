@@ -1,5 +1,6 @@
 """Query Tree using embedding similarity between query and node text."""
 
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
@@ -66,24 +67,21 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         query_str: str,
         source_builder: ResponseSourceBuilder,
         level: int = 0,
-        verbose: bool = False,
     ) -> str:
-
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         # Get the node with the highest similarity to the query
         selected_node, selected_index = self._get_most_similar_node(
             cur_node_list, query_str
         )
-        if verbose:
-            print(
-                f">[Level {level}] Node [{selected_index+1}] Summary text: "
-                f"{' '.join(selected_node.get_text().splitlines())}"
-            )
+        logging.debug(
+            f">[Level {level}] Node [{selected_index+1}] Summary text: "
+            f"{' '.join(selected_node.get_text().splitlines())}"
+        )
 
         # Get the response for the selected node
         response = self._query_with_selected_node(
-            selected_node, query_str, source_builder, level=level, verbose=verbose
+            selected_node, query_str, source_builder, level=level
         )
 
         return response

@@ -1,5 +1,6 @@
 """Base index classes."""
 import json
+import logging
 from abc import abstractmethod
 from typing import (
     Any,
@@ -49,8 +50,6 @@ class BaseGPTIndex(Generic[IS]):
             will use the default PromptHelper.
         chunk_size_limit (Optional[int]): Optional chunk size limit. If not provided,
             will use the default chunk size limit (4096 max input size).
-        verbose (bool): Optional bool. If True, will print out additional information
-            during the index building process.
         include_extra_info (bool): Optional bool. If True, extra info (i.e. metadata)
             of each Document will be prepended to its text to help with queries.
             Default is True.
@@ -69,7 +68,6 @@ class BaseGPTIndex(Generic[IS]):
         index_registry: Optional[IndexRegistry] = None,
         prompt_helper: Optional[PromptHelper] = None,
         chunk_size_limit: Optional[int] = None,
-        verbose: bool = False,
         include_extra_info: bool = True,
     ) -> None:
         """Initialize with parameters."""
@@ -92,8 +90,6 @@ class BaseGPTIndex(Generic[IS]):
         self._docstore = docstore or DocumentStore()
         self._index_registry = index_registry or IndexRegistry()
 
-        self._verbose = verbose
-
         if index_struct is not None:
             if not isinstance(index_struct, self.index_struct_cls):
                 raise ValueError(
@@ -107,9 +103,7 @@ class BaseGPTIndex(Generic[IS]):
             )
             self._validate_documents(documents)
             # TODO: introduce document store outside __init__ function
-            self._index_struct = self.build_index_from_documents(
-                documents, verbose=verbose
-            )
+            self._index_struct = self.build_index_from_documents(documents)
         # update index registry and docstore with index_struct
         self._update_index_registry_and_docstore()
 
@@ -263,21 +257,16 @@ class BaseGPTIndex(Generic[IS]):
             text_splitter=text_splitter,
             start_idx=start_idx,
             include_extra_info=self._include_extra_info,
-            verbose=self._verbose,
         )
 
     @abstractmethod
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
-    ) -> IS:
+    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
         """Build the index from documents."""
 
     @llm_token_counter("build_index_from_documents")
-    def build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
-    ) -> IS:
+    def build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
         """Build the index from documents."""
-        return self._build_index_from_documents(documents, verbose=verbose)
+        return self._build_index_from_documents(documents)
 
     @abstractmethod
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
@@ -310,13 +299,10 @@ class BaseGPTIndex(Generic[IS]):
             doc_id (str): document id
             full_delete (bool): whether to delete the document from the docstore.
                 By default this is True.
-            verbose (bool): whether to print verbose output. By default this is False.
 
         """
-        verbose = delete_kwargs.pop("verbose", False)
         full_delete = delete_kwargs.pop("full_delete", True)
-        if verbose:
-            print(f"> Deleting document: {doc_id}")
+        logging.debug(f"> Deleting document: {doc_id}")
         if full_delete:
             self._docstore.delete_document(doc_id)
         self._delete(doc_id, **delete_kwargs)
@@ -349,7 +335,6 @@ class BaseGPTIndex(Generic[IS]):
     def query(
         self,
         query_str: str,
-        verbose: bool = False,
         mode: str = QueryMode.DEFAULT,
         **query_kwargs: Any,
     ) -> Response:
@@ -377,7 +362,6 @@ class BaseGPTIndex(Generic[IS]):
                 self._docstore,
                 self._index_registry,
                 query_configs=query_configs,
-                verbose=verbose,
                 recursive=True,
             )
             return query_runner.query(query_str, self._index_struct)
@@ -396,7 +380,6 @@ class BaseGPTIndex(Generic[IS]):
                 self._docstore,
                 self._index_registry,
                 query_configs=[query_config],
-                verbose=verbose,
                 recursive=False,
             )
             return query_runner.query(query_str, self._index_struct)

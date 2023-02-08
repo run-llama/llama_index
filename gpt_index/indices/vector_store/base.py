@@ -62,9 +62,7 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
     ) -> None:
         """Add document to index."""
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
-    ) -> BID:
+    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> BID:
         """Build index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.text_qa_template, 1
