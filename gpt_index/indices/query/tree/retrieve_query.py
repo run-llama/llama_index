@@ -1,5 +1,5 @@
 """Retrieve query."""
-
+import logging
 from typing import List, Optional
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
@@ -30,11 +30,10 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        print(f"> Starting query: {query_str}")
+        logging.info(f"> Starting query: {query_str}")
         node_list = get_sorted_node_list(self.index_struct.root_nodes)
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         node_text = self._prompt_helper.get_text_from_nodes(

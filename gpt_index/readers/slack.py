@@ -7,8 +7,6 @@ from typing import List, Optional
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
 
-logger = logging.getLogger(__name__)
-
 
 class SlackReader(BaseReader):
     """Slack reader.
@@ -65,14 +63,14 @@ class SlackReader(BaseReader):
                 next_cursor = result["response_metadata"]["next_cursor"]
             except SlackApiError as e:
                 if e.response["error"] == "ratelimited":
-                    logger.error(
+                    logging.error(
                         "Rate limit error reached, sleeping for: {} seconds".format(
                             e.response.headers["retry-after"]
                         )
                     )
                     time.sleep(int(e.response.headers["retry-after"]))
                 else:
-                    logger.error("Error parsing conversation replies: {}".format(e))
+                    logging.error("Error parsing conversation replies: {}".format(e))
 
         return "\n\n".join(messages_text)
 
@@ -94,7 +92,7 @@ class SlackReader(BaseReader):
                 )
                 conversation_history = result["messages"]
                 # Print results
-                logger.info(
+                logging.info(
                     "{} messages found in {}".format(len(conversation_history), id)
                 )
                 for message in conversation_history:
@@ -108,14 +106,14 @@ class SlackReader(BaseReader):
 
             except SlackApiError as e:
                 if e.response["error"] == "ratelimited":
-                    logger.error(
+                    logging.error(
                         "Rate limit error reached, sleeping for: {} seconds".format(
                             e.response.headers["retry-after"]
                         )
                     )
                     time.sleep(int(e.response.headers["retry-after"]))
                 else:
-                    logger.error("Error parsing conversation replies: {}".format(e))
+                    logging.error("Error parsing conversation replies: {}".format(e))
 
         return "\n\n".join(result_messages)
 
@@ -140,4 +138,4 @@ class SlackReader(BaseReader):
 
 if __name__ == "__main__":
     reader = SlackReader()
-    print(reader.load_data(channel_ids=["C04DC2VUY3F"]))
+    logging.info(reader.load_data(channel_ids=["C04DC2VUY3F"]))

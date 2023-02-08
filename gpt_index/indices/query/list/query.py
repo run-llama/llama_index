@@ -39,7 +39,6 @@ class GPTListIndexQuery(BaseGPTListIndexQuery):
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""

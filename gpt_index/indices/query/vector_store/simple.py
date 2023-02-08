@@ -1,4 +1,5 @@
 """Default query for GPTSimpleVectorIndex."""
+import logging
 from typing import List, Optional
 
 from gpt_index.data_structs.data_structs import Node, SimpleIndexDict
@@ -35,7 +36,6 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
@@ -57,8 +57,7 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
             for node, similarity in zip(top_k_nodes, top_similarities):
                 similarity_tracker.add(node, similarity)
 
-        # print verbose output
-        if verbose:
+        if logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG:
             fmt_txts = []
             for node_idx, node_similarity, node in zip(
                 top_ids, top_similarities, top_k_nodes
@@ -67,6 +66,6 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
                     {node_similarity:.6}] {truncate_text(node.get_text(), 100)}"
                 fmt_txts.append(fmt_txt)
             top_k_node_text = "\n".join(fmt_txts)
-            print(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
+            logging.debug(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
 
         return top_k_nodes

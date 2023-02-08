@@ -106,7 +106,6 @@ class ComposableGraph:
         self,
         query_str: str,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
-        verbose: bool = False,
     ) -> Response:
         """Query the index."""
         # go over all the indices and create a registry
@@ -117,7 +116,6 @@ class ComposableGraph:
             self._docstore,
             self._index_registry,
             query_configs=query_configs,
-            verbose=verbose,
             recursive=True,
         )
         return query_runner.query(query_str, self._index_struct)

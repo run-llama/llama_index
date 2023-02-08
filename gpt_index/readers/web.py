@@ -7,8 +7,6 @@ from langchain.utilities import RequestsWrapper
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
 
-logger = logging.getLogger(__name__)
-
 
 class SimpleWebPageReader(BaseReader):
     """Simple web page reader.
@@ -250,7 +248,6 @@ class RssReader(BaseReader):
         for url in urls:
             parsed = feedparser.parse(url)
             for entry in parsed.entries:
-
                 if entry.content:
                     data = entry.content[0].value
                 else:
@@ -269,4 +266,4 @@ class RssReader(BaseReader):
 
 if __name__ == "__main__":
     reader = SimpleWebPageReader()
-    print(reader.load_data(["http://www.google.com"]))
+    logging.info(reader.load_data(["http://www.google.com"]))
