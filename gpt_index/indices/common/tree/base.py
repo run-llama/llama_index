@@ -1,6 +1,7 @@
 """Common classes/functions for tree index operations."""
 
 
+import logging
 from typing import Dict, Sequence
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
@@ -61,7 +62,6 @@ class GPTTreeIndexBuilder:
         self,
         documents: Sequence[BaseDocument],
         build_tree: bool = True,
-        verbose: bool = False,
     ) -> IndexGraph:
         """Build from text.
 
@@ -75,9 +75,7 @@ class GPTTreeIndexBuilder:
 
         if build_tree:
             # instantiate all_nodes from initial text chunks
-            root_nodes = self.build_index_from_nodes(
-                all_nodes, all_nodes, verbose=verbose
-            )
+            root_nodes = self.build_index_from_nodes(all_nodes, all_nodes)
         else:
             # if build_tree is False, then don't surface any root nodes
             root_nodes = {}
@@ -87,13 +85,12 @@ class GPTTreeIndexBuilder:
         self,
         cur_nodes: Dict[int, Node],
         all_nodes: Dict[int, Node],
-        verbose: bool = False,
     ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         cur_node_list = get_sorted_node_list(cur_nodes)
         cur_index = len(all_nodes)
         new_node_dict = {}
-        print(
+        logging.info(
             f"> Building index from nodes: {len(cur_nodes) // self.num_children} chunks"
         )
         for i in range(0, len(cur_node_list), self.num_children):
@@ -106,9 +103,9 @@ class GPTTreeIndexBuilder:
                 self.summary_prompt, context_str=text_chunk
             )
 
-            if verbose:
-                fmt_summary = truncate_text(new_summary, 50)
-                print(f"> {i}/{len(cur_nodes)}, summary: {fmt_summary}")
+            logging.debug(
+                f"> {i}/{len(cur_nodes)}, summary: {truncate_text(new_summary, 50)}"
+            )
             new_node = Node(
                 text=new_summary,
                 index=cur_index,

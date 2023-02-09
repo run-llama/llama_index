@@ -72,7 +72,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         }
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
+        self, documents: Sequence[BaseDocument]
     ) -> IndexList:
         """Build the index from documents.
 

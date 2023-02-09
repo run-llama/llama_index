@@ -58,13 +58,12 @@ class SQLContextBuilder:
     def build_all_context_from_documents(
         self,
         documents_dict: Dict[str, List[BaseDocument]],
-        verbose: bool = False,
     ) -> Dict[str, str]:
         """Build context for all tables in the database."""
         context_dict = {}
         for table_name in self._sql_database.get_table_names():
             context_dict[table_name] = self.build_table_context_from_documents(
-                documents_dict[table_name], table_name, verbose=verbose
+                documents_dict[table_name], table_name
             )
         return context_dict
 
@@ -72,7 +71,6 @@ class SQLContextBuilder:
         self,
         documents: Sequence[BaseDocument],
         table_name: str,
-        verbose: bool = False,
     ) -> str:
         """Build context from documents for a single table."""
         schema = self._sql_database.get_single_table_info(table_name)
@@ -98,7 +96,5 @@ class SQLContextBuilder:
                 response_builder.add_text_chunks([TextChunk(text_chunk)])
 
         # feed in the "query_str" or the task
-        table_context = response_builder.get_response(
-            self._table_context_task, verbose=verbose
-        )
+        table_context = response_builder.get_response(self._table_context_task)
         return table_context

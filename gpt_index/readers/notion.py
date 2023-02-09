@@ -1,4 +1,5 @@
 """Notion reader."""
+import logging
 import os
 from typing import Any, Dict, List, Optional
 
@@ -163,4 +164,4 @@ class NotionPageReader(BaseReader):
 
 if __name__ == "__main__":
     reader = NotionPageReader()
-    print(reader.search("What I"))
+    logging.info(reader.search("What I"))

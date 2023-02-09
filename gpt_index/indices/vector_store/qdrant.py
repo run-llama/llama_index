@@ -152,7 +152,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
             )
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
+        self, documents: Sequence[BaseDocument]
     ) -> QdrantIndexStruct:
         """Build index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
