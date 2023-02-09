@@ -56,6 +56,9 @@ class GithubRepositoryReader(BaseReader):
         use_parser: bool = True,
         verbose: bool = False,
         github_token: Optional[str] = None,
+        concurrent_requests: int = 5,
+        ignore_file_extensions: Optional[List[str]] = None,
+        ignore_directories: Optional[List[str]] = None,
     ):
         """
         Initialize params.
@@ -66,6 +69,9 @@ class GithubRepositoryReader(BaseReader):
             - use_parser (bool): Whether to use the parser to extract the text from the files.
             - verbose (bool): Whether to print verbose messages.
             - github_token (str): Github token. If not provided, it will be read from the GITHUB_TOKEN environment variable.
+            - concurrent_requests (int): Number of concurrent requests to make to the Github API.
+            - ignore_file_extensions (List[str]): List of file extensions to ignore. i.e. ['.png', '.jpg']
+            - ignore_directories (List[str]): List of directories to ignore. i.e. ['node_modules', 'dist']
 
         Raises:
             - `ValueError`: If the github_token is not provided and the GITHUB_TOKEN environment variable is not set.
@@ -84,6 +90,9 @@ class GithubRepositoryReader(BaseReader):
         self._repo = repo
         self._use_parser = use_parser
         self._verbose = verbose
+        self._concurrent_requests = concurrent_requests
+        self._ignore_file_extensions = ignore_file_extensions
+        self._ignore_directories = ignore_directories
 
         # Set up the event loop
         try:
@@ -106,11 +115,11 @@ class GithubRepositoryReader(BaseReader):
         :return: list of documents
         """
 
-        commit_response: GitCommitResponseModel = self.loop.run_until_complete(
+        commit_response: GitCommitResponseModel = self._loop.run_until_complete(
             self._client.get_commit(self._owner, self._repo, commit_sha)
         )
 
-        tree_sha = commit_response.tree.sha
+        tree_sha = commit_response.commit.tree.sha
         blobs_and_paths = self._loop.run_until_complete(self._recurse_tree(tree_sha))
 
         print_if_verbose(self._verbose, f"got {len(blobs_and_paths)} blobs")
@@ -197,20 +206,38 @@ class GithubRepositoryReader(BaseReader):
         print_if_verbose(
             self._verbose, "\t" * current_depth + f"processing tree {tree_sha}"
         )
-        for tree in tree_data.tree:
-            file_path = os.path.join(current_path, tree.path)
-            if tree.type == "tree":
+        for tree_obj in tree_data.tree:
+            file_path = os.path.join(current_path, tree_obj.path)
+            if tree_obj.type == "tree":
                 print_if_verbose(
-                    self._verbose, "\t" * current_depth + f"recursing into {tree.path}"
+                    self._verbose,
+                    "\t" * current_depth + f"recursing into {tree_obj.path}",
                 )
+                if self._ignore_directories is not None:
+                    if file_path in self._ignore_directories:
+                        print_if_verbose(
+                            self._verbose,
+                            "\t" * current_depth
+                            + f"ignoring tree {tree_obj.path} due to directory",
+                        )
+                        continue
+
                 blobs_and_full_paths.extend(
-                    await self._recurse_tree(tree.sha, file_path, current_depth + 1)
+                    await self._recurse_tree(tree_obj.sha, file_path, current_depth + 1)
                 )
-            elif tree.type == "blob":
+            elif tree_obj.type == "blob":
                 print_if_verbose(
-                    self._verbose, "\t" * current_depth + f"found blob {tree.path}"
+                    self._verbose, "\t" * current_depth + f"found blob {tree_obj.path}"
                 )
-                blobs_and_full_paths.append((tree, file_path))
+                if self._ignore_file_extensions is not None:
+                    if get_file_extension(file_path) in self._ignore_file_extensions:
+                        print_if_verbose(
+                            self._verbose,
+                            "\t" * current_depth
+                            + f"ignoring blob {tree_obj.path} due to file extension",
+                        )
+                        continue
+                blobs_and_full_paths.append((tree_obj, file_path))
         return blobs_and_full_paths
 
     async def _generate_documents(
@@ -228,7 +255,7 @@ class GithubRepositoryReader(BaseReader):
             owner=self._owner,
             repo=self._repo,
             loop=self._loop,
-            buffer_size=5,  # TODO: make this configurable
+            buffer_size=self._concurrent_requests,  # TODO: make this configurable
             verbose=self._verbose,
         )
 
@@ -362,6 +389,7 @@ if __name__ == "__main__":
         repo="gpt_index",
         use_parser=False,
         verbose=True,
+        ignore_directories=["examples"],
     )
 
     @timeit
@@ -380,4 +408,10 @@ if __name__ == "__main__":
         for document in documents:
             print(document.extra_info)
 
+    input("Press enter to load github repository from branch name...")
+
     load_data_from_branch()
+
+    input("Press enter to load github repository from commit sha...")
+
+    load_data_from_commit()

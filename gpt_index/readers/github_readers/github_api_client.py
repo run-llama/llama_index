@@ -5,11 +5,14 @@ This module contains the Github API client for the GPT-Index library.
 It is used by the Github readers to retrieve the data from Github.
 """
 
+import json
 import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
+
+# from gpt_index.readers.github_readers.utils import print_if_verbose
 
 
 @dataclass
@@ -87,17 +90,23 @@ class GitCommitResponseModel(DataClassJsonMixin):
     """
 
     @dataclass
-    class Tree(DataClassJsonMixin):
-        """
-        Dataclass for the tree object in the commit.
+    class Commit(DataClassJsonMixin):
+        """Dataclass for the commit object in the commit. (commit.commit)."""
 
-        Attributes:
-            - sha (str): SHA for the commit
-        """
+        @dataclass
+        class Tree(DataClassJsonMixin):
+            """
+            Dataclass for the tree object in the commit.
 
-        sha: str
+            Attributes:
+                - sha (str): SHA for the commit
+            """
 
-    tree: Tree
+            sha: str
+
+        tree: Tree
+
+    commit: Commit
 
 
 @dataclass
@@ -157,6 +166,7 @@ class GithubClient:
         github_token: Optional[str] = None,
         base_url: str = DEFAULT_BASE_URL,
         api_version: str = DEFAULT_API_VERSION,
+        verbose: bool = False,
     ) -> None:
         """
         Initialize the GithubClient.
@@ -182,6 +192,7 @@ class GithubClient:
 
         self._base_url = base_url
         self._api_version = api_version
+        self._verbose = verbose
 
         self._endpoints = {
             "getTree": "/repos/{owner}/{repo}/git/trees/{tree_sha}",
@@ -252,6 +263,7 @@ class GithubClient:
             except httpx.HTTPError as excp:
                 print(f"HTTP Exception for {excp.request.url} - {excp}")
                 raise excp
+            # print_if_verbose(self._verbose, response)
             return response
 
     async def get_branch(
@@ -346,6 +358,7 @@ class GithubClient:
         Examples:
             >>> commit_info = client.get_commit("owner", "repo", "commit_sha")
         """
+
         return GitCommitResponseModel.from_json(
             (
                 await self.request(
