@@ -82,7 +82,7 @@ class GithubRepositoryReader(BaseReader):
             - `ValueError`: If the github_token is not provided and
                 the GITHUB_TOKEN environment variable is not set.
         """
-        super().__init__(verbose)
+        super().__init__()
         if github_token is None:
             github_token = os.getenv("GITHUB_TOKEN")
             if github_token is None:
