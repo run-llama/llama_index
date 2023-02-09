@@ -78,9 +78,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         )
 
         # Get the response for the selected node
-        response = self._query_with_selected_node(
-            selected_node, query_str, level=level
-        )
+        response = self._query_with_selected_node(selected_node, query_str, level=level)
 
         return response
 

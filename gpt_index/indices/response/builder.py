@@ -59,7 +59,7 @@ class ResponseBuilder:
         self.refine_template = refine_template
         self._texts = texts or []
         nodes = nodes or []
-        self._nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
+        self.source_nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
 
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
@@ -71,15 +71,15 @@ class ResponseBuilder:
 
     def add_node(self, node: Node, similarity: Optional[float] = None) -> None:
         """Add node."""
-        self._nodes.append(SourceNode.from_node(node, similarity=similarity))
+        self.source_nodes.append(SourceNode.from_node(node, similarity=similarity))
 
     def add_source_node(self, source_node: SourceNode) -> None:
         """Add source node directly."""
-        self._nodes.append(source_node)
+        self.source_nodes.append(source_node)
 
     def get_sources(self) -> List[SourceNode]:
         """Get sources."""
-        return self._nodes
+        return self.source_nodes
 
     def refine_response_single(
         self,
