@@ -36,7 +36,6 @@ Create a new `.py` file with the following:
 
 ```python
 from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
-from IPython.display import Markdown, display
 
 documents = SimpleDirectoryReader('data').load_data()
 index = GPTSimpleVectorIndex(documents)
