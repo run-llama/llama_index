@@ -1,4 +1,5 @@
 """Default query for GPTFaissIndex."""
+import logging
 from typing import Any, Optional
 
 from gpt_index.data_structs.table import SQLStructTable
@@ -36,7 +37,7 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         self._sql_database = sql_database
 
     @llm_token_counter("query")
-    def query(self, query_str: str, verbose: bool = False) -> Response:
+    def query(self, query_str: str) -> Response:
         """Answer a query."""
         # NOTE: override query method in order to fetch the right results.
         # NOTE: since the query_str is a SQL query, it doesn't make sense
@@ -93,18 +94,17 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
             tables_desc.append(table_text)
         return "\n\n".join(tables_desc)
 
-    def _query(self, query_str: str, verbose: bool = False) -> Response:
+    def _query(self, query_str: str) -> Response:
         """Answer a query."""
         table_desc_str = self._get_all_tables_desc()
-        print(f"table desc str: {table_desc_str}")
+        logging.info(f"table desc str: {table_desc_str}")
         response_str, _ = self._llm_predictor.predict(
             self._text_to_sql_prompt, query_str=query_str, schema=table_desc_str
         )
 
         sql_query_str = self._parse_response_to_sql(response_str)
         # assume that it's a valid SQL query
-        if verbose:
-            print(f"> Predicted SQL query: {sql_query_str}")
+        logging.debug(f"> Predicted SQL query: {sql_query_str}")
 
         response_str, extra_info = self._sql_database.run_sql(sql_query_str)
         response = Response(response=response_str, extra_info=extra_info)

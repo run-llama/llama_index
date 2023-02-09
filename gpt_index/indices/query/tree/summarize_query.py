@@ -1,6 +1,6 @@
 """Summarize query."""
 
-
+import logging
 from typing import Any, List, Optional, cast
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
@@ -50,11 +50,10 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        print(f"> Starting query: {query_str}")
+        logging.info(f"> Starting query: {query_str}")
         index_struct = cast(IndexGraph, self._index_struct)
         sorted_node_list = get_sorted_node_list(index_struct.all_nodes)
         return sorted_node_list

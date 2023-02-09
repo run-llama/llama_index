@@ -1,4 +1,5 @@
 """Simple reader that reads files of different formats from a directory."""
+import logging
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
@@ -67,10 +68,9 @@ class SimpleDirectoryReader(BaseReader):
         file_extractor: Optional[Dict[str, BaseParser]] = None,
         num_files_limit: Optional[int] = None,
         file_metadata: Optional[Callable[[str], Dict]] = None,
-        verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
-        super().__init__(verbose=verbose)
+        super().__init__()
 
         if not input_dir and not input_files:
             raise ValueError("Must provide either `input_dir` or `input_files`.")
@@ -121,10 +121,9 @@ class SimpleDirectoryReader(BaseReader):
             new_input_files = new_input_files[0 : self.num_files_limit]
 
         # print total number of files added
-        if self.verbose:
-            print(
-                f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}"
-            )
+        logging.debug(
+            f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}"
+        )
 
         return new_input_files
 

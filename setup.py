@@ -17,7 +17,7 @@ install_requires = [
     "transformers",
     "nltk",
     "numpy",
-    "tenacity",
+    "tenacity<8.2.0",
     "pandas",
 ]
 
