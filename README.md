@@ -59,6 +59,9 @@ Examples are in the `examples` folder. Indices are in the `indices` folder (see 
 
 To build a simple vector store index:
 ```python
+import os
+os.environ["OPENAI_API_KEY"] = 'YOUR_OPENAI_API_KEY'
+
 from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
 index = GPTSimpleVectorIndex(documents)

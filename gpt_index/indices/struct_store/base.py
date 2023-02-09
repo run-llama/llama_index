@@ -1,5 +1,6 @@
 """Struct store."""
 
+import logging
 import re
 from abc import abstractmethod
 from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar
@@ -109,14 +110,13 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         self,
         document: BaseDocument,
         text_splitter: TokenTextSplitter,
-        verbose: bool = False,
     ) -> None:
         """Add document to index."""
         text_chunks = text_splitter.split_text(document.get_text())
         fields = {}
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
-            print(f"> Adding chunk {i}: {fmt_text_chunk}")
+            logging.info(f"> Adding chunk {i}: {fmt_text_chunk}")
             # if embedding specified in document, pass it to the Node
             schema_text = self._get_schema_text()
             response_str, _ = self._llm_predictor.predict(
@@ -134,19 +134,16 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         struct_datapoint = StructDatapoint(fields)
         if struct_datapoint is not None:
             self._insert_datapoint(struct_datapoint)
-            if verbose:
-                print(f"> Added datapoint: {fields}")
+            logging.debug(f"> Added datapoint: {fields}")
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
-    ) -> BST:
+    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> BST:
         """Build index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.schema_extract_prompt, 1
         )
         index_struct = self.index_struct_cls()
         for d in documents:
-            self._add_document_to_index(d, text_splitter, verbose=verbose)
+            self._add_document_to_index(d, text_splitter)
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:

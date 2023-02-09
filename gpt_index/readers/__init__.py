@@ -15,6 +15,9 @@ from gpt_index.readers.faiss import FaissReader
 
 # readers
 from gpt_index.readers.file.base import SimpleDirectoryReader
+from gpt_index.readers.github_readers.github_repository_reader import (
+    GithubRepositoryReader,
+)
 from gpt_index.readers.google_readers.gdocs import GoogleDocsReader
 from gpt_index.readers.make_com.wrapper import MakeWrapper
 from gpt_index.readers.mbox import MboxReader
@@ -59,5 +62,6 @@ __all__ = [
     "MakeWrapper",
     "TwitterTweetReader",
     "ObsidianReader",
+    "GithubRepositoryReader",
     "MboxReader",
 ]

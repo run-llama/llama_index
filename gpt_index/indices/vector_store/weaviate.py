@@ -112,7 +112,7 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
             WeaviateNode.from_gpt_index(self.client, n, index_struct.get_class_prefix())
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
+        self, documents: Sequence[BaseDocument]
     ) -> WeaviateIndexStruct:
         """Build index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(

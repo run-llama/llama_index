@@ -1,4 +1,5 @@
 """Pinecone vector store index query."""
+import logging
 from typing import Any, Dict, List, Optional, cast
 
 from gpt_index.data_structs.data_structs import IndexDict, Node
@@ -58,7 +59,6 @@ class GPTPineconeIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
@@ -84,8 +84,7 @@ class GPTPineconeIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
             if similarity_tracker is not None:
                 similarity_tracker.add(node, match.score)
 
-        # print verbose output
-        if verbose:
+        if logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG:
             fmt_txts = []
             for node_idx, node_similarity, node in zip(
                 top_k_ids, top_k_scores, top_k_nodes
@@ -94,6 +93,6 @@ class GPTPineconeIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
                     {node_similarity:.6}] {truncate_text(node.get_text(), 100)}"
                 fmt_txts.append(fmt_txt)
             top_k_node_text = "\n".join(fmt_txts)
-            print(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
+            logging.debug(f"> Top {len(top_k_nodes)} nodes:\n{top_k_node_text}")
 
         return top_k_nodes

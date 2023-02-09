@@ -61,6 +61,7 @@ from gpt_index.readers import (
     DiscordReader,
     Document,
     FaissReader,
+    GithubRepositoryReader,
     GoogleDocsReader,
     MboxReader,
     NotionPageReader,
@@ -138,4 +139,12 @@ __all__ = [
     "IndexStructType",
     "TwitterTweetReader",
     "download_loader",
+    "GithubRepositoryReader",
 ]
+
+import logging
+from logging import NullHandler
+
+# best practices for library logging:
+# https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
+logging.getLogger(__name__).addHandler(NullHandler())
