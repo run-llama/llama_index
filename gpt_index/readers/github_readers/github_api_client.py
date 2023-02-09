@@ -5,7 +5,6 @@ This module contains the Github API client for the GPT-Index library.
 It is used by the Github readers to retrieve the data from Github.
 """
 
-import json
 import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
@@ -175,7 +174,8 @@ class GithubClient:
             - github_token (str): Github token for authentication.
                 If not provided, the client will try to get it from
                 the GITHUB_TOKEN environment variable.
-            - base_url (str): Base URL for the Github API (defaults to "https://api.github.com").
+            - base_url (str): Base URL for the Github API
+                (defaults to "https://api.github.com").
             - api_version (str): Github API version (defaults to "2022-11-28").
 
         Raises:
@@ -358,7 +358,6 @@ class GithubClient:
         Examples:
             >>> commit_info = client.get_commit("owner", "repo", "commit_sha")
         """
-
         return GitCommitResponseModel.from_json(
             (
                 await self.request(

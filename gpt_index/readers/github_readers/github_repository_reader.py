@@ -2,7 +2,7 @@
 Github repository reader.
 
 Retrieves the contents of a Github repository and returns a list of documents.
-The documents are either the contents of the files in the repository or 
+The documents are either the contents of the files in the repository or
 the text extracted from the files using the parser.
 """
 
@@ -66,15 +66,21 @@ class GithubRepositoryReader(BaseReader):
         Args:
             - owner (str): Owner of the repository.
             - repo (str): Name of the repository.
-            - use_parser (bool): Whether to use the parser to extract the text from the files.
+            - use_parser (bool): Whether to use the parser to extract
+                the text from the files.
             - verbose (bool): Whether to print verbose messages.
-            - github_token (str): Github token. If not provided, it will be read from the GITHUB_TOKEN environment variable.
-            - concurrent_requests (int): Number of concurrent requests to make to the Github API.
-            - ignore_file_extensions (List[str]): List of file extensions to ignore. i.e. ['.png', '.jpg']
-            - ignore_directories (List[str]): List of directories to ignore. i.e. ['node_modules', 'dist']
+            - github_token (str): Github token. If not provided,
+                it will be read from the GITHUB_TOKEN environment variable.
+            - concurrent_requests (int): Number of concurrent requests to
+                make to the Github API.
+            - ignore_file_extensions (List[str]): List of file extensions to ignore.
+                i.e. ['.png', '.jpg']
+            - ignore_directories (List[str]): List of directories to ignore.
+                i.e. ['node_modules', 'dist']
 
         Raises:
-            - `ValueError`: If the github_token is not provided and the GITHUB_TOKEN environment variable is not set.
+            - `ValueError`: If the github_token is not provided and
+                the GITHUB_TOKEN environment variable is not set.
         """
         super().__init__(verbose)
         if github_token is None:
@@ -114,7 +120,6 @@ class GithubRepositoryReader(BaseReader):
 
         :return: list of documents
         """
-
         commit_response: GitCommitResponseModel = self._loop.run_until_complete(
             self._client.get_commit(self._owner, self._repo, commit_sha)
         )
@@ -185,15 +190,16 @@ class GithubRepositoryReader(BaseReader):
     ) -> Any:
         """
         Recursively get all blob tree objects in a tree.
-        And construct their full path relative to the root of the repository.
-        (see GitTreeResponseModel.GitTreeObject in github_api_client.py for more information)
 
+        And construct their full path relative to the root of the repository.
+        (see GitTreeResponseModel.GitTreeObject in
+            github_api_client.py for more information)
 
         :param `tree_sha`: sha of the tree to recurse
         :param `current_path`: current path of the tree
         :param `current_depth`: current depth of the tree
-        :return: list of tuples of (tree object, file's full path in the repo realtive to the root of the repo)
-
+        :return: list of tuples of
+            (tree object, file's full path realtive to the root of the repo)
         """
         blobs_and_full_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]] = []
         print_if_verbose(
@@ -244,9 +250,10 @@ class GithubRepositoryReader(BaseReader):
         self, blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]]
     ) -> List[Document]:
         """
-        Generate documents from a list of blobs and their full paths relative to the root of the repo.
+        Generate documents from a list of blobs and their full paths.
 
-        :param `blobs_and_paths`: list of tuples of (tree object, file's full path in the repo realtive to the root of the repo)
+        :param `blobs_and_paths`: list of tuples of
+            (tree object, file's full path in the repo realtive to the root of the repo)
         :return: list of documents
         """
         buffered_iterator = BufferedGitBlobDataIterator(
@@ -298,7 +305,8 @@ class GithubRepositoryReader(BaseReader):
                 continue
             print_if_verbose(
                 self._verbose,
-                f"got {len(decoded_text)} characters - adding to documents - {full_path}",
+                f"got {len(decoded_text)} characters"
+                + f"- adding to documents - {full_path}",
             )
             document = Document(
                 text=decoded_text,
@@ -326,7 +334,9 @@ class GithubRepositoryReader(BaseReader):
             parser.init_parser()
             print_if_verbose(
                 self._verbose,
-                f"parsing {file_path} as {file_extension} with {parser.__class__.__name__}",
+                f"parsing {file_path}"
+                + f"as {file_extension} with "
+                + f"{parser.__class__.__name__}",
             )
             with tempfile.TemporaryDirectory() as tmpdirname:
                 with tempfile.NamedTemporaryFile(
@@ -337,7 +347,8 @@ class GithubRepositoryReader(BaseReader):
                 ) as tmpfile:
                     print_if_verbose(
                         self._verbose,
-                        f"created a temporary file {tmpfile.name} for parsing {file_path}",
+                        "created a temporary file"
+                        + f"{tmpfile.name} for parsing {file_path}",
                     )
                     tmpfile.write(file_content)
                     tmpfile.flush()
@@ -350,7 +361,9 @@ class GithubRepositoryReader(BaseReader):
                             self._verbose, f"error while parsing {file_path}"
                         )
                         logger.error(
-                            f"Error while parsing {file_path} with {parser.__class__.__name__}:\n{e}"
+                            "Error while parsing "
+                            + f"{file_path} with "
+                            + f"{parser.__class__.__name__}:\n{e}"
                         )
                         parsed_file = None
                     finally:
@@ -372,10 +385,10 @@ if __name__ == "__main__":
     import time
 
     def timeit(func: Callable) -> Callable:
-        """Decorator to time a function."""
+        """Time a function."""
 
         def wrapper(*args: Any, **kwargs: Any) -> None:
-            """Wrapper function."""
+            """Callcuate time taken to run a function."""
             start = time.time()
             func(*args, **kwargs)
             end = time.time()
