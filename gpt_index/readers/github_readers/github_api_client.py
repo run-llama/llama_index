@@ -11,8 +11,6 @@ from typing import Any, Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
-# from gpt_index.readers.github_readers.utils import print_if_verbose
-
 
 @dataclass
 class GitTreeResponseModel(DataClassJsonMixin):
@@ -263,7 +261,6 @@ class GithubClient:
             except httpx.HTTPError as excp:
                 print(f"HTTP Exception for {excp.request.url} - {excp}")
                 raise excp
-            # print_if_verbose(self._verbose, response)
             return response
 
     async def get_branch(
