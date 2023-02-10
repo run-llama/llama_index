@@ -166,7 +166,7 @@ DEFAULT_SCHEMA_EXTRACT_TMPL = (
 DEFAULT_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(DEFAULT_SCHEMA_EXTRACT_TMPL)
 
 # NOTE: taken from langchain and adapted
-# shorturl.at/nqyD1gT
+# https://tinyurl.com/b772sd77
 DEFAULT_TEXT_TO_SQL_TMPL = (
     "Given an input question, first create a syntactically correct SQL query "
     "to run, then look at the results of the query and return the answer.\n"
