@@ -6,6 +6,7 @@ import subprocess
 import sys
 from importlib import util
 from pathlib import Path
+from typing import Optional
 
 import pkg_resources
 import requests
@@ -18,7 +19,9 @@ LOADER_HUB_URL = (
 )
 
 
-def download_loader(loader_class: str) -> BaseReader:
+def download_loader(
+    loader_class: str, refresh_cache: Optional[bool] = False
+) -> BaseReader:
     """Download a single loader from the Loader Hub.
 
     Args:
@@ -41,7 +44,7 @@ def download_loader(loader_class: str) -> BaseReader:
         # Create a new directory because it does not exist
         os.makedirs(dirpath)
 
-    if not os.path.exists(loader_path):
+    if refresh_cache or not os.path.exists(loader_path):
         response = requests.get(f"{LOADER_HUB_URL}/{loader_id}/base.py")
         with open(loader_path, "w") as f:
             f.write(response.text)
