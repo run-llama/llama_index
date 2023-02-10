@@ -12,12 +12,7 @@ from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
-from gpt_index.indices.response.builder import (
-    ResponseBuilder,
-    ResponseMode,
-    ResponseSourceBuilder,
-    TextChunk,
-)
+from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
@@ -243,15 +238,14 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Answer a query."""
         # TODO: remove _query and just use query
         tuples = self.get_nodes_and_similarities_for_response(query_str)
-        source_builder = ResponseSourceBuilder()
         node_texts = []
         for node, similarity in tuples:
             text, response = self._get_text_from_node(query_str, node)
-            source_builder.add_node(node, similarity=similarity)
+            self.response_builder.add_node(node, similarity=similarity)
             if response is not None:
                 # these are source nodes from within this node (when it's an index)
                 for source_node in response.source_nodes:
-                    source_builder.add_source_node(source_node)
+                    self.response_builder.add_source_node(source_node)
             node_texts.append(text)
 
         if self._response_mode != ResponseMode.NO_TEXT:
@@ -259,7 +253,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         else:
             response_str = None
 
-        return Response(response_str, source_nodes=source_builder.get_sources())
+        return Response(response_str, source_nodes=self.response_builder.get_sources())
 
     @llm_token_counter("query")
     def query(self, query_str: str) -> Response:
