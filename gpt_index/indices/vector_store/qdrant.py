@@ -124,6 +124,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
                     collection_name=collection_name,
                     vector_size=len(text_embedding),
                 )
+                self._collection_initialized = True
 
             while True:
                 new_id = get_new_id(set())
@@ -174,7 +175,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
         self._client.delete(
             collection_name=self._collection_name,
             points_selector=rest.Filter(
-                should=[
+                must=[
                     rest.FieldCondition(
                         key="doc_id", match=rest.MatchValue(value=doc_id)
                     )
