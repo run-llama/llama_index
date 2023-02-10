@@ -91,7 +91,7 @@ def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
     """Temporary setter.
 
     Utility class for setting a temporary value for an attribute on a class.
-    Taken from: shorturl.at/fBFQ5.
+    Taken from: https://tinyurl.com/2p89xymh
 
     """
     prev_values = {k: getattr(obj, k) for k in kwargs}
