@@ -39,7 +39,7 @@ def download_loader(
         os.makedirs(dirpath)
 
     library_path = f"{dirpath}/library.json"
-    loader_id = None  # e.g. `web/simple_web`
+    loader_id = ""  # e.g. `web/simple_web`
 
     # Check cache first
     if not refresh_cache and os.path.exists(library_path):
@@ -49,7 +49,7 @@ def download_loader(
             loader_id = library[loader_class]["id"]
 
     # Fetch up-to-date library from remote repo if loader_id not found
-    if loader_id == None:
+    if loader_id == "":
         response = requests.get(f"{LOADER_HUB_URL}/library.json")
         library = json.loads(response.text)
         loader_id = library[loader_class]["id"]
