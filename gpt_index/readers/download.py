@@ -27,6 +27,9 @@ def download_loader(
     Args:
         loader_class: The name of the loader class you want to download,
             such as `SimpleWebPageReader`.
+        refresh_cache: If true, the local cache will be skipped and the
+            loader will be fetched directly from the remote repo.
+
     Returns:
         A Loader.
     """
