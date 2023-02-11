@@ -330,7 +330,8 @@ class GithubRepositoryReader(BaseReader):
         :return: Document if the file is supported by a parser, None otherwise
         """
         file_extension = get_file_extension(file_path)
-        if (parser := DEFAULT_FILE_EXTRACTOR.get(file_extension)) is not None:
+        parser = DEFAULT_FILE_EXTRACTOR.get(file_extension)
+        if parser is not None:
             parser.init_parser()
             print_if_verbose(
                 self._verbose,
