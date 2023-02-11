@@ -33,19 +33,34 @@ def download_loader(
     Returns:
         A Loader.
     """
-    response = requests.get(f"{LOADER_HUB_URL}/library.json")
-    library = json.loads(response.text)
-
-    # Look up the loader id (e.g. `web/simple_web`)
-    loader_id = library[loader_class]["id"]
     dirpath = ".modules"
-    loader_filename = loader_id.replace("/", "-")
-    loader_path = f"{dirpath}/{loader_filename}.py"
-    requirements_path = f"{dirpath}/{loader_filename}_requirements.txt"
-
     if not os.path.exists(dirpath):
         # Create a new directory because it does not exist
         os.makedirs(dirpath)
+
+    library_path = f"{dirpath}/library.json"
+    loader_id = None  # e.g. `web/simple_web`
+
+    # Check cache first
+    if not refresh_cache and os.path.exists(library_path):
+        with open(library_path) as f:
+            library = json.load(f)
+        if loader_class in library:
+            loader_id = library[loader_class]["id"]
+
+    # Fetch up-to-date library from remote repo if loader_id not found
+    if loader_id == None:
+        response = requests.get(f"{LOADER_HUB_URL}/library.json")
+        library = json.loads(response.text)
+        loader_id = library[loader_class]["id"]
+        # Update cache
+        with open(library_path, "w") as f:
+            f.write(response.text)
+
+    # Load the module
+    loader_filename = loader_id.replace("/", "-")
+    loader_path = f"{dirpath}/{loader_filename}.py"
+    requirements_path = f"{dirpath}/{loader_filename}_requirements.txt"
 
     if refresh_cache or not os.path.exists(loader_path):
         response = requests.get(f"{LOADER_HUB_URL}/{loader_id}/base.py")
