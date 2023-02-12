@@ -248,7 +248,7 @@ class RssReader(BaseReader):
         for url in urls:
             parsed = feedparser.parse(url)
             for entry in parsed.entries:
-                if entry.content:
+                if "content" in entry:
                     data = entry.content[0].value
                 else:
                     data = entry.description or entry.summary
