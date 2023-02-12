@@ -3,7 +3,7 @@
 import random
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -330,3 +330,69 @@ class QdrantIndexStruct(IndexStruct):
     def get_type(cls) -> str:
         """Get type."""
         return "qdrant"
+
+
+@dataclass
+class KG(IndexStruct):
+    """A table of keywords mapping keywords to text chunks."""
+
+    # Unidirectional
+
+    table: Dict[str, Set[str]] = field(default_factory=dict)
+    text_chunks: Dict[str, Node] = field(default_factory=dict)
+    rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
+
+    # def _get_index(self) -> int:
+    #     """Get the next index for the text chunk."""
+    #     # randomly generate until we get a unique index
+    #     while True:
+    #         idx = random.randint(0, sys.maxsize)
+    #         if idx not in self.text_chunks:
+    #             break
+    #     return idx
+
+    def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
+        """Upsert a knowledge triplet to the graph."""
+        subj, relationship, obj = triplet
+        self.add_node([subj, obj], node)
+        if subj not in self.rel_map:
+            self.rel_map[subj] = []
+        self.rel_map[subj].append((obj, relationship))
+
+    def add_node(self, keywords: List[str], node: Node) -> None:
+        """Add text to table."""
+        node_id = node.get_doc_id()
+        for keyword in keywords:
+            if keyword not in self.table:
+                self.table[keyword] = set()
+            self.table[keyword].add(node_id)
+        self.text_chunks[node_id] = node
+
+    def get_texts(self, keyword: str) -> List[Node]:
+        """Get the corresponding knowledge for a given keyword."""
+        if keyword not in self.table:
+            return []
+        keywords = [keyword] + [child for child, _ in self.rel_map[keyword]]
+        text_chunks: List[Node] = []
+        for keyword in keywords:
+            for node_id in self.table.get(keyword, set()):
+                text_chunks.append(self.text_chunks[node_id])
+            # TODO: Traverse
+        return text_chunks
+
+    # def get_serialized_text()
+
+    # @property
+    # def keywords(self) -> Set[str]:
+    #     """Get all keywords in the table."""
+    #     return set(self.table.keys())
+
+    # @property
+    # def size(self) -> int:
+    #     """Get the size of the table."""
+    #     return len(self.table)
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "kg"
