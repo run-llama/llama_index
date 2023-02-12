@@ -39,7 +39,7 @@ def download_loader(
         os.makedirs(dirpath)
 
     library_path = f"{dirpath}/library.json"
-    loader_id = ""  # e.g. `web/simple_web`
+    loader_id = None  # e.g. `web/simple_web`
 
     # Check cache first
     if not refresh_cache and os.path.exists(library_path):
@@ -49,14 +49,18 @@ def download_loader(
             loader_id = library[loader_class]["id"]
 
     # Fetch up-to-date library from remote repo if loader_id not found
-    if loader_id == "":
+    if loader_id is None:
         response = requests.get(f"{LOADER_HUB_URL}/library.json")
         library = json.loads(response.text)
+        if loader_class not in library:
+            raise ValueError("Loader class name not found in library")
+
         loader_id = library[loader_class]["id"]
         # Update cache
         with open(library_path, "w") as f:
             f.write(response.text)
 
+    assert loader_id is not None
     # Load the module
     loader_filename = loader_id.replace("/", "-")
     loader_path = f"{dirpath}/{loader_filename}.py"
