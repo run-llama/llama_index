@@ -1,6 +1,7 @@
 """Weaviate vector store index query."""
 
 
+import logging
 from typing import Any, List, Optional, cast
 
 from gpt_index.data_structs.data_structs import Node, WeaviateIndexStruct
@@ -38,7 +39,6 @@ class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
@@ -51,12 +51,12 @@ class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         )
         nodes = nodes[: self.similarity_top_k]
         node_idxs = [str(i) for i in range(len(nodes))]
-        # print verbose output
-        if verbose:
+
+        if logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG:
             fmt_txts = []
             for node_idx, node in zip(node_idxs, nodes):
                 fmt_txt = f"> [Node {node_idx}] {truncate_text(node.get_text(), 100)}"
                 fmt_txts.append(fmt_txt)
             top_k_node_text = "\n".join(fmt_txts)
-            print(f"> Top {len(nodes)} nodes:\n{top_k_node_text}")
+            logging.debug(f"> Top {len(nodes)} nodes:\n{top_k_node_text}")
         return nodes

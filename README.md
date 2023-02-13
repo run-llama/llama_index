@@ -11,6 +11,8 @@ Twitter: https://twitter.com/gpt_index.
 
 Discord: https://discord.gg/dGcwcsnxhU.
 
+LlamaHub (community library of data loaders): https://llamahub.ai
+
 ## 🚀 Overview
 
 **NOTE**: This README is not updated as frequently as the documentation. Please check out the documentation above for the latest updates!
@@ -59,6 +61,9 @@ Examples are in the `examples` folder. Indices are in the `indices` folder (see 
 
 To build a simple vector store index:
 ```python
+import os
+os.environ["OPENAI_API_KEY"] = 'YOUR_OPENAI_API_KEY'
+
 from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
 index = GPTSimpleVectorIndex(documents)

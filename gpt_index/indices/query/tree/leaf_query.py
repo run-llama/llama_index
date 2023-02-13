@@ -1,10 +1,11 @@
 """Leaf query mechanism."""
 
+import logging
 from typing import Any, Dict, Optional, cast
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.response.builder import ResponseBuilder, ResponseSourceBuilder
+from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
@@ -61,10 +62,8 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         self,
         selected_node: Node,
         query_str: str,
-        source_builder: ResponseSourceBuilder,
         prev_response: Optional[str] = None,
         level: int = 0,
-        verbose: bool = False,
     ) -> str:
         """Get response for selected node.
 
@@ -79,16 +78,15 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                 self.text_qa_template,
                 self.refine_template,
             )
-            source_builder.add_node(selected_node)
+            self.response_builder.add_node(selected_node)
             # use response builder to get answer from node
             node_text, _ = self._get_text_from_node(
-                query_str, selected_node, verbose=verbose, level=level
+                query_str, selected_node, level=level
             )
             cur_response = response_builder.get_response_over_chunks(
-                query_str, [node_text], prev_response=prev_response, verbose=verbose
+                query_str, [node_text], prev_response=prev_response
             )
-            if verbose:
-                print(f">[Level {level}] Current answer response: {cur_response} ")
+            logging.debug(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query_level(
                 {
@@ -96,9 +94,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                     for i in selected_node.child_indices
                 },
                 query_str,
-                source_builder,
                 level=level + 1,
-                verbose=verbose,
             )
 
         if prev_response is None:
@@ -112,18 +108,15 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                 context_msg=context_msg,
             )
 
-            if verbose:
-                print(f">[Level {level}] Refine prompt: {formatted_refine_prompt}")
-                print(f">[Level {level}] Current refined response: {cur_response} ")
+            logging.debug(f">[Level {level}] Refine prompt: {formatted_refine_prompt}")
+            logging.debug(f">[Level {level}] Current refined response: {cur_response} ")
             return cur_response
 
     def _query_level(
         self,
         cur_nodes: Dict[int, Node],
         query_str: str,
-        source_builder: ResponseSourceBuilder,
         level: int = 0,
-        verbose: bool = False,
     ) -> str:
         """Answer a query recursively."""
         cur_node_list = get_sorted_node_list(cur_nodes)
@@ -153,63 +146,56 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                 context_list=numbered_node_text,
             )
 
-        if verbose:
-            print(f">[Level {level}] current prompt template: {formatted_query_prompt}")
+        logging.debug(
+            f">[Level {level}] current prompt template: {formatted_query_prompt}"
+        )
 
         numbers = extract_numbers_given_response(response, n=self.child_branch_factor)
         if numbers is None:
-            if verbose:
-                print(
-                    f">[Level {level}] Could not retrieve response - no numbers present"
-                )
+            logging.debug(
+                f">[Level {level}] Could not retrieve response - no numbers present"
+            )
             # just join text from current nodes as response
             return response
         result_response = None
         for number_str in numbers:
             number = int(number_str)
             if number > len(cur_node_list):
-                if verbose:
-                    print(
-                        f">[Level {level}] Invalid response: {response} - "
-                        f"number {number} out of range"
-                    )
+                logging.debug(
+                    f">[Level {level}] Invalid response: {response} - "
+                    f"number {number} out of range"
+                )
                 return response
 
             # number is 1-indexed, so subtract 1
             selected_node = cur_node_list[number - 1]
 
-            print(
+            logging.info(
                 f">[Level {level}] Selected node: "
                 f"[{number}]/[{','.join([str(int(n)) for n in numbers])}]"
             )
-            if verbose:
-                summary_text = " ".join(selected_node.get_text().splitlines())
-                fmt_summary_text = truncate_text(summary_text, 100)
-                print(
-                    f">[Level {level}] Node "
-                    f"[{number}] Summary text: {fmt_summary_text}"
-                )
+            debug_str = " ".join(selected_node.get_text().splitlines())
+            logging.debug(
+                f">[Level {level}] Node "
+                f"[{number}] Summary text: "
+                f"{ truncate_text(debug_str, 100) }"
+            )
             result_response = self._query_with_selected_node(
                 selected_node,
                 query_str,
-                source_builder,
                 prev_response=result_response,
                 level=level,
-                verbose=verbose,
             )
         # result_response should not be None
         return cast(str, result_response)
 
-    def _query(self, query_str: str, verbose: bool = False) -> Response:
+    def _query(self, query_str: str) -> Response:
         """Answer a query."""
         # NOTE: this overrides the _query method in the base class
-        print(f"> Starting query: {query_str}")
-        source_builder = ResponseSourceBuilder()
+        logging.info(f"> Starting query: {query_str}")
         response_str = self._query_level(
             self.index_struct.root_nodes,
             query_str,
-            source_builder,
             level=0,
-            verbose=verbose,
         ).strip()
-        return Response(response_str, source_nodes=source_builder.get_sources())
+        return Response(response_str, source_nodes=self.response_builder.get_sources())

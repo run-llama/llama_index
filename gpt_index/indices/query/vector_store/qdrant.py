@@ -1,4 +1,5 @@
 """Qdrant vector store index query."""
+import logging
 from typing import Any, List, Optional, cast
 
 from gpt_index.data_structs import Node, QdrantIndexStruct
@@ -63,7 +64,6 @@ class GPTQdrantIndexQuery(BaseGPTVectorStoreIndexQuery[QdrantIndexStruct]):
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
@@ -77,12 +77,11 @@ class GPTQdrantIndexQuery(BaseGPTVectorStoreIndexQuery[QdrantIndexStruct]):
             limit=cast(int, self.similarity_top_k),
         )
 
-        if verbose:
-            print(f"> Top {len(response)} nodes:")
+        logging.debug(f"> Top {len(response)} nodes:")
 
         nodes = []
         for point in response:
-            payload = cast(Payload, point)
+            payload = cast(Payload, point.payload)
             node = Node(
                 doc_id=payload.get("doc_id"),
                 text=payload.get("text"),
@@ -92,10 +91,9 @@ class GPTQdrantIndexQuery(BaseGPTVectorStoreIndexQuery[QdrantIndexStruct]):
             if similarity_tracker is not None:
                 similarity_tracker.add(node, point.score)
 
-            if verbose:
-                print(
-                    f"> [Node {point.id}] [Similarity score: {point.score:.6}] "
-                    f"{truncate_text(str(payload.get('text')), 100)}"
-                )
+            logging.debug(
+                f"> [Node {point.id}] [Similarity score: {point.score:.6}] "
+                f"{truncate_text(str(payload.get('text')), 100)}"
+            )
 
         return nodes

@@ -66,6 +66,9 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
 
         if client is None:
             raise ValueError("client cannot be None.")
+
+        if collection_name is None and index_struct is not None:
+            collection_name = index_struct.collection_name
         if collection_name is None:
             raise ValueError("collection_name cannot be None.")
 
@@ -121,6 +124,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
                     collection_name=collection_name,
                     vector_size=len(text_embedding),
                 )
+                self._collection_initialized = True
 
             while True:
                 new_id = get_new_id(set())
@@ -149,7 +153,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
             )
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
+        self, documents: Sequence[BaseDocument]
     ) -> QdrantIndexStruct:
         """Build index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
@@ -171,7 +175,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
         self._client.delete(
             collection_name=self._collection_name,
             points_selector=rest.Filter(
-                should=[
+                must=[
                     rest.FieldCondition(
                         key="doc_id", match=rest.MatchValue(value=doc_id)
                     )

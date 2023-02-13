@@ -1,5 +1,6 @@
 """Base query classes."""
 
+import logging
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
@@ -11,12 +12,7 @@ from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
-from gpt_index.indices.response.builder import (
-    ResponseBuilder,
-    ResponseMode,
-    ResponseSourceBuilder,
-    TextChunk,
-)
+from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
@@ -153,7 +149,6 @@ class BaseGPTIndexQuery(Generic[IS]):
         self,
         query_str: str,
         node: Node,
-        verbose: bool = False,
         level: Optional[int] = None,
     ) -> Tuple[TextChunk, Optional[Response]]:
         """Query a given node.
@@ -164,8 +159,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         """
         level_str = "" if level is None else f"[Level {level}]"
         fmt_text_chunk = truncate_text(node.get_text(), 50)
-        if verbose:
-            print(f">{level_str} Searching in chunk: {fmt_text_chunk}")
+        logging.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
         is_index_struct = False
         # if self._query_runner is not None, assume we want to do a recursive
@@ -198,7 +192,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         pass
 
     def _give_response_for_nodes(
-        self, query_str: str, text_chunks: List[TextChunk], verbose: bool = False
+        self, query_str: str, text_chunks: List[TextChunk]
     ) -> str:
         """Give response for nodes."""
         self.response_builder.reset()
@@ -206,7 +200,6 @@ class BaseGPTIndexQuery(Generic[IS]):
             self.response_builder.add_text_chunks([text])
         response = self.response_builder.get_response(
             query_str,
-            verbose=verbose,
             mode=self._response_mode,
             **self._response_kwargs,
         )
@@ -214,7 +207,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         return response or ""
 
     def get_nodes_and_similarities_for_response(
-        self, query_str: str, verbose: bool = False
+        self, query_str: str
     ) -> List[Tuple[Node, Optional[float]]]:
         """Get list of tuples of node and similarity for response.
 
@@ -224,7 +217,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         """
         similarity_tracker = SimilarityTracker()
         nodes = self._get_nodes_for_response(
-            query_str, similarity_tracker=similarity_tracker, verbose=verbose
+            query_str, similarity_tracker=similarity_tracker
         )
         nodes = [
             node for node in nodes if self._should_use_node(node, similarity_tracker)
@@ -237,41 +230,35 @@ class BaseGPTIndexQuery(Generic[IS]):
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
 
-    def _query(self, query_str: str, verbose: bool = False) -> Response:
+    def _query(self, query_str: str) -> Response:
         """Answer a query."""
         # TODO: remove _query and just use query
-        tuples = self.get_nodes_and_similarities_for_response(
-            query_str, verbose=verbose
-        )
-        source_builder = ResponseSourceBuilder()
+        tuples = self.get_nodes_and_similarities_for_response(query_str)
         node_texts = []
         for node, similarity in tuples:
-            text, response = self._get_text_from_node(query_str, node, verbose=verbose)
-            source_builder.add_node(node, similarity=similarity)
+            text, response = self._get_text_from_node(query_str, node)
+            self.response_builder.add_node(node, similarity=similarity)
             if response is not None:
                 # these are source nodes from within this node (when it's an index)
                 for source_node in response.source_nodes:
-                    source_builder.add_source_node(source_node)
+                    self.response_builder.add_source_node(source_node)
             node_texts.append(text)
 
         if self._response_mode != ResponseMode.NO_TEXT:
-            response_str = self._give_response_for_nodes(
-                query_str, node_texts, verbose=verbose
-            )
+            response_str = self._give_response_for_nodes(query_str, node_texts)
         else:
             response_str = None
 
-        return Response(response_str, source_nodes=source_builder.get_sources())
+        return Response(response_str, source_nodes=self.response_builder.get_sources())
 
     @llm_token_counter("query")
-    def query(self, query_str: str, verbose: bool = False) -> Response:
+    def query(self, query_str: str) -> Response:
         """Answer a query."""
-        response = self._query(query_str, verbose=verbose)
+        response = self._query(query_str)
         # if include_summary is True, then include summary text in answer
         # summary text is set through `set_text` on the underlying index.
         # TODO: refactor response builder to be in the __init__
@@ -286,7 +273,6 @@ class BaseGPTIndexQuery(Generic[IS]):
             # NOTE: use create and refine for now (default response mode)
             response.response = response_builder.get_response(
                 query_str,
-                verbose=verbose,
                 mode=self._response_mode,
                 prev_response=response.response,
             )

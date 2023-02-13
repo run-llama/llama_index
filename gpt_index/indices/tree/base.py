@@ -98,7 +98,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self._validate_build_tree_required(mode)
 
     def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
+        self, documents: Sequence[BaseDocument]
     ) -> IndexGraph:
         """Build the index from documents."""
         # do simple concatenation
@@ -109,7 +109,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self._prompt_helper,
         )
         index_graph = index_builder.build_from_text(
-            documents, build_tree=self.build_tree, verbose=verbose
+            documents, build_tree=self.build_tree
         )
         return index_graph
 

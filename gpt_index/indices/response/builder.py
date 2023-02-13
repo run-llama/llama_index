@@ -7,7 +7,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 2) create and refine separately over each chunk, 3) tree summarization.
 
 """
-
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
@@ -50,6 +50,7 @@ class ResponseBuilder:
         text_qa_template: QuestionAnswerPrompt,
         refine_template: RefinePrompt,
         texts: Optional[List[TextChunk]] = None,
+        nodes: Optional[List[Node]] = None,
     ) -> None:
         """Init params."""
         self.prompt_helper = prompt_helper
@@ -57,6 +58,8 @@ class ResponseBuilder:
         self.text_qa_template = text_qa_template
         self.refine_template = refine_template
         self._texts = texts or []
+        nodes = nodes or []
+        self.source_nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
 
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
@@ -66,17 +69,27 @@ class ResponseBuilder:
         """Clear text chunks."""
         self._texts = []
 
+    def add_node(self, node: Node, similarity: Optional[float] = None) -> None:
+        """Add node."""
+        self.source_nodes.append(SourceNode.from_node(node, similarity=similarity))
+
+    def add_source_node(self, source_node: SourceNode) -> None:
+        """Add source node directly."""
+        self.source_nodes.append(source_node)
+
+    def get_sources(self) -> List[SourceNode]:
+        """Get sources."""
+        return self.source_nodes
+
     def refine_response_single(
         self,
         response: str,
         query_str: str,
         text_chunk: str,
-        verbose: bool = False,
     ) -> str:
         """Refine response."""
         fmt_text_chunk = truncate_text(text_chunk, 50)
-        if verbose:
-            print(f"> Refine context: {fmt_text_chunk}")
+        logging.debug(f"> Refine context: {fmt_text_chunk}")
         # NOTE: partial format refine template with query_str and existing_answer here
         refine_template = self.refine_template.partial_format(
             query_str=query_str, existing_answer=response
@@ -90,15 +103,13 @@ class ResponseBuilder:
                 refine_template,
                 context_msg=cur_text_chunk,
             )
-            if verbose:
-                print(f"> Refined response: {response}")
+            logging.debug(f"> Refined response: {response}")
         return response
 
     def give_response_single(
         self,
         query_str: str,
         text_chunk: str,
-        verbose: bool = False,
     ) -> str:
         """Give response given a query and a corresponding text chunk."""
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
@@ -114,14 +125,12 @@ class ResponseBuilder:
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
-                if verbose:
-                    print(f"> Initial response: {response}")
+                logging.debug(f"> Initial response: {response}")
             else:
                 response = self.refine_response_single(
                     response,
                     query_str,
                     cur_text_chunk,
-                    verbose=verbose,
                 )
         return response or ""
 
@@ -130,7 +139,6 @@ class ResponseBuilder:
         query_str: str,
         text_chunks: List[TextChunk],
         prev_response: Optional[str] = None,
-        verbose: bool = False,
     ) -> str:
         """Give response over chunks."""
         response = None
@@ -145,24 +153,23 @@ class ResponseBuilder:
                     response = self.give_response_single(
                         query_str,
                         text_chunk.text,
-                        verbose=verbose,
                     )
             else:
                 response = self.refine_response_single(
-                    prev_response, query_str, text_chunk.text, verbose=verbose
+                    prev_response, query_str, text_chunk.text
                 )
             prev_response = response
         return response or "Empty Response"
 
     def _get_response_default(
-        self, query_str: str, prev_response: Optional[str], verbose: bool = False
+        self, query_str: str, prev_response: Optional[str]
     ) -> str:
         return self.get_response_over_chunks(
-            query_str, self._texts, prev_response=prev_response, verbose=verbose
+            query_str, self._texts, prev_response=prev_response
         )
 
     def _get_response_compact(
-        self, query_str: str, prev_response: Optional[str], verbose: bool = False
+        self, query_str: str, prev_response: Optional[str]
     ) -> str:
         """Get compact response."""
         # use prompt helper to fix compact text_chunks under the prompt limitation
@@ -175,7 +182,7 @@ class ResponseBuilder:
             )
             new_text_chunks = [TextChunk(text=t) for t in new_texts]
             response = self.get_response_over_chunks(
-                query_str, new_text_chunks, prev_response=prev_response, verbose=verbose
+                query_str, new_text_chunks, prev_response=prev_response
             )
         return response
 
@@ -183,7 +190,6 @@ class ResponseBuilder:
         self,
         query_str: str,
         prev_response: Optional[str],
-        verbose: bool = False,
         num_children: int = 10,
     ) -> str:
         """Get tree summarize response."""
@@ -207,9 +213,7 @@ class ResponseBuilder:
             self.llm_predictor,
             self.prompt_helper,
         )
-        root_nodes = index_builder.build_index_from_nodes(
-            all_nodes, all_nodes, verbose=verbose
-        )
+        root_nodes = index_builder.build_index_from_nodes(all_nodes, all_nodes)
         node_list = get_sorted_node_list(root_nodes)
         node_text = self.prompt_helper.get_text_from_nodes(
             node_list, prompt=text_qa_template
@@ -218,7 +222,6 @@ class ResponseBuilder:
             query_str,
             [TextChunk(node_text)],
             prev_response=prev_response,
-            verbose=verbose,
         )
         return response or "Empty Response"
 
@@ -227,40 +230,16 @@ class ResponseBuilder:
         query_str: str,
         prev_response: Optional[str] = None,
         mode: ResponseMode = ResponseMode.DEFAULT,
-        verbose: bool = False,
         **response_kwargs: Any,
     ) -> str:
         """Get response."""
         if mode == ResponseMode.DEFAULT:
-            return self._get_response_default(query_str, prev_response, verbose=verbose)
+            return self._get_response_default(query_str, prev_response)
         elif mode == ResponseMode.COMPACT:
-            return self._get_response_compact(query_str, prev_response, verbose=verbose)
+            return self._get_response_compact(query_str, prev_response)
         elif mode == ResponseMode.TREE_SUMMARIZE:
             return self._get_response_tree_summarize(
-                query_str, prev_response, verbose=verbose, **response_kwargs
+                query_str, prev_response, **response_kwargs
             )
         else:
             raise ValueError(f"Invalid mode: {mode}")
-
-
-class ResponseSourceBuilder:
-    """Response source builder class."""
-
-    # TODO: consolidate with ResponseBuilder
-
-    def __init__(self, nodes: Optional[List[Node]] = None) -> None:
-        """Init params."""
-        nodes = nodes or []
-        self._nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
-
-    def add_node(self, node: Node, similarity: Optional[float] = None) -> None:
-        """Add node."""
-        self._nodes.append(SourceNode.from_node(node, similarity=similarity))
-
-    def add_source_node(self, source_node: SourceNode) -> None:
-        """Add source node directly."""
-        self._nodes.append(source_node)
-
-    def get_sources(self) -> List[SourceNode]:
-        """Get sources."""
-        return self._nodes

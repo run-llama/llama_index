@@ -1,47 +1,33 @@
-# Data Connectors
+# Data Connectors (LlamaHub 🦙)
 
-We currently offer connectors into the following data sources. External data sources are retrieved through their APIs + corresponding authentication token.
-The API reference documentation can be found [here](/reference/readers.rst).
+Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙. 
+LlamaHub is an open-source repository containing data loaders that you can easily plug and play into any GPT Index application.
 
-All readers can be imported through `from gpt_index.readers import ...`. A subset can be imported directly through `from gpt_index import ...`
+![](/_static/data_connectors/llamahub.png)
 
-#### External API's
 
+Some sample data connectors:
+- local file directory (`SimpleDirectoryReader`). Can support parsing a wide range of file types: `.pdf`, `.jpg`, `.png`, `.docx`, etc.
 - [Notion](https://developers.notion.com/) (`NotionPageReader`)
 - [Google Docs](https://developers.google.com/docs/api) (`GoogleDocsReader`)
 - [Slack](https://api.slack.com/) (`SlackReader`)
 - [Discord](https://discord.com/developers/docs/intro) (`DiscordReader`)
-  - Note: We use the [discord.py](https://github.com/Rapptz/discord.py) API wrapper for Discord. This is meant to be used
-    in an async setting; however, we adapt it to synchronous Document loading.
-- Wikipedia (`WikipediaReader`)
-- YouTube (`YoutubeTranscriptReader`)
-- Twitter (`TwitterTweetReader`)
-- Web (`SimpleWebPageReader`, `BeautifulSoupWebReader`, `TrafilaturaWebReader`)
 
-#### Databases
 
-- MongoDB (`SimpleMongoReader`)
-- SQL Databases (`DatabaseReader`)
+Each data loader contains a "Usage" section showing how that loader can be used. At the core of using each loader is a `download_loader` function, which
+downloads the loader file into a module that you can use within your application.
 
-#### Vector Stores
+Example usage:
 
-See [How to use Vector Stores with GPT Index](vector_stores.md) for a more thorough guide on integrating vector stores with GPT Index.
+```python
+from gpt_index import GPTSimpleVectorIndex, download_loader
 
-- Qdrant (`QdrantReader`)
-- Weaviate (`WeaviateReader`)
-- Pinecone (`PineconeReader`)
-- Faiss (`FaissReader`)
+GoogleDocsReader = download_loader('GoogleDocsReader')
 
-### Workflow Automation
+gdoc_ids = ['1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec']
+loader = GoogleDocsReader()
+documents = loader.load_data(document_ids=gdoc_ids)
+index = GPTSimpleVectorIndex(documents)
+index.query('Where did the author go to school?')
+```
 
-- Make.com (`MakeWrapper`). NOTE: `load_data` is not supported. See `pass_response_to_webhook` in the [reference documentation](/reference/readers.rst) instead.
-
-#### File
-
-- local file directory (`SimpleDirectoryReader`)
-- Obsidian Reader (`ObsidianReader`)
-
-The `SimpleDirectoryReader` can support parsing a wide range of file types: `.pdf`, `.jpg`, `.png`, `.docx`, `.mp3`, `.mp4`.
-Each of these file types may require additional dependencies to be installed.
-
-We offer [example notebooks of connecting to different data sources](https://github.com/jerryjliu/gpt_index/tree/main/examples/data_connectors). Please check them out!

@@ -1,5 +1,6 @@
 """Wrapper functions around an LLM chain."""
 
+import logging
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
@@ -122,6 +123,7 @@ class LLMPredictor:
         """
         formatted_prompt = prompt.format(**prompt_args)
         llm_prediction = self._predict(prompt, **prompt_args)
+        logging.debug(llm_prediction)
 
         # We assume that the value of formatted_prompt is exactly the thing
         # eventually sent to OpenAI, or whatever LLM downstream
