@@ -7,6 +7,7 @@ from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseQueryRunner
+from gpt_index.indices.query.query_processor import BaseQueryProcessor
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -31,6 +32,7 @@ class QueryRunner(BaseQueryRunner):
         docstore: DocumentStore,
         index_registry: IndexRegistry,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
+        query_processor: BaseQueryProcessor | None = None,
         recursive: bool = False,
     ) -> None:
         """Init params."""
@@ -53,6 +55,7 @@ class QueryRunner(BaseQueryRunner):
         self._embed_model = embed_model
         self._docstore = docstore
         self._index_registry = index_registry
+        self._query_processor = query_processor or BaseQueryProcessor()
         self._recursive = recursive
 
     def _get_query_kwargs(self, config: QueryConfig) -> Dict[str, Any]:
@@ -75,9 +78,9 @@ class QueryRunner(BaseQueryRunner):
     ) -> Response:
         """Run query."""
         if isinstance(query_str_or_bundle, str):
-            query_bundle = QueryBundle(query_str_or_bundle)
-        else:
-            query_bundle = query_str_or_bundle
+            query_bundle = self._query_processor(query_str_or_bundle)
+        else: 
+            query_bundle = query_str_or_bundle 
 
         index_struct_type = index_struct.get_type()
         if index_struct_type not in self._config_dict:
