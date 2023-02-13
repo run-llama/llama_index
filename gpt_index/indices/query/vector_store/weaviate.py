@@ -43,7 +43,7 @@ class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        query_embedding = self._embed_model.get_query_embedding(query_bundle)
+        query_embedding = self._embed_model.get_query_embedding(query_bundle.embedding_strs)
         nodes = WeaviateNode.to_gpt_index_list(
             self.client,
             self._index_struct.get_class_prefix(),

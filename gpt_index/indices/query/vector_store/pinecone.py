@@ -63,7 +63,7 @@ class GPTPineconeIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        query_embedding = self._embed_model.get_query_embedding(query_bundle)
+        query_embedding = self._embed_model.get_query_embedding(query_bundle.embedding_strs)
 
         response = self._pinecone_index.query(
             query_embedding,

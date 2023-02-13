@@ -6,7 +6,6 @@ from typing import Callable, List, Optional
 
 import numpy as np
 
-from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.utils import globals_helper
 
 # TODO: change to numpy array
@@ -37,19 +36,21 @@ class BaseEmbedding:
     def _combine_embeddings(self, embeddings: list[list[float]]) -> List[float]:
         return list(np.array(embeddings).mean(axis=0))
 
-    def get_query_embedding(self, query: str | QueryBundle) -> List[float]:
+    def get_query_embedding(self, query: str | list[str]) -> List[float]:
         """Get query embedding."""
         if isinstance(query, str):
             query_embedding = self._get_query_embedding(query)
             query_tokens_count = len(self._tokenizer(query))
             self._total_tokens_used += query_tokens_count
-        elif isinstance(query, QueryBundle):
+        elif isinstance(query, list):
             embeddings = [
-                self._get_query_embedding(embedding_str) for embedding_str in query.embedding_strs
+                self._get_query_embedding(embedding_str) for embedding_str in query
                 ]
             query_embedding = self._combine_embeddings(embeddings)
-            query_tokens_count = sum(len(self._tokenizer(embedding_str)) for embedding_str in query.embedding_strs)
+            query_tokens_count = sum(len(self._tokenizer(embedding_str)) for embedding_str in query)
             self._total_tokens_used += query_tokens_count
+        else:
+            raise ValueError(f'Unknown query type: {type(query)}')
 
         return query_embedding
 
