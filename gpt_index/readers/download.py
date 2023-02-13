@@ -14,7 +14,8 @@ from pkg_resources import DistributionNotFound
 
 from gpt_index.readers.base import BaseReader
 
-LOADER_HUB_URL = "https://api.github.com/repos/ahmetkca/llama-hub/contents/loader_hub{path}?ref=github-reader"
+LOADER_HUB_URL = "https://api.github.com/repos/ahmetkca/llama-hub"
++"/contents/loader_hub{path}?ref=github-reader"
 
 
 def _get_file_content(path: str) -> bool:
@@ -23,7 +24,6 @@ def _get_file_content(path: str) -> bool:
         "X-GitHub-Api-Version": "2022-11-28",
     }
     resp = requests.get(LOADER_HUB_URL.format(path=path), headers=headers).json()
-    print(resp)
     content = resp["content"]
     assert resp["encoding"] == "base64"
     return base64.b64decode(content).decode("utf-8")
@@ -53,7 +53,7 @@ def download_loader(loader_class: str) -> BaseReader:
 
     # Create an __init__.py file if it does not exist under the modules directory
     with open(f"{dirpath}/__init__.py", "w") as f:
-        f.write(f'""" Init file for modules directory. """')
+        f.write('""" Init file for modules directory. """')
 
     if not os.path.exists(loader_path):
         os.makedirs(loader_path)
