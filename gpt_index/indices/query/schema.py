@@ -108,3 +108,8 @@ class QueryConfig(DataClassJsonMixin):
     index_struct_type: str
     query_mode: QueryMode
     query_kwargs: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class QueryBundle(DataClassJsonMixin):
+    query_str: str
+    embedding_strs: list[str]
