@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, cast
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
@@ -189,13 +190,13 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         # result_response should not be None
         return cast(str, result_response)
 
-    def _query(self, query_str: str) -> Response:
+    def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         # NOTE: this overrides the _query method in the base class
-        logging.info(f"> Starting query: {query_str}")
+        logging.info(f"> Starting query: {query_bundle.query_str}")
         response_str = self._query_level(
             self.index_struct.root_nodes,
-            query_str,
+            query_bundle.query_str,
             level=0,
         ).strip()
         return Response(response_str, source_nodes=self.response_builder.get_sources())
