@@ -230,17 +230,3 @@ DEFAULT_REFINE_TABLE_CONTEXT_TMPL = (
 DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = RefineTableContextPrompt(
     DEFAULT_REFINE_TABLE_CONTEXT_TMPL
 )
-
-
-HYDE_TMPL = (
-    "Please write a passage to answer the question\n"
-    "Try to include as many key details as possible.\n"
-    "\n"
-    "\n"
-    "{context_str}\n"
-    "\n"
-    "\n"
-    'Passage:"""\n'
-)
-
-DEFAULT_HYDE_PROMPT = SummaryPrompt(HYDE_TMPL)
