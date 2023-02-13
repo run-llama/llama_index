@@ -12,13 +12,8 @@ class BaseQueryProcessor:
     def __init__(self) -> None:
         pass
 
-    def __call__(self, query: str | QueryBundle) -> QueryBundle:
-        if isinstance(query, str):
-            return QueryBundle(query_str=query, embedding_strs=[query])
-        elif isinstance(query, QueryBundle):
-            return query
-        else:
-            raise ValueError("Unknown query type")
+    def __call__(self, query_str: str) -> QueryBundle:
+        return QueryBundle(query_str=query_str, embedding_strs=[query_str])
 
 
 class HyDEQueryProcessor(BaseQueryProcessor):
@@ -26,26 +21,24 @@ class HyDEQueryProcessor(BaseQueryProcessor):
         self,
         llm_predictor: Optional[LLMPredictor] = None,
         hyde_prompt: Optional[Prompt] = None,
+        include_original: bool = True,
     ) -> None:
         super().__init__()
 
         self._llm_predictor = llm_predictor or LLMPredictor()
         self._hyde_prompt = hyde_prompt or DEFAULT_HYDE_PROMPT
+        self._include_original = include_original
 
-    def __call__(self, query: str | QueryBundle) -> QueryBundle:
+    def __call__(self, query_str: str) -> QueryBundle:
         """Override QueryProcessor.process_query"""
-
-        if isinstance(query, str):
-            query_str = query
-        elif isinstance(query, QueryBundle):
-            query_str = query.query_str
-        else:
-            raise ValueError('Unknown query type')
-
+        # TODO: support generating multiple hypothetical docs
         hypothetical_doc, _ = self._llm_predictor.predict(
             self._hyde_prompt, context_str=query_str
         )
+        embedding_strs = [hypothetical_doc]
+        if self._include_original:
+            embedding_strs.append(query_str)
         return QueryBundle(
             query_str=query_str,
-            embedding_strs=[hypothetical_doc]
+            embedding_strs=embedding_strs,
         )
