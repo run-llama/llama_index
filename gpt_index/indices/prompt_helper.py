@@ -68,8 +68,12 @@ class PromptHelper:
         """
         llm_metadata = llm_predictor.get_llm_metadata()
         max_chunk_overlap = max_chunk_overlap or min(
-            MAX_CHUNK_OVERLAP, llm_metadata.max_input_size // 10
+            MAX_CHUNK_OVERLAP,
+            llm_metadata.max_input_size // 10,
         )
+        if chunk_size_limit is not None:
+            max_chunk_overlap = min(max_chunk_overlap, chunk_size_limit // 10)
+
         return self(
             llm_metadata.max_input_size,
             llm_metadata.num_output,

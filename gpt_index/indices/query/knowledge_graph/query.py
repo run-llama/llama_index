@@ -49,6 +49,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
+        include_text: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -59,10 +60,19 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
         )
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
+        self._include_text = include_text
 
-    @abstractmethod
     def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
         """Extract keywords."""
+        response, _ = self._llm_predictor.predict(
+            self.query_keyword_extract_template,
+            max_keywords=self.max_keywords_per_query,
+            question=query_str,
+        )
+        keywords = extract_keywords_given_response(
+            response, start_token="KEYWORDS:", lowercase=False
+        )
+        return list(keywords)
 
     def _get_nodes_for_response(
         self,
@@ -72,11 +82,28 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
     ) -> List[Node]:
         """Get nodes for response."""
         print(f"> Starting query: {query_str}")
-        # keywords = self._get_keywords(query_str, verbose=verbose)
-        keywords = ["Terry Winograd"]
+        keywords = self._get_keywords(query_str, verbose=verbose)
+        # keywords = ["Terry Winograd"]
         print(f"query keywords: {keywords}")
+        rel_texts = []
         nodes: List[Node] = []
         for keyword in keywords:
-            for chunk in self.index_struct.get_texts(keyword):
-                nodes.append(chunk)
+            cur_rel_texts = self.index_struct.get_rel_map_texts(keyword)
+            rel_texts.extend(cur_rel_texts)
+            if self._include_text:
+                for node in self.index_struct.get_texts(keyword):
+                    nodes.append(node)
+
+        # TODO: make initial text customizable
+        rel_initial_text = "The following are knowledge triplets in the form of (subset, predicate, object):"
+        rel_texts = [rel_initial_text] + rel_texts
+        rel_text_node = Node(text="\n".join(rel_texts))
+        nodes.append(rel_text_node)
+
         return nodes
+
+        # nodes: List[Node] = []
+        # for keyword in keywords:
+        #     for chunk in self.index_struct.get_texts(keyword):
+        #         nodes.append(chunk)
+        # return nodes

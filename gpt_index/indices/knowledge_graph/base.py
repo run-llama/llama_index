@@ -94,7 +94,10 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         knowledge_strs = response.strip().split("\n")
         results = []
         for text in knowledge_strs:
-            subj, pred, obj = text[1:-1].split(",")
+            tokens = text[1:-1].split(",")
+            if len(tokens) != 3:
+                continue
+            subj, pred, obj = tokens
             results.append((subj, pred, obj))
         return results
 
@@ -118,34 +121,3 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 for triplet in triplets:
                     index_struct.upsert_triplet(triplet, n)
         return index_struct
-
-    # def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
-    #     """Insert a document."""
-    #     nodes = self._get_nodes_from_document(document, self._text_splitter)
-    #     for n in nodes:
-    #         keywords = self._extract_keywords(n.get_text())
-    #         self._index_struct.add_node(list(keywords), n)
-
-    # def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-    #     """Delete a document."""
-    #     # get set of ids that correspond to node
-    #     node_idxs_to_delete = set()
-    #     for node_idx, node in self._index_struct.text_chunks.items():
-    #         if node.ref_doc_id != doc_id:
-    #             continue
-    #         node_idxs_to_delete.add(node_idx)
-    #     for node_idx in node_idxs_to_delete:
-    #         del self._index_struct.text_chunks[node_idx]
-
-    #     # delete node_idxs from keyword to node idxs mapping
-    #     keywords_to_delete = set()
-    #     for keyword, node_idxs in self._index_struct.table.items():
-    #         if node_idxs_to_delete.intersection(node_idxs):
-    #             self._index_struct.table[keyword] = node_idxs.difference(
-    #                 node_idxs_to_delete
-    #             )
-    #             if not self._index_struct.table[keyword]:
-    #                 keywords_to_delete.add(keyword)
-
-    #     for keyword in keywords_to_delete:
-    #         del self._index_struct.table[keyword]

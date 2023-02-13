@@ -368,6 +368,17 @@ class KG(IndexStruct):
             self.table[keyword].add(node_id)
         self.text_chunks[node_id] = node
 
+    def get_rel_map_texts(self, keyword: str) -> List[str]:
+        """Get the corresponding knowledge for a given keyword."""
+        # NOTE: return a single node for now
+        if keyword not in self.rel_map:
+            return []
+        # text_chunks: List[Node] = []
+        texts = []
+        for obj, rel in self.rel_map[keyword]:
+            texts.append(str((keyword, rel, obj)))
+        return texts
+
     def get_texts(self, keyword: str) -> List[Node]:
         """Get the corresponding knowledge for a given keyword."""
         if keyword not in self.table:
