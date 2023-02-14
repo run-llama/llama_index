@@ -45,12 +45,14 @@ class BaseEmbedding:
         elif isinstance(query, list):
             embeddings = [
                 self._get_query_embedding(embedding_str) for embedding_str in query
-                ]
+            ]
             query_embedding = self._combine_embeddings(embeddings)
-            query_tokens_count = sum(len(self._tokenizer(embedding_str)) for embedding_str in query)
+            query_tokens_count = sum(
+                len(self._tokenizer(embedding_str)) for embedding_str in query
+            )
             self._total_tokens_used += query_tokens_count
         else:
-            raise ValueError(f'Unknown query type: {type(query)}')
+            raise ValueError(f"Unknown query type: {type(query)}")
 
         return query_embedding
 

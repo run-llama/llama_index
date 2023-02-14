@@ -100,7 +100,9 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         table_desc_str = self._get_all_tables_desc()
         logging.info(f"table desc str: {table_desc_str}")
         response_str, _ = self._llm_predictor.predict(
-            self._text_to_sql_prompt, query_str=query_bundle.query_str, schema=table_desc_str
+            self._text_to_sql_prompt,
+            query_str=query_bundle.query_str,
+            schema=table_desc_str,
         )
 
         sql_query_str = self._parse_response_to_sql(response_str)

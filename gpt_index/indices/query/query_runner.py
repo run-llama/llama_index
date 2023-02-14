@@ -70,13 +70,15 @@ class QueryRunner(BaseQueryRunner):
             query_kwargs["embed_model"] = self._embed_model
         return query_kwargs
 
-    def query(self, query_str_or_bundle: str | QueryBundle, index_struct: IndexStruct) -> Response:
+    def query(
+        self, query_str_or_bundle: str | QueryBundle, index_struct: IndexStruct
+    ) -> Response:
         """Run query."""
         if isinstance(query_str_or_bundle, str):
             query_str = query_str_or_bundle
             query_bundle = QueryBundle(query_str=query_str, embedding_strs=[query_str])
-        else: 
-            query_bundle = query_str_or_bundle 
+        else:
+            query_bundle = query_str_or_bundle
 
         index_struct_type = index_struct.get_type()
         if index_struct_type not in self._config_dict:

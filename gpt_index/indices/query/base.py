@@ -250,7 +250,9 @@ class BaseGPTIndexQuery(Generic[IS]):
             node_texts.append(text)
 
         if self._response_mode != ResponseMode.NO_TEXT:
-            response_str = self._give_response_for_nodes(query_bundle.query_str, node_texts)
+            response_str = self._give_response_for_nodes(
+                query_bundle.query_str, node_texts
+            )
         else:
             response_str = None
 

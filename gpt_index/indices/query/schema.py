@@ -109,7 +109,20 @@ class QueryConfig(DataClassJsonMixin):
     query_mode: QueryMode
     query_kwargs: Dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class QueryBundle(DataClassJsonMixin):
+    """
+    Query bundle.
+
+    This dataclass contains the original query string and associated transformations.
+
+    Args:
+        query_str (str): the original user-specified query string.
+            This is currently used by all non embedding-based queries.
+        embedding_strs (list[str]): list of strings used for embedding the query.
+            This is currently used by all embedding-based queries.
+    """
+
     query_str: str
     embedding_strs: list[str]

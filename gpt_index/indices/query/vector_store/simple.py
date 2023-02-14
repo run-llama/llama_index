@@ -41,7 +41,9 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
     ) -> List[Node]:
         """Get nodes for response."""
         # TODO: consolidate with get_query_text_embedding_similarities
-        query_embedding = self._embed_model.get_query_embedding(query_bundle.embedding_strs)
+        query_embedding = self._embed_model.get_query_embedding(
+            query_bundle.embedding_strs
+        )
         items = self._index_struct.embedding_dict.items()
         node_ids = [t[0] for t in items]
         embeddings = [t[1] for t in items]
