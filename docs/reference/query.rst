@@ -18,6 +18,8 @@ among all queries.
    indices/table_query.rst
    indices/tree_query.rst
    indices/vector_store_query.rst
+   indices/struct_store_query.rst
+   indices/kg_query.rst
 
 
 This section shows how to define a query config in order to recursively query
