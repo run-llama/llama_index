@@ -334,7 +334,7 @@ class BaseGPTIndex(Generic[IS]):
 
     def query(
         self,
-        query_str: str | QueryBundle,
+        query_str: Union[str, QueryBundle],
         mode: str = QueryMode.DEFAULT,
         **query_kwargs: Any,
     ) -> Response:

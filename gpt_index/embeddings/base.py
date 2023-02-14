@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from enum import Enum
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 
 import numpy as np
 
@@ -36,7 +36,7 @@ class BaseEmbedding:
     def _combine_embeddings(self, embeddings: list[list[float]]) -> List[float]:
         return list(np.array(embeddings).mean(axis=0))
 
-    def get_query_embedding(self, query: str | list[str]) -> List[float]:
+    def get_query_embedding(self, query: Union[str, list[str]]) -> List[float]:
         """Get query embedding."""
         if isinstance(query, str):
             query_embedding = self._get_query_embedding(query)
