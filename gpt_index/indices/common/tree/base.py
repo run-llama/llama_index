@@ -1,6 +1,7 @@
 """Common classes/functions for tree index operations."""
 
 
+import asyncio
 import logging
 from typing import Dict, Sequence
 
@@ -62,6 +63,7 @@ class GPTTreeIndexBuilder:
         self,
         documents: Sequence[BaseDocument],
         build_tree: bool = True,
+        async_: bool = True,
     ) -> IndexGraph:
         """Build from text.
 
@@ -75,7 +77,7 @@ class GPTTreeIndexBuilder:
 
         if build_tree:
             # instantiate all_nodes from initial text chunks
-            root_nodes = self.build_index_from_nodes(all_nodes, all_nodes)
+            root_nodes = self.build_index_from_nodes(all_nodes, all_nodes, async_=async_)
         else:
             # if build_tree is False, then don't surface any root nodes
             root_nodes = {}
@@ -85,6 +87,7 @@ class GPTTreeIndexBuilder:
         self,
         cur_nodes: Dict[int, Node],
         all_nodes: Dict[int, Node],
+        async_: bool = True,
     ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         cur_node_list = get_sorted_node_list(cur_nodes)
@@ -93,16 +96,33 @@ class GPTTreeIndexBuilder:
         logging.info(
             f"> Building index from nodes: {len(cur_nodes) // self.num_children} chunks"
         )
+
+        indices, text_chunks = [], []
         for i in range(0, len(cur_node_list), self.num_children):
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
             text_chunk = self._prompt_helper.get_text_from_nodes(
                 cur_nodes_chunk, prompt=self.summary_prompt
             )
+            indices.append(i)
+            text_chunks.append(text_chunk)
 
-            new_summary, _ = self._llm_predictor.predict(
-                self.summary_prompt, context_str=text_chunk
-            )
+        if async_:
+            tasks = [
+                self._llm_predictor.apredict(
+                    self.summary_prompt, context_str=text_chunk
+                ) for text_chunk in text_chunks
+            ]
+            all_tasks = asyncio.gather(*tasks)
+            outputs = asyncio.run(all_tasks)
+            summaries = [output[0] for output in outputs]
+        else:
+            summaries = [
+                self._llm_predictor.predict(
+                    self.summary_prompt, context_str=text_chunk
+                )[0] for text_chunk in text_chunks
+            ]
 
+        for i, new_summary in zip(indices, summaries):
             logging.debug(
                 f"> {i}/{len(cur_nodes)}, summary: {truncate_text(new_summary, 50)}"
             )
