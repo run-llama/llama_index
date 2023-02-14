@@ -81,7 +81,7 @@ class QueryRunner(BaseQueryRunner):
         # TODO: Consider refactor to support index-specific query processing
         if isinstance(query_str_or_bundle, str):
             query_bundle = self._query_processor(query_str_or_bundle)
-        else: 
+        else:
             query_bundle = query_str_or_bundle
 
         index_struct_type = index_struct.get_type()
