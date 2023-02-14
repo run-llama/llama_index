@@ -32,5 +32,8 @@ class PromptType(str, Enum):
     # table context
     TABLE_CONTEXT = "table_context"
 
+    # KG extraction prompt
+    KNOWLEDGE_TRIPLET_EXTRACT = "knowledge_triplet_extract"
+
     # custom (by default)
     CUSTOM = "custom"

@@ -73,12 +73,12 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         """Get nodes for response."""
         logging.info(f"> Starting query: {query_str}")
         keywords = self._get_keywords(query_str)
-        logging.info(f"query keywords: {keywords}")
+        logging.info(f"> query keywords: {keywords}")
 
         # go through text chunks in order of most matching keywords
         chunk_indices_count: Dict[int, int] = defaultdict(int)
         keywords = [k for k in keywords if k in self.index_struct.keywords]
-        logging.info(f"Extracted keywords: {keywords}")
+        logging.info(f"> Extracted keywords: {keywords}")
         for k in keywords:
             for text_chunk_idx in self.index_struct.table[k]:
                 chunk_indices_count[text_chunk_idx] += 1

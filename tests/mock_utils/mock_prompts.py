@@ -2,6 +2,7 @@
 
 from gpt_index.prompts.prompts import (
     KeywordExtractPrompt,
+    KnowledgeGraphPrompt,
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,
     RefinePrompt,
@@ -51,3 +52,8 @@ MOCK_TEXT_TO_SQL_PROMPT = TextToSQLPrompt(MOCK_TEXT_TO_SQL_PROMPT_TMPL)
 
 MOCK_TABLE_CONTEXT_PROMPT_TMPL = "{schema}\n{context_str}\n{query_str}"
 MOCK_TABLE_CONTEXT_PROMPT = TableContextPrompt(MOCK_TABLE_CONTEXT_PROMPT_TMPL)
+
+MOCK_KG_TRIPLET_EXTRACT_PROMPT_TMPL = "{max_knowledge_triplets}\n{text}"
+MOCK_KG_TRIPLET_EXTRACT_PROMPT = KnowledgeGraphPrompt(
+    MOCK_KG_TRIPLET_EXTRACT_PROMPT_TMPL
+)

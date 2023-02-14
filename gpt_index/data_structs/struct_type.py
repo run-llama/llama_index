@@ -31,6 +31,9 @@ class IndexStructType(str, Enum):
             See :ref:`Ref-Indices-StructStore`
             for more information on the SQL vector store index.
 
+        KG ("kg"): Knowledge Graph index.
+            See :ref:`Ref-Indices-KG` for KG indices.
+
     """
 
     # TODO: refactor so these are properties on the base class
@@ -52,3 +55,5 @@ class IndexStructType(str, Enum):
     QDRANT = "qdrant"
     # for SQL index
     SQL = "sql"
+    # for KG index
+    KG = "kg"
