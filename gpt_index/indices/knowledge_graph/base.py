@@ -8,29 +8,20 @@ existing keywords in the table.
 
 """
 
-import re
-from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type
+import logging
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 from gpt_index.data_structs.data_structs import KG
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.keyword_table.query import (
-    GPTKeywordTableGPTQuery,
-    GPTKeywordTableRAKEQuery,
-    GPTKeywordTableSimpleQuery,
-)
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
-    DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
-    DEFAULT_KG_TRIPLET_EXTRACT_TMPL,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
-from gpt_index.prompts.prompts import KeywordExtractPrompt, KnowledgeGraphPrompt
+from gpt_index.prompts.prompts import KnowledgeGraphPrompt
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
 
@@ -86,7 +77,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             self.kg_triple_extract_template,
             text=text,
         )
-        print(response)
         return self._parse_triplet_response(response)
 
     @staticmethod
@@ -98,12 +88,10 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             if len(tokens) != 3:
                 continue
             subj, pred, obj = tokens
-            results.append((subj, pred, obj))
+            results.append((subj.strip(), pred.strip(), obj.strip()))
         return results
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], verbose: bool = False
-    ) -> KG:
+    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> KG:
         """Build the index from documents."""
         text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.kg_triple_extract_template, 1
@@ -118,6 +106,32 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 n.doc_id = node_id
 
                 triplets = self._extract_triplets(n.get_text())
+                logging.debug(f"Extracted triplets: {triplets}")
                 for triplet in triplets:
                     index_struct.upsert_triplet(triplet, n)
         return index_struct
+
+    def get_networkx_graph(self) -> Any:
+        """Get networkx representation of the graph structure.
+
+        NOTE: This function requires networkx to be installed.
+        NOTE: This is a beta feature.
+
+        """
+        try:
+            import networkx as nx
+        except ImportError:
+            raise ImportError("Please install networkx to visualize the graph.")
+
+        g = nx.Graph()
+        # add nodes
+        for node_name in self.index_struct.table.keys():
+            g.add_node(node_name)
+
+        # add edges
+        rel_map = self.index_struct.rel_map
+        for keyword in rel_map.keys():
+            for obj, rel in rel_map[keyword]:
+                g.add_edge(keyword, obj, title=rel)
+
+        return g

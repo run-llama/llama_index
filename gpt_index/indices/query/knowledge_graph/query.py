@@ -1,22 +1,16 @@
 """Query for GPTKGTableIndex."""
+import logging
 from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
 from gpt_index.data_structs.data_structs import KG, Node
-from gpt_index.indices.keyword_table.utils import (
-    extract_keywords_given_response,
-    rake_extract_keywords,
-    simple_extract_keywords,
-)
+from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.utils import truncate_text
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
-    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
-)
-from gpt_index.prompts.prompts import KnowledgeGraphPrompt, QueryKeywordExtractPrompt
+from gpt_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
+from gpt_index.prompts.prompts import QueryKeywordExtractPrompt
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -27,9 +21,6 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
     Arguments are shared among subclasses.
 
     Args:
-        keyword_extract_template (Optional[KGExtractPrompt]): A KG
-            Extraction Prompt
-            (see :ref:`Prompt-Templates`).
         query_keyword_extract_template (Optional[QueryKGExtractPrompt]): A Query
             KG Extraction
             Prompt (see :ref:`Prompt-Templates`).
@@ -45,7 +36,6 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
     def __init__(
         self,
         index_struct: KG,
-        keyword_extract_template: Optional[KnowledgeGraphPrompt] = None,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
@@ -56,13 +46,10 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         super().__init__(index_struct=index_struct, **kwargs)
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
-        self.keyword_extract_template = (
-            keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
-        )
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
         self._include_text = include_text
 
-    def _get_keywords(self, query_str: str, verbose: bool = False) -> List[str]:
+    def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
         response, _ = self._llm_predictor.predict(
             self.query_keyword_extract_template,
@@ -77,33 +64,48 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
     def _get_nodes_for_response(
         self,
         query_str: str,
-        verbose: bool = False,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        print(f"> Starting query: {query_str}")
-        keywords = self._get_keywords(query_str, verbose=verbose)
-        # keywords = ["Terry Winograd"]
-        print(f"query keywords: {keywords}")
+        logging.info(f"> Starting query: {query_str}")
+        keywords = self._get_keywords(query_str)
+        logging.info(f"> Query keywords: {keywords}")
         rel_texts = []
-        nodes: List[Node] = []
+        chunk_indices_count: Dict[str, int] = defaultdict(int)
         for keyword in keywords:
             cur_rel_texts = self.index_struct.get_rel_map_texts(keyword)
             rel_texts.extend(cur_rel_texts)
             if self._include_text:
-                for node in self.index_struct.get_texts(keyword):
-                    nodes.append(node)
+                for node_id in self.index_struct.get_node_ids(keyword):
+                    chunk_indices_count[node_id] += 1
 
+        sorted_chunk_indices = sorted(
+            list(chunk_indices_count.keys()),
+            key=lambda x: chunk_indices_count[x],
+            reverse=True,
+        )
+        sorted_chunk_indices = sorted_chunk_indices[: self.num_chunks_per_query]
+        sorted_nodes = [
+            self.index_struct.text_chunks[idx] for idx in sorted_chunk_indices
+        ]
+        # filter sorted nodes
+        sorted_nodes = [node for node in sorted_nodes if self._should_use_node(node)]
+        for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
+            logging.info(
+                f"> Querying with idx: {chunk_idx}: "
+                f"{truncate_text(node.get_text(), 80)}"
+            )
+
+        # add relationships as Node
         # TODO: make initial text customizable
-        rel_initial_text = "The following are knowledge triplets in the form of (subset, predicate, object):"
+        rel_initial_text = (
+            "The following are knowledge triplets "
+            "in the form of (subset, predicate, object):"
+        )
         rel_texts = [rel_initial_text] + rel_texts
         rel_text_node = Node(text="\n".join(rel_texts))
-        nodes.append(rel_text_node)
+        rel_info_text = "\n".join(rel_texts)
+        logging.info(f"> Extracted relationships: {rel_info_text}")
+        sorted_nodes.append(rel_text_node)
 
-        return nodes
-
-        # nodes: List[Node] = []
-        # for keyword in keywords:
-        #     for chunk in self.index_struct.get_texts(keyword):
-        #         nodes.append(chunk)
-        # return nodes
+        return sorted_nodes

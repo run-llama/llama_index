@@ -342,15 +342,6 @@ class KG(IndexStruct):
     text_chunks: Dict[str, Node] = field(default_factory=dict)
     rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
 
-    # def _get_index(self) -> int:
-    #     """Get the next index for the text chunk."""
-    #     # randomly generate until we get a unique index
-    #     while True:
-    #         idx = random.randint(0, sys.maxsize)
-    #         if idx not in self.text_chunks:
-    #             break
-    #     return idx
-
     def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
         """Upsert a knowledge triplet to the graph."""
         subj, relationship, obj = triplet
@@ -379,29 +370,19 @@ class KG(IndexStruct):
             texts.append(str((keyword, rel, obj)))
         return texts
 
-    def get_texts(self, keyword: str) -> List[Node]:
+    def get_node_ids(self, keyword: str, depth: int = 1) -> List[str]:
         """Get the corresponding knowledge for a given keyword."""
+        if depth > 1:
+            raise ValueError("Depth > 1 not supported yet.")
         if keyword not in self.table:
             return []
         keywords = [keyword] + [child for child, _ in self.rel_map[keyword]]
-        text_chunks: List[Node] = []
+        node_ids: List[str] = []
         for keyword in keywords:
             for node_id in self.table.get(keyword, set()):
-                text_chunks.append(self.text_chunks[node_id])
-            # TODO: Traverse
-        return text_chunks
-
-    # def get_serialized_text()
-
-    # @property
-    # def keywords(self) -> Set[str]:
-    #     """Get all keywords in the table."""
-    #     return set(self.table.keys())
-
-    # @property
-    # def size(self) -> int:
-    #     """Get the size of the table."""
-    #     return len(self.table)
+                node_ids.append(node_id)
+            # TODO: Traverse (with depth > 1)
+        return node_ids
 
     @classmethod
     def get_type(cls) -> str:
