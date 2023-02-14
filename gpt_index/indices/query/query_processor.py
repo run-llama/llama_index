@@ -1,4 +1,4 @@
-"""Query processor"""
+"""Query processor."""
 
 from typing import Optional
 
@@ -9,20 +9,42 @@ from gpt_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 
 
 class BaseQueryProcessor:
-    def __init__(self) -> None:
-        pass
+    """Base class for query processor.
+
+    A query processor augments a raw query string with associated transformations
+    to improve index querying.
+    """
 
     def __call__(self, query_str: str) -> QueryBundle:
+        """Run query processor."""
         return QueryBundle(query_str=query_str, embedding_strs=[query_str])
 
 
 class HyDEQueryProcessor(BaseQueryProcessor):
+    """Hypothetical Document Embeddings (HyDE) query processor.
+
+    It uses an LLM to generate hypothetical answer(s) to a given query,
+    and use the resulting documents as embedding strings.
+
+    As described in `[Precise Zero-Shot Dense Retrieval without Relevance Labels]
+        (https://arxiv.org/abs/2212.10496)`
+    """
+
     def __init__(
         self,
         llm_predictor: Optional[LLMPredictor] = None,
         hyde_prompt: Optional[Prompt] = None,
         include_original: bool = True,
     ) -> None:
+        """Initialize HyDEQueryProcessor.
+
+        Args:
+            llm_predictor (Optional[LLMPredictor]): LLM for generating
+                hypothetical documents
+            hyde_prompt (Optional[Prompt]): Custom prompt for HyDE
+            include_original (bool): Whether to include original query
+                string as one of the embedding strings
+        """
         super().__init__()
 
         self._llm_predictor = llm_predictor or LLMPredictor()
@@ -30,7 +52,7 @@ class HyDEQueryProcessor(BaseQueryProcessor):
         self._include_original = include_original
 
     def __call__(self, query_str: str) -> QueryBundle:
-        """Override QueryProcessor.process_query"""
+        """Run query processor."""
         # TODO: support generating multiple hypothetical docs
         hypothetical_doc, _ = self._llm_predictor.predict(
             self._hyde_prompt, context_str=query_str
