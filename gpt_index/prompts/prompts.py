@@ -237,3 +237,10 @@ class RefineTableContextPrompt(Prompt):
         "query_str",
         "existing_answer",
     ]
+
+
+class KnowledgeGraphPrompt(Prompt):
+    """Define the knowledge graph triplet extraction prompt."""
+
+    prompt_type: PromptType = PromptType.KNOWLEDGE_TRIPLET_EXTRACT
+    input_variables: List[str] = ["max_knowledge_triplets", "text"]
