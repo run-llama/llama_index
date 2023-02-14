@@ -109,9 +109,10 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self.summary_template,
             self._llm_predictor,
             self._prompt_helper,
+            self._async_,
         )
         index_graph = index_builder.build_from_text(
-            documents, build_tree=self.build_tree, async_=self._async_
+            documents, build_tree=self.build_tree
         )
         return index_graph
 

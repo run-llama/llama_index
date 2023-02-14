@@ -27,6 +27,7 @@ class GPTTreeIndexBuilder:
         summary_prompt: SummaryPrompt,
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
+        async_: bool = True,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -35,6 +36,7 @@ class GPTTreeIndexBuilder:
         self.summary_prompt = summary_prompt
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
+        self._async_ = async_
 
     def _get_nodes_from_document(
         self, start_idx: int, document: BaseDocument
@@ -63,7 +65,6 @@ class GPTTreeIndexBuilder:
         self,
         documents: Sequence[BaseDocument],
         build_tree: bool = True,
-        async_: bool = True,
     ) -> IndexGraph:
         """Build from text.
 
@@ -77,7 +78,7 @@ class GPTTreeIndexBuilder:
 
         if build_tree:
             # instantiate all_nodes from initial text chunks
-            root_nodes = self.build_index_from_nodes(all_nodes, all_nodes, async_=async_)
+            root_nodes = self.build_index_from_nodes(all_nodes, all_nodes)
         else:
             # if build_tree is False, then don't surface any root nodes
             root_nodes = {}
@@ -87,7 +88,6 @@ class GPTTreeIndexBuilder:
         self,
         cur_nodes: Dict[int, Node],
         all_nodes: Dict[int, Node],
-        async_: bool = True,
     ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         cur_node_list = get_sorted_node_list(cur_nodes)
@@ -106,7 +106,7 @@ class GPTTreeIndexBuilder:
             indices.append(i)
             text_chunks.append(text_chunk)
 
-        if async_:
+        if self._async_:
             tasks = [
                 self._llm_predictor.apredict(
                     self.summary_prompt, context_str=text_chunk
