@@ -42,4 +42,3 @@ class HyDEQueryProcessor(BaseQueryProcessor):
             query_str=query_str,
             embedding_strs=embedding_strs,
         )
-        
