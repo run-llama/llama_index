@@ -243,7 +243,7 @@ DEFAULT_KG_TRIPLET_EXTRACT_TMPL = (
     "---------------------\n"
     "Example:"
     "Text: Alice is Bob's mother."
-    "Triplets: (Alice, is mother of, Bob)\n"
+    "Triplets:\n(Alice, is mother of, Bob)\n"
     "Text: Philz is a coffee shop founded in Berkeley in 1982.\n"
     "Triplets:\n"
     "(Philz, is, coffee shop)\n"

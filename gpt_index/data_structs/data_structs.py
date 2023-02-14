@@ -364,7 +364,6 @@ class KG(IndexStruct):
         # NOTE: return a single node for now
         if keyword not in self.rel_map:
             return []
-        # text_chunks: List[Node] = []
         texts = []
         for obj, rel in self.rel_map[keyword]:
             texts.append(str((keyword, rel, obj)))
@@ -376,7 +375,11 @@ class KG(IndexStruct):
             raise ValueError("Depth > 1 not supported yet.")
         if keyword not in self.table:
             return []
-        keywords = [keyword] + [child for child, _ in self.rel_map[keyword]]
+        keywords = [keyword]
+        # some keywords may correspond to a leaf node, may not be in rel_map
+        if keyword in self.rel_map:
+            keywords.extend([child for child, _ in self.rel_map[keyword]])
+
         node_ids: List[str] = []
         for keyword in keywords:
             for node_id in self.table.get(keyword, set()):

@@ -39,11 +39,13 @@ def struct_kwargs() -> Tuple[Dict, Dict]:
 def mock_extract_triplets(text: str) -> List[Tuple[str, str, str]]:
     """Mock extract triplets."""
     lines = text.split("\n")
-    triplets = []
+    triplets: List[Tuple[str, str, str]] = []
     for line in lines:
         tokens = line[1:-1].split(",")
         tokens = [t.strip() for t in tokens]
-        triplets.append(tuple(tokens))
+
+        subj, pred, obj = tokens
+        triplets.append((subj, pred, obj))
     return triplets
 
 

@@ -106,10 +106,27 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 n.doc_id = node_id
 
                 triplets = self._extract_triplets(n.get_text())
-                logging.debug(f"Extracted triplets: {triplets}")
+                logging.debug(f"> Extracted triplets: {triplets}")
                 for triplet in triplets:
                     index_struct.upsert_triplet(triplet, n)
         return index_struct
+
+    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+        """Insert a document."""
+        nodes = self._get_nodes_from_document(document, self._text_splitter)
+        for n in nodes:
+            # set doc id
+            node_id = get_new_id(set())
+            n.doc_id = node_id
+
+            triplets = self._extract_triplets(n.get_text())
+            logging.debug(f"Extracted triplets: {triplets}")
+            for triplet in triplets:
+                self._index_struct.upsert_triplet(triplet, n)
+
+    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a document."""
+        raise NotImplementedError("Delete is not supported for KG index yet.")
 
     def get_networkx_graph(self) -> Any:
         """Get networkx representation of the graph structure.
