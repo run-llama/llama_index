@@ -7,7 +7,7 @@ exposed for recursive queries over composable indices.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -125,4 +125,4 @@ class QueryBundle(DataClassJsonMixin):
     """
 
     query_str: str
-    embedding_strs: list[str]
+    embedding_strs: List[str]

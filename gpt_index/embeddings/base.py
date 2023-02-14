@@ -33,10 +33,10 @@ class BaseEmbedding:
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
 
-    def _combine_embeddings(self, embeddings: list[list[float]]) -> List[float]:
+    def _combine_embeddings(self, embeddings: List[List[float]]) -> List[float]:
         return list(np.array(embeddings).mean(axis=0))
 
-    def get_query_embedding(self, query: Union[str, list[str]]) -> List[float]:
+    def get_query_embedding(self, query: Union[str, List[str]]) -> List[float]:
         """Get query embedding."""
         if isinstance(query, str):
             query_embedding = self._get_query_embedding(query)
