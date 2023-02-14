@@ -337,7 +337,7 @@ class BaseGPTIndex(Generic[IS]):
         self,
         query_str: Union[str, QueryBundle],
         mode: str = QueryMode.DEFAULT,
-        query_processor: BaseQueryProcessor | None = None,
+        query_processor: Optional[BaseQueryProcessor] = None,
         **query_kwargs: Any,
     ) -> Response:
         """Answer a query.

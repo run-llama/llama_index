@@ -32,7 +32,7 @@ class QueryRunner(BaseQueryRunner):
         docstore: DocumentStore,
         index_registry: IndexRegistry,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
-        query_processor: BaseQueryProcessor | None = None,
+        query_processor: Optional[BaseQueryProcessor] = None,
         recursive: bool = False,
     ) -> None:
         """Init params."""
@@ -77,10 +77,12 @@ class QueryRunner(BaseQueryRunner):
         self, query_str_or_bundle: Union[str, QueryBundle], index_struct: IndexStruct
     ) -> Response:
         """Run query."""
+        # NOTE: query processor is only run once
+        # TODO: Consider refactor to support index-specific query processing
         if isinstance(query_str_or_bundle, str):
             query_bundle = self._query_processor(query_str_or_bundle)
         else: 
-            query_bundle = query_str_or_bundle 
+            query_bundle = query_str_or_bundle
 
         index_struct_type = index_struct.get_type()
         if index_struct_type not in self._config_dict:
