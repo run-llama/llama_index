@@ -1,6 +1,5 @@
 """Query for GPTKGTableIndex."""
 import logging
-from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 

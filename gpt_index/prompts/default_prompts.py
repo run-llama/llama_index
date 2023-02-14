@@ -238,7 +238,8 @@ DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = RefineTableContextPrompt(
 ############################################
 
 DEFAULT_KG_TRIPLET_EXTRACT_TMPL = (
-    "Some text is provided below. Given the text, extract up to {max_knowledge_triplets} "
+    "Some text is provided below. Given the text, extract up to "
+    "{max_knowledge_triplets} "
     "knowledge triplets in the form of (subject, predicate, object). Avoid stopwords.\n"
     "---------------------\n"
     "Example:"
