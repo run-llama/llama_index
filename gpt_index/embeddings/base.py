@@ -13,6 +13,7 @@ EMB_TYPE = List
 
 
 def mean_agg(embeddings: List[List[float]]) -> List[float]:
+    """Mean aggregation for embeddings."""
     return list(np.array(embeddings).mean(axis=0))
 
 
@@ -49,6 +50,7 @@ class BaseEmbedding:
         queries: List[str],
         agg_fn: Optional[Callable[..., List[float]]] = None,
     ) -> List[float]:
+        """Get aggregated embedding from multiple queries."""
         query_embeddings = [self.get_query_embedding(query) for query in queries]
 
         if agg_fn is None:
@@ -100,4 +102,3 @@ class BaseEmbedding:
     def last_token_usage(self, value: int) -> None:
         """Set the last token usage."""
         self._last_token_usage = value
-
