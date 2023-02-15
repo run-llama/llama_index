@@ -63,7 +63,7 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        query_embedding = self._embed_model.get_query_embedding(
+        query_embedding = self._embed_model.get_agg_embedding_from_queries(
             query_bundle.embedding_strs
         )
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]

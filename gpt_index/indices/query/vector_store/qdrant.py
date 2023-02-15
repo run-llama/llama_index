@@ -70,7 +70,7 @@ class GPTQdrantIndexQuery(BaseGPTVectorStoreIndexQuery[QdrantIndexStruct]):
         """Get nodes for response."""
         from qdrant_client.http.models.models import Payload
 
-        query_embedding = self._embed_model.get_query_embedding(
+        query_embedding = self._embed_model.get_agg_embedding_from_queries(
             query_bundle.embedding_strs
         )
 

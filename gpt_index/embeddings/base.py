@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from enum import Enum
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional
 
 import numpy as np
 
@@ -10,6 +10,10 @@ from gpt_index.utils import globals_helper
 
 # TODO: change to numpy array
 EMB_TYPE = List
+
+
+def mean_agg(embeddings: List[List[float]]) -> List[float]:
+    return list(np.array(embeddings).mean(axis=0))
 
 
 class SimilarityMode(str, Enum):
@@ -33,28 +37,24 @@ class BaseEmbedding:
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
 
-    def _combine_embeddings(self, embeddings: List[List[float]]) -> List[float]:
-        return list(np.array(embeddings).mean(axis=0))
-
-    def get_query_embedding(self, query: Union[str, List[str]]) -> List[float]:
+    def get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        if isinstance(query, str):
-            query_embedding = self._get_query_embedding(query)
-            query_tokens_count = len(self._tokenizer(query))
-            self._total_tokens_used += query_tokens_count
-        elif isinstance(query, list):
-            embeddings = [
-                self._get_query_embedding(embedding_str) for embedding_str in query
-            ]
-            query_embedding = self._combine_embeddings(embeddings)
-            query_tokens_count = sum(
-                len(self._tokenizer(embedding_str)) for embedding_str in query
-            )
-            self._total_tokens_used += query_tokens_count
-        else:
-            raise ValueError(f"Unknown query type: {type(query)}")
-
+        query_embedding = self._get_query_embedding(query)
+        query_tokens_count = len(self._tokenizer(query))
+        self._total_tokens_used += query_tokens_count
         return query_embedding
+
+    def get_agg_embedding_from_queries(
+        self,
+        queries: List[str],
+        agg_fn: Optional[Callable[..., List[float]]] = None,
+    ) -> List[float]:
+        query_embeddings = [self.get_query_embedding(query) for query in queries]
+
+        if agg_fn is None:
+            agg_fn = mean_agg
+
+        return agg_fn(query_embeddings)
 
     @abstractmethod
     def _get_text_embedding(self, text: str) -> List[float]:
@@ -100,3 +100,4 @@ class BaseEmbedding:
     def last_token_usage(self, value: int) -> None:
         """Set the last token usage."""
         self._last_token_usage = value
+
