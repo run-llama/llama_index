@@ -7,6 +7,7 @@ from gpt_index.data_structs.data_structs import KG, Node
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from gpt_index.prompts.prompts import QueryKeywordExtractPrompt
@@ -62,12 +63,12 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
 
     def _get_nodes_for_response(
         self,
-        query_str: str,
+        query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        logging.info(f"> Starting query: {query_str}")
-        keywords = self._get_keywords(query_str)
+        logging.info(f"> Starting query: {query_bundle.query_str}")
+        keywords = self._get_keywords(query_bundle.query_str)
         logging.info(f"> Query keywords: {keywords}")
         rel_texts = []
         chunk_indices_count: Dict[str, int] = defaultdict(int)
