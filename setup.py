@@ -29,7 +29,21 @@ setup(
     name="gpt_index",
     version=__version__,
     packages=find_packages(),
-    description="Building an index of GPT summaries.",
+    description="Interface between LLMs and your data",
+    install_requires=install_requires,
+    long_description=long_description,
+    license="MIT",
+    url="https://github.com/jerryjliu/gpt_index",
+    include_package_data=True,
+    long_description_content_type="text/markdown",
+)
+
+# upload duplicate package to pypi
+setup(
+    name="llama_index",
+    version=__version__,
+    packages=find_packages(),
+    description="Interface between LLMs and your data.",
     install_requires=install_requires,
     long_description=long_description,
     license="MIT",
