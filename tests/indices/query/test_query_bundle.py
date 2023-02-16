@@ -96,7 +96,7 @@ def test_embedding_query(
     # test embedding query
     query_bundle = QueryBundle(
         query_str="What is?",
-        embedding_strs=[
+        custom_embedding_strs=[
             "It is what it is.",
             "The meaning of life",
         ],

@@ -75,8 +75,7 @@ class QueryRunner(BaseQueryRunner):
     ) -> Response:
         """Run query."""
         if isinstance(query_str_or_bundle, str):
-            query_str = query_str_or_bundle
-            query_bundle = QueryBundle(query_str=query_str, embedding_strs=[query_str])
+            query_bundle = QueryBundle(query_str_or_bundle)
         else:
             query_bundle = query_str_or_bundle
 

@@ -111,7 +111,7 @@ def test_query(
         docstore=index.docstore,
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
     )
-    query_bundle = QueryBundle(query_str="foo", embedding_strs=["foo"])
+    query_bundle = QueryBundle(query_str="foo", custom_embedding_strs=["foo"])
     nodes = query._get_nodes_for_response(query_bundle)
     assert nodes[0].get_text() == "(foo, is, bar)"
     assert (
@@ -127,7 +127,7 @@ def test_query(
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
         include_text=False,
     )
-    query_bundle = QueryBundle(query_str="foo", embedding_strs=["foo"])
+    query_bundle = QueryBundle(query_str="foo", custom_embedding_strs=["foo"])
     nodes = query._get_nodes_for_response(query_bundle)
     assert (
         nodes[0].get_text() == "The following are knowledge triplets in the form of "
