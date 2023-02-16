@@ -79,7 +79,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         # go through text chunks in order of most matching keywords
         chunk_indices_count: Dict[int, int] = defaultdict(int)
         keywords = [k for k in keywords if k in self.index_struct.keywords]
-        logging.info(f"Extracted keywords: {keywords}")
+        logging.info(f"> Extracted keywords: {keywords}")
         for k in keywords:
             for text_chunk_idx in self.index_struct.table[k]:
                 chunk_indices_count[text_chunk_idx] += 1

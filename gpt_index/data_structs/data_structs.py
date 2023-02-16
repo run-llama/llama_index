@@ -3,7 +3,7 @@
 import random
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -330,3 +330,64 @@ class QdrantIndexStruct(IndexStruct):
     def get_type(cls) -> str:
         """Get type."""
         return "qdrant"
+
+
+@dataclass
+class KG(IndexStruct):
+    """A table of keywords mapping keywords to text chunks."""
+
+    # Unidirectional
+
+    table: Dict[str, Set[str]] = field(default_factory=dict)
+    text_chunks: Dict[str, Node] = field(default_factory=dict)
+    rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
+
+    def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
+        """Upsert a knowledge triplet to the graph."""
+        subj, relationship, obj = triplet
+        self.add_node([subj, obj], node)
+        if subj not in self.rel_map:
+            self.rel_map[subj] = []
+        self.rel_map[subj].append((obj, relationship))
+
+    def add_node(self, keywords: List[str], node: Node) -> None:
+        """Add text to table."""
+        node_id = node.get_doc_id()
+        for keyword in keywords:
+            if keyword not in self.table:
+                self.table[keyword] = set()
+            self.table[keyword].add(node_id)
+        self.text_chunks[node_id] = node
+
+    def get_rel_map_texts(self, keyword: str) -> List[str]:
+        """Get the corresponding knowledge for a given keyword."""
+        # NOTE: return a single node for now
+        if keyword not in self.rel_map:
+            return []
+        texts = []
+        for obj, rel in self.rel_map[keyword]:
+            texts.append(str((keyword, rel, obj)))
+        return texts
+
+    def get_node_ids(self, keyword: str, depth: int = 1) -> List[str]:
+        """Get the corresponding knowledge for a given keyword."""
+        if depth > 1:
+            raise ValueError("Depth > 1 not supported yet.")
+        if keyword not in self.table:
+            return []
+        keywords = [keyword]
+        # some keywords may correspond to a leaf node, may not be in rel_map
+        if keyword in self.rel_map:
+            keywords.extend([child for child, _ in self.rel_map[keyword]])
+
+        node_ids: List[str] = []
+        for keyword in keywords:
+            for node_id in self.table.get(keyword, set()):
+                node_ids.append(node_id)
+            # TODO: Traverse (with depth > 1)
+        return node_ids
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "kg"

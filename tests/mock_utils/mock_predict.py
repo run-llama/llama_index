@@ -66,6 +66,11 @@ def _mock_text_to_sql(prompt_args: Dict) -> str:
     return "SELECT " + ", ".join(subtokens) + f" FROM {table_name}"
 
 
+def _mock_kg_triplet_extract(prompt_args: Dict) -> str:
+    """Mock kg triplet extract."""
+    return prompt_args["text"]
+
+
 def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
     """Mock predict method of LLMPredictor.
 
@@ -92,6 +97,8 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
         response = _mock_schema_extract(full_prompt_args)
     elif prompt.prompt_type == PromptType.TEXT_TO_SQL:
         response = _mock_text_to_sql(full_prompt_args)
+    elif prompt.prompt_type == PromptType.KNOWLEDGE_TRIPLET_EXTRACT:
+        response = _mock_kg_triplet_extract(full_prompt_args)
     else:
         raise ValueError("Invalid prompt to use with mocks.")
 
