@@ -7,6 +7,7 @@ from gpt_index.indices.query.embedding_utils import (
     SimilarityTracker,
     get_top_k_embeddings,
 )
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
 from gpt_index.indices.utils import truncate_text
 
@@ -35,12 +36,14 @@ class GPTSimpleVectorIndexQuery(BaseGPTVectorStoreIndexQuery[SimpleIndexDict]):
 
     def _get_nodes_for_response(
         self,
-        query_str: str,
+        query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
         # TODO: consolidate with get_query_text_embedding_similarities
-        query_embedding = self._embed_model.get_query_embedding(query_str)
+        query_embedding = self._embed_model.get_agg_embedding_from_queries(
+            query_bundle.embedding_strs
+        )
         items = self._index_struct.embedding_dict.items()
         node_ids = [t[0] for t in items]
         embeddings = [t[1] for t in items]
