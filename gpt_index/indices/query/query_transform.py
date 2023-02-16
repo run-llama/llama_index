@@ -8,10 +8,10 @@ from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 
 
-class BaseQueryProcessor:
-    """Base class for query processor.
+class BaseQueryTransform:
+    """Base class for query transform.
 
-    A query processor augments a raw query string with associated transformations
+    A query transform augments a raw query string with associated transformations
     to improve index querying.
     """
 
@@ -20,8 +20,8 @@ class BaseQueryProcessor:
         return QueryBundle(query_str=query_str, embedding_strs=[query_str])
 
 
-class HyDEQueryProcessor(BaseQueryProcessor):
-    """Hypothetical Document Embeddings (HyDE) query processor.
+class HyDEQueryTransform(BaseQueryTransform):
+    """Hypothetical Document Embeddings (HyDE) query transform.
 
     It uses an LLM to generate hypothetical answer(s) to a given query,
     and use the resulting documents as embedding strings.
@@ -36,7 +36,7 @@ class HyDEQueryProcessor(BaseQueryProcessor):
         hyde_prompt: Optional[Prompt] = None,
         include_original: bool = True,
     ) -> None:
-        """Initialize HyDEQueryProcessor.
+        """Initialize HyDEQueryTransform.
 
         Args:
             llm_predictor (Optional[LLMPredictor]): LLM for generating
@@ -52,7 +52,7 @@ class HyDEQueryProcessor(BaseQueryProcessor):
         self._include_original = include_original
 
     def __call__(self, query_str: str) -> QueryBundle:
-        """Run query processor."""
+        """Run query transform."""
         # TODO: support generating multiple hypothetical docs
         hypothetical_doc, _ = self._llm_predictor.predict(
             self._hyde_prompt, context_str=query_str

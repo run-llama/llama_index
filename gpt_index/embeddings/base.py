@@ -1,6 +1,5 @@
 """Base embeddings file."""
 
-import logging
 from abc import abstractmethod
 from enum import Enum
 from typing import Callable, List, Optional
@@ -12,7 +11,6 @@ from gpt_index.utils import globals_helper
 # TODO: change to numpy array
 EMB_TYPE = List
 
-_logger = logging.getLogger(__name__)
 
 def mean_agg(embeddings: List[List[float]]) -> List[float]:
     """Mean aggregation for embeddings."""

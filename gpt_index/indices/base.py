@@ -22,8 +22,8 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.node_utils import get_nodes_from_document
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.query_processor import BaseQueryProcessor
 from gpt_index.indices.query.query_runner import QueryRunner
+from gpt_index.indices.query.query_transform import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -337,7 +337,7 @@ class BaseGPTIndex(Generic[IS]):
         self,
         query_str: Union[str, QueryBundle],
         mode: str = QueryMode.DEFAULT,
-        query_processor: Optional[BaseQueryProcessor] = None,
+        query_transform: Optional[BaseQueryTransform] = None,
         **query_kwargs: Any,
     ) -> Response:
         """Answer a query.
@@ -364,7 +364,7 @@ class BaseGPTIndex(Generic[IS]):
                 self._docstore,
                 self._index_registry,
                 query_configs=query_configs,
-                query_processor=query_processor,
+                query_transform=query_transform,
                 recursive=True,
             )
             return query_runner.query(query_str, self._index_struct)
@@ -383,7 +383,7 @@ class BaseGPTIndex(Generic[IS]):
                 self._docstore,
                 self._index_registry,
                 query_configs=[query_config],
-                query_processor=query_processor,
+                query_transform=query_transform,
                 recursive=False,
             )
             return query_runner.query(query_str, self._index_struct)
