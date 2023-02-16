@@ -19,11 +19,6 @@ def mean_agg(embeddings: List[List[float]]) -> List[float]:
     return list(np.array(embeddings).mean(axis=0))
 
 
-def mean_agg(embeddings: List[List[float]]) -> List[float]:
-    """Mean aggregation for embeddings."""
-    return list(np.array(embeddings).mean(axis=0))
-
-
 class SimilarityMode(str, Enum):
     """Modes for similarity/distance."""
 
