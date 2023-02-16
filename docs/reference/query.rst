@@ -10,6 +10,7 @@ multiple indices that are `composed </how_to/composability.html>`_ together.
 We then show the base query class, which contains parameters that are shared
 among all queries. 
 Lastly, we show how to customize the string(s) used for an embedding-based query.
+
 .. toctree::
    :maxdepth: 1
    :caption: Index-specific Query Subclasses
@@ -46,5 +47,15 @@ Query bundle enables user to customize the string(s) used for embedding-based qu
 
 .. automodule:: gpt_index.indices.query.schema
    :members: QueryBundle
+   :inherited-members:
+   :exclude-members:
+
+Query Transform
+
+Query transform augments a raw query string with associated transformations 
+to improve index querying.
+
+.. automodule:: gpt_index.indices.query.query_transform
+   :members:
    :inherited-members:
    :exclude-members:
