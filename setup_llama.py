@@ -4,7 +4,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-with open(Path(__file__).absolute().parents[0] / "gpt_index" / "VERSION") as _f:
+with open(Path(__file__).absolute().parents[0] / "llama_index" / "VERSION") as _f:
     __version__ = _f.read().strip()
 
 with open("README.md", "r", encoding="utf-8") as f:
@@ -25,11 +25,13 @@ install_requires = [
 if sys.version_info >= (3, 9):
     install_requires.extend(["tiktoken"])
 
+# upload duplicate package to pypi
 setup(
-    name="gpt_index",
+    name="llama_index",
     version=__version__,
-    packages=find_packages(),
-    description="Interface between LLMs and your data",
+    # packages=find_packages(),
+    packages=find_packages(include=["llama*"]),
+    description="Interface between LLMs and your data.",
     install_requires=install_requires,
     long_description=long_description,
     license="MIT",
