@@ -20,9 +20,9 @@ LOADER_HUB_URL = (
 
 
 def download_loader(
-    loader_class: str, 
+    loader_class: str,
     loader_hub_url: str = LOADER_HUB_URL,
-    refresh_cache: Optional[bool] = False
+    refresh_cache: Optional[bool] = False,
 ) -> BaseReader:
     """Download a single loader from the Loader Hub.
 
