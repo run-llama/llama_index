@@ -1,4 +1,4 @@
-"""Query processor."""
+"""Query transform."""
 
 from typing import Optional
 

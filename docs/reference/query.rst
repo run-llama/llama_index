@@ -54,7 +54,7 @@ Query Transform
 Query transform augments a raw query string with associated transformations 
 to improve index querying.
 
-.. automodule:: gpt_index.indices.query.transform
+.. automodule:: gpt_index.indices.query.query_transform
    :members:
    :inherited-members:
    :exclude-members:
