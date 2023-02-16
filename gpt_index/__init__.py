@@ -42,6 +42,9 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 
+# playground
+from gpt_index.playground.base import Playground
+
 # prompts
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.prompts import (
@@ -140,6 +143,7 @@ __all__ = [
     "TwitterTweetReader",
     "download_loader",
     "GithubRepositoryReader",
+    "Playground",
 ]
 
 import logging

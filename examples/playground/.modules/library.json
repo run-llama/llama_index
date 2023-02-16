@@ -1,0 +1,164 @@
+{
+  "AsanaReader": {
+    "id": "asana",
+    "author": "daveey"
+  },
+  "GoogleDocsReader": {
+    "id": "google_docs",
+    "author": "jerryjliu"
+  },
+  "GoogleDriveReader": {
+    "id": "google_drive",
+    "author": "ravi03071991"
+  },
+  "SimpleDirectoryReader": {
+    "id": "file",
+    "author": "jerryjliu"
+  },
+  "PDFReader": {
+    "id": "file/pdf",
+    "author": "ravi03071991"
+  },
+  "CJKPDFReader": {
+    "id": "file/cjk_pdf",
+    "author": "JiroShimaya",
+    "keywords": ["Japanese", "Chinese", "Korean"]
+  },
+  "DocxReader": {
+    "id": "file/docx",
+    "author": "thejessezhang"
+  },
+  "PptxReader": {
+    "id": "file/pptx",
+    "author": "thejessezhang"
+  },
+  "ImageReader": {
+    "id": "file/image",
+    "author": "ravi03071991"
+  },
+  "EpubReader": {
+    "id": "file/epub",
+    "author": "Haowjy"
+  },
+  "MarkdownReader": {
+    "id": "file/markdown",
+    "author": "hursh-desai"
+  },
+  "AudioTranscriber": {
+    "id": "file/audio",
+    "author": "ravi03071991"
+  },
+  "SimpleCSVReader": {
+    "id": "file/simple_csv",
+    "author": "vguillet"
+  },
+  "PandasCSVReader": {
+    "id": "file/pandas_csv",
+    "author": "ephe-meral"
+  },
+  "SimpleWebPageReader": {
+    "id": "web/simple_web",
+    "author": "thejessezhang"
+  },
+  "BeautifulSoupWebReader": {
+    "id": "web/beautiful_soup_web",
+    "author": "thejessezhang",
+    "keywords": ["substack", "readthedocs", "documentation"]
+  },
+  "RssReader": {
+    "id": "web/rss",
+    "author": "bborn",
+    "keywords": ["feed", "rss", "atom"]
+  },
+  "DatabaseReader": {
+    "id": "database",
+    "author": "kevinqz"
+  },
+  "DiscordReader": {
+    "id": "discord",
+    "author": "jerryjliu"
+  },
+  "FaissReader": {
+    "id": "faiss",
+    "author": "jerryjliu"
+  },
+  "SimpleMongoReader": {
+    "id": "mongo",
+    "author": "jerryjliu"
+  },
+  "NotionPageReader": {
+    "id": "notion",
+    "author": "jerryjliu"
+  },
+  "ObsidianReader": {
+    "id": "obsidian",
+    "author": "hursh-desai"
+  },
+  "PineconeReader": {
+    "id": "pinecone",
+    "author": "jerryjliu"
+  },
+  "QdrantReader": {
+    "id": "qdrant",
+    "author": "kacperlukawski"
+  },
+  "SlackReader": {
+    "id": "slack",
+    "author": "jerryjliu"
+  },
+  "StringIterableReader": {
+    "id": "string_iterable",
+    "author": "teoh"
+  },
+  "TwitterTweetReader": {
+    "id": "twitter",
+    "author": "ravi03071991"
+  },
+  "WeaviateReader": {
+    "id": "weaviate",
+    "author": "jerryjliu"
+  },
+  "WikipediaReader": {
+    "id": "wikipedia",
+    "author": "jerryjliu"
+  },
+  "YoutubeTranscriptReader": {
+    "id": "youtube_transcript",
+    "author": "ravi03071991"
+  },
+  "MakeWrapper": {
+    "id": "make_com"
+  },
+  "ArxivReader": {
+    "id": "papers/arxiv",
+    "author": "thejessezhang"
+  },
+  "PubmedReader": {
+    "id": "papers/pubmed",
+    "author": "thejessezhang"
+  },
+  "MboxReader": {
+    "id": "file/mbox",
+    "author": "minosvasilias"
+  },
+  "UnstructuredReader": {
+    "id": "file/unstructured",
+    "author": "thejessezhang",
+    "keywords": ["sec", "html", "eml", "10k", "10q", "unstructured.io"]
+  },
+  "KnowledgeBaseWebReader": {
+    "id": "web/knowledge_base",
+    "author": "jasonwcfan",
+    "keywords": ["documentation"]
+  },
+  "S3Reader": {
+    "id": "s3",
+    "author": "thejessezhang",
+    "keywords": ["aws s3", "bucket", "amazon web services"]
+  },
+  "RemoteReader": {
+    "id": "remote",
+    "author": "thejessezhang",
+    "keywords": ["hosted", "url", "gutenberg"]
+  }
+}
