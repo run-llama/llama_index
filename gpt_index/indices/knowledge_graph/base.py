@@ -29,7 +29,16 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
 class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
-    """GPT KG Index."""
+    """GPT Knowledge Graph Index.
+
+    Build a KG by extracting triplets, and leveraging the KG during query-time.
+
+    Args:
+        kg_triple_extract_template (KnowledgeGraphPrompt): The prompt to use for
+            extracting triplets.
+        max_triplets_per_chunk (int): The maximum number of triplets to extract.
+
+    """
 
     index_struct_cls = KG
 
