@@ -52,10 +52,7 @@ class BaseEmbedding:
     ) -> List[float]:
         """Get aggregated embedding from multiple queries."""
         query_embeddings = [self.get_query_embedding(query) for query in queries]
-
-        if agg_fn is None:
-            agg_fn = mean_agg
-
+        agg_fn = agg_fn or mean_agg
         return agg_fn(query_embeddings)
 
     @abstractmethod
