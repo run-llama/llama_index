@@ -9,7 +9,7 @@ We then show how to define a query config in order to recursively query
 multiple indices that are `composed </how_to/composability.html>`_ together.
 We then show the base query class, which contains parameters that are shared
 among all queries. 
-
+Lastly, we show how to customize the string(s) used for an embedding-based query.
 .. toctree::
    :maxdepth: 1
    :caption: Index-specific Query Subclasses
@@ -32,7 +32,6 @@ multiple indices that are `composed </how_to/composability.html>`_ together.
 
    indices/composability_query.rst
 
-
 Base Query Class
 ^^^^^^^^^^^^^^^^
 
@@ -40,3 +39,12 @@ Base Query Class
    :members:
    :inherited-members:
    :exclude-members: BaseQueryRunner
+
+Query Bundle
+^^^^^^^^^^^^^^^^
+Query bundle enables user to customize the string(s) used for embedding-based query.
+
+.. automodule:: gpt_index.indices.query.schema
+   :members: QueryBundle
+   :inherited-members:
+   :exclude-members:

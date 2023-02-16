@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from gpt_index.data_structs.table import SQLStructTable
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from gpt_index.prompts.prompts import TextToSQLPrompt
@@ -37,12 +38,12 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         self._sql_database = sql_database
 
     @llm_token_counter("query")
-    def query(self, query_str: str) -> Response:
+    def query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         # NOTE: override query method in order to fetch the right results.
         # NOTE: since the query_str is a SQL query, it doesn't make sense
         # to use ResponseBuilder anywhere.
-        response_str, extra_info = self._sql_database.run_sql(query_str)
+        response_str, extra_info = self._sql_database.run_sql(query_bundle.query_str)
         response = Response(response=response_str, extra_info=extra_info)
         return response
 
@@ -94,12 +95,14 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
             tables_desc.append(table_text)
         return "\n\n".join(tables_desc)
 
-    def _query(self, query_str: str) -> Response:
+    def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_all_tables_desc()
         logging.info(f"table desc str: {table_desc_str}")
         response_str, _ = self._llm_predictor.predict(
-            self._text_to_sql_prompt, query_str=query_str, schema=table_desc_str
+            self._text_to_sql_prompt,
+            query_str=query_bundle.query_str,
+            schema=table_desc_str,
         )
 
         sql_query_str = self._parse_response_to_sql(response_str)
