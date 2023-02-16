@@ -48,3 +48,13 @@ Query bundle enables user to customize the string(s) used for embedding-based qu
    :members: QueryBundle
    :inherited-members:
    :exclude-members:
+
+Query Transform
+
+Query transform augments a raw query string with associated transformations 
+to improve index querying.
+
+.. automodule:: gpt_index.indices.query.transform
+   :members:
+   :inherited-members:
+   :exclude-members:
