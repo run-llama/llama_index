@@ -10,6 +10,7 @@ multiple indices that are `composed </how_to/composability.html>`_ together.
 We then show the base query class, which contains parameters that are shared
 among all queries. 
 Lastly, we show how to customize the string(s) used for an embedding-based query.
+
 .. toctree::
    :maxdepth: 1
    :caption: Index-specific Query Subclasses
