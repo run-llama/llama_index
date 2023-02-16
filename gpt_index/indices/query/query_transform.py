@@ -17,7 +17,7 @@ class BaseQueryTransform:
 
     def __call__(self, query_str: str) -> QueryBundle:
         """Run query processor."""
-        return QueryBundle(query_str=query_str, embedding_strs=[query_str])
+        return QueryBundle(query_str=query_str, custom_embedding_strs=[query_str])
 
 
 class HyDEQueryTransform(BaseQueryTransform):
@@ -62,5 +62,5 @@ class HyDEQueryTransform(BaseQueryTransform):
             embedding_strs.append(query_str)
         return QueryBundle(
             query_str=query_str,
-            embedding_strs=embedding_strs,
+            custom_embedding_strs=embedding_strs,
         )
