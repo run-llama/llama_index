@@ -1,5 +1,6 @@
 """Vector-store based data structures."""
 
+from gpt_index.indices.vector_store.chroma import GPTChromaIndex
 from gpt_index.indices.vector_store.faiss import GPTFaissIndex
 from gpt_index.indices.vector_store.pinecone import GPTPineconeIndex
 from gpt_index.indices.vector_store.qdrant import GPTQdrantIndex
@@ -12,4 +13,5 @@ __all__ = [
     "GPTWeaviateIndex",
     "GPTPineconeIndex",
     "GPTQdrantIndex",
+    "GPTChromaIndex",
 ]
