@@ -21,7 +21,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_TEXT_QA_PROMPT,
 )
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.response.schema import Response
+from gpt_index.response.schema import Response, SourceNode
 from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
@@ -242,6 +242,14 @@ class BaseGPTIndexQuery(Generic[IS]):
         node_texts = []
         for node, similarity in tuples:
             text, response = self._get_text_from_node(query_bundle, node)
+            if isinstance(node.extra_info, dict):
+                # Optional extra_sources that aren't directly from documents
+                for extra_source_str in node.extra_info.get("extra_sources", []):
+                    self.response_builder.add_source_node(
+                        SourceNode(source_text=extra_source_str, doc_id=None)
+                    )
+                node.extra_info.pop("extra_sources", None)
+
             self.response_builder.add_node(node, similarity=similarity)
             if response is not None:
                 # these are source nodes from within this node (when it's an index)

@@ -102,9 +102,11 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             "The following are knowledge triplets "
             "in the form of (subset, predicate, object):"
         )
-        rel_texts = [rel_initial_text] + rel_texts
-        rel_text_node = Node(text="\n".join(rel_texts))
-        rel_info_text = "\n".join(rel_texts)
+        rel_info = [rel_initial_text] + rel_texts
+        rel_text_node = Node(
+            text="\n".join(rel_info), extra_info={"extra_sources": rel_texts}
+        )
+        rel_info_text = "\n".join(rel_info)
         logging.info(f"> Extracted relationships: {rel_info_text}")
         sorted_nodes.append(rel_text_node)
 

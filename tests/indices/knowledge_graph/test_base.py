@@ -115,7 +115,8 @@ def test_query(
     nodes = query._get_nodes_for_response(query_bundle)
     assert nodes[0].get_text() == "(foo, is, bar)"
     assert (
-        nodes[1].get_text() == "The following are knowledge triplets in the "
+        nodes[1].get_text() == """extra_sources: ["('foo', 'is', 'bar')"]\n\n"""
+        "The following are knowledge triplets in the "
         "form of (subset, predicate, object):\n('foo', 'is', 'bar')"
     )
 
@@ -130,6 +131,7 @@ def test_query(
     query_bundle = QueryBundle(query_str="foo", custom_embedding_strs=["foo"])
     nodes = query._get_nodes_for_response(query_bundle)
     assert (
-        nodes[0].get_text() == "The following are knowledge triplets in the form of "
+        nodes[0].get_text() == """extra_sources: ["('foo', 'is', 'bar')"]\n\n"""
+        "The following are knowledge triplets in the form of "
         "(subset, predicate, object):\n('foo', 'is', 'bar')"
     )
