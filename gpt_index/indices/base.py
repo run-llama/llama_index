@@ -175,10 +175,6 @@ class BaseGPTIndex(Generic[IS]):
                 results.append(sub_index_struct)
             elif isinstance(doc, Document):
                 results.append(doc)
-            # elif isinstance(doc, IndexStruct):
-            #     results.append(doc)
-            #     # update docstore
-            #     docstore.add_documents([doc])
             else:
                 raise ValueError(f"Invalid document type: {type(doc)}.")
         return cast(List[BaseDocument], results)
