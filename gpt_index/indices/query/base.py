@@ -171,8 +171,10 @@ class BaseGPTIndexQuery(Generic[IS]):
             and node.ref_doc_id is not None
             and self._docstore is not None
         ):
-            doc = self._docstore.get_document(node.ref_doc_id, raise_error=True)
-            if isinstance(doc, IndexStruct):
+            doc = self._docstore.get_document(node.ref_doc_id, raise_error=False)
+            # NOTE: old version of the docstore contain both documents and index_struct,
+            # whereas new versions of the docstore only contain the index struct
+            if doc is not None and isinstance(doc, IndexStruct):
                 is_index_struct = True
 
         if is_index_struct:

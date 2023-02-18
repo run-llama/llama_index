@@ -135,9 +135,6 @@ def test_list_delete(
 
     # delete from documents
     list_index = GPTListIndex(new_documents)
-    # assert source doc is in docstore
-    source_doc = list_index.docstore.get_document("test_id_1")
-    assert source_doc is not None
     list_index.delete("test_id_1")
     assert len(list_index.index_struct.nodes) == 2
     assert list_index.index_struct.nodes[0].ref_doc_id == "test_id_2"
