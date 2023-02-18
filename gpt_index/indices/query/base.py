@@ -4,7 +4,7 @@ import logging
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Optional, Tuple, TypeVar, cast
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.docstore import DocumentStore
@@ -194,13 +194,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Validate the index struct."""
         pass
 
-    def _give_response_for_nodes(
-        self, query_str: str, text_chunks: List[TextChunk]
-    ) -> str:
+    def _give_response_for_nodes(self, query_str: str) -> str:
         """Give response for nodes."""
-        self.response_builder.reset()
-        for text in text_chunks:
-            self.response_builder.add_text_chunks([text])
         response = self.response_builder.get_response(
             query_str,
             mode=self._response_mode,
@@ -237,28 +232,42 @@ class BaseGPTIndexQuery(Generic[IS]):
     ) -> List[Node]:
         """Get nodes for response."""
 
+    def _get_extra_info_for_response(
+        self,
+        nodes: List[Node],
+    ) -> Optional[Dict[str, Any]]:
+        """Get extra info for response."""
+        return None
+
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
+        self.response_builder.reset()
         # TODO: remove _query and just use query
         tuples = self.get_nodes_and_similarities_for_response(query_bundle)
-        node_texts = []
+
         for node, similarity in tuples:
             text, response = self._get_text_from_node(query_bundle, node)
-            self.response_builder.add_node(node, similarity=similarity)
+            self.response_builder.add_node_as_source(node, similarity=similarity)
             if response is not None:
                 # these are source nodes from within this node (when it's an index)
                 for source_node in response.source_nodes:
                     self.response_builder.add_source_node(source_node)
-            node_texts.append(text)
+            self.response_builder.add_text_chunks([text])
 
         if self._response_mode != ResponseMode.NO_TEXT:
-            response_str = self._give_response_for_nodes(
-                query_bundle.query_str, node_texts
-            )
+            response_str = self._give_response_for_nodes(query_bundle.query_str)
         else:
             response_str = None
 
-        return Response(response_str, source_nodes=self.response_builder.get_sources())
+        response_extra_info = self._get_extra_info_for_response(
+            [node for node, _ in tuples]
+        )
+
+        return Response(
+            response_str,
+            source_nodes=self.response_builder.get_sources(),
+            extra_info=response_extra_info,
+        )
 
     @llm_token_counter("query")
     def query(self, query_bundle: QueryBundle) -> Response:

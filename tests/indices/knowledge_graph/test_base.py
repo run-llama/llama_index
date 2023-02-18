@@ -102,6 +102,10 @@ def test_query(
     response = index.query("foo")
     # when include_text is True, the first node is the raw text
     assert str(response) == "foo:(foo, is, bar)"
+    assert response.extra_info is not None
+    assert response.extra_info["kg_rel_map"] == {
+        "foo": [("bar", "is")],
+    }
 
     # test specific query class
     query = GPTKGTableQuery(

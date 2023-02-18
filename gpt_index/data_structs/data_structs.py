@@ -369,6 +369,13 @@ class KG(IndexStruct):
             texts.append(str((keyword, rel, obj)))
         return texts
 
+    def get_rel_map_tuples(self, keyword: str) -> List[Tuple[str, str]]:
+        """Get the corresponding knowledge for a given keyword."""
+        # NOTE: return a single node for now
+        if keyword not in self.rel_map:
+            return []
+        return self.rel_map[keyword]
+
     def get_node_ids(self, keyword: str, depth: int = 1) -> List[str]:
         """Get the corresponding knowledge for a given keyword."""
         if depth > 1:
