@@ -19,6 +19,7 @@ from gpt_index.readers.github_readers.github_repository_reader import (
     GithubRepositoryReader,
 )
 from gpt_index.readers.google_readers.gdocs import GoogleDocsReader
+from gpt_index.readers.llamahub_modules import *
 from gpt_index.readers.make_com.wrapper import MakeWrapper
 from gpt_index.readers.mbox import MboxReader
 from gpt_index.readers.mongo import SimpleMongoReader
