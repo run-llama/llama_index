@@ -301,14 +301,9 @@ class BaseGPTIndex(Generic[IS]):
 
         Args:
             doc_id (str): document id
-            full_delete (bool): whether to delete the document from the docstore.
-                By default this is True.
 
         """
-        full_delete = delete_kwargs.pop("full_delete", True)
         logging.debug(f"> Deleting document: {doc_id}")
-        if full_delete:
-            self._docstore.delete_document(doc_id)
         self._delete(doc_id, **delete_kwargs)
 
     def update(self, document: DOCUMENTS_INPUT, **update_kwargs: Any) -> None:
