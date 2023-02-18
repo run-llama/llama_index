@@ -68,8 +68,11 @@ class ResponseBuilder:
     def reset(self) -> None:
         """Clear text chunks."""
         self._texts = []
+        self.source_nodes = []
 
-    def add_node(self, node: Node, similarity: Optional[float] = None) -> None:
+    def add_node_as_source(
+        self, node: Node, similarity: Optional[float] = None
+    ) -> None:
         """Add node."""
         self.source_nodes.append(SourceNode.from_node(node, similarity=similarity))
 
