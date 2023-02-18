@@ -106,7 +106,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         )
         rel_info = [rel_initial_text] + rel_texts
         rel_node_info = {
-            "kg_rel_text": rel_texts,
+            "kg_rel_texts": rel_texts,
             "kg_rel_map": cur_rel_map,
         }
         rel_text_node = Node(text="\n".join(rel_info), node_info=rel_node_info)
