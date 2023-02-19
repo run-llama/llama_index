@@ -3,7 +3,7 @@
 
 import asyncio
 import logging
-from typing import Dict, Sequence
+from typing import Dict, List, Sequence, Tuple
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -110,19 +110,23 @@ class GPTTreeIndexBuilder:
             tasks = [
                 self._llm_predictor.apredict(
                     self.summary_prompt, context_str=text_chunk
-                ) for text_chunk in text_chunks
+                )
+                for text_chunk in text_chunks
             ]
             all_tasks = asyncio.gather(*tasks)
-            outputs = asyncio.run(all_tasks)
+            outputs: List[Tuple[str, str]] = asyncio.run(all_tasks)  # type: ignore
             summaries = [output[0] for output in outputs]
         else:
             summaries = [
                 self._llm_predictor.predict(
                     self.summary_prompt, context_str=text_chunk
-                )[0] for text_chunk in text_chunks
+                )[0]
+                for text_chunk in text_chunks
             ]
 
-        for i, cur_nodes_chunk, new_summary in zip(indices, cur_nodes_chunks, summaries):
+        for i, cur_nodes_chunk, new_summary in zip(
+            indices, cur_nodes_chunks, summaries
+        ):
             logging.debug(
                 f"> {i}/{len(cur_nodes)}, summary: {truncate_text(new_summary, 50)}"
             )
