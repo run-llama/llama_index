@@ -40,7 +40,7 @@ class Playground:
 
     @classmethod
     def from_docs(cls, documents: List[Document], **kwargs: Any) -> Playground:
-        """Initialize with Documents to easily test them across the default list of indices.
+        """Initialize with Documents using the default list of indices.
 
         Args:
             documents: A List of Documents to experiment with.
@@ -100,10 +100,12 @@ class Playground:
 
         Args:
             query_text (str): Query to run all indices on.
-            to_pandas (Optional[bool]): Return results in a pandas dataframe. True by default.
+            to_pandas (Optional[bool]): Return results in a pandas dataframe.
+                True by default.
 
         Returns:
-            The output of each index along with other data, such as the time it took to compute. Results are stored in a Pandas Dataframe or a list of Dicts.
+            The output of each index along with other data, such as the time it took to
+            compute. Results are stored in a Pandas Dataframe or a list of Dicts.
         """
         print(f"\033[1mQuery:\033[0m\n{query_text}\n")
         print(f"Trying {len(self._indices) * len(self._modes)} combinations...\n\n")

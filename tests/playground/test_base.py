@@ -107,15 +107,15 @@ def test_from_docs(
 def test_validation() -> None:
     """Test validation of indices and modes."""
     with pytest.raises(ValueError):
-        playground = Playground(indices=["GPTSimpleVectorIndex"])  # type: ignore
+        _ = Playground(indices=["GPTSimpleVectorIndex"])  # type: ignore
 
     with pytest.raises(ValueError):
-        playground = Playground(
+        _ = Playground(
             indices=[GPTSimpleVectorIndex, GPTListIndex, GPTTreeIndex]  # type: ignore
         )
 
     with pytest.raises(ValueError):
-        playground = Playground(indices=[])  # type: ignore
+        _ = Playground(indices=[])  # type: ignore
 
     with pytest.raises(TypeError):
-        playground = Playground(modes=["default"])  # type: ignore
+        _ = Playground(modes=["default"])  # type: ignore
