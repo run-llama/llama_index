@@ -100,6 +100,12 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             results.append((subj.strip(), pred.strip(), obj.strip()))
         return results
 
+    def _build_fallback_text_splitter(self) -> TextSplitter:
+        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
+        return self._prompt_helper.get_text_splitter_given_prompt(
+            self.kg_triple_extract_template, 1
+        )
+
     def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> KG:
         """Build the index from documents."""
         # do simple concatenation

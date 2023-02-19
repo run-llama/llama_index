@@ -105,6 +105,12 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
     def _get_schema_text(self) -> str:
         """Get schema text for extracting relevant info from unstructured text."""
 
+    def _build_fallback_text_splitter(self) -> TextSplitter:
+        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
+        return self._prompt_helper.get_text_splitter_given_prompt(
+            self.schema_extract_prompt, 1
+        )
+
     def _add_document_to_index(
         self,
         document: BaseDocument,
