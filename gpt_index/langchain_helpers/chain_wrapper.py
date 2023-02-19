@@ -154,7 +154,7 @@ class LLMPredictor:
         self._last_token_usage = value
 
     async def _apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
-        """Inner predict function.
+        """Async inner predict function.
 
         If retry_on_throttling is true, we will retry on rate limit errors.
 
@@ -169,7 +169,7 @@ class LLMPredictor:
         return llm_prediction
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
-        """Predict the answer to a query.
+        """Async predict the answer to a query.
 
         Args:
             prompt (Prompt): Prompt to use for prediction.
