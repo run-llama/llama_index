@@ -2,12 +2,13 @@
 
 
 import logging
-from typing import Dict, Sequence
+from typing import Dict, Optional, Sequence
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.prompts import SummaryPrompt
 from gpt_index.schema import BaseDocument
 
@@ -26,6 +27,7 @@ class GPTTreeIndexBuilder:
         summary_prompt: SummaryPrompt,
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
+        text_splitter: TextSplitter,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -34,16 +36,14 @@ class GPTTreeIndexBuilder:
         self.summary_prompt = summary_prompt
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
+        self._text_splitter = text_splitter
 
     def _get_nodes_from_document(
         self, start_idx: int, document: BaseDocument
     ) -> Dict[int, Node]:
         """Add document to index."""
         # NOTE: summary prompt does not need to be partially formatted
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.summary_prompt, self.num_children
-        )
-        text_chunks = text_splitter.split_text(
+        text_chunks = self._text_splitter.split_text(
             document.get_text(), extra_info_str=document.extra_info_str
         )
         doc_nodes = {

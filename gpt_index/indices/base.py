@@ -27,7 +27,7 @@ from gpt_index.indices.query.query_transform import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
 from gpt_index.readers.schema.base import Document
 from gpt_index.response.schema import Response
 from gpt_index.schema import BaseDocument
@@ -68,6 +68,7 @@ class BaseGPTIndex(Generic[IS]):
         docstore: Optional[DocumentStore] = None,
         index_registry: Optional[IndexRegistry] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        text_splitter: Optional[TextSplitter] = None,
         chunk_size_limit: Optional[int] = None,
         include_extra_info: bool = True,
     ) -> None:
@@ -86,6 +87,7 @@ class BaseGPTIndex(Generic[IS]):
         self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
             self._llm_predictor, chunk_size_limit=chunk_size_limit
         )
+        self._text_splitter = text_splitter or TokenTextSplitter()
 
         # build index struct in the init function
         self._docstore = docstore or DocumentStore()
@@ -250,12 +252,11 @@ class BaseGPTIndex(Generic[IS]):
     def _get_nodes_from_document(
         self,
         document: BaseDocument,
-        text_splitter: TokenTextSplitter,
         start_idx: int = 0,
     ) -> List[Node]:
         return get_nodes_from_document(
             document=document,
-            text_splitter=text_splitter,
+            text_splitter=self._text_splitter,
             start_idx=start_idx,
             include_extra_info=self._include_extra_info,
         )

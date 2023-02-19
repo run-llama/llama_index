@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from typing import Callable, List, Optional
 
-from langchain.text_splitter import TextSplitter
+from langchain.text_splitter import NLTKTextSplitter, SpacyTextSplitter, TextSplitter
 
 from gpt_index.utils import globals_helper
 
@@ -105,8 +105,8 @@ class TokenTextSplitter(TextSplitter):
 
     def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
-        text_slits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
-        return [text_split.text_chunk for text_split in text_slits]
+        text_splits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
+        return [text_split.text_chunk for text_split in text_splits]
 
     def split_text_with_overlaps(
         self, text: str, extra_info_str: Optional[str] = None
@@ -215,3 +215,6 @@ class TokenTextSplitter(TextSplitter):
             cur_total += num_cur_tokens
             cur_idx += 1
         return self._separator.join(splits[start_idx:cur_idx])
+
+
+__all__ = ["TextSplitter", "TokenTextSplitter", "NLTKTextSplitter", "SpacyTextSplitter"]

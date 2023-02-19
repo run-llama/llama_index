@@ -208,10 +208,11 @@ class ResponseBuilder:
         }
 
         index_builder = GPTTreeIndexBuilder(
-            num_children,
-            summary_template,
-            self.llm_predictor,
-            self.prompt_helper,
+            num_childer=num_children,
+            summary_prompt=summary_template,
+            llm_predictor=self.llm_predictor,
+            prompt_helper=self.prompt_helper,
+            text_splitter=text_splitter,
         )
         root_nodes = index_builder.build_index_from_nodes(all_nodes, all_nodes)
         node_list = get_sorted_node_list(root_nodes)
