@@ -73,7 +73,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
-            # if not specified, use "smart" text splitter to ensure chunks fit in prompt
             text_splitter=text_splitter,
             **kwargs,
         )
@@ -87,6 +86,12 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             QueryMode.RETRIEVE: GPTTreeIndexRetQuery,
             QueryMode.SUMMARIZE: GPTTreeIndexSummarizeQuery,
         }
+
+    def _build_fallback_text_splitter(self) -> TextSplitter:
+        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
+        return self._prompt_helper.get_text_splitter_given_prompt(
+            self.summary_template, self.num_children
+        )
 
     def _validate_build_tree_required(self, mode: QueryMode) -> None:
         """Check if index supports modes that require trees."""

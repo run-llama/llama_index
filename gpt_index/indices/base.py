@@ -87,7 +87,7 @@ class BaseGPTIndex(Generic[IS]):
         self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
             self._llm_predictor, chunk_size_limit=chunk_size_limit
         )
-        self._text_splitter = text_splitter or TokenTextSplitter()
+        self._text_splitter = text_splitter or self._build_fallback_text_splitter()
 
         # build index struct in the init function
         self._docstore = docstore or DocumentStore()
@@ -260,6 +260,10 @@ class BaseGPTIndex(Generic[IS]):
             start_idx=start_idx,
             include_extra_info=self._include_extra_info,
         )
+
+    def _build_fallback_text_splitter(self) -> TextSplitter:
+        """Build the text splitter if not specified in args."""
+        return TokenTextSplitter()
 
     @abstractmethod
     def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
