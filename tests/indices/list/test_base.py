@@ -219,44 +219,32 @@ def test_index_overlap(
         )
     ]
 
-    def _mock_text_splitter_with_space(
-        prompt: Prompt, num_chunks: int, padding: Optional[int] = 1
-    ) -> TokenTextSplitter:
-        """Mock text splitter."""
-        return TokenTextSplitter(
-            separator=" ",
-            chunk_size=30,
-            chunk_overlap=10,
-            tokenizer=globals_helper.tokenizer,
-        )
+    # A text splitter for test purposes
+    _mock_text_splitter = TokenTextSplitter(
+        separator=" ",
+        chunk_size=30,
+        chunk_overlap=10,
+        tokenizer=globals_helper.tokenizer,
+    )
 
-    with patch.object(
-        PromptHelper,
-        "get_text_splitter_given_prompt",
-        side_effect=_mock_text_splitter_with_space,
-    ):
-        index = GPTListIndex(documents, **index_kwargs)
+    index = GPTListIndex(documents, text_splitter=_mock_text_splitter, **index_kwargs)
 
-        query_str = "What is?"
-        response = index.query(query_str, mode="default", **query_kwargs)
-        node_info_0 = (
-            response.source_nodes[0].node_info
-            if response.source_nodes[0].node_info
-            else {}
-        )
-        # First chunk: 'Hello world. This is a test 1. This is a test 2.
-        # This is a test 3. This is a test 4. This is a'
-        assert node_info_0["start"] == 0  # start at the start
-        assert node_info_0["end"] == 94  # Length of first chunk.
+    query_str = "What is?"
+    response = index.query(query_str, mode="default", **query_kwargs)
+    node_info_0 = (
+        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+    )
+    # First chunk: 'Hello world. This is a test 1. This is a test 2.
+    # This is a test 3. This is a test 4. This is a'
+    assert node_info_0["start"] == 0  # start at the start
+    assert node_info_0["end"] == 94  # Length of first chunk.
 
-        node_info_1 = (
-            response.source_nodes[1].node_info
-            if response.source_nodes[1].node_info
-            else {}
-        )
-        # Second chunk: 'This is a test 4. This is a test 5.\n'
-        assert node_info_1["start"] == 67  # Position of second chunk relative to start
-        assert node_info_1["end"] == 103  # End index
+    node_info_1 = (
+        response.source_nodes[1].node_info if response.source_nodes[1].node_info else {}
+    )
+    # Second chunk: 'This is a test 4. This is a test 5.\n'
+    assert node_info_1["start"] == 67  # Position of second chunk relative to start
+    assert node_info_1["end"] == 103  # End index
 
 
 @patch_common
