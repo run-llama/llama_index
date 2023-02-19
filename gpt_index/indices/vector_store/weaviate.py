@@ -8,10 +8,11 @@ from typing import Any, Dict, Optional, Sequence, Type, cast
 
 from gpt_index.data_structs.data_structs import WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.weaviate import GPTWeaviateIndexQuery
+from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -21,7 +22,7 @@ from gpt_index.readers.weaviate.utils import get_default_class_prefix
 from gpt_index.schema import BaseDocument
 
 
-class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
+class GPTWeaviateIndex(BaseGPTVectorStoreIndex[WeaviateIndexStruct]):
     """GPT Weaviate Index.
 
     The GPTWeaviateIndex is a data structure where nodes are keyed by
@@ -106,10 +107,14 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
     ) -> None:
         """Add document to index."""
         nodes = self._get_nodes_from_document(document, text_splitter)
-        for n in nodes:
-            if n.embedding is None:
-                n.embedding = self._embed_model.get_text_embedding(n.get_text())
-            WeaviateNode.from_gpt_index(self.client, n, index_struct.get_class_prefix())
+        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
+
+        for new_id, node, embed in id_node_embed_tups:
+            # TODO: always store embedding in node
+            node.embedding = embed
+            WeaviateNode.from_gpt_index(
+                self.client, node, index_struct.get_class_prefix()
+            )
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument]
@@ -122,10 +127,6 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
         for d in documents:
             self._add_document_to_index(index_struct, d, text_splitter)
         return index_struct
-
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
-        """Insert a document."""
-        self._add_document_to_index(self._index_struct, document, self._text_splitter)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

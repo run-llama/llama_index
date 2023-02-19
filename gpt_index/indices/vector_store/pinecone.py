@@ -8,10 +8,11 @@ from typing import Any, Dict, Optional, Sequence, Type, cast
 
 from gpt_index.data_structs.data_structs import PineconeIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.pinecone import GPTPineconeIndexQuery
+from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -20,7 +21,7 @@ from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
 
 
-class GPTPineconeIndex(BaseGPTIndex[PineconeIndexStruct]):
+class GPTPineconeIndex(BaseGPTVectorStoreIndex[PineconeIndexStruct]):
     """GPT Pinecone Index.
 
     The GPTPineconeIndex is a data structure where nodes are keyed by
@@ -99,42 +100,22 @@ class GPTPineconeIndex(BaseGPTIndex[PineconeIndexStruct]):
     ) -> None:
         """Add document to index."""
         nodes = self._get_nodes_from_document(document, text_splitter)
-        for n in nodes:
-            if n.embedding is None:
-                text_embedding = self._embed_model.get_text_embedding(n.get_text())
-            else:
-                text_embedding = n.embedding
 
+        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
+        for new_id, node, text_embedding in id_node_embed_tups:
+            # assign a new_id if current_id conflicts with existing ids
             while True:
-                new_id = get_new_id(set())
                 result = self._pinecone_index.fetch([new_id], **self._pinecone_kwargs)
                 if len(result["vectors"]) == 0:
                     break
-
+                new_id = get_new_id(set())
             metadata = {
-                "text": n.get_text(),
+                "text": node.get_text(),
                 "doc_id": document.get_doc_id(),
             }
-
             self._pinecone_index.upsert(
                 [(new_id, text_embedding, metadata)], **self._pinecone_kwargs
             )
-
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
-    ) -> PineconeIndexStruct:
-        """Build index from documents."""
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
-        )
-        index_struct = self.index_struct_cls()
-        for d in documents:
-            self._add_document_to_index(index_struct, d, text_splitter)
-        return index_struct
-
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
-        """Insert a document."""
-        self._add_document_to_index(self._index_struct, document, self._text_splitter)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

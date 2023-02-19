@@ -110,13 +110,19 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
         from qdrant_client.http.exceptions import UnexpectedResponse
 
         nodes = self._get_nodes_from_document(document, text_splitter)
-        for n in nodes:
-            if n.embedding is None:
-                text_embedding = self._embed_model.get_text_embedding(n.get_text())
-            else:
-                text_embedding = n.embedding
+        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
 
+        for new_id, node, text_embedding in id_node_embed_tups:
             collection_name = index_struct.get_collection_name()
+            # assign a new_id if current_id conflicts with existing ids
+            while True:
+                try:
+                    self._client.http.points_api.get_point(
+                        collection_name=collection_name, id=new_id
+                    )
+                except UnexpectedResponse:
+                    break
+                new_id = get_new_id(set())
 
             # Create the Qdrant collection, if it does not exist yet
             if not self._collection_initialized:
@@ -126,19 +132,10 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
                 )
                 self._collection_initialized = True
 
-            while True:
-                new_id = get_new_id(set())
-                try:
-                    self._client.http.points_api.get_point(
-                        collection_name=collection_name, id=new_id
-                    )
-                except UnexpectedResponse:
-                    break
-
             payload = {
                 "doc_id": document.get_doc_id(),
-                "text": n.get_text(),
-                "index": n.index,
+                "text": node.get_text(),
+                "index": node.index,
             }
 
             self._client.upsert(

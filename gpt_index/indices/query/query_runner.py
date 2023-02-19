@@ -34,6 +34,7 @@ class QueryRunner(BaseQueryRunner):
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
         recursive: bool = False,
+        use_async: bool = False,
     ) -> None:
         """Init params."""
         config_dict: Dict[str, QueryConfig] = {}
@@ -57,6 +58,7 @@ class QueryRunner(BaseQueryRunner):
         self._index_registry = index_registry
         self._query_transform = query_transform or BaseQueryTransform()
         self._recursive = recursive
+        self._use_async = use_async
 
     def _get_query_kwargs(self, config: QueryConfig) -> Dict[str, Any]:
         """Get query kwargs.
@@ -102,6 +104,7 @@ class QueryRunner(BaseQueryRunner):
             **query_kwargs,
             query_runner=query_runner,
             docstore=self._docstore,
+            use_async=self._use_async,
         )
 
         return query_obj.query(query_bundle)
