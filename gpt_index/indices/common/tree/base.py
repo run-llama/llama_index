@@ -96,14 +96,14 @@ class GPTTreeIndexBuilder:
         logging.info(
             f"> Building index from nodes: {len(cur_nodes) // self.num_children} chunks"
         )
-
-        indices, text_chunks = [], []
+        indices, cur_nodes_chunks, text_chunks = [], [], []
         for i in range(0, len(cur_node_list), self.num_children):
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
             text_chunk = self._prompt_helper.get_text_from_nodes(
                 cur_nodes_chunk, prompt=self.summary_prompt
             )
             indices.append(i)
+            cur_nodes_chunks.append(cur_nodes_chunk)
             text_chunks.append(text_chunk)
 
         if self._use_async:
@@ -122,7 +122,7 @@ class GPTTreeIndexBuilder:
                 )[0] for text_chunk in text_chunks
             ]
 
-        for i, new_summary in zip(indices, summaries):
+        for i, cur_nodes_chunk, new_summary in zip(indices, cur_nodes_chunks, summaries):
             logging.debug(
                 f"> {i}/{len(cur_nodes)}, summary: {truncate_text(new_summary, 50)}"
             )
