@@ -4,24 +4,19 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Dict, Optional, Sequence, Type, cast
+import logging
+from typing import Any, List, cast
 
 import numpy as np
 
-from gpt_index.data_structs.data_structs import IndexDict
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.query.vector_store.faiss import GPTFaissIndexQuery
-from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.schema import BaseDocument
+from gpt_index.indices.vector_store.types import (
+    NodeEmbeddingResult,
+    VectorStore,
+    VectorStoreQueryResult,
+)
 
 
-class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
+class FaissVectorStore(VectorStore):
     """GPT Faiss Index.
 
     The GPTFaissIndex is a data structure where nodes are keyed by
@@ -43,18 +38,9 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
             embedding similarity.
     """
 
-    index_struct_cls = IndexDict
-
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        faiss_index: Optional[Any] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        text_splitter: Optional[TextSplitter] = None,
-        **kwargs: Any,
+        faiss_index: Any,
     ) -> None:
         """Initialize params."""
         import_err_msg = """
@@ -67,66 +53,35 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
         except ImportError:
             raise ValueError(import_err_msg)
 
-        if faiss_index is None:
-            raise ValueError("faiss_index cannot be None.")
-        if documents is not None and faiss_index.ntotal > 0:
-            raise ValueError(
-                "If building a GPTFaissIndex from scratch, faiss_index must be empty."
-            )
         self._faiss_index = cast(faiss.Index, faiss_index)
-        super().__init__(
-            documents=documents,
-            index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            text_splitter=text_splitter,
-            **kwargs,
-        )
 
-    @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTFaissIndexQuery,
-            QueryMode.EMBEDDING: GPTFaissIndexQuery,
-        }
+    @property
+    def config_dict(self) -> dict:
+        return {}
 
-    def _add_document_to_index(
+    def add(
         self,
-        index_struct: IndexDict,
-        document: BaseDocument,
-    ) -> None:
+        embedding_results: List[NodeEmbeddingResult],
+    ) -> List[str]:
         """Add document to index."""
-        nodes = self._get_nodes_from_document(document)
-
-        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
-
-        for new_id, node, text_embedding in id_node_embed_tups:
+        new_ids = []
+        for result in embedding_results:
+            text_embedding = result.embedding
             text_embedding_np = np.array(text_embedding, dtype="float32")[np.newaxis, :]
             new_id = str(self._faiss_index.ntotal)
             self._faiss_index.add(text_embedding_np)
+            new_ids.append(new_id)
+        return new_ids
 
-            # add to index
-            index_struct.add_node(node, text_id=new_id)
+    @property
+    def client(self) -> Any:
+        return self._faiss_index
 
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query.
-
-        This allows subclasses to pass in additional query kwargs
-        to query, for instance arguments that are shared between the
-        index and the query class. By default, this does nothing.
-        This also allows subclasses to do validation.
-
-        """
-        super()._preprocess_query(mode, query_kwargs)
-        # pass along faiss_index
-        query_kwargs["faiss_index"] = self._faiss_index
 
     @classmethod
-    def load_from_disk(
-        cls, save_path: str, faiss_index_save_path: Optional[str] = None, **kwargs: Any
-    ) -> "BaseGPTIndex":
+    def load(
+        cls, save_path: str
+    ) -> "FaissVectorStore":
         """Load index from disk.
 
         This method loads the index from a JSON file stored on disk. The index data
@@ -149,19 +104,14 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
             BaseGPTIndex: The loaded index.
 
         """
-        if faiss_index_save_path is not None:
-            import faiss
+        import faiss
 
-            faiss_index = faiss.read_index(faiss_index_save_path)
-            return super().load_from_disk(save_path, faiss_index=faiss_index, **kwargs)
-        else:
-            return super().load_from_disk(save_path, **kwargs)
+        faiss_index = faiss.read_index(save_path)
+        return cls(faiss_index)
 
-    def save_to_disk(
+    def save(
         self,
         save_path: str,
-        faiss_index_save_path: Optional[str] = None,
-        **save_kwargs: Any,
     ) -> None:
         """Save to file.
 
@@ -179,13 +129,26 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
                 will not be saved to disk.
 
         """
-        super().save_to_disk(save_path, **save_kwargs)
+        import faiss
 
-        if faiss_index_save_path is not None:
-            import faiss
+        faiss.write_index(self._faiss_index, save_path)
 
-            faiss.write_index(self._faiss_index, faiss_index_save_path)
-
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not yet implemented for Faiss index.")
+
+    def query(self, query_embedding: List[float], similarity_top_k: int) -> VectorStoreQueryResult:
+        """Get nodes for response."""
+        query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
+        dists, indices = self._faiss_index.search(
+            query_embedding_np, similarity_top_k
+        )
+        dists = [d[0] for d in dists]
+        # if empty, then return an empty response
+        if len(indices) == 0:
+            return VectorStoreQueryResult(similarities=[], ids=[])
+
+        # returned dimension is 1 x k
+        node_idxs = list([str(i) for i in indices[0]])
+
+        return VectorStoreQueryResult(similarities=dists, ids=node_idxs)

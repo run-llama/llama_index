@@ -10,6 +10,7 @@ from gpt_index.indices.query.base import BaseQueryRunner
 from gpt_index.indices.query.query_transform import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
+from gpt_index.indices.vector_store.types import VectorStore
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
 
@@ -76,7 +77,10 @@ class QueryRunner(BaseQueryRunner):
         return query_kwargs
 
     def query(
-        self, query_str_or_bundle: Union[str, QueryBundle], index_struct: IndexStruct
+        self, 
+        query_str_or_bundle: Union[str, QueryBundle], 
+        index_struct: IndexStruct, 
+        vector_store: Optional[VectorStore] = None,
     ) -> Response:
         """Run query."""
         # NOTE: Currently, query transform is only run once
@@ -105,6 +109,7 @@ class QueryRunner(BaseQueryRunner):
             query_runner=query_runner,
             docstore=self._docstore,
             use_async=self._use_async,
+            vector_store=vector_store,
         )
 
         return query_obj.query(query_bundle)

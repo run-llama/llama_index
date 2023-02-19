@@ -1,21 +1,25 @@
 """Simple vector store index."""
 
-from typing import Any, Dict, Optional, Sequence, Type
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
-from gpt_index.data_structs.data_structs import SimpleIndexDict
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.query.vector_store.simple import GPTSimpleVectorIndexQuery
-from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.schema import BaseDocument
+from dataclasses_json import DataClassJsonMixin
+
+from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
+from gpt_index.indices.vector_store.types import (
+    NodeEmbeddingResult,
+    VectorStore,
+    VectorStoreQueryResult,
+)
 
 
-class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
+@dataclass
+class SimpleVectorStoreData(DataClassJsonMixin):
+    embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
+    text_id_to_doc_id: Dict[str, str] = field(default_factory=dict)
+
+
+class SimpleVectorStore(VectorStore):
     """GPT Simple Vector Index.
 
     The GPTSimpleVectorIndex is a data structure where nodes are keyed by
@@ -35,64 +39,64 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
             embedding similarity.
     """
 
-    index_struct_cls = SimpleIndexDict
-
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[SimpleIndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        simple_vector_store_data_dict: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(
-            documents=documents,
-            index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            text_splitter=text_splitter,
-            **kwargs,
-        )
+        if simple_vector_store_data_dict is None:
+            self._data = SimpleVectorStoreData()
+        else:
+            self._data = SimpleVectorStoreData.from_dict(simple_vector_store_data_dict)
 
-    @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
-        """Get query map."""
+    @property
+    def client(self) -> None:
+        return None
+    
+    @property
+    def config_dict(self) -> dict:
         return {
-            QueryMode.DEFAULT: GPTSimpleVectorIndexQuery,
-            QueryMode.EMBEDDING: GPTSimpleVectorIndexQuery,
+            "simple_vector_store_data_dict": self._data.to_dict(),
         }
 
-    def _add_document_to_index(
+    def get(self, text_id: str) -> List[float]:
+        return self._data.embedding_dict[text_id]
+
+    def add(
         self,
-        index_struct: SimpleIndexDict,
-        document: BaseDocument,
-    ) -> None:
+        embedding_results: List[NodeEmbeddingResult],
+    ) -> List[str]:
         """Add document to index."""
-        nodes = self._get_nodes_from_document(document)
+        for result in embedding_results:
+            text_id = result.id
+            self._data.embedding_dict[text_id] = result.embedding
+            self._data.text_id_to_doc_id[text_id] = result.doc_id
+        return [result.id for result in embedding_results]
 
-        id_node_embed_tups = self._get_node_embedding_tups(
-            nodes, set(index_struct.nodes_dict.keys())
-        )
-        for new_id, node, text_embedding in id_node_embed_tups:
-            index_struct.add_node(node, text_id=new_id)
-            index_struct.add_to_embedding_dict(new_id, text_embedding)
-
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         text_ids_to_delete = set()
-        int_ids_to_delete = set()
-        for text_id, int_id in self.index_struct.id_map.items():
-            node = self.index_struct.nodes_dict[int_id]
-            if node.ref_doc_id != doc_id:
-                continue
-            text_ids_to_delete.add(text_id)
-            int_ids_to_delete.add(int_id)
+        for text_id, doc_id_ in self._data.text_id_to_doc_id.items():
+            if doc_id == doc_id_:
+                text_ids_to_delete.add(text_id)
 
-        for int_id, text_id in zip(int_ids_to_delete, text_ids_to_delete):
-            del self.index_struct.nodes_dict[int_id]
-            del self.index_struct.id_map[text_id]
-            del self.index_struct.embedding_dict[text_id]
+        for text_id in text_ids_to_delete:
+            del self._data.embedding_dict[text_id]
+            del self._data.text_id_to_doc_id[text_id]
+
+    def query(self, query_embedding: List[float], similarity_top_k: int) -> VectorStoreQueryResult:
+        """Get nodes for response."""
+        # TODO: consolidate with get_query_text_embedding_similarities
+        items = self._data.embedding_dict.items()
+        node_ids = [t[0] for t in items]
+        embeddings = [t[1] for t in items]
+
+        top_similarities, top_ids = get_top_k_embeddings(
+            query_embedding,
+            embeddings,
+            similarity_top_k=similarity_top_k,
+            embedding_ids=node_ids,
+        )
+
+        return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)

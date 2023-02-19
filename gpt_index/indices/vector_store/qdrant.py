@@ -3,24 +3,19 @@
 An index that is built on top of an existing Qdrant collection.
 
 """
-from typing import Any, Dict, Optional, Sequence, Type, cast
+import logging
+from typing import Any, List, Optional, cast
 
-from gpt_index.data_structs.data_structs import QdrantIndexStruct
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.query.vector_store.qdrant import GPTQdrantIndexQuery
-from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.schema import BaseDocument
+from gpt_index.data_structs.data_structs import Node
+from gpt_index.indices.vector_store.types import (
+    NodeEmbeddingResult,
+    VectorStore,
+    VectorStoreQueryResult,
+)
 from gpt_index.utils import get_new_id
 
 
-class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
+class QdrantVectorStore(VectorStore):
     """GPT Qdrant Index.
 
     The GPTQdrantIndex is a data structure where nodes are keyed by
@@ -42,18 +37,10 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
         collection_name: (Optional[str]): name of the Qdrant collection
     """
 
-    index_struct_cls = QdrantIndexStruct
-
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[QdrantIndexStruct] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        collection_name: str,
         client: Optional[Any] = None,
-        collection_name: Optional[str] = None,
         **kwargs: Any
     ) -> None:
         """Init params."""
@@ -68,48 +55,29 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
         if client is None:
             raise ValueError("client cannot be None.")
 
-        if collection_name is None and index_struct is not None:
-            collection_name = index_struct.collection_name
-        if collection_name is None:
-            raise ValueError("collection_name cannot be None.")
-
         self._client = cast(qdrant_client.QdrantClient, client)
         self._collection_name = collection_name
         self._collection_initialized = self._collection_exists(collection_name)
-
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        super().__init__(
-            documents,
-            index_struct,
-            text_qa_template,
-            llm_predictor,
-            embed_model,
-            text_splitter,
-            **kwargs
-        )
-
-    @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
-        """Get query map."""
+    
+    @property
+    def config_dict(self) -> dict:
         return {
-            QueryMode.DEFAULT: GPTQdrantIndexQuery,
-            QueryMode.EMBEDDING: GPTQdrantIndexQuery,
+            'collection_name': self._collection_name,
         }
 
-    def _add_document_to_index(
+    def add(
         self,
-        index_struct: QdrantIndexStruct,
-        document: BaseDocument,
+        embedding_results: List[NodeEmbeddingResult]
     ) -> None:
         """Add document to index."""
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
 
-        nodes = self._get_nodes_from_document(document)
-        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
-
-        for new_id, node, text_embedding in id_node_embed_tups:
-            collection_name = index_struct.get_collection_name()
+        for result in embedding_results:
+            new_id = result.id
+            node = result.node
+            text_embedding = result.embedding
+            collection_name = self._collection_name
             # assign a new_id if current_id conflicts with existing ids
             while True:
                 try:
@@ -129,7 +97,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
                 self._collection_initialized = True
 
             payload = {
-                "doc_id": document.get_doc_id(),
+                "doc_id": result.doc_id,
                 "text": node.get_text(),
                 "index": node.index,
             }
@@ -145,20 +113,7 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
                 ],
             )
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
-    ) -> QdrantIndexStruct:
-        """Build index from documents."""
-        index_struct = self.index_struct_cls(collection_name=self._collection_name)
-        for d in documents:
-            self._add_document_to_index(index_struct, d)
-        return index_struct
-
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
-        """Insert a document."""
-        self._add_document_to_index(self.index_struct, document)
-
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         from qdrant_client.http import models as rest
 
@@ -173,11 +128,9 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
             ),
         )
 
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Query mode to class."""
-        super()._preprocess_query(mode, query_kwargs)
-        # Pass along Qdrant client instance
-        query_kwargs["client"] = self._client
+    @property
+    def client(self) -> Any:
+        return self._client
 
     def _create_collection(self, collection_name: str, vector_size: int) -> None:
         """Create a Qdrant collection."""
@@ -199,3 +152,30 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
             return response.result is not None
         except UnexpectedResponse:
             return False
+
+    def query(self, 
+        query_embedding: List[float], 
+        similarity_top_k: int, 
+    ) -> VectorStoreQueryResult:
+        from qdrant_client.http.models.models import Payload
+
+        response = self._client.search(
+            collection_name=self._collection_name,
+            query_vector=query_embedding,
+            limit=cast(int, similarity_top_k),
+        )
+
+        logging.debug(f"> Top {len(response)} nodes:")
+
+        nodes = []
+        similarities = []
+        for point in response:
+            payload = cast(Payload, point.payload)
+            node = Node(
+                ref_doc_id=payload.get("doc_id"),
+                text=payload.get("text"),
+            )
+            nodes.append(node)
+            similarities.append(point.score)
+
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities)

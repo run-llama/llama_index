@@ -4,25 +4,19 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Dict, Optional, Sequence, Type, cast
+import logging
+from typing import Any, List, Optional, cast
 
-from gpt_index.data_structs.data_structs import WeaviateIndexStruct
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.query.vector_store.weaviate import GPTWeaviateIndexQuery
-from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
+from gpt_index.indices.vector_store.types import (
+    NodeEmbeddingResult,
+    VectorStore,
+    VectorStoreQueryResult,
+)
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
 from gpt_index.readers.weaviate.utils import get_default_class_prefix
-from gpt_index.schema import BaseDocument
 
 
-class GPTWeaviateIndex(BaseGPTVectorStoreIndex[WeaviateIndexStruct]):
+class WeaviateVectorStore(VectorStore):
     """GPT Weaviate Index.
 
     The GPTWeaviateIndex is a data structure where nodes are keyed by
@@ -42,16 +36,8 @@ class GPTWeaviateIndex(BaseGPTVectorStoreIndex[WeaviateIndexStruct]):
             embedding similarity.
     """
 
-    index_struct_cls = WeaviateIndexStruct
-
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[WeaviateIndexStruct] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        text_splitter: Optional[TextSplitter] = None,
         weaviate_client: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         **kwargs: Any,
@@ -66,67 +52,51 @@ class GPTWeaviateIndex(BaseGPTVectorStoreIndex[WeaviateIndexStruct]):
         except ImportError:
             raise ValueError(import_err_msg)
 
-        self.client = cast(Client, weaviate_client)
-        if index_struct is not None:
-            if class_prefix is not None:
-                raise ValueError(
-                    "class_prefix must be None when index_struct is not None."
-                )
-            self.class_prefix = index_struct.get_class_prefix()
-        else:
-            self.class_prefix = class_prefix or get_default_class_prefix()
+        self._client = cast(Client, weaviate_client)
+        self._class_prefix = class_prefix or get_default_class_prefix()
         # try to create schema
-        WeaviateNode.create_schema(self.client, self.class_prefix)
+        WeaviateNode.create_schema(self._client, self._class_prefix)
+        
 
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        super().__init__(
-            documents=documents,
-            index_struct=index_struct,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            text_splitter=text_splitter,
-            **kwargs,
-        )
-
-    @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
-        """Get query map."""
+    @property
+    def client(self) -> Any:
+        return self._client
+    
+    @property
+    def config_dict(self) -> dict:
         return {
-            QueryMode.DEFAULT: GPTWeaviateIndexQuery,
-            QueryMode.EMBEDDING: GPTWeaviateIndexQuery,
+            'class_prefix': self._class_prefix
         }
 
-    def _add_document_to_index(
+    def add(
         self,
-        index_struct: WeaviateIndexStruct,
-        document: BaseDocument,
+        embedding_results: List[NodeEmbeddingResult],
     ) -> None:
         """Add document to index."""
-        nodes = self._get_nodes_from_document(document)
-        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
-
-        for new_id, node, embed in id_node_embed_tups:
+        for result in embedding_results:
+            node = result.node
+            embedding = result.embedding
             # TODO: always store embedding in node
-            node.embedding = embed
+            node.embedding = embedding
             WeaviateNode.from_gpt_index(
-                self.client, node, index_struct.get_class_prefix()
+                self._client, node, self._class_prefix
             )
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
-    ) -> WeaviateIndexStruct:
-        """Build index from documents."""
-        index_struct = self.index_struct_cls(class_prefix=self.class_prefix)
-        for d in documents:
-            self._add_document_to_index(index_struct, d)
-        return index_struct
-
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
-        WeaviateNode.delete_document(self.client, doc_id, self.class_prefix)
+        WeaviateNode.delete_document(self._client, doc_id, self._class_prefix)
 
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Query mode to class."""
-        super()._preprocess_query(mode, query_kwargs)
-        # pass along weaviate client and info
-        query_kwargs["weaviate_client"] = self.client
+    def query(self, query_embedding: List[float], similarity_top_k: int) -> VectorStoreQueryResult:
+        """Get nodes for response."""
+        nodes = WeaviateNode.to_gpt_index_list(
+            self.client,
+            self._class_prefix,
+            vector=query_embedding,
+            object_limit=similarity_top_k,
+        )
+        nodes = nodes[: similarity_top_k]
+        node_idxs = [str(i) for i in range(len(nodes))]
+
+        return VectorStoreQueryResult(nodes=nodes, ids=node_idxs)
+        
+
