@@ -336,6 +336,7 @@ class BaseGPTIndex(Generic[IS]):
         self,
         query_str: str,
         mode: str = QueryMode.DEFAULT,
+        use_async: bool = False,
         **query_kwargs: Any,
     ) -> Response:
         """Answer a query.
@@ -363,6 +364,7 @@ class BaseGPTIndex(Generic[IS]):
                 self._index_registry,
                 query_configs=query_configs,
                 recursive=True,
+                use_async=use_async,
             )
             return query_runner.query(query_str, self._index_struct)
         else:
@@ -381,6 +383,7 @@ class BaseGPTIndex(Generic[IS]):
                 self._index_registry,
                 query_configs=[query_config],
                 recursive=False,
+                use_async=use_async,
             )
             return query_runner.query(query_str, self._index_struct)
 

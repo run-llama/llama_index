@@ -51,7 +51,7 @@ class ResponseBuilder:
         refine_template: RefinePrompt,
         texts: Optional[List[TextChunk]] = None,
         nodes: Optional[List[Node]] = None,
-        async_: bool = True,
+        use_async: bool = False,
     ) -> None:
         """Init params."""
         self.prompt_helper = prompt_helper
@@ -61,7 +61,7 @@ class ResponseBuilder:
         self._texts = texts or []
         nodes = nodes or []
         self.source_nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
-        self._async_ = async_
+        self._use_async = use_async
 
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
@@ -214,7 +214,7 @@ class ResponseBuilder:
             summary_template,
             self.llm_predictor,
             self.prompt_helper,
-            self._async_,
+            self._use_async,
         )
         root_nodes = index_builder.build_index_from_nodes(all_nodes, all_nodes)
         node_list = get_sorted_node_list(root_nodes)

@@ -27,7 +27,7 @@ class GPTTreeIndexBuilder:
         summary_prompt: SummaryPrompt,
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
-        async_: bool = True,
+        use_async: bool = False,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -36,7 +36,7 @@ class GPTTreeIndexBuilder:
         self.summary_prompt = summary_prompt
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
-        self._async_ = async_
+        self._use_async = use_async
 
     def _get_nodes_from_document(
         self, start_idx: int, document: BaseDocument
@@ -106,7 +106,7 @@ class GPTTreeIndexBuilder:
             indices.append(i)
             text_chunks.append(text_chunk)
 
-        if self._async_:
+        if self._use_async:
             tasks = [
                 self._llm_predictor.apredict(
                     self.summary_prompt, context_str=text_chunk
