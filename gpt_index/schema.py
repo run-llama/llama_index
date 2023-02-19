@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
+from gpt_index.utils import get_new_id
+
 
 @dataclass
 class BaseDocument(DataClassJsonMixin):
@@ -22,6 +24,12 @@ class BaseDocument(DataClassJsonMixin):
 
     # extra fields
     extra_info: Optional[Dict[str, Any]] = None
+
+    def __post_init__(self) -> None:
+        """Post init."""
+        # assign doc_id if not set
+        if self.doc_id is None:
+            self.doc_id = get_new_id(set())
 
     @classmethod
     @abstractmethod

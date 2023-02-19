@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from enum import Enum
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 
@@ -10,6 +10,13 @@ from gpt_index.utils import globals_helper
 
 # TODO: change to numpy array
 EMB_TYPE = List
+
+DEFAULT_EMBED_BATCH_SIZE = 10
+
+
+def mean_agg(embeddings: List[List[float]]) -> List[float]:
+    """Mean aggregation for embeddings."""
+    return list(np.array(embeddings).mean(axis=0))
 
 
 class SimilarityMode(str, Enum):
@@ -23,11 +30,16 @@ class SimilarityMode(str, Enum):
 class BaseEmbedding:
     """Base class for embeddings."""
 
-    def __init__(self) -> None:
+    def __init__(self, embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE) -> None:
         """Init params."""
         self._total_tokens_used = 0
         self._last_token_usage: Optional[int] = None
         self._tokenizer: Callable = globals_helper.tokenizer
+        # list of tuples of id, text
+        self._text_queue: List[Tuple[str, str]] = []
+        if embed_batch_size <= 0:
+            raise ValueError("embed_batch_size must be > 0")
+        self._embed_batch_size = embed_batch_size
 
     @abstractmethod
     def _get_query_embedding(self, query: str) -> List[float]:
@@ -40,9 +52,29 @@ class BaseEmbedding:
         self._total_tokens_used += query_tokens_count
         return query_embedding
 
+    def get_agg_embedding_from_queries(
+        self,
+        queries: List[str],
+        agg_fn: Optional[Callable[..., List[float]]] = None,
+    ) -> List[float]:
+        """Get aggregated embedding from multiple queries."""
+        query_embeddings = [self.get_query_embedding(query) for query in queries]
+        agg_fn = agg_fn or mean_agg
+        return agg_fn(query_embeddings)
+
     @abstractmethod
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
+
+    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Get text embeddings.
+
+        By default, this is a wrapper around _get_text_embedding.
+        Can be overriden for batch queries.
+
+        """
+        result = [self._get_text_embedding(text) for text in texts]
+        return result
 
     def get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
@@ -50,6 +82,40 @@ class BaseEmbedding:
         text_tokens_count = len(self._tokenizer(text))
         self._total_tokens_used += text_tokens_count
         return text_embedding
+
+    def queue_text_for_embeddding(self, text_id: str, text: str) -> None:
+        """Queue text for embedding.
+
+        Used for batching texts during embedding calls.
+
+        """
+        self._text_queue.append((text_id, text))
+
+    def get_queued_text_embeddings(self) -> Tuple[List[str], List[List[float]]]:
+        """Get queued text embeddings.
+
+        Call embedding API to get embeddings for all queued texts.
+
+        """
+        text_queue = self._text_queue
+        cur_batch: List[Tuple[str, str]] = []
+        result_ids: List[str] = []
+        result_embeddings: List[List[float]] = []
+        for idx, (text_id, text) in enumerate(text_queue):
+            cur_batch.append((text_id, text))
+            text_tokens_count = len(self._tokenizer(text))
+            self._total_tokens_used += text_tokens_count
+            if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
+                # flush
+                cur_batch_ids = [text_id for text_id, _ in cur_batch]
+                cur_batch_texts = [text for _, text in cur_batch]
+                embeddings = self._get_text_embeddings(cur_batch_texts)
+                result_ids.extend(cur_batch_ids)
+                result_embeddings.extend(embeddings)
+
+        # reset queue
+        self._text_queue = []
+        return result_ids, result_embeddings
 
     def similarity(
         self,

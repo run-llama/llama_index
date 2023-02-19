@@ -4,7 +4,7 @@ import logging
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Optional, Tuple, TypeVar, cast
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.docstore import DocumentStore
@@ -12,6 +12,7 @@ from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -31,7 +32,7 @@ class BaseQueryRunner:
     """Base query runner."""
 
     @abstractmethod
-    def query(self, query: str, index_struct: IndexStruct) -> Response:
+    def query(self, query_bundle: QueryBundle, index_struct: IndexStruct) -> Response:
         """Schedule a query."""
         raise NotImplementedError("Not implemented yet.")
 
@@ -149,7 +150,7 @@ class BaseGPTIndexQuery(Generic[IS]):
 
     def _get_text_from_node(
         self,
-        query_str: str,
+        query_bundle: QueryBundle,
         node: Node,
         level: Optional[int] = None,
     ) -> Tuple[TextChunk, Optional[Response]]:
@@ -172,13 +173,15 @@ class BaseGPTIndexQuery(Generic[IS]):
             and node.ref_doc_id is not None
             and self._docstore is not None
         ):
-            doc = self._docstore.get_document(node.ref_doc_id, raise_error=True)
-            if isinstance(doc, IndexStruct):
+            doc = self._docstore.get_document(node.ref_doc_id, raise_error=False)
+            # NOTE: old version of the docstore contain both documents and index_struct,
+            # whereas new versions of the docstore only contain the index struct
+            if doc is not None and isinstance(doc, IndexStruct):
                 is_index_struct = True
 
         if is_index_struct:
             query_runner = cast(BaseQueryRunner, self._query_runner)
-            response = query_runner.query(query_str, cast(IndexStruct, doc))
+            response = query_runner.query(query_bundle, cast(IndexStruct, doc))
             return TextChunk(str(response), is_answer=True), response
         else:
             text = node.get_text()
@@ -193,13 +196,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Validate the index struct."""
         pass
 
-    def _give_response_for_nodes(
-        self, query_str: str, text_chunks: List[TextChunk]
-    ) -> str:
+    def _give_response_for_nodes(self, query_str: str) -> str:
         """Give response for nodes."""
-        self.response_builder.reset()
-        for text in text_chunks:
-            self.response_builder.add_text_chunks([text])
         response = self.response_builder.get_response(
             query_str,
             mode=self._response_mode,
@@ -209,7 +207,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         return response or ""
 
     def get_nodes_and_similarities_for_response(
-        self, query_str: str
+        self, query_bundle: QueryBundle
     ) -> List[Tuple[Node, Optional[float]]]:
         """Get list of tuples of node and similarity for response.
 
@@ -219,7 +217,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         """
         similarity_tracker = SimilarityTracker()
         nodes = self._get_nodes_for_response(
-            query_str, similarity_tracker=similarity_tracker
+            query_bundle, similarity_tracker=similarity_tracker
         )
         nodes = [
             node for node in nodes if self._should_use_node(node, similarity_tracker)
@@ -231,36 +229,52 @@ class BaseGPTIndexQuery(Generic[IS]):
     @abstractmethod
     def _get_nodes_for_response(
         self,
-        query_str: str,
+        query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
 
-    def _query(self, query_str: str) -> Response:
+    def _get_extra_info_for_response(
+        self,
+        nodes: List[Node],
+    ) -> Optional[Dict[str, Any]]:
+        """Get extra info for response."""
+        return None
+
+    def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
+        self.response_builder.reset()
         # TODO: remove _query and just use query
-        tuples = self.get_nodes_and_similarities_for_response(query_str)
-        node_texts = []
+        tuples = self.get_nodes_and_similarities_for_response(query_bundle)
+
         for node, similarity in tuples:
-            text, response = self._get_text_from_node(query_str, node)
-            self.response_builder.add_node(node, similarity=similarity)
+            text, response = self._get_text_from_node(query_bundle, node)
+            self.response_builder.add_node_as_source(node, similarity=similarity)
             if response is not None:
                 # these are source nodes from within this node (when it's an index)
                 for source_node in response.source_nodes:
                     self.response_builder.add_source_node(source_node)
-            node_texts.append(text)
+            self.response_builder.add_text_chunks([text])
 
         if self._response_mode != ResponseMode.NO_TEXT:
-            response_str = self._give_response_for_nodes(query_str, node_texts)
+            response_str = self._give_response_for_nodes(query_bundle.query_str)
         else:
             response_str = None
 
-        return Response(response_str, source_nodes=self.response_builder.get_sources())
+        response_extra_info = self._get_extra_info_for_response(
+            [node for node, _ in tuples]
+        )
+
+        return Response(
+            response_str,
+            source_nodes=self.response_builder.get_sources(),
+            extra_info=response_extra_info,
+        )
 
     @llm_token_counter("query")
-    def query(self, query_str: str) -> Response:
+    def query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
-        response = self._query(query_str)
+        response = self._query(query_bundle)
         # if include_summary is True, then include summary text in answer
         # summary text is set through `set_text` on the underlying index.
         # TODO: refactor response builder to be in the __init__
@@ -274,7 +288,7 @@ class BaseGPTIndexQuery(Generic[IS]):
             )
             # NOTE: use create and refine for now (default response mode)
             response.response = response_builder.get_response(
-                query_str,
+                query_bundle.query_str,
                 mode=self._response_mode,
                 prev_response=response.response,
             )

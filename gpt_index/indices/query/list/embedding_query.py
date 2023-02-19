@@ -9,6 +9,7 @@ from gpt_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
 )
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
+from gpt_index.indices.query.schema import QueryBundle
 
 
 class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
@@ -44,13 +45,13 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
 
     def _get_nodes_for_response(
         self,
-        query_str: str,
+        query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
         nodes = self.index_struct.nodes
         # top k nodes
-        query_embedding, node_embeddings = self._get_embeddings(query_str, nodes)
+        query_embedding, node_embeddings = self._get_embeddings(query_bundle, nodes)
 
         top_similarities, top_idxs = get_top_k_embeddings(
             self._embed_model,
@@ -72,10 +73,12 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         return top_k_nodes
 
     def _get_embeddings(
-        self, query_str: str, nodes: List[Node]
+        self, query_bundle: QueryBundle, nodes: List[Node]
     ) -> Tuple[List[float], List[List[float]]]:
         """Get top nodes by similarity to the query."""
-        query_embedding = self._embed_model.get_query_embedding(query_str)
+        query_embedding = self._embed_model.get_agg_embedding_from_queries(
+            query_bundle.embedding_strs
+        )
         node_embeddings: List[List[float]] = []
         for node in self.index_struct.nodes:
             if node.embedding is not None:

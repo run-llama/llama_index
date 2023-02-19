@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.data_structs.data_structs import Node
+from gpt_index.embeddings.base import mean_agg
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.tree.base import GPTTreeIndex
@@ -34,6 +35,14 @@ def test_embedding_similarity() -> None:
     query_embedding = [0.0, 1.0, 0.0]
     cosine = embed_model.similarity(query_embedding, text_embedding)
     assert cosine == 0.8
+
+
+def test_mean_agg() -> None:
+    """Test mean aggregation for embeddings."""
+    embedding_0 = [3.0, 4.0, 0.0]
+    embedding_1 = [0.0, 1.0, 0.0]
+    output = mean_agg([embedding_0, embedding_1])
+    assert output == [1.5, 2.5, 0.0]
 
 
 @pytest.fixture

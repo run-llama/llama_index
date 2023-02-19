@@ -29,7 +29,7 @@ setup(
     name="gpt_index",
     version=__version__,
     packages=find_packages(),
-    description="Building an index of GPT summaries.",
+    description="Interface between LLMs and your data",
     install_requires=install_requires,
     long_description=long_description,
     license="MIT",
