@@ -64,7 +64,7 @@ class Playground:
                 )
 
     @property
-    def indices(self) -> int:
+    def indices(self) -> List[BaseGPTIndex]:
         """Get Playground's indices."""
         return self._indices
 
@@ -83,7 +83,7 @@ class Playground:
             )
 
     @property
-    def modes(self) -> int:
+    def modes(self) -> List[str]:
         """Get Playground's indices."""
         return self._modes
 

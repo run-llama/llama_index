@@ -58,7 +58,7 @@ def test_get_set_compare(
         GPTTreeIndex(documents=documents),
     ]
 
-    playground = Playground(indices=indices)
+    playground = Playground(indices=indices)  # type: ignore
 
     assert len(playground.indices) == 3
     assert len(playground.modes) == len(DEFAULT_MODES)
@@ -107,15 +107,15 @@ def test_from_docs(
 def test_validation() -> None:
     """Test validation of indices and modes."""
     with pytest.raises(ValueError):
-        playground = Playground(indices=["GPTSimpleVectorIndex"])
+        playground = Playground(indices=["GPTSimpleVectorIndex"])  # type: ignore
 
     with pytest.raises(ValueError):
         playground = Playground(
-            indices=[GPTSimpleVectorIndex, GPTListIndex, GPTTreeIndex]
+            indices=[GPTSimpleVectorIndex, GPTListIndex, GPTTreeIndex]  # type: ignore
         )
 
     with pytest.raises(ValueError):
-        playground = Playground(indices=[])
+        playground = Playground(indices=[])  # type: ignore
 
     with pytest.raises(TypeError):
-        playground = Playground(modes=["default"])
+        playground = Playground(modes=["default"])  # type: ignore
