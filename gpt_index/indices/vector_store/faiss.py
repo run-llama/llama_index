@@ -80,7 +80,8 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
-            text_splitter=text_splitter**kwargs,
+            text_splitter=text_splitter,
+            **kwargs,
         )
 
     @classmethod

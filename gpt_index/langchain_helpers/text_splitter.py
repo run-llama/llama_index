@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from typing import Callable, List, Optional
 
-from langchain.text_splitter import NLTKTextSplitter, SpacyTextSplitter, TextSplitter
+from langchain.text_splitter import TextSplitter
 
 from gpt_index.utils import globals_helper
 
@@ -217,4 +217,4 @@ class TokenTextSplitter(TextSplitter):
         return self._separator.join(splits[start_idx:cur_idx])
 
 
-__all__ = ["TextSplitter", "TokenTextSplitter", "NLTKTextSplitter", "SpacyTextSplitter"]
+__all__ = ["TextSplitter", "TokenTextSplitter"]

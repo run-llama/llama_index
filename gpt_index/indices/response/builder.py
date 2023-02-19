@@ -208,7 +208,7 @@ class ResponseBuilder:
         }
 
         index_builder = GPTTreeIndexBuilder(
-            num_childer=num_children,
+            num_children=num_children,
             summary_prompt=summary_template,
             llm_predictor=self.llm_predictor,
             prompt_helper=self.prompt_helper,

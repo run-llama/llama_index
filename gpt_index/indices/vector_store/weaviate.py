@@ -83,7 +83,8 @@ class GPTWeaviateIndex(BaseGPTIndex[WeaviateIndexStruct]):
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
-            text_splitter=text_splitter**kwargs,
+            text_splitter=text_splitter,
+            **kwargs,
         )
 
     @classmethod

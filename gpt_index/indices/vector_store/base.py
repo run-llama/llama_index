@@ -65,9 +65,9 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
         """Build index from documents."""
         index_struct = self.index_struct_cls()
         for d in documents:
-            self._add_document_to_index(index_struct, d, self._text_splitter)
+            self._add_document_to_index(index_struct, d)
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        self._add_document_to_index(self._index_struct, document, self._text_splitter)
+        self._add_document_to_index(self._index_struct, document)

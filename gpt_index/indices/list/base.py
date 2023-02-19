@@ -57,7 +57,8 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
-            text_splitter=text_splitter**kwargs,
+            text_splitter=text_splitter,
+            **kwargs,
         )
 
     @classmethod
