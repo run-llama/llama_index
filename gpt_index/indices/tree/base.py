@@ -73,14 +73,13 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
-            text_splitter=text_splitter,
+            # if not specified, use "smart" text splitter to ensure chunks fit in prompt
+            text_splitter=text_splitter
+            or self._prompt_helper.get_text_splitter_given_prompt(
+                self.summary_template, self.num_children
+            ),
             **kwargs,
         )
-        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
-        if text_splitter is None:
-            self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-                self.summary_template, self.num_children
-            )
 
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:

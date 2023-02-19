@@ -6,7 +6,11 @@ from typing import List
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.utils import truncate_text
-from gpt_index.langchain_helpers.text_splitter import TextSplit, TextSplitter
+from gpt_index.langchain_helpers.text_splitter import (
+    TextSplit,
+    TextSplitter,
+    TokenTextSplitter,
+)
 from gpt_index.schema import BaseDocument
 
 
@@ -18,7 +22,7 @@ def get_text_splits_from_document(
     """Break the document into chunks with additional info."""
     # TODO: clean up since this only exists due to the diff w LangChain's TextSplitter
     text_splits = []
-    if hasattr(text_splitter, "split_text_with_overlaps"):
+    if isinstance(text_splitter, TokenTextSplitter):
         # use this to extract extra information about the chunks
         text_splits = text_splitter.split_text_with_overlaps(
             document.get_text(),
