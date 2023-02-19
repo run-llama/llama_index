@@ -428,7 +428,8 @@ class BaseGPTIndex(Generic[IS]):
             result_dict["docstore"],
             type_to_struct=type_to_struct,
         )
-        index_struct = docstore.get_document(index_struct_id)
+        if "index_struct_id" in result_dict:
+            index_struct = docstore.get_document(index_struct_id)
         return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 
     @classmethod
