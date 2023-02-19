@@ -2,9 +2,10 @@
 
 
 import logging
-from typing import Dict, Optional, Sequence
+from typing import Dict, Sequence
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
+from gpt_index.indices.node_utils import get_text_splits_from_document
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -43,9 +44,8 @@ class GPTTreeIndexBuilder:
     ) -> Dict[int, Node]:
         """Add document to index."""
         # NOTE: summary prompt does not need to be partially formatted
-        text_chunks = self._text_splitter.split_text(
-            document.get_text(), extra_info_str=document.extra_info_str
-        )
+        text_splits = get_text_splits_from_document(document)
+        text_chunks = [text_split.text_chunk for text_split in text_splits]
         doc_nodes = {
             (start_idx + i): Node(
                 text=t,
