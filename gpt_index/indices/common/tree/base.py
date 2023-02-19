@@ -1,10 +1,10 @@
 """Common classes/functions for tree index operations."""
 
 
-import asyncio
 import logging
 from typing import Dict, List, Sequence, Tuple
 
+from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
@@ -113,8 +113,7 @@ class GPTTreeIndexBuilder:
                 )
                 for text_chunk in text_chunks
             ]
-            all_tasks = asyncio.gather(*tasks)
-            outputs: List[Tuple[str, str]] = asyncio.run(all_tasks)  # type: ignore
+            outputs: List[Tuple[str, str]] = run_async_tasks(tasks)
             summaries = [output[0] for output in outputs]
         else:
             summaries = [
