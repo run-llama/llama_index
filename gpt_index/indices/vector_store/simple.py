@@ -13,7 +13,6 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
-from gpt_index.utils import get_new_id
 
 
 class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
@@ -73,19 +72,12 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
     ) -> None:
         """Add document to index."""
         nodes = self._get_nodes_from_document(document, text_splitter)
-        for n in nodes:
-            # add to in-memory dict
-            # NOTE: embeddings won't be stored in Node but rather in underlying
-            # Faiss store
-            if n.embedding is None:
-                text_embedding = self._embed_model.get_text_embedding(n.get_text())
-            else:
-                text_embedding = n.embedding
-            new_id = get_new_id(set(index_struct.nodes_dict.keys()))
 
-            # add to index
-            index_struct.add_node(n, text_id=new_id)
-            # TODO: deprecate
+        id_node_embed_tups = self._get_node_embedding_tups(
+            nodes, set(index_struct.nodes_dict.keys())
+        )
+        for new_id, node, text_embedding in id_node_embed_tups:
+            index_struct.add_node(node, text_id=new_id)
             index_struct.add_to_embedding_dict(new_id, text_embedding)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
