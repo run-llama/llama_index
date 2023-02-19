@@ -1,6 +1,6 @@
 """Init file of Playground."""
 
 # playground
-from gpt_index.playground.base import Playground
+from gpt_index.playground.base import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
 
-__all__ = ["Playground"]
+__all__ = ["Playground", "DEFAULT_INDEX_CLASSES", "DEFAULT_MODES"]
