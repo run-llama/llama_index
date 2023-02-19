@@ -152,3 +152,39 @@ class LLMPredictor:
     def last_token_usage(self, value: int) -> None:
         """Set the last token usage."""
         self._last_token_usage = value
+
+    async def _apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+        """Async inner predict function.
+
+        If retry_on_throttling is true, we will retry on rate limit errors.
+
+        """
+        llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm)
+
+        # Note: we don't pass formatted_prompt to llm_chain.predict because
+        # langchain does the same formatting under the hood
+        full_prompt_args = prompt.get_full_format_args(prompt_args)
+        # TODO: support retry on throttling
+        llm_prediction = await llm_chain.apredict(**full_prompt_args)
+        return llm_prediction
+
+    async def apredict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
+        """Async predict the answer to a query.
+
+        Args:
+            prompt (Prompt): Prompt to use for prediction.
+
+        Returns:
+            Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
+
+        """
+        formatted_prompt = prompt.format(**prompt_args)
+        llm_prediction = await self._apredict(prompt, **prompt_args)
+        logging.debug(llm_prediction)
+
+        # We assume that the value of formatted_prompt is exactly the thing
+        # eventually sent to OpenAI, or whatever LLM downstream
+        prompt_tokens_count = self._count_tokens(formatted_prompt)
+        prediction_tokens_count = self._count_tokens(llm_prediction)
+        self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
+        return llm_prediction, formatted_prompt

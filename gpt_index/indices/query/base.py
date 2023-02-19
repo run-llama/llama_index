@@ -84,6 +84,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         include_summary: bool = False,
         response_kwargs: Optional[Dict] = None,
         similarity_cutoff: Optional[float] = None,
+        use_async: bool = True,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -114,6 +115,7 @@ class BaseGPTIndexQuery(Generic[IS]):
             self._llm_predictor,
             self.text_qa_template,
             self.refine_template,
+            use_async=use_async,
         )
 
         self.similarity_cutoff = similarity_cutoff
