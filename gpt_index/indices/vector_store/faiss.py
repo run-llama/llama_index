@@ -98,21 +98,16 @@ class GPTFaissIndex(BaseGPTVectorStoreIndex[IndexDict]):
     ) -> None:
         """Add document to index."""
         nodes = self._get_nodes_from_document(document, text_splitter)
-        for n in nodes:
-            # add to FAISS
-            # NOTE: embeddings won't be stored in Node but rather in underlying
-            # Faiss store
-            if n.embedding is None:
-                text_embedding = self._embed_model.get_text_embedding(n.get_text())
-            else:
-                text_embedding = n.embedding
 
+        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
+
+        for new_id, node, text_embedding in id_node_embed_tups:
             text_embedding_np = np.array(text_embedding, dtype="float32")[np.newaxis, :]
             new_id = str(self._faiss_index.ntotal)
             self._faiss_index.add(text_embedding_np)
 
             # add to index
-            index_struct.add_node(n, text_id=new_id)
+            index_struct.add_node(node, text_id=new_id)
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Preprocess query.

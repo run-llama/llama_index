@@ -37,6 +37,7 @@ class Node(IndexStruct):
 
     def __post_init__(self) -> None:
         """Post init."""
+        super().__post_init__()
         # NOTE: for Node objects, the text field is required
         if self.text is None:
             raise ValueError("text field not set.")
@@ -275,6 +276,7 @@ class WeaviateIndexStruct(IndexStruct):
 
     def __post_init__(self) -> None:
         """Post init."""
+        super().__post_init__()
         if self.class_prefix is None:
             raise ValueError("class_prefix must be provided.")
 
@@ -317,6 +319,7 @@ class QdrantIndexStruct(IndexStruct):
 
     def __post_init__(self) -> None:
         """Post init."""
+        super().__post_init__()
         if self.collection_name is None:
             raise ValueError("collection_name must be provided.")
 

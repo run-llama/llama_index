@@ -101,6 +101,11 @@ def mock_get_text_embedding(text: str) -> List[float]:
         raise ValueError("Invalid text for `mock_get_text_embedding`.")
 
 
+def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
+    """Mock get text embeddings."""
+    return [mock_get_text_embedding(text) for text in texts]
+
+
 def mock_get_query_embedding(query: str) -> List[float]:
     """Mock get query embedding."""
     return [0, 0, 1, 0, 0]
@@ -108,9 +113,13 @@ def mock_get_query_embedding(query: str) -> List[float]:
 
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 def test_build_faiss(
+    _mock_embeds: Any,
     _mock_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
@@ -139,9 +148,13 @@ def test_build_faiss(
 
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 def test_faiss_insert(
+    _mock_embeds: Any,
     _mock_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
@@ -170,13 +183,17 @@ def test_faiss_insert(
 
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 @patch.object(
     OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
 )
 def test_faiss_query(
     _mock_query_embed: Any,
+    _mock_texts_embed: Any,
     _mock_text_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
@@ -203,9 +220,13 @@ def test_faiss_query(
 
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 def test_build_simple(
+    _mock_embeds: Any,
     _mock_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
@@ -235,9 +256,13 @@ def test_build_simple(
 
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 def test_simple_insert(
+    _mock_embeds: Any,
     _mock_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
@@ -270,9 +295,13 @@ def test_simple_insert(
 
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 def test_simple_delete(
+    _mock_embeds: Any,
     _mock_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
@@ -325,13 +354,17 @@ def test_simple_delete(
 
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 @patch.object(
     OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
 )
 def test_simple_query(
     _mock_query_embed: Any,
+    _mock_text_embeds: Any,
     _mock_text_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
@@ -370,10 +403,14 @@ def test_simple_query(
     OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
 )
 @patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
     OpenAIEmbedding, "_get_query_embedding", side_effect=mock_get_query_embedding
 )
 def test_query_and_count_tokens(
     _mock_query_embed: Any,
+    _mock_text_embeds: Any,
     _mock_text_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
@@ -405,10 +442,14 @@ def test_query_and_count_tokens(
     OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
 )
 @patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
     OpenAIEmbedding, "_get_query_embedding", side_effect=mock_get_query_embedding
 )
 def test_query_and_similarity_scores(
     _mock_query_embed: Any,
+    _mock_text_embeds: Any,
     _mock_text_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
@@ -440,10 +481,14 @@ def test_query_and_similarity_scores(
     OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
 )
 @patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
     OpenAIEmbedding, "_get_query_embedding", side_effect=mock_get_query_embedding
 )
 def test_query_and_similarity_scores_with_cutoff(
     _mock_query_embed: Any,
+    _mock_text_embeds: Any,
     _mock_text_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
