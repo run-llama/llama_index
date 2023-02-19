@@ -74,10 +74,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             # if not specified, use "smart" text splitter to ensure chunks fit in prompt
-            text_splitter=text_splitter
-            or self._prompt_helper.get_text_splitter_given_prompt(
-                self.summary_template, self.num_children
-            ),
+            text_splitter=text_splitter,
             **kwargs,
         )
 
