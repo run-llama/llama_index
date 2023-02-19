@@ -364,7 +364,7 @@ def test_simple_delete(
 )
 def test_simple_query(
     _mock_query_embed: Any,
-    _mock_text_embeds: Any, 
+    _mock_text_embeds: Any,
     _mock_text_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
