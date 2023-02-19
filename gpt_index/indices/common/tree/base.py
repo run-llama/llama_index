@@ -2,8 +2,9 @@
 
 
 import logging
-from typing import Dict, Sequence
+from typing import Dict, List, Sequence, Tuple
 
+from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
@@ -26,6 +27,7 @@ class GPTTreeIndexBuilder:
         summary_prompt: SummaryPrompt,
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
+        use_async: bool = False,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -34,6 +36,7 @@ class GPTTreeIndexBuilder:
         self.summary_prompt = summary_prompt
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
+        self._use_async = use_async
 
     def _get_nodes_from_document(
         self, start_idx: int, document: BaseDocument
@@ -93,16 +96,36 @@ class GPTTreeIndexBuilder:
         logging.info(
             f"> Building index from nodes: {len(cur_nodes) // self.num_children} chunks"
         )
+        indices, cur_nodes_chunks, text_chunks = [], [], []
         for i in range(0, len(cur_node_list), self.num_children):
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
             text_chunk = self._prompt_helper.get_text_from_nodes(
                 cur_nodes_chunk, prompt=self.summary_prompt
             )
+            indices.append(i)
+            cur_nodes_chunks.append(cur_nodes_chunk)
+            text_chunks.append(text_chunk)
 
-            new_summary, _ = self._llm_predictor.predict(
-                self.summary_prompt, context_str=text_chunk
-            )
+        if self._use_async:
+            tasks = [
+                self._llm_predictor.apredict(
+                    self.summary_prompt, context_str=text_chunk
+                )
+                for text_chunk in text_chunks
+            ]
+            outputs: List[Tuple[str, str]] = run_async_tasks(tasks)
+            summaries = [output[0] for output in outputs]
+        else:
+            summaries = [
+                self._llm_predictor.predict(
+                    self.summary_prompt, context_str=text_chunk
+                )[0]
+                for text_chunk in text_chunks
+            ]
 
+        for i, cur_nodes_chunk, new_summary in zip(
+            indices, cur_nodes_chunks, summaries
+        ):
             logging.debug(
                 f"> {i}/{len(cur_nodes)}, summary: {truncate_text(new_summary, 50)}"
             )
