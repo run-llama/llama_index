@@ -2,18 +2,16 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import patch
 
 import pytest
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.prompts.base import Prompt
 from gpt_index.readers.schema.base import Document
 from gpt_index.utils import globals_helper
 from tests.mock_utils.mock_decorator import patch_common

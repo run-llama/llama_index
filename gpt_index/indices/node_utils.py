@@ -16,7 +16,7 @@ def get_text_splits_from_document(
     include_extra_info: bool = True,
 ) -> List[TextSplit]:
     """Break the document into chunks with additional info."""
-    # TODO: clean up text splitters to have more consistency here
+    # TODO: clean up since this only exists due to the diff w LangChain's TextSplitter
     text_splits = []
     if hasattr(text_splitter, "split_text_with_overlaps"):
         # use this to extract extra information about the chunks
@@ -52,8 +52,7 @@ def get_nodes_from_document(
         text_chunk = text_split.text_chunk
         logging.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
         index_pos_info = None
-        if len(text_splits) > 0:
-            text_split = text_splits[i]
+        if text_split.num_char_overlap is not None:
             index_pos_info = {
                 # NOTE: start is inclusive, end is exclusive
                 "start": index_counter - text_split.num_char_overlap,

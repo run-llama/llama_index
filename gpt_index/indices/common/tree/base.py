@@ -44,7 +44,9 @@ class GPTTreeIndexBuilder:
     ) -> Dict[int, Node]:
         """Add document to index."""
         # NOTE: summary prompt does not need to be partially formatted
-        text_splits = get_text_splits_from_document(document)
+        text_splits = get_text_splits_from_document(
+            document=document, text_splitter=self._text_splitter
+        )
         text_chunks = [text_split.text_chunk for text_split in text_splits]
         doc_nodes = {
             (start_idx + i): Node(

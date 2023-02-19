@@ -17,7 +17,7 @@ class TextSplit:
     """
 
     text_chunk: str
-    num_char_overlap: int
+    num_char_overlap: Optional[int] = None
 
 
 class TokenTextSplitter(TextSplitter):

@@ -6,7 +6,7 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT,
     DEFAULT_TABLE_CONTEXT_PROMPT,

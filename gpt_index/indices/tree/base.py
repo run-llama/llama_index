@@ -76,7 +76,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             text_splitter=text_splitter,
             **kwargs,
         )
-        # if not specified, use "smart" text splitter to ensure that chunks fit within prompt
+        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
         if text_splitter is None:
             self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 self.summary_template, self.num_children
