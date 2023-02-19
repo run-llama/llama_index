@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import pandas as pd
 from langchain.input import get_color_mapping, print_text
@@ -39,7 +39,12 @@ class Playground:
         self.index_colors = get_color_mapping(index_range)
 
     @classmethod
-    def from_docs(cls, documents: List[Document], **kwargs: Any) -> Playground:
+    def from_docs(
+        cls,
+        documents: List[Document],
+        index_classes: List[Type[BaseGPTIndex]] = DEFAULT_INDEX_CLASSES,
+        **kwargs: Any,
+    ) -> Playground:
         """Initialize with Documents using the default list of indices.
 
         Args:
@@ -50,7 +55,7 @@ class Playground:
                 "Playground must be initialized with a nonempty list of Documents."
             )
 
-        indices = [index_class(documents) for index_class in DEFAULT_INDEX_CLASSES]
+        indices = [index_class(documents) for index_class in index_classes]
         return cls(indices, **kwargs)
 
     def _validate_indices(self, indices: List[BaseGPTIndex]) -> None:
