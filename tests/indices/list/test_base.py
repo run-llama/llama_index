@@ -218,14 +218,14 @@ def test_index_overlap(
     ]
 
     # A text splitter for test purposes
-    _mock_text_splitter = TokenTextSplitter(
+    _text_splitter = TokenTextSplitter(
         separator=" ",
         chunk_size=30,
         chunk_overlap=10,
         tokenizer=globals_helper.tokenizer,
     )
 
-    index = GPTListIndex(documents, text_splitter=_mock_text_splitter, **index_kwargs)
+    index = GPTListIndex(documents, text_splitter=_text_splitter, **index_kwargs)
 
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
