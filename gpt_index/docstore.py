@@ -92,7 +92,6 @@ class DocumentStore(DataClassJsonMixin):
 
     def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[DOC_TYPE]:
         """Get a document from the store."""
-        print(self.docs.keys())
         doc = self.docs.get(doc_id, None)
         if doc is None and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
