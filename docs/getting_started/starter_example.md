@@ -35,7 +35,7 @@ This contains GPT Index examples around Paul Graham's essay, ["What I Worked On"
 Create a new `.py` file with the following:
 
 ```python
-from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
 index = GPTSimpleVectorIndex(documents)
