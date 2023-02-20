@@ -49,6 +49,7 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 )
 def test_get_set_compare(
     _mock_query_embed: Any,
+    _mock_texts_embed: Any,
     _mock_text_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
@@ -93,6 +94,7 @@ def test_get_set_compare(
     OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 def test_from_docs(
+    _mock_embeds: Any,
     _mock_embed: Any,
     _mock_init: Any,
     _mock_predict: Any,
