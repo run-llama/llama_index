@@ -9,8 +9,8 @@ GPT Index (LlamaIndex) is a project consisting of a set of data structures desig
 use large external knowledge bases with LLMs.
 
 PyPi: 
-- GPT Index: https://pypi.org/project/gpt-index/.
-- LlamaIndex (duplicate): https://pypi.org/project/llama-index/.
+- LlamaIndex: https://pypi.org/project/llama-index/.
+- GPT Index (duplicate): https://pypi.org/project/gpt-index/.
 
 Documentation: https://gpt-index.readthedocs.io/en/latest/.
 
