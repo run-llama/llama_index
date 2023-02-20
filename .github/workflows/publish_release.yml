@@ -32,7 +32,7 @@ jobs:
           GPT_INDEX_DIR=. 
           USERNAME=__token__
           PASSWORD=${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
-          sh ./scripts/publish_llama_package.sh
+          bash ./scripts/publish_llama_package.sh
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@master
         with:
