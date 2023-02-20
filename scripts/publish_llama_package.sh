@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # publish llama_index package
 if [[ -n "$LLAMA_INDEX_DIR" ]]; then
     echo "LLAMA_INDEX_DIR is set to $LLAMA_INDEX_DIR"
