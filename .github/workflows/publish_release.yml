@@ -5,6 +5,8 @@ on:
     tags:
       - "v*"
 
+  workflow_dispatch:
+
 jobs:
   build-n-publish:
     name: Build and publish to PyPI
