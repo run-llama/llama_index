@@ -124,6 +124,9 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         # filter sorted nodes
         sorted_nodes = [node for node in sorted_nodes if self._should_use_node(node)]
         for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
+            # these nodes are found using keyword mapping, give high confidence to avoid cutoff
+            if similarity_tracker is not None:
+                similarity_tracker.add(node, 1000.0)
             logging.info(
                 f"> Querying with idx: {chunk_idx}: "
                 f"{truncate_text(node.get_text(), 80)}"
@@ -141,6 +144,9 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             "kg_rel_map": cur_rel_map,
         }
         rel_text_node = Node(text="\n".join(rel_info), node_info=rel_node_info)
+        # this node is constructed from rel_texts, give high confidence to avoid cutoff
+        if similarity_tracker is not None:
+            similarity_tracker.add(rel_text_node, 1000.0)
         rel_info_text = "\n".join(rel_info)
         logging.info(f"> Extracted relationships: {rel_info_text}")
         sorted_nodes.append(rel_text_node)
