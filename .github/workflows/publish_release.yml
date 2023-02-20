@@ -26,9 +26,6 @@ jobs:
           python -m pip install --upgrade build twine
           python -m build
           twine check --strict dist/*
-      - name: Build and publish llamaindex distribution
-        run: >
-          LLAMA_INDEX_DIR=../llama_index GPT_INDEX_DIR=. USERNAME=__token__ PASSWORD=${{ secrets.LLAMA_INDEX_PYPI_TOKEN }} bash ./scripts/publish_llama_package.sh
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@master
         with:
