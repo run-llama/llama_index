@@ -8,6 +8,7 @@ import numpy as np
 from gpt_index.data_structs.data_structs import IndexDict, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.query.vector_store.base import BaseGPTVectorStoreIndexQuery
 from gpt_index.indices.utils import truncate_text
 
@@ -58,11 +59,13 @@ class GPTFaissIndexQuery(BaseGPTVectorStoreIndexQuery[IndexDict]):
 
     def _get_nodes_for_response(
         self,
-        query_str: str,
+        query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        query_embedding = self._embed_model.get_query_embedding(query_str)
+        query_embedding = self._embed_model.get_agg_embedding_from_queries(
+            query_bundle.embedding_strs
+        )
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
         dists, indices = self._faiss_index.search(
             query_embedding_np, self.similarity_top_k

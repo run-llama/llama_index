@@ -7,6 +7,7 @@ import pytest
 
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import (
@@ -110,7 +111,8 @@ def test_query(
         docstore=index.docstore,
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
     )
-    nodes = query._get_nodes_for_response("foo")
+    query_bundle = QueryBundle(query_str="foo", custom_embedding_strs=["foo"])
+    nodes = query._get_nodes_for_response(query_bundle)
     assert nodes[0].get_text() == "(foo, is, bar)"
     assert (
         nodes[1].get_text() == "The following are knowledge triplets in the "
@@ -125,7 +127,8 @@ def test_query(
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
         include_text=False,
     )
-    nodes = query._get_nodes_for_response("foo")
+    query_bundle = QueryBundle(query_str="foo", custom_embedding_strs=["foo"])
+    nodes = query._get_nodes_for_response(query_bundle)
     assert (
         nodes[0].get_text() == "The following are knowledge triplets in the form of "
         "(subset, predicate, object):\n('foo', 'is', 'bar')"

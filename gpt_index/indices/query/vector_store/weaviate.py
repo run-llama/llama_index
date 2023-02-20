@@ -8,6 +8,7 @@ from gpt_index.data_structs.data_structs import Node, WeaviateIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.utils import truncate_text
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
 
@@ -38,11 +39,13 @@ class GPTWeaviateIndexQuery(BaseGPTIndexQuery[WeaviateIndexStruct]):
 
     def _get_nodes_for_response(
         self,
-        query_str: str,
+        query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        query_embedding = self._embed_model.get_query_embedding(query_str)
+        query_embedding = self._embed_model.get_agg_embedding_from_queries(
+            query_bundle.embedding_strs
+        )
         nodes = WeaviateNode.to_gpt_index_list(
             self.client,
             self._index_struct.get_class_prefix(),

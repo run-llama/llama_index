@@ -23,7 +23,8 @@ from gpt_index.indices.node_utils import get_nodes_from_document
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
-from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.query.query_transform import BaseQueryTransform
+from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -334,8 +335,9 @@ class BaseGPTIndex(Generic[IS]):
 
     def query(
         self,
-        query_str: str,
+        query_str: Union[str, QueryBundle],
         mode: str = QueryMode.DEFAULT,
+        query_transform: Optional[BaseQueryTransform] = None,
         **query_kwargs: Any,
     ) -> Response:
         """Answer a query.
@@ -362,6 +364,7 @@ class BaseGPTIndex(Generic[IS]):
                 self._docstore,
                 self._index_registry,
                 query_configs=query_configs,
+                query_transform=query_transform,
                 recursive=True,
             )
             return query_runner.query(query_str, self._index_struct)
@@ -380,6 +383,7 @@ class BaseGPTIndex(Generic[IS]):
                 self._docstore,
                 self._index_registry,
                 query_configs=[query_config],
+                query_transform=query_transform,
                 recursive=False,
             )
             return query_runner.query(query_str, self._index_struct)

@@ -7,7 +7,8 @@ from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseQueryRunner
-from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.query.query_transform import BaseQueryTransform
+from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
@@ -31,6 +32,7 @@ class QueryRunner(BaseQueryRunner):
         docstore: DocumentStore,
         index_registry: IndexRegistry,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
+        query_transform: Optional[BaseQueryTransform] = None,
         recursive: bool = False,
     ) -> None:
         """Init params."""
@@ -53,6 +55,7 @@ class QueryRunner(BaseQueryRunner):
         self._embed_model = embed_model
         self._docstore = docstore
         self._index_registry = index_registry
+        self._query_transform = query_transform or BaseQueryTransform()
         self._recursive = recursive
 
     def _get_query_kwargs(self, config: QueryConfig) -> Dict[str, Any]:
@@ -70,8 +73,17 @@ class QueryRunner(BaseQueryRunner):
             query_kwargs["embed_model"] = self._embed_model
         return query_kwargs
 
-    def query(self, query_str: str, index_struct: IndexStruct) -> Response:
+    def query(
+        self, query_str_or_bundle: Union[str, QueryBundle], index_struct: IndexStruct
+    ) -> Response:
         """Run query."""
+        # NOTE: Currently, query transform is only run once
+        # TODO: Consider refactor to support index-specific query transform
+        if isinstance(query_str_or_bundle, str):
+            query_bundle = self._query_transform(query_str_or_bundle)
+        else:
+            query_bundle = query_str_or_bundle
+
         index_struct_type = index_struct.get_type()
         if index_struct_type not in self._config_dict:
             config = QueryConfig(
@@ -92,4 +104,4 @@ class QueryRunner(BaseQueryRunner):
             docstore=self._docstore,
         )
 
-        return query_obj.query(query_str)
+        return query_obj.query(query_bundle)

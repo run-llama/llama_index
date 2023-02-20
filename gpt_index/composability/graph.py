@@ -14,7 +14,7 @@ from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner
-from gpt_index.indices.query.schema import QueryConfig
+from gpt_index.indices.query.schema import QueryBundle, QueryConfig
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
@@ -106,7 +106,7 @@ class ComposableGraph:
 
     def query(
         self,
-        query_str: str,
+        query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
     ) -> Response:
         """Query the index."""

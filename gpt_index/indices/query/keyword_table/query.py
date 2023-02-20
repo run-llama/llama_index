@@ -12,6 +12,7 @@ from gpt_index.indices.keyword_table.utils import (
 )
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
@@ -67,13 +68,13 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
 
     def _get_nodes_for_response(
         self,
-        query_str: str,
+        query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        logging.info(f"> Starting query: {query_str}")
-        keywords = self._get_keywords(query_str)
-        logging.info(f"> query keywords: {keywords}")
+        logging.info(f"> Starting query: {query_bundle.query_str}")
+        keywords = self._get_keywords(query_bundle.query_str)
+        logging.info(f"query keywords: {keywords}")
 
         # go through text chunks in order of most matching keywords
         chunk_indices_count: Dict[int, int] = defaultdict(int)
