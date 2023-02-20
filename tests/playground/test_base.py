@@ -34,10 +34,10 @@ def mock_get_query_embedding(query: str) -> List[float]:
 
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
 )
 @patch.object(
-    OpenAIEmbedding, "_get_query_embedding", side_effect=mock_get_query_embedding
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
 )
 def test_get_set_compare(
     _mock_query_embed: Any,
@@ -79,7 +79,7 @@ def test_get_set_compare(
 
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
 )
 def test_from_docs(
     _mock_embed: Any,
