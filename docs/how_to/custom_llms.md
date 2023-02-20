@@ -34,7 +34,7 @@ you may plug in any LLM shown on Langchain's
 
 ```python
 
-from gpt_index import (
+from llama_index import (
     GPTKeywordTableIndex, 
     SimpleDirectoryReader, 
     LLMPredictor,
@@ -66,7 +66,7 @@ For OpenAI, Cohere, AI21, you just need to set the `max_tokens` parameter
 
 ```python
 
-from gpt_index import (
+from llama_index import (
     GPTKeywordTableIndex, 
     SimpleDirectoryReader, 
     LLMPredictor,
@@ -97,7 +97,7 @@ a custom PromptHelper class.
 
 ```python
 
-from gpt_index import (
+from llama_index import (
     GPTKeywordTableIndex, 
     SimpleDirectoryReader, 
     LLMPredictor,
