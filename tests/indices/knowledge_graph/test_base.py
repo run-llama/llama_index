@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.data_structs.data_structs import MODE_EMBEDDINGS, MODE_KEYWORDS
+from gpt_index.data_structs.data_structs import MODE_EMBEDDINGS
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
