@@ -12,6 +12,7 @@ def get_top_k_embeddings(
     embeddings: List[List[float]],
     similarity_top_k: Optional[int] = None,
     embedding_ids: Optional[List] = None,
+    similarity_cutoff: Optional[float] = None,
 ) -> Tuple[List[float], List]:
     """Get top nodes by similarity to the query."""
     if embedding_ids is None:
@@ -25,6 +26,10 @@ def get_top_k_embeddings(
     sorted_tups = sorted(
         zip(similarities, embedding_ids), key=lambda x: x[0], reverse=True
     )
+
+    if similarity_cutoff is not None:
+        sorted_tups = [tup for tup in sorted_tups if tup[0] > similarity_cutoff]
+
     similarity_top_k = similarity_top_k or len(sorted_tups)
     result_tups = sorted_tups[:similarity_top_k]
 

@@ -11,7 +11,7 @@ existing keywords in the table.
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
-from gpt_index.data_structs.data_structs import KG
+from gpt_index.data_structs.data_structs import KG, MODE_KEYWORDS
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
@@ -49,10 +49,12 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
+        mode: Optional[str] = MODE_KEYWORDS,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
+        self._mode = mode
         self.max_triplets_per_chunk = max_triplets_per_chunk
         self.kg_triple_extract_template = (
             kg_triple_extract_template or DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
@@ -72,6 +74,8 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.kg_triple_extract_template, 1
         )
+        if self._index_struct is not None:
+            self._index_struct._mode = mode
 
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
@@ -106,7 +110,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             self.kg_triple_extract_template, 1
         )
         # do simple concatenation
-        index_struct = KG(table={})
+        index_struct = KG(table={}, _mode=self._mode)
         for d in documents:
             nodes = self._get_nodes_from_document(d, text_splitter)
             for n in nodes:
@@ -118,6 +122,14 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 logging.debug(f"> Extracted triplets: {triplets}")
                 for triplet in triplets:
                     index_struct.upsert_triplet(triplet, n)
+
+                if index_struct.should_use_embeddings():
+                    rel_embeddings = self._embed_model._get_text_embeddings(
+                        [str(x) for x in triplets]
+                    )
+                    for rel_embedding in rel_embeddings:
+                        index_struct.add_to_embedding_dict(triplet, rel_embedding)
+
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
@@ -131,7 +143,14 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             triplets = self._extract_triplets(n.get_text())
             logging.debug(f"Extracted triplets: {triplets}")
             for triplet in triplets:
+                triplet_str = str(triplet)
                 self._index_struct.upsert_triplet(triplet, n)
+                if (
+                    self._index_struct.should_use_embeddings()
+                    and triplet_str not in self._index_struct.embedding_dict
+                ):
+                    rel_embedding = self._embed_model.get_text_embedding(triplet_str)
+                    self.index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
