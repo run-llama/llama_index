@@ -55,7 +55,7 @@ class GPTChromaIndexQuery(BaseGPTVectorStoreIndexQuery[ChromaIndexStruct]):
             "`chromadb` package not found, please run `pip install chromadb`"
         )
         try:
-            import chromadb
+            import chromadb  # noqa: F401
         except ImportError:
             raise ValueError(import_err_msg)
 
@@ -95,7 +95,7 @@ class GPTChromaIndexQuery(BaseGPTVectorStoreIndexQuery[ChromaIndexStruct]):
             )
             nodes.append(node)
 
-            similarity_score = [math.exp(-result[3][0])]
+            similarity_score = math.exp(-result[3][0])
 
             if similarity_tracker is not None:
                 similarity_tracker.add(node, similarity_score)

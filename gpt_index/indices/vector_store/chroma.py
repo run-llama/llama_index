@@ -34,7 +34,7 @@ class GPTChromaIndex(BaseGPTIndex[ChromaIndexStruct]):
             (see :ref:`Prompt-Templates`).
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
-        chroma_collection (Optional[Any]): Chroma Collection instance from `chromadb` package
+        chroma_collection (Optional[Any]): Collection instance from `chromadb` package
 
     """
 
@@ -51,12 +51,11 @@ class GPTChromaIndex(BaseGPTIndex[ChromaIndexStruct]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-
         import_err_msg = (
             "`chromadb` package not found, please run `pip install chromadb`"
         )
         try:
-            import chromadb
+            import chromadb  # noqa: F401
         except ImportError:
             raise ValueError(import_err_msg)
         from chromadb.api.models.Collection import Collection
@@ -103,7 +102,7 @@ class GPTChromaIndex(BaseGPTIndex[ChromaIndexStruct]):
                 text_embedding = n.embedding
             embeddings.append(text_embedding)
 
-            # TODO: Check for ID uniqueness. Nominally, Chroma should generate these internally.
+            # TODO: Check for ID uniqueness.
             ids.append(get_new_id(set()))
 
             metadatas.append({"document_id": document.get_doc_id()})
@@ -129,8 +128,8 @@ class GPTChromaIndex(BaseGPTIndex[ChromaIndexStruct]):
 
         return index_struct
 
-    def _delete(self, doc_id: str, **kwargs) -> None:
-        """Delete a document"""
+    def _delete(self, doc_id: str, **kwargs: Any) -> None:
+        """Delete a document."""
         self._collection.delete(where={"document_id": doc_id})
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:

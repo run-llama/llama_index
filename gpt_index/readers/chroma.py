@@ -23,7 +23,6 @@ class ChromaReader(BaseReader):
         persist_directory: Optional[str] = None,
     ) -> None:
         """Initialize with parameters."""
-
         import_err_msg = (
             "`chromadb` package not found, please run `pip install chromadb`"
         )
@@ -58,7 +57,6 @@ class ChromaReader(BaseReader):
         Returns:
             List[Document]: A list of documents.
         """
-
         results = self._collection.query(query_embeddings=query_vector, n_results=limit)
 
         documents = []
