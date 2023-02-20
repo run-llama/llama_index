@@ -69,7 +69,7 @@ This wrapper allows us to query, save, and load the graph to/from disk.
 
 ```python
 
-from gpt_index.composability import ComposableGraph
+from llama_index.composability import ComposableGraph
 
 graph = ComposableGraph.build_from_index(list_index)
 

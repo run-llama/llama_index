@@ -20,7 +20,7 @@ downloads the loader file into a module that you can use within your application
 Example usage:
 
 ```python
-from gpt_index import GPTSimpleVectorIndex, download_loader
+from llama_index import GPTSimpleVectorIndex, download_loader
 
 GoogleDocsReader = download_loader('GoogleDocsReader')
 
