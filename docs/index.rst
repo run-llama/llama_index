@@ -11,7 +11,8 @@ use large external knowledge bases with LLMs.
 
    ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! We will carry out this transition gradually.
 
-   **2/27/2022**: We have a duplicate `llama-index` pip package. Simply replace all imports of `gpt_index` with `llama_index` if you choose to `pip install llama-index`.
+   **2/19/2023**: By default, our docs/notebooks/instructions now use the `llama-index` package. However the `gpt-index` package still exists as a duplicate!
+   **2/16/2023**: We have a duplicate `llama-index` pip package. Simply replace all imports of `gpt_index` with `llama_index` if you choose to `pip install llama-index`.
 
 - Github: https://github.com/jerryjliu/gpt_index
 - PyPi: https://pypi.org/project/gpt-index/
