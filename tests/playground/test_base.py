@@ -49,7 +49,6 @@ def test_get_set_compare(
     _mock_split_text: Any,
 ) -> None:
     """Test basic comparison of indices."""
-
     documents = [Document("They're taking the Hobbits to Isengard!")]
 
     indices = [
