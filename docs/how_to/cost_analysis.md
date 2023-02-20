@@ -52,7 +52,7 @@ any respective LLM calls are made.
 
 To predict token usage of LLM calls, import and instantiate the MockLLMPredictor with the following:
 ```python
-from gpt_index import MockLLMPredictor
+from llama_index import MockLLMPredictor
 
 llm_predictor = MockLLMPredictor(max_tokens=256)
 ```
@@ -61,7 +61,7 @@ You can then use this predictor during both index construction and querying. Exa
 
 **Index Construction**
 ```python
-from gpt_index import GPTTreeIndex, MockLLMPredictor, SimpleDirectoryReader
+from llama_index import GPTTreeIndex, MockLLMPredictor, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 # the "mock" llm predictor is our token counter
@@ -88,7 +88,7 @@ You may also predict the token usage of embedding calls with `MockEmbedding`.
 You can use it in tandem with `MockLLMPredictor`.
 
 ```python
-from gpt_index import (
+from llama_index import (
     GPTSimpleVectorIndex, 
     MockLLMPredictor, 
     MockEmbedding, 

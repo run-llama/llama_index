@@ -16,6 +16,7 @@ class Document(BaseDocument):
 
     def __post_init__(self) -> None:
         """Post init."""
+        super().__post_init__()
         if self.text is None:
             raise ValueError("text field not set.")
 

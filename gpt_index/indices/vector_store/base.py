@@ -5,9 +5,9 @@ An index that that is built on top of an existing vector store.
 """
 
 from abc import abstractmethod
-from typing import Any, Generic, Optional, Sequence, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Sequence, Set, Tuple, TypeVar
 
-from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -15,6 +15,7 @@ from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import get_new_id
 
 BID = TypeVar("BID", bound=IndexStruct)
 
@@ -52,6 +53,37 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
         self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
             self.text_qa_template, 1
         )
+
+    def _get_node_embedding_tups(
+        self, nodes: List[Node], existing_node_ids: Set
+    ) -> List[Tuple[str, Node, List[float]]]:
+        """Get tuples of id, node, and embedding.
+
+        Allows us to store these nodes in a vector store.
+        Embeddings are called in batches.
+
+        """
+        id_to_node_map: Dict[str, Node] = {}
+        id_to_embed_map: Dict[str, List[float]] = {}
+
+        for n in nodes:
+            new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
+            if n.embedding is None:
+                self._embed_model.queue_text_for_embeddding(new_id, n.get_text())
+            else:
+                id_to_embed_map[new_id] = n.embedding
+
+            id_to_node_map[new_id] = n
+
+        # call embedding model to get embeddings
+        result_ids, result_embeddings = self._embed_model.get_queued_text_embeddings()
+        for new_id, text_embedding in zip(result_ids, result_embeddings):
+            id_to_embed_map[new_id] = text_embedding
+
+        result_tups = []
+        for id, embed in id_to_embed_map.items():
+            result_tups.append((id, id_to_node_map[id], embed))
+        return result_tups
 
     @abstractmethod
     def _add_document_to_index(
