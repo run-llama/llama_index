@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # create llama_index package
 
 if [[ -n "$LLAMA_INDEX_DIR" ]]; then
