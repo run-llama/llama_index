@@ -128,7 +128,9 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                         [str(x) for x in triplets]
                     )
                     for i, rel_embedding in enumerate(rel_embeddings):
-                        index_struct.add_to_embedding_dict(str(triplets[i]), rel_embedding)
+                        index_struct.add_to_embedding_dict(
+                            str(triplets[i]), rel_embedding
+                        )
 
         return index_struct
 

@@ -350,9 +350,7 @@ class KG(IndexStruct):
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
     _mode: str = MODE_KEYWORDS
 
-    def add_to_embedding_dict(
-        self, triplet_str: str, embedding: List[float]
-    ) -> None:
+    def add_to_embedding_dict(self, triplet_str: str, embedding: List[float]) -> None:
         """Add embedding to dict."""
         self.embedding_dict[triplet_str] = embedding
 
