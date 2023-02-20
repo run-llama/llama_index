@@ -407,9 +407,11 @@ class KG(IndexStruct):
         return node_ids
 
     def should_use_keywords(self) -> bool:
+        """Check if struct keywords should be used"""
         return self._mode.__contains__(MODE_KEYWORDS)
 
     def should_use_embeddings(self) -> bool:
+        """Check if struct embeddings should be used"""
         return self._mode.__contains__(MODE_EMBEDDINGS)
 
     @classmethod
