@@ -5,7 +5,7 @@ on:
     tags:
       - "v*"
 
-  jobs:
+jobs:
   build-n-publish:
     name: Build and publish to PyPI
     runs-on: ubuntu-latest
