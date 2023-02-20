@@ -351,10 +351,10 @@ class KG(IndexStruct):
     _mode: str = MODE_KEYWORDS
 
     def add_to_embedding_dict(
-        self, triplet: Tuple[str, str, str], embedding: List[float]
+        self, triplet_str: str, embedding: List[float]
     ) -> None:
         """Add embedding to dict."""
-        self.embedding_dict[str(triplet)] = embedding
+        self.embedding_dict[triplet_str] = embedding
 
     def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
         """Upsert a knowledge triplet to the graph."""
@@ -408,10 +408,10 @@ class KG(IndexStruct):
             # TODO: Traverse (with depth > 1)
         return node_ids
 
-    def should_use_keywords(self):
+    def should_use_keywords(self) -> bool:
         return self._mode.__contains__(MODE_KEYWORDS)
 
-    def should_use_embeddings(self):
+    def should_use_embeddings(self) -> bool:
         return self._mode.__contains__(MODE_EMBEDDINGS)
 
     @classmethod

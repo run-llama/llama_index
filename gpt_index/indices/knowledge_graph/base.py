@@ -49,7 +49,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
-        mode: Optional[str] = MODE_KEYWORDS,
+        mode: str = MODE_KEYWORDS,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -127,8 +127,8 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                     rel_embeddings = self._embed_model._get_text_embeddings(
                         [str(x) for x in triplets]
                     )
-                    for rel_embedding in rel_embeddings:
-                        index_struct.add_to_embedding_dict(triplet, rel_embedding)
+                    for i, rel_embedding in enumerate(rel_embeddings):
+                        index_struct.add_to_embedding_dict(str(triplets[i]), rel_embedding)
 
         return index_struct
 

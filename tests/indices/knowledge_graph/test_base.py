@@ -225,7 +225,7 @@ def test_query_similarity(
 
     # returns only two rel texts to use for generating response
     response = index.query("foo", top_k_embeddings=2)
-    print(response.extra_info["kg_rel_texts"])
+    assert isinstance(response.extra_info, dict)
     assert len(response.extra_info["kg_rel_texts"]) == 2
 
     # Filters out all embeddings

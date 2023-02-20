@@ -49,11 +49,10 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, **kwargs)
+        super().__init__(index_struct=index_struct, embed_model=embed_model, **kwargs)
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
-        self._embed_model = embed_model
         self._include_text = include_text
         self.top_k_embeddings = top_k_embeddings
 
