@@ -32,12 +32,20 @@ def mock_get_query_embedding(query: str) -> List[float]:
     return [0, 0, 1, 0, 0]
 
 
+def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
+    """Mock get text embeddings."""
+    return [mock_get_text_embedding(text) for text in texts]
+
+
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
 )
 @patch.object(
-    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
+    OpenAIEmbedding, "_get_query_embedding", side_effect=mock_get_query_embedding
 )
 def test_get_set_compare(
     _mock_query_embed: Any,
@@ -49,6 +57,7 @@ def test_get_set_compare(
     _mock_split_text: Any,
 ) -> None:
     """Test basic comparison of indices."""
+
     documents = [Document("They're taking the Hobbits to Isengard!")]
 
     indices = [
@@ -78,7 +87,10 @@ def test_get_set_compare(
 
 @patch_common
 @patch.object(
-    OpenAIEmbedding, "get_text_embedding", side_effect=mock_get_text_embedding
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 def test_from_docs(
     _mock_embed: Any,
