@@ -124,7 +124,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         # filter sorted nodes
         sorted_nodes = [node for node in sorted_nodes if self._should_use_node(node)]
         for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
-            # these nodes are found using keyword mapping, give high confidence to avoid cutoff
+            # nodes are found with keyword mapping, give high conf to avoid cutoff
             if similarity_tracker is not None:
                 similarity_tracker.add(node, 1000.0)
             logging.info(
