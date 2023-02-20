@@ -33,7 +33,7 @@ query_str = "What did the author do growing up?"
 SUMMARY_PROMPT_TMPL = (
     "Context information is below. \n"
     "---------------------\n"
-    "{text}"
+    "{context_str}"
     "\n---------------------\n"
     "Given the context information and not prior knowledge, "
     f"answer the question: {query_str}\n"
