@@ -106,6 +106,33 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
     return [mock_get_text_embedding(text) for text in texts]
 
 
+async def mock_aget_text_embedding(text: str) -> List[float]:
+    """Mock async get text embedding."""
+    # assume dimensions are 5
+    if text == "Hello world.":
+        return [1, 0, 0, 0, 0]
+    elif text == "This is a test.":
+        return [0, 1, 0, 0, 0]
+    elif text == "This is another test.":
+        return [0, 0, 1, 0, 0]
+    elif text == "This is a test v2.":
+        return [0, 0, 0, 1, 0]
+    elif text == "This is a test v3.":
+        return [0, 0, 0, 0, 1]
+    elif text == "This is bar test.":
+        return [0, 0, 1, 0, 0]
+    elif text == "Hello world backup.":
+        # this is used when "Hello world." is deleted.
+        return [1, 0, 0, 0, 0]
+    else:
+        raise ValueError("Invalid text for `mock_aget_text_embedding`.")
+
+
+async def mock_aget_text_embeddings(texts: List[str]) -> List[List[float]]:
+    """Mock async get text embeddings."""
+    return [await mock_aget_text_embedding(text) for text in texts]
+
+
 def mock_get_query_embedding(query: str) -> List[float]:
     """Mock get query embedding."""
     return [0, 0, 1, 0, 0]
@@ -236,7 +263,7 @@ def test_build_simple(
     documents: List[Document],
     struct_kwargs: Dict,
 ) -> None:
-    """Test build GPTFaissIndex."""
+    """Test build GPTSimpleVectorIndex."""
     index_kwargs, query_kwargs = struct_kwargs
 
     index = GPTSimpleVectorIndex(documents=documents, **index_kwargs)
@@ -272,7 +299,7 @@ def test_simple_insert(
     documents: List[Document],
     struct_kwargs: Dict,
 ) -> None:
-    """Test build GPTFaissIndex."""
+    """Test insert GPTSimpleVectorIndex."""
     index_kwargs, query_kwargs = struct_kwargs
 
     index = GPTSimpleVectorIndex(documents=documents, **index_kwargs)
@@ -311,7 +338,7 @@ def test_simple_delete(
     documents: List[Document],
     struct_kwargs: Dict,
 ) -> None:
-    """Test build GPTFaissIndex."""
+    """Test delete GPTSimpleVectorIndex."""
     index_kwargs, query_kwargs = struct_kwargs
 
     new_documents = [
@@ -517,3 +544,39 @@ def test_query_and_similarity_scores_with_cutoff(
     query_str = "What is?"
     response = index.query(query_str, similarity_cutoff=0.9, **query_kwargs)
     assert len(response.source_nodes) == 1
+
+
+@patch_common
+@patch.object(
+    OpenAIEmbedding, "_aget_text_embedding", side_effect=mock_aget_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_aget_text_embeddings", side_effect=mock_aget_text_embeddings
+)
+def test_simple_async(
+    _mock_embeds: Any,
+    _mock_embed: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test simple vector index with use_async."""
+    index_kwargs, query_kwargs = struct_kwargs
+
+    index = GPTSimpleVectorIndex(documents=documents, use_async=True, **index_kwargs)
+    assert len(index.index_struct.nodes_dict) == 4
+    # check contents of nodes
+    actual_node_tups = [
+        ("Hello world.", [1, 0, 0, 0, 0]),
+        ("This is a test.", [0, 1, 0, 0, 0]),
+        ("This is another test.", [0, 0, 1, 0, 0]),
+        ("This is a test v2.", [0, 0, 0, 1, 0]),
+    ]
+    for text_id in index.index_struct.id_map.keys():
+        node = index.index_struct.get_node(text_id)
+        embedding = index.index_struct.embedding_dict[text_id]
+        assert (node.text, embedding) in actual_node_tups
