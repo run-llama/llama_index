@@ -164,7 +164,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         raise NotImplementedError("Delete is not supported for KG index yet.")
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
-        """Set the default embedding mode during query based on current index"""
+        """Set the default embedding mode during query based on current index."""
         if len(self.index_struct.embedding_dict) > 0:
             query_kwargs["embedding_mode"] = HYBRID_QUERY
 
