@@ -1,11 +1,13 @@
 """Base embeddings file."""
 
+import itertools
 from abc import abstractmethod
 from enum import Enum
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
 
+from gpt_index.async_utils import run_async_tasks
 from gpt_index.utils import globals_helper
 
 # TODO: change to numpy array
@@ -66,6 +68,10 @@ class BaseEmbedding:
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
 
+    @abstractmethod
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        """Asynchronously get text embedding."""
+
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings.
 
@@ -74,6 +80,16 @@ class BaseEmbedding:
 
         """
         result = [self._get_text_embedding(text) for text in texts]
+        return result
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronously get text embeddings.
+
+        By default, this is a wrapper around _aget_text_embedding.
+        Can be overriden for batch queries.
+
+        """
+        result = [await self._aget_text_embedding(text) for text in texts]
         return result
 
     def get_text_embedding(self, text: str) -> List[float]:
@@ -115,6 +131,32 @@ class BaseEmbedding:
 
         # reset queue
         self._text_queue = []
+        return result_ids, result_embeddings
+
+    async def aget_queued_text_embeddings(
+        self, text_queue: List[Tuple[str, str]]
+    ) -> Tuple[List[str], List[List[float]]]:
+        """Asynchronously get a list of text embeddings.
+
+        Call async embedding API to get embeddings for all queued texts in parallel.
+        Argument `text_queue` must be passed in to avoid updating it async.
+
+        """
+        cur_batch: List[Tuple[str, str]] = []
+        result_ids: List[str] = []
+        result_embeddings: List[List[float]] = []
+        for idx, (text_id, text) in enumerate(text_queue):
+            cur_batch.append((text_id, text))
+            text_tokens_count = len(self._tokenizer(text))
+            self._total_tokens_used += text_tokens_count
+            if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
+                # flush
+                cur_batch_ids = [text_id for text_id, _ in cur_batch]
+                cur_batch_texts = [text for _, text in cur_batch]
+                embeddings = await self._aget_text_embeddings(cur_batch_texts)
+                result_ids.extend(cur_batch_ids)
+                result_embeddings.extend(embeddings)
+
         return result_ids, result_embeddings
 
     def similarity(

@@ -66,6 +66,21 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
             QueryMode.EMBEDDING: GPTSimpleVectorIndexQuery,
         }
 
+    async def _async_add_document_to_index(
+        self,
+        index_struct: SimpleIndexDict,
+        document: BaseDocument,
+    ) -> None:
+        """Asynchronously add document to index."""
+        nodes = self._get_nodes_from_document(document)
+
+        id_node_embed_tups = await self._aget_node_embedding_tups(
+            nodes, set(index_struct.nodes_dict.keys())
+        )
+        for new_id, node, text_embedding in id_node_embed_tups:
+            index_struct.add_node(node, text_id=new_id)
+            index_struct.add_to_embedding_dict(new_id, text_embedding)
+
     def _add_document_to_index(
         self,
         index_struct: SimpleIndexDict,

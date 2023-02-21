@@ -4,9 +4,13 @@ An index that that is built on top of an existing vector store.
 
 """
 
+import asyncio
+import functools
 from abc import abstractmethod
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, Generic, List, Optional, Sequence, Set, Tuple, TypeVar
 
+from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
@@ -16,7 +20,6 @@ from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
-from gpt_index.async_utils import run_async_tasks
 
 BID = TypeVar("BID", bound=IndexStruct)
 
@@ -39,10 +42,12 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         text_splitter: Optional[TextSplitter] = None,
+        use_async: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self._use_async = use_async
         super().__init__(
             documents=documents,
             index_struct=index_struct,
@@ -83,6 +88,41 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
             result_tups.append((id, id_to_node_map[id], embed))
         return result_tups
 
+    async def _aget_node_embedding_tups(
+        self, nodes: List[Node], existing_node_ids: Set
+    ) -> List[Tuple[str, Node, List[float]]]:
+        """Asynchronously get tuples of id, node, and embedding.
+
+        Allows us to store these nodes in a vector store.
+        Embeddings are called in batches.
+
+        """
+        id_to_node_map: Dict[str, Node] = {}
+        id_to_embed_map: Dict[str, List[float]] = {}
+
+        text_queue: List[Tuple[str, str]] = []
+        for n in nodes:
+            new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
+            if n.embedding is None:
+                text_queue.append((new_id, n.get_text()))
+            else:
+                id_to_embed_map[new_id] = n.embedding
+
+            id_to_node_map[new_id] = n
+
+        # call embedding model to get embeddings
+        (
+            result_ids,
+            result_embeddings,
+        ) = await self._embed_model.aget_queued_text_embeddings(text_queue)
+        for new_id, text_embedding in zip(result_ids, result_embeddings):
+            id_to_embed_map[new_id] = text_embedding
+
+        result_tups = []
+        for id, embed in id_to_embed_map.items():
+            result_tups.append((id, id_to_node_map[id], embed))
+        return result_tups
+
     @abstractmethod
     def _add_document_to_index(
         self,
@@ -91,13 +131,13 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
     ) -> None:
         """Add document to index."""
 
+    @abstractmethod
     async def _async_add_document_to_index(
         self,
         index_struct: BID,
         document: BaseDocument,
     ) -> None:
         """Asynchronously add document to index."""
-        self._add_document_to_index(index_struct=BID, document=BaseDocument)
 
     def _build_fallback_text_splitter(self) -> TextSplitter:
         # if not specified, use "smart" text splitter to ensure chunks fit in prompt
@@ -105,12 +145,10 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
             self.text_qa_template, 1
         )
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument], use_async: bool = False
-    ) -> BID:
+    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> BID:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
-        if use_async:
+        if self._use_async:
             tasks = [
                 self._async_add_document_to_index(index_struct, d) for d in documents
             ]
