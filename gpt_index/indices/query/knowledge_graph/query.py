@@ -4,7 +4,6 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
 from gpt_index.data_structs.data_structs import KG, Node
-from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import (
@@ -46,7 +45,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         include_text: bool = True,
-        embedding_mode: str = None,
+        embedding_mode: Optional[str] = None,
         top_k_embeddings: int = 1,
         **kwargs: Any,
     ) -> None:
@@ -93,7 +92,10 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
                     for node_id in self.index_struct.get_node_ids(keyword):
                         chunk_indices_count[node_id] += 1
 
-        if self._embedding_mode is not None and len(self.index_struct.embedding_dict) > 0:
+        if (
+            self._embedding_mode is not None
+            and len(self.index_struct.embedding_dict) > 0
+        ):
             query_embedding = self._embed_model.get_text_embedding(", ".join(keywords))
             all_rel_texts = list(self.index_struct.embedding_dict.keys())
 
@@ -114,7 +116,9 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             logging.debug(f"Found the following top_k rel_texts: {str(rel_texts)}")
             rel_texts.extend(top_rel_texts)
         elif len(self.index_struct.embedding_dict) > 0:
-            logger.error("Index was not constructed with embeddings, skipping embedding usage...")
+            logging.error(
+                "Index was not constructed with embeddings, skipping embedding usage..."
+            )
 
         # remove any duplicates from keyword + embedding queries
         if self._embedding_mode == HYBRID_QUERY:

@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 from gpt_index.data_structs.data_structs import KG
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, HYBRID_QUERY
+from gpt_index.indices.query.knowledge_graph.query import HYBRID_QUERY, GPTKGTableQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TextSplitter
@@ -125,13 +125,17 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                     index_struct.upsert_triplet(triplet, n)
 
                 if self.include_embeddings:
-                    rel_embeddings = self._embed_model._get_text_embeddings(
-                        [str(x) for x in triplets]
-                    )
-                    for i, rel_embedding in enumerate(rel_embeddings):
-                        index_struct.add_to_embedding_dict(
-                            str(triplets[i]), rel_embedding
+                    for i, triplet in enumerate(triplets):
+                        self._embed_model.queue_text_for_embeddding(
+                            str(triplet), str(triplet)
                         )
+
+                    (
+                        rel_texts,
+                        rel_embeddings,
+                    ) = self._embed_model.get_queued_text_embeddings()
+                    for rel_text, rel_embedding in zip(rel_texts, rel_embeddings):
+                        index_struct.add_to_embedding_dict(rel_text, rel_embedding)
 
         return index_struct
 
@@ -149,7 +153,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 triplet_str = str(triplet)
                 self._index_struct.upsert_triplet(triplet, n)
                 if (
-                    self.include_embeddings()
+                    self.include_embeddings
                     and triplet_str not in self._index_struct.embedding_dict
                 ):
                     rel_embedding = self._embed_model.get_text_embedding(triplet_str)
@@ -158,11 +162,11 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete is not supported for KG index yet.")
-    
+
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
         """Set the default embedding mode during query based on current index"""
         if self.include_embeddings:
-            query_kwargs['embedding_mode'] = HYBRID_QUERY
+            query_kwargs["embedding_mode"] = HYBRID_QUERY
 
     def get_networkx_graph(self) -> Any:
         """Get networkx representation of the graph structure.

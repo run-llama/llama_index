@@ -7,7 +7,7 @@ import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
-from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, EMBEDDINGS_ONLY_QUERY, HYBRID_QUERY
+from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
