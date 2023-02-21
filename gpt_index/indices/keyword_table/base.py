@@ -22,6 +22,7 @@ from gpt_index.indices.query.keyword_table.query import (
 )
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
@@ -60,6 +61,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         max_keywords_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
+        text_splitter: Optional[TextSplitter] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -76,10 +78,8 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
+            text_splitter=text_splitter,
             **kwargs,
-        )
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.keyword_extract_template, 1
         )
 
     @classmethod
@@ -95,17 +95,20 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
 
+    def _build_fallback_text_splitter(self) -> TextSplitter:
+        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
+        return self._prompt_helper.get_text_splitter_given_prompt(
+            self.keyword_extract_template, 1
+        )
+
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument]
     ) -> KeywordTable:
         """Build the index from documents."""
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.keyword_extract_template, 1
-        )
         # do simple concatenation
         index_struct = KeywordTable(table={})
         for d in documents:
-            nodes = self._get_nodes_from_document(d, text_splitter)
+            nodes = self._get_nodes_from_document(d)
             for n in nodes:
                 keywords = self._extract_keywords(n.get_text())
                 index_struct.add_node(list(keywords), n)
@@ -114,7 +117,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        nodes = self._get_nodes_from_document(document, self._text_splitter)
+        nodes = self._get_nodes_from_document(document)
         for n in nodes:
             keywords = self._extract_keywords(n.get_text())
             self._index_struct.add_node(list(keywords), n)

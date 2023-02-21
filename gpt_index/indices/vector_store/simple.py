@@ -10,7 +10,7 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.simple import GPTSimpleVectorIndexQuery
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 
@@ -44,6 +44,7 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
+        text_splitter: Optional[TextSplitter] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -53,6 +54,7 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
+            text_splitter=text_splitter,
             **kwargs,
         )
 
@@ -68,10 +70,9 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
         self,
         index_struct: SimpleIndexDict,
         document: BaseDocument,
-        text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
-        nodes = self._get_nodes_from_document(document, text_splitter)
+        nodes = self._get_nodes_from_document(document)
 
         id_node_embed_tups = self._get_node_embedding_tups(
             nodes, set(index_struct.nodes_dict.keys())

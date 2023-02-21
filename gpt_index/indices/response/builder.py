@@ -217,7 +217,8 @@ class ResponseBuilder:
             summary_template,
             self.llm_predictor,
             self.prompt_helper,
-            self._use_async,
+            text_splitter,
+            use_async=self._use_async,
         )
         root_nodes = index_builder.build_index_from_nodes(all_nodes, all_nodes)
         node_list = get_sorted_node_list(root_nodes)
