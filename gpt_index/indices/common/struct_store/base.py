@@ -26,7 +26,7 @@ class SQLContextBuilder:
 
     Args:
         sql_database (Optional[SQLDatabase]): SQL database to use,
-        context_builder_prompt (Optional[TableContextPrompt]): A
+        table_context_prompt (Optional[TableContextPrompt]): A
             Table Context Prompt (see :ref:`Prompt-Templates`).
     """
 
