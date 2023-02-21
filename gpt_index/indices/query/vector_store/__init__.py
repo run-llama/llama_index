@@ -14,5 +14,5 @@ __all__ = [
     "GPTWeaviateIndexQuery",
     "GPTPineconeIndexQuery",
     "GPTQdrantIndexQuery",
-    "GPTChromaIndexQuery ",
+    "GPTChromaIndexQuery",
 ]

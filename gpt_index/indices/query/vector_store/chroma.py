@@ -95,7 +95,7 @@ class GPTChromaIndexQuery(BaseGPTVectorStoreIndexQuery[ChromaIndexStruct]):
             )
             nodes.append(node)
 
-            similarity_score = math.exp(-result[3][0])
+            similarity_score = 1.0 - math.exp(-result[3][0])
 
             if similarity_tracker is not None:
                 similarity_tracker.add(node, similarity_score)
