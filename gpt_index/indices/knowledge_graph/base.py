@@ -165,7 +165,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
         """Set the default embedding mode during query based on current index"""
-        if self.include_embeddings:
+        if len(self.index_struct.embedding_dict) > 0:
             query_kwargs["embedding_mode"] = HYBRID_QUERY
 
     def get_networkx_graph(self) -> Any:

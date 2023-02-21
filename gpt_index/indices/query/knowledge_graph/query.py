@@ -70,6 +70,15 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         )
         return list(keywords)
 
+    def _extract_rel_text_keywords(self, rel_texts: List[str]) -> List[str]:
+        """Find the keywords for given rel text triplets."""
+        keywords = []
+        for rel_text in rel_texts:
+            keyword = rel_text.split(",")[0]
+            if keyword:
+                keywords.append(keyword.strip("(\"'"))
+        return keywords
+
     def _get_nodes_for_response(
         self,
         query_bundle: QueryBundle,
@@ -115,7 +124,16 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             )
             logging.debug(f"Found the following top_k rel_texts: {str(rel_texts)}")
             rel_texts.extend(top_rel_texts)
-        elif len(self.index_struct.embedding_dict) > 0:
+            if self._include_text:
+                keywords = self._extract_rel_text_keywords(top_rel_texts)
+                nested_node_ids = [
+                    self.index_struct.get_node_ids(keyword) for keyword in keywords
+                ]
+                # flatten list
+                node_ids = [_id for ids in nested_node_ids for _id in ids]
+                for node_id in node_ids:
+                    chunk_indices_count[node_id] += 1
+        elif len(self.index_struct.embedding_dict) == 0:
             logging.error(
                 "Index was not constructed with embeddings, skipping embedding usage..."
             )
