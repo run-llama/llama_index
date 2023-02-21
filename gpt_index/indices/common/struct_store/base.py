@@ -6,6 +6,7 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT,
     DEFAULT_TABLE_CONTEXT_PROMPT,
@@ -34,6 +35,7 @@ class SQLContextBuilder:
         sql_database: SQLDatabase,
         llm_predictor: Optional[LLMPredictor] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        text_splitter: Optional[TextSplitter] = None,
         table_context_prompt: Optional[TableContextPrompt] = None,
         refine_table_context_prompt: Optional[RefineTableContextPrompt] = None,
         table_context_task: Optional[str] = None,
@@ -47,6 +49,7 @@ class SQLContextBuilder:
         self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
             self._llm_predictor
         )
+        self._text_splitter = text_splitter
         self._table_context_prompt = (
             table_context_prompt or DEFAULT_TABLE_CONTEXT_PROMPT
         )
@@ -80,8 +83,9 @@ class SQLContextBuilder:
         refine_prompt_with_schema = RefinePrompt.from_prompt(
             self._refine_table_context_prompt.partial_format(schema=schema)
         )
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            prompt_with_schema, 1
+        text_splitter = (
+            self._text_splitter
+            or self._prompt_helper.get_text_splitter_given_prompt(prompt_with_schema, 1)
         )
         # we use the ResponseBuilder to iteratively go through all texts
         response_builder = ResponseBuilder(

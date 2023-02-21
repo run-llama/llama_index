@@ -15,7 +15,7 @@ contains optional prompts that the user may pass in.
 
 ### Example
 
-An example can be found in [this notebook](https://github.com/jerryjliu/gpt_index/blob/main/examples/paul_graham_essay/TestEssay.ipynb).
+An example can be found in [this notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/paul_graham_essay/TestEssay.ipynb).
 
 The corresponding snippet is below. We show how to define a custom Summarization Prompt that not only
 contains a `text` field, but also `query_str` field during construction of `GPTTreeIndex`, so that 
@@ -23,7 +23,7 @@ the answer to the query can be simply synthesized from the root nodes.
 
 ```python
 
-from gpt_index import SummaryPrompt, GPTTreeIndex, SimpleDirectoryReader
+from llama_index import SummaryPrompt, GPTTreeIndex, SimpleDirectoryReader
 
 # load documents
 documents = SimpleDirectoryReader('data').load_data()
@@ -33,7 +33,7 @@ query_str = "What did the author do growing up?"
 SUMMARY_PROMPT_TMPL = (
     "Context information is below. \n"
     "---------------------\n"
-    "{text}"
+    "{context_str}"
     "\n---------------------\n"
     "Given the context information and not prior knowledge, "
     f"answer the question: {query_str}\n"

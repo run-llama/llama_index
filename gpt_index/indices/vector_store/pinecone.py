@@ -14,7 +14,7 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.pinecone import GPTPineconeIndexQuery
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
@@ -52,6 +52,7 @@ class GPTPineconeIndex(BaseGPTVectorStoreIndex[PineconeIndexStruct]):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
+        text_splitter: Optional[TextSplitter] = None,
         pinecone_index: Optional[Any] = None,
         chunk_size_limit: int = 2048,
         pinecone_kwargs: Optional[Dict] = None,
@@ -75,13 +76,9 @@ class GPTPineconeIndex(BaseGPTVectorStoreIndex[PineconeIndexStruct]):
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
+            text_splitter=text_splitter,
             chunk_size_limit=chunk_size_limit,
             **kwargs,
-        )
-        # NOTE: when building the vector store index, text_qa_template is not partially
-        # formatted because we don't know the query ahead of time.
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
         )
 
     @classmethod
@@ -96,10 +93,9 @@ class GPTPineconeIndex(BaseGPTVectorStoreIndex[PineconeIndexStruct]):
         self,
         index_struct: PineconeIndexStruct,
         document: BaseDocument,
-        text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
-        nodes = self._get_nodes_from_document(document, text_splitter)
+        nodes = self._get_nodes_from_document(document)
 
         id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
         for new_id, node, text_embedding in id_node_embed_tups:

@@ -49,7 +49,7 @@ class QdrantReader(BaseReader):
             raise ValueError(import_err_msg)
 
         self._client = qdrant_client.QdrantClient(
-            host=host,
+            url=host,
             port=port,
             grpc_port=grpc_port,
             prefer_grpc=prefer_grpc,
@@ -87,7 +87,7 @@ class QdrantReader(BaseReader):
 
         documents = []
         for point in response:
-            payload = cast(Payload, point)
+            payload = cast(Payload, point.payload)
             try:
                 vector = cast(List[float], point.vector)
             except ValueError as e:

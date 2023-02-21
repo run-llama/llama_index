@@ -65,9 +65,9 @@ We introduce a wrapper class,
 An example snippet is shown below (to use Hugging Face embeddings) on the GPTListIndex:
 
 ```python
-from gpt_index import GPTListIndex, SimpleDirectoryReader
+from llama_index import GPTListIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-from gpt_index import LangchainEmbedding
+from llama_index import LangchainEmbedding
 
 # load in HF embedding model from langchain
 embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
@@ -88,9 +88,9 @@ print(response)
 Another example snippet is shown for GPTSimpleVectorIndex.
 
 ```python
-from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-from gpt_index import LangchainEmbedding
+from llama_index import LangchainEmbedding
 
 # load in HF embedding model from langchain
 embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
