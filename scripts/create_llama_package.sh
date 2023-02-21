@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # create llama_index package
 
 if [[ -n "$LLAMA_INDEX_DIR" ]]; then
@@ -14,6 +16,7 @@ else
     exit 1
 fi
 
+rm -rf $LLAMA_INDEX_DIR
 mkdir -p $LLAMA_INDEX_DIR
 # copy files from gpt_index dir
 cp -r $GPT_INDEX_DIR/gpt_index $LLAMA_INDEX_DIR/llama_index

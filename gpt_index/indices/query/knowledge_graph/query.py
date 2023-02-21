@@ -71,10 +71,12 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         keywords = self._get_keywords(query_bundle.query_str)
         logging.info(f"> Query keywords: {keywords}")
         rel_texts = []
+        cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
         for keyword in keywords:
             cur_rel_texts = self.index_struct.get_rel_map_texts(keyword)
             rel_texts.extend(cur_rel_texts)
+            cur_rel_map[keyword] = self.index_struct.get_rel_map_tuples(keyword)
             if self._include_text:
                 for node_id in self.index_struct.get_node_ids(keyword):
                     chunk_indices_count[node_id] += 1
@@ -102,10 +104,24 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             "The following are knowledge triplets "
             "in the form of (subset, predicate, object):"
         )
-        rel_texts = [rel_initial_text] + rel_texts
-        rel_text_node = Node(text="\n".join(rel_texts))
-        rel_info_text = "\n".join(rel_texts)
+        rel_info = [rel_initial_text] + rel_texts
+        rel_node_info = {
+            "kg_rel_texts": rel_texts,
+            "kg_rel_map": cur_rel_map,
+        }
+        rel_text_node = Node(text="\n".join(rel_info), node_info=rel_node_info)
+        rel_info_text = "\n".join(rel_info)
         logging.info(f"> Extracted relationships: {rel_info_text}")
         sorted_nodes.append(rel_text_node)
 
         return sorted_nodes
+
+    def _get_extra_info_for_response(
+        self, nodes: List[Node]
+    ) -> Optional[Dict[str, Any]]:
+        """Get extra info for response."""
+        for node in nodes:
+            if node.node_info is None or "kg_rel_map" not in node.node_info:
+                continue
+            return node.node_info
+        raise ValueError("kg_rel_map must be found in at least one Node.")

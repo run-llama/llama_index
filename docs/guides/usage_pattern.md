@@ -13,7 +13,7 @@ We provide a variety of [data loaders](/how_to/data_connectors.md) which will lo
 through the `load_data` function, e.g.:
 
 ```python
-from gpt_index import SimpleDirectoryReader
+from llama_index import SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
 
@@ -22,7 +22,7 @@ documents = SimpleDirectoryReader('data').load_data()
 You can also choose to construct documents manually. GPT Index exposes the `Document` struct.
 
 ```python
-from gpt_index import Document
+from llama_index import Document
 
 text_list = [text1, text2, ...]
 documents = [Document(t) for t in text_list]
@@ -33,7 +33,7 @@ documents = [Document(t) for t in text_list]
 We can now build an index over these Document objects. The simplest is to load in the Document objects during index initialization.
 
 ```python
-from gpt_index import GPTSimpleVectorIndex
+from llama_index import GPTSimpleVectorIndex
 
 index = GPTSimpleVectorIndex(documents)
 
@@ -47,7 +47,7 @@ You can also take advantage of the `insert` capability of indices to insert Docu
 one at a time instead of during index construction. 
 
 ```python
-from gpt_index import GPTSimpleVectorIndex
+from llama_index import GPTSimpleVectorIndex
 
 index = GPTSimpleVectorIndex([])
 for doc in documents:
@@ -63,7 +63,7 @@ By default, we use OpenAI's `text-davinci-003` model. You may choose to use anot
 an index.
 
 ```python
-from gpt_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper
+from llama_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper
 
 ...
 
@@ -124,7 +124,7 @@ index = GPTSimpleVectorIndex.load_from_disk('index.json')
 You can build indices on top of other indices! 
 
 ```python
-from gpt_index import GPTSimpleVectorIndex, GPTListIndex
+from llama_index import GPTSimpleVectorIndex, GPTListIndex
 
 index1 = GPTSimpleVectorIndex(documents1)
 index2 = GPTSimpleVectorIndex(documents2)

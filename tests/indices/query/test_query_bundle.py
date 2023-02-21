@@ -53,7 +53,7 @@ def _get_query_embedding(
 
 
 def _get_text_embedding(
-    query: str,
+    text: str,
 ) -> List[float]:
     """Get node text embedding."""
     text_embed_map: Dict[str, List[float]] = {
@@ -64,7 +64,14 @@ def _get_text_embedding(
         "This is a test v2.": [0.0, 0.0, 0.0, 1.0, 0.0],
     }
 
-    return text_embed_map[query]
+    return text_embed_map[text]
+
+
+def _get_text_embeddings(
+    texts: List[str],
+) -> List[List[float]]:
+    """Get node text embedding."""
+    return [_get_text_embedding(text) for text in texts]
 
 
 @patch_common
@@ -78,14 +85,16 @@ def _get_text_embedding(
     "_get_text_embedding",
     side_effect=_get_text_embedding,
 )
+@patch.object(OpenAIEmbedding, "_get_text_embeddings", side_effect=_get_text_embeddings)
 def test_embedding_query(
+    _mock_get_text_embedding: Any,
+    _mock_get_text_embeddings: Any,
+    _mock_get_query_embedding: Any,
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
     _mock_split_text_overlap: Any,
     _mock_split_text: Any,
-    _mock_get_text_embedding: Any,
-    _mock_get_query_embedding: Any,
     documents: List[Document],
     struct_kwargs: Dict,
 ) -> None:

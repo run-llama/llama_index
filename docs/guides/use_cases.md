@@ -65,7 +65,7 @@ While a single vector store may implicitly do so (the top-k nearest neighbor tex
 Assuming you've already defined "subindices" over each data source, you can define a higher-level list index on top of these subindices through [composability](/how_to/composability.md).
 
 ```python
-from gpt_index import GPTSimpleVectorIndex, GPTListIndex
+from llama_index import GPTSimpleVectorIndex, GPTListIndex
 
 index1 = GPTSimpleVectorIndex(notion_docs)
 index2 = GPTSimpleVectorIndex(slack_docs)
@@ -95,7 +95,7 @@ A `GPTKeywordTableIndex` uses keyword matching, and a `GPTVectorStoreIndex` uses
 embedding cosine similarity.
 
 ```python
-from gpt_index import GPTTreeIndex, GPTSimpleVectorIndex
+from llama_index import GPTTreeIndex, GPTSimpleVectorIndex
 
 ...
 
@@ -137,7 +137,7 @@ You have a knowledge base that is organized in a hierarchy. For instance, you ma
 You can do this by defining a subindex for each subsection, defining a *summary text* for that subindex, and [a higher order index](/how_to/composability.md) to combine the subindices. You can stack this as many times as you wish. By defining summary text for each subsection, the higher order index will *refine* the answer synthesized through a subindex with the summary.
 
 ```python
-from gpt_index import GPTTreeIndex, GPTSimpleVectorIndex
+from llama_index import GPTTreeIndex, GPTSimpleVectorIndex
 
 
 index1 = GPTSimpleVectorIndex(chapter1)

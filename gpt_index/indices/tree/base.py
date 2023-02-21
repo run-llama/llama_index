@@ -61,6 +61,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         llm_predictor: Optional[LLMPredictor] = None,
         text_splitter: Optional[TextSplitter] = None,
         build_tree: bool = True,
+        use_async: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -69,6 +70,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.summary_template = summary_template or DEFAULT_SUMMARY_PROMPT
         self.insert_prompt: TreeInsertPrompt = insert_prompt or DEFAULT_INSERT_PROMPT
         self.build_tree = build_tree
+        self._use_async = use_async
         super().__init__(
             documents=documents,
             index_struct=index_struct,
@@ -112,11 +114,12 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         """Build the index from documents."""
         # do simple concatenation
         index_builder = GPTTreeIndexBuilder(
-            num_children=self.num_children,
-            summary_prompt=self.summary_template,
-            llm_predictor=self._llm_predictor,
-            prompt_helper=self._prompt_helper,
-            text_splitter=self._text_splitter,
+            self.num_children,
+            self.summary_template,
+            self._llm_predictor,
+            self._prompt_helper,
+            self._text_splitter,
+            use_async=self._use_async,
         )
         index_graph = index_builder.build_from_text(
             documents, build_tree=self.build_tree

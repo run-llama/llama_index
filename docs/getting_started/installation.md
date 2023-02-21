@@ -4,7 +4,7 @@
 
 You can simply do:
 ```
-pip install gpt-index
+pip install llama-index
 ```
 
 ### Installation from Source
