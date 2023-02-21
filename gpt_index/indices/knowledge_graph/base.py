@@ -17,6 +17,7 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
@@ -49,6 +50,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
+        text_splitter: Optional[TextSplitter] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -67,10 +69,8 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
+            text_splitter=text_splitter,
             **kwargs,
-        )
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.kg_triple_extract_template, 1
         )
 
     @classmethod
@@ -100,15 +100,18 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             results.append((subj.strip(), pred.strip(), obj.strip()))
         return results
 
-    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> KG:
-        """Build the index from documents."""
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+    def _build_fallback_text_splitter(self) -> TextSplitter:
+        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
+        return self._prompt_helper.get_text_splitter_given_prompt(
             self.kg_triple_extract_template, 1
         )
+
+    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> KG:
+        """Build the index from documents."""
         # do simple concatenation
         index_struct = KG(table={})
         for d in documents:
-            nodes = self._get_nodes_from_document(d, text_splitter)
+            nodes = self._get_nodes_from_document(d)
             for n in nodes:
                 # set doc id
                 node_id = get_new_id(set())
@@ -122,7 +125,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        nodes = self._get_nodes_from_document(document, self._text_splitter)
+        nodes = self._get_nodes_from_document(document)
         for n in nodes:
             # set doc id
             node_id = get_new_id(set())

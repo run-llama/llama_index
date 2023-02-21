@@ -14,7 +14,7 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.weaviate import GPTWeaviateIndexQuery
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
@@ -51,6 +51,7 @@ class GPTWeaviateIndex(BaseGPTVectorStoreIndex[WeaviateIndexStruct]):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
+        text_splitter: Optional[TextSplitter] = None,
         weaviate_client: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         **kwargs: Any,
@@ -83,12 +84,8 @@ class GPTWeaviateIndex(BaseGPTVectorStoreIndex[WeaviateIndexStruct]):
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
+            text_splitter=text_splitter,
             **kwargs,
-        )
-        # NOTE: when building the vector store index, text_qa_template is not partially
-        # formatted because we don't know the query ahead of time.
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
         )
 
     @classmethod
@@ -103,10 +100,9 @@ class GPTWeaviateIndex(BaseGPTVectorStoreIndex[WeaviateIndexStruct]):
         self,
         index_struct: WeaviateIndexStruct,
         document: BaseDocument,
-        text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
-        nodes = self._get_nodes_from_document(document, text_splitter)
+        nodes = self._get_nodes_from_document(document)
         id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
 
         for new_id, node, embed in id_node_embed_tups:
@@ -120,12 +116,9 @@ class GPTWeaviateIndex(BaseGPTVectorStoreIndex[WeaviateIndexStruct]):
         self, documents: Sequence[BaseDocument]
     ) -> WeaviateIndexStruct:
         """Build index from documents."""
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
-        )
         index_struct = self.index_struct_cls(class_prefix=self.class_prefix)
         for d in documents:
-            self._add_document_to_index(index_struct, d, text_splitter)
+            self._add_document_to_index(index_struct, d)
         return index_struct
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:

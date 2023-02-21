@@ -13,6 +13,7 @@ from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
@@ -58,6 +59,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         insert_prompt: Optional[TreeInsertPrompt] = None,
         num_children: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
+        text_splitter: Optional[TextSplitter] = None,
         build_tree: bool = True,
         use_async: bool = False,
         **kwargs: Any,
@@ -73,6 +75,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
+            text_splitter=text_splitter,
             **kwargs,
         )
 
@@ -85,6 +88,12 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             QueryMode.RETRIEVE: GPTTreeIndexRetQuery,
             QueryMode.SUMMARIZE: GPTTreeIndexSummarizeQuery,
         }
+
+    def _build_fallback_text_splitter(self) -> TextSplitter:
+        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
+        return self._prompt_helper.get_text_splitter_given_prompt(
+            self.summary_template, self.num_children
+        )
 
     def _validate_build_tree_required(self, mode: QueryMode) -> None:
         """Check if index supports modes that require trees."""
@@ -109,7 +118,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self.summary_template,
             self._llm_predictor,
             self._prompt_helper,
-            self._use_async,
+            self._text_splitter,
+            use_async=self._use_async,
         )
         index_graph = index_builder.build_from_text(
             documents, build_tree=self.build_tree
@@ -126,6 +136,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             summary_prompt=self.summary_template,
             llm_predictor=self._llm_predictor,
             prompt_helper=self._prompt_helper,
+            text_splitter=self._text_splitter,
         )
         inserter.insert(document)
 
