@@ -34,7 +34,7 @@ you may plug in any LLM shown on Langchain's
 
 ```python
 
-from gpt_index import (
+from llama_index import (
     GPTKeywordTableIndex, 
     SimpleDirectoryReader, 
     LLMPredictor,
@@ -47,7 +47,7 @@ documents = SimpleDirectoryReader('data').load_data()
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002"))
 
 # build index
-index = GPTKeywordTableIndex(llm_predictor=llm_predictor)
+index = GPTKeywordTableIndex(documents, llm_predictor=llm_predictor)
 
 # get response from query
 response = index.query("What did the author do after his time at Y Combinator?")
@@ -66,7 +66,7 @@ For OpenAI, Cohere, AI21, you just need to set the `max_tokens` parameter
 
 ```python
 
-from gpt_index import (
+from llama_index import (
     GPTKeywordTableIndex, 
     SimpleDirectoryReader, 
     LLMPredictor,
@@ -79,7 +79,7 @@ documents = SimpleDirectoryReader('data').load_data()
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=512))
 
 # build index
-index = GPTKeywordTableIndex(llm_predictor=llm_predictor)
+index = GPTKeywordTableIndex(documents, llm_predictor=llm_predictor)
 
 # get response from query
 response = index.query("What did the author do after his time at Y Combinator?")
@@ -97,7 +97,7 @@ a custom PromptHelper class.
 
 ```python
 
-from gpt_index import (
+from llama_index import (
     GPTKeywordTableIndex, 
     SimpleDirectoryReader, 
     LLMPredictor,
@@ -121,7 +121,7 @@ prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=num_output))
 
 # build index
-index = GPTKeywordTableIndex(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+index = GPTKeywordTableIndex(documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper)
 
 # get response from query
 response = index.query("What did the author do after his time at Y Combinator?")

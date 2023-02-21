@@ -9,7 +9,7 @@ from gpt_index.data_structs.table import BaseStructTable, StructDatapoint
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from gpt_index.prompts.prompts import SchemaExtractPrompt
 from gpt_index.schema import BaseDocument
@@ -49,6 +49,7 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         schema_extract_prompt: Optional[SchemaExtractPrompt] = None,
         output_parser: Optional[OUTPUT_PARSER_TYPE] = None,
         llm_predictor: Optional[LLMPredictor] = None,
+        text_splitter: Optional[TextSplitter] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -60,10 +61,8 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
+            text_splitter=text_splitter,
             **kwargs,
-        )
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.schema_extract_prompt, 1
         )
 
     @abstractmethod
@@ -106,13 +105,18 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
     def _get_schema_text(self) -> str:
         """Get schema text for extracting relevant info from unstructured text."""
 
+    def _build_fallback_text_splitter(self) -> TextSplitter:
+        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
+        return self._prompt_helper.get_text_splitter_given_prompt(
+            self.schema_extract_prompt, 1
+        )
+
     def _add_document_to_index(
         self,
         document: BaseDocument,
-        text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
-        text_chunks = text_splitter.split_text(document.get_text())
+        text_chunks = self._text_splitter.split_text(document.get_text())
         fields = {}
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
@@ -138,17 +142,14 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
 
     def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> BST:
         """Build index from documents."""
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.schema_extract_prompt, 1
-        )
         index_struct = self.index_struct_cls()
         for d in documents:
-            self._add_document_to_index(d, text_splitter)
+            self._add_document_to_index(d)
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        self._add_document_to_index(document, self._text_splitter)
+        self._add_document_to_index(document)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

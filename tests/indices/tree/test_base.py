@@ -14,7 +14,10 @@ from gpt_index.langchain_helpers.chain_wrapper import (
 )
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_predict import mock_llmchain_predict
+from tests.mock_utils.mock_predict import (
+    mock_llmchain_predict,
+    mock_llmpredictor_predict,
+)
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_QUERY_PROMPT,
@@ -123,6 +126,41 @@ def test_build_tree_with_embed(
     # make sure all leaf nodes have embeddings
     for i in range(4):
         assert tree.index_struct.all_nodes[i].embedding == [0.1, 0.2, 0.3]
+    assert tree.index_struct.all_nodes[4].text == ("Hello world.\nThis is a test.")
+    assert tree.index_struct.all_nodes[5].text == (
+        "This is another test.\nThis is a test v2."
+    )
+
+
+OUTPUTS = [
+    ("Hello world.\nThis is a test.", ""),
+    ("This is another test.\nThis is a test v2.", ""),
+]
+
+
+@patch_common
+@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_predict)
+@patch("gpt_index.indices.common.tree.base.run_async_tasks", side_effect=[OUTPUTS])
+def test_build_tree_async(
+    _mock_run_async_tasks: Any,
+    _mock_apredict: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test build tree with use_async."""
+    index_kwargs, _ = struct_kwargs
+    tree = GPTTreeIndex(documents, use_async=True, **index_kwargs)
+    assert len(tree.index_struct.all_nodes) == 6
+    # check contents of nodes
+    assert tree.index_struct.all_nodes[0].text == "Hello world."
+    assert tree.index_struct.all_nodes[1].text == "This is a test."
+    assert tree.index_struct.all_nodes[2].text == "This is another test."
+    assert tree.index_struct.all_nodes[3].text == "This is a test v2."
     assert tree.index_struct.all_nodes[4].text == ("Hello world.\nThis is a test.")
     assert tree.index_struct.all_nodes[5].text == (
         "This is another test.\nThis is a test v2."

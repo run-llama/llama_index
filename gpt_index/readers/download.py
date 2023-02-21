@@ -20,7 +20,10 @@ LOADER_HUB_URL = (
 
 
 def download_loader(
-    loader_class: str, refresh_cache: Optional[bool] = False
+    loader_class: str,
+    loader_hub_url: str = LOADER_HUB_URL,
+    refresh_cache: Optional[bool] = False,
+    use_gpt_index_import: bool = False,
 ) -> BaseReader:
     """Download a single loader from the Loader Hub.
 
@@ -29,6 +32,11 @@ def download_loader(
             such as `SimpleWebPageReader`.
         refresh_cache: If true, the local cache will be skipped and the
             loader will be fetched directly from the remote repo.
+        use_gpt_index_import: If true, the loader files will use
+            gpt_index as the base dependency. By default (False),
+            the loader files use llama_index as the base dependency.
+            NOTE: this is a temporary workaround while we fully migrate all usages
+            to llama_index.
 
     Returns:
         A Loader.
@@ -50,7 +58,7 @@ def download_loader(
 
     # Fetch up-to-date library from remote repo if loader_id not found
     if loader_id is None:
-        response = requests.get(f"{LOADER_HUB_URL}/library.json")
+        response = requests.get(f"{loader_hub_url}/library.json")
         library = json.loads(response.text)
         if loader_class not in library:
             raise ValueError("Loader class name not found in library")
@@ -67,12 +75,18 @@ def download_loader(
     requirements_path = f"{dirpath}/{loader_filename}_requirements.txt"
 
     if refresh_cache or not os.path.exists(loader_path):
-        response = requests.get(f"{LOADER_HUB_URL}/{loader_id}/base.py")
+        response = requests.get(f"{loader_hub_url}/{loader_id}/base.py")
+        response_text = response.text
+        if use_gpt_index_import:
+            response_text = response_text.replace(
+                "import llama_index", "import gpt_index"
+            )
+            response_text = response_text.replace("from llama_index", "from gpt_index")
         with open(loader_path, "w") as f:
-            f.write(response.text)
+            f.write(response_text)
 
     if not os.path.exists(requirements_path):
-        response = requests.get(f"{LOADER_HUB_URL}/{loader_id}/requirements.txt")
+        response = requests.get(f"{loader_hub_url}/{loader_id}/requirements.txt")
         if response.status_code == 200:
             with open(requirements_path, "w") as f:
                 f.write(response.text)
