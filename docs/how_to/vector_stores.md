@@ -38,7 +38,7 @@ response = index.query("<query_text>")
 display(Markdown(f"<b>{response}</b>"))
 ```
 
-Qdrant also stores documents alongside vectors. Here's how to use Qdrant:
+Qdrant also stores both documents and vectors. This is an example of how to use Qdrant:
 
 ![](/_static/vector_stores/qdrant_reader.png)
 

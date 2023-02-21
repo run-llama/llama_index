@@ -19,8 +19,8 @@ class ChromaReader(BaseReader):
 
     def __init__(
         self,
-        collection_name: Optional[str] = None,
-        persist_directory: Optional[str] = None,
+        collection_name: str,
+        persist_directory: str,
     ) -> None:
         """Initialize with parameters."""
         import_err_msg = (

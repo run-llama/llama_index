@@ -4,10 +4,11 @@ from typing import Any, Dict, Optional, Sequence, Type, cast
 
 from gpt_index.data_structs.data_structs import ChromaIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.chroma import GPTChromaIndexQuery
+from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -16,7 +17,7 @@ from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
 
 
-class GPTChromaIndex(BaseGPTIndex[ChromaIndexStruct]):
+class GPTChromaIndex(BaseGPTVectorStoreIndex[ChromaIndexStruct]):
     """GPT Chroma Index.
 
     The GPTChromaIndex is a data structure where nodes are keyed by
@@ -90,23 +91,20 @@ class GPTChromaIndex(BaseGPTIndex[ChromaIndexStruct]):
             raise ValueError("Collection not initialized")
         nodes = self._get_nodes_from_document(document, text_splitter)
 
+        esxisting_ids = set(self._collection.get()["ids"])
+
+        id_node_embed_tups = self._get_node_embedding_tups(nodes, esxisting_ids)
+
         embeddings = []
         metadatas = []
         ids = []
         documents = []
 
-        for n in nodes:
-            if n.embedding is None:
-                text_embedding = self._embed_model.get_text_embedding(n.get_text())
-            else:
-                text_embedding = n.embedding
-            embeddings.append(text_embedding)
-
-            # TODO: Check for ID uniqueness.
-            ids.append(get_new_id(set()))
-
+        for node_id, node, embed in id_node_embed_tups:
+            embeddings.append(embed)
             metadatas.append({"document_id": document.get_doc_id()})
-            documents.append(n.get_text())
+            ids.append(node_id)
+            documents.append(node.get_text())
 
         self._collection.add(
             embeddings=embeddings,
