@@ -16,6 +16,7 @@ from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
+from gpt_index.async_utils import run_async_tasks
 
 BID = TypeVar("BID", bound=IndexStruct)
 
@@ -90,6 +91,14 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
     ) -> None:
         """Add document to index."""
 
+    async def _async_add_document_to_index(
+        self,
+        index_struct: BID,
+        document: BaseDocument,
+    ) -> None:
+        """Asynchronously add document to index."""
+        self._add_document_to_index(index_struct=BID, document=BaseDocument)
+
     def _build_fallback_text_splitter(self) -> TextSplitter:
         # if not specified, use "smart" text splitter to ensure chunks fit in prompt
         return self._prompt_helper.get_text_splitter_given_prompt(
@@ -97,13 +106,18 @@ class BaseGPTVectorStoreIndex(BaseGPTIndex[BID], Generic[BID]):
         )
 
     def _build_index_from_documents(
-        self,
-        documents: Sequence[BaseDocument],
+        self, documents: Sequence[BaseDocument], use_async: bool = False
     ) -> BID:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
-        for d in documents:
-            self._add_document_to_index(index_struct, d)
+        if use_async:
+            tasks = [
+                self._async_add_document_to_index(index_struct, d) for d in documents
+            ]
+            run_async_tasks(tasks)
+        else:
+            for d in documents:
+                self._add_document_to_index(index_struct, d)
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
