@@ -11,10 +11,10 @@ existing keywords in the table.
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
-from gpt_index.data_structs.data_structs import KG, MODE_KEYWORDS
+from gpt_index.data_structs.data_structs import KG
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
+from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, HYBRID_QUERY
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TextSplitter
@@ -51,12 +51,12 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         max_triplets_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
         text_splitter: Optional[TextSplitter] = None,
-        mode: str = MODE_KEYWORDS,
+        include_embeddings: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
-        self._mode = mode
+        self.include_embeddings = include_embeddings
         self.max_triplets_per_chunk = max_triplets_per_chunk
         self.kg_triple_extract_template = (
             kg_triple_extract_template or DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
@@ -74,9 +74,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             text_splitter=text_splitter,
             **kwargs,
         )
-
-        if self._index_struct is not None:
-            self._index_struct._mode = mode
 
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
@@ -114,7 +111,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
     def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> KG:
         """Build the index from documents."""
         # do simple concatenation
-        index_struct = KG(table={}, _mode=self._mode)
+        index_struct = KG(table={})
         for d in documents:
             nodes = self._get_nodes_from_document(d)
             for n in nodes:
@@ -127,7 +124,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 for triplet in triplets:
                     index_struct.upsert_triplet(triplet, n)
 
-                if index_struct.should_use_embeddings():
+                if self.include_embeddings:
                     rel_embeddings = self._embed_model._get_text_embeddings(
                         [str(x) for x in triplets]
                     )
@@ -152,7 +149,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 triplet_str = str(triplet)
                 self._index_struct.upsert_triplet(triplet, n)
                 if (
-                    self._index_struct.should_use_embeddings()
+                    self.include_embeddings()
                     and triplet_str not in self._index_struct.embedding_dict
                 ):
                     rel_embedding = self._embed_model.get_text_embedding(triplet_str)
@@ -161,6 +158,11 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete is not supported for KG index yet.")
+    
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
+        """Set the default embedding mode during query based on current index"""
+        if self.include_embeddings:
+            query_kwargs['embedding_mode'] = HYBRID_QUERY
 
     def get_networkx_graph(self) -> Any:
         """Get networkx representation of the graph structure.

@@ -17,6 +17,8 @@ from gpt_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMP
 from gpt_index.prompts.prompts import QueryKeywordExtractPrompt
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
+EMBEDDINGS_ONLY_QUERY = "embedding_only"
+HYBRID_QUERY = "hybrid"
 
 
 class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
@@ -41,20 +43,21 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         self,
         index_struct: KG,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         include_text: bool = True,
+        embedding_mode: str = None,
         top_k_embeddings: int = 1,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, embed_model=embed_model, **kwargs)
+        super().__init__(index_struct=index_struct, **kwargs)
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
-        self._include_text = include_text
         self.top_k_embeddings = top_k_embeddings
+        self._include_text = include_text
+        self._embedding_mode = embedding_mode
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -81,7 +84,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
 
-        if self.index_struct.should_use_keywords():
+        if self._embedding_mode != EMBEDDINGS_ONLY_QUERY:
             for keyword in keywords:
                 cur_rel_texts = self.index_struct.get_rel_map_texts(keyword)
                 rel_texts.extend(cur_rel_texts)
@@ -90,9 +93,10 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
                     for node_id in self.index_struct.get_node_ids(keyword):
                         chunk_indices_count[node_id] += 1
 
-        if self.index_struct.should_use_embeddings():
+        if self._embedding_mode is not None and len(self.index_struct.embedding_dict) > 0:
             query_embedding = self._embed_model.get_text_embedding(", ".join(keywords))
             all_rel_texts = list(self.index_struct.embedding_dict.keys())
+
             rel_text_embeddings = [
                 self.index_struct.embedding_dict[_id] for _id in all_rel_texts
             ]
@@ -109,8 +113,12 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             )
             logging.debug(f"Found the following top_k rel_texts: {str(rel_texts)}")
             rel_texts.extend(top_rel_texts)
+        elif len(self.index_struct.embedding_dict) > 0:
+            logger.error("Index was not constructed with embeddings, skipping embedding usage...")
 
-        rel_texts = list(set(rel_texts))
+        # remove any duplicates from keyword + embedding queries
+        if self._embedding_mode == HYBRID_QUERY:
+            rel_texts = list(set(rel_texts))
 
         sorted_chunk_indices = sorted(
             list(chunk_indices_count.keys()),

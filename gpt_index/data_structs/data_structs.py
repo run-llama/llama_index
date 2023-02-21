@@ -10,9 +10,6 @@ from dataclasses_json import DataClassJsonMixin
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_int_id
 
-MODE_KEYWORDS = "keyword"
-MODE_EMBEDDINGS = "embedding"
-
 
 @dataclass
 class IndexStruct(BaseDocument, DataClassJsonMixin):
@@ -348,7 +345,6 @@ class KG(IndexStruct):
     text_chunks: Dict[str, Node] = field(default_factory=dict)
     rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
-    _mode: str = MODE_KEYWORDS
 
     def add_to_embedding_dict(self, triplet_str: str, embedding: List[float]) -> None:
         """Add embedding to dict."""
@@ -405,14 +401,6 @@ class KG(IndexStruct):
                 node_ids.append(node_id)
             # TODO: Traverse (with depth > 1)
         return node_ids
-
-    def should_use_keywords(self) -> bool:
-        """Check if struct keywords should be used."""
-        return self._mode.__contains__(MODE_KEYWORDS)
-
-    def should_use_embeddings(self) -> bool:
-        """Check if struct embeddings should be used."""
-        return self._mode.__contains__(MODE_EMBEDDINGS)
 
     @classmethod
     def get_type(cls) -> str:

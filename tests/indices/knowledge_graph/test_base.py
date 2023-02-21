@@ -5,10 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.data_structs.data_structs import MODE_EMBEDDINGS
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
-from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
+from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, EMBEDDINGS_ONLY_QUERY, HYBRID_QUERY
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
@@ -134,7 +133,7 @@ def test_build_kg_similarity(
     documents: List[Document],
 ) -> None:
     """Test build knowledge graph."""
-    index = GPTKnowledgeGraphIndex(documents, mode=MODE_EMBEDDINGS)
+    index = GPTKnowledgeGraphIndex(documents, include_embeddings=True)
     # get embedding dict from KG index struct
     rel_text_embeddings = index.index_struct.embedding_dict
 
@@ -221,9 +220,10 @@ def test_query_similarity(
     documents: List[Document],
 ) -> None:
     """Test query."""
-    index = GPTKnowledgeGraphIndex(documents, mode=MODE_EMBEDDINGS)
+    index = GPTKnowledgeGraphIndex(documents, include_embeddings=True)
 
     # returns only two rel texts to use for generating response
+    # uses hyrbid query by default
     response = index.query("foo", top_k_embeddings=2)
     assert isinstance(response.extra_info, dict)
     assert len(response.extra_info["kg_rel_texts"]) == 2
