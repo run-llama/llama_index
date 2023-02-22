@@ -3,6 +3,7 @@ import logging
 from typing import Any, Optional, cast
 
 from gpt_index.data_structs.table import SQLStructTable
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
@@ -132,7 +133,13 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
 
         if self._sql_context_container.index_struct is None:
             table_desc_list = []
-            for table_desc in self._sql_context_container.context_dict.values():
+            context_dict = self._sql_context_container.context_dict
+            if context_dict is None:
+                raise ValueError(
+                    "context_dict must be provided. There is currently no "
+                    "table context."
+                )
+            for table_desc in context_dict.values():
                 table_desc_list.append(table_desc)
             tables_desc_str = "\n\n".join(table_desc_list)
         else:
@@ -153,7 +160,7 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
                 self._llm_predictor,
                 self._prompt_helper,
                 self._embed_model,
-                self._docstore,
+                cast(DocumentStore, self._docstore),
                 # NOTE: this is hacky, it's a way of passing current index registry
                 cast(IndexRegistry, getattr(self._query_runner, "index_registry")),
                 query_configs=[query_config],
@@ -162,7 +169,7 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
                 use_async=self._use_async,
             )
             response = query_runner.query(context_query_str, self._index_struct)
-            tables_desc_str = response.response
+            tables_desc_str = str(response)
 
         return tables_desc_str
 
@@ -181,5 +188,6 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         logging.debug(f"> Predicted SQL query: {sql_query_str}")
 
         response_str, extra_info = self._sql_database.run_sql(sql_query_str)
+        extra_info["sql_query"] = sql_query_str
         response = Response(response=response_str, extra_info=extra_info)
         return response

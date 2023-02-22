@@ -6,7 +6,6 @@ from typing import Any, Dict, Optional
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.data_structs import IndexStruct
-from gpt_index.docstore import DocumentStore
 
 
 @dataclass

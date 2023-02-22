@@ -35,6 +35,11 @@ class SQLContextContainerBuilder:
     instead of context_dict. index can also be derived from existing
     context.
 
+    Args:
+        sql_database (SQLDatabase): SQL database
+        context_dict (Optional[Dict[str, str]]): context dict
+        index (Optional[BaseGPTIndex]): gpt index
+
     """
 
     def __init__(
@@ -64,12 +69,13 @@ class SQLContextContainerBuilder:
 
     @classmethod
     def from_documents(
-        documents: Sequence[BaseDocument],
+        cls,
+        documents_dict: Dict[str, List[BaseDocument]],
         sql_database: SQLDatabase,
     ) -> "SQLContextContainerBuilder":
         """Build context from documents."""
         context_builder = SQLContextBuilder(sql_database)
-        context_dict = context_builder.build_all_context_from_documents(documents)
+        context_dict = context_builder.build_all_context_from_documents(documents_dict)
         return SQLContextContainerBuilder(sql_database, context_dict=context_dict)
 
     def _build_context_from_sql_database(
@@ -122,7 +128,6 @@ class SQLContextContainerBuilder:
         index_struct = self.index.index_struct if self.index else None
         index_docstore = self.index.docstore if self.index else None
         return SQLContextContainer(
-            sql_database=self.sql_database,
             context_dict=self.context_dict,
             index_struct=index_struct,
             index_docstore=index_docstore,
@@ -242,9 +247,10 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         #     context_dict = {}
 
         # TODO: index_struct context_dict is deprecated, we're migrating storage of information to here.
-        self.sql_context_container = sql_context_container or SQLContextContainer(
-            sql_database
-        )
+        if sql_context_container is None:
+            container_builder = SQLContextContainerBuilder(sql_database)
+            sql_context_container = container_builder.build_context_container()
+        self.sql_context_container = sql_context_container
 
         # # validate context_dict keys are valid table names
         # context_keys = set(context_dict.keys())
