@@ -103,9 +103,6 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         SQLContextContainer.
 
         """
-        # if self._table_context_str is not None:
-        #     return self._table_context_str
-
         if self._sql_context_container.context_str is not None:
             tables_desc_str = self._sql_context_container.context_str
         else:

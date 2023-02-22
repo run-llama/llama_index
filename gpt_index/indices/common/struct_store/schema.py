@@ -24,25 +24,3 @@ class SQLContextContainer(DataClassJsonMixin):
 
     context_dict: Optional[Dict[str, str]] = None
     context_str: Optional[str] = None
-
-    # index_struct: Optional[IndexStruct] = None
-    # index_docstore: Optional[DocumentStore] = None
-
-    # def __init__(
-    #     self,
-    #     # sql_database: SQLDatabase,
-    #     context_dict: Optional[Dict[str, str]] = None,
-    #     # index: Optional[BaseGPTIndex] = None,
-    #     index_struct: Optional[IndexStruct] = None,
-    #     index_docstore: Optional[DocumentStore] = None,
-    # ):
-    #     """Initialize params."""
-    #     self.context_dict = context_dict
-    #     # TODO: translate
-    #     # self.index = index
-
-    #     self.index_struct = index_struct
-    #     self.index_docstore = index_docstore
-
-    # # def build_index(self, index_cls: Type[BaseGPTIndex]) -> None:
-    # #     """Build index structure."""
