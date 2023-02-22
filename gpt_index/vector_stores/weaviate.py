@@ -68,7 +68,7 @@ class WeaviateVectorStore(VectorStore):
     def add(
         self,
         embedding_results: List[NodeEmbeddingResult],
-    ) -> None:
+    ) -> List[str]:
         """Add document to index."""
         for result in embedding_results:
             node = result.node
@@ -76,6 +76,7 @@ class WeaviateVectorStore(VectorStore):
             # TODO: always store embedding in node
             node.embedding = embedding
             WeaviateNode.from_gpt_index(self._client, node, self._class_prefix)
+        return [result.id for result in embedding_results]
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

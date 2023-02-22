@@ -20,7 +20,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         index_struct: IndexDict,
         vector_store: VectorStore,
         embed_model: Optional[BaseEmbedding] = None,
-        similarity_top_k: Optional[int] = 1,
+        similarity_top_k: int = 1,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -45,12 +45,13 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
                 raise ValueError(
                     "Vector store query result should return at least one of nodes or ids."
                 )
+            assert isinstance(self._index_struct, IndexDict)
             nodes = self._index_struct.get_nodes(query_result.ids)
             query_result.nodes = nodes
 
         log_vector_store_query_result(query_result)
 
-        if similarity_tracker is not None:
+        if similarity_tracker is not None and query_result.similarities is not None:
             for node, similarity in zip(query_result.nodes, query_result.similarities):
                 similarity_tracker.add(node, similarity)
 

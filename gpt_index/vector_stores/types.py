@@ -19,7 +19,7 @@ class NodeEmbeddingResult:
 class VectorStoreQueryResult:
     nodes: Optional[List[Node]] = None
     similarities: Optional[List[float]] = None
-    ids: Optional[List[int]] = None
+    ids: Optional[List[str]] = None
 
 
 class VectorStore(Protocol):

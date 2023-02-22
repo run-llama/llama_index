@@ -117,7 +117,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         document: BaseDocument,
     ) -> None:
         """Add document to index."""
-        nodes = self._get_nodes_from_document(document, text_splitter)
+        nodes = self._get_nodes_from_document(document)
         embedding_results = self._get_node_embedding_results(
             nodes, set(), document.get_doc_id()
         )

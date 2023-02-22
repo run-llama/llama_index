@@ -62,11 +62,12 @@ class QdrantVectorStore(VectorStore):
             "collection_name": self._collection_name,
         }
 
-    def add(self, embedding_results: List[NodeEmbeddingResult]) -> None:
+    def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
         """Add document to index."""
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
 
+        ids = []
         for result in embedding_results:
             new_id = result.id
             node = result.node
@@ -106,6 +107,8 @@ class QdrantVectorStore(VectorStore):
                     )
                 ],
             )
+            ids.append(new_id)
+        return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

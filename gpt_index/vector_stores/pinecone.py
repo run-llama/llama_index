@@ -62,8 +62,9 @@ class PineconeVectorStore(VectorStore):
     def add(
         self,
         embedding_results: List[NodeEmbeddingResult],
-    ) -> None:
+    ) -> List[str]:
         """Add document to index."""
+        ids = []
         for result in embedding_results:
             new_id = result.id
             node = result.node
@@ -84,6 +85,8 @@ class PineconeVectorStore(VectorStore):
             self._pinecone_index.upsert(
                 [(new_id, text_embedding, metadata)], **self._pinecone_kwargs
             )
+            ids.append(new_id)
+        return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

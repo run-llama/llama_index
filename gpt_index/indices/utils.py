@@ -48,7 +48,7 @@ def truncate_text(text: str, max_length: int) -> str:
 
 def log_vector_store_query_result(
     result: VectorStoreQueryResult, logger: Optional[logging.Logger] = None
-):
+) -> None:
     logger = logger or _logger
 
     assert result.ids is not None
