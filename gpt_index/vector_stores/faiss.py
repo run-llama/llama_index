@@ -9,7 +9,7 @@ from typing import Any, List, cast
 
 import numpy as np
 
-from gpt_index.indices.vector_store.types import (
+from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,

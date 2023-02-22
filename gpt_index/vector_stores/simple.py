@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
-from gpt_index.indices.vector_store.types import (
+from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,

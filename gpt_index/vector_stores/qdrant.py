@@ -7,12 +7,12 @@ import logging
 from typing import Any, List, Optional, cast
 
 from gpt_index.data_structs.data_structs import Node
-from gpt_index.indices.vector_store.types import (
+from gpt_index.utils import get_new_id
+from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
 )
-from gpt_index.utils import get_new_id
 
 
 class QdrantVectorStore(VectorStore):

@@ -4,29 +4,26 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Dict, List, Optional, Sequence, Set, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Type
 
 from gpt_index.data_structs.data_structs import IndexDict, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.query_runner import QueryRunner
-from gpt_index.indices.query.query_transform import BaseQueryTransform
-from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
+from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
-from gpt_index.indices.vector_store.faiss import FaissVectorStore
-from gpt_index.indices.vector_store.pinecone import PineconeVectorStore
-from gpt_index.indices.vector_store.qdrant import QdrantVectorStore
-from gpt_index.indices.vector_store.simple import SimpleVectorStore
-from gpt_index.indices.vector_store.types import NodeEmbeddingResult, VectorStore
-from gpt_index.indices.vector_store.weaviate import WeaviateVectorStore
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.response.schema import Response
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
+from gpt_index.vector_stores.faiss import FaissVectorStore
+from gpt_index.vector_stores.pinecone import PineconeVectorStore
+from gpt_index.vector_stores.qdrant import QdrantVectorStore
+from gpt_index.vector_stores.simple import SimpleVectorStore
+from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
+from gpt_index.vector_stores.weaviate import WeaviateVectorStore
 
 VECTOR_STORE_CONFIG_DICT_KEY = 'vector_store'
 
@@ -202,7 +199,7 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         vector_store = SimpleVectorStore(
             simple_vector_store_data_dict=simple_vector_store_data_dict
             )
-        
+
         super().__init__(
             documents=documents,
             index_struct=index_struct,

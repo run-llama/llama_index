@@ -3,7 +3,7 @@ import logging
 from typing import Optional
 
 from gpt_index.indices.utils import truncate_text
-from gpt_index.indices.vector_store.types import VectorStoreQueryResult
+from gpt_index.vector_stores.types import VectorStoreQueryResult
 
 _logger = logging.getLogger(__name__)
 

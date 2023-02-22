@@ -7,13 +7,13 @@ An index that that is built on top of an existing vector store.
 import logging
 from typing import Any, List, Optional, cast
 
-from gpt_index.indices.vector_store.types import (
+from gpt_index.readers.weaviate.data_structs import WeaviateNode
+from gpt_index.readers.weaviate.utils import get_default_class_prefix
+from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
 )
-from gpt_index.readers.weaviate.data_structs import WeaviateNode
-from gpt_index.readers.weaviate.utils import get_default_class_prefix
 
 
 class WeaviateVectorStore(VectorStore):

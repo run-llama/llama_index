@@ -8,8 +8,8 @@ from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.vector_store.types import VectorStore
-from gpt_index.indices.vector_store.utils import log_vector_store_query_result
+from gpt_index.indices.utils import log_vector_store_query_result
+from gpt_index.vector_stores.types import VectorStore
 
 
 class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
