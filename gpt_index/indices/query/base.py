@@ -110,6 +110,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._include_summary = include_summary
 
         self._response_kwargs = response_kwargs or {}
+        self._use_async = use_async
         self.response_builder = ResponseBuilder(
             self._prompt_helper,
             self._llm_predictor,
