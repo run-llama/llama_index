@@ -10,7 +10,6 @@ from gpt_index.indices.query.base import BaseQueryRunner
 from gpt_index.indices.query.query_transform import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
-from gpt_index.indices.vector_store.types import VectorStore
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
 

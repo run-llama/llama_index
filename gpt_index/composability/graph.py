@@ -18,7 +18,7 @@ from gpt_index.indices.query.schema import QueryBundle, QueryConfig
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.indices.vector_store.index import (
+from gpt_index.indices.vector_store import (
     GPTFaissIndex,
     GPTPineconeIndex,
     GPTQdrantIndex,
