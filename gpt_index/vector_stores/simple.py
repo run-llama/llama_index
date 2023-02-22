@@ -53,7 +53,7 @@ class SimpleVectorStore(VectorStore):
     @property
     def client(self) -> None:
         return None
-    
+
     @property
     def config_dict(self) -> dict:
         return {
@@ -85,7 +85,9 @@ class SimpleVectorStore(VectorStore):
             del self._data.embedding_dict[text_id]
             del self._data.text_id_to_doc_id[text_id]
 
-    def query(self, query_embedding: List[float], similarity_top_k: int) -> VectorStoreQueryResult:
+    def query(
+        self, query_embedding: List[float], similarity_top_k: int
+    ) -> VectorStoreQueryResult:
         """Get nodes for response."""
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()

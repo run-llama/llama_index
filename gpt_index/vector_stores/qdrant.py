@@ -38,10 +38,7 @@ class QdrantVectorStore(VectorStore):
     """
 
     def __init__(
-        self,
-        collection_name: str,
-        client: Optional[Any] = None,
-        **kwargs: Any
+        self, collection_name: str, client: Optional[Any] = None, **kwargs: Any
     ) -> None:
         """Init params."""
         import_err_msg = (
@@ -58,17 +55,14 @@ class QdrantVectorStore(VectorStore):
         self._client = cast(qdrant_client.QdrantClient, client)
         self._collection_name = collection_name
         self._collection_initialized = self._collection_exists(collection_name)
-    
+
     @property
     def config_dict(self) -> dict:
         return {
-            'collection_name': self._collection_name,
+            "collection_name": self._collection_name,
         }
 
-    def add(
-        self,
-        embedding_results: List[NodeEmbeddingResult]
-    ) -> None:
+    def add(self, embedding_results: List[NodeEmbeddingResult]) -> None:
         """Add document to index."""
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
@@ -153,9 +147,10 @@ class QdrantVectorStore(VectorStore):
         except UnexpectedResponse:
             return False
 
-    def query(self, 
-        query_embedding: List[float], 
-        similarity_top_k: int, 
+    def query(
+        self,
+        query_embedding: List[float],
+        similarity_top_k: int,
     ) -> VectorStoreQueryResult:
         from qdrant_client.http.models.models import Payload
 

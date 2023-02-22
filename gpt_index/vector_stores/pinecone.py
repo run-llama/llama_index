@@ -64,14 +64,16 @@ class PineconeVectorStore(VectorStore):
         embedding_results: List[NodeEmbeddingResult],
     ) -> None:
         """Add document to index."""
-        for result in embedding_results: 
+        for result in embedding_results:
             new_id = result.id
             node = result.node
             text_embedding = result.embedding
 
             # assign a new_id if current_id conflicts with existing ids
             while True:
-                fetch_result = self._pinecone_index.fetch([new_id], **self._pinecone_kwargs)
+                fetch_result = self._pinecone_index.fetch(
+                    [new_id], **self._pinecone_kwargs
+                )
                 if len(fetch_result["vectors"]) == 0:
                     break
                 new_id = get_new_id(set())
@@ -94,7 +96,9 @@ class PineconeVectorStore(VectorStore):
     def client(self) -> Any:
         return self._pinecone_index
 
-    def query(self, query_embedding: List[float], similarity_top_k: int) -> VectorStoreQueryResult:
+    def query(
+        self, query_embedding: List[float], similarity_top_k: int
+    ) -> VectorStoreQueryResult:
         """Get nodes for response."""
         response = self._pinecone_index.query(
             query_embedding,
@@ -114,5 +118,6 @@ class PineconeVectorStore(VectorStore):
             top_k_nodes.append(node)
             top_k_scores.append(match.score)
 
-        return VectorStoreQueryResult(nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids)
-
+        return VectorStoreQueryResult(
+            nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
+        )

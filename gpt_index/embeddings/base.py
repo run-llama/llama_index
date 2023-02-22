@@ -14,14 +14,12 @@ EMB_TYPE = List
 DEFAULT_EMBED_BATCH_SIZE = 10
 
 
-
 class SimilarityMode(str, Enum):
     """Modes for similarity/distance."""
 
     DEFAULT = "cosine"
     DOT_PRODUCT = "dot_product"
     EUCLIDEAN = "euclidean"
-
 
 
 def mean_agg(embeddings: List[List[float]]) -> List[float]:
@@ -44,6 +42,7 @@ def similarity(
         product = np.dot(embedding1, embedding2)
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
         return product / norm
+
 
 class BaseEmbedding:
     """Base class for embeddings."""

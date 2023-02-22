@@ -25,7 +25,8 @@ from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
 from gpt_index.vector_stores.weaviate import WeaviateVectorStore
 
-VECTOR_STORE_CONFIG_DICT_KEY = 'vector_store'
+VECTOR_STORE_CONFIG_DICT_KEY = "vector_store"
+
 
 class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     """Base GPT Vector Store Index.
@@ -36,6 +37,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
     """
+
     index_struct_cls = IndexDict
 
     def __init__(
@@ -69,7 +71,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             QueryMode.DEFAULT: GPTVectorStoreIndexQuery,
             QueryMode.EMBEDDING: GPTVectorStoreIndexQuery,
         }
-    
+
     def _get_node_embedding_results(
         self, nodes: List[Node], existing_node_ids: Set, doc_id: str
     ) -> List[NodeEmbeddingResult]:
@@ -78,7 +80,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.
 
-    """
+        """
         id_to_node_map: Dict[str, Node] = {}
         id_to_embed_map: Dict[str, List[float]] = {}
 
@@ -98,7 +100,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         result_tups = []
         for id, embed in id_to_embed_map.items():
-            result_tups.append(NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id))
+            result_tups.append(
+                NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
+            )
         return result_tups
 
     def _build_fallback_text_splitter(self) -> TextSplitter:
@@ -114,14 +118,18 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     ) -> None:
         """Add document to index."""
         nodes = self._get_nodes_from_document(document, text_splitter)
-        embedding_results = self._get_node_embedding_results(nodes, set(), document.get_doc_id())
+        embedding_results = self._get_node_embedding_results(
+            nodes, set(), document.get_doc_id()
+        )
 
         new_ids = self._vector_store.add(embedding_results)
 
         for result, new_id in zip(embedding_results, new_ids):
             index_struct.add_node(result.node, text_id=new_id)
 
-    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IndexDict:
+    def _build_index_from_documents(
+        self, documents: Sequence[BaseDocument]
+    ) -> IndexDict:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
         for d in documents:
@@ -138,7 +146,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self._vector_store.delete(doc_id)
 
     @classmethod
-    def load_from_dict(cls, result_dict: Dict[str, Any], **kwargs: Any) -> "BaseGPTIndex":
+    def load_from_dict(
+        cls, result_dict: Dict[str, Any], **kwargs: Any
+    ) -> "BaseGPTIndex":
         """Load index from string (in JSON-format).
 
         This method loads the index from a JSON string. The index data
@@ -157,7 +167,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             BaseGPTIndex: The loaded index.
 
         """
-        if 'vector_store' in result_dict:
+        if "vector_store" in result_dict:
             config_dict = result_dict[VECTOR_STORE_CONFIG_DICT_KEY]
         return super().load_from_dict(result_dict, **config_dict, **kwargs)
 
@@ -198,7 +208,7 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
     ) -> None:
         vector_store = SimpleVectorStore(
             simple_vector_store_data_dict=simple_vector_store_data_dict
-            )
+        )
 
         super().__init__(
             documents=documents,
@@ -306,4 +316,3 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
-        

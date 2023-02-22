@@ -9,14 +9,14 @@ from gpt_index.embeddings.base import similarity as default_similarity_fn
 def get_top_k_embeddings(
     query_embedding: List[float],
     embeddings: List[List[float]],
-    similarity_fn: Optional[Callable[..., float]]=None,
+    similarity_fn: Optional[Callable[..., float]] = None,
     similarity_top_k: Optional[int] = None,
     embedding_ids: Optional[List] = None,
 ) -> Tuple[List[float], List]:
     """Get top nodes by similarity to the query."""
     if embedding_ids is None:
         embedding_ids = [i for i in range(len(embeddings))]
-    
+
     similarity_fn = similarity_fn or default_similarity_fn
 
     similarities = []

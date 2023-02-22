@@ -216,7 +216,7 @@ class IndexDict(IndexStruct):
     def get_node(self, text_id: str) -> Node:
         """Get node."""
         return self.get_nodes([text_id])[0]
- 
+
     def delete(self, doc_id: str) -> None:
         """Delete a document."""
         text_ids_to_delete = set()
@@ -236,6 +236,7 @@ class IndexDict(IndexStruct):
     def get_type(cls) -> str:
         """Get type."""
         return "dict"
+
 
 @dataclass
 class KG(IndexStruct):

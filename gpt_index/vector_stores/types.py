@@ -40,5 +40,7 @@ class VectorStore(Protocol):
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         ...
 
-    def query(self, query_embedding: List[float], similarity_top_k: int) -> VectorStoreQueryResult:
+    def query(
+        self, query_embedding: List[float], similarity_top_k: int
+    ) -> VectorStoreQueryResult:
         ...

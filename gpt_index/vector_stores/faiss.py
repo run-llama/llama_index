@@ -77,11 +77,8 @@ class FaissVectorStore(VectorStore):
     def client(self) -> Any:
         return self._faiss_index
 
-
     @classmethod
-    def load(
-        cls, save_path: str
-    ) -> "FaissVectorStore":
+    def load(cls, save_path: str) -> "FaissVectorStore":
         """Load index from disk.
 
         This method loads the index from a JSON file stored on disk. The index data
@@ -137,12 +134,12 @@ class FaissVectorStore(VectorStore):
         """Delete a document."""
         raise NotImplementedError("Delete not yet implemented for Faiss index.")
 
-    def query(self, query_embedding: List[float], similarity_top_k: int) -> VectorStoreQueryResult:
+    def query(
+        self, query_embedding: List[float], similarity_top_k: int
+    ) -> VectorStoreQueryResult:
         """Get nodes for response."""
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
-        dists, indices = self._faiss_index.search(
-            query_embedding_np, similarity_top_k
-        )
+        dists, indices = self._faiss_index.search(query_embedding_np, similarity_top_k)
         dists = [d[0] for d in dists]
         # if empty, then return an empty response
         if len(indices) == 0:

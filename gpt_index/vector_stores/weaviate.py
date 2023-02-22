@@ -56,17 +56,14 @@ class WeaviateVectorStore(VectorStore):
         self._class_prefix = class_prefix or get_default_class_prefix()
         # try to create schema
         WeaviateNode.create_schema(self._client, self._class_prefix)
-        
 
     @property
     def client(self) -> Any:
         return self._client
-    
+
     @property
     def config_dict(self) -> dict:
-        return {
-            'class_prefix': self._class_prefix
-        }
+        return {"class_prefix": self._class_prefix}
 
     def add(
         self,
@@ -78,15 +75,15 @@ class WeaviateVectorStore(VectorStore):
             embedding = result.embedding
             # TODO: always store embedding in node
             node.embedding = embedding
-            WeaviateNode.from_gpt_index(
-                self._client, node, self._class_prefix
-            )
+            WeaviateNode.from_gpt_index(self._client, node, self._class_prefix)
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         WeaviateNode.delete_document(self._client, doc_id, self._class_prefix)
 
-    def query(self, query_embedding: List[float], similarity_top_k: int) -> VectorStoreQueryResult:
+    def query(
+        self, query_embedding: List[float], similarity_top_k: int
+    ) -> VectorStoreQueryResult:
         """Get nodes for response."""
         nodes = WeaviateNode.to_gpt_index_list(
             self.client,
@@ -94,9 +91,7 @@ class WeaviateVectorStore(VectorStore):
             vector=query_embedding,
             object_limit=similarity_top_k,
         )
-        nodes = nodes[: similarity_top_k]
+        nodes = nodes[:similarity_top_k]
         node_idxs = [str(i) for i in range(len(nodes))]
 
         return VectorStoreQueryResult(nodes=nodes, ids=node_idxs)
-        
-
