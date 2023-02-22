@@ -85,11 +85,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         response_kwargs: Optional[Dict] = None,
         similarity_cutoff: Optional[float] = None,
         use_async: bool = True,
-        **kwargs,
     ) -> None:
         """Initialize with parameters."""
-        del kwargs  # Unused
-
         if index_struct is None:
             raise ValueError("index_struct must be provided.")
         self._validate_index_struct(index_struct)
