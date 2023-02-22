@@ -8,12 +8,9 @@ import numpy as np
 import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.vector_store.index.base import (
-    GPTFaissIndex,
-    GPTSimpleVectorIndex,
-)
-from gpt_index.indices.vector_store.simple import SimpleVectorStore
+from gpt_index.indices.vector_store.base import GPTFaissIndex, GPTSimpleVectorIndex
 from gpt_index.readers.schema.base import Document
+from gpt_index.vector_stores.simple import SimpleVectorStore
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
