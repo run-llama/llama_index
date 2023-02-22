@@ -10,11 +10,10 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.chroma import GPTChromaIndexQuery
 from gpt_index.indices.vector_store.base import BaseGPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
-from gpt_index.utils import get_new_id
 
 
 class GPTChromaIndex(BaseGPTVectorStoreIndex[ChromaIndexStruct]):
@@ -48,6 +47,7 @@ class GPTChromaIndex(BaseGPTVectorStoreIndex[ChromaIndexStruct]):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
+        text_splitter: Optional[TextSplitter] = None,
         chroma_collection: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
@@ -67,8 +67,10 @@ class GPTChromaIndex(BaseGPTVectorStoreIndex[ChromaIndexStruct]):
         super().__init__(
             documents=documents,
             index_struct=index_struct,
+            text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
+            text_splitter=text_splitter,
             **kwargs,
         )
 
@@ -84,12 +86,11 @@ class GPTChromaIndex(BaseGPTVectorStoreIndex[ChromaIndexStruct]):
         self,
         index_struct: ChromaIndexStruct,
         document: BaseDocument,
-        text_splitter: TokenTextSplitter,
     ) -> None:
         """Add document to index."""
         if not self._collection:
             raise ValueError("Collection not initialized")
-        nodes = self._get_nodes_from_document(document, text_splitter)
+        nodes = self._get_nodes_from_document(document)
 
         esxisting_ids = set(self._collection.get()["ids"])
 
@@ -118,11 +119,9 @@ class GPTChromaIndex(BaseGPTVectorStoreIndex[ChromaIndexStruct]):
     ) -> ChromaIndexStruct:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
-        )
+
         for d in documents:
-            self._add_document_to_index(index_struct, d, text_splitter)
+            self._add_document_to_index(index_struct, d)
 
         return index_struct
 

@@ -1,6 +1,6 @@
 """Chroma Reader."""
 
-from typing import Any, Optional
+from typing import Any
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
