@@ -23,8 +23,10 @@ class SQLContextContainer(DataClassJsonMixin):
     """
 
     context_dict: Optional[Dict[str, str]] = None
-    index_struct: Optional[IndexStruct] = None
-    index_docstore: Optional[DocumentStore] = None
+    context_str: Optional[str] = None
+
+    # index_struct: Optional[IndexStruct] = None
+    # index_docstore: Optional[DocumentStore] = None
 
     # def __init__(
     #     self,

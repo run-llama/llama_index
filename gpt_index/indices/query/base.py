@@ -85,6 +85,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         response_kwargs: Optional[Dict] = None,
         similarity_cutoff: Optional[float] = None,
         use_async: bool = True,
+        recursive: bool = False,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -120,6 +121,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         )
 
         self.similarity_cutoff = similarity_cutoff
+        self._recursive = recursive
 
     def _should_use_node(
         self, node: Node, similarity_tracker: Optional[SimilarityTracker] = None
@@ -166,11 +168,13 @@ class BaseGPTIndexQuery(Generic[IS]):
         logging.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
         is_index_struct = False
-        # if self._query_runner is not None, assume we want to do a recursive
+        # if recursive and self._query_runner is not None,
+        # assume we want to do a recursive
         # query. In order to not perform a recursive query, make sure
         # _query_runner is None.
         if (
-            self._query_runner is not None
+            self._recursive
+            and self._query_runner is not None
             and node.ref_doc_id is not None
             and self._docstore is not None
         ):

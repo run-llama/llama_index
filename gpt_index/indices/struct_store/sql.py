@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Type, Union, cast
 
 from dataclasses_json import DataClassJsonMixin
 from sqlalchemy import Table
@@ -14,7 +14,8 @@ from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.common.struct_store.base import SQLContextBuilder
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.query.query_transform import BaseQueryTransform
+from gpt_index.indices.query.schema import QueryBundle, QueryMode
 from gpt_index.indices.query.struct_store.sql import (
     GPTNLStructStoreIndexQuery,
     GPTSQLStructStoreIndexQuery,
@@ -23,7 +24,13 @@ from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.base import Document
+from gpt_index.response.schema import Response
 from gpt_index.schema import BaseDocument
+
+DEFAULT_CONTEXT_QUERY_TMPL = (
+    "Please return the relevant tables (including the full schema) "
+    "for the following query: {orig_query_str}"
+)
 
 
 class SQLContextContainerBuilder:
@@ -47,6 +54,7 @@ class SQLContextContainerBuilder:
         sql_database: SQLDatabase,
         context_dict: Optional[Dict[str, str]] = None,
         index: Optional[BaseGPTIndex] = None,
+        context_str: Optional[str] = None,
     ):
         """Initialize params."""
         self.sql_database = sql_database
@@ -66,6 +74,7 @@ class SQLContextContainerBuilder:
         )
         self.context_dict = full_context_dict
         self.index = index
+        self.context_str = context_str
 
     @classmethod
     def from_documents(
@@ -98,7 +107,7 @@ class SQLContextContainerBuilder:
     def derive_index_from_context(
         self,
         index_cls: Type[BaseGPTIndex],
-        store_index: bool = False,
+        store_index: bool = True,
         **index_kwargs: Any,
     ) -> BaseGPTIndex:
         """Derive index from context."""
@@ -119,18 +128,39 @@ class SQLContextContainerBuilder:
             self.index = index
         return index
 
+    def query_index_for_context(
+        self,
+        query_str: Union[str, QueryBundle],
+        query_tmpl: Optional[str] = DEFAULT_CONTEXT_QUERY_TMPL,
+        store_context_str: bool = True,
+        **index_kwargs: Any,
+    ) -> str:
+        """Query index for context."""
+        if self.index is None:
+            raise ValueError(
+                "Cannot query index for context if index is not specified."
+            )
+        if query_tmpl is None:
+            context_query_str = query_str
+        else:
+            context_query_str = query_tmpl.format(orig_query_str=query_str)
+        response = self.index.query(context_query_str, **index_kwargs)
+        context_str = str(response.response)
+        if store_context_str:
+            self.context_str = context_str
+        return context_str
+
     def set_index(self, index: BaseGPTIndex) -> None:
         """Set index."""
         self.index = index
 
-    def build_context_container(self) -> SQLContextContainer:
+    def build_context_container(
+        self,
+    ) -> SQLContextContainer:
         """Build index structure."""
-        index_struct = self.index.index_struct if self.index else None
-        index_docstore = self.index.docstore if self.index else None
         return SQLContextContainer(
+            context_str=self.context_str,
             context_dict=self.context_dict,
-            index_struct=index_struct,
-            index_docstore=index_docstore,
         )
 
 
@@ -156,19 +186,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             Specifying the Table object explicitly, instead of
             the table name, allows you to pass in a view.
             Either table_name or table must be specified.
-        table_context_dict (Optional[Dict[str, str]]): Optional table context to use.
-            If specified,
-            sql_context_builder and context_documents cannot be specified.
-        sql_context_builder (Optional[SQLContextBuilder]): SQL context builder.
-            If specified, the context builder will be used to build
-            context for the specified table, which will then be used during
-            query-time. Also if specified, context_documents must be specified,
-            and table_context cannot be specified.
-        context_documents_dict (Optional[Dict[str, List[BaseDocument]]]):
-            Optional context
-            documents to inform the sql_context_builder. Must be specified if
-            sql_context_builder is specified. Cannot be specified if table_context
-            is specified.
+        sql_context_container (Optional[SQLContextContainer]): SQL context container
 
     """
 
@@ -183,9 +201,6 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         table_name: Optional[str] = None,
         table: Optional[Table] = None,
         ref_doc_id_column: Optional[str] = None,
-        # table_context_dict: Optional[Dict[str, str]] = None,
-        # sql_context_builder: Optional[SQLContextBuilder] = None,
-        # context_documents_dict: Optional[Dict[str, List[BaseDocument]]] = None,
         sql_context_container: Optional[SQLContextContainer] = None,
         **kwargs: Any,
     ) -> None:
@@ -219,49 +234,11 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             **kwargs,
         )
 
-        # if context builder is specified, then add to context_dict
-        # if table_context_dict is not None and (
-        #     sql_context_builder is not None or context_documents_dict is not None
-        # ):
-        #     raise ValueError(
-        #         "Cannot specify both table_context_dict and "
-        #         "sql_context_builder/context_documents_dict"
-        #     )
-        # if sql_context_builder is not None:
-        #     if context_documents_dict is None:
-        #         raise ValueError(
-        #             "context_documents_dict must be specified if "
-        #             "sql_context_builder is specified"
-        #         )
-        #     context_documents_dict = cast(
-        #         Dict[str, List[BaseDocument]], context_documents_dict
-        #     )
-        #     context_dict: Dict[
-        #         str, str
-        #     ] = sql_context_builder.build_all_context_from_documents(
-        #         context_documents_dict
-        #     )
-        # elif table_context_dict is not None:
-        #     context_dict = table_context_dict
-        # else:
-        #     context_dict = {}
-
         # TODO: index_struct context_dict is deprecated, we're migrating storage of information to here.
         if sql_context_container is None:
             container_builder = SQLContextContainerBuilder(sql_database)
             sql_context_container = container_builder.build_context_container()
         self.sql_context_container = sql_context_container
-
-        # # validate context_dict keys are valid table names
-        # context_keys = set(context_dict.keys())
-        # if not context_keys.issubset(set(self.sql_database.get_table_names())):
-        #     raise ValueError(
-        #         "Invalid context table names: "
-        #         f"{context_keys - set(self.sql_database.get_table_names())}"
-        #     )
-
-        # self._index_struct.context_dict.update(context_dict)
-        # self._sql_context_builder = sql_context_builder
 
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
@@ -298,7 +275,8 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         super()._preprocess_query(mode, query_kwargs)
         # pass along sql_database, table_name
         query_kwargs["sql_database"] = self.sql_database
-        query_kwargs["sql_context_container"] = self.sql_context_container
+        if "sql_context_container" not in query_kwargs:
+            query_kwargs["sql_context_container"] = self.sql_context_container
         if mode == QueryMode.DEFAULT:
             query_kwargs["ref_doc_id_column"] = self.ref_doc_id_column
 
