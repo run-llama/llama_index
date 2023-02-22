@@ -12,7 +12,7 @@ from gpt_index.embeddings.langchain import LangchainEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 
 # structured
-from gpt_index.indices.common.struct_store.base import SQLContextBuilder
+from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 
 # indices
 from gpt_index.indices.keyword_table import (
@@ -85,6 +85,10 @@ from gpt_index.readers.download import download_loader
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from gpt_index.token_counter.mock_embed_model import MockEmbedding
 
+# NOTE: keep for backwards compatibility
+SQLContextBuilder = SQLDocumentContextBuilder
+
+
 __all__ = [
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
@@ -132,6 +136,7 @@ __all__ = [
     "MockEmbedding",
     "SQLDatabase",
     "GPTIndexMemory",
+    "SQLDocumentContextBuilder",
     "SQLContextBuilder",
     "PromptHelper",
     "QueryConfig",

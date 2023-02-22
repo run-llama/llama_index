@@ -1,7 +1,7 @@
 """Struct store schema."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from dataclasses_json import DataClassJsonMixin
 

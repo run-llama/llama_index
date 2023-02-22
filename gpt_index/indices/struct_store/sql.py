@@ -1,167 +1,22 @@
-"""SQLite structured store."""
-
+"""SQL Structured Store."""
 import json
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence, Type, Union, cast
+from typing import Any, Dict, Optional, Sequence, Type, cast
 
-from dataclasses_json import DataClassJsonMixin
 from sqlalchemy import Table
 
-from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.data_structs.table import SQLStructTable, StructDatapoint
-from gpt_index.docstore import DocumentStore
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.indices.common.struct_store.base import SQLContextBuilder
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.query_transform import BaseQueryTransform
-from gpt_index.indices.query.schema import QueryBundle, QueryMode
+from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.sql import (
     GPTNLStructStoreIndexQuery,
     GPTSQLStructStoreIndexQuery,
 )
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
+from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.readers.base import Document
-from gpt_index.response.schema import Response
-from gpt_index.schema import BaseDocument
-
-DEFAULT_CONTEXT_QUERY_TMPL = (
-    "Please return the relevant tables (including the full schema) "
-    "for the following query: {orig_query_str}"
-)
-
-
-class SQLContextContainerBuilder:
-    """SQLContextContainerBuilder.
-
-    Build container in indices, pass state to queries.
-
-    NOTE: if index is specified, that will be used as context
-    instead of context_dict. index can also be derived from existing
-    context.
-
-    Args:
-        sql_database (SQLDatabase): SQL database
-        context_dict (Optional[Dict[str, str]]): context dict
-        index (Optional[BaseGPTIndex]): gpt index
-
-    """
-
-    def __init__(
-        self,
-        sql_database: SQLDatabase,
-        context_dict: Optional[Dict[str, str]] = None,
-        index: Optional[BaseGPTIndex] = None,
-        context_str: Optional[str] = None,
-    ):
-        """Initialize params."""
-        self.sql_database = sql_database
-
-        # if context_dict provided, validate that all keys are valid table names
-        if context_dict is not None:
-            # validate context_dict keys are valid table names
-            context_keys = set(context_dict.keys())
-            if not context_keys.issubset(set(self.sql_database.get_table_names())):
-                raise ValueError(
-                    "Invalid context table names: "
-                    f"{context_keys - set(self.sql_database.get_table_names())}"
-                )
-        # build full context from sql_database
-        full_context_dict = self._build_context_from_sql_database(
-            sql_database, current_context=context_dict
-        )
-        self.context_dict = full_context_dict
-        self.index = index
-        self.context_str = context_str
-
-    @classmethod
-    def from_documents(
-        cls,
-        documents_dict: Dict[str, List[BaseDocument]],
-        sql_database: SQLDatabase,
-    ) -> "SQLContextContainerBuilder":
-        """Build context from documents."""
-        context_builder = SQLContextBuilder(sql_database)
-        context_dict = context_builder.build_all_context_from_documents(documents_dict)
-        return SQLContextContainerBuilder(sql_database, context_dict=context_dict)
-
-    def _build_context_from_sql_database(
-        self,
-        sql_database: SQLDatabase,
-        current_context: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, str]:
-        """Get tables schema + optional context as a single string."""
-        current_context = current_context or {}
-        result_context = {}
-        for table_name in sql_database.get_table_names():
-            table_desc = sql_database.get_single_table_info(table_name)
-            table_text = f"Schema of table {table_name}:\n" f"{table_desc}\n"
-            if table_name in current_context:
-                table_text += f"Context of table {table_name}:\n"
-                table_text += current_context[table_name]
-            result_context[table_name] = table_text
-        return result_context
-
-    def derive_index_from_context(
-        self,
-        index_cls: Type[BaseGPTIndex],
-        store_index: bool = True,
-        **index_kwargs: Any,
-    ) -> BaseGPTIndex:
-        """Derive index from context."""
-        if self.index is not None and not store_index:
-            raise ValueError(
-                "Cannot derive index from context if index is already specified."
-            )
-
-        context_docs = []
-        for table_name, context_str in self.context_dict.items():
-            doc = Document(context_str, extra_info={"table_name": table_name})
-            context_docs.append(doc)
-        index = index_cls(
-            documents=context_docs,
-            **index_kwargs,
-        )
-        if store_index:
-            self.index = index
-        return index
-
-    def query_index_for_context(
-        self,
-        query_str: Union[str, QueryBundle],
-        query_tmpl: Optional[str] = DEFAULT_CONTEXT_QUERY_TMPL,
-        store_context_str: bool = True,
-        **index_kwargs: Any,
-    ) -> str:
-        """Query index for context."""
-        if self.index is None:
-            raise ValueError(
-                "Cannot query index for context if index is not specified."
-            )
-        if query_tmpl is None:
-            context_query_str = query_str
-        else:
-            context_query_str = query_tmpl.format(orig_query_str=query_str)
-        response = self.index.query(context_query_str, **index_kwargs)
-        context_str = str(response.response)
-        if store_context_str:
-            self.context_str = context_str
-        return context_str
-
-    def set_index(self, index: BaseGPTIndex) -> None:
-        """Set index."""
-        self.index = index
-
-    def build_context_container(
-        self,
-    ) -> SQLContextContainer:
-        """Build index structure."""
-        return SQLContextContainer(
-            context_str=self.context_str,
-            context_dict=self.context_dict,
-        )
 
 
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
@@ -186,7 +41,8 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             Specifying the Table object explicitly, instead of
             the table name, allows you to pass in a view.
             Either table_name or table must be specified.
-        sql_context_container (Optional[SQLContextContainer]): SQL context container
+        sql_context_container (Optional[SQLContextContainer]): SQL context container.
+            an be generated from a SQLContextContainerBuilder.
 
     """
 
@@ -234,7 +90,8 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             **kwargs,
         )
 
-        # TODO: index_struct context_dict is deprecated, we're migrating storage of information to here.
+        # TODO: index_struct context_dict is deprecated,
+        # we're migrating storage of information to here.
         if sql_context_container is None:
             container_builder = SQLContextContainerBuilder(sql_database)
             sql_context_container = container_builder.build_context_container()

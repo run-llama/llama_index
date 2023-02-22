@@ -3,12 +3,9 @@ import logging
 from typing import Any, Optional, cast
 
 from gpt_index.data_structs.table import SQLStructTable
-from gpt_index.docstore import DocumentStore
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.query_runner import QueryRunner
-from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
-from gpt_index.indices.registry import IndexRegistry
+from gpt_index.indices.query.schema import QueryBundle, QueryMode
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from gpt_index.prompts.prompts import TextToSQLPrompt
