@@ -29,7 +29,7 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
-from gpt_index.indices.vector_store.base import (
+from gpt_index.indices.vector_store import (
     GPTFaissIndex,
     GPTPineconeIndex,
     GPTQdrantIndex,
