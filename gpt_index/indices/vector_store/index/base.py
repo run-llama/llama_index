@@ -141,7 +141,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self._vector_store.delete(doc_id)
 
     @classmethod
-    def load_from_dict(cls, result_dict: str, **kwargs: Any) -> "BaseGPTIndex":
+    def load_from_dict(cls, result_dict: Dict[str, Any], **kwargs: Any) -> "BaseGPTIndex":
         """Load index from string (in JSON-format).
 
         This method loads the index from a JSON string. The index data
@@ -162,7 +162,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         """
         if 'vector_store' in result_dict:
             config_dict = result_dict[VECTOR_STORE_CONFIG_DICT_KEY]
-        return super().load_from_dict(result_dict, **kwargs, **config_dict)
+        return super().load_from_dict(result_dict, **config_dict, **kwargs)
 
     def save_to_dict(self, **save_kwargs: Any) -> dict:
         """Save to string.
@@ -181,43 +181,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         out_dict[VECTOR_STORE_CONFIG_DICT_KEY] = self._vector_store.config_dict
         return out_dict
 
-    def query(
-        self,
-        query_str: Union[str, QueryBundle],
-        mode: str = QueryMode.DEFAULT,
-        query_transform: Optional[BaseQueryTransform] = None,
-        **query_kwargs: Any,
-    ) -> Response:
-        """Answer a query.
-
-        When `query` is called, we query the index with the given `mode` and
-        `query_kwargs`. The `mode` determines the type of query to run, and
-        `query_kwargs` are parameters that are specific to the query type.
-
-        For a comprehensive documentation of available `mode` and `query_kwargs` to
-        query a given index, please visit :ref:`Ref-Query`.
-
-
-        """
-        mode_enum = QueryMode(mode)
-        self._preprocess_query(mode_enum, query_kwargs)
-        # TODO: pass in query config directly
-        query_config = QueryConfig(
-            index_struct_type=self._index_struct.get_type(),
-            query_mode=mode_enum,
-            query_kwargs=query_kwargs,
-        )
-        query_runner = QueryRunner(
-            self._llm_predictor,
-            self._prompt_helper,
-            self._embed_model,
-            self._docstore,
-            self._index_registry,
-            query_configs=[query_config],
-            query_transform=query_transform,
-            recursive=False,
-        )
-        return query_runner.query(query_str, self._index_struct, self._vector_store)
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        super()._preprocess_query(mode, query_kwargs)
+        # NOTE: Pass along vector store instance to query objects
+        # TODO: refactor this to be more explicit
+        query_kwargs["vector_store"] = self._vector_store
 
 
 class GPTSimpleVectorIndex(GPTVectorStoreIndex):
@@ -341,3 +309,4 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
+        
