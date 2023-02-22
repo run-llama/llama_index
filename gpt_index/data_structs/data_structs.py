@@ -336,6 +336,20 @@ class QdrantIndexStruct(IndexStruct):
 
 
 @dataclass
+class ChromaIndexStruct(IndexStruct):
+    """An index struct for Chroma.
+
+    Docs are stored in Chroma directly.
+
+    """
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "chroma"
+
+
+@dataclass
 class KG(IndexStruct):
     """A table of keywords mapping keywords to text chunks."""
 
