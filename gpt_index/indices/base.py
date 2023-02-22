@@ -400,7 +400,7 @@ class BaseGPTIndex(Generic[IS]):
         """Get query map."""
 
     @classmethod
-    def load_from_dict(cls, result_dict: str, **kwargs: Any) -> "BaseGPTIndex":
+    def load_from_dict(cls, result_dict: Dict[str, Any], **kwargs: Any) -> "BaseGPTIndex":
         """Load index from dict."""
         if "index_struct" in result_dict:
             index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])

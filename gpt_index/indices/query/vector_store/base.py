@@ -41,7 +41,8 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         query_result = self._vector_store.query(query_embedding, self._similarity_top_k)
 
         if query_result.nodes is None:
-            assert query_result.ids is not None
+            if query_result.ids is None:
+                raise ValueError('Vector store query result should return at least one of nodes or ids.')
             nodes = self._index_struct.get_nodes(query_result.ids)
             query_result.nodes = nodes
 
