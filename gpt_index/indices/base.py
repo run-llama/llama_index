@@ -472,7 +472,7 @@ class BaseGPTIndex(Generic[IS]):
             exclude_ids=[self.index_struct.get_doc_id()]
         ):
             raise ValueError(
-                "Cannot call `save_to_string` on index if index is composed on top of "
+                "Cannot call save index if index is composed on top of "
                 "other indices. Please define a `ComposableGraph` and use "
                 "`save_to_string` and `load_from_string` on that instead."
             )
