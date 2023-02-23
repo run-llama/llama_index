@@ -156,7 +156,7 @@ pinecone.create_index(
     pod_type="p1"
 )
 index = pinecone.Index("quickstart")
-vector_store = PineconeVectorStore(piecone_index=index)
+vector_store = PineconeVectorStore(pinecone_index=index)
 
 # 2. Load documents, build the GPTFaissIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
