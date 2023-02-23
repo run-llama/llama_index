@@ -4,8 +4,9 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Dict, List, Optional, Sequence, Set, Type
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type
 
+from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import IndexDict, Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
@@ -49,12 +50,14 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         embed_model: Optional[BaseEmbedding] = None,
         vector_store: Optional[VectorStore] = None,
         text_splitter: Optional[TextSplitter] = None,
+        use_async: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._vector_store = vector_store or SimpleVectorStore()
 
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self._use_async = use_async
         super().__init__(
             documents=documents,
             index_struct=index_struct,
@@ -105,11 +108,67 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             )
         return result_tups
 
+    async def _aget_node_embedding_results(
+        self, nodes: List[Node], existing_node_ids: Set, doc_id: str
+    ) -> List[NodeEmbeddingResult]:
+        """Asynchronously get tuples of id, node, and embedding.
+
+        Allows us to store these nodes in a vector store.
+        Embeddings are called in batches.
+
+        """
+        id_to_node_map: Dict[str, Node] = {}
+        id_to_embed_map: Dict[str, List[float]] = {}
+
+        text_queue: List[Tuple[str, str]] = []
+        for n in nodes:
+            new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
+            if n.embedding is None:
+                text_queue.append((new_id, n.get_text()))
+            else:
+                id_to_embed_map[new_id] = n.embedding
+
+            id_to_node_map[new_id] = n
+
+        # call embedding model to get embeddings
+        (
+            result_ids,
+            result_embeddings,
+        ) = await self._embed_model.aget_queued_text_embeddings(text_queue)
+        for new_id, text_embedding in zip(result_ids, result_embeddings):
+            id_to_embed_map[new_id] = text_embedding
+
+        result_tups = []
+        for id, embed in id_to_embed_map.items():
+            result_tups.append(
+                NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
+            )
+        return result_tups
+
     def _build_fallback_text_splitter(self) -> TextSplitter:
         # if not specified, use "smart" text splitter to ensure chunks fit in prompt
         return self._prompt_helper.get_text_splitter_given_prompt(
             self.text_qa_template, 1
         )
+
+    async def _async_add_document_to_index(
+        self,
+        index_struct: IndexDict,
+        document: BaseDocument,
+    ) -> None:
+        """Asynchronously add document to index."""
+        nodes = self._get_nodes_from_document(document)
+        embedding_results = await self._aget_node_embedding_results(
+            nodes, set(), document.get_doc_id()
+        )
+
+        new_ids = self._vector_store.add(embedding_results)
+
+        # if the vector store doesn't store text, we need to add the nodes to the
+        # index struct
+        if not self._vector_store.stores_text:
+            for result, new_id in zip(embedding_results, new_ids):
+                index_struct.add_node(result.node, text_id=new_id)
 
     def _add_document_to_index(
         self,
@@ -135,8 +194,14 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     ) -> IndexDict:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
-        for d in documents:
-            self._add_document_to_index(index_struct, d)
+        if self._use_async:
+            tasks = [
+                self._async_add_document_to_index(index_struct, d) for d in documents
+            ]
+            run_async_tasks(tasks)
+        else:
+            for d in documents:
+                self._add_document_to_index(index_struct, d)
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
