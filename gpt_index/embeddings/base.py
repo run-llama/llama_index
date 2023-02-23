@@ -14,17 +14,34 @@ EMB_TYPE = List
 DEFAULT_EMBED_BATCH_SIZE = 10
 
 
-def mean_agg(embeddings: List[List[float]]) -> List[float]:
-    """Mean aggregation for embeddings."""
-    return list(np.array(embeddings).mean(axis=0))
-
-
 class SimilarityMode(str, Enum):
     """Modes for similarity/distance."""
 
     DEFAULT = "cosine"
     DOT_PRODUCT = "dot_product"
     EUCLIDEAN = "euclidean"
+
+
+def mean_agg(embeddings: List[List[float]]) -> List[float]:
+    """Mean aggregation for embeddings."""
+    return list(np.array(embeddings).mean(axis=0))
+
+
+def similarity(
+    embedding1: EMB_TYPE,
+    embedding2: EMB_TYPE,
+    mode: SimilarityMode = SimilarityMode.DEFAULT,
+) -> float:
+    """Get embedding similarity."""
+    if mode == SimilarityMode.EUCLIDEAN:
+        return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
+    elif mode == SimilarityMode.DOT_PRODUCT:
+        product = np.dot(embedding1, embedding2)
+        return product
+    else:
+        product = np.dot(embedding1, embedding2)
+        norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
+        return product / norm
 
 
 class BaseEmbedding:
@@ -124,15 +141,7 @@ class BaseEmbedding:
         mode: SimilarityMode = SimilarityMode.DEFAULT,
     ) -> float:
         """Get embedding similarity."""
-        if mode == SimilarityMode.EUCLIDEAN:
-            return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
-        elif mode == SimilarityMode.DOT_PRODUCT:
-            product = np.dot(embedding1, embedding2)
-            return product
-        else:
-            product = np.dot(embedding1, embedding2)
-            norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
-            return product / norm
+        return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
 
     @property
     def total_tokens_used(self) -> int:

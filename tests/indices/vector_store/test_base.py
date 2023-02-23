@@ -8,9 +8,12 @@ import numpy as np
 import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.vector_store.faiss import GPTFaissIndex
-from gpt_index.indices.vector_store.simple import GPTSimpleVectorIndex
+from gpt_index.indices.vector_store.vector_indices import (
+    GPTFaissIndex,
+    GPTSimpleVectorIndex,
+)
 from gpt_index.readers.schema.base import Document
+from gpt_index.vector_stores.simple import SimpleVectorStore
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
@@ -210,7 +213,7 @@ def test_faiss_query(
     faiss_index = MockFaissIndex()
 
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTFaissIndex(documents, faiss_index=faiss_index, **index_kwargs)
+    index = GPTFaissIndex(documents=documents, faiss_index=faiss_index, **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
@@ -250,7 +253,9 @@ def test_build_simple(
     ]
     for text_id in index.index_struct.id_map.keys():
         node = index.index_struct.get_node(text_id)
-        embedding = index.index_struct.embedding_dict[text_id]
+        # NOTE: this test breaks abstraction
+        assert isinstance(index._vector_store, SimpleVectorStore)
+        embedding = index._vector_store.get(text_id)
         assert (node.text, embedding) in actual_node_tups
 
 
@@ -289,7 +294,9 @@ def test_simple_insert(
     ]
     for text_id in index.index_struct.id_map.keys():
         node = index.index_struct.get_node(text_id)
-        embedding = index.index_struct.embedding_dict[text_id]
+        # NOTE: this test breaks abstraction
+        assert isinstance(index._vector_store, SimpleVectorStore)
+        embedding = index._vector_store.get(text_id)
         assert (node.text, embedding) in actual_node_tups
 
 
@@ -333,7 +340,9 @@ def test_simple_delete(
     ]
     for text_id in index.index_struct.id_map.keys():
         node = index.index_struct.get_node(text_id)
-        embedding = index.index_struct.embedding_dict[text_id]
+        # NOTE: this test breaks abstraction
+        assert isinstance(index._vector_store, SimpleVectorStore)
+        embedding = index._vector_store.get(text_id)
         assert (node.text, embedding, node.ref_doc_id) in actual_node_tups
 
     # test insert
@@ -348,7 +357,9 @@ def test_simple_delete(
     ]
     for text_id in index.index_struct.id_map.keys():
         node = index.index_struct.get_node(text_id)
-        embedding = index.index_struct.embedding_dict[text_id]
+        # NOTE: this test breaks abstraction
+        assert isinstance(index._vector_store, SimpleVectorStore)
+        embedding = index._vector_store.get(text_id)
         assert (node.text, embedding, node.ref_doc_id) in actual_node_tups
 
 

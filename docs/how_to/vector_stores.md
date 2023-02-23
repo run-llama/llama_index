@@ -61,7 +61,6 @@ For instance, this is an example usage of the Pinecone data loader `PineconeRead
 
 GPT Index also supports using a vector store itself as an index.
 These are found in the following classes:
-
 - `GPTSimpleVectorIndex`
 - `GPTFaissIndex`
 - `GPTWeaviateIndex`
@@ -69,46 +68,130 @@ These are found in the following classes:
 - `GPTQdrantIndex`
 - `GPTChromaIndex`
 
+
+An API reference of each vector index is [found here](/reference/indices/vector_store.md).
+
 Similar to any other index within GPT Index (tree, keyword table, list), this index can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.
 
 Once constructed, the index can be used for querying.
 
-**Faiss Index Construction/Querying**
-![](/_static/vector_stores/faiss_index_0.png)
-![](/_static/vector_stores/faiss_index_1.png)
-
 **Simple Index Construction/Querying**
-![](/_static/vector_stores/simple_index_0.png)
+```python
+from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+
+# Load documents, build the GPTSimpleVectorIndex
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTSimpleVectorIndex(documents)
+
+# Query index
+response = index.query("What did the author do growing up?")
+
+```
+
+**Faiss Index Construction/Querying**
+```python
+from gpt_index import GPTFaissIndex, SimpleDirectoryReader
+import faiss
+
+# Creating a faiss index
+d = 1536
+faiss_index = faiss.IndexFlatL2(d)
+
+# Load documents, build the GPTFaissIndex
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTFaissIndex(documents, faiss_index=faiss_index)
+
+# Query index
+response = index.query("What did the author do growing up?")
+
+```
 
 **Weaviate Index Construction/Querying**
-![](/_static/vector_stores/weaviate_index_0.png)
+```python
+from gpt_index import GPTWeaviateIndex, SimpleDirectoryReader
+import weaviate
+
+# Creating a Weaviate vector store
+resource_owner_config = weaviate.AuthClientPassword(
+    username="<username>",
+    password="<password>",
+)
+client = weaviate.Client(
+    "https://<cluster-id>.semi.network/", auth_client_secret=resource_owner_config
+)
+
+# Load documents, build the GPTWeaviateIndex
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTWeaviateIndex(documents, weaviate_client=client)
+
+# Query index
+response = index.query("What did the author do growing up?")
+
+```
 
 **Pinecone Index Construction/Querying**
-![](/_static/vector_stores/pinecone_index_0.png)
+```python
+from gpt_index import GPTPineconeIndex, SimpleDirectoryReader
+import pinecone
+
+# Creating a Pinecone index
+api_key = "api_key"
+pinecone.init(api_key=api_key, environment="us-west1-gcp")
+pinecone.create_index(
+    "quickstart", 
+    dimension=1536, 
+    metric="euclidean", 
+    pod_type="p1"
+)
+index = pinecone.Index("quickstart")
+
+# Load documents, build the GPTPineconeIndex
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTPineconeIndex(documents, pinecone_index=index)
+
+# Query index
+response = index.query("What did the author do growing up?")
+```
 
 **Qdrant Index Construction/Querying**
-![](/_static/vector_stores/qdrant_index_0.png)
+```python
+import qdrant_client
+from gpt_index import GPTQdrantIndex, SimpleDirectoryReader
+
+# Creating a Qdrant vector store
+client = qdrant_client.QdrantClient(
+    host="<qdrant-host>",
+    qpi_key="<qdrant-api-key>",
+    https=True
+)
+collection_name = "paul_graham"
+
+# Load documents, build the GPTFaissIndex
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTQdrantIndex(documents, collection_name=collection_name, client=client)
+
+# Query index
+response = index.query("What did the author do growing up?")
+```
 
 **Chroma Index Construction/Querying**
 
 ```python
-
 import chromadb
 from gpt_index import GPTChromaIndex, SimpleDirectoryReader
 
+# Creating a Chroma vector store
 # By default, Chroma will operate purely in-memory.
 chroma_client = chromadb.Client()
 chroma_collection = chroma_client.create_collection("quickstart")
 
-# load documents
-documents = SimpleDirectoryReader('../../examples/paul_graham_essay/data').load_data()
-
-# N.B: OPENAI_API_KEY must be set as an environment variable.
+# Load documents, build the GPTFaissIndex
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTChromaIndex(documents, chroma_collection=chroma_collection)
 
-response = index.query("What did the author do growing up?", chroma_collection=chroma_collection)
-display(Markdown(f"<b>{response}</b>"))
+# Query index
+response = index.query("What did the author do growing up?")
 
 ```
 

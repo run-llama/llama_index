@@ -76,7 +76,9 @@ class QueryRunner(BaseQueryRunner):
         return query_kwargs
 
     def query(
-        self, query_str_or_bundle: Union[str, QueryBundle], index_struct: IndexStruct
+        self,
+        query_str_or_bundle: Union[str, QueryBundle],
+        index_struct: IndexStruct,
     ) -> Response:
         """Run query."""
         # NOTE: Currently, query transform is only run once

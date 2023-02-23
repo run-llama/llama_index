@@ -7,12 +7,12 @@ from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar
 
 from gpt_index.data_structs.table import BaseStructTable, StructDatapoint
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from gpt_index.prompts.prompts import SchemaExtractPrompt
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import truncate_text
 
 BST = TypeVar("BST", bound=BaseStructTable)
 

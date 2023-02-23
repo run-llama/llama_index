@@ -1,17 +1,21 @@
 """Vector-store based data structures."""
 
-from gpt_index.indices.vector_store.chroma import GPTChromaIndex
-from gpt_index.indices.vector_store.faiss import GPTFaissIndex
-from gpt_index.indices.vector_store.pinecone import GPTPineconeIndex
-from gpt_index.indices.vector_store.qdrant import GPTQdrantIndex
-from gpt_index.indices.vector_store.simple import GPTSimpleVectorIndex
-from gpt_index.indices.vector_store.weaviate import GPTWeaviateIndex
+from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
+from gpt_index.indices.vector_store.vector_indices import (
+    GPTChromaIndex,
+    GPTFaissIndex,
+    GPTPineconeIndex,
+    GPTQdrantIndex,
+    GPTSimpleVectorIndex,
+    GPTWeaviateIndex,
+)
 
 __all__ = [
-    "GPTFaissIndex",
+    "GPTVectorStoreIndex",
     "GPTSimpleVectorIndex",
-    "GPTWeaviateIndex",
+    "GPTFaissIndex",
     "GPTPineconeIndex",
+    "GPTWeaviateIndex",
     "GPTQdrantIndex",
     "GPTChromaIndex",
 ]
