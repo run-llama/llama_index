@@ -25,6 +25,7 @@ from gpt_index.indices.vector_store import (
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
 )
+from gpt_index.indices.vector_store.chroma import GPTChromaIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
 
@@ -46,6 +47,7 @@ DEFAULT_INDEX_REGISTRY_MAP: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.QDRANT: GPTQdrantIndex,
     IndexStructType.SQL: GPTSQLStructStoreIndex,
     IndexStructType.KG: GPTKnowledgeGraphIndex,
+    IndexStructType.CHROMA: GPTChromaIndex,
 }
 
 
