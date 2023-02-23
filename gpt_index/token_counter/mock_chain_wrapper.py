@@ -47,13 +47,13 @@ def _mock_answer(max_tokens: int, prompt_args: Dict) -> str:
 def _mock_refine(max_tokens: int, prompt: Prompt, prompt_args: Dict) -> str:
     """Mock refine."""
     # tokens in response shouldn't be larger than tokens in
-    # `existing_answer` + `context_msg`
+    # `existing_answer` + `context_str`
     # NOTE: if existing_answer is not in prompt_args, we need to get it from the prompt
     if "existing_answer" not in prompt_args:
         existing_answer = prompt.partial_dict["existing_answer"]
     else:
         existing_answer = prompt_args["existing_answer"]
-    num_ctx_tokens = len(globals_helper.tokenizer(prompt_args["context_msg"]))
+    num_ctx_tokens = len(globals_helper.tokenizer(prompt_args["context_str"]))
     num_exist_tokens = len(globals_helper.tokenizer(existing_answer))
     token_limit = min(num_ctx_tokens + num_exist_tokens, max_tokens)
     return " ".join(["answer"] * token_limit)

@@ -86,7 +86,7 @@ def test_compact_response(
     """Test give response."""
     # test response with ResponseMode.COMPACT
     # NOTE: here we want to guarante that prompts have 0 extra tokens
-    mock_refine_prompt_tmpl = "{query_str}{existing_answer}{context_msg}"
+    mock_refine_prompt_tmpl = "{query_str}{existing_answer}{context_str}"
     mock_refine_prompt = RefinePrompt(mock_refine_prompt_tmpl)
 
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
@@ -136,7 +136,7 @@ def test_tree_summarize_response(
     """Test give response."""
     # test response with ResponseMode.TREE_SUMMARIZE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
-    mock_refine_prompt_tmpl = "{query_str}{existing_answer}{context_msg}"
+    mock_refine_prompt_tmpl = "{query_str}{existing_answer}{context_str}"
     mock_refine_prompt = RefinePrompt(mock_refine_prompt_tmpl)
 
     mock_qa_prompt_tmpl = "{context_str}{query_str}"

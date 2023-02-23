@@ -145,14 +145,14 @@ refine_str = (
     "We have the opportunity to refine the existing answer"
     "(only if needed) with some more datapoints below.\n"
     "------------\n"
-    "{context_msg}\n"
+    "{context_str}\n"
     "------------\n"
     "Given the new context, refine the original answer to better "
     "answer the question. "
     "If the context isn't useful, return the original answer."
 )
 refine_prompt = Prompt(
-    input_variables=["query_str", "existing_answer", "context_msg"],
+    input_variables=["query_str", "existing_answer", "context_str"],
     template=refine_str,
 )
 

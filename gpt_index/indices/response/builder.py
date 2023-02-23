@@ -106,7 +106,7 @@ class ResponseBuilder:
         for cur_text_chunk in text_chunks:
             response, _ = self.llm_predictor.predict(
                 refine_template,
-                context_msg=cur_text_chunk,
+                context_str=cur_text_chunk,
             )
             logging.debug(f"> Refined response: {response}")
         return response

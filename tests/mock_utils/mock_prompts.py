@@ -25,7 +25,7 @@ MOCK_QUERY_PROMPT_TMPL = "{num_chunks}\n" "{context_list}\n" "{query_str}'\n"
 MOCK_QUERY_PROMPT = TreeSelectPrompt(MOCK_QUERY_PROMPT_TMPL)
 
 
-MOCK_REFINE_PROMPT_TMPL = "{query_str}\n" "{existing_answer}\n" "{context_msg}\n"
+MOCK_REFINE_PROMPT_TMPL = "{query_str}\n" "{existing_answer}\n" "{context_str}\n"
 MOCK_REFINE_PROMPT = RefinePrompt(MOCK_REFINE_PROMPT_TMPL)
 
 
