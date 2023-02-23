@@ -99,12 +99,6 @@ class GPTPineconeIndex(BaseGPTVectorStoreIndex[PineconeIndexStruct]):
 
         id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
         for new_id, node, text_embedding in id_node_embed_tups:
-            # assign a new_id if current_id conflicts with existing ids
-            while True:
-                result = self._pinecone_index.fetch([new_id], **self._pinecone_kwargs)
-                if len(result["vectors"]) == 0:
-                    break
-                new_id = get_new_id(set())
             metadata = {
                 "text": node.get_text(),
                 "doc_id": document.get_doc_id(),
