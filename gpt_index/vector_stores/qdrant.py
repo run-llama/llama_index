@@ -181,6 +181,7 @@ class QdrantVectorStore(VectorStore):
 
         nodes = []
         similarities = []
+        ids = []
         for point in response:
             payload = cast(Payload, point.payload)
             node = Node(
@@ -189,5 +190,6 @@ class QdrantVectorStore(VectorStore):
             )
             nodes.append(node)
             similarities.append(point.score)
+            ids.append(point.id)
 
-        return VectorStoreQueryResult(nodes=nodes, similarities=similarities)
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)

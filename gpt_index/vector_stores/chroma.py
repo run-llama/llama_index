@@ -106,16 +106,19 @@ class ChromaVectorStore(VectorStore):
         logging.debug(f"> Top {len(results['documents'])} nodes:")
         nodes = []
         similarities = []
+        ids = []
         for result in zip(
             results["ids"],
             results["documents"],
             results["metadatas"],
             results["distances"],
         ):
+            node_id = result[0][0]
             node = Node(
-                ref_doc_id=result[0][0],
+                doc_id=node_id,
                 text=result[1][0],
                 extra_info=result[2][0],
+                ref_doc_id=result[2][0]["document_id"],
             )
             nodes.append(node)
 
@@ -126,5 +129,6 @@ class ChromaVectorStore(VectorStore):
                 f"> [Node {result[0][0]}] [Similarity score: {similarity_score}] "
                 f"{truncate_text(str(result[1][0]), 100)}"
             )
+            ids.append(node_id)
 
-        return VectorStoreQueryResult(nodes=nodes, similarities=similarities)
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
