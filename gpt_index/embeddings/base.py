@@ -151,7 +151,7 @@ class BaseEmbedding:
         cur_batch: List[Tuple[str, str]] = []
         result_ids: List[str] = []
         result_embeddings: List[List[float]] = []
-        embeddings_coroutines = List[Coroutine] = []
+        embeddings_coroutines: List[Coroutine] = []
         for idx, (text_id, text) in enumerate(text_queue):
             cur_batch.append((text_id, text))
             text_tokens_count = len(self._tokenizer(text))
