@@ -143,7 +143,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             result_tups.append(
                 NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
             )
-            result_tups.append((id, id_to_node_map[id], embed))
         return result_tups
 
     def _build_fallback_text_splitter(self) -> TextSplitter:
@@ -159,7 +158,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     ) -> None:
         """Asynchronously add document to index."""
         nodes = self._get_nodes_from_document(document)
-        embedding_results = await self._get_node_embedding_results(
+        embedding_results = await self._aget_node_embedding_results(
             nodes, set(), document.get_doc_id()
         )
 

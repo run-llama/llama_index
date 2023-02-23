@@ -1,7 +1,7 @@
 """Test Faiss index."""
 
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -589,5 +589,6 @@ def test_simple_async(
     ]
     for text_id in index.index_struct.id_map.keys():
         node = index.index_struct.get_node(text_id)
-        embedding = index.index_struct.embedding_dict[text_id]
+        vector_store = cast(SimpleVectorStore, index._vector_store)
+        embedding = vector_store.get(text_id)
         assert (node.text, embedding) in actual_node_tups
