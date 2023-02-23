@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.vector_store.old_indices import (
+from gpt_index.indices.vector_store.vector_indices import (
     GPTFaissIndex,
     GPTSimpleVectorIndex,
 )

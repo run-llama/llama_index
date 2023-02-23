@@ -3,21 +3,22 @@
 Vector Store Index
 ==================
 
-Below we show the vector store index class; it is the main
-interface for specifying a vector store index. To specify a vector store 
-index, you must also specify a Vector Store, shown below. 
+Below we show the vector store index classes.
 
-We still maintain the some vector store index class for backwards compatibility.
-However, these classes are deprecated and will be removed in a future release.
+Each vector store index class is a combination of a base vector store index
+class and a vector store, shown below.
+
+NOTE: the vector store is currently not user-facing but will be soon!
 
 .. toctree::
    :maxdepth: 1
 
    vector_stores/stores.rst
-   vector_stores/old_indices.rst
+   vector_stores/base_index.rst
 
-.. automodule:: gpt_index.indices.vector_store.base
+.. automodule:: gpt_index.indices.vector_store.vector_indices
    :members:
    :inherited-members:
    :exclude-members: delete, docstore, index_struct, index_struct_cls
+
 

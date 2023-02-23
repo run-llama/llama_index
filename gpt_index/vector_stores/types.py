@@ -38,13 +38,6 @@ class VectorStore(Protocol):
 
     stores_text: bool
 
-    # TODO: this is more suitable as a class attribute (but that doesn't
-    # play nice with protocols)
-    # @property
-    # def stores_text(self) -> bool:
-    #     """Whether the vector store stores text."""
-    #     ...
-
     @property
     def client(self) -> Any:
         """Get client."""
