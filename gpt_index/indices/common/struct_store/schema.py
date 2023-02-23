@@ -1,3 +1,4 @@
+"""Common structures for structured indices."""
 from dataclasses import dataclass
 from typing import Dict, Optional
 

@@ -1,6 +1,6 @@
 """Default query for GPTFaissIndex."""
 import logging
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from gpt_index.data_structs.table import SQLStructTable
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer

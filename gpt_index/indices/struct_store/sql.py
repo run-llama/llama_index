@@ -157,7 +157,8 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             BaseGPTIndex: The loaded index.
 
         """
-        # NOTE: also getting deserialized in parent class, figure out how to deal with later
+        # NOTE: also getting deserialized in parent class,
+        # figure out how to deal with later
         result_dict = json.loads(index_string)
         sql_context_container = SQLContextContainer.from_dict(
             result_dict["sql_context_container"]
