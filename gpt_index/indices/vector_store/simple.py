@@ -1,8 +1,8 @@
 """Simple vector store index."""
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
-from gpt_index.data_structs.data_structs import SimpleIndexDict
+from gpt_index.data_structs.data_structs import Node, SimpleIndexDict
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -66,17 +66,11 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
             QueryMode.EMBEDDING: GPTSimpleVectorIndexQuery,
         }
 
-    async def _async_add_document_to_index(
+    def _add_nodes_to_index(
         self,
         index_struct: SimpleIndexDict,
-        document: BaseDocument,
+        id_node_embed_tups: List[Tuple[str, Node, List[float]]],
     ) -> None:
-        """Asynchronously add document to index."""
-        nodes = self._get_nodes_from_document(document)
-
-        id_node_embed_tups = await self._aget_node_embedding_tups(
-            nodes, set(index_struct.nodes_dict.keys())
-        )
         for new_id, node, text_embedding in id_node_embed_tups:
             index_struct.add_node(node, text_id=new_id)
             index_struct.add_to_embedding_dict(new_id, text_embedding)
@@ -88,13 +82,22 @@ class GPTSimpleVectorIndex(BaseGPTVectorStoreIndex[SimpleIndexDict]):
     ) -> None:
         """Add document to index."""
         nodes = self._get_nodes_from_document(document)
-
         id_node_embed_tups = self._get_node_embedding_tups(
             nodes, set(index_struct.nodes_dict.keys())
         )
-        for new_id, node, text_embedding in id_node_embed_tups:
-            index_struct.add_node(node, text_id=new_id)
-            index_struct.add_to_embedding_dict(new_id, text_embedding)
+        self._add_nodes_to_index(index_struct, id_node_embed_tups)
+
+    async def _async_add_document_to_index(
+        self,
+        index_struct: SimpleIndexDict,
+        document: BaseDocument,
+    ) -> None:
+        """Asynchronously add document to index."""
+        nodes = self._get_nodes_from_document(document)
+        id_node_embed_tups = await self._aget_node_embedding_tups(
+            nodes, set(index_struct.nodes_dict.keys())
+        )
+        self._add_nodes_to_index(index_struct, id_node_embed_tups)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

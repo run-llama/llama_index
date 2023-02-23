@@ -4,9 +4,9 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
-from gpt_index.data_structs.data_structs import PineconeIndexStruct
+from gpt_index.data_structs.data_structs import Node, PineconeIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -89,15 +89,11 @@ class GPTPineconeIndex(BaseGPTVectorStoreIndex[PineconeIndexStruct]):
             QueryMode.EMBEDDING: GPTPineconeIndexQuery,
         }
 
-    def _add_document_to_index(
+    def _add_nodes_to_index(
         self,
-        index_struct: PineconeIndexStruct,
         document: BaseDocument,
+        id_node_embed_tups: List[Tuple[str, Node, List[float]]],
     ) -> None:
-        """Add document to index."""
-        nodes = self._get_nodes_from_document(document)
-
-        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
         for new_id, node, text_embedding in id_node_embed_tups:
             # assign a new_id if current_id conflicts with existing ids
             while True:
@@ -112,6 +108,26 @@ class GPTPineconeIndex(BaseGPTVectorStoreIndex[PineconeIndexStruct]):
             self._pinecone_index.upsert(
                 [(new_id, text_embedding, metadata)], **self._pinecone_kwargs
             )
+
+    def _add_document_to_index(
+        self,
+        index_struct: PineconeIndexStruct,
+        document: BaseDocument,
+    ) -> None:
+        """Add document to index."""
+        nodes = self._get_nodes_from_document(document)
+        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
+        self._add_nodes_to_index(document, id_node_embed_tups)
+
+    async def _async_add_document_to_index(
+        self,
+        index_struct: PineconeIndexStruct,
+        document: BaseDocument,
+    ) -> None:
+        """Asynchronously add document to index."""
+        nodes = self._get_nodes_from_document(document)
+        id_node_embed_tups = await self._aget_node_embedding_tups(nodes, set())
+        self._add_nodes_to_index(document, id_node_embed_tups)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

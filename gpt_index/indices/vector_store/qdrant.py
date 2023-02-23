@@ -3,9 +3,9 @@
 An index that is built on top of an existing Qdrant collection.
 
 """
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
-from gpt_index.data_structs.data_structs import QdrantIndexStruct
+from gpt_index.data_structs.data_structs import Node, QdrantIndexStruct
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -96,17 +96,14 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
             QueryMode.EMBEDDING: GPTQdrantIndexQuery,
         }
 
-    def _add_document_to_index(
+    def _add_nodes_to_index(
         self,
         index_struct: QdrantIndexStruct,
         document: BaseDocument,
+        id_node_embed_tups: List[Tuple[str, Node, List[float]]],
     ) -> None:
-        """Add document to index."""
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
-
-        nodes = self._get_nodes_from_document(document)
-        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
 
         for new_id, node, text_embedding in id_node_embed_tups:
             collection_name = index_struct.get_collection_name()
@@ -144,6 +141,26 @@ class GPTQdrantIndex(BaseGPTVectorStoreIndex[QdrantIndexStruct]):
                     )
                 ],
             )
+
+    def _add_document_to_index(
+        self,
+        index_struct: QdrantIndexStruct,
+        document: BaseDocument,
+    ) -> None:
+        """Add document to index."""
+        nodes = self._get_nodes_from_document(document)
+        id_node_embed_tups = self._get_node_embedding_tups(nodes, set())
+        self._add_nodes_to_index(index_struct, document, id_node_embed_tups)
+
+    async def _async_add_document_to_index(
+        self,
+        index_struct: QdrantIndexStruct,
+        document: BaseDocument,
+    ) -> None:
+        """Asynchronously add document to index."""
+        nodes = self._get_nodes_from_document(document)
+        id_node_embed_tups = await self._aget_node_embedding_tups(nodes, set())
+        self._add_nodes_to_index(index_struct, document, id_node_embed_tups)
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument]

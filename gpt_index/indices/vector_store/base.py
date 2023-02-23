@@ -4,10 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
-import asyncio
-import functools
 from abc import abstractmethod
-from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, Generic, List, Optional, Sequence, Set, Tuple, TypeVar
 
 from gpt_index.async_utils import run_async_tasks
