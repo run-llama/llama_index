@@ -497,7 +497,6 @@ class BaseGPTIndex(Generic[IS]):
             str: The JSON string of the index.
 
         """
-
         out_dict = self.save_to_dict(**save_kwargs)
         return json.dumps(out_dict, **save_kwargs)
 

@@ -17,26 +17,21 @@ from gpt_index.vector_stores.types import (
 
 
 class PineconeVectorStore(VectorStore):
-    """GPT Pinecone Index.
+    """Pinecone Vector Store.
 
-    The GPTPineconeIndex is a data structure where nodes are keyed by
-    embeddings, and those embeddings are stored within a Pinecone index.
-    During index construction, the document texts are chunked up,
-    converted to nodes with text; they are then encoded in
-    document embeddings stored within Pinecone.
+    In this vector store, embeddings and docs are stored within a
+    Pinecone index.
 
     During query time, the index uses Pinecone to query for the top
-    k most similar nodes, and synthesizes an answer from the
-    retrieved nodes.
+    k most similar nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
-        chunk_size_limit (int): Maximum number of tokens per chunk. NOTE:
-            in Pinecone the default is 2048 due to metadata size restrictions.
+        pinecone_index (Optional[pinecone.Index]): Pinecone index instance
+        pinecone_kwargs (Optional[Dict]): kwargs to pass to Pinecone index
+
     """
+
+    stores_text: bool = True
 
     def __init__(
         self,
@@ -57,13 +52,19 @@ class PineconeVectorStore(VectorStore):
 
     @property
     def config_dict(self) -> dict:
+        """Return config dict."""
         return self._pinecone_kwargs
 
     def add(
         self,
         embedding_results: List[NodeEmbeddingResult],
     ) -> List[str]:
-        """Add document to index."""
+        """Add embedding results to index.
+
+        Args
+            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+
+        """
         ids = []
         for result in embedding_results:
             new_id = result.id
@@ -89,7 +90,12 @@ class PineconeVectorStore(VectorStore):
         return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+        """Delete a document.
+
+        Args:
+            doc_id (str): document id
+
+        """
         # delete by filtering on the doc_id metadata
         self._pinecone_index.delete(
             filter={"doc_id": {"$eq": doc_id}}, **self._pinecone_kwargs
@@ -97,12 +103,19 @@ class PineconeVectorStore(VectorStore):
 
     @property
     def client(self) -> Any:
+        """Return Pinecone client."""
         return self._pinecone_index
 
     def query(
         self, query_embedding: List[float], similarity_top_k: int
     ) -> VectorStoreQueryResult:
-        """Get nodes for response."""
+        """Query index for top k most similar nodes.
+
+        Args:
+            query_embedding (List[float]): query embedding
+            similarity_top_k (int): top k most similar nodes
+
+        """
         response = self._pinecone_index.query(
             query_embedding,
             top_k=similarity_top_k,

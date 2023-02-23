@@ -43,7 +43,8 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         if query_result.nodes is None:
             if query_result.ids is None:
                 raise ValueError(
-                    "Vector store query result should return at least one of nodes or ids."
+                    "Vector store query result should return at "
+                    "least one of nodes or ids."
                 )
             assert isinstance(self._index_struct, IndexDict)
             nodes = self._index_struct.get_nodes(query_result.ids)

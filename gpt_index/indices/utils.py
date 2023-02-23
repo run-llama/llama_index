@@ -4,7 +4,7 @@ import re
 from typing import Dict, List, Optional, Set
 
 from gpt_index.data_structs.data_structs import Node
-from gpt_index.utils import globals_helper
+from gpt_index.utils import globals_helper, truncate_text
 from gpt_index.vector_stores.types import VectorStoreQueryResult
 
 _logger = logging.getLogger(__name__)
@@ -41,14 +41,10 @@ def expand_tokens_with_subtokens(tokens: Set[str]) -> Set[str]:
     return results
 
 
-def truncate_text(text: str, max_length: int) -> str:
-    """Truncate text to a maximum length."""
-    return text[: max_length - 3] + "..."
-
-
 def log_vector_store_query_result(
     result: VectorStoreQueryResult, logger: Optional[logging.Logger] = None
 ) -> None:
+    """Log vector store query result."""
     logger = logger or _logger
 
     assert result.ids is not None

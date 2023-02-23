@@ -17,26 +17,19 @@ from gpt_index.vector_stores.types import (
 
 
 class FaissVectorStore(VectorStore):
-    """GPT Faiss Index.
+    """Faiss Vector Store.
 
-    The GPTFaissIndex is a data structure where nodes are keyed by
-    embeddings, and those embeddings are stored within a Faiss index.
-    During index construction, the document texts are chunked up,
-    converted to nodes with text; they are then encoded in
-    document embeddings stored within Faiss.
+    Embeddings are stored within a Faiss index.
 
     During query time, the index uses Faiss to query for the top
-    k most similar nodes, and synthesizes an answer from the
-    retrieved nodes.
+    k embeddings, and returns the corresponding indices.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-        faiss_index (faiss.Index): A Faiss Index object (required). Note: the index
-            will be reset during index construction.
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        faiss_index (faiss.Index): Faiss index instance
+
     """
+
+    stores_text: bool = False
 
     def __init__(
         self,
@@ -57,13 +50,21 @@ class FaissVectorStore(VectorStore):
 
     @property
     def config_dict(self) -> dict:
+        """Return config dict."""
         return {}
 
     def add(
         self,
         embedding_results: List[NodeEmbeddingResult],
     ) -> List[str]:
-        """Add document to index."""
+        """Add embedding results to index.
+
+        NOTE: in the Faiss vector store, we do not store text in Faiss.
+
+        Args
+            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+
+        """
         new_ids = []
         for result in embedding_results:
             text_embedding = result.embedding
@@ -75,30 +76,18 @@ class FaissVectorStore(VectorStore):
 
     @property
     def client(self) -> Any:
+        """Return the faiss index."""
         return self._faiss_index
 
     @classmethod
     def load(cls, save_path: str) -> "FaissVectorStore":
-        """Load index from disk.
-
-        This method loads the index from a JSON file stored on disk. The index data
-        structure itself is preserved completely. If the index is defined over
-        subindices, those subindices will also be preserved (and subindices of
-        those subindices, etc.).
-        In GPTFaissIndex, we allow user to specify an additional
-        `faiss_index_save_path` to load faiss index from a file - that
-        way, the user does not have to recreate the faiss index outside
-        of this class.
+        """Load vector store from disk.
 
         Args:
             save_path (str): The save_path of the file.
-            faiss_index_save_path (Optional[str]): The save_path of the
-                Faiss index file. If not specified, the Faiss index
-                will not be saved to disk.
-            **kwargs: Additional kwargs to pass to the index constructor.
 
         Returns:
-            BaseGPTIndex: The loaded index.
+            FaissVectorStore: The loaded vector store.
 
         """
         import faiss
@@ -112,18 +101,10 @@ class FaissVectorStore(VectorStore):
     ) -> None:
         """Save to file.
 
-        This method stores the index into a JSON file stored on disk.
-        In GPTFaissIndex, we allow user to specify an additional
-        `faiss_index_save_path` to save the faiss index to a file - that
-        way, the user can pass in the same argument in
-        `GPTFaissIndex.load_from_disk` without having to recreate
-        the Faiss index outside of this class.
+        This method saves the vector store to disk.
 
         Args:
             save_path (str): The save_path of the file.
-            faiss_index_save_path (Optional[str]): The save_path of the
-                Faiss index file. If not specified, the Faiss index
-                will not be saved to disk.
 
         """
         import faiss
@@ -131,13 +112,24 @@ class FaissVectorStore(VectorStore):
         faiss.write_index(self._faiss_index, save_path)
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+        """Delete a document.
+
+        Args:
+            doc_id (str): document id
+
+        """
         raise NotImplementedError("Delete not yet implemented for Faiss index.")
 
     def query(
         self, query_embedding: List[float], similarity_top_k: int
     ) -> VectorStoreQueryResult:
-        """Get nodes for response."""
+        """Query index for top k most similar nodes.
+
+        Args:
+            query_embedding (List[float]): query embedding
+            similarity_top_k (int): top k most similar nodes
+
+        """
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
         dists, indices = self._faiss_index.search(query_embedding_np, similarity_top_k)
         dists = [d[0] for d in dists]

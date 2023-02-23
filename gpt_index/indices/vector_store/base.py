@@ -18,13 +18,8 @@ from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
-from gpt_index.vector_stores.chroma import ChromaVectorStore
-from gpt_index.vector_stores.faiss import FaissVectorStore
-from gpt_index.vector_stores.pinecone import PineconeVectorStore
-from gpt_index.vector_stores.qdrant import QdrantVectorStore
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
-from gpt_index.vector_stores.weaviate import WeaviateVectorStore
 
 VECTOR_STORE_CONFIG_DICT_KEY = "vector_store"
 
@@ -125,8 +120,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         new_ids = self._vector_store.add(embedding_results)
 
-        for result, new_id in zip(embedding_results, new_ids):
-            index_struct.add_node(result.node, text_id=new_id)
+        # if the vector store doesn't store text, we need to add the nodes to the
+        # index struct
+        if not self._vector_store.stores_text:
+            for result, new_id in zip(embedding_results, new_ids):
+                index_struct.add_node(result.node, text_id=new_id)
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument]
@@ -194,151 +192,3 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         # NOTE: Pass along vector store instance to query objects
         # TODO: refactor this to be more explicit
         query_kwargs["vector_store"] = self._vector_store
-
-
-class GPTSimpleVectorIndex(GPTVectorStoreIndex):
-    def __init__(
-        self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        simple_vector_store_data_dict: Optional[dict] = None,
-        **kwargs: Any,
-    ) -> None:
-        vector_store = SimpleVectorStore(
-            simple_vector_store_data_dict=simple_vector_store_data_dict
-        )
-
-        super().__init__(
-            documents=documents,
-            index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            vector_store=vector_store,
-            **kwargs,
-        )
-
-
-class GPTFaissIndex(GPTVectorStoreIndex):
-    def __init__(
-        self,
-        faiss_index: Any,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        **kwargs: Any,
-    ) -> None:
-        vector_store = FaissVectorStore(faiss_index)
-
-        super().__init__(
-            documents=documents,
-            index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            vector_store=vector_store,
-            **kwargs,
-        )
-
-
-class GPTPineconeIndex(GPTVectorStoreIndex):
-    def __init__(
-        self,
-        pinecone_index: Any,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        **kwargs: Any,
-    ) -> None:
-        vector_store = PineconeVectorStore(pinecone_index=pinecone_index)
-
-        super().__init__(
-            documents=documents,
-            index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            vector_store=vector_store,
-            **kwargs,
-        )
-
-
-class GPTWeaviateIndex(GPTVectorStoreIndex):
-    def __init__(
-        self,
-        weaviate_client: Any,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        **kwargs: Any,
-    ) -> None:
-        vector_store = WeaviateVectorStore(weaviate_client=weaviate_client)
-
-        super().__init__(
-            documents=documents,
-            index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            vector_store=vector_store,
-            **kwargs,
-        )
-
-
-class GPTQdrantIndex(GPTVectorStoreIndex):
-    def __init__(
-        self,
-        client: Any,
-        collection_name: str,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        **kwargs: Any,
-    ) -> None:
-        vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
-
-        super().__init__(
-            documents=documents,
-            index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            vector_store=vector_store,
-            **kwargs,
-        )
-
-
-class GPTChromaIndex(GPTVectorStoreIndex):
-    def __init__(
-        self,
-        client: Any,
-        chroma_collection: Any,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
-        index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        **kwargs: Any,
-    ) -> None:
-        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-
-        super().__init__(
-            documents=documents,
-            index_struct=index_struct,
-            text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            vector_store=vector_store,
-            **kwargs,
-        )

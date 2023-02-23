@@ -4,7 +4,6 @@ An index that that is built on top of an existing vector store.
 
 """
 
-import logging
 from typing import Any, List, Optional, cast
 
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
@@ -17,24 +16,22 @@ from gpt_index.vector_stores.types import (
 
 
 class WeaviateVectorStore(VectorStore):
-    """GPT Weaviate Index.
+    """Weaviate vector store.
 
-    The GPTWeaviateIndex is a data structure where nodes are keyed by
-    embeddings, and those embeddings are stored within a Weaviate index.
-    During index construction, the document texts are chunked up,
-    converted to nodes with text; they are then encoded in
-    document embeddings stored within Weaviate.
+    In this vector store, embeddings and docs are stored within a
+    Weaviate collection.
 
     During query time, the index uses Weaviate to query for the top
-    k most similar nodes, and synthesizes an answer from the
-    retrieved nodes.
+    k most similar nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        weaviate_client (weaviate.Client): WeaviateClient
+            instance from `weaviate-client` package
+        class_prefix (Optional[str]): prefix for Weaviate classes
+
     """
+
+    stores_text: bool = True
 
     def __init__(
         self,
@@ -59,17 +56,24 @@ class WeaviateVectorStore(VectorStore):
 
     @property
     def client(self) -> Any:
+        """Get client."""
         return self._client
 
     @property
     def config_dict(self) -> dict:
+        """Get config dict."""
         return {"class_prefix": self._class_prefix}
 
     def add(
         self,
         embedding_results: List[NodeEmbeddingResult],
     ) -> List[str]:
-        """Add document to index."""
+        """Add embedding results to index.
+
+        Args
+            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+
+        """
         for result in embedding_results:
             node = result.node
             embedding = result.embedding
@@ -79,13 +83,24 @@ class WeaviateVectorStore(VectorStore):
         return [result.id for result in embedding_results]
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+        """Delete a document.
+
+        Args:
+            doc_id (str): document id
+
+        """
         WeaviateNode.delete_document(self._client, doc_id, self._class_prefix)
 
     def query(
         self, query_embedding: List[float], similarity_top_k: int
     ) -> VectorStoreQueryResult:
-        """Get nodes for response."""
+        """Query index for top k most similar nodes.
+
+        Args:
+            query_embedding (List[float]): query embedding
+            similarity_top_k (int): top k most similar nodes
+
+        """
         nodes = WeaviateNode.to_gpt_index_list(
             self.client,
             self._class_prefix,

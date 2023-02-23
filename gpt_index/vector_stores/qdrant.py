@@ -16,26 +16,20 @@ from gpt_index.vector_stores.types import (
 
 
 class QdrantVectorStore(VectorStore):
-    """GPT Qdrant Index.
+    """Qdrant Vector Store.
 
-    The GPTQdrantIndex is a data structure where nodes are keyed by
-    embeddings, and those embeddings are stored within a Qdrant collection.
-    During index construction, the document texts are chunked up,
-    converted to nodes with text; they are then encoded in
-    document embeddings stored within Qdrant.
+    In this vector store, embeddings and docs are stored within a
+    Qdrant collection.
 
     During query time, the index uses Qdrant to query for the top
-    k most similar nodes, and synthesizes an answer from the
-    retrieved nodes.
+    k most similar nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        collection_name: (str): name of the Qdrant collection
         client (Optional[Any]): QdrantClient instance from `qdrant-client` package
-        collection_name: (Optional[str]): name of the Qdrant collection
     """
+
+    stores_text: bool = True
 
     def __init__(
         self, collection_name: str, client: Optional[Any] = None, **kwargs: Any
@@ -58,12 +52,18 @@ class QdrantVectorStore(VectorStore):
 
     @property
     def config_dict(self) -> dict:
+        """Return config dict."""
         return {
             "collection_name": self._collection_name,
         }
 
     def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
-        """Add document to index."""
+        """Add embedding results to index.
+
+        Args
+            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+
+        """
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
 
@@ -111,7 +111,12 @@ class QdrantVectorStore(VectorStore):
         return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+        """Delete a document.
+
+        Args:
+            doc_id: (str): document id
+
+        """
         from qdrant_client.http import models as rest
 
         self._client.delete(
@@ -127,6 +132,7 @@ class QdrantVectorStore(VectorStore):
 
     @property
     def client(self) -> Any:
+        """Return the Qdrant client."""
         return self._client
 
     def _create_collection(self, collection_name: str, vector_size: int) -> None:
@@ -142,6 +148,7 @@ class QdrantVectorStore(VectorStore):
         )
 
     def _collection_exists(self, collection_name: str) -> bool:
+        """Check if a collection exists."""
         from qdrant_client.http.exceptions import UnexpectedResponse
 
         try:
@@ -155,6 +162,13 @@ class QdrantVectorStore(VectorStore):
         query_embedding: List[float],
         similarity_top_k: int,
     ) -> VectorStoreQueryResult:
+        """Query index for top k most similar nodes.
+
+        Args:
+            query_embedding (List[float]): query embedding
+            similarity_top_k (int): top k most similar nodes
+
+        """
         from qdrant_client.http.models.models import Payload
 
         response = self._client.search(

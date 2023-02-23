@@ -15,29 +15,30 @@ from gpt_index.vector_stores.types import (
 
 @dataclass
 class SimpleVectorStoreData(DataClassJsonMixin):
+    """Simple Vector Store Data container.
+
+    Args:
+        embedding_dict (Optional[dict]): dict mapping doc_ids to embeddings.
+        text_id_to_doc_id (Optional[dict]): dict mapping text_ids to doc_ids.
+
+    """
+
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
     text_id_to_doc_id: Dict[str, str] = field(default_factory=dict)
 
 
 class SimpleVectorStore(VectorStore):
-    """GPT Simple Vector Index.
+    """Simple Vector Store.
 
-    The GPTSimpleVectorIndex is a data structure where nodes are keyed by
-    embeddings, and those embeddings are stored within a simple dictionary.
-    During index construction, the document texts are chunked up,
-    converted to nodes with text; they are then encoded in
-    document embeddings stored within the dict.
-
-    During query time, the index uses the dict to query for the top
-    k most similar nodes, and synthesizes an answer from the
-    retrieved nodes.
+    In this vector store, embeddings are stored within a simple, in-memory dictionary.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        simple_vector_store_data_dict (Optional[dict]): data dict
+            containing the embeddings and doc_ids. See SimpleVectorStoreData
+            for more details.
     """
+
+    stores_text: bool = False
 
     def __init__(
         self,
@@ -52,22 +53,25 @@ class SimpleVectorStore(VectorStore):
 
     @property
     def client(self) -> None:
+        """Get client."""
         return None
 
     @property
     def config_dict(self) -> dict:
+        """Get config dict."""
         return {
             "simple_vector_store_data_dict": self._data.to_dict(),
         }
 
     def get(self, text_id: str) -> List[float]:
+        """Get embedding."""
         return self._data.embedding_dict[text_id]
 
     def add(
         self,
         embedding_results: List[NodeEmbeddingResult],
     ) -> List[str]:
-        """Add document to index."""
+        """Add embedding_results to index."""
         for result in embedding_results:
             text_id = result.id
             self._data.embedding_dict[text_id] = result.embedding

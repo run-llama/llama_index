@@ -1,12 +1,12 @@
 """Vector-store based data structures."""
 
-from gpt_index.indices.vector_store.base import (
+from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
+from gpt_index.indices.vector_store.old_indices import (
     GPTChromaIndex,
     GPTFaissIndex,
     GPTPineconeIndex,
     GPTQdrantIndex,
     GPTSimpleVectorIndex,
-    GPTVectorStoreIndex,
     GPTWeaviateIndex,
 )
 

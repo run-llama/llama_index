@@ -4,8 +4,7 @@ import math
 from typing import Any, List, Optional, cast
 
 from gpt_index.data_structs.data_structs import Node
-from gpt_index.indices.utils import truncate_text
-from gpt_index.utils import get_new_id
+from gpt_index.utils import get_new_id, truncate_text
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
@@ -14,7 +13,20 @@ from gpt_index.vector_stores.types import (
 
 
 class ChromaVectorStore(VectorStore):
-    """Chroma vector store."""
+    """Chroma vector store.
+
+    In this vector store, embeddings are stored within a ChromaDB collection.
+
+    During query time, the index uses ChromaDB to query for the top
+    k most similar nodes.
+
+    Args:
+        chroma_collection (chromadb.api.models.Collection.Collection):
+            ChromaDB collection instance
+
+    """
+
+    stores_text: bool = True
 
     def __init__(self, chroma_collection: Any, **kwargs: Any) -> None:
         """Init params."""
@@ -34,7 +46,12 @@ class ChromaVectorStore(VectorStore):
         return {}
 
     def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
-        """Add document to index."""
+        """Add embedding results to index.
+
+        Args
+            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+
+        """
         if not self._collection:
             raise ValueError("Collection not initialized")
 
@@ -57,11 +74,17 @@ class ChromaVectorStore(VectorStore):
         return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+        """Delete a document.
+
+        Args:
+            doc_id (str): document id
+
+        """
         self._collection.delete(where={"document_id": doc_id})
 
     @property
     def client(self) -> Any:
+        """Return client."""
         return self._collection
 
     def query(
@@ -69,6 +92,13 @@ class ChromaVectorStore(VectorStore):
         query_embedding: List[float],
         similarity_top_k: int,
     ) -> VectorStoreQueryResult:
+        """Query index for top k most similar nodes.
+
+        Args:
+            query_embedding (List[float]): query embedding
+            similarity_top_k (int): top k most similar nodes
+
+        """
         results = self._collection.query(
             query_embeddings=query_embedding, n_results=similarity_top_k
         )
