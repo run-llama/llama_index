@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.data_structs import Node
-from gpt_index.indices.utils import truncate_text
+from gpt_index.utils import truncate_text
 
 
 @dataclass

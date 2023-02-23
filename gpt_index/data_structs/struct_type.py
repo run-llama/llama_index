@@ -26,7 +26,9 @@ class IndexStructType(str, Enum):
         QDRANT ("qdrant"): Qdrant Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Qdrant vector store index.
-
+        CHROMA ("chroma"): Chroma Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Chroma vector store index.
         SQL ("SQL"): SQL Structured Store Index.
             See :ref:`Ref-Indices-StructStore`
             for more information on the SQL vector store index.
@@ -53,6 +55,8 @@ class IndexStructType(str, Enum):
     PINECONE = "pinecone"
     # for qdrant index
     QDRANT = "qdrant"
+    # for chroma index
+    CHROMA = "chroma"
     # for SQL index
     SQL = "sql"
     # for KG index

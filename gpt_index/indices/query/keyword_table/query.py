@@ -13,12 +13,12 @@ from gpt_index.indices.keyword_table.utils import (
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from gpt_index.prompts.prompts import KeywordExtractPrompt, QueryKeywordExtractPrompt
+from gpt_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 

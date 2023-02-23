@@ -1,7 +1,5 @@
 """Query classes for vector store indices."""
 
-from gpt_index.indices.query.vector_store.faiss import GPTFaissIndexQuery
-from gpt_index.indices.query.vector_store.simple import GPTSimpleVectorIndexQuery
-from gpt_index.indices.query.vector_store.weaviate import GPTWeaviateIndexQuery
+from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
 
-__all__ = ["GPTFaissIndexQuery", "GPTSimpleVectorIndexQuery", "GPTWeaviateIndexQuery"]
+__all__ = ["GPTVectorStoreIndexQuery"]

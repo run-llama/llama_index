@@ -10,6 +10,7 @@ definition of a Document - the bare minimum is a `text` property.
 
 """
 
+from gpt_index.readers.chroma import ChromaReader
 from gpt_index.readers.discord_reader import DiscordReader
 from gpt_index.readers.faiss import FaissReader
 
@@ -52,6 +53,7 @@ __all__ = [
     "WeaviateReader",
     "PineconeReader",
     "QdrantReader",
+    "ChromaReader",
     "FaissReader",
     "Document",
     "StringIterableReader",
