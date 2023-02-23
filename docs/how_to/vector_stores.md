@@ -69,7 +69,7 @@ These are found in the following classes:
 - `GPTChromaIndex`
 
 
-An API reference of each vector index is [found here](/reference/indices/vector_stores/vector_indices.md).
+An API reference of each vector index is [found here](/reference/indices/vector_store.md).
 
 Similar to any other index within GPT Index (tree, keyword table, list), this index can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.

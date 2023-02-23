@@ -190,6 +190,6 @@ class QdrantVectorStore(VectorStore):
             )
             nodes.append(node)
             similarities.append(point.score)
-            ids.append(point.id)
+            ids.append(str(point.id))
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
