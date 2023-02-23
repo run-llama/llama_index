@@ -32,6 +32,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             (see :ref:`Prompt-Templates`).
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
+        vector_store (Optional[VectorStore]): Vector store to use for
+            embedding similarity. See :ref:`Ref-Indices-VectorStore-Stores` for more details.
+
     """
 
     index_struct_cls = IndexDict
