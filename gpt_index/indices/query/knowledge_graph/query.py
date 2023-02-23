@@ -1,6 +1,7 @@
 """Query for GPTKGTableIndex."""
 import logging
 from collections import defaultdict
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from gpt_index.data_structs.data_structs import KG, Node
@@ -16,8 +17,24 @@ from gpt_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMP
 from gpt_index.prompts.prompts import QueryKeywordExtractPrompt
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
-EMBEDDINGS_ONLY_QUERY = "embedding_only"
-HYBRID_QUERY = "hybrid"
+
+
+class KGQueryMode(str, Enum):
+    """Query mode enum for Knowledge Graphs.
+
+    Can be passed as the enum struct, or as the underlying string.
+
+    Attributes:
+        KEYWORD ("keyword"): Default query mode, using keywords to find triplets.
+        EMBEDDING ("embedding"): Embedding mode, using embeddings to find
+            similar triplets.
+        HYBRID ("hyrbid"): Hyrbid mode, combining both keywords and embeddings
+            to find relevant triplets.
+    """
+
+    KEYWORD = "keyword"
+    EMBEDDING = "embedding"
+    HYBRID = "hyrbid"
 
 
 class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
@@ -35,7 +52,13 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             (see :ref:`Prompt-Templates`).
         max_keywords_per_query (int): Maximum number of keywords to extract from query.
         num_chunks_per_query (int): Maximum number of text chunks to query.
-
+        include_text (bool): Use the document text source from each relevent triplet
+            during queries.
+        embedding_mode (KGQueryMode): Specifies whether to use keyowrds,
+            embeddings, or both to find relevent triplets. Should be one of "keyword",
+            "embedding", or "hybrid".
+        top_k_embeddings (int): The number of top embeddings to use
+            (if embeddings are used).
     """
 
     def __init__(
@@ -45,8 +68,8 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         include_text: bool = True,
-        embedding_mode: Optional[str] = None,
-        top_k_embeddings: int = 1,
+        embedding_mode: Optional[KGQueryMode] = KGQueryMode.KEYWORD,
+        top_k_embeddings: int = 2,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -56,7 +79,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
         self.top_k_embeddings = top_k_embeddings
         self._include_text = include_text
-        self._embedding_mode = embedding_mode
+        self._embedding_mode = KGQueryMode(embedding_mode)
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -92,7 +115,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
 
-        if self._embedding_mode != EMBEDDINGS_ONLY_QUERY:
+        if self._embedding_mode != KGQueryMode.EMBEDDING:
             for keyword in keywords:
                 cur_rel_texts = self.index_struct.get_rel_map_texts(keyword)
                 rel_texts.extend(cur_rel_texts)
@@ -102,10 +125,12 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
                         chunk_indices_count[node_id] += 1
 
         if (
-            self._embedding_mode is not None
+            self._embedding_mode != KGQueryMode.KEYWORD
             and len(self.index_struct.embedding_dict) > 0
         ):
-            query_embedding = self._embed_model.get_text_embedding(", ".join(keywords))
+            query_embedding = self._embed_model.get_text_embedding(
+                query_bundle.query_str
+            )
             all_rel_texts = list(self.index_struct.embedding_dict.keys())
 
             rel_text_embeddings = [
@@ -139,7 +164,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             )
 
         # remove any duplicates from keyword + embedding queries
-        if self._embedding_mode == HYBRID_QUERY:
+        if self._embedding_mode == KGQueryMode.HYBRID:
             rel_texts = list(set(rel_texts))
 
         sorted_chunk_indices = sorted(

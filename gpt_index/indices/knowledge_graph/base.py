@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 from gpt_index.data_structs.data_structs import KG
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.knowledge_graph.query import HYBRID_QUERY, GPTKGTableQuery
+from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, KGQueryMode
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TextSplitter
@@ -130,12 +130,9 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                             str(triplet), str(triplet)
                         )
 
-                    (
-                        rel_texts,
-                        rel_embeddings,
-                    ) = self._embed_model.get_queued_text_embeddings()
-                    for rel_text, rel_embedding in zip(rel_texts, rel_embeddings):
-                        index_struct.add_to_embedding_dict(rel_text, rel_embedding)
+                    embed_outputs = self._embed_model.get_queued_text_embeddings()
+                    for (rel_text, rel_embed) in zip(*embed_outputs):
+                        index_struct.add_to_embedding_dict(rel_text, rel_embed)
 
         return index_struct
 
@@ -165,8 +162,11 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
         """Set the default embedding mode during query based on current index."""
-        if len(self.index_struct.embedding_dict) > 0:
-            query_kwargs["embedding_mode"] = HYBRID_QUERY
+        if (
+            len(self.index_struct.embedding_dict) > 0
+            and "embedding_mode" not in query_kwargs
+        ):
+            query_kwargs["embedding_mode"] = KGQueryMode.HYBRID
 
     def get_networkx_graph(self) -> Any:
         """Get networkx representation of the graph structure.
