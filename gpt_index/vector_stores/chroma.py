@@ -16,7 +16,7 @@ from gpt_index.vector_stores.types import (
 class ChromaVectorStore(VectorStore):
     """Chroma vector store."""
 
-    def __init__(self, chroma_collection: Any, **kwargs) -> None:
+    def __init__(self, chroma_collection: Any, **kwargs: Any) -> None:
         """Init params."""
         import_err_msg = (
             "`chromadb` package not found, please run `pip install chromadb`"
@@ -54,6 +54,7 @@ class ChromaVectorStore(VectorStore):
             metadatas=metadatas,
             documents=documents,
         )
+        return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
@@ -61,7 +62,7 @@ class ChromaVectorStore(VectorStore):
 
     @property
     def client(self) -> Any:
-        return self._client
+        return self._collection
 
     def query(
         self,
