@@ -19,13 +19,13 @@ from gpt_index.indices.registry import IndexRegistry
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store import (
+    GPTChromaIndex,
     GPTFaissIndex,
     GPTPineconeIndex,
     GPTQdrantIndex,
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
 )
-from gpt_index.indices.vector_store.chroma import GPTChromaIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
 

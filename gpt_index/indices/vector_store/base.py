@@ -18,6 +18,7 @@ from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
+from gpt_index.vector_stores.chroma import ChromaVectorStore
 from gpt_index.vector_stores.faiss import FaissVectorStore
 from gpt_index.vector_stores.pinecone import PineconeVectorStore
 from gpt_index.vector_stores.qdrant import QdrantVectorStore
@@ -306,6 +307,31 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         **kwargs: Any,
     ) -> None:
         vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
+
+        super().__init__(
+            documents=documents,
+            index_struct=index_struct,
+            text_qa_template=text_qa_template,
+            llm_predictor=llm_predictor,
+            embed_model=embed_model,
+            vector_store=vector_store,
+            **kwargs,
+        )
+
+
+class GPTChromaIndex(GPTVectorStoreIndex):
+    def __init__(
+        self,
+        client: Any,
+        chroma_collection: Any,
+        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        index_struct: Optional[IndexDict] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
+        embed_model: Optional[BaseEmbedding] = None,
+        **kwargs: Any,
+    ) -> None:
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 
         super().__init__(
             documents=documents,
