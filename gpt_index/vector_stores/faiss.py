@@ -4,7 +4,6 @@ An index that that is built on top of an existing vector store.
 
 """
 
-import logging
 from typing import Any, List, cast
 
 import numpy as np
