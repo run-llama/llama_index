@@ -29,7 +29,6 @@ def mock_get_text_embedding(text: str) -> List[float]:
     elif text == "foo":
         return [0, 0, 0, 1]
     else:
-        print(text)
         raise ValueError("Invalid text for `mock_get_text_embedding`.")
 
 
