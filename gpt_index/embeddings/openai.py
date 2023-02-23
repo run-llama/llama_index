@@ -107,6 +107,25 @@ def get_embedding(
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+async def aget_embedding(text: str, engine: Optional[str] = None) -> List[float]:
+    """Asynchronously get embedding.
+
+    NOTE: Copied from OpenAI's embedding utils:
+    https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
+
+    Copied here to avoid importing unnecessary dependencies
+    like matplotlib, plotly, scipy, sklearn.
+
+    """
+    # replace newlines, which can negatively affect performance.
+    text = text.replace("\n", " ")
+
+    return (await openai.Embedding.acreate(input=[text], engine=engine))["data"][0][
+        "embedding"
+    ]
+
+
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 def get_embeddings(
     list_of_text: List[str],
     engine: Optional[str] = None,
@@ -126,6 +145,29 @@ def get_embeddings(
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
     data = openai.Embedding.create(input=list_of_text, engine=engine).data
+    data = sorted(data, key=lambda x: x["index"])  # maintain the same order as input.
+    return [d["embedding"] for d in data]
+
+
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+async def aget_embeddings(
+    list_of_text: List[str], engine: Optional[str] = None
+) -> List[List[float]]:
+    """Asynchronously get embeddings.
+
+    NOTE: Copied from OpenAI's embedding utils:
+    https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
+
+    Copied here to avoid importing unnecessary dependencies
+    like matplotlib, plotly, scipy, sklearn.
+
+    """
+    assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
+
+    # replace newlines, which can negatively affect performance.
+    list_of_text = [text.replace("\n", " ") for text in list_of_text]
+
+    data = (await openai.Embedding.acreate(input=list_of_text, engine=engine)).data
     data = sorted(data, key=lambda x: x["index"])  # maintain the same order as input.
     return [d["embedding"] for d in data]
 
@@ -190,6 +232,17 @@ class OpenAIEmbedding(BaseEmbedding):
             engine = _TEXT_MODE_MODEL_DICT[key]
         return get_embedding(text, engine=engine)
 
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        """Asynchronously get text embedding."""
+        if self.deployment_name is not None:
+            engine = self.deployment_name
+        else:
+            key = (self.mode, self.model)
+            if key not in _TEXT_MODE_MODEL_DICT:
+                raise ValueError(f"Invalid mode, model combination: {key}")
+            engine = _TEXT_MODE_MODEL_DICT[key]
+        return await aget_embedding(text, engine=engine)
+
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings.
 
@@ -205,4 +258,16 @@ class OpenAIEmbedding(BaseEmbedding):
                 raise ValueError(f"Invalid mode, model combination: {key}")
             engine = _TEXT_MODE_MODEL_DICT[key]
         embeddings = get_embeddings(texts, engine=engine)
+        return embeddings
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronously get text embeddings."""
+        if self.deployment_name is not None:
+            engine = self.deployment_name
+        else:
+            key = (self.mode, self.model)
+            if key not in _TEXT_MODE_MODEL_DICT:
+                raise ValueError(f"Invalid mode, model combination: {key}")
+            engine = _TEXT_MODE_MODEL_DICT[key]
+        embeddings = await aget_embeddings(texts, engine=engine)
         return embeddings
