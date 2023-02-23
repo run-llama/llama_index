@@ -8,7 +8,7 @@ import pytest
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.indices.vector_store.simple import GPTSimpleVectorIndex
+from gpt_index.indices.vector_store import GPTSimpleVectorIndex
 from gpt_index.playground import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common

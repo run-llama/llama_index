@@ -6,9 +6,6 @@ from gpt_index.data_structs.data_structs import (
     IndexList,
     KeywordTable,
     Node,
-    QdrantIndexStruct,
-    SimpleIndexDict,
-    WeaviateIndexStruct,
 )
 from gpt_index.data_structs.table import StructDatapoint
 
@@ -18,8 +15,5 @@ __all__ = [
     "KeywordTable",
     "IndexList",
     "IndexDict",
-    "SimpleIndexDict",
-    "WeaviateIndexStruct",
-    "QdrantIndexStruct",
     "StructDatapoint",
 ]

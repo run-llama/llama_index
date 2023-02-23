@@ -35,6 +35,7 @@ from gpt_index.indices.vector_store import (
     GPTPineconeIndex,
     GPTQdrantIndex,
     GPTSimpleVectorIndex,
+    GPTVectorStoreIndex,
     GPTWeaviateIndex,
 )
 
@@ -94,10 +95,11 @@ __all__ = [
     "GPTListIndex",
     "GPTTreeIndex",
     "GPTFaissIndex",
-    "GPTSimpleVectorIndex",
-    "GPTWeaviateIndex",
     "GPTPineconeIndex",
     "GPTQdrantIndex",
+    "GPTSimpleVectorIndex",
+    "GPTVectorStoreIndex",
+    "GPTWeaviateIndex",
     "GPTChromaIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",
