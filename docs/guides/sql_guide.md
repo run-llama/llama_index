@@ -151,12 +151,12 @@ ORDER BY population DESC
 LIMIT 1
 ```
 
-By default, the text-to-SQL prompt just injects the table schema information into the prompt.
-However, oftentimes you may want to add your own context as well. See the below
-sections for figuring out how to better customize the table context that you create.
-
-
 ## Injecting Context
+
+By default, the text-to-SQL prompt just injects the table schema information into the prompt.
+However, oftentimes you may want to add your own context as well. This section shows you how
+you can add context, either manually, or extracted through documents.
+
 
 
 
