@@ -5,6 +5,9 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
     __version__ = _f.read().strip()
 
 
+import logging
+from logging import NullHandler
+
 from gpt_index.data_structs.struct_type import IndexStructType
 
 # embeddings
@@ -12,7 +15,7 @@ from gpt_index.embeddings.langchain import LangchainEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 
 # structured
-from gpt_index.indices.common.struct_store.base import SQLContextBuilder
+from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 
 # indices
 from gpt_index.indices.keyword_table import (
@@ -88,6 +91,11 @@ from gpt_index.readers.download import download_loader
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from gpt_index.token_counter.mock_embed_model import MockEmbedding
 
+# best practices for library logging:
+# https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
+logging.getLogger(__name__).addHandler(NullHandler())
+
+
 __all__ = [
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
@@ -138,6 +146,7 @@ __all__ = [
     "MockEmbedding",
     "SQLDatabase",
     "GPTIndexMemory",
+    "SQLDocumentContextBuilder",
     "SQLContextBuilder",
     "PromptHelper",
     "QueryConfig",
@@ -148,9 +157,5 @@ __all__ = [
     "GithubRepositoryReader",
 ]
 
-import logging
-from logging import NullHandler
-
-# best practices for library logging:
-# https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
-logging.getLogger(__name__).addHandler(NullHandler())
+# NOTE: keep for backwards compatibility
+SQLContextBuilder = SQLDocumentContextBuilder
