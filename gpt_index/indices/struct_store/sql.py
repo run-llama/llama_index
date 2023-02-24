@@ -42,7 +42,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             the table name, allows you to pass in a view.
             Either table_name or table must be specified.
         sql_context_container (Optional[SQLContextContainer]): SQL context container.
-            an be generated from a SQLContextContainerBuilder. 
+            an be generated from a SQLContextContainerBuilder.
             See :ref:`Ref-Struct-Store` for more details.
 
     """
