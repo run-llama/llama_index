@@ -115,6 +115,9 @@ class PineconeVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        if doc_ids:
+            raise NotImplementedError("Filtering by doc_ids not yet supported for PineconeVectorStore.")
+
         response = self._pinecone_index.query(
             query_embedding,
             top_k=similarity_top_k,

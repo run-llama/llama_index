@@ -101,6 +101,9 @@ class WeaviateVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        if doc_ids:
+            raise NotImplementedError("Filtering by doc_ids not yet supported for WeaviateVectorStore.")
+
         nodes = WeaviateNode.to_gpt_index_list(
             self.client,
             self._class_prefix,

@@ -93,6 +93,9 @@ class SimpleVectorStore(VectorStore):
         self, query_embedding: List[float], similarity_top_k: int, doc_ids: Optional[List[str]] = None
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
+        if doc_ids:
+            raise NotImplementedError("Filtering by doc_ids not yet supported for SimpleVectorStore.")
+
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()
         node_ids = [t[0] for t in items]

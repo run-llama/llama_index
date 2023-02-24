@@ -43,6 +43,8 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         # NOTE: override query method in order to fetch the right results.
         # NOTE: since the query_str is a SQL query, it doesn't make sense
         # to use ResponseBuilder anywhere.
+        if doc_ids:
+            raise NotImplementedError("Filtering by doc_ids not yet supported for SQL queries.")
         response_str, extra_info = self._sql_database.run_sql(query_bundle.query_str)
         response = Response(response=response_str, extra_info=extra_info)
         return response

@@ -129,6 +129,9 @@ class FaissVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        if doc_ids:
+            raise NotImplementedError("Filtering by doc_ids not yet supported for FaissVectorStore.")
+
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
         dists, indices = self._faiss_index.search(query_embedding_np, similarity_top_k)
         dists = [d[0] for d in dists]

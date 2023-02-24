@@ -39,7 +39,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
             query_bundle.embedding_strs
         )
 
-        query_result = self._vector_store.query(query_embedding, self._similarity_top_k)
+        query_result = self._vector_store.query(query_embedding, self._similarity_top_k, doc_ids=doc_ids)
 
         if query_result.nodes is None:
             if query_result.ids is None:

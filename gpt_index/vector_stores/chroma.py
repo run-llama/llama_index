@@ -101,6 +101,9 @@ class ChromaVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        if doc_ids:
+            raise NotImplementedError("Filtering by doc_ids not yet supported for ChromaVectorStore")
+
         results = self._collection.query(
             query_embeddings=query_embedding, n_results=similarity_top_k
         )
