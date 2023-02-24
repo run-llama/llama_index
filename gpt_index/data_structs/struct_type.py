@@ -32,9 +32,8 @@ class IndexStructType(str, Enum):
         SQL ("SQL"): SQL Structured Store Index.
             See :ref:`Ref-Indices-StructStore`
             for more information on the SQL vector store index.
-
         KG ("kg"): Knowledge Graph index.
-            See :ref:`Ref-Indices-KG` for KG indices.
+            See :ref:`Ref-Indices-Knowledge-Graph` for KG indices.
 
     """
 

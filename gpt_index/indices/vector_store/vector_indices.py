@@ -126,12 +126,14 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         `faiss_index_save_path` to load faiss index from a file - that
         way, the user does not have to recreate the faiss index outside
         of this class.
+
         Args:
             save_path (str): The save_path of the file.
            faiss_index_save_path (Optional[str]): The save_path of the
                 Faiss index file. If not specified, the Faiss index
                 will not be saved to disk.
             **kwargs: Additional kwargs to pass to the index constructor.
+
         Returns:
             BaseGPTIndex: The loaded index.
         """
@@ -157,6 +159,7 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         way, the user can pass in the same argument in
         `GPTFaissIndex.load_from_disk` without having to recreate
         the Faiss index outside of this class.
+
         Args:
             save_path (str): The save_path of the file.
             faiss_index_save_path (Optional[str]): The save_path of the
@@ -334,7 +337,7 @@ class GPTChromaIndex(GPTVectorStoreIndex):
             (see :ref:`Prompt-Templates`).
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
-        chroma_collection (Optional[Any]): Collection instance from `chromadb` package
+        chroma_collection (Optional[Any]): Collection instance from `chromadb` package.
 
     """
 
