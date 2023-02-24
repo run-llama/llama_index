@@ -36,6 +36,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         vector_store (Optional[VectorStore]): Vector store to use for
             embedding similarity. See :ref:`Ref-Indices-VectorStore-Stores`
             for more details.
+        use_async (bool): Whether to use asynchronous calls. Defaults to False.
 
     """
 
