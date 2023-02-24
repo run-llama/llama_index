@@ -236,6 +236,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             BaseGPTIndex: The loaded index.
 
         """
+        config_dict = {}
         if "vector_store" in result_dict:
             config_dict = result_dict[VECTOR_STORE_CONFIG_DICT_KEY]
         return super().load_from_dict(result_dict, **config_dict, **kwargs)
