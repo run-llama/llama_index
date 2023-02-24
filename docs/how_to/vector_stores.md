@@ -162,7 +162,7 @@ from gpt_index import GPTQdrantIndex, SimpleDirectoryReader
 # Creating a Qdrant vector store
 client = qdrant_client.QdrantClient(
     host="<qdrant-host>",
-    qpi_key="<qdrant-api-key>",
+    api_key="<qdrant-api-key>",
     https=True
 )
 collection_name = "paul_graham"
