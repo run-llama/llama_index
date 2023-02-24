@@ -7,6 +7,7 @@ from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
 
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.utils import globals_helper
 
 # TODO: change to numpy array
@@ -121,6 +122,17 @@ class BaseEmbedding:
         text_tokens_count = len(self._tokenizer(text))
         self._total_tokens_used += text_tokens_count
         return text_embedding
+
+    def _get_node_embedding(self, node: Node) -> List[float]:
+        """Get node embedding. Can be overridden to use node metadata in embedding creation"""
+        return self._get_text_embedding(node.text)
+
+    def get_node_embedding(self, node: Node) -> List[float]:
+        """Get node embedding."""
+        node_embedding = self._get_node_embedding(node)
+        text_tokens_count = len(self._tokenizer(node.text))
+        self._total_tokens_used += text_tokens_count
+        return node_embedding
 
     def queue_text_for_embeddding(self, text_id: str, text: str) -> None:
         """Queue text for embedding.
