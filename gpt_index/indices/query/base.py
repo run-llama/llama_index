@@ -14,7 +14,6 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
-from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
@@ -23,6 +22,7 @@ from gpt_index.prompts.default_prompts import (
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.response.schema import Response
 from gpt_index.token_counter.token_counter import llm_token_counter
+from gpt_index.utils import truncate_text
 
 IS = TypeVar("IS", bound=IndexStruct)
 

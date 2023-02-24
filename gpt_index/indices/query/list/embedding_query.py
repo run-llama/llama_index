@@ -54,7 +54,6 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         query_embedding, node_embeddings = self._get_embeddings(query_bundle, nodes)
 
         top_similarities, top_idxs = get_top_k_embeddings(
-            self._embed_model,
             query_embedding,
             node_embeddings,
             similarity_top_k=self.similarity_top_k,
