@@ -1,4 +1,4 @@
-# A Guide to LlamaIndex + Structured Data
+it # A Guide to LlamaIndex + Structured Data
 
 A lot of modern data systems depend on structured data, such as a Postgres DB or a Snowflake data warehouse.
 LlamaIndex provides a lot of advanced features, powered by LLM's, to both create structured data from
@@ -9,7 +9,7 @@ This guide helps walk through each of these capabilities. Specifically, we cover
 - **Text-to-SQL (basic)**: How to query a set of tables using natural language.
 - **Injecting Context**: How to inject context for each table into the text-to-SQL prompt. The context
     can be manually added, or ti can be derived from unstructured documents.
-- **Storing Context within an Index**: By default, we directly insert the context into the prompt. Sometimes this is not 
+- **Storing Table Context within an Index**: By default, we directly insert the context into the prompt. Sometimes this is not 
     feasible if the context is large. Here we show how you can actually use a LlamaIndex data structure
     to contain the table context!
 
@@ -157,102 +157,110 @@ By default, the text-to-SQL prompt just injects the table schema information int
 However, oftentimes you may want to add your own context as well. This section shows you how
 you can add context, either manually, or extracted through documents.
 
+We offer you a context builder class to better manage the context within your SQL tables:
+`SQLContextContainerBuilder`. This class takes in the `SQLDatabase` object,
+and a few other optional parameters, and builds a `SQLContextContainer` object
+that you can then pass to the index during construction + query-time.
+
+You can add context manually to the context builder. The code snippet below shows you how:
+
+```python
+# manually set text
+city_stats_text = (
+    "This table gives information regarding the population and country of a given city.\n"
+    "The user will query with codewords, where 'foo' corresponds to population and 'bar'"
+    "corresponds to city."
+)
+table_context_dict={"city_stats": city_stats_text}
+context_builder = SQLContextContainerBuilder(sql_database, context_dict=table_context_dict)
+context_container = context_builder.build_context_container()
+
+# building the index
+index = GPTSQLStructStoreIndex(
+    wiki_docs, 
+    sql_database=sql_database, 
+    table_name="city_stats",
+    sql_context_container=context_container
+)
+```
+
+You can also choose to **extract** context from a set of unstructured Documents.
+To do this, you can call `SQLContextContainerBuilder.from_documents`.
+We use the `TableContextPrompt` and the `RefineTableContextPrompt` (see
+the [reference docs](/reference/prompts.md)).
+
+```python
+# this is a dummy document that we will extract context from
+# in GPTSQLContextContainerBuilder
+city_stats_text = (
+    "This table gives information regarding the population and country of a given city.\n"
+)
+context_documents_dict = {"city_stats": [Document(city_stats_text)]}
+context_builder = SQLContextContainerBuilder.from_documents(
+    context_documents_dict, 
+    sql_database
+)
+context_container = context_builder.build_context_container()
+
+# building the index
+index = GPTSQLStructStoreIndex(
+    wiki_docs, 
+    sql_database=sql_database, 
+    table_name="city_stats",
+    sql_context_container=context_container,
+)
+```
+
+## Storing Table Context within an Index
+
+A database collection can have many tables, and if each table has many columns + a description associated with it,
+then the total context can be quite large.
+
+Luckily, you can choose to use a LlamaIndex data structure to store this table context! 
+Then when the SQL index is queried, we can use this "side" index to retrieve the proper context
+that can be fed into the text-to-SQL prompt.
+
+Here we make use of the `derive_index_from_context` function within `SQLContextContainerBuilder`
+to create a new index. You have flexibility in choosing which index class to specify + 
+which arguments to pass in. We then use a helper method called `query_index_for_context`
+which is a simple wrapper on the `index.query` call that wraps a query template + 
+stores the context on the generated context container.
+
+You can then build the context container, and pass it to the index during query-time!
+
+```python
+from gpt_index import GPTSQLStructStoreIndex, SQLDatabase, GPTSimpleVectorIndex
+from gpt_index.indices.struct_store import SQLContextContainerBuilder
+
+sql_database = SQLDatabase(engine)
+# build a vector index from the table schema information
+context_builder = SQLContextContainerBuilder(sql_database)
+table_schema_index = context_builder.derive_index_from_context(
+    GPTSimpleVectorIndex,
+    store_index=True
+)
+
+query_str = "Which city has the highest population?"
+
+# query the table schema index using the helper method
+# to retrieve table context
+SQLContextContainerBuilder.query_index_for_context(
+    table_schema_index,
+    query_str,
+    store_context_str=True
+)
+context_container = context_builder.build_context_container()
+
+# query the SQL index with the table context
+response = index.query(query_str, sql_context_container=context_container)
+print(response)
+
+```
 
 
+## Concluding Thoughts
+
+This is it for now! We're constantly looking for ways to improve our structured data support.
+If you have any questions let us know in [our Discord](https://discord.gg/dGcwcsnxhU).
 
 
-## Storing Context within an Index
-
-
-
-This guide describes how each index works with diagrams. We also visually highlight our "Response Synthesis" modes.
-
-Some terminology:
-- **Node**: Corresponds to a chunk of text from a Document. GPT Index takes in Document objects and internally parses/chunks them into Node objects.
-- **Response Synthesis**: Our module which synthesizes a response given the retrieved Node. You can see how to 
-    [specify different response modes](setting-response-mode) here. 
-    See below for an illustration of how each response mode works.
-
-## List Index
-
-The list index simply stores Nodes as a sequential chain.
-
-![](/_static/indices/list.png)
-
-### Querying
-
-During query time, if no other query parameters are specified, GPT Index simply all Nodes in the list into
-our Reponse Synthesis module.
-
-![](/_static/indices/list_query.png)
-
-The list index does offer numerous ways of querying a list index, from an embedding-based query which 
-will fetch the top-k neighbors, or with the addition of a keyword filter, as seen below:
-
-![](/_static/indices/list_filter_query.png)
-
-
-## Vector Store Index
-
-The vector store index stores each Node and a corresponding embedding in a [Vector Store](vector-store-index).
-
-![](/_static/indices/vector_store.png)
-
-### Querying
-
-Querying a vector store index involves fetching the top-k most similar Nodes, and passing
-those into our Response Synthesis module.
-
-![](/_static/indices/vector_store_query.png)
-
-## Tree Index
-
-The tree index builds a hierarchical tree from a set of Nodes (which become leaf nodes in this tree).
-
-![](/_static/indices/tree.png)
-
-### Querying
-
-Querying a tree index involves traversing from root nodes down 
-to leaf nodes. By default, (`child_branch_factor=1`), a query
-chooses one child node given a parent node. If `child_branch_factor=2`, a query
-chooses two child nodes per parent.
-
-![](/_static/indices/tree_query.png)
-
-## Keyword Table Index
-
-The keyword table index extracts keywords from each Node and builds a mapping from 
-each keyword to the corresponding Nodes of that keyword.
-
-![](/_static/indices/keyword.png)
-
-### Querying
-
-During query time, we extract relevant keywords from the query, and match those with pre-extracted
-Node keywords to fetch the corresponding Nodes. The extracted Nodes are passed to our 
-Response Synthesis module.
-
-![](/_static/indices/keyword_query.png)
-
-## Response Synthesis
-
-GPT Index offers different methods of synthesizing a response. The way to toggle this can be found in our 
-[Usage Pattern Guide](setting-response-mode). Below, we visually highlight how each response mode works.
-
-### Create and Refine
-
-Create and refine is an iterative way of generating a response. We first use the context in the first node, along
-with the query, to generate an initial answer. We then pass this answer, the query, and the context of the second node
-as input into a "refine prompt" to generate a refined answer. We refine through N-1 nodes, where N is the total 
-number of nodes.
-
-![](/_static/indices/create_and_refine.png)
-
-### Tree Summarize
-
-Tree summarize is another way of generating a response. We essentially build a tree index
-over the set of candidate nodes, with a *summary prompt* seeded with the query. The tree
-is built in a bottoms-up fashion, and in the end the root node is returned as the response.
-
-![](/_static/indices/tree_summarize.png)
