@@ -1,4 +1,4 @@
-it # A Guide to LlamaIndex + Structured Data
+# A Guide to LlamaIndex + Structured Data
 
 A lot of modern data systems depend on structured data, such as a Postgres DB or a Snowflake data warehouse.
 LlamaIndex provides a lot of advanced features, powered by LLM's, to both create structured data from
