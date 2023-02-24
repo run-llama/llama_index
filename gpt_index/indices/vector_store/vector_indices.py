@@ -209,7 +209,9 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         """Init params."""
         if pinecone_index is None:
             raise ValueError("pinecone_index is required.")
-        vector_store = PineconeVectorStore(pinecone_index=pinecone_index)
+        vector_store = kwargs.pop(
+            "vector_store", PineconeVectorStore(pinecone_index=pinecone_index)
+        )
 
         super().__init__(
             documents=documents,
