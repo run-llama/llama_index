@@ -79,6 +79,7 @@ class QueryRunner(BaseQueryRunner):
         self,
         query_str_or_bundle: Union[str, QueryBundle],
         index_struct: IndexStruct,
+        doc_ids: Optional[List[str]] = None,
     ) -> Response:
         """Run query."""
         # NOTE: Currently, query transform is only run once
@@ -109,4 +110,4 @@ class QueryRunner(BaseQueryRunner):
             use_async=self._use_async,
         )
 
-        return query_obj.query(query_bundle)
+        return query_obj.query(query_bundle, doc_ids=doc_ids)

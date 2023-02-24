@@ -52,6 +52,7 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
+        doc_ids: Optional[List[str]] = None,
     ) -> List[Node]:
         """Get nodes for response."""
         logging.info(f"> Starting query: {query_bundle.query_str}")

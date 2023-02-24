@@ -1,6 +1,6 @@
 """Default query for GPTFaissIndex."""
 import logging
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from gpt_index.data_structs.table import SQLStructTable
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -38,7 +38,7 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         self._sql_database = sql_database
 
     @llm_token_counter("query")
-    def query(self, query_bundle: QueryBundle) -> Response:
+    def query(self, query_bundle: QueryBundle, doc_ids: Optional[List[str]]) -> Response:
         """Answer a query."""
         # NOTE: override query method in order to fetch the right results.
         # NOTE: since the query_str is a SQL query, it doesn't make sense

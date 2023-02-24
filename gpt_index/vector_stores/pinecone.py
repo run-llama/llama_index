@@ -106,7 +106,7 @@ class PineconeVectorStore(VectorStore):
         return self._pinecone_index
 
     def query(
-        self, query_embedding: List[float], similarity_top_k: int
+        self, query_embedding: List[float], similarity_top_k: int, doc_ids: Optional[List[str]] = None
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 

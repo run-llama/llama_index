@@ -1,7 +1,7 @@
 """Chroma vector store."""
 import logging
 import math
-from typing import Any, List, cast
+from typing import Any, List, Optional, cast
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.utils import truncate_text
@@ -92,6 +92,7 @@ class ChromaVectorStore(VectorStore):
         self,
         query_embedding: List[float],
         similarity_top_k: int,
+        doc_ids: Optional[List[str]] = None,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 

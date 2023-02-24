@@ -207,7 +207,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         return response or ""
 
     def get_nodes_and_similarities_for_response(
-        self, query_bundle: QueryBundle
+        self, query_bundle: QueryBundle, doc_ids: Optional[List[str]] = None
     ) -> List[Tuple[Node, Optional[float]]]:
         """Get list of tuples of node and similarity for response.
 
@@ -217,7 +217,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         """
         similarity_tracker = SimilarityTracker()
         nodes = self._get_nodes_for_response(
-            query_bundle, similarity_tracker=similarity_tracker
+            query_bundle, similarity_tracker=similarity_tracker, doc_ids=doc_ids
         )
         nodes = [
             node for node in nodes if self._should_use_node(node, similarity_tracker)
@@ -231,6 +231,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
+        doc_ids: Optional[List[str]] = None,
     ) -> List[Node]:
         """Get nodes for response."""
 
@@ -241,11 +242,11 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Get extra info for response."""
         return None
 
-    def _query(self, query_bundle: QueryBundle) -> Response:
+    def _query(self, query_bundle: QueryBundle, doc_ids: Optional[List[str]] = None) -> Response:
         """Answer a query."""
         self.response_builder.reset()
         # TODO: remove _query and just use query
-        tuples = self.get_nodes_and_similarities_for_response(query_bundle)
+        tuples = self.get_nodes_and_similarities_for_response(query_bundle, doc_ids=doc_ids)
 
         for node, similarity in tuples:
             text, response = self._get_text_from_node(query_bundle, node)
@@ -272,9 +273,9 @@ class BaseGPTIndexQuery(Generic[IS]):
         )
 
     @llm_token_counter("query")
-    def query(self, query_bundle: QueryBundle) -> Response:
+    def query(self, query_bundle: QueryBundle, doc_ids: Optional[List[str]] = None) -> Response:
         """Answer a query."""
-        response = self._query(query_bundle)
+        response = self._query(query_bundle, doc_ids=doc_ids)
         # if include_summary is True, then include summary text in answer
         # summary text is set through `set_text` on the underlying index.
         # TODO: refactor response builder to be in the __init__

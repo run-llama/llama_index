@@ -33,6 +33,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
+        doc_ids: Optional[List[str]] = None,
     ) -> List[Node]:
         query_embedding = self._embed_model.get_agg_embedding_from_queries(
             query_bundle.embedding_strs

@@ -47,6 +47,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
+        doc_ids: Optional[List[str]] = None,
     ) -> List[Node]:
         """Get nodes for response."""
         nodes = self.index_struct.nodes

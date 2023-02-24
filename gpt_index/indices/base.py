@@ -342,6 +342,7 @@ class BaseGPTIndex(Generic[IS]):
         mode: str = QueryMode.DEFAULT,
         query_transform: Optional[BaseQueryTransform] = None,
         use_async: bool = False,
+        doc_ids: Optional[List[str]] = None,
         **query_kwargs: Any,
     ) -> Response:
         """Answer a query.
@@ -372,7 +373,7 @@ class BaseGPTIndex(Generic[IS]):
                 recursive=True,
                 use_async=use_async,
             )
-            return query_runner.query(query_str, self._index_struct)
+            return query_runner.query(query_str, self._index_struct, doc_ids=doc_ids)
         else:
             self._preprocess_query(mode_enum, query_kwargs)
             # TODO: pass in query config directly
@@ -392,7 +393,7 @@ class BaseGPTIndex(Generic[IS]):
                 recursive=False,
                 use_async=use_async,
             )
-            return query_runner.query(query_str, self._index_struct)
+            return query_runner.query(query_str, self._index_struct, doc_ids=doc_ids)
 
     @classmethod
     @abstractmethod
