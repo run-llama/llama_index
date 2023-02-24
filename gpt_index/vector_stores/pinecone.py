@@ -70,14 +70,6 @@ class PineconeVectorStore(VectorStore):
             node = result.node
             text_embedding = result.embedding
 
-            # assign a new_id if current_id conflicts with existing ids
-            while True:
-                fetch_result = self._pinecone_index.fetch(
-                    [new_id], **self._pinecone_kwargs
-                )
-                if len(fetch_result["vectors"]) == 0:
-                    break
-                new_id = get_new_id(set())
             metadata = {
                 "text": node.get_text(),
                 "doc_id": result.doc_id,
