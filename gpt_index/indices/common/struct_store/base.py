@@ -21,13 +21,21 @@ from gpt_index.prompts.prompts import (
 from gpt_index.schema import BaseDocument
 
 
-class SQLContextBuilder:
+class SQLDocumentContextBuilder:
     """Builder that builds context for a given set of SQL tables.
 
     Args:
         sql_database (Optional[SQLDatabase]): SQL database to use,
-        context_builder_prompt (Optional[TableContextPrompt]): A
+        llm_predictor (Optional[LLMPredictor]): LLM Predictor to use.
+        prompt_helper (Optional[PromptHelper]): Prompt Helper to use.
+        text_splitter (Optional[TextSplitter]): Text Splitter to use.
+        table_context_prompt (Optional[TableContextPrompt]): A
             Table Context Prompt (see :ref:`Prompt-Templates`).
+        refine_table_context_prompt (Optional[RefineTableContextPrompt]):
+            A Refine Table Context Prompt (see :ref:`Prompt-Templates`).
+        table_context_task (Optional[str]): The query to perform
+            on the table context. A default query string is used
+            if none is provided by the user.
     """
 
     def __init__(
