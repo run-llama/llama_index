@@ -71,6 +71,17 @@ class BaseEmbedding:
         self._total_tokens_used += query_tokens_count
         return query_embedding
 
+    @abstractmethod
+    def _get_node_query_embedding(self, node: Node) -> List[float]:
+        """Get query embedding."""
+
+    def get_node_query_embedding(self, node: Node) -> List[float]:
+        """Get query embedding."""
+        query_embedding = self._get_node_query_embedding(node)
+        query_tokens_count = len(self._tokenizer(node.text))
+        self._total_tokens_used += query_tokens_count
+        return query_embedding
+
     def get_agg_embedding_from_queries(
         self,
         queries: List[str],
