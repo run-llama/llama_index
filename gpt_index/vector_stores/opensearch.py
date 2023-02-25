@@ -140,7 +140,7 @@ class OpensearchVectorStore(VectorStore):
     """Elasticsearch/Opensearch vector store.
 
     Args:
-        client (ElasticVectorSearch): Langchain elasticsearch client
+        client (OpensearchVectorClient): Vector index client to use for data insertion/querying.
     """
 
     stores_text: bool = True
