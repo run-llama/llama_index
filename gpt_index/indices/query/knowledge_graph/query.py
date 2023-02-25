@@ -12,9 +12,9 @@ from gpt_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
 )
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.utils import truncate_text
 from gpt_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from gpt_index.prompts.prompts import QueryKeywordExtractPrompt
+from gpt_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 

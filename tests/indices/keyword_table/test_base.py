@@ -6,8 +6,10 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
+from tests.mock_utils.mock_predict import mock_llmpredictor_predict
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
@@ -42,6 +44,48 @@ def test_build_table(
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
     table = GPTSimpleKeywordTableIndex(documents)
+    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    assert len(table_chunks) == 4
+    assert "Hello world." in table_chunks
+    assert "This is a test." in table_chunks
+    assert "This is another test." in table_chunks
+    assert "This is a test v2." in table_chunks
+
+    # test that expected keys are present in table
+    # NOTE: in mock keyword extractor, stopwords are not filtered
+    assert table.index_struct.table.keys() == {
+        "this",
+        "hello",
+        "world",
+        "test",
+        "another",
+        "v2",
+        "is",
+        "a",
+        "v2",
+    }
+
+
+@patch_common
+@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_predict)
+@patch(
+    "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
+    mock_extract_keywords,
+)
+def test_build_table_async(
+    _mock_extract: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+) -> None:
+    """Test build table."""
+    # test simple keyword table
+    # NOTE: here the keyword extraction isn't mocked because we're using
+    # the regex-based keyword extractor, not GPT
+    table = GPTSimpleKeywordTableIndex(documents, use_async=True)
     table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
     assert len(table_chunks) == 4
     assert "Hello world." in table_chunks

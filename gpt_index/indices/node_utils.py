@@ -5,13 +5,13 @@ import logging
 from typing import List
 
 from gpt_index.data_structs.data_structs import Node
-from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.text_splitter import (
     TextSplit,
     TextSplitter,
     TokenTextSplitter,
 )
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import truncate_text
 
 
 def get_text_splits_from_document(

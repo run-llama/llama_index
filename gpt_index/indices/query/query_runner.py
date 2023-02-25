@@ -76,7 +76,9 @@ class QueryRunner(BaseQueryRunner):
         return query_kwargs
 
     def query(
-        self, query_str_or_bundle: Union[str, QueryBundle], index_struct: IndexStruct
+        self,
+        query_str_or_bundle: Union[str, QueryBundle],
+        index_struct: IndexStruct,
     ) -> Response:
         """Run query."""
         # NOTE: Currently, query transform is only run once
@@ -97,13 +99,14 @@ class QueryRunner(BaseQueryRunner):
 
         query_cls = self._index_registry.type_to_query[index_struct_type][mode]
         # if recursive, pass self as query_runner to each individual query
-        query_runner = self if self._recursive else None
+        query_runner = self
         query_kwargs = self._get_query_kwargs(config)
         query_obj = query_cls(
             index_struct,
             **query_kwargs,
             query_runner=query_runner,
             docstore=self._docstore,
+            recursive=self._recursive,
             use_async=self._use_async,
         )
 

@@ -125,7 +125,12 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         query_str = query_bundle.query_str
         cur_node_list = get_sorted_node_list(cur_nodes)
 
-        if self.child_branch_factor == 1:
+        if len(cur_node_list) == 1:
+            logging.debug(f">[Level {level}] Only one node left. Querying node.")
+            return self._query_with_selected_node(
+                cur_node_list[0], query_bundle, level=level
+            )
+        elif self.child_branch_factor == 1:
             query_template = self.query_template.partial_format(
                 num_chunks=len(cur_node_list), query_str=query_str
             )

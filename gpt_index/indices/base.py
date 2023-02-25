@@ -400,6 +400,28 @@ class BaseGPTIndex(Generic[IS]):
         """Get query map."""
 
     @classmethod
+    def load_from_dict(
+        cls, result_dict: Dict[str, Any], **kwargs: Any
+    ) -> "BaseGPTIndex":
+        """Load index from dict."""
+        if "index_struct" in result_dict:
+            index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])
+            index_struct_id = index_struct.get_doc_id()
+        elif "index_struct_id" in result_dict:
+            index_struct_id = result_dict["index_struct_id"]
+        else:
+            raise ValueError("index_struct or index_struct_id must be provided.")
+
+        type_to_struct = {cls.index_struct_cls.get_type(): cls.index_struct_cls}
+        docstore = DocumentStore.load_from_dict(
+            result_dict["docstore"],
+            type_to_struct=type_to_struct,
+        )
+        if "index_struct_id" in result_dict:
+            index_struct = docstore.get_document(index_struct_id)
+        return cls(index_struct=index_struct, docstore=docstore, **kwargs)
+
+    @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "BaseGPTIndex":
         """Load index from string (in JSON-format).
 
@@ -420,22 +442,7 @@ class BaseGPTIndex(Generic[IS]):
 
         """
         result_dict = json.loads(index_string)
-        if "index_struct" in result_dict:
-            index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])
-            index_struct_id = index_struct.get_doc_id()
-        elif "index_struct_id" in result_dict:
-            index_struct_id = result_dict["index_struct_id"]
-        else:
-            raise ValueError("index_struct or index_struct_id must be provided.")
-
-        type_to_struct = {cls.index_struct_cls.get_type(): cls.index_struct_cls}
-        docstore = DocumentStore.load_from_dict(
-            result_dict["docstore"],
-            type_to_struct=type_to_struct,
-        )
-        if "index_struct_id" in result_dict:
-            index_struct = docstore.get_document(index_struct_id)
-        return cls(index_struct=index_struct, docstore=docstore, **kwargs)
+        return cls.load_from_dict(result_dict, **kwargs)
 
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "BaseGPTIndex":
@@ -461,6 +468,22 @@ class BaseGPTIndex(Generic[IS]):
             file_contents = f.read()
             return cls.load_from_string(file_contents, **kwargs)
 
+    def save_to_dict(self, **save_kwargs: Any) -> dict:
+        """Save to dict."""
+        if self.docstore.contains_index_struct(
+            exclude_ids=[self.index_struct.get_doc_id()]
+        ):
+            raise ValueError(
+                "Cannot call save index if index is composed on top of "
+                "other indices. Please define a `ComposableGraph` and use "
+                "`save_to_string` and `load_from_string` on that instead."
+            )
+        out_dict: Dict[str, Any] = {
+            "index_struct_id": self.index_struct.get_doc_id(),
+            "docstore": self.docstore.serialize_to_dict(),
+        }
+        return out_dict
+
     def save_to_string(self, **save_kwargs: Any) -> str:
         """Save to string.
 
@@ -474,18 +497,7 @@ class BaseGPTIndex(Generic[IS]):
             str: The JSON string of the index.
 
         """
-        if self.docstore.contains_index_struct(
-            exclude_ids=[self.index_struct.get_doc_id()]
-        ):
-            raise ValueError(
-                "Cannot call `save_to_string` on index if index is composed on top of "
-                "other indices. Please define a `ComposableGraph` and use "
-                "`save_to_string` and `load_from_string` on that instead."
-            )
-        out_dict: Dict[str, Any] = {
-            "index_struct_id": self.index_struct.get_doc_id(),
-            "docstore": self.docstore.serialize_to_dict(),
-        }
+        out_dict = self.save_to_dict(**save_kwargs)
         return json.dumps(out_dict, **save_kwargs)
 
     def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
