@@ -8,7 +8,7 @@ import subprocess
 import sys
 from importlib import util
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import pkg_resources
 import requests
@@ -16,37 +16,18 @@ from pkg_resources import DistributionNotFound
 
 from gpt_index.readers.base import BaseReader
 
-LLAMA_HUB_CONTENTS_URL = "https://api.github.com/repos/ahmetkca/llama-hub/contents"
-LOADER_HUB_PATH = "/loader_hub{path}"
-LOADER_HUB_URL = LLAMA_HUB_CONTENTS_URL + LOADER_HUB_PATH + "?ref=github-reader"
+LLAMA_HUB_CONTENTS_URL = "https://raw.githubusercontent.com/emptycrown/loader-hub/main"
+LOADER_HUB_PATH = "/loader_hub"
+LOADER_HUB_URL = LLAMA_HUB_CONTENTS_URL + LOADER_HUB_PATH
 
 
-def _get_file_content(loader_hub_url: str, path: str) -> str:
-    """
-    Get the content of a file from the GitHub REST API.
-
-    Decodes the content from base64-encoded string into a string using utf-8.
-
-    Args:
-        - path: The path of the file in the Loader Hub repo.
-
-    Returns:
-        The content of the file as a string.
-    """
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
-    resp = requests.get(LOADER_HUB_URL.format(path=path), headers=headers).json()
-    content = resp["content"]
-    if resp["encoding"] != "base64":
-        raise ValueError(
-            f"Expected encoding to be 'base64', but got '{resp['encoding']}' instead."
-        )
-    return base64.b64decode(content).decode("utf-8")
+def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
+    """Get the content of a file from the GitHub REST API."""
+    resp = requests.get(loader_hub_url + path)
+    return resp.text, resp.status_code
 
 
-def get_exports(raw_content: str) -> list:
+def get_exports(raw_content: str) -> List:
     """
     Reads the content of a Python file and returns a list of exported class names.
     for example:
@@ -73,7 +54,7 @@ def get_exports(raw_content: str) -> list:
     return exports
 
 
-def rewrite_exports(exports: list[str]) -> None:
+def rewrite_exports(exports: List[str]) -> None:
     """
     Writes the `__all__` variable to the `__init__.py` file in the modules directory.
 
@@ -138,7 +119,7 @@ def download_loader(
 
     # Fetch up-to-date library from remote repo if loader_id not found
     if loader_id is None:
-        library_raw_content = _get_file_content(loader_hub_url, "/library.json")
+        library_raw_content, _ = _get_file_content(loader_hub_url, "/library.json")
         library = json.loads(library_raw_content)
         if loader_class not in library:
             raise ValueError("Loader class name not found in library")
@@ -149,17 +130,23 @@ def download_loader(
         with open(library_path, "w") as f:
             f.write(library_raw_content)
 
-    assert loader_id is not None
+    if loader_id is None:
+        raise ValueError("Loader class name not found in library")
     # Load the module
     loader_path = f"{dirpath}/{loader_id}"
     requirements_path = f"{loader_path}/requirements.txt"
 
     if refresh_cache or not os.path.exists(loader_path):
         os.makedirs(loader_path, exist_ok=True)
-        basepy_raw_content = _get_file_content(loader_hub_url, f"/{loader_id}/base.py")
+        basepy_raw_content, _ = _get_file_content(
+            loader_hub_url, f"/{loader_id}/base.py"
+        )
         if use_gpt_index_import:
             basepy_raw_content = basepy_raw_content.replace(
                 "import llama_index", "import gpt_index"
+            )
+            basepy_raw_content = basepy_raw_content.replace(
+                "from llama_index", "from gpt_index"
             )
 
         with open(f"{loader_path}/base.py", "w") as f:
@@ -168,36 +155,30 @@ def download_loader(
         # Get content of extra files if there are any
         # and write them under the loader directory
         for extra_file in extra_files:
-            extra_file_raw_content = _get_file_content(
+            extra_file_raw_content, _ = _get_file_content(
                 loader_hub_url, f"/{loader_id}/{extra_file}"
             )
             # If the extra file is an __init__.py file, we need to
             # add the exports to the __init__.py file in the modules directory
             if extra_file == "__init__.py":
                 loader_exports = get_exports(extra_file_raw_content)
-                with open(dirpath / "__init__.py", "r+") as f:
-                    f.write(f"from .{loader_id} import {', '.join(loader_exports)}")
-                    existing_exports = get_exports(f.read())
+                existing_exports = []
+                if os.path.exists(dirpath / "__init__.py"):
+                    with open(dirpath / "__init__.py", "r+") as f:
+                        f.write(f"from .{loader_id} import {', '.join(loader_exports)}")
+                        existing_exports = get_exports(f.read())
                 rewrite_exports(existing_exports + loader_exports)
             with open(f"{loader_path}/{extra_file}", "w") as f:
                 f.write(extra_file_raw_content)
 
-        response = requests.get(f"{loader_hub_url}/{loader_id}/base.py")
-        response_text = response.text
-        if use_gpt_index_import:
-            response_text = response_text.replace(
-                "import llama_index", "import gpt_index"
-            )
-            response_text = response_text.replace("from llama_index", "from gpt_index")
-        with open(loader_path, "w") as f:
-            f.write(response_text)
-
     if not os.path.exists(requirements_path):
         # NOTE: need to check the status code
-        response = requests.get(f"{loader_hub_url}/{loader_id}/requirements.txt")
-        if response.status_code == 200:
+        response_txt, status_code = _get_file_content(
+            loader_hub_url, f"/{loader_id}/requirements.txt"
+        )
+        if status_code == 200:
             with open(requirements_path, "w") as f:
-                f.write(response.text)
+                f.write(response_txt)
 
     # Install dependencies if there are any and not already installed
     if os.path.exists(requirements_path):
