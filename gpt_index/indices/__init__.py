@@ -1,4 +1,4 @@
-"""GPT Index data structures."""
+"""LlamaIndex data structures."""
 
 # indices
 from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex

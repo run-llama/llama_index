@@ -10,7 +10,7 @@ Each call to an LLM will cost some amount of money - for instance, OpenAI's Davi
 The cost of building and querying each index is a TODO in the reference documentation. In the meantime, we provide the following information:
 
 1. A high-level overview of the cost structure of the indices.
-2. A token predictor that you can use directly within GPT Index!
+2. A token predictor that you can use directly within LlamaIndex!
 
 ### Overview of Cost Structure
 
@@ -44,7 +44,7 @@ Here are some notes regarding each of the indices:
 
 ### Token Predictor Usage
 
-GPT Index offers token **predictors** to predict token usage of LLM and embedding calls.
+LlamaIndex offers token **predictors** to predict token usage of LLM and embedding calls.
 This allows you to estimate your costs during 1) index construction, and 2) index querying, before
 any respective LLM calls are made.
 

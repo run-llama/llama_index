@@ -2,10 +2,12 @@
 
 > ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! We will carry out this transition gradually.
 
+> **2/25/2023**: By default, our docs/notebooks/instructions now reference "LlamaIndex"
+instead of "GPT Index".
 > **2/19/2023**: By default, our docs/notebooks/instructions now use the `llama-index` package. However the `gpt-index` package still exists as a duplicate!
 > **2/16/2023**: We have a duplicate `llama-index` pip package. Simply replace all imports of `gpt_index` with `llama_index` if you choose to `pip install llama-index`.
 
-GPT Index (LlamaIndex) is a project consisting of a set of data structures designed to make it easier to 
+LlamaIndex (GPT Index) is a project consisting of a set of data structures designed to make it easier to 
 use large external knowledge bases with LLMs.
 
 PyPi: 

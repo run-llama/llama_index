@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath("../"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 
-project = "GPT Index"
+project = "LlamaIndex"
 copyright = "2022, Jerry Liu"
 author = "Jerry Liu"
 

@@ -34,13 +34,13 @@ Context
 
 Proposed Solution
 ^^^^^^^^^^^^^^^^^
-That's where the **GPT Index** comes in. GPT Index is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
+That's where the **GPT Index** comes in. LlamaIndex is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
 
 - Provides simple data structures to resolve prompt size limitations.
 - Offers data connectors to your external data sources.
 - Offers you a comprehensive toolset trading off cost and performance.
 
-At the core of GPT Index is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
+At the core of LlamaIndex is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
 
 - Uses a pre-trained LLM primarily for *reasoning*/*summarization* instead of prior knowledge.
 - Takes as input a large corpus of text data and build a structured index over it (using an LLM or heuristics).

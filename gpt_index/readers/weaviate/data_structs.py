@@ -1,6 +1,6 @@
-"""Weaviate-specific serializers for GPT Index data structures.
+"""Weaviate-specific serializers for LlamaIndex data structures.
 
-Contain conversion to and from dataclasses that GPT Index uses.
+Contain conversion to and from dataclasses that LlamaIndex uses.
 
 """
 
@@ -94,7 +94,7 @@ class BaseWeaviateIndexStruct(Generic[IS]):
     @classmethod
     @abstractmethod
     def _entry_to_gpt_index(cls, entry: Dict) -> IS:
-        """Convert to gpt index list."""
+        """Convert to LlamaIndex list."""
 
     @classmethod
     def to_gpt_index_list(
@@ -104,7 +104,7 @@ class BaseWeaviateIndexStruct(Generic[IS]):
         vector: Optional[List[float]] = None,
         object_limit: Optional[int] = None,
     ) -> List[IS]:
-        """Convert to gpt index list."""
+        """Convert to LlamaIndex list."""
         validate_client(client)
         class_name = cls._class_name(class_prefix)
         properties = cls._get_common_properties() + cls._get_properties()
@@ -133,11 +133,11 @@ class BaseWeaviateIndexStruct(Generic[IS]):
     @classmethod
     @abstractmethod
     def _from_gpt_index(cls, client: Any, index: IS, class_prefix: str) -> str:
-        """Convert from gpt index."""
+        """Convert from LlamaIndex."""
 
     @classmethod
     def from_gpt_index(cls, client: Any, index: IS, class_prefix: str) -> str:
-        """Convert from gpt index."""
+        """Convert from LlamaIndex."""
         validate_client(client)
         index_id = cls._from_gpt_index(client, index, class_prefix)
         client.batch.flush()
@@ -180,7 +180,7 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
 
     @classmethod
     def _entry_to_gpt_index(cls, entry: Dict) -> Node:
-        """Convert to gpt index list."""
+        """Convert to LlamaIndex list."""
         extra_info_str = entry["extra_info"]
         if extra_info_str == "":
             extra_info = None
@@ -205,7 +205,7 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
 
     @classmethod
     def _from_gpt_index(cls, client: Any, node: Node, class_prefix: str) -> str:
-        """Convert from gpt index."""
+        """Convert from LlamaIndex."""
         node_dict = node.to_dict()
         vector = node_dict.pop("embedding")
         extra_info = node_dict.pop("extra_info")
