@@ -1,4 +1,4 @@
-# 🗂️ ️GPT Index (LlamaIndex 🦙)
+# 🗂️ LlamaIndex 🦙 (GPT Index)
 
 > ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! We will carry out this transition gradually.
 
