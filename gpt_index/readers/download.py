@@ -1,7 +1,5 @@
 """Download loader from the Loader Hub."""
 
-import base64
-import importlib
 import json
 import os
 import subprocess
@@ -28,9 +26,9 @@ def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
 
 
 def get_exports(raw_content: str) -> List:
-    """
-    Reads the content of a Python file and returns a list of exported class names.
-    for example:
+    """Read content of a Python file and returns a list of exported class names.
+
+    For example:
     ```python
     from .a import A
     from .b import B
@@ -44,6 +42,7 @@ def get_exports(raw_content: str) -> List:
 
     Returns:
         A list of exported class names.
+
     """
     exports = []
     for line in raw_content.splitlines():
@@ -55,16 +54,15 @@ def get_exports(raw_content: str) -> List:
 
 
 def rewrite_exports(exports: List[str]) -> None:
-    """
-    Writes the `__all__` variable to the `__init__.py` file in the modules directory.
+    """Write the `__all__` variable to the `__init__.py` file in the modules dir.
 
     Removes the line that contains `__all__` and appends a new line with the updated
     `__all__` variable.
 
     Args:
         - exports: A list of exported class names.
-    """
 
+    """
     dirpath = Path(__file__).parent / "llamahub_modules"
     init_path = f"{dirpath}/__init__.py"
     with open(init_path, "r") as f:
