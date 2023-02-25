@@ -28,13 +28,13 @@ class KGQueryMode(str, Enum):
         KEYWORD ("keyword"): Default query mode, using keywords to find triplets.
         EMBEDDING ("embedding"): Embedding mode, using embeddings to find
             similar triplets.
-        HYBRID ("hyrbid"): Hyrbid mode, combining both keywords and embeddings
+        HYBRID ("hybrid"): Hyrbid mode, combining both keywords and embeddings
             to find relevant triplets.
     """
 
     KEYWORD = "keyword"
     EMBEDDING = "embedding"
-    HYBRID = "hyrbid"
+    HYBRID = "hybrid"
 
 
 class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
@@ -57,7 +57,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         embedding_mode (KGQueryMode): Specifies whether to use keyowrds,
             embeddings, or both to find relevent triplets. Should be one of "keyword",
             "embedding", or "hybrid".
-        top_k_embeddings (int): The number of top embeddings to use
+        similarity_top_k (int): The number of top embeddings to use
             (if embeddings are used).
     """
 
@@ -69,7 +69,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         num_chunks_per_query: int = 10,
         include_text: bool = True,
         embedding_mode: Optional[KGQueryMode] = KGQueryMode.KEYWORD,
-        top_k_embeddings: int = 2,
+        similarity_top_k: int = 2,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -77,7 +77,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
-        self.top_k_embeddings = top_k_embeddings
+        self.similarity_top_k = similarity_top_k
         self._include_text = include_text
         self._embedding_mode = KGQueryMode(embedding_mode)
 
@@ -139,7 +139,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             similarities, top_rel_texts = get_top_k_embeddings(
                 query_embedding,
                 rel_text_embeddings,
-                similarity_top_k=self.top_k_embeddings,
+                similarity_top_k=self.similarity_top_k,
                 embedding_ids=all_rel_texts,
                 similarity_cutoff=self.similarity_cutoff,
             )
