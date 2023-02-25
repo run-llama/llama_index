@@ -16,6 +16,10 @@ from gpt_index.vector_stores import (
     SimpleVectorStore,
     WeaviateVectorStore,
 )
+from gpt_index.vector_stores.opensearch import (
+    OpensearchVectorClient,
+    OpensearchVectorStore,
+)
 
 
 class GPTSimpleVectorIndex(GPTVectorStoreIndex):
@@ -358,6 +362,56 @@ class GPTChromaIndex(GPTVectorStoreIndex):
             raise ValueError("chroma_collection is required.")
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 
+        super().__init__(
+            documents=documents,
+            index_struct=index_struct,
+            text_qa_template=text_qa_template,
+            llm_predictor=llm_predictor,
+            embed_model=embed_model,
+            vector_store=vector_store,
+            **kwargs,
+        )
+
+
+class GPTOpensearchIndex(GPTVectorStoreIndex):
+    """GPT Opensearch Index
+
+    The GPTOpensearchIndex is a data structure where nodes are keyed by
+    embeddings, and those embeddings are stored in a document that is indexed with its embedding as well as
+    its textual data (text field is defined in the OpensearchVectorClient).
+    During index construction, the document texts are chunked up,
+    converted to nodes with text; each node's embedding is computed, and then
+    the node's text, along with the embedding, is converted into JSON document that
+    is indexed in Opensearch. The embedding data is put into a field with type "knn_vector" and the text
+    is put into a standard Opensearch text field.
+
+    During query time, the index performs approximate KNN search using the "knn_vector" field
+    that the embeddings were mapped to.
+
+    Args:
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+        endpoint (str): Endpoint of the elasticsearch cluster (required).
+        index_name (str): Index in the elasticsearch cluster (required).
+        embedding_field (str): Field (within the JSON document) that the embeddings are stored in.
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
+            embedding similarity.
+    """
+
+    def __init__(
+        self,
+        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        client: Optional[OpensearchVectorClient] = None,
+        index_struct: Optional[IndexDict] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
+        embed_model: Optional[BaseEmbedding] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Init params."""
+        if client is None:
+            raise ValueError("client is required.")
+        vector_store = OpensearchVectorStore(client)
         super().__init__(
             documents=documents,
             index_struct=index_struct,
