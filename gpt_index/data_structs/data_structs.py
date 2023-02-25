@@ -247,6 +247,11 @@ class KG(IndexStruct):
     table: Dict[str, Set[str]] = field(default_factory=dict)
     text_chunks: Dict[str, Node] = field(default_factory=dict)
     rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
+    embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
+
+    def add_to_embedding_dict(self, triplet_str: str, embedding: List[float]) -> None:
+        """Add embedding to dict."""
+        self.embedding_dict[triplet_str] = embedding
 
     def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
         """Upsert a knowledge triplet to the graph."""

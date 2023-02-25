@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
+from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
 from gpt_index.indices.query.schema import QueryBundle
@@ -14,6 +15,31 @@ from tests.mock_utils.mock_prompts import (
     MOCK_KG_TRIPLET_EXTRACT_PROMPT,
     MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
 )
+
+
+def mock_get_text_embedding(text: str) -> List[float]:
+    """Mock get text embedding."""
+    # assume dimensions are 4
+    if text == "('foo', 'is', 'bar')":
+        return [1, 0, 0, 0]
+    elif text == "('hello', 'is not', 'world')":
+        return [0, 1, 0, 0]
+    elif text == "('Jane', 'is mother of', 'Bob')":
+        return [0, 0, 1, 0]
+    elif text == "foo":
+        return [0, 0, 0, 1]
+    else:
+        raise ValueError("Invalid text for `mock_get_text_embedding`.")
+
+
+def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
+    """Mock get text embeddings."""
+    return [mock_get_text_embedding(text) for text in texts]
+
+
+def mock_get_query_embedding(query: str) -> List[float]:
+    """Mock get query embedding."""
+    return [0, 0, 1, 0, 0]
 
 
 @pytest.fixture
@@ -88,6 +114,38 @@ def test_build_kg(
 @patch.object(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+def test_build_kg_similarity(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    _mock_get_text_embeddings: Any,
+    _mock_get_text_embedding: Any,
+    struct_kwargs: Any,
+    documents: List[Document],
+) -> None:
+    """Test build knowledge graph."""
+    index = GPTKnowledgeGraphIndex(documents, include_embeddings=True)
+    # get embedding dict from KG index struct
+    rel_text_embeddings = index.index_struct.embedding_dict
+
+    # check that all rel_texts were embedded
+    assert len(rel_text_embeddings) == 3
+    for rel_text, embedding in rel_text_embeddings.items():
+        assert embedding == mock_get_text_embedding(rel_text)
+
+
+@patch_common
+@patch.object(
+    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+)
 def test_query(
     _mock_init: Any,
     _mock_predict: Any,
@@ -137,3 +195,40 @@ def test_query(
         nodes[0].get_text() == "The following are knowledge triplets in the form of "
         "(subset, predicate, object):\n('foo', 'is', 'bar')"
     )
+
+
+@patch_common
+@patch.object(
+    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+def test_query_similarity(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    _mock_get_text_embeddings: Any,
+    _mock_get_text_embedding: Any,
+    struct_kwargs: Any,
+    documents: List[Document],
+) -> None:
+    """Test query."""
+    index = GPTKnowledgeGraphIndex(documents, include_embeddings=True)
+
+    # returns only two rel texts to use for generating response
+    # uses hyrbid query by default
+    response = index.query("foo", similarity_top_k=2)
+    assert isinstance(response.extra_info, dict)
+    assert len(response.extra_info["kg_rel_texts"]) == 2
+
+    # Filters out all embeddings
+    try:
+        response = index.query("foo", similarity_cutoff=-1.0)
+    except ValueError as e:
+        assert str(e) == "kg_rel_map must be found in at least one Node."
