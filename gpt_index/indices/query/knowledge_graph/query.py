@@ -137,7 +137,6 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
                 self.index_struct.embedding_dict[_id] for _id in all_rel_texts
             ]
             similarities, top_rel_texts = get_top_k_embeddings(
-                self._embed_model,
                 query_embedding,
                 rel_text_embeddings,
                 similarity_top_k=self.top_k_embeddings,
