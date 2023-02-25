@@ -223,7 +223,7 @@ def test_query_similarity(
 
     # returns only two rel texts to use for generating response
     # uses hyrbid query by default
-    response = index.query("foo", top_k_embeddings=2)
+    response = index.query("foo", similarity_top_k=2)
     assert isinstance(response.extra_info, dict)
     assert len(response.extra_info["kg_rel_texts"]) == 2
 
