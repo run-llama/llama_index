@@ -1,12 +1,12 @@
-"""SQLite structured store."""
-
-from typing import Any, Dict, List, Optional, Sequence, Type, cast
+"""SQL Structured Store."""
+import json
+from typing import Any, Dict, Optional, Sequence, Type, cast
 
 from sqlalchemy import Table
 
 from gpt_index.data_structs.table import SQLStructTable, StructDatapoint
-from gpt_index.indices.base import DOCUMENTS_INPUT
-from gpt_index.indices.common.struct_store.base import SQLContextBuilder
+from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.sql import (
@@ -14,9 +14,9 @@ from gpt_index.indices.query.struct_store.sql import (
     GPTSQLStructStoreIndexQuery,
 )
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
+from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.schema import BaseDocument
 
 
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
@@ -41,19 +41,9 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             Specifying the Table object explicitly, instead of
             the table name, allows you to pass in a view.
             Either table_name or table must be specified.
-        table_context_dict (Optional[Dict[str, str]]): Optional table context to use.
-            If specified,
-            sql_context_builder and context_documents cannot be specified.
-        sql_context_builder (Optional[SQLContextBuilder]): SQL context builder.
-            If specified, the context builder will be used to build
-            context for the specified table, which will then be used during
-            query-time. Also if specified, context_documents must be specified,
-            and table_context cannot be specified.
-        context_documents_dict (Optional[Dict[str, List[BaseDocument]]]):
-            Optional context
-            documents to inform the sql_context_builder. Must be specified if
-            sql_context_builder is specified. Cannot be specified if table_context
-            is specified.
+        sql_context_container (Optional[SQLContextContainer]): SQL context container.
+            an be generated from a SQLContextContainerBuilder.
+            See :ref:`Ref-Struct-Store` for more details.
 
     """
 
@@ -68,9 +58,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         table_name: Optional[str] = None,
         table: Optional[Table] = None,
         ref_doc_id_column: Optional[str] = None,
-        table_context_dict: Optional[Dict[str, str]] = None,
-        sql_context_builder: Optional[SQLContextBuilder] = None,
-        context_documents_dict: Optional[Dict[str, List[BaseDocument]]] = None,
+        sql_context_container: Optional[SQLContextContainer] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -103,43 +91,12 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             **kwargs,
         )
 
-        # if context builder is specified, then add to context_dict
-        if table_context_dict is not None and (
-            sql_context_builder is not None or context_documents_dict is not None
-        ):
-            raise ValueError(
-                "Cannot specify both table_context_dict and "
-                "sql_context_builder/context_documents_dict"
-            )
-        if sql_context_builder is not None:
-            if context_documents_dict is None:
-                raise ValueError(
-                    "context_documents_dict must be specified if "
-                    "sql_context_builder is specified"
-                )
-            context_documents_dict = cast(
-                Dict[str, List[BaseDocument]], context_documents_dict
-            )
-            context_dict: Dict[
-                str, str
-            ] = sql_context_builder.build_all_context_from_documents(
-                context_documents_dict
-            )
-        elif table_context_dict is not None:
-            context_dict = table_context_dict
-        else:
-            context_dict = {}
-
-        # validate context_dict keys are valid table names
-        context_keys = set(context_dict.keys())
-        if not context_keys.issubset(set(self.sql_database.get_table_names())):
-            raise ValueError(
-                "Invalid context table names: "
-                f"{context_keys - set(self.sql_database.get_table_names())}"
-            )
-
-        self._index_struct.context_dict.update(context_dict)
-        self._sql_context_builder = sql_context_builder
+        # TODO: index_struct context_dict is deprecated,
+        # we're migrating storage of information to here.
+        if sql_context_container is None:
+            container_builder = SQLContextContainerBuilder(sql_database)
+            sql_context_container = container_builder.build_context_container()
+        self.sql_context_container = sql_context_container
 
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
@@ -176,5 +133,66 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         super()._preprocess_query(mode, query_kwargs)
         # pass along sql_database, table_name
         query_kwargs["sql_database"] = self.sql_database
+        if "sql_context_container" not in query_kwargs:
+            query_kwargs["sql_context_container"] = self.sql_context_container
         if mode == QueryMode.DEFAULT:
             query_kwargs["ref_doc_id_column"] = self.ref_doc_id_column
+
+    @classmethod
+    def load_from_string(cls, index_string: str, **kwargs: Any) -> "BaseGPTIndex":
+        """Load index from string (in JSON-format).
+
+        This method loads the index from a JSON string. The index data
+        structure itself is preserved completely. If the index is defined over
+        subindices, those subindices will also be preserved (and subindices of
+        those subindices, etc.).
+
+        NOTE: load_from_string should not be used for indices composed on top
+        of other indices. Please define a `ComposableGraph` and use
+        `save_to_string` and `load_from_string` on that instead.
+
+        Args:
+            index_string (str): The index string (in JSON-format).
+
+        Returns:
+            BaseGPTIndex: The loaded index.
+
+        """
+        # NOTE: also getting deserialized in parent class,
+        # figure out how to deal with later
+        result_dict = json.loads(index_string)
+        sql_context_container = SQLContextContainer.from_dict(
+            result_dict["sql_context_container"]
+        )
+        result_obj = super().load_from_string(
+            index_string, sql_context_container=sql_context_container, **kwargs
+        )
+        return result_obj
+
+    def save_to_string(self, **save_kwargs: Any) -> str:
+        """Save to string.
+
+        This method stores the index into a JSON string.
+
+        NOTE: save_to_string should not be used for indices composed on top
+        of other indices. Please define a `ComposableGraph` and use
+        `save_to_string` and `load_from_string` on that instead.
+
+        Returns:
+            str: The JSON string of the index.
+
+        """
+        if self.docstore.contains_index_struct(
+            exclude_ids=[self.index_struct.get_doc_id()]
+        ):
+            raise ValueError(
+                "Cannot call `save_to_string` on index if index is composed on top of "
+                "other indices. Please define a `ComposableGraph` and use "
+                "`save_to_string` and `load_from_string` on that instead."
+            )
+        out_dict: Dict[str, Any] = {
+            "index_struct_id": self.index_struct.get_doc_id(),
+            "docstore": self.docstore.serialize_to_dict(),
+            "sql_context_container": self.sql_context_container.to_dict(),
+        }
+        return json.dumps(out_dict, **save_kwargs)

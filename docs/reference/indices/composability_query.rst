@@ -6,7 +6,7 @@ Composable Queries
 .. automodule:: gpt_index.indices.query.schema
    :members:
    :inherited-members:
-   :exclude-members: 
+   :exclude-members: QueryBundle
 
 
 .. automodule:: gpt_index.data_structs.struct_type

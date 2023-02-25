@@ -3,7 +3,7 @@
 import random
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -37,6 +37,7 @@ class Node(IndexStruct):
 
     def __post_init__(self) -> None:
         """Post init."""
+        super().__post_init__()
         # NOTE: for Node objects, the text field is required
         if self.text is None:
             raise ValueError("text field not set.")
@@ -173,7 +174,7 @@ class IndexList(IndexStruct):
 
 
 @dataclass
-class BaseIndexDict(IndexStruct):
+class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
     nodes_dict: Dict[int, Node] = field(default_factory=dict)
@@ -216,117 +217,90 @@ class BaseIndexDict(IndexStruct):
         """Get node."""
         return self.get_nodes([text_id])[0]
 
+    def delete(self, doc_id: str) -> None:
+        """Delete a document."""
+        text_ids_to_delete = set()
+        int_ids_to_delete = set()
+        for text_id, int_id in self.id_map.items():
+            node = self.nodes_dict[int_id]
+            if node.ref_doc_id != doc_id:
+                continue
+            text_ids_to_delete.add(text_id)
+            int_ids_to_delete.add(int_id)
+
+        for int_id, text_id in zip(int_ids_to_delete, text_ids_to_delete):
+            del self.nodes_dict[int_id]
+            del self.id_map[text_id]
+
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
         return "dict"
 
 
-# TODO: this should be specific to FAISS
 @dataclass
-class IndexDict(BaseIndexDict):
-    """A dictionary of documents.
+class KG(IndexStruct):
+    """A table of keywords mapping keywords to text chunks."""
 
-    Note: this index structure is specifically used with the Faiss index.
+    # Unidirectional
 
-    """
+    table: Dict[str, Set[str]] = field(default_factory=dict)
+    text_chunks: Dict[str, Node] = field(default_factory=dict)
+    rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
+
+    def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
+        """Upsert a knowledge triplet to the graph."""
+        subj, relationship, obj = triplet
+        self.add_node([subj, obj], node)
+        if subj not in self.rel_map:
+            self.rel_map[subj] = []
+        self.rel_map[subj].append((obj, relationship))
+
+    def add_node(self, keywords: List[str], node: Node) -> None:
+        """Add text to table."""
+        node_id = node.get_doc_id()
+        for keyword in keywords:
+            if keyword not in self.table:
+                self.table[keyword] = set()
+            self.table[keyword].add(node_id)
+        self.text_chunks[node_id] = node
+
+    def get_rel_map_texts(self, keyword: str) -> List[str]:
+        """Get the corresponding knowledge for a given keyword."""
+        # NOTE: return a single node for now
+        if keyword not in self.rel_map:
+            return []
+        texts = []
+        for obj, rel in self.rel_map[keyword]:
+            texts.append(str((keyword, rel, obj)))
+        return texts
+
+    def get_rel_map_tuples(self, keyword: str) -> List[Tuple[str, str]]:
+        """Get the corresponding knowledge for a given keyword."""
+        # NOTE: return a single node for now
+        if keyword not in self.rel_map:
+            return []
+        return self.rel_map[keyword]
+
+    def get_node_ids(self, keyword: str, depth: int = 1) -> List[str]:
+        """Get the corresponding knowledge for a given keyword."""
+        if depth > 1:
+            raise ValueError("Depth > 1 not supported yet.")
+        if keyword not in self.table:
+            return []
+        keywords = [keyword]
+        # some keywords may correspond to a leaf node, may not be in rel_map
+        if keyword in self.rel_map:
+            keywords.extend([child for child, _ in self.rel_map[keyword]])
+
+        node_ids: List[str] = []
+        for keyword in keywords:
+            for node_id in self.table.get(keyword, set()):
+                node_ids.append(node_id)
+            # TODO: Traverse (with depth > 1)
+        return node_ids
 
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
-        return "dict"
-
-
-@dataclass
-class SimpleIndexDict(BaseIndexDict):
-    """A simple dictionary of documents.
-
-    This index structure also contains an internal in-memory
-    embedding dict.
-
-    """
-
-    embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
-
-    def add_to_embedding_dict(self, text_id: str, embedding: List[float]) -> None:
-        """Add embedding to dict."""
-        if text_id not in self.id_map:
-            raise ValueError("text_id not found in id_map")
-        elif not isinstance(text_id, str):
-            raise ValueError("text_id must be a string.")
-        self.embedding_dict[text_id] = embedding
-
-    @classmethod
-    def get_type(cls) -> str:
-        """Get type."""
-        return "simple_dict"
-
-
-@dataclass
-class WeaviateIndexStruct(IndexStruct):
-    """A helper index struct for Weaviate.
-
-    In Weaviate, docs are stored in Weaviate directly.
-    This index struct helps to store the class prefix
-
-    """
-
-    class_prefix: Optional[str] = None
-
-    def __post_init__(self) -> None:
-        """Post init."""
-        if self.class_prefix is None:
-            raise ValueError("class_prefix must be provided.")
-
-    def get_class_prefix(self) -> str:
-        """Get class prefix."""
-        if self.class_prefix is None:
-            raise ValueError("class_prefix must be provided.")
-        return self.class_prefix
-
-    @classmethod
-    def get_type(cls) -> str:
-        """Get type."""
-        return "weaviate"
-
-
-@dataclass
-class PineconeIndexStruct(IndexStruct):
-    """An index struct for Pinecone.
-
-    Docs are stored in Pinecone directly.
-
-    """
-
-    @classmethod
-    def get_type(cls) -> str:
-        """Get type."""
-        return "pinecone"
-
-
-@dataclass
-class QdrantIndexStruct(IndexStruct):
-    """And index struct for Qdrant.
-
-    Docs are stored in Qdrant directly.
-    This index struct helps to store the collection name
-
-    """
-
-    collection_name: Optional[str] = None
-
-    def __post_init__(self) -> None:
-        """Post init."""
-        if self.collection_name is None:
-            raise ValueError("collection_name must be provided.")
-
-    def get_collection_name(self) -> str:
-        """Get class prefix."""
-        if self.collection_name is None:
-            raise ValueError("collection_name must be provided.")
-        return self.collection_name
-
-    @classmethod
-    def get_type(cls) -> str:
-        """Get type."""
-        return "qdrant"
+        return "kg"

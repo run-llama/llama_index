@@ -7,7 +7,7 @@ exposed for recursive queries over composable indices.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -108,3 +108,29 @@ class QueryConfig(DataClassJsonMixin):
     index_struct_type: str
     query_mode: QueryMode
     query_kwargs: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class QueryBundle(DataClassJsonMixin):
+    """
+    Query bundle.
+
+    This dataclass contains the original query string and associated transformations.
+
+    Args:
+        query_str (str): the original user-specified query string.
+            This is currently used by all non embedding-based queries.
+        embedding_strs (list[str]): list of strings used for embedding the query.
+            This is currently used by all embedding-based queries.
+    """
+
+    query_str: str
+    custom_embedding_strs: Optional[List[str]] = None
+
+    @property
+    def embedding_strs(self) -> List[str]:
+        """Use custom embedding strs if specified, otherwise use query str."""
+        if self.custom_embedding_strs is None:
+            return [self.query_str]
+        else:
+            return self.custom_embedding_strs

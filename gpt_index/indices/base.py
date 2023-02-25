@@ -23,10 +23,11 @@ from gpt_index.indices.node_utils import get_nodes_from_document
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
-from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.query.query_transform import BaseQueryTransform
+from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
 from gpt_index.readers.schema.base import Document
 from gpt_index.response.schema import Response
 from gpt_index.schema import BaseDocument
@@ -67,6 +68,7 @@ class BaseGPTIndex(Generic[IS]):
         docstore: Optional[DocumentStore] = None,
         index_registry: Optional[IndexRegistry] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        text_splitter: Optional[TextSplitter] = None,
         chunk_size_limit: Optional[int] = None,
         include_extra_info: bool = True,
     ) -> None:
@@ -85,6 +87,7 @@ class BaseGPTIndex(Generic[IS]):
         self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
             self._llm_predictor, chunk_size_limit=chunk_size_limit
         )
+        self._text_splitter = text_splitter or self._build_fallback_text_splitter()
 
         # build index struct in the init function
         self._docstore = docstore or DocumentStore()
@@ -140,7 +143,12 @@ class BaseGPTIndex(Generic[IS]):
         self._index_registry.type_to_query[cur_type] = self.get_query_map()
 
         # update docstore with current struct
-        self._docstore.add_documents([self.index_struct])
+        # NOTE: we call allow_update=True: in old versions of the docstore,
+        # the index_struct was not stored in the docstore. whereas
+        # in the new docstore, index_struct is stored in the docstore.
+        # if we want to break BW compatibility, we can just remove this line
+        # and only insert into docstore during index construction.
+        self._docstore.add_documents([self.index_struct], allow_update=True)
 
     def _process_documents(
         self,
@@ -167,10 +175,8 @@ class BaseGPTIndex(Generic[IS]):
                         f"Invalid doc ID: {sub_index_struct.get_doc_id()}"
                     )
                 results.append(sub_index_struct)
-            elif isinstance(doc, (Document, IndexStruct)):
+            elif isinstance(doc, Document):
                 results.append(doc)
-                # update docstore
-                docstore.add_documents([doc])
             else:
                 raise ValueError(f"Invalid document type: {type(doc)}.")
         return cast(List[BaseDocument], results)
@@ -234,7 +240,7 @@ class BaseGPTIndex(Generic[IS]):
         self._index_struct.doc_id = doc_id
         # Note: we also need to delete old doc_id, and update docstore
         self._docstore.delete_document(old_doc_id)
-        self._docstore.add_documents([self._index_struct])
+        self._docstore.add_documents([self._index_struct], allow_update=True)
 
     def get_doc_id(self) -> str:
         """Get doc_id for index struct.
@@ -249,15 +255,18 @@ class BaseGPTIndex(Generic[IS]):
     def _get_nodes_from_document(
         self,
         document: BaseDocument,
-        text_splitter: TokenTextSplitter,
         start_idx: int = 0,
     ) -> List[Node]:
         return get_nodes_from_document(
             document=document,
-            text_splitter=text_splitter,
+            text_splitter=self._text_splitter,
             start_idx=start_idx,
             include_extra_info=self._include_extra_info,
         )
+
+    def _build_fallback_text_splitter(self) -> TextSplitter:
+        """Build the text splitter if not specified in args."""
+        return TokenTextSplitter()
 
     @abstractmethod
     def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
@@ -297,14 +306,9 @@ class BaseGPTIndex(Generic[IS]):
 
         Args:
             doc_id (str): document id
-            full_delete (bool): whether to delete the document from the docstore.
-                By default this is True.
 
         """
-        full_delete = delete_kwargs.pop("full_delete", True)
         logging.debug(f"> Deleting document: {doc_id}")
-        if full_delete:
-            self._docstore.delete_document(doc_id)
         self._delete(doc_id, **delete_kwargs)
 
     def update(self, document: DOCUMENTS_INPUT, **update_kwargs: Any) -> None:
@@ -334,8 +338,10 @@ class BaseGPTIndex(Generic[IS]):
 
     def query(
         self,
-        query_str: str,
+        query_str: Union[str, QueryBundle],
         mode: str = QueryMode.DEFAULT,
+        query_transform: Optional[BaseQueryTransform] = None,
+        use_async: bool = False,
         **query_kwargs: Any,
     ) -> Response:
         """Answer a query.
@@ -362,7 +368,9 @@ class BaseGPTIndex(Generic[IS]):
                 self._docstore,
                 self._index_registry,
                 query_configs=query_configs,
+                query_transform=query_transform,
                 recursive=True,
+                use_async=use_async,
             )
             return query_runner.query(query_str, self._index_struct)
         else:
@@ -380,7 +388,9 @@ class BaseGPTIndex(Generic[IS]):
                 self._docstore,
                 self._index_registry,
                 query_configs=[query_config],
+                query_transform=query_transform,
                 recursive=False,
+                use_async=use_async,
             )
             return query_runner.query(query_str, self._index_struct)
 
@@ -388,6 +398,28 @@ class BaseGPTIndex(Generic[IS]):
     @abstractmethod
     def get_query_map(cls) -> Dict[str, Type[BaseGPTIndexQuery]]:
         """Get query map."""
+
+    @classmethod
+    def load_from_dict(
+        cls, result_dict: Dict[str, Any], **kwargs: Any
+    ) -> "BaseGPTIndex":
+        """Load index from dict."""
+        if "index_struct" in result_dict:
+            index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])
+            index_struct_id = index_struct.get_doc_id()
+        elif "index_struct_id" in result_dict:
+            index_struct_id = result_dict["index_struct_id"]
+        else:
+            raise ValueError("index_struct or index_struct_id must be provided.")
+
+        type_to_struct = {cls.index_struct_cls.get_type(): cls.index_struct_cls}
+        docstore = DocumentStore.load_from_dict(
+            result_dict["docstore"],
+            type_to_struct=type_to_struct,
+        )
+        if "index_struct_id" in result_dict:
+            index_struct = docstore.get_document(index_struct_id)
+        return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 
     @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "BaseGPTIndex":
@@ -410,13 +442,7 @@ class BaseGPTIndex(Generic[IS]):
 
         """
         result_dict = json.loads(index_string)
-        index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])
-        type_to_struct = {index_struct.get_type(): type(index_struct)}
-        docstore = DocumentStore.load_from_dict(
-            result_dict["docstore"],
-            type_to_struct=type_to_struct,
-        )
-        return cls(index_struct=index_struct, docstore=docstore, **kwargs)
+        return cls.load_from_dict(result_dict, **kwargs)
 
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "BaseGPTIndex":
@@ -442,6 +468,22 @@ class BaseGPTIndex(Generic[IS]):
             file_contents = f.read()
             return cls.load_from_string(file_contents, **kwargs)
 
+    def save_to_dict(self, **save_kwargs: Any) -> dict:
+        """Save to dict."""
+        if self.docstore.contains_index_struct(
+            exclude_ids=[self.index_struct.get_doc_id()]
+        ):
+            raise ValueError(
+                "Cannot call save index if index is composed on top of "
+                "other indices. Please define a `ComposableGraph` and use "
+                "`save_to_string` and `load_from_string` on that instead."
+            )
+        out_dict: Dict[str, Any] = {
+            "index_struct_id": self.index_struct.get_doc_id(),
+            "docstore": self.docstore.serialize_to_dict(),
+        }
+        return out_dict
+
     def save_to_string(self, **save_kwargs: Any) -> str:
         """Save to string.
 
@@ -455,18 +497,7 @@ class BaseGPTIndex(Generic[IS]):
             str: The JSON string of the index.
 
         """
-        if self.docstore.contains_index_struct(
-            exclude_ids=[self.index_struct.get_doc_id()]
-        ):
-            raise ValueError(
-                "Cannot call `save_to_string` on index if index is composed on top of "
-                "other indices. Please define a `ComposableGraph` and use "
-                "`save_to_string` and `load_from_string` on that instead."
-            )
-        out_dict: Dict[str, dict] = {
-            "index_struct": self.index_struct.to_dict(),
-            "docstore": self.docstore.serialize_to_dict(),
-        }
+        out_dict = self.save_to_dict(**save_kwargs)
         return json.dumps(out_dict, **save_kwargs)
 
     def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
