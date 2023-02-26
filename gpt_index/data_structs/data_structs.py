@@ -180,6 +180,10 @@ class IndexDict(IndexStruct):
     nodes_dict: Dict[int, Node] = field(default_factory=dict)
     id_map: Dict[str, int] = field(default_factory=dict)
 
+    # TODO: temporary hack to store embeddings for simple vector index
+    # this should be empty for all other indices
+    embeddings_dict: Dict[str, List[float]] = field(default_factory=dict)
+
     def add_node(
         self,
         node: Node,

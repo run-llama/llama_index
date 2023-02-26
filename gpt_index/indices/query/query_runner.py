@@ -42,7 +42,7 @@ class QueryRunner(BaseQueryRunner):
             query_config_objs: List[QueryConfig] = []
         elif isinstance(query_configs[0], Dict):
             query_config_objs = [
-                QueryConfig.from_dict(cast(Dict, qc)) for qc in query_configs
+                QueryConfig.load_from_dict(cast(Dict, qc)) for qc in query_configs
             ]
         else:
             query_config_objs = [cast(QueryConfig, q) for q in query_configs]
