@@ -9,10 +9,12 @@ import pytest
 
 from gpt_index.composability.graph import ComposableGraph
 from gpt_index.data_structs.struct_type import IndexStructType
+from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.tree.base import GPTTreeIndex
+from gpt_index.indices.vector_store.vector_indices import GPTSimpleVectorIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMChain,
     LLMMetadata,
@@ -51,6 +53,9 @@ def struct_kwargs() -> Tuple[Dict, List]:
         "table": {
             "keyword_extract_template": MOCK_KEYWORD_EXTRACT_PROMPT,
         },
+        "vector": {
+            "text_qa_template": MOCK_TEXT_QA_PROMPT,
+        },
     }
     query_configs = [
         QueryConfig(
@@ -77,6 +82,15 @@ def struct_kwargs() -> Tuple[Dict, List]:
                 "query_keyword_extract_template": MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
                 "text_qa_template": MOCK_TEXT_QA_PROMPT,
                 "refine_template": MOCK_REFINE_PROMPT,
+            },
+        ),
+        QueryConfig(
+            index_struct_type=IndexStructType.DICT,
+            query_mode=QueryMode.DEFAULT,
+            query_kwargs={
+                "text_qa_template": MOCK_TEXT_QA_PROMPT,
+                "refine_template": MOCK_REFINE_PROMPT,
+                "similarity_top_k": 1,
             },
         ),
     ]
@@ -339,3 +353,96 @@ def test_recursive_query_list_tree_token_count(
     tree.query(query_str, mode="recursive", query_configs=query_configs)
     # prompt is which is 35 tokens, plus 10 for the mock response
     assert tree._llm_predictor.total_tokens_used - start_token_ct == 45
+
+
+def mock_get_query_embedding(query: str) -> List[float]:
+    """Mock get query embedding."""
+    if query == "Foo?":
+        return [0, 0, 1, 0, 0]
+    elif query == "Orange?":
+        return [0, 1, 0, 0, 0]
+    elif query == "Cat?":
+        return [0, 0, 0, 1, 0]
+    else:
+        raise ValueError("Invalid query for `mock_get_query_embedding`.")
+
+
+def mock_get_text_embedding(text: str) -> List[float]:
+    """Mock get text embedding."""
+    # assume dimensions are 5
+    if text == "Hello world.":
+        return [1, 0, 0, 0, 0]
+    elif text == "This is a test.":
+        return [0, 1, 0, 0, 0]
+    elif text == "This is another test.":
+        return [0, 0, 1, 0, 0]
+    elif text == "This is a test v2.":
+        return [0, 0, 0, 1, 0]
+    else:
+        raise ValueError("Invalid text for `mock_get_text_embedding`.")
+
+
+def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
+    """Mock get text embeddings."""
+    return [mock_get_text_embedding(text) for text in texts]
+
+
+@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
+@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_recursive_query_vector_table(
+    _mock_query_embed: Any,
+    _mock_get_text_embeds: Any,
+    _mock_get_text_embed: Any,
+    _mock_init: Any,
+    _mock_total_tokens_used: Any,
+    _mock_predict: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test query."""
+    index_kwargs, query_configs = struct_kwargs
+    list_kwargs = index_kwargs["list"]
+    table_kwargs = index_kwargs["table"]
+    # try building a tree for a group of 4, then a list
+    # use a diff set of documents
+    # try building a list for every two, then a tree
+    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
+    list1.set_text("foo bar")
+    list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
+    list2.set_text("apple orange")
+    list3 = GPTSimpleVectorIndex(documents[4:6], **list_kwargs)
+    list3.set_text("toronto london")
+    list4 = GPTSimpleVectorIndex(documents[6:8], **list_kwargs)
+    list4.set_text("cat dog")
+
+    table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
+    query_str = "Foo?"
+    response = table.query(query_str, mode="recursive", query_configs=query_configs)
+    assert str(response) == ("Foo?:This is another test.")
+    query_str = "Orange?"
+    response = table.query(query_str, mode="recursive", query_configs=query_configs)
+    assert str(response) == ("Orange?:This is a test.")
+    query_str = "Cat?"
+    response = table.query(query_str, mode="recursive", query_configs=query_configs)
+    assert str(response) == ("Cat?:This is a test v2.")
+
+    # test serialize and then back
+    # use composable graph struct
+    with TemporaryDirectory() as tmpdir:
+        graph = ComposableGraph.build_from_index(table)
+        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
+        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
+        response = graph.query(query_str, query_configs=query_configs)
+        assert str(response) == ("Cat?:This is a test v2.")
