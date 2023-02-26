@@ -1,6 +1,6 @@
 """List index.
 
-A simple data structure where GPT Index iterates through document chunks
+A simple data structure where LlamaIndex iterates through document chunks
 in sequence in order to answer a given query.
 
 """

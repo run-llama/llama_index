@@ -1,6 +1,6 @@
 """Keyword-table based index.
 
-Similar to a "hash table" in concept. GPT Index first tries
+Similar to a "hash table" in concept. LlamaIndex first tries
 to extract keywords from the source text, and stores the
 keywords as keys per item. It similarly extracts keywords
 from the query text. Then, it tries to match those keywords to

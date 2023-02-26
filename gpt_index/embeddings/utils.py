@@ -1,4 +1,4 @@
-"""Embedding utils for gpt index."""
+"""Embedding utils for LlamaIndex."""
 
 from typing import List
 

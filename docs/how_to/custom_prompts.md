@@ -1,9 +1,9 @@
 # Defining Prompts
 
-Prompting is the fundamental input that gives LLMs their expressive power. GPT Index uses prompts to build the index, do insertion, 
+Prompting is the fundamental input that gives LLMs their expressive power. LlamaIndex uses prompts to build the index, do insertion, 
 perform traversal during querying, and to synthesize the final answer.
 
-GPT Index uses a finite set of *prompt types*, described [here](/reference/prompts.rst). 
+LlamaIndex uses a finite set of *prompt types*, described [here](/reference/prompts.rst). 
 All index classes, along with their associated queries, utilize a subset of these prompts. The user may provide their own prompt.
 If the user does not provide their own prompt, default prompts are used.
 

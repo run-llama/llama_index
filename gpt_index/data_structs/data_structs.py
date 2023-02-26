@@ -13,7 +13,7 @@ from gpt_index.utils import get_new_int_id
 
 @dataclass
 class IndexStruct(BaseDocument, DataClassJsonMixin):
-    """A base data struct for a GPT index."""
+    """A base data struct for a LlamaIndex."""
 
     # NOTE: the text field, inherited from BaseDocument,
     # represents a summary of the content of the index struct.

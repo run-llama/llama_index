@@ -12,7 +12,7 @@ class SQLContextContainer(DataClassJsonMixin):
 
     A container interface to store context for a given table.
     Context can be built from unstructured documents (e.g. using SQLContextBuilder).
-    Context can also be dumped to an underlying GPT Index data structure.
+    Context can also be dumped to an underlying LlamaIndex data structure.
 
     Contains both the raw context_dict as well as any index_structure.
 

@@ -2,10 +2,14 @@
 
 > ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! We will carry out this transition gradually.
 
+> **2/25/2023**: By default, our docs/notebooks/instructions now reference "LlamaIndex"
+instead of "GPT Index".
+
 > **2/19/2023**: By default, our docs/notebooks/instructions now use the `llama-index` package. However the `gpt-index` package still exists as a duplicate!
+
 > **2/16/2023**: We have a duplicate `llama-index` pip package. Simply replace all imports of `gpt_index` with `llama_index` if you choose to `pip install llama-index`.
 
-GPT Index (LlamaIndex) is a project consisting of a set of data structures designed to make it easier to 
+LlamaIndex (GPT Index) is a project consisting of a set of data structures designed to make it easier to 
 use large external knowledge bases with LLMs.
 
 PyPi: 
@@ -31,8 +35,8 @@ LlamaHub (community library of data loaders): https://llamahub.ai
 
 #### Proposed Solution
 
-At its core, GPT Index contains a toolkit of **index data structures** designed to easily connect LLM's with your external data.
-GPT Index helps to provide the following advantages:
+At its core, LlamaIndex contains a toolkit of **index data structures** designed to easily connect LLM's with your external data.
+LlamaIndex helps to provide the following advantages:
 - Remove concerns over prompt size limitations.
 - Abstract common usage patterns to reduce boilerplate code in your LLM app.
 - Provide data connectors to your common data sources (Google Docs, Slack, etc.).
@@ -98,14 +102,14 @@ All requirements should be contained within the `setup.py` file. To run the pack
 
 ## 📖 Citation
 
-Reference to cite if you use GPT Index in a paper:
+Reference to cite if you use LlamaIndex in a paper:
 
 ```
-@software{Liu_GPT_Index_2022,
+@software{Liu_LlamaIndex_2022,
 author = {Liu, Jerry},
 doi = {10.5281/zenodo.1234},
 month = {11},
-title = {{GPT Index}},
+title = {{LlamaIndex}},
 url = {https://github.com/jerryjliu/gpt_index},year = {2022}
 }
 ```

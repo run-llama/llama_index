@@ -1,6 +1,6 @@
-# GPT Index Usage Pattern
+# LlamaIndex Usage Pattern
 
-The general usage pattern of GPT Index is as follows:
+The general usage pattern of LlamaIndex is as follows:
 1. Load in documents (either manually, or through a data loader).
 2. Index Construction.
 3. [Optional, Advanced] Building indices on top of other indices
@@ -19,7 +19,7 @@ documents = SimpleDirectoryReader('data').load_data()
 
 ```
 
-You can also choose to construct documents manually. GPT Index exposes the `Document` struct.
+You can also choose to construct documents manually. LlamaIndex exposes the `Document` struct.
 
 ```python
 from llama_index import Document
@@ -39,7 +39,7 @@ index = GPTSimpleVectorIndex(documents)
 
 ```
 
-Depending on which index you use, GPT Index may make LLM calls in order to build the index.
+Depending on which index you use, LlamaIndex may make LLM calls in order to build the index.
 
 ### Inserting Documents
 
@@ -131,7 +131,7 @@ index2 = GPTSimpleVectorIndex(documents2)
 
 # Set summary text
 # you can set the summary manually, or you can
-# generate the summary itself using GPT Index
+# generate the summary itself using LlamaIndex
 index1.set_text("summary1")
 index2.set_text("summary2")
 
