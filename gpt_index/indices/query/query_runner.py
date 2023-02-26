@@ -95,7 +95,6 @@ class QueryRunner(BaseQueryRunner):
             )
         else:
             config = self._config_dict[index_struct_type]
-        print((index_struct_type, config))
         mode = config.query_mode
 
         query_cls = self._index_registry.type_to_query[index_struct_type][mode]

@@ -36,6 +36,13 @@ class BaseDocument(DataClassJsonMixin):
     def get_type(cls) -> str:
         """Get Document type."""
 
+    @classmethod
+    def get_types(cls) -> List[str]:
+        """Get Document type."""
+        # TODO: remove this method
+        # a hack to preserve backwards compatibility for vector indices
+        return [cls.get_type()]
+
     def get_text(self) -> str:
         """Get text."""
         if self.text is None:
