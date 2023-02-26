@@ -18,14 +18,6 @@ from gpt_index.indices.query.schema import QueryBundle, QueryConfig
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.indices.vector_store import (
-    GPTChromaIndex,
-    GPTFaissIndex,
-    GPTPineconeIndex,
-    GPTQdrantIndex,
-    GPTSimpleVectorIndex,
-    GPTWeaviateIndex,
-)
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
@@ -42,13 +34,8 @@ DEFAULT_INDEX_REGISTRY_MAP: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.LIST: GPTListIndex,
     IndexStructType.KEYWORD_TABLE: GPTKeywordTableIndex,
     IndexStructType.DICT: GPTVectorStoreIndex,
-    # IndexStructType.DICT: GPTFaissIndex,
-    # IndexStructType.WEAVIATE: GPTWeaviateIndex,
-    # IndexStructType.PINECONE: GPTPineconeIndex,
-    # IndexStructType.QDRANT: GPTQdrantIndex,
     IndexStructType.SQL: GPTSQLStructStoreIndex,
     IndexStructType.KG: GPTKnowledgeGraphIndex,
-    # IndexStructType.CHROMA: GPTChromaIndex,
 }
 
 
