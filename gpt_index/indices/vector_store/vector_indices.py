@@ -254,6 +254,7 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         weaviate_client: Optional[Any] = None,
+        class_prefix: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -263,7 +264,9 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         """Init params."""
         if weaviate_client is None:
             raise ValueError("weaviate_client is required.")
-        vector_store = WeaviateVectorStore(weaviate_client=weaviate_client)
+        vector_store = WeaviateVectorStore(
+            weaviate_client=weaviate_client, class_prefix=class_prefix
+        )
 
         super().__init__(
             documents=documents,
