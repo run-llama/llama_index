@@ -40,7 +40,7 @@ DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
 
 
 class BaseGPTIndex(Generic[IS]):
-    """Base GPT Index.
+    """Base LlamaIndex.
 
     Args:
         documents (Optional[Sequence[BaseDocument]]): List of documents to

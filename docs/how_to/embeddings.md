@@ -1,6 +1,6 @@
 # Embedding support
 
-GPT Index provides support for embeddings in the following format:
+LlamaIndex provides support for embeddings in the following format:
 - Adding embeddings to Document objects
 - Using a Vector Store as an underlying index (e.g. `GPTSimpleVectorIndex`, `GPTFaissIndex`)
 - Querying our list and tree indices with embeddings.
@@ -22,7 +22,7 @@ guide for more details.
 
 ## Using an Embedding Query Mode in List/Tree Index
 
-GPT Index provides embedding support to our tree and list indices. In addition to each node storing text, each node can optionally store an embedding.
+LlamaIndex provides embedding support to our tree and list indices. In addition to each node storing text, each node can optionally store an embedding.
 During query-time, we can use embeddings to do max-similarity retrieval of nodes before calling the LLM to synthesize an answer. 
 Since similarity lookup using embeddings (e.g. using cosine similarity) does not require a LLM call, embeddings serve as a cheaper lookup mechanism instead
 of using LLMs to traverse nodes.
@@ -55,12 +55,12 @@ An example notebook is given [here](https://github.com/jerryjliu/gpt_index/blob/
 (custom-embeddings)=
 ## Custom Embeddings
 
-GPT Index allows you to define custom embedding modules. By default, we use `text-embedding-ada-002` from OpenAI. 
+LlamaIndex allows you to define custom embedding modules. By default, we use `text-embedding-ada-002` from OpenAI. 
 
 You can also choose to plug in embeddings from
 Langchain's [embeddings](https://langchain.readthedocs.io/en/latest/reference/modules/embeddings.html) module.
 We introduce a wrapper class, 
-[`LangchainEmbedding`](/reference/embeddings.rst), for integration into GPT Index.
+[`LangchainEmbedding`](/reference/embeddings.rst), for integration into LlamaIndex.
 
 An example snippet is shown below (to use Hugging Face embeddings) on the GPTListIndex:
 

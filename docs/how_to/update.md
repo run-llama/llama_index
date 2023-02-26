@@ -1,6 +1,6 @@
 # Updating an Index
 
-Every GPT Index data structure allows **insertion**, **deletion**, and **update**.
+Every LlamaIndex data structure allows **insertion**, **deletion**, and **update**.
 
 ### Insertion
 

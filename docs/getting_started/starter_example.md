@@ -1,10 +1,10 @@
 # Starter Tutorial
 
-Here is a starter example for using GPT Index. Make sure you've followed the [installation](installation.md) steps first.
+Here is a starter example for using LlamaIndex. Make sure you've followed the [installation](installation.md) steps first.
 
 ### Download
 
-GPT Index examples can be found in the `examples` folder of the GPT Index repository.
+LlamaIndex examples can be found in the `examples` folder of the LlamaIndex repository.
 We first want to download this `examples` folder. An easy way to do this is to just clone the repo:
 
 ```bash
@@ -28,7 +28,7 @@ We now want to navigate to the following folder:
 $ cd examples/paul_graham_essay
 ```
 
-This contains GPT Index examples around Paul Graham's essay, ["What I Worked On"](http://paulgraham.com/worked.html). A comprehensive set of examples are already provided in `TestEssay.ipynb`. For the purposes of this tutorial, we can focus on a simple example of getting GPT Index up and running.
+This contains LlamaIndex examples around Paul Graham's essay, ["What I Worked On"](http://paulgraham.com/worked.html). A comprehensive set of examples are already provided in `TestEssay.ipynb`. For the purposes of this tutorial, we can focus on a simple example of getting LlamaIndex up and running.
 
 ### Build and Query Index
 
@@ -77,5 +77,5 @@ index = GPTSimpleVectorIndex.load_from_disk('index.json')
 
 ### Next Steps
 
-That's it! For more information on GPT Index features, please check out the numerous "How-To Guides" to the left.
+That's it! For more information on LlamaIndex features, please check out the numerous "How-To Guides" to the left.
 Additionally, if you would like to play around with Example Notebooks, check out [this link](/reference/example_notebooks.rst).

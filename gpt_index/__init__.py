@@ -1,4 +1,4 @@
-"""Init file of GPT Index."""
+"""Init file of LlamaIndex."""
 from pathlib import Path
 
 with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:

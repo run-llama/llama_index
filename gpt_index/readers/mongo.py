@@ -9,7 +9,7 @@ from gpt_index.readers.schema.base import Document
 class SimpleMongoReader(BaseReader):
     """Simple mongo reader.
 
-    Concatenates each Mongo doc into Document used by GPT Index.
+    Concatenates each Mongo doc into Document used by LlamaIndex.
 
     Args:
         host (str): Mongo host.

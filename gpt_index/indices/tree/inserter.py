@@ -16,7 +16,7 @@ from gpt_index.schema import BaseDocument
 
 
 class GPTIndexInserter:
-    """GPT Index inserter."""
+    """LlamaIndex inserter."""
 
     def __init__(
         self,
