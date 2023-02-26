@@ -42,7 +42,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         # NOTE: composability on top of other vector stores (pinecone/weaviate)
         # was already broken in this form.
         if vector_store is None:
-            if index_struct.embeddings_dict != None:
+            if len(index_struct.embeddings_dict) > 0:
                 simple_vector_store_data_dict = {
                     "embedding_dict": index_struct.embeddings_dict,
                 }

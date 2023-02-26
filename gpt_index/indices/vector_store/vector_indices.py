@@ -64,6 +64,12 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
             **kwargs,
         )
 
+        # TODO: Temporary hack to also store embeddings in index_struct
+        embedding_dict = vector_store._data.embedding_dict
+        self._index_struct.embeddings_dict = embedding_dict
+        # update docstore with current struct
+        self._docstore.add_documents([self.index_struct], allow_update=True)
+
 
 class GPTFaissIndex(GPTVectorStoreIndex):
     """GPT Faiss Index.
