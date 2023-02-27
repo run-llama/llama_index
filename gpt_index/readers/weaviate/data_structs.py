@@ -6,7 +6,7 @@ Contain conversion to and from dataclasses that GPT Index uses.
 
 import json
 from abc import abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.readers.weaviate.utils import (
@@ -250,3 +250,19 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         entries = parsed_result[class_name]
         for entry in entries:
             client.data_object.delete(entry["_additional"]["id"], class_name)
+
+    @classmethod
+    def from_gpt_index_batch(
+        cls, client: Any, nodes: List[Node], class_prefix: str
+    ) -> List[str]:
+        """Convert from gpt index."""
+        from weaviate import Client  # noqa: F401
+
+        client = cast(Client, client)
+        validate_client(client)
+        index_ids = []
+        with client.batch as batch:
+            for node in nodes:
+                index_id = cls._from_gpt_index(client, node, class_prefix)
+        index_ids.append(index_id)
+        return index_id
