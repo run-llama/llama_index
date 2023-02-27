@@ -1,11 +1,10 @@
 # A Primer to using LlamaIndex
 
-At its core, LlamaIndex contains a toolkit of **index data structures** designed to easily connect LLM's with your external data.
-LlamaIndex helps to provide the following advantages:
-- Remove concerns over prompt size limitations.
-- Abstract common usage patterns to reduce boilerplate code in your LLM app.
-- Provide data connectors to your common data sources (Google Docs, Slack, etc.).
-- Provide cost transparency + tools that reduce cost while increasing performance.
+At its core, LlamaIndex contains a toolkit designed to easily connect LLM's with your external data.
+LlamaIndex helps to provide the following:
+- A set of **data structures** that allow you to index your data for various LLM tasks, and remove concerns over prompt size limitations.
+- Data connectors to your common data sources (Google Docs, Slack, etc.).
+- Cost transparency + tools that reduce cost while increasing performance.
 
 
 Each data structure offers distinct use cases and a variety of customizable parameters. These indices can then be 
