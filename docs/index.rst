@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to GPT Index (LlamaIndex 🦙)!
+Welcome to LlamaIndex 🦙 (GPT Index)!
 =====================================
 
 GPT Index (LlamaIndex) is a project consisting of a set of data structures designed to make it easier to 
