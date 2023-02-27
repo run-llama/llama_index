@@ -98,6 +98,9 @@ class QueryConfig(DataClassJsonMixin):
 
 
     Args:
+        index_struct_id (str): The index struct id. This can be obtained by calling
+            "get_doc_id" on the original index class. This can be set by calling
+            "set_doc_id" on the original index class.
         index_struct_type (IndexStructType): The type of index struct.
         query_mode (QueryMode): The query mode.
         query_kwargs (Dict[str, Any], optional): The query kwargs. Defaults to {}.
@@ -108,6 +111,9 @@ class QueryConfig(DataClassJsonMixin):
     index_struct_type: str
     query_mode: QueryMode
     query_kwargs: Dict[str, Any] = field(default_factory=dict)
+    # NOTE: type as Optional because old query configs may not
+    # have this field
+    index_struct_id: Optional[str] = None
 
 
 @dataclass

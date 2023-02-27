@@ -37,7 +37,8 @@ class QueryRunner(BaseQueryRunner):
         use_async: bool = False,
     ) -> None:
         """Init params."""
-        config_dict: Dict[str, QueryConfig] = {}
+        type_to_config_dict: Dict[str, QueryConfig] = {}
+        id_to_config_dict: Dict[str, QueryConfig] = {}
         if query_configs is None or len(query_configs) == 0:
             query_config_objs: List[QueryConfig] = []
         elif isinstance(query_configs[0], Dict):
@@ -48,9 +49,12 @@ class QueryRunner(BaseQueryRunner):
             query_config_objs = [cast(QueryConfig, q) for q in query_configs]
 
         for qc in query_config_objs:
-            config_dict[qc.index_struct_type] = qc
+            type_to_config_dict[qc.index_struct_type] = qc
+            if qc.index_struct_id is not None:
+                id_to_config_dict[qc.index_struct_id] = qc
 
-        self._config_dict = config_dict
+        self._type_to_config_dict = type_to_config_dict
+        self._id_to_config_dict = id_to_config_dict
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
         self._embed_model = embed_model
@@ -88,13 +92,16 @@ class QueryRunner(BaseQueryRunner):
         else:
             query_bundle = query_str_or_bundle
 
+        index_struct_id = index_struct.get_doc_id()
         index_struct_type = index_struct.get_type()
-        if index_struct_type not in self._config_dict:
+        if index_struct_id in self._id_to_config_dict:
+            config = self._id_to_config_dict[index_struct_id]
+        elif index_struct_type in self._type_to_config_dict:
+            config = self._type_to_config_dict[index_struct_type]
+        else:
             config = QueryConfig(
                 index_struct_type=index_struct_type, query_mode=QueryMode.DEFAULT
             )
-        else:
-            config = self._config_dict[index_struct_type]
         mode = config.query_mode
 
         query_cls = self._index_registry.type_to_query[index_struct_type][mode]

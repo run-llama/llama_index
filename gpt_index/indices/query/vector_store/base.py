@@ -80,4 +80,6 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
             for node, similarity in zip(query_result.nodes, query_result.similarities):
                 similarity_tracker.add(node, similarity)
 
+        print("query_result.nodes", query_result.nodes)
+
         return query_result.nodes
