@@ -1,9 +1,9 @@
-# 💡 Contributing to GPT Index
+# 💡 Contributing to LlamaIndex
 
 > ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! 
 > **2/19/2023**: We are still in the middle of the transition. If you are interested in contributing to LlamaIndex, make sure to follow the below steps. For testing, please do `import gpt_index` instead of `import llama_index`.
 
-Interested in contributing to GPT Index? Here's how to get started! 
+Interested in contributing to LlamaIndex? Here's how to get started! 
 
 ## Contributions that we're looking for:
 - Bug fixes
@@ -16,10 +16,10 @@ Also, join our Discord for discussions: https://discord.gg/dGcwcsnxhU.
 
 ## Environment Setup
 
-GPT Index is a Python package. We've tested primarily with Python versions >= 3.8. Here's a quick
+LlamaIndex is a Python package. We've tested primarily with Python versions >= 3.8. Here's a quick
 and dirty guide to getting your environment setup.
 
-First, create a fork of GPT Index, by clicking the "Fork" button on the [GPT Index Github page](https://github.com/jerryjliu/gpt_index).
+First, create a fork of LlamaIndex, by clicking the "Fork" button on the [LlamaIndex Github page](https://github.com/jerryjliu/gpt_index).
 Following [these steps](https://docs.github.com/en/get-started/quickstart/fork-a-repo) for more details
 on how to fork the repo and clone the forked repo.
 
@@ -75,7 +75,7 @@ Example notebooks can be found in this folder: https://github.com/jerryjliu/gpt_
 ### Creating a pull request
 
 See [these instructions](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork)
-to open a pull request against the main GPT Index repo.
+to open a pull request against the main LlamaIndex repo.
 
 
 

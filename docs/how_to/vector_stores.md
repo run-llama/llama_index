@@ -1,13 +1,13 @@
 # Using Vector Stores
 
-GPT Index offers multiple integration points with vector stores / vector databases:
+LlamaIndex offers multiple integration points with vector stores / vector databases:
 
-1. GPT Index can load data from vector stores, similar to any other data connector. This data can then be used within GPT Index data structures.
-2. GPT Index can use a vector store itself as an index. Like any other index, this index can store documents and be used to answer queries.
+1. LlamaIndex can load data from vector stores, similar to any other data connector. This data can then be used within LlamaIndex data structures.
+2. LlamaIndex can use a vector store itself as an index. Like any other index, this index can store documents and be used to answer queries.
 
 ## Loading Data from Vector Stores using Data Connector
 
-GPT Index supports loading data from the following sources. See [Data Connectors](data_connectors.md) for more details and API documentation.
+LlamaIndex supports loading data from the following sources. See [Data Connectors](data_connectors.md) for more details and API documentation.
 
 - Chroma (`ChromaReader`) [Installation](https://docs.trychroma.com/getting-started)
 - Qdrant (`QdrantReader`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
@@ -59,7 +59,7 @@ For instance, this is an example usage of the Pinecone data loader `PineconeRead
 
 ## Using a Vector Store as an Index
 
-GPT Index also supports using a vector store itself as an index.
+LlamaIndex also supports using a vector store itself as an index.
 These are found in the following classes:
 - `GPTSimpleVectorIndex`
 - `GPTFaissIndex`
@@ -71,7 +71,7 @@ These are found in the following classes:
 
 An API reference of each vector index is [found here](/reference/indices/vector_store.md).
 
-Similar to any other index within GPT Index (tree, keyword table, list), this index can be constructed upon any collection
+Similar to any other index within LlamaIndex (tree, keyword table, list), this index can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.
 
 Once constructed, the index can be used for querying.

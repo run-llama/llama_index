@@ -1,26 +1,26 @@
 # 😎 App Showcase
 
-Here is a sample of some of the incredible applications and tools built on top of GPT Index! 
+Here is a sample of some of the incredible applications and tools built on top of LlamaIndex! 
 
 ###### Meru - Dense Data Retrieval API
 
-Hosted API service. Includes a "Dense Data Retrieval" API built on top of GPT Index where users can upload their documents and query them.
+Hosted API service. Includes a "Dense Data Retrieval" API built on top of LlamaIndex where users can upload their documents and query them.
 [[Website]](https://www.usemeru.com/densedataretrieval)
 
 ###### Algovera
 
-Build AI workflows using building blocks. Many workflows built on top of GPT Index.
+Build AI workflows using building blocks. Many workflows built on top of LlamaIndex.
 
 [[Website]](https://app.algovera.ai/workflows).
 
-###### ChatGPT GPT Index
+###### ChatGPT LlamaIndex
 
 Interface that allows users to upload long docs and chat with the bot.
 [[Tweet thread]](https://twitter.com/s_jobs6/status/1618346125697875968?s=20&t=RJhQu2mD0-zZNGfq65xodA)
 
 ###### AgentHQ
 
-A web tool to build agents, interacting with GPT Index data structures.[[Website]](https://app.agent-hq.io/)
+A web tool to build agents, interacting with LlamaIndex data structures.[[Website]](https://app.agent-hq.io/)
 
 
 ###### PapersGPT

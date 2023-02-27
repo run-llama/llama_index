@@ -68,6 +68,12 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
             **kwargs,
         )
 
+        # TODO: Temporary hack to also store embeddings in index_struct
+        embedding_dict = vector_store._data.embedding_dict
+        self._index_struct.embeddings_dict = embedding_dict
+        # update docstore with current struct
+        self._docstore.add_documents([self.index_struct], allow_update=True)
+
 
 class GPTFaissIndex(GPTVectorStoreIndex):
     """GPT Faiss Index.
@@ -252,6 +258,7 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         weaviate_client: Optional[Any] = None,
+        class_prefix: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -261,7 +268,9 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         """Init params."""
         if weaviate_client is None:
             raise ValueError("weaviate_client is required.")
-        vector_store = WeaviateVectorStore(weaviate_client=weaviate_client)
+        vector_store = WeaviateVectorStore(
+            weaviate_client=weaviate_client, class_prefix=class_prefix
+        )
 
         super().__init__(
             documents=documents,

@@ -13,7 +13,7 @@ from gpt_index.utils import get_new_int_id
 
 @dataclass
 class IndexStruct(BaseDocument, DataClassJsonMixin):
-    """A base data struct for a GPT index."""
+    """A base data struct for a LlamaIndex."""
 
     # NOTE: the text field, inherited from BaseDocument,
     # represents a summary of the content of the index struct.
@@ -180,6 +180,10 @@ class IndexDict(IndexStruct):
     nodes_dict: Dict[int, Node] = field(default_factory=dict)
     id_map: Dict[str, int] = field(default_factory=dict)
 
+    # TODO: temporary hack to store embeddings for simple vector index
+    # this should be empty for all other indices
+    embeddings_dict: Dict[str, List[float]] = field(default_factory=dict)
+
     def add_node(
         self,
         node: Node,
@@ -236,6 +240,11 @@ class IndexDict(IndexStruct):
     def get_type(cls) -> str:
         """Get type."""
         return "dict"
+
+    @classmethod
+    def get_types(cls) -> List[str]:
+        """Get type."""
+        return ["dict", "simple_dict", "weaviate", "pinecone", "qdrant", "chroma"]
 
 
 @dataclass
