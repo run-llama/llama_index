@@ -9,8 +9,7 @@ instead of "GPT Index".
 
 > **2/16/2023**: We have a duplicate `llama-index` pip package. Simply replace all imports of `gpt_index` with `llama_index` if you choose to `pip install llama-index`.
 
-LlamaIndex (GPT Index) is a project consisting of a set of data structures designed to make it easier to 
-use large external knowledge bases with LLMs.
+LlamaIndex (GPT Index) is a project that provides a central interface to connect your LLM's with external data.
 
 PyPi: 
 - LlamaIndex: https://pypi.org/project/llama-index/.
@@ -35,12 +34,11 @@ LlamaHub (community library of data loaders): https://llamahub.ai
 
 #### Proposed Solution
 
-At its core, LlamaIndex contains a toolkit of **index data structures** designed to easily connect LLM's with your external data.
-LlamaIndex helps to provide the following advantages:
-- Remove concerns over prompt size limitations.
-- Abstract common usage patterns to reduce boilerplate code in your LLM app.
-- Provide data connectors to your common data sources (Google Docs, Slack, etc.).
-- Provide cost transparency + tools that reduce cost while increasing performance.
+At its core, LlamaIndex contains a toolkit designed to easily connect LLM's with your external data.
+LlamaIndex helps to provide the following:
+- A set of **data structures** that allow you to index your data for various LLM tasks, and remove concerns over prompt size limitations.
+- Data connectors to your common data sources (Google Docs, Slack, etc.).
+- Cost transparency + tools that reduce cost while increasing performance.
 
 
 Each data structure offers distinct use cases and a variety of customizable parameters. These indices can then be 
