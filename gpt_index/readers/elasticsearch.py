@@ -12,7 +12,7 @@ from gpt_index.readers.schema.base import Document
 class ElasticsearchReader(BaseReader):
     """
     Read documents from an Elasticsearch/Opensearch index.
-    These documents can then be used in a downstream GPT Index data structure.
+    These documents can then be used in a downstream Llama Index data structure.
 
     Args:
         endpoint (str): URL (http/https) of cluster

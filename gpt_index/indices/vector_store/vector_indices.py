@@ -400,9 +400,10 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
-        endpoint (str): Endpoint of the elasticsearch cluster (required).
-        index_name (str): Index in the elasticsearch cluster (required).
-        embedding_field (str): Field (within the JSON document) that the embeddings are stored in.
+        client (Optional[OpensearchVectorClient]): The client which encapsulates logic for
+            using Opensearch as a vector store (that is, it holds stuff like endpoint, index_name
+            and performs operations like initializing the index and
+            adding new doc/embeddings to said index).
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
     """

@@ -8,6 +8,7 @@ from gpt_index.indices.vector_store.vector_indices import (
     GPTQdrantIndex,
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
+    GPTOpensearchIndex,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "GPTWeaviateIndex",
     "GPTQdrantIndex",
     "GPTChromaIndex",
+    "GPTOpensearchIndex",
 ]

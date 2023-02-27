@@ -40,6 +40,7 @@ from gpt_index.readers.web import (
 )
 from gpt_index.readers.wikipedia import WikipediaReader
 from gpt_index.readers.youtube_transcript import YoutubeTranscriptReader
+from gpt_index.readers.elasticsearch import ElasticsearchReader
 
 __all__ = [
     "WikipediaReader",
@@ -66,4 +67,5 @@ __all__ = [
     "ObsidianReader",
     "GithubRepositoryReader",
     "MboxReader",
+    "ElasticsearchReader",
 ]
