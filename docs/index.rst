@@ -6,8 +6,7 @@
 Welcome to LlamaIndex 🦙 (GPT Index)!
 =====================================
 
-GPT Index (LlamaIndex) is a project consisting of a set of data structures designed to make it easier to 
-use large external knowledge bases with LLMs.
+LlamaIndex (GPT Index) is a project that provides a central interface to connect your LLM's with external data.
 
    ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! We will carry out this transition gradually.
 
@@ -34,7 +33,7 @@ Context
 
 Proposed Solution
 ^^^^^^^^^^^^^^^^^
-That's where the **GPT Index** comes in. LlamaIndex is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
+That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
 
 - Provides simple data structures to resolve prompt size limitations.
 - Offers data connectors to your external data sources.
