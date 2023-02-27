@@ -261,8 +261,8 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         client = cast(Client, client)
         validate_client(client)
         index_ids = []
-        with client.batch as batch:
+        with client.batch as _:
             for node in nodes:
                 index_id = cls._from_gpt_index(client, node, class_prefix)
         index_ids.append(index_id)
-        return index_id
+        return index_ids
