@@ -1,7 +1,7 @@
 """Query Tree using embedding similarity between query and node text."""
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.embeddings.base import BaseEmbedding
@@ -86,7 +86,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
                 node, query_bundle, level=level, prev_response=result_response
             )
 
-        return result_response
+        return cast(str, result_response)
 
     def _get_query_text_embedding_similarities(
         self, query_bundle: QueryBundle, nodes: List[Node]
@@ -110,7 +110,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
 
             similarity = self._embed_model.similarity(query_embedding, text_embedding)
             similarities.append(similarity)
-            node.similarity = similarity
         return similarities
 
     def _get_most_similar_nodes(
@@ -119,9 +118,11 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         """Get the node with the highest similarity to the query."""
         similarities = self._get_query_text_embedding_similarities(query_bundle, nodes)
 
-        selected_nodes = []
-        selected_indices = []
-        for node, _ in sorted(zip(nodes, similarities), key=lambda x: x[1], reverse=True):
+        selected_nodes: List[Node] = []
+        selected_indices: List[int] = []
+        for node, _ in sorted(
+            zip(nodes, similarities), key=lambda x: x[1], reverse=True
+        ):
             if len(selected_nodes) < self.child_branch_factor:
                 selected_nodes.append(node)
                 selected_indices.append(nodes.index(node))
