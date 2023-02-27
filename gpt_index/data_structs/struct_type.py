@@ -12,9 +12,7 @@ class IndexStructType(str, Enum):
         KEYWORD_TABLE ("keyword_table"): Keyword table index. See
             :ref:`Ref-Indices-Table`
             for keyword table indices.
-        DICT ("dict"): Faiss Vector Store Index. See :ref:`Ref-Indices-VectorStore`
-            for more information on the Faiss vector store index.
-        SIMPLE_DICT ("simple_dict"): Simple Vector Store Index. See
+        DICT ("dict"): Vector Store Index. See
             :ref:`Ref-Indices-VectorStore`
             for more information on the simple vector store index.
         WEAVIATE ("weaviate"): Weaviate Vector Store Index.
@@ -26,13 +24,14 @@ class IndexStructType(str, Enum):
         QDRANT ("qdrant"): Qdrant Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Qdrant vector store index.
-
+        CHROMA ("chroma"): Chroma Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Chroma vector store index.
         SQL ("SQL"): SQL Structured Store Index.
             See :ref:`Ref-Indices-StructStore`
             for more information on the SQL vector store index.
-
         KG ("kg"): Knowledge Graph index.
-            See :ref:`Ref-Indices-KG` for KG indices.
+            See :ref:`Ref-Indices-Knowledge-Graph` for KG indices.
 
     """
 
@@ -42,17 +41,7 @@ class IndexStructType(str, Enum):
     TREE = "tree"
     LIST = "list"
     KEYWORD_TABLE = "keyword_table"
-    # for Faiss
-    # TODO: rename
     DICT = "dict"
-    # for simple embedding index
-    SIMPLE_DICT = "simple_dict"
-    # for weaviate index
-    WEAVIATE = "weaviate"
-    # for pinecone index
-    PINECONE = "pinecone"
-    # for qdrant index
-    QDRANT = "qdrant"
     # for SQL index
     SQL = "sql"
     # for KG index

@@ -1,6 +1,6 @@
-# GPT Index Use Cases
-GPT Index data structures and parameters offer distinct use cases and advantages.
-This guide should paint a picture of how you can use GPT Index to solve your own data needs. 
+# LlamaIndex Use Cases
+LlamaIndex data structures and parameters offer distinct use cases and advantages.
+This guide should paint a picture of how you can use LlamaIndex to solve your own data needs. 
 We go through each use case, and describe the index tools you can use for each use case.
 
 ## By Use Cases
@@ -20,9 +20,9 @@ Our Vector Store Indices are good to start with because they generalize to a bro
 For a more detailed/advanced treatment of different use cases and how they map to indices, please see below.
 
 
-### Use Case: Connecting GPT Index to an External Data Source of Documents
+### Use Case: Connecting LlamaIndex to an External Data Source of Documents
 
-To connect GPT Index to a large external data source of documents, you will want to [use one of our data connectors](/how_to/data_connectors.md), or construct `Document` objects manually (see the [primer guide](/guides/primer.md) for how).
+To connect LlamaIndex to a large external data source of documents, you will want to [use one of our data connectors](/how_to/data_connectors.md), or construct `Document` objects manually (see the [primer guide](/guides/primer.md) for how).
 
 Then you will likely want to use a [Vector Store Index](vector-store-index).
 
@@ -72,7 +72,7 @@ index2 = GPTSimpleVectorIndex(slack_docs)
 
 # Set summary text
 # you can set the summary manually, or you can
-# generate the summary itself using GPT Index
+# generate the summary itself using LlamaIndex
 index1.set_text("summary1")
 index2.set_text("summary2")
 
@@ -105,7 +105,7 @@ index2 = GPTSimpleVectorIndex(slack_docs)
 
 # Set summary text
 # you can set the summary manually, or you can
-# generate the summary itself using GPT Index
+# generate the summary itself using LlamaIndex
 index1.set_text("summary1")
 index2.set_text("summary2")
 
@@ -145,7 +145,7 @@ index2 = GPTSimpleVectorIndex(chapter2)
 
 # Set summary text
 # you can set the summary manually, or you can
-# generate the summary itself using GPT Index
+# generate the summary itself using LlamaIndex
 index1.set_text("summary1")
 index2.set_text("summary2")
 

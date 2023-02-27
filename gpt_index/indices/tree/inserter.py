@@ -6,6 +6,7 @@ from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
@@ -15,13 +16,14 @@ from gpt_index.schema import BaseDocument
 
 
 class GPTIndexInserter:
-    """GPT Index inserter."""
+    """LlamaIndex inserter."""
 
     def __init__(
         self,
         index_graph: IndexGraph,
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
+        text_splitter: TextSplitter,
         num_children: int = 10,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
@@ -35,9 +37,7 @@ class GPTIndexInserter:
         self.index_graph = index_graph
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.summary_prompt, self.num_children
-        )
+        self._text_splitter = text_splitter
 
     def _insert_under_parent_and_consolidate(
         self, text_chunk: str, doc: BaseDocument, parent_node: Optional[Node]

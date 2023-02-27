@@ -14,7 +14,6 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
-from gpt_index.indices.utils import truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
@@ -23,6 +22,7 @@ from gpt_index.prompts.default_prompts import (
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.response.schema import Response
 from gpt_index.token_counter.token_counter import llm_token_counter
+from gpt_index.utils import truncate_text
 
 IS = TypeVar("IS", bound=IndexStruct)
 
@@ -38,7 +38,7 @@ class BaseQueryRunner:
 
 
 class BaseGPTIndexQuery(Generic[IS]):
-    """Base GPT Index Query.
+    """Base LlamaIndex Query.
 
     Helper class that is used to query an index. Can be called within `query`
     method of a BaseGPTIndex object, or instantiated independently.
@@ -85,6 +85,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         response_kwargs: Optional[Dict] = None,
         similarity_cutoff: Optional[float] = None,
         use_async: bool = True,
+        recursive: bool = False,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -110,6 +111,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._include_summary = include_summary
 
         self._response_kwargs = response_kwargs or {}
+        self._use_async = use_async
         self.response_builder = ResponseBuilder(
             self._prompt_helper,
             self._llm_predictor,
@@ -119,6 +121,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         )
 
         self.similarity_cutoff = similarity_cutoff
+        self._recursive = recursive
 
     def _should_use_node(
         self, node: Node, similarity_tracker: Optional[SimilarityTracker] = None
@@ -165,11 +168,13 @@ class BaseGPTIndexQuery(Generic[IS]):
         logging.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
         is_index_struct = False
-        # if self._query_runner is not None, assume we want to do a recursive
+        # if recursive and self._query_runner is not None,
+        # assume we want to do a recursive
         # query. In order to not perform a recursive query, make sure
         # _query_runner is None.
         if (
-            self._query_runner is not None
+            self._recursive
+            and self._query_runner is not None
             and node.ref_doc_id is not None
             and self._docstore is not None
         ):

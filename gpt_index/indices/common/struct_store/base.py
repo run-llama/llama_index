@@ -6,6 +6,7 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT,
     DEFAULT_TABLE_CONTEXT_PROMPT,
@@ -20,13 +21,21 @@ from gpt_index.prompts.prompts import (
 from gpt_index.schema import BaseDocument
 
 
-class SQLContextBuilder:
+class SQLDocumentContextBuilder:
     """Builder that builds context for a given set of SQL tables.
 
     Args:
         sql_database (Optional[SQLDatabase]): SQL database to use,
-        context_builder_prompt (Optional[TableContextPrompt]): A
+        llm_predictor (Optional[LLMPredictor]): LLM Predictor to use.
+        prompt_helper (Optional[PromptHelper]): Prompt Helper to use.
+        text_splitter (Optional[TextSplitter]): Text Splitter to use.
+        table_context_prompt (Optional[TableContextPrompt]): A
             Table Context Prompt (see :ref:`Prompt-Templates`).
+        refine_table_context_prompt (Optional[RefineTableContextPrompt]):
+            A Refine Table Context Prompt (see :ref:`Prompt-Templates`).
+        table_context_task (Optional[str]): The query to perform
+            on the table context. A default query string is used
+            if none is provided by the user.
     """
 
     def __init__(
@@ -34,6 +43,7 @@ class SQLContextBuilder:
         sql_database: SQLDatabase,
         llm_predictor: Optional[LLMPredictor] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        text_splitter: Optional[TextSplitter] = None,
         table_context_prompt: Optional[TableContextPrompt] = None,
         refine_table_context_prompt: Optional[RefineTableContextPrompt] = None,
         table_context_task: Optional[str] = None,
@@ -47,6 +57,7 @@ class SQLContextBuilder:
         self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
             self._llm_predictor
         )
+        self._text_splitter = text_splitter
         self._table_context_prompt = (
             table_context_prompt or DEFAULT_TABLE_CONTEXT_PROMPT
         )
@@ -80,8 +91,9 @@ class SQLContextBuilder:
         refine_prompt_with_schema = RefinePrompt.from_prompt(
             self._refine_table_context_prompt.partial_format(schema=schema)
         )
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            prompt_with_schema, 1
+        text_splitter = (
+            self._text_splitter
+            or self._prompt_helper.get_text_splitter_given_prompt(prompt_with_schema, 1)
         )
         # we use the ResponseBuilder to iteratively go through all texts
         response_builder = ResponseBuilder(

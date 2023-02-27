@@ -1,6 +1,6 @@
-"""Data Connectors for GPT Index.
+"""Data Connectors for LlamaIndex.
 
-This module contains the data connectors for GPT Index. Each connector inherits
+This module contains the data connectors for LlamaIndex. Each connector inherits
 from a `BaseReader` class, connects to a data source, and loads Document objects
 from that data source.
 
@@ -10,6 +10,7 @@ definition of a Document - the bare minimum is a `text` property.
 
 """
 
+from gpt_index.readers.chroma import ChromaReader
 from gpt_index.readers.discord_reader import DiscordReader
 from gpt_index.readers.faiss import FaissReader
 
@@ -52,6 +53,7 @@ __all__ = [
     "WeaviateReader",
     "PineconeReader",
     "QdrantReader",
+    "ChromaReader",
     "FaissReader",
     "Document",
     "StringIterableReader",

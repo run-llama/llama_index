@@ -11,7 +11,7 @@ PMT = TypeVar("PMT", bound="Prompt")
 
 
 class Prompt:
-    """Prompt class for GPT Index.
+    """Prompt class for LlamaIndex.
 
     Wrapper around langchain's prompt class. Adds ability to:
         - enforce certain prompt types

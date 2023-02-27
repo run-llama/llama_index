@@ -1,8 +1,9 @@
 """Base embeddings file."""
 
+import asyncio
 from abc import abstractmethod
 from enum import Enum
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
 
@@ -14,17 +15,34 @@ EMB_TYPE = List
 DEFAULT_EMBED_BATCH_SIZE = 10
 
 
-def mean_agg(embeddings: List[List[float]]) -> List[float]:
-    """Mean aggregation for embeddings."""
-    return list(np.array(embeddings).mean(axis=0))
-
-
 class SimilarityMode(str, Enum):
     """Modes for similarity/distance."""
 
     DEFAULT = "cosine"
     DOT_PRODUCT = "dot_product"
     EUCLIDEAN = "euclidean"
+
+
+def mean_agg(embeddings: List[List[float]]) -> List[float]:
+    """Mean aggregation for embeddings."""
+    return list(np.array(embeddings).mean(axis=0))
+
+
+def similarity(
+    embedding1: EMB_TYPE,
+    embedding2: EMB_TYPE,
+    mode: SimilarityMode = SimilarityMode.DEFAULT,
+) -> float:
+    """Get embedding similarity."""
+    if mode == SimilarityMode.EUCLIDEAN:
+        return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
+    elif mode == SimilarityMode.DOT_PRODUCT:
+        product = np.dot(embedding1, embedding2)
+        return product
+    else:
+        product = np.dot(embedding1, embedding2)
+        norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
+        return product / norm
 
 
 class BaseEmbedding:
@@ -66,14 +84,35 @@ class BaseEmbedding:
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
 
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        """Asynchronously get text embedding.
+
+        By default, this falls back to _get_text_embedding.
+        Meant to be overriden if there is a true async implementation.
+
+        """
+        return self._get_text_embedding(text)
+
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings.
 
         By default, this is a wrapper around _get_text_embedding.
-        Can be overriden for batch queries.
+        Meant to be overriden for batch queries.
 
         """
         result = [self._get_text_embedding(text) for text in texts]
+        return result
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronously get text embeddings.
+
+        By default, this is a wrapper around _aget_text_embedding.
+        Meant to be overriden for batch queries.
+
+        """
+        result = await asyncio.gather(
+            *[self._aget_text_embedding(text) for text in texts]
+        )
         return result
 
     def get_text_embedding(self, text: str) -> List[float]:
@@ -117,6 +156,41 @@ class BaseEmbedding:
         self._text_queue = []
         return result_ids, result_embeddings
 
+    async def aget_queued_text_embeddings(
+        self, text_queue: List[Tuple[str, str]]
+    ) -> Tuple[List[str], List[List[float]]]:
+        """Asynchronously get a list of text embeddings.
+
+        Call async embedding API to get embeddings for all queued texts in parallel.
+        Argument `text_queue` must be passed in to avoid updating it async.
+
+        """
+        cur_batch: List[Tuple[str, str]] = []
+        result_ids: List[str] = []
+        result_embeddings: List[List[float]] = []
+        embeddings_coroutines: List[Coroutine] = []
+        for idx, (text_id, text) in enumerate(text_queue):
+            cur_batch.append((text_id, text))
+            text_tokens_count = len(self._tokenizer(text))
+            self._total_tokens_used += text_tokens_count
+            if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
+                # flush
+                cur_batch_ids = [text_id for text_id, _ in cur_batch]
+                cur_batch_texts = [text for _, text in cur_batch]
+                embeddings_coroutines.append(
+                    self._aget_text_embeddings(cur_batch_texts)
+                )
+                result_ids.extend(cur_batch_ids)
+
+        # flatten the results of asyncio.gather, which is a list of embeddings lists
+        result_embeddings = [
+            embedding
+            for embeddings in await asyncio.gather(*embeddings_coroutines)
+            for embedding in embeddings
+        ]
+
+        return result_ids, result_embeddings
+
     def similarity(
         self,
         embedding1: EMB_TYPE,
@@ -124,15 +198,7 @@ class BaseEmbedding:
         mode: SimilarityMode = SimilarityMode.DEFAULT,
     ) -> float:
         """Get embedding similarity."""
-        if mode == SimilarityMode.EUCLIDEAN:
-            return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
-        elif mode == SimilarityMode.DOT_PRODUCT:
-            product = np.dot(embedding1, embedding2)
-            return product
-        else:
-            product = np.dot(embedding1, embedding2)
-            norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
-            return product / norm
+        return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
 
     @property
     def total_tokens_used(self) -> int:

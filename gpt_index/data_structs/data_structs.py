@@ -13,7 +13,7 @@ from gpt_index.utils import get_new_int_id
 
 @dataclass
 class IndexStruct(BaseDocument, DataClassJsonMixin):
-    """A base data struct for a GPT index."""
+    """A base data struct for a LlamaIndex."""
 
     # NOTE: the text field, inherited from BaseDocument,
     # represents a summary of the content of the index struct.
@@ -174,11 +174,15 @@ class IndexList(IndexStruct):
 
 
 @dataclass
-class BaseIndexDict(IndexStruct):
+class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
     nodes_dict: Dict[int, Node] = field(default_factory=dict)
     id_map: Dict[str, int] = field(default_factory=dict)
+
+    # TODO: temporary hack to store embeddings for simple vector index
+    # this should be empty for all other indices
+    embeddings_dict: Dict[str, List[float]] = field(default_factory=dict)
 
     def add_node(
         self,
@@ -217,122 +221,30 @@ class BaseIndexDict(IndexStruct):
         """Get node."""
         return self.get_nodes([text_id])[0]
 
+    def delete(self, doc_id: str) -> None:
+        """Delete a document."""
+        text_ids_to_delete = set()
+        int_ids_to_delete = set()
+        for text_id, int_id in self.id_map.items():
+            node = self.nodes_dict[int_id]
+            if node.ref_doc_id != doc_id:
+                continue
+            text_ids_to_delete.add(text_id)
+            int_ids_to_delete.add(int_id)
+
+        for int_id, text_id in zip(int_ids_to_delete, text_ids_to_delete):
+            del self.nodes_dict[int_id]
+            del self.id_map[text_id]
+
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
         return "dict"
 
-
-# TODO: this should be specific to FAISS
-@dataclass
-class IndexDict(BaseIndexDict):
-    """A dictionary of documents.
-
-    Note: this index structure is specifically used with the Faiss index.
-
-    """
-
     @classmethod
-    def get_type(cls) -> str:
+    def get_types(cls) -> List[str]:
         """Get type."""
-        return "dict"
-
-
-@dataclass
-class SimpleIndexDict(BaseIndexDict):
-    """A simple dictionary of documents.
-
-    This index structure also contains an internal in-memory
-    embedding dict.
-
-    """
-
-    embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
-
-    def add_to_embedding_dict(self, text_id: str, embedding: List[float]) -> None:
-        """Add embedding to dict."""
-        if text_id not in self.id_map:
-            raise ValueError("text_id not found in id_map")
-        elif not isinstance(text_id, str):
-            raise ValueError("text_id must be a string.")
-        self.embedding_dict[text_id] = embedding
-
-    @classmethod
-    def get_type(cls) -> str:
-        """Get type."""
-        return "simple_dict"
-
-
-@dataclass
-class WeaviateIndexStruct(IndexStruct):
-    """A helper index struct for Weaviate.
-
-    In Weaviate, docs are stored in Weaviate directly.
-    This index struct helps to store the class prefix
-
-    """
-
-    class_prefix: Optional[str] = None
-
-    def __post_init__(self) -> None:
-        """Post init."""
-        super().__post_init__()
-        if self.class_prefix is None:
-            raise ValueError("class_prefix must be provided.")
-
-    def get_class_prefix(self) -> str:
-        """Get class prefix."""
-        if self.class_prefix is None:
-            raise ValueError("class_prefix must be provided.")
-        return self.class_prefix
-
-    @classmethod
-    def get_type(cls) -> str:
-        """Get type."""
-        return "weaviate"
-
-
-@dataclass
-class PineconeIndexStruct(IndexStruct):
-    """An index struct for Pinecone.
-
-    Docs are stored in Pinecone directly.
-
-    """
-
-    @classmethod
-    def get_type(cls) -> str:
-        """Get type."""
-        return "pinecone"
-
-
-@dataclass
-class QdrantIndexStruct(IndexStruct):
-    """And index struct for Qdrant.
-
-    Docs are stored in Qdrant directly.
-    This index struct helps to store the collection name
-
-    """
-
-    collection_name: Optional[str] = None
-
-    def __post_init__(self) -> None:
-        """Post init."""
-        super().__post_init__()
-        if self.collection_name is None:
-            raise ValueError("collection_name must be provided.")
-
-    def get_collection_name(self) -> str:
-        """Get class prefix."""
-        if self.collection_name is None:
-            raise ValueError("collection_name must be provided.")
-        return self.collection_name
-
-    @classmethod
-    def get_type(cls) -> str:
-        """Get type."""
-        return "qdrant"
+        return ["dict", "simple_dict", "weaviate", "pinecone", "qdrant", "chroma"]
 
 
 @dataclass
@@ -344,6 +256,11 @@ class KG(IndexStruct):
     table: Dict[str, Set[str]] = field(default_factory=dict)
     text_chunks: Dict[str, Node] = field(default_factory=dict)
     rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
+    embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
+
+    def add_to_embedding_dict(self, triplet_str: str, embedding: List[float]) -> None:
+        """Add embedding to dict."""
+        self.embedding_dict[triplet_str] = embedding
 
     def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
         """Upsert a knowledge triplet to the graph."""

@@ -1,6 +1,6 @@
 """Keyword-table based index.
 
-Similar to a "hash table" in concept. GPT Index first tries
+Similar to a "hash table" in concept. LlamaIndex first tries
 to extract keywords from the source text, and stores the
 keywords as keys per item. It similarly extracts keywords
 from the query text. Then, it tries to match those keywords to
@@ -11,6 +11,7 @@ existing keywords in the table.
 from abc import abstractmethod
 from typing import Any, Dict, Optional, Sequence, Set, Type
 
+from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import KeywordTable
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
@@ -22,6 +23,7 @@ from gpt_index.indices.query.keyword_table.query import (
 )
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
@@ -48,6 +50,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         keyword_extract_template (Optional[KeywordExtractPrompt]): A Keyword
             Extraction Prompt
             (see :ref:`Prompt-Templates`).
+        use_async (bool): Whether to use asynchronous calls. Defaults to False.
 
     """
 
@@ -60,6 +63,8 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         max_keywords_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
+        text_splitter: Optional[TextSplitter] = None,
+        use_async: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -72,14 +77,13 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self.keyword_extract_template = self.keyword_extract_template.partial_format(
             max_keywords=self.max_keywords_per_chunk
         )
+        self._use_async = use_async
         super().__init__(
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
+            text_splitter=text_splitter,
             **kwargs,
-        )
-        self._text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.keyword_extract_template, 1
         )
 
     @classmethod
@@ -95,26 +99,56 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
 
+    async def _async_extract_keywords(self, text: str) -> Set[str]:
+        """Extract keywords from text."""
+        # by default just call sync version
+        return self._extract_keywords(text)
+
+    def _build_fallback_text_splitter(self) -> TextSplitter:
+        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
+        return self._prompt_helper.get_text_splitter_given_prompt(
+            self.keyword_extract_template, 1
+        )
+
+    def _add_document_to_index(
+        self, index_struct: KeywordTable, document: BaseDocument
+    ) -> None:
+        """Add document to index."""
+        nodes = self._get_nodes_from_document(document)
+        for n in nodes:
+            keywords = self._extract_keywords(n.get_text())
+            index_struct.add_node(list(keywords), n)
+
+    async def _async_add_document_to_index(
+        self, index_struct: KeywordTable, document: BaseDocument
+    ) -> None:
+        """Add document to index."""
+        nodes = self._get_nodes_from_document(document)
+        for n in nodes:
+            keywords = await self._async_extract_keywords(n.get_text())
+            index_struct.add_node(list(keywords), n)
+
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument]
     ) -> KeywordTable:
         """Build the index from documents."""
-        text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
-            self.keyword_extract_template, 1
-        )
         # do simple concatenation
         index_struct = KeywordTable(table={})
         for d in documents:
-            nodes = self._get_nodes_from_document(d, text_splitter)
-            for n in nodes:
-                keywords = self._extract_keywords(n.get_text())
-                index_struct.add_node(list(keywords), n)
+            if self._use_async:
+                tasks = [
+                    self._async_add_document_to_index(index_struct, d)
+                    for d in documents
+                ]
+                run_async_tasks(tasks)
+            else:
+                self._add_document_to_index(index_struct, d)
 
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        nodes = self._get_nodes_from_document(document, self._text_splitter)
+        nodes = self._get_nodes_from_document(document)
         for n in nodes:
             keywords = self._extract_keywords(n.get_text())
             self._index_struct.add_node(list(keywords), n)
@@ -154,6 +188,15 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
         response, _ = self._llm_predictor.predict(
+            self.keyword_extract_template,
+            text=text,
+        )
+        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
+        return keywords
+
+    async def _async_extract_keywords(self, text: str) -> Set[str]:
+        """Extract keywords from text."""
+        response, _ = await self._llm_predictor.apredict(
             self.keyword_extract_template,
             text=text,
         )

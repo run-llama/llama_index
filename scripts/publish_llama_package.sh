@@ -15,22 +15,22 @@ else
     exit 1
 fi
 
-if [[ -n "$USERNAME" ]]; then
-    echo "USERNAME is set to $USERNAME"
+if [[ -n "$PYPI_USERNAME" ]]; then
+    echo "PYPI_USERNAME is set to $PYPI_USERNAME"
 else
-    echo "USERNAME is not set"
+    echo "PYPI_USERNAME is not set"
     exit 1
 fi
 
-if [[ -n "$PASSWORD" ]]; then
-    echo "PASSWORD is set to $PASSWORD"
+if [[ -n "$PYPI_PASSWORD" ]]; then
+    echo "PYPI_PASSWORD is set to $PYPI_PASSWORD"
 else
-    echo "PASSWORD is not set"
+    echo "PYPI_PASSWORD is not set"
     exit 1
 fi
 
 LLAMA_INDEX_DIR=$LLAMA_INDEX_DIR GPT_INDEX_DIR=$GPT_INDEX_DIR sh $GPT_INDEX_DIR/scripts/create_llama_package.sh
 
 # publish llama_index package
-twine upload $LLAMA_INDEX_DIR/dist/* -u $USERNAME -p $PASSWORD
+twine upload $LLAMA_INDEX_DIR/dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD
 
