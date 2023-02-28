@@ -1,4 +1,4 @@
-"""Base vector store index query."""
+"""Vector-store specific query classes."""
 
 
 from typing import Any, Dict, Optional
