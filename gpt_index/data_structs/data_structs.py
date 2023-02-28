@@ -242,11 +242,6 @@ class IndexDict(IndexStruct):
         """Get type."""
         return IndexStructType.VECTOR_STORE
 
-    # @classmethod
-    # def get_types(cls) -> List[str]:
-    #     """Get type."""
-    #     return ["dict", "simple_dict", "weaviate", "pinecone", "qdrant", "chroma"]
-
 
 @dataclass
 class KG(IndexStruct):
