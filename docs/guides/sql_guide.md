@@ -8,7 +8,7 @@ This guide helps walk through each of these capabilities. Specifically, we cover
 - **Inferring Structured Datapoints**: Converting unstructured data to structured data.
 - **Text-to-SQL (basic)**: How to query a set of tables using natural language.
 - **Injecting Context**: How to inject context for each table into the text-to-SQL prompt. The context
-    can be manually added, or ti can be derived from unstructured documents.
+    can be manually added, or it can be derived from unstructured documents.
 - **Storing Table Context within an Index**: By default, we directly insert the context into the prompt. Sometimes this is not 
     feasible if the context is large. Here we show how you can actually use a LlamaIndex data structure
     to contain the table context!
