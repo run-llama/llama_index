@@ -3,7 +3,7 @@
 LLMPredictor
 =================
 
-Our LLMPredictor is a wrapper around Langchain's `LLMChain` that allows easy integration into GPT Index.
+Our LLMPredictor is a wrapper around Langchain's `LLMChain` that allows easy integration into LlamaIndex.
 
 .. automodule:: gpt_index.langchain_helpers.chain_wrapper
    :members:

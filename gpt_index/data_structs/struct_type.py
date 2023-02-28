@@ -12,7 +12,10 @@ class IndexStructType(str, Enum):
         KEYWORD_TABLE ("keyword_table"): Keyword table index. See
             :ref:`Ref-Indices-Table`
             for keyword table indices.
-        DICT ("dict"): Vector Store Index. See
+        DICT ("dict"): Faiss Vector Store Index. See
+            :ref:`Ref-Indices-VectorStore`
+            for more information on the faiss vector store index.
+        SIMPLE_DICT ("simple_dict"): Simple Vector Store Index. See
             :ref:`Ref-Indices-VectorStore`
             for more information on the simple vector store index.
         WEAVIATE ("weaviate"): Weaviate Vector Store Index.
@@ -41,7 +44,17 @@ class IndexStructType(str, Enum):
     TREE = "tree"
     LIST = "list"
     KEYWORD_TABLE = "keyword_table"
+
+    # faiss
     DICT = "dict"
+    # simple
+    SIMPLE_DICT = "simple_dict"
+    WEAVIATE = "weaviate"
+    PINECONE = "pinecone"
+    QDRANT = "qdrant"
+    CHROMA = "chroma"
+    VECTOR_STORE = "vector_store"
+
     # for SQL index
     SQL = "sql"
     # for KG index

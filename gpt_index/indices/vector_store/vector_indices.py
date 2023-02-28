@@ -1,10 +1,28 @@
 """Deprecated vector store indices."""
 
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Type, cast
 
-from gpt_index.data_structs.data_structs import IndexDict
+from gpt_index.data_structs.data_structs import (
+    ChromaIndexDict,
+    FaissIndexDict,
+    IndexDict,
+    PineconeIndexDict,
+    QdrantIndexDict,
+    SimpleIndexDict,
+    WeaviateIndexDict,
+)
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.query.vector_store.queries import (
+    GPTChromaIndexQuery,
+    GPTFaissIndexQuery,
+    GPTPineconeIndexQuery,
+    GPTQdrantIndexQuery,
+    GPTSimpleVectorIndexQuery,
+    GPTWeaviateIndexQuery,
+)
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
@@ -39,6 +57,8 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
 
     """
 
+    index_struct_cls: Type[IndexDict] = SimpleIndexDict
+
     def __init__(
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
@@ -70,6 +90,21 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         # update docstore with current struct
         self._docstore.add_documents([self.index_struct], allow_update=True)
 
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTSimpleVectorIndexQuery,
+            QueryMode.EMBEDDING: GPTSimpleVectorIndexQuery,
+        }
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        del query_kwargs["vector_store"]
+        vector_store = cast(SimpleVectorStore, self._vector_store)
+        query_kwargs["simple_vector_store_data_dict"] = vector_store._data
+
 
 class GPTFaissIndex(GPTVectorStoreIndex):
     """GPT Faiss Index.
@@ -92,6 +127,8 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
     """
+
+    index_struct_cls: Type[IndexDict] = FaissIndexDict
 
     def __init__(
         self,
@@ -117,6 +154,21 @@ class GPTFaissIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTFaissIndexQuery,
+            QueryMode.EMBEDDING: GPTFaissIndexQuery,
+        }
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        del query_kwargs["vector_store"]
+        vector_store = cast(FaissVectorStore, self._vector_store)
+        query_kwargs["faiss_index"] = vector_store._faiss_index
 
     @classmethod
     def load_from_disk(
@@ -202,21 +254,30 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             in Pinecone the default is 2048 due to metadata size restrictions.
     """
 
+    index_struct_cls: Type[IndexDict] = PineconeIndexDict
+
     def __init__(
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         pinecone_index: Optional[Any] = None,
+        pinecone_kwargs: Optional[Dict] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
+        chunk_size_limit: int = 2048,
         **kwargs: Any,
     ) -> None:
         """Init params."""
         if pinecone_index is None:
             raise ValueError("pinecone_index is required.")
+        if pinecone_kwargs is None:
+            pinecone_kwargs = {}
         vector_store = kwargs.pop(
-            "vector_store", PineconeVectorStore(pinecone_index=pinecone_index)
+            "vector_store",
+            PineconeVectorStore(
+                pinecone_index=pinecone_index, pinecone_kwargs=pinecone_kwargs
+            ),
         )
 
         super().__init__(
@@ -226,8 +287,25 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             llm_predictor=llm_predictor,
             embed_model=embed_model,
             vector_store=vector_store,
+            chunk_size_limit=chunk_size_limit,
             **kwargs,
         )
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTPineconeIndexQuery,
+            QueryMode.EMBEDDING: GPTPineconeIndexQuery,
+        }
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        del query_kwargs["vector_store"]
+        vector_store = cast(PineconeVectorStore, self._vector_store)
+        query_kwargs["pinecone_index"] = vector_store._pinecone_index
+        query_kwargs["pinecone_kwargs"] = vector_store._pinecone_kwargs
 
 
 class GPTWeaviateIndex(GPTVectorStoreIndex):
@@ -249,6 +327,8 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
     """
+
+    index_struct_cls: Type[IndexDict] = WeaviateIndexDict
 
     def __init__(
         self,
@@ -278,6 +358,22 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
             **kwargs,
         )
 
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTWeaviateIndexQuery,
+            QueryMode.EMBEDDING: GPTWeaviateIndexQuery,
+        }
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        del query_kwargs["vector_store"]
+        vector_store = cast(WeaviateVectorStore, self._vector_store)
+        query_kwargs["weaviate_client"] = vector_store._client
+        query_kwargs["class_prefix"] = vector_store._class_prefix
+
 
 class GPTQdrantIndex(GPTVectorStoreIndex):
     """GPT Qdrant Index.
@@ -300,6 +396,8 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         client (Optional[Any]): QdrantClient instance from `qdrant-client` package
         collection_name: (Optional[str]): name of the Qdrant collection
     """
+
+    index_struct_cls: Type[IndexDict] = QdrantIndexDict
 
     def __init__(
         self,
@@ -329,6 +427,22 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
             **kwargs,
         )
 
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTQdrantIndexQuery,
+            QueryMode.EMBEDDING: GPTQdrantIndexQuery,
+        }
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        del query_kwargs["vector_store"]
+        vector_store = cast(QdrantVectorStore, self._vector_store)
+        query_kwargs["client"] = vector_store._client
+        query_kwargs["collection_name"] = vector_store._collection_name
+
 
 class GPTChromaIndex(GPTVectorStoreIndex):
     """GPT Chroma Index.
@@ -351,6 +465,8 @@ class GPTChromaIndex(GPTVectorStoreIndex):
         chroma_collection (Optional[Any]): Collection instance from `chromadb` package.
 
     """
+
+    index_struct_cls: Type[IndexDict] = ChromaIndexDict
 
     def __init__(
         self,
@@ -376,3 +492,18 @@ class GPTChromaIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTChromaIndexQuery,
+            QueryMode.EMBEDDING: GPTChromaIndexQuery,
+        }
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        del query_kwargs["vector_store"]
+        vector_store = cast(ChromaVectorStore, self._vector_store)
+        query_kwargs["chroma_collection"] = vector_store._collection

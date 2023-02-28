@@ -38,7 +38,7 @@ class BaseQueryRunner:
 
 
 class BaseGPTIndexQuery(Generic[IS]):
-    """Base GPT Index Query.
+    """Base LlamaIndex Query.
 
     Helper class that is used to query an index. Can be called within `query`
     method of a BaseGPTIndex object, or instantiated independently.

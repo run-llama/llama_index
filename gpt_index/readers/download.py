@@ -102,6 +102,10 @@ def download_loader(
     if not os.path.exists(dirpath):
         # Create a new directory because it does not exist
         os.makedirs(dirpath)
+    if not os.path.exists(f"{dirpath}/__init__.py"):
+        # Create an empty __init__.py file if it does not exist yet
+        with open(f"{dirpath}/__init__.py", "w") as f:
+            pass
 
     library_path = f"{dirpath}/library.json"
     loader_id = None  # e.g. `web/simple_web`
@@ -161,10 +165,9 @@ def download_loader(
             if extra_file == "__init__.py":
                 loader_exports = get_exports(extra_file_raw_content)
                 existing_exports = []
-                if os.path.exists(dirpath / "__init__.py"):
-                    with open(dirpath / "__init__.py", "r+") as f:
-                        f.write(f"from .{loader_id} import {', '.join(loader_exports)}")
-                        existing_exports = get_exports(f.read())
+                with open(dirpath / "__init__.py", "r+") as f:
+                    f.write(f"from .{loader_id} import {', '.join(loader_exports)}")
+                    existing_exports = get_exports(f.read())
                 rewrite_exports(existing_exports + loader_exports)
             with open(f"{loader_path}/{extra_file}", "w") as f:
                 f.write(extra_file_raw_content)

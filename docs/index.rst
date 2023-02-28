@@ -3,11 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to GPT Index (LlamaIndex 🦙)!
+Welcome to LlamaIndex 🦙 (GPT Index)!
 =====================================
 
-GPT Index (LlamaIndex) is a project consisting of a set of data structures designed to make it easier to 
-use large external knowledge bases with LLMs.
+LlamaIndex (GPT Index) is a project that provides a central interface to connect your LLM's with external data.
 
    ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! We will carry out this transition gradually.
 
@@ -34,13 +33,13 @@ Context
 
 Proposed Solution
 ^^^^^^^^^^^^^^^^^
-That's where the **GPT Index** comes in. GPT Index is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
+That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
 
 - Provides simple data structures to resolve prompt size limitations.
 - Offers data connectors to your external data sources.
 - Offers you a comprehensive toolset trading off cost and performance.
 
-At the core of GPT Index is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
+At the core of LlamaIndex is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
 
 - Uses a pre-trained LLM primarily for *reasoning*/*summarization* instead of prior knowledge.
 - Takes as input a large corpus of text data and build a structured index over it (using an LLM or heuristics).
