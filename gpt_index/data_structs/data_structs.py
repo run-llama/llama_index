@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 
+from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_int_id
 
@@ -239,12 +240,7 @@ class IndexDict(IndexStruct):
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
-        return "dict"
-
-    @classmethod
-    def get_types(cls) -> List[str]:
-        """Get type."""
-        return ["dict", "simple_dict", "weaviate", "pinecone", "qdrant", "chroma"]
+        return IndexStructType.VECTOR_STORE
 
 
 @dataclass
@@ -318,3 +314,60 @@ class KG(IndexStruct):
     def get_type(cls) -> str:
         """Get type."""
         return "kg"
+
+
+# TODO: remove once we centralize UX around vector index
+
+
+class SimpleIndexDict(IndexDict):
+    """Index dict for simple vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.SIMPLE_DICT
+
+
+class FaissIndexDict(IndexDict):
+    """Index dict for Faiss vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.DICT
+
+
+class WeaviateIndexDict(IndexDict):
+    """Index dict for Weaviate vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.WEAVIATE
+
+
+class PineconeIndexDict(IndexDict):
+    """Index dict for Pinecone vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.PINECONE
+
+
+class QdrantIndexDict(IndexDict):
+    """Index dict for Qdrant vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.QDRANT
+
+
+class ChromaIndexDict(IndexDict):
+    """Index dict for Chroma vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.CHROMA
