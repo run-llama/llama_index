@@ -9,7 +9,6 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.utils import log_vector_store_query_result
-from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import VectorStore
 
 
@@ -34,30 +33,8 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         """Initialize params."""
         super().__init__(index_struct=index_struct, embed_model=embed_model, **kwargs)
         self._similarity_top_k = similarity_top_k
-
-        # TODO: this is a temporary hack to allow composable
-        # indices to work for simple vector stores
-        # Our composability framework at the moment only allows for storage
-        # of index_struct, not vector_store. Therefore in order to
-        # allow simple vector indices to be composed, we need to "infer"
-        # the vector store from the index struct.
-        # NOTE: the next refactor would be to allow users to pass in
-        # the vector store during query-time. However this is currently
-        # not complete in our composability framework because the configs
-        # are keyed on index type, not index id (which means that users
-        # can't pass in distinct vector stores for different subindices).
-        # NOTE: composability on top of other vector stores (pinecone/weaviate)
-        # was already broken in this form.
         if vector_store is None:
-            if len(index_struct.embeddings_dict) > 0:
-                simple_vector_store_data_dict = {
-                    "embedding_dict": index_struct.embeddings_dict,
-                }
-                vector_store = SimpleVectorStore(
-                    simple_vector_store_data_dict=simple_vector_store_data_dict
-                )
-            else:
-                raise ValueError("Vector store is required for vector store query.")
+            raise ValueError("Vector store is required for vector store query.")
         self._vector_store = vector_store
 
     def _get_nodes_for_response(
@@ -86,7 +63,5 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         if similarity_tracker is not None and query_result.similarities is not None:
             for node, similarity in zip(query_result.nodes, query_result.similarities):
                 similarity_tracker.add(node, similarity)
-
-        print("query_result.nodes", query_result.nodes)
 
         return query_result.nodes

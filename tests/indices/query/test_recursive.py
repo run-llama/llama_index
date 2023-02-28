@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import patch
 
 import pytest
@@ -539,5 +539,6 @@ def test_recursive_query_vector_table_query_configs(
         graph = ComposableGraph.build_from_index(table)
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        response = graph.query(query_str, query_configs=query_configs)
+        # cast to Any to avoid mypy error
+        response = graph.query(query_str, query_configs=cast(Any, query_configs))
         assert str(response) == ("Orange?:Hello world.")
