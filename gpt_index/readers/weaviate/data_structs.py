@@ -6,7 +6,7 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 
 import json
 from abc import abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.readers.weaviate.utils import (
@@ -132,7 +132,9 @@ class BaseWeaviateIndexStruct(Generic[IS]):
 
     @classmethod
     @abstractmethod
-    def _from_gpt_index(cls, client: Any, index: IS, class_prefix: str) -> str:
+    def _from_gpt_index(
+        cls, client: Any, index: IS, class_prefix: str, batch: Optional[Any] = None
+    ) -> str:
         """Convert from LlamaIndex."""
 
     @classmethod
@@ -204,7 +206,9 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         )
 
     @classmethod
-    def _from_gpt_index(cls, client: Any, node: Node, class_prefix: str) -> str:
+    def _from_gpt_index(
+        cls, client: Any, node: Node, class_prefix: str, batch: Optional[Any] = None
+    ) -> str:
         """Convert from LlamaIndex."""
         node_dict = node.to_dict()
         vector = node_dict.pop("embedding")
@@ -224,7 +228,12 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         # TODO: account for existing nodes that are stored
         node_id = get_new_id(set())
         class_name = cls._class_name(class_prefix)
-        client.batch.add_data_object(node_dict, class_name, node_id, vector)
+
+        # if batch object is provided (via a contexxt manager), use that instead
+        if batch is not None:
+            batch.add_data_object(node_dict, class_name, node_id, vector)
+        else:
+            client.batch.add_data_object(node_dict, class_name, node_id, vector)
 
         return node_id
 
@@ -250,3 +259,19 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         entries = parsed_result[class_name]
         for entry in entries:
             client.data_object.delete(entry["_additional"]["id"], class_name)
+
+    @classmethod
+    def from_gpt_index_batch(
+        cls, client: Any, nodes: List[Node], class_prefix: str
+    ) -> List[str]:
+        """Convert from gpt index."""
+        from weaviate import Client  # noqa: F401
+
+        client = cast(Client, client)
+        validate_client(client)
+        index_ids = []
+        with client.batch as batch:
+            for node in nodes:
+                index_id = cls._from_gpt_index(client, node, class_prefix, batch=batch)
+        index_ids.append(index_id)
+        return index_ids

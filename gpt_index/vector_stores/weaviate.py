@@ -84,7 +84,10 @@ class WeaviateVectorStore(VectorStore):
             embedding = result.embedding
             # TODO: always store embedding in node
             node.embedding = embedding
-            WeaviateNode.from_gpt_index(self._client, node, self._class_prefix)
+
+        WeaviateNode.from_gpt_index_batch(
+            self._client, [r.node for r in embedding_results], self._class_prefix
+        )
         return [result.id for result in embedding_results]
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
