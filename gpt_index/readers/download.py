@@ -103,6 +103,10 @@ def download_loader(
         # Create a new directory because it does not exist
         os.makedirs(dirpath)
 
+    if not Path(dirpath / "__init__.py").exists():
+        # Create an empty __init__.py file
+        Path(dirpath / "__init__.py").touch()
+
     library_path = f"{dirpath}/library.json"
     loader_id = None  # e.g. `web/simple_web`
     extra_files = []  # e.g. `web/simple_web/utils.py`
