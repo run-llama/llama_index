@@ -265,6 +265,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
+        chunk_size_limit: int = 2048,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -286,6 +287,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             llm_predictor=llm_predictor,
             embed_model=embed_model,
             vector_store=vector_store,
+            chunk_size_limit=chunk_size_limit,
             **kwargs,
         )
 
@@ -370,7 +372,7 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         del query_kwargs["vector_store"]
         vector_store = cast(WeaviateVectorStore, self._vector_store)
         query_kwargs["weaviate_client"] = vector_store._client
-        query_kwargs["pinecone_kwargs"] = vector_store._class_prefix
+        query_kwargs["class_prefix"] = vector_store._class_prefix
 
 
 class GPTQdrantIndex(GPTVectorStoreIndex):
@@ -438,8 +440,8 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         super()._preprocess_query(mode, query_kwargs)
         del query_kwargs["vector_store"]
         vector_store = cast(QdrantVectorStore, self._vector_store)
-        query_kwargs["weaviate_client"] = vector_store._client
-        query_kwargs["pinecone_kwargs"] = vector_store._collection_name
+        query_kwargs["client"] = vector_store._client
+        query_kwargs["collection_name"] = vector_store._collection_name
 
 
 class GPTChromaIndex(GPTVectorStoreIndex):
