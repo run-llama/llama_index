@@ -103,7 +103,7 @@ def download_loader(
         # Create a new directory because it does not exist
         os.makedirs(dirpath)
     if not os.path.exists(f"{dirpath}/__init__.py"):
-        # Create an empty __init__.py file if it does not exist
+        # Create an empty __init__.py file if it does not exist yet
         with open(f"{dirpath}/__init__.py", "w") as f:
             pass
 
