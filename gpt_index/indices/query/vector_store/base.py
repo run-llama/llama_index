@@ -14,7 +14,14 @@ from gpt_index.vector_stores.types import VectorStore
 
 
 class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
-    """Base vector store query."""
+    """Base vector store query.
+
+    Args:
+        embed_model (Optional[BaseEmbedding]): embedding model
+        similarity_top_k (int): number of top k results to return
+        vector_store (Optional[VectorStore]): vector store
+
+    """
 
     def __init__(
         self,
