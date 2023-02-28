@@ -68,6 +68,8 @@ class QueryConfig(DataClassJsonMixin):
         # using JSON dictionaries
         query_configs = [
             {
+                # index_struct_id is optional
+                "index_struct_id": "<index_struct_id>",
                 "index_struct_type": "tree",
                 "query_mode": "default",
                 "query_kwargs": {
@@ -84,6 +86,7 @@ class QueryConfig(DataClassJsonMixin):
 
         query_configs = [
             QueryConfig(
+                index_struct_id="<index_struct_id>",
                 index_struct_type=IndexStructType.TREE,
                 query_mode=QueryMode.DEFAULT,
                 query_kwargs={
@@ -98,7 +101,7 @@ class QueryConfig(DataClassJsonMixin):
 
 
     Args:
-        index_struct_id (str): The index struct id. This can be obtained by calling
+        index_struct_id (Optional[str]): The index struct id. This can be obtained by calling
             "get_doc_id" on the original index class. This can be set by calling
             "set_doc_id" on the original index class.
         index_struct_type (IndexStructType): The type of index struct.
