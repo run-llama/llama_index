@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from langchain.utilities import RequestsWrapper
+import requests
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -41,10 +41,9 @@ class SimpleWebPageReader(BaseReader):
         """
         if not isinstance(urls, list):
             raise ValueError("urls must be a list of strings.")
-        requests = RequestsWrapper()
         documents = []
         for url in urls:
-            response = requests.run(url)
+            response = requests.get(url, headers=None).text
             if self._html_to_text:
                 import html2text
 
