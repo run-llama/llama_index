@@ -88,7 +88,7 @@ DEFAULT_QUERY_PROMPT_MULTIPLE = TreeSelectMultiplePrompt(
 DEFAULT_REFINE_PROMPT_TMPL = (
     "The original question is as follows: {query_str}\n"
     "We have provided an existing answer: {existing_answer}\n"
-    "We have the opportunity to refine the existing answer"
+    "We have the opportunity to refine the existing answer "
     "(only if needed) with some more context below.\n"
     "------------\n"
     "{context_msg}\n"
