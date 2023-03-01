@@ -371,3 +371,12 @@ class ChromaIndexDict(IndexDict):
     def get_type(cls) -> str:
         """Get type."""
         return IndexStructType.CHROMA
+
+
+class OpensearchIndexDict(IndexDict):
+    """Index dict for Opensearch vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.OPENSEARCH
