@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import patch
 
 import pytest
@@ -446,3 +446,99 @@ def test_recursive_query_vector_table(
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         response = graph.query(query_str, query_configs=query_configs)
         assert str(response) == ("Cat?:This is a test v2.")
+
+
+@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
+@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_recursive_query_vector_table_query_configs(
+    _mock_query_embed: Any,
+    _mock_get_text_embeds: Any,
+    _mock_get_text_embed: Any,
+    _mock_init: Any,
+    _mock_total_tokens_used: Any,
+    _mock_predict: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test query.
+
+    Difference with above test is we specify query config params and
+    assert that they're passed in.
+
+    """
+    index_kwargs, _ = struct_kwargs
+    query_configs = [
+        QueryConfig(
+            index_struct_type=IndexStructType.KEYWORD_TABLE,
+            query_mode=QueryMode.DEFAULT,
+            query_kwargs={
+                "query_keyword_extract_template": MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
+                "text_qa_template": MOCK_TEXT_QA_PROMPT,
+                "refine_template": MOCK_REFINE_PROMPT,
+            },
+        ),
+        QueryConfig(
+            index_struct_id="vector1",
+            index_struct_type=IndexStructType.DICT,
+            query_mode=QueryMode.DEFAULT,
+            query_kwargs={
+                "text_qa_template": MOCK_TEXT_QA_PROMPT,
+                "refine_template": MOCK_REFINE_PROMPT,
+                "similarity_top_k": 2,
+                "required_keywords": ["v2"],
+            },
+        ),
+        QueryConfig(
+            index_struct_id="vector2",
+            index_struct_type=IndexStructType.DICT,
+            query_mode=QueryMode.DEFAULT,
+            query_kwargs={
+                "text_qa_template": MOCK_TEXT_QA_PROMPT,
+                "refine_template": MOCK_REFINE_PROMPT,
+                "similarity_top_k": 2,
+                "required_keywords": ["world"],
+            },
+        ),
+    ]
+
+    list_kwargs = index_kwargs["list"]
+    table_kwargs = index_kwargs["table"]
+    # try building a tree for a group of 4, then a list
+    # use a diff set of documents
+    # try building a list for every two, then a tree
+    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
+    list1.set_text("foo bar")
+    list1.set_doc_id("vector1")
+    list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
+    list2.set_text("apple orange")
+    list2.set_doc_id("vector2")
+
+    table = GPTSimpleKeywordTableIndex([list1, list2], **table_kwargs)
+    query_str = "Foo?"
+    response = table.query(query_str, mode="recursive", query_configs=query_configs)
+    assert str(response) == ("Foo?:This is a test v2.")
+    query_str = "Orange?"
+    response = table.query(query_str, mode="recursive", query_configs=query_configs)
+    assert str(response) == ("Orange?:Hello world.")
+
+    # test serialize and then back
+    # use composable graph struct
+    with TemporaryDirectory() as tmpdir:
+        graph = ComposableGraph.build_from_index(table)
+        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
+        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
+        # cast to Any to avoid mypy error
+        response = graph.query(query_str, query_configs=cast(Any, query_configs))
+        assert str(response) == ("Orange?:Hello world.")
