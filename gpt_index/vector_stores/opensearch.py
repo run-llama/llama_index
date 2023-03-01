@@ -1,11 +1,8 @@
-"""
-Elasticsearch/Opensearch vector store.
-"""
-from gpt_index.data_structs import Node
-
-
+"""Elasticsearch/Opensearch vector store."""
 import json
-from typing import Any, List
+from typing import Any, Dict, List, Optional
+
+from gpt_index.data_structs import Node
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
@@ -25,10 +22,12 @@ class OpensearchVectorClient:
         endpoint (str): URL (http/https) of elasticsearch endpoint
         index (str): Name of the elasticsearch index
         dim (int): Dimension of the vector
-        embedding_field (str): Name of the field in the index to store embedding array in.
+        embedding_field (str): Name of the field in the index to store
+            embedding array in.
         text_field (str): Name of the field to grab text from
-        method (Optional[dict]): Opensearch "method" JSON obj for configuring the KNN index
-            this includes engine, metric, and other config params. Defaults to:
+        method (Optional[dict]): Opensearch "method" JSON obj for configuring
+            the KNN index.
+            This includes engine, metric, and other config params. Defaults to:
                 {
                     "name": "hnsw",
                     "space_type": "l2",
@@ -42,10 +41,11 @@ class OpensearchVectorClient:
         endpoint: str,
         index: str,
         dim: int,
-        embedding_field="embedding",
-        text_field="content",
-        method=None,
+        embedding_field: str = "embedding",
+        text_field: str = "content",
+        method: Optional[dict] = None,
     ):
+        """Init params."""
         if method is None:
             method = {
                 "name": "hnsw",
@@ -85,7 +85,7 @@ class OpensearchVectorClient:
 
     def index_results(self, results: List[NodeEmbeddingResult]) -> List[str]:
         """Store results in the index."""
-        bulk_req = []
+        bulk_req: List[Dict[Any, Any]] = []
         for result in results:
             bulk_req.append({"index": {"_index": self._index, "_id": result.id}})
             bulk_req.append(
@@ -113,6 +113,7 @@ class OpensearchVectorClient:
     def do_approx_knn(
         self, query_embedding: List[float], k: int
     ) -> VectorStoreQueryResult:
+        """Do approximate knn."""
         res = self._client.post(
             f"{self._index}/_search",
             json={
@@ -140,7 +141,9 @@ class OpensearchVectorStore(VectorStore):
     """Elasticsearch/Opensearch vector store.
 
     Args:
-        client (OpensearchVectorClient): Vector index client to use for data insertion/querying.
+        client (OpensearchVectorClient): Vector index client to use
+            for data insertion/querying.
+
     """
 
     stores_text: bool = True

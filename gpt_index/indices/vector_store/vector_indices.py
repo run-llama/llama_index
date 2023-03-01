@@ -6,6 +6,7 @@ from gpt_index.data_structs.data_structs import (
     ChromaIndexDict,
     FaissIndexDict,
     IndexDict,
+    OpensearchIndexDict,
     PineconeIndexDict,
     QdrantIndexDict,
     SimpleIndexDict,
@@ -18,6 +19,7 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.queries import (
     GPTChromaIndexQuery,
     GPTFaissIndexQuery,
+    GPTOpensearchIndexQuery,
     GPTPineconeIndexQuery,
     GPTQdrantIndexQuery,
     GPTSimpleVectorIndexQuery,
@@ -514,30 +516,33 @@ class GPTChromaIndex(GPTVectorStoreIndex):
 
 
 class GPTOpensearchIndex(GPTVectorStoreIndex):
-    """GPT Opensearch Index
+    """GPT Opensearch Index.
 
     The GPTOpensearchIndex is a data structure where nodes are keyed by
-    embeddings, and those embeddings are stored in a document that is indexed with its embedding as well as
-    its textual data (text field is defined in the OpensearchVectorClient).
+    embeddings, and those embeddings are stored in a document that is indexed
+    with its embedding as well as its textual data (text field is defined in
+    the OpensearchVectorClient).
     During index construction, the document texts are chunked up,
     converted to nodes with text; each node's embedding is computed, and then
     the node's text, along with the embedding, is converted into JSON document that
-    is indexed in Opensearch. The embedding data is put into a field with type "knn_vector" and the text
-    is put into a standard Opensearch text field.
+    is indexed in Opensearch. The embedding data is put into a field with type
+    "knn_vector" and the text is put into a standard Opensearch text field.
 
-    During query time, the index performs approximate KNN search using the "knn_vector" field
-    that the embeddings were mapped to.
+    During query time, the index performs approximate KNN search using the
+    "knn_vector" field that the embeddings were mapped to.
 
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
-        client (Optional[OpensearchVectorClient]): The client which encapsulates logic for
-            using Opensearch as a vector store (that is, it holds stuff like endpoint, index_name
-            and performs operations like initializing the index and
-            adding new doc/embeddings to said index).
+        client (Optional[OpensearchVectorClient]): The client which encapsulates
+            logic for using Opensearch as a vector store (that is, it holds stuff
+            like endpoint, index_name and performs operations like initializing the
+            index and adding new doc/embeddings to said index).
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
     """
+
+    index_struct_cls: Type[IndexDict] = OpensearchIndexDict
 
     def __init__(
         self,
@@ -562,3 +567,18 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTOpensearchIndexQuery,
+            QueryMode.EMBEDDING: GPTOpensearchIndexQuery,
+        }
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        del query_kwargs["vector_store"]
+        vector_store = cast(OpensearchVectorStore, self._vector_store)
+        query_kwargs["client"] = vector_store._client

@@ -1,5 +1,7 @@
 """Elasticsearch (or Opensearch) reader over REST api.
+
 This only uses the basic search api, so it will work with Elasticsearch and Opensearch.
+
 """
 
 
@@ -12,6 +14,7 @@ from gpt_index.readers.schema.base import Document
 class ElasticsearchReader(BaseReader):
     """
     Read documents from an Elasticsearch/Opensearch index.
+
     These documents can then be used in a downstream Llama Index data structure.
 
     Args:
@@ -20,7 +23,9 @@ class ElasticsearchReader(BaseReader):
         httpx_client_args (dict): Optional additional args to pass to the `httpx.Client`
     """
 
-    def __init__(self, endpoint: str, index: str, httpx_client_args=None):
+    def __init__(
+        self, endpoint: str, index: str, httpx_client_args: Optional[dict] = None
+    ):
         """Initialize with parameters."""
         import_err_msg = """
             `httpx` package not found. Install via `pip install httpx`
@@ -44,8 +49,10 @@ class ElasticsearchReader(BaseReader):
         Args:
             field (str): Field in the document to retrieve text from
             query (Optional[dict]): Elasticsearch JSON query DSL object.
-                For example: {"query": {"match": {"message": {"query": "this is a test"}}}}
-            embedding_field (Optional[str]): If there are embeddings stored in this index, this field can be used
+                For example:
+                {"query": {"match": {"message": {"query": "this is a test"}}}}
+            embedding_field (Optional[str]): If there are embeddings stored in
+                this index, this field can be used
                 to set the embedding field on the returned Document list.
         Returns:
             List[Document]: A list of documents.
