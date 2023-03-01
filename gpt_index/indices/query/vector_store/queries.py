@@ -8,11 +8,13 @@ from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
 from gpt_index.vector_stores import (
     ChromaVectorStore,
     FaissVectorStore,
+    OpensearchVectorStore,
     PineconeVectorStore,
     QdrantVectorStore,
     SimpleVectorStore,
     WeaviateVectorStore,
 )
+from gpt_index.vector_stores.opensearch import OpensearchVectorClient
 
 
 class GPTSimpleVectorIndexQuery(GPTVectorStoreIndexQuery):
@@ -189,4 +191,29 @@ class GPTChromaIndexQuery(GPTVectorStoreIndexQuery):
         if chroma_collection is None:
             raise ValueError("chroma_collection is required.")
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        super().__init__(index_struct=index_struct, vector_store=vector_store, **kwargs)
+
+
+class GPTOpensearchIndexQuery(GPTVectorStoreIndexQuery):
+    """GPT Opensearch vector index query.
+
+    Args:
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
+            embedding similarity.
+        client (Optional[OpensearchVectorClient]): Opensearch vector client.
+
+    """
+
+    def __init__(
+        self,
+        index_struct: IndexDict,
+        client: Optional[OpensearchVectorClient] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize params."""
+        if client is None:
+            raise ValueError("OpensearchVectorClient client is required.")
+        vector_store = OpensearchVectorStore(client=client)
         super().__init__(index_struct=index_struct, vector_store=vector_store, **kwargs)

@@ -12,6 +12,7 @@ definition of a Document - the bare minimum is a `text` property.
 
 from gpt_index.readers.chroma import ChromaReader
 from gpt_index.readers.discord_reader import DiscordReader
+from gpt_index.readers.elasticsearch import ElasticsearchReader
 from gpt_index.readers.faiss import FaissReader
 
 # readers
@@ -66,4 +67,5 @@ __all__ = [
     "ObsidianReader",
     "GithubRepositoryReader",
     "MboxReader",
+    "ElasticsearchReader",
 ]
