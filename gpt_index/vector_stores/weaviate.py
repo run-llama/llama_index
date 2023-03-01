@@ -50,6 +50,11 @@ class WeaviateVectorStore(VectorStore):
             raise ValueError(import_err_msg)
 
         self._client = cast(Client, weaviate_client)
+        # validate class prefix starts with a capital letter
+        if class_prefix is not None and not class_prefix[0].isupper():
+            raise ValueError(
+                "Class prefix must start with a capital letter, e.g. 'Gpt'"
+            )
         self._class_prefix = class_prefix or get_default_class_prefix()
         # try to create schema
         WeaviateNode.create_schema(self._client, self._class_prefix)
@@ -79,7 +84,10 @@ class WeaviateVectorStore(VectorStore):
             embedding = result.embedding
             # TODO: always store embedding in node
             node.embedding = embedding
-            WeaviateNode.from_gpt_index(self._client, node, self._class_prefix)
+
+        WeaviateNode.from_gpt_index_batch(
+            self._client, [r.node for r in embedding_results], self._class_prefix
+        )
         return [result.id for result in embedding_results]
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:

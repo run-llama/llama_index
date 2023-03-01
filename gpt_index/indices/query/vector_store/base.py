@@ -13,12 +13,19 @@ from gpt_index.vector_stores.types import VectorStore
 
 
 class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
-    """Base vector store query."""
+    """Base vector store query.
+
+    Args:
+        embed_model (Optional[BaseEmbedding]): embedding model
+        similarity_top_k (int): number of top k results to return
+        vector_store (Optional[VectorStore]): vector store
+
+    """
 
     def __init__(
         self,
         index_struct: IndexDict,
-        vector_store: VectorStore,
+        vector_store: Optional[VectorStore] = None,
         embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: int = 1,
         **kwargs: Any,
@@ -26,7 +33,8 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         """Initialize params."""
         super().__init__(index_struct=index_struct, embed_model=embed_model, **kwargs)
         self._similarity_top_k = similarity_top_k
-
+        if vector_store is None:
+            raise ValueError("Vector store is required for vector store query.")
         self._vector_store = vector_store
 
     def _get_nodes_for_response(

@@ -7,13 +7,14 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 
+from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_int_id
 
 
 @dataclass
 class IndexStruct(BaseDocument, DataClassJsonMixin):
-    """A base data struct for a GPT index."""
+    """A base data struct for a LlamaIndex."""
 
     # NOTE: the text field, inherited from BaseDocument,
     # represents a summary of the content of the index struct.
@@ -180,6 +181,10 @@ class IndexDict(IndexStruct):
     nodes_dict: Dict[int, Node] = field(default_factory=dict)
     id_map: Dict[str, int] = field(default_factory=dict)
 
+    # TODO: temporary hack to store embeddings for simple vector index
+    # this should be empty for all other indices
+    embeddings_dict: Dict[str, List[float]] = field(default_factory=dict)
+
     def add_node(
         self,
         node: Node,
@@ -235,7 +240,7 @@ class IndexDict(IndexStruct):
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
-        return "dict"
+        return IndexStructType.VECTOR_STORE
 
 
 @dataclass
@@ -247,6 +252,11 @@ class KG(IndexStruct):
     table: Dict[str, Set[str]] = field(default_factory=dict)
     text_chunks: Dict[str, Node] = field(default_factory=dict)
     rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
+    embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
+
+    def add_to_embedding_dict(self, triplet_str: str, embedding: List[float]) -> None:
+        """Add embedding to dict."""
+        self.embedding_dict[triplet_str] = embedding
 
     def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
         """Upsert a knowledge triplet to the graph."""
@@ -304,3 +314,69 @@ class KG(IndexStruct):
     def get_type(cls) -> str:
         """Get type."""
         return "kg"
+
+
+# TODO: remove once we centralize UX around vector index
+
+
+class SimpleIndexDict(IndexDict):
+    """Index dict for simple vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.SIMPLE_DICT
+
+
+class FaissIndexDict(IndexDict):
+    """Index dict for Faiss vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.DICT
+
+
+class WeaviateIndexDict(IndexDict):
+    """Index dict for Weaviate vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.WEAVIATE
+
+
+class PineconeIndexDict(IndexDict):
+    """Index dict for Pinecone vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.PINECONE
+
+
+class QdrantIndexDict(IndexDict):
+    """Index dict for Qdrant vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.QDRANT
+
+
+class ChromaIndexDict(IndexDict):
+    """Index dict for Chroma vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.CHROMA
+
+
+class OpensearchIndexDict(IndexDict):
+    """Index dict for Opensearch vector index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.OPENSEARCH

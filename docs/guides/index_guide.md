@@ -3,7 +3,7 @@
 This guide describes how each index works with diagrams. We also visually highlight our "Response Synthesis" modes.
 
 Some terminology:
-- **Node**: Corresponds to a chunk of text from a Document. GPT Index takes in Document objects and internally parses/chunks them into Node objects.
+- **Node**: Corresponds to a chunk of text from a Document. LlamaIndex takes in Document objects and internally parses/chunks them into Node objects.
 - **Response Synthesis**: Our module which synthesizes a response given the retrieved Node. You can see how to 
     [specify different response modes](setting-response-mode) here. 
     See below for an illustration of how each response mode works.
@@ -16,7 +16,7 @@ The list index simply stores Nodes as a sequential chain.
 
 ### Querying
 
-During query time, if no other query parameters are specified, GPT Index simply all Nodes in the list into
+During query time, if no other query parameters are specified, LlamaIndex simply all Nodes in the list into
 our Reponse Synthesis module.
 
 ![](/_static/indices/list_query.png)
@@ -72,7 +72,7 @@ Response Synthesis module.
 
 ## Response Synthesis
 
-GPT Index offers different methods of synthesizing a response. The way to toggle this can be found in our 
+LlamaIndex offers different methods of synthesizing a response. The way to toggle this can be found in our 
 [Usage Pattern Guide](setting-response-mode). Below, we visually highlight how each response mode works.
 
 ### Create and Refine

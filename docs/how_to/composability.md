@@ -1,7 +1,7 @@
 # Composability
 
 
-GPT Index offers **composability** of your indices, meaning that you can build indices on top of other indices. This allows you to more effectively index your entire document tree in order to feed custom knowledge to GPT.
+LlamaIndex offers **composability** of your indices, meaning that you can build indices on top of other indices. This allows you to more effectively index your entire document tree in order to feed custom knowledge to GPT.
 
 Composability allows you to to define lower-level indices for each document, and higher-order indices over a collection of documents. To see how this works, imagine defining 1) a tree index for the text within each document, and 2) a list index over each tree index (one document) within your collection.
 
@@ -33,11 +33,14 @@ the subindices to be used as Documents for higher-level indices.
 
 ```python
 index1.set_text("<summary1>")
+index1.set_doc_id("<index_id_1>")
 index2.set_text("<summary2>")
+index2.set_doc_id("<index_id_2>")
 index3.set_text("<summary3>")
+index3.set_doc_id("<index_id_3>")
 ```
 
-You may choose to manually specify the summary text, or use GPT Index itself to generate
+You may choose to manually specify the summary text, or use LlamaIndex itself to generate
 a summary, for instance with the following:
 
 ```python
@@ -95,6 +98,8 @@ Information on how to specify query configs (either as a list of JSON dicts or `
 # set query config. An example is provided below
 query_configs = [
     {
+        # NOTE: index_struct_id is optional
+        "index_struct_id": "<index_id_1>",
         "index_struct_type": "tree",
         "query_mode": "default",
         "query_kwargs": {
