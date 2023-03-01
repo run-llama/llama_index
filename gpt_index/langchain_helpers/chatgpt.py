@@ -45,7 +45,6 @@ class ChatGPTLLMPredictor(LLMPredictor):
         If retry_on_throttling is true, we will retry on rate limit errors.
 
         """
-
         prompt_str = prompt.format(**prompt_args)
         messages = self._prepend_messages + [{"role": "user", "content": prompt_str}]
 
