@@ -1,6 +1,6 @@
 """Chroma Reader."""
 
-from typing import Any
+from typing import Any, List
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -26,9 +26,7 @@ class ChromaReader(BaseReader):
     ) -> None:
 
         """Initialize with parameters."""
-        import_err_msg = (
-            "`chromadb` package not found, please run `pip install chromadb`"
-        )
+        import_err_msg = "`chromadb` package not found, please run `pip install chromadb`"
         try:
             import chromadb  # noqa: F401
         except ImportError:
@@ -39,11 +37,7 @@ class ChromaReader(BaseReader):
         from chromadb.config import Settings
 
         if persist_directory:
-            self._client = chromadb.Client(
-                Settings(
-                    chroma_db_impl="duckdb+parquet", persist_directory=persist_directory
-                )
-            )
+            self._client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory=persist_directory))
         else:
             self._client = chromadb.Client(
                 Settings(
@@ -56,12 +50,11 @@ class ChromaReader(BaseReader):
 
     def load_data(
         self,
-        query: str or list,
+        query: str | List[str],
         limit: int = 10,
         where: dict = {},  # {"metadata_field": "is_equal_to_this"},
         where_document: dict = {},  # {"$contains":"search_string"}
     ) -> Any:
-        print(self._collection.count())
         query = query if isinstance(query, list) else [query]
         results = self._collection.query(
             query_texts=query,
@@ -70,7 +63,6 @@ class ChromaReader(BaseReader):
             where_document=where_document,
             include=["metadatas", "documents", "distances", "embeddings"],
         )
-        print(results)
         documents = []
         for result in zip(
             results["ids"],
