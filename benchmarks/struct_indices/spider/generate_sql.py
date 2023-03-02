@@ -3,6 +3,8 @@ import argparse
 import json
 import logging
 import os
+import re
+import sqlite3
 
 from langchain import OpenAI
 from sqlalchemy import create_engine
@@ -13,18 +15,35 @@ from gpt_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
 logging.getLogger("root").setLevel(logging.WARNING)
 
 
+_spaces = re.compile(r"\s+")
+_newlines = re.compile(r"\n+")
+_sql_from_error_msg = re.compile(r"\[SQL: (.*?)\]", re.DOTALL)
+
+
 def _generate_sql(
     llama_index: GPTSQLStructStoreIndex,
     nl_query_text: str,
 ) -> str:
-    response = llama_index.query(nl_query_text, mode="default")
-    if (
-        response.extra_info is None
-        or "sql_query" not in response.extra_info
-        or response.extra_info["sql_query"] is None
-    ):
-        raise RuntimeError("No SQL query generated.")
-    return response.extra_info["sql_query"].replace("\n", " ").strip()
+    """Generate SQL query for the given NL query text."""
+    try:
+        response = llama_index.query(nl_query_text, mode="default")
+        if (
+            response.extra_info is None
+            or "sql_query" not in response.extra_info
+            or response.extra_info["sql_query"] is None
+        ):
+            raise RuntimeError("No SQL query generated.")
+        query = response.extra_info["sql_query"]
+    except Exception as e:
+        # Try to extract the SQL query from the error message.
+        match = _sql_from_error_msg.search(str(e))
+        if match is None:
+            raise e
+        query = match.group(1)
+    # Remove newlines and extra spaces.
+    query = _newlines.sub(" ", query)
+    query = _spaces.sub(" ", query)
+    return query.strip()
 
 
 def generate_sql(llama_indexes: dict, examples: list, output_file: str) -> None:
@@ -33,7 +52,15 @@ def generate_sql(llama_indexes: dict, examples: list, output_file: str) -> None:
         for example in tqdm(examples, desc=f"Generating {output_file}"):
             db_name = example["db_id"]
             nl_query_text = example["question"]
-            sql_query = _generate_sql(llama_indexes[db_name], nl_query_text)
+            try:
+                sql_query = _generate_sql(llama_indexes[db_name], nl_query_text)
+            except Exception as e:
+                print(
+                    f"Failed to generate SQL query for question: "
+                    f"{example['question']} on database: {example['db_id']}."
+                )
+                print(e)
+                sql_query = "ERROR"
             f.write(sql_query + "\n")
 
 

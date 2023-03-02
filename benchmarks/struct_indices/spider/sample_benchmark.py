@@ -46,18 +46,20 @@ if __name__ == "__main__":
     with open(os.path.join(args.input, "dev.json"), "r") as f:
         dev = json.load(f)
 
-    # Randomly sample the indices using the sample factor.
+    # Randomly sample (without replacement) the indices using the sample factor.
     random.seed(args.seed)
     train_spider_indices = list(range(len(train_spider)))
     train_others_indices = list(range(len(train_others)))
     dev_indices = list(range(len(dev)))
-    train_spider_indices = random.sample(
-        train_spider_indices, int(args.sample_factor * len(train_spider_indices))
+    train_spider_indices = random.choices(
+        train_spider_indices, k=int(args.sample_factor * len(train_spider_indices))
     )
-    train_others_indices = random.sample(
-        train_others_indices, int(args.sample_factor * len(train_others_indices))
+    train_others_indices = random.choices(
+        train_others_indices, k=int(args.sample_factor * len(train_others_indices))
     )
-    dev_indices = random.sample(dev_indices, int(args.sample_factor * len(dev_indices)))
+    dev_indices = random.choices(
+        dev_indices, k=int(args.sample_factor * len(dev_indices))
+    )
     # Sort the indices to ensure same ordering as the original sql files.
     train_spider_indices.sort()
     train_others_indices.sort()
@@ -74,9 +76,19 @@ if __name__ == "__main__":
     # Write the sql files to the output directory.
     with open(os.path.join(args.output, "train_gold.sql"), "w") as f:
         for i in train_spider_indices:
-            f.write(train_spider[i]["query"] + "\t" + train_spider[i]["db_id"] + "\n")
+            f.write(
+                train_spider[i]["query"].replace("\t", " ")
+                + "\t"
+                + train_spider[i]["db_id"]
+                + "\n"
+            )
         for i in train_others_indices:
-            f.write(train_others[i]["query"] + "\t" + train_others[i]["db_id"] + "\n")
+            f.write(
+                train_others[i]["query"].replace("\t", " ")
+                + "\t"
+                + train_others[i]["db_id"]
+                + "\n"
+            )
     with open(os.path.join(args.output, "dev_gold.sql"), "w") as f:
         for i in dev_indices:
             f.write(dev[i]["query"] + "\t" + dev[i]["db_id"] + "\n")

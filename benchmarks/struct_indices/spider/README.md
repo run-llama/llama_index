@@ -34,4 +34,5 @@ evaluation metrics.
 ## TODO
 
 1. Include the complete schema in the prompt.
-2. Use training set to generate in-context learning examples.
+2. Auto-course-correction encountering SQL errors using Langchain agent.
+3. Use training set to generate in-context learning examples.
