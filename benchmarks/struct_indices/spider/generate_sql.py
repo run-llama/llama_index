@@ -1,3 +1,4 @@
+"""Generate SQL queries using LlamaIndex."""
 import argparse
 import json
 import logging
@@ -27,6 +28,7 @@ def _generate_sql(
 
 
 def generate_sql(llama_indexes: dict, examples: list, output_file: str) -> None:
+    """Generate SQL queries for the given examples and write them to the output file."""
     with open(output_file, "w") as f:
         for example in tqdm(examples, desc=f"Generating {output_file}"):
             db_name = example["db_id"]

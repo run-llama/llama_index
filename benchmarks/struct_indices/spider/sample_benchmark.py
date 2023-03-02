@@ -1,9 +1,9 @@
+"""Sample a fraction of the Spider dataset."""
 import argparse
 import json
 import os
 import random
 import shutil
-import sys
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
