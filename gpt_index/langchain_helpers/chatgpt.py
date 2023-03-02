@@ -34,6 +34,9 @@ class ChatGPTLLMPredictor(LLMPredictor):
         """Initialize params."""
         self._prepend_messages = prepend_messages or DEFAULT_MESSAGE_PREPEND
         self._include_role_in_response = include_role_in_response
+        # set openAI kwargs
+        if "temperature" not in openai_kwargs:
+            openai_kwargs["temperature"] = 0
         self._openai_kwargs = openai_kwargs
         self._total_tokens_used = 0
         self.flag = True
