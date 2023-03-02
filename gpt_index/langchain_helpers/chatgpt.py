@@ -59,3 +59,24 @@ class ChatGPTLLMPredictor(LLMPredictor):
             response += "role: " + message_obj["role"] + "\n"
         response += message_obj["content"]
         return response
+
+    async def _apredict(self, prompt: Prompt, **prompt_args: Any) -> str:
+        """Async inner predict function.
+
+        If retry_on_throttling is true, we will retry on rate limit errors.
+
+        """
+        prompt_str = prompt.format(**prompt_args)
+        messages = self._prepend_messages + [{"role": "user", "content": prompt_str}]
+
+        response = await openai.ChatCompletion.acreate(
+            model="gpt-3.5-turbo", messages=messages, **self._openai_kwargs
+        )
+
+        # hacky
+        message_obj = response["choices"][0]["message"]
+        response = ""
+        if self._include_role_in_response:
+            response += "role: " + message_obj["role"] + "\n"
+        response += message_obj["content"]
+        return response
