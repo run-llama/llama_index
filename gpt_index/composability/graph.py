@@ -114,11 +114,13 @@ class ComposableGraph:
         self,
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
     ) -> Response:
         """Query the index."""
         # go over all the indices and create a registry
+        llm_predictor = llm_predictor or self._llm_predictor
         query_runner = QueryRunner(
-            self._llm_predictor,
+            llm_predictor,
             self._prompt_helper,
             self._embed_model,
             self._docstore,
