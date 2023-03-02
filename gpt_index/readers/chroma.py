@@ -54,6 +54,59 @@ class ChromaReader(BaseReader):
             )
         self._collection = self._client.get_collection(collection_name)
 
+    def create_documents(self, results: tuple) -> List[Document]:
+        """Create documents from the results.
+
+        Args:
+            results: Results from the query.
+
+        Returns:
+            List of documents.
+        """
+        documents = []
+        for result in zip(
+            results["ids"],
+            results["documents"],
+            results["embeddings"],
+            results["metadatas"],
+        ):
+            document = Document(
+                doc_id=result[0][0],
+                text=result[1][0],
+                embedding=result[2][0],
+                extra_info=result[3][0],
+            )
+            documents.append(document)
+
+        return documents
+
+    def load_embedding_data(
+        self,
+        query_embedding: List[float],
+        limit: int = 10,
+        where: dict = {},
+        where_document: dict = {},
+    ) -> Any:
+        """Load data from the collection.
+
+        Args:
+            query_embedding: Query embedding.
+            limit: Number of results to return.
+            where: Filter results by metadata. {"metadata_field": "is_equal_to_this"}
+            where_document: Filter results by document. {"$contains":"search_string"}
+
+        Returns:
+            List of documents.
+        """
+        results = self._collection.query(
+            query_embeddings=[query_embedding],
+            n_results=limit,
+            where=where,
+            where_document=where_document,
+            include=["metadatas", "documents", "distances", "embeddings"],
+        )
+        return self.create_documents(results)
+
     def load_data(
         self,
         query: str | List[str],
@@ -80,19 +133,4 @@ class ChromaReader(BaseReader):
             where_document=where_document,
             include=["metadatas", "documents", "distances", "embeddings"],
         )
-        documents = []
-        for result in zip(
-            results["ids"],
-            results["documents"],
-            results["embeddings"],
-            results["metadatas"],
-        ):
-            document = Document(
-                doc_id=result[0][0],
-                text=result[1][0],
-                embedding=result[2][0],
-                extra_info=result[3][0],
-            )
-            documents.append(document)
-
-        return documents
+        return self.create_documents(results)
