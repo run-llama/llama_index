@@ -31,10 +31,18 @@ class ChromaReader(BaseReader):
         from chromadb.config import Settings
 
         if persist_directory:
-            self._client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory=persist_directory))
+            self._client = chromadb.Client(
+                Settings(
+                    chroma_db_impl="duckdb+parquet", persist_directory=persist_directory
+                )
+            )
         else:
             self._client = chromadb.Client(
-                Settings(chroma_api_impl="rest", chroma_server_host=host, chroma_server_http_port=port)
+                Settings(
+                    chroma_api_impl="rest",
+                    chroma_server_host=host,
+                    chroma_server_http_port=port,
+                )
             )
         self._collection = self._client.get_collection(collection_name)
 
@@ -56,7 +64,12 @@ class ChromaReader(BaseReader):
         )
         print(results)
         documents = []
-        for result in zip(results["ids"], results["documents"], results["embeddings"], results["metadatas"]):
+        for result in zip(
+            results["ids"],
+            results["documents"],
+            results["embeddings"],
+            results["metadatas"],
+        ):
             document = Document(
                 doc_id=result[0][0],
                 text=result[1][0],
