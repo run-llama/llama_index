@@ -20,51 +20,48 @@ class ChromaReader(BaseReader):
     def __init__(
         self,
         collection_name: str,
-        persist_directory: str,
+        host: str = "localhost",
+        port: int = 8000,
+        persist_directory: str = None,
     ) -> None:
-        """Initialize with parameters."""
-        import_err_msg = (
-            "`chromadb` package not found, please run `pip install chromadb`"
-        )
-        try:
-            import chromadb  # noqa: F401
-        except ImportError:
-            raise ValueError(import_err_msg)
 
-        if (collection_name is None) or (persist_directory is None):
-            raise ValueError("Please provide a collection name and persist directory.")
-
+        if collection_name is None:
+            raise ValueError("Please provide a collection name.")
+        import chromadb
         from chromadb.config import Settings
 
-        self._client = chromadb.Client(
-            Settings(
-                chroma_db_impl="duckdb+parquet", persist_directory=persist_directory
+        if persist_directory:
+            self._client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory=persist_directory))
+        else:
+            self._client = chromadb.Client(
+                Settings(chroma_api_impl="rest", chroma_server_host=host, chroma_server_http_port=port)
             )
-        )
         self._collection = self._client.get_collection(collection_name)
 
     def load_data(
         self,
-        query_vector: Any,
+        query: str or list,
         limit: int = 10,
+        where: dict = {},  # {"metadata_field": "is_equal_to_this"},
+        where_document: dict = {},  # {"$contains":"search_string"}
     ) -> Any:
-        """Load data from Chroma.
-
-        Args:
-            query_vector (Any): Query
-            limit (int): Number of results to return.
-
-        Returns:
-            List[Document]: A list of documents.
-        """
-        results = self._collection.query(query_embeddings=query_vector, n_results=limit)
-
+        print(self._collection.count())
+        query = query if isinstance(query, list) else [query]
+        results = self._collection.query(
+            query_texts=query,
+            n_results=limit,
+            where=where,
+            where_document=where_document,
+            include=["metadatas", "documents", "distances", "embeddings"],
+        )
+        print(results)
         documents = []
-        for result in zip(results["ids"], results["documents"], results["embeddings"]):
+        for result in zip(results["ids"], results["documents"], results["embeddings"], results["metadatas"]):
             document = Document(
                 doc_id=result[0][0],
                 text=result[1][0],
                 embedding=result[2][0],
+                extra_info=result[3][0],
             )
             documents.append(document)
 
