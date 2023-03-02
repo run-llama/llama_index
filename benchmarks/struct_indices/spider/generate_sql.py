@@ -17,10 +17,16 @@ def _generate_sql(
     nl_query_text: str,
 ) -> str:
     response = llama_index.query(nl_query_text, mode="default")
+    if (
+        response.extra_info is None
+        or "sql_query" not in response.extra_info
+        or response.extra_info["sql_query"] is None
+    ):
+        raise RuntimeError("No SQL query generated.")
     return response.extra_info["sql_query"].replace("\n", " ").strip()
 
 
-def generate_sql(llama_indexes: dict, examples: list, output_file: str):
+def generate_sql(llama_indexes: dict, examples: list, output_file: str) -> None:
     with open(output_file, "w") as f:
         for example in tqdm(examples, desc=f"Generating {output_file}"):
             db_name = example["db_id"]
