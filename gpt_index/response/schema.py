@@ -83,14 +83,14 @@ class StreamingResponse:
 
     """
 
-    response_gen: Generator
+    response_gen: Optional[Generator]
     source_nodes: List[SourceNode] = field(default_factory=list)
     extra_info: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None
 
     def __str__(self) -> str:
         """Convert to string representation."""
-        if self.response_txt is None:
+        if self.response_txt is None and self.response_gen is not None:
             response_txt = ""
             for text in self.response_gen:
                 response_txt += text
@@ -99,7 +99,7 @@ class StreamingResponse:
 
     def get_response(self) -> Response:
         """Get a standard response object."""
-        if self.response_txt is None:
+        if self.response_txt is None and self.response_gen is not None:
             response_txt = ""
             for text in self.response_gen:
                 response_txt += text
@@ -108,7 +108,7 @@ class StreamingResponse:
 
     def print_response_stream(self) -> None:
         """Print the response stream."""
-        if self.response_txt is None:
+        if self.response_txt is None and self.response_gen is not None:
             response_txt = ""
             for text in self.response_gen:
                 print(text, end="")

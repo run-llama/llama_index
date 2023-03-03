@@ -279,13 +279,13 @@ class BaseGPTIndexQuery(Generic[IS]):
             [node for node, _ in tuples]
         )
 
-        if isinstance(response_str, str):
+        if response_str is None or isinstance(response_str, str):
             return Response(
                 response_str,
                 source_nodes=self.response_builder.get_sources(),
                 extra_info=response_extra_info,
             )
-        elif isinstance(response_str, Generator):
+        elif response_str is None or isinstance(response_str, Generator):
             return StreamingResponse(
                 response_str,
                 source_nodes=self.response_builder.get_sources(),
