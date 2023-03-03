@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Optional, Tuple
+from typing import Any, Generator, Optional, Tuple
 
 import openai
 from langchain import Cohere, LLMChain, OpenAI
@@ -47,6 +47,12 @@ def _get_llm_metadata(llm: BaseLLM) -> LLMMetadata:
         return LLMMetadata(num_output=llm.maxTokens)
     else:
         return LLMMetadata()
+
+
+def _get_response_gen(openai_response_stream: Generator) -> Generator:
+    """Get response generator from openai response stream."""
+    for response in openai_response_stream:
+        yield response["choices"][0]["text"]
 
 
 class LLMPredictor:
@@ -131,6 +137,27 @@ class LLMPredictor:
         prediction_tokens_count = self._count_tokens(llm_prediction)
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
         return llm_prediction, formatted_prompt
+
+    def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
+        """Stream the answer to a query.
+
+        NOTE: this is a beta feature. Will try to build or use
+        better abstractions about response handling.
+
+        Args:
+            prompt (Prompt): Prompt to use for prediction.
+
+        Returns:
+            str: The predicted answer.
+
+        """
+        if not isinstance(self._llm, OpenAI):
+            raise ValueError("stream is only supported for OpenAI LLMs")
+        formatted_prompt = prompt.format(**prompt_args)
+        raw_response_gen = self._llm.stream(formatted_prompt)
+        response_gen = _get_response_gen(raw_response_gen)
+        # NOTE/TODO: token counting doesn't work with streaming
+        return response_gen, formatted_prompt
 
     @property
     def total_tokens_used(self) -> int:

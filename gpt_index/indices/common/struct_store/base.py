@@ -1,6 +1,6 @@
 """Common classes for structured operations."""
 
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, cast
 
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
@@ -109,4 +109,4 @@ class SQLDocumentContextBuilder:
 
         # feed in the "query_str" or the task
         table_context = response_builder.get_response(self._table_context_task)
-        return table_context
+        return cast(str, table_context)
