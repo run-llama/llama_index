@@ -1,7 +1,7 @@
 """Response schema."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional, Union
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -44,7 +44,9 @@ class SourceNode(DataClassJsonMixin):
 
 @dataclass
 class Response:
-    """Response.
+    """Response object.
+
+    Returned if streaming=False during the `index.query()` call.
 
     Attributes:
         response: The response text.
@@ -68,3 +70,61 @@ class Response:
             source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
             texts.append(source_text)
         return "\n\n".join(texts)
+
+
+@dataclass
+class StreamingResponse:
+    """StreamingResponse object.
+
+    Returned if streaming=True during the `index.query()` call.
+
+    Attributes:
+        response_gen: The response generator.
+
+    """
+
+    response_gen: Optional[Generator]
+    source_nodes: List[SourceNode] = field(default_factory=list)
+    extra_info: Optional[Dict[str, Any]] = None
+    response_txt: Optional[str] = None
+
+    def __str__(self) -> str:
+        """Convert to string representation."""
+        if self.response_txt is None and self.response_gen is not None:
+            response_txt = ""
+            for text in self.response_gen:
+                response_txt += text
+            self.response_txt = response_txt
+        return self.response_txt or "None"
+
+    def get_response(self) -> Response:
+        """Get a standard response object."""
+        if self.response_txt is None and self.response_gen is not None:
+            response_txt = ""
+            for text in self.response_gen:
+                response_txt += text
+            self.response_txt = response_txt
+        return Response(self.response_txt, self.source_nodes, self.extra_info)
+
+    def print_response_stream(self) -> None:
+        """Print the response stream."""
+        if self.response_txt is None and self.response_gen is not None:
+            response_txt = ""
+            for text in self.response_gen:
+                print(text, end="")
+            self.response_txt = response_txt
+        else:
+            print(self.response_txt)
+
+    def get_formatted_sources(self, length: int = 100) -> str:
+        """Get formatted sources text."""
+        texts = []
+        for source_node in self.source_nodes:
+            fmt_text_chunk = truncate_text(source_node.source_text, length)
+            doc_id = source_node.doc_id or "None"
+            source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
+            texts.append(source_text)
+        return "\n\n".join(texts)
+
+
+RESPONSE_TYPE = Union[Response, StreamingResponse]

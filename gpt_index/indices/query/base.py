@@ -4,7 +4,7 @@ import logging
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar, cast
+from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar, cast
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.docstore import DocumentStore
@@ -13,14 +13,19 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
+from gpt_index.indices.response.builder import (
+    RESPONSE_TEXT_TYPE,
+    ResponseBuilder,
+    ResponseMode,
+    TextChunk,
+)
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
 )
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.response.schema import Response
+from gpt_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.utils import truncate_text
 
@@ -64,6 +69,8 @@ class BaseGPTIndexQuery(Generic[IS]):
             through `index.set_text("<text>")`).
         similarity_cutoff (float): Optional float. If set, will filter out nodes with
             similarity below this cutoff threshold when computing the response
+        streaming (bool): Optional bool. If True, will return a StreamingResponse
+            object. If False, will return a Response object.
 
     """
 
@@ -86,6 +93,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         similarity_cutoff: Optional[float] = None,
         use_async: bool = True,
         recursive: bool = False,
+        streaming: bool = False,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -118,10 +126,12 @@ class BaseGPTIndexQuery(Generic[IS]):
             self.text_qa_template,
             self.refine_template,
             use_async=use_async,
+            streaming=streaming,
         )
 
         self.similarity_cutoff = similarity_cutoff
         self._recursive = recursive
+        self._streaming = streaming
 
     def _should_use_node(
         self, node: Node, similarity_tracker: Optional[SimilarityTracker] = None
@@ -201,15 +211,14 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Validate the index struct."""
         pass
 
-    def _give_response_for_nodes(self, query_str: str) -> str:
+    def _give_response_for_nodes(self, query_str: str) -> RESPONSE_TEXT_TYPE:
         """Give response for nodes."""
         response = self.response_builder.get_response(
             query_str,
             mode=self._response_mode,
             **self._response_kwargs,
         )
-
-        return response or ""
+        return response
 
     def get_nodes_and_similarities_for_response(
         self, query_bundle: QueryBundle
@@ -246,7 +255,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Get extra info for response."""
         return None
 
-    def _query(self, query_bundle: QueryBundle) -> Response:
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         self.response_builder.reset()
         # TODO: remove _query and just use query
@@ -270,14 +279,23 @@ class BaseGPTIndexQuery(Generic[IS]):
             [node for node, _ in tuples]
         )
 
-        return Response(
-            response_str,
-            source_nodes=self.response_builder.get_sources(),
-            extra_info=response_extra_info,
-        )
+        if response_str is None or isinstance(response_str, str):
+            return Response(
+                response_str,
+                source_nodes=self.response_builder.get_sources(),
+                extra_info=response_extra_info,
+            )
+        elif response_str is None or isinstance(response_str, Generator):
+            return StreamingResponse(
+                response_str,
+                source_nodes=self.response_builder.get_sources(),
+                extra_info=response_extra_info,
+            )
+        else:
+            raise ValueError("Response must be a string or a generator.")
 
     @llm_token_counter("query")
-    def query(self, query_bundle: QueryBundle) -> Response:
+    def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         response = self._query(query_bundle)
         # if include_summary is True, then include summary text in answer
@@ -290,12 +308,24 @@ class BaseGPTIndexQuery(Generic[IS]):
                 self.text_qa_template,
                 self.refine_template,
                 texts=[TextChunk(self._index_struct.get_text())],
+                streaming=self._streaming,
             )
-            # NOTE: use create and refine for now (default response mode)
-            response.response = response_builder.get_response(
-                query_bundle.query_str,
-                mode=self._response_mode,
-                prev_response=response.response,
-            )
+            if isinstance(response, Response):
+                # NOTE: use create and refine for now (default response mode)
+                response_str = response_builder.get_response(
+                    query_bundle.query_str,
+                    mode=self._response_mode,
+                    prev_response=response.response,
+                )
+                response.response = cast(str, response_str)
+            elif isinstance(response, StreamingResponse):
+                response_gen = response_builder.get_response(
+                    query_bundle.query_str,
+                    mode=self._response_mode,
+                    prev_response=str(response.response_gen),
+                )
+                response.response_gen = cast(Generator, response_gen)
+            else:
+                raise ValueError("Response must be a string or a generator.")
 
         return response
