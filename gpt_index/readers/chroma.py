@@ -1,6 +1,6 @@
 """Chroma Reader."""
 
-from typing import Any, List
+from typing import Any, List, Union
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -20,11 +20,10 @@ class ChromaReader(BaseReader):
     def __init__(
         self,
         collection_name: str,
+        persist_directory: str = None,
         host: str = "localhost",
         port: int = 8000,
-        persist_directory: str = None,
     ) -> None:
-
         """Initialize with parameters."""
         import_err_msg = (
             "`chromadb` package not found, please run `pip install chromadb`"
@@ -80,44 +79,17 @@ class ChromaReader(BaseReader):
 
         return documents
 
-    def load_embedding_data(
-        self,
-        query_embedding: List[float],
-        limit: int = 10,
-        where: dict = {},
-        where_document: dict = {},
-    ) -> Any:
-        """Load data from the collection.
-
-        Args:
-            query_embedding: Query embedding.
-            limit: Number of results to return.
-            where: Filter results by metadata. {"metadata_field": "is_equal_to_this"}
-            where_document: Filter results by document. {"$contains":"search_string"}
-
-        Returns:
-            List of documents.
-        """
-        results = self._collection.query(
-            query_embeddings=[query_embedding],
-            n_results=limit,
-            where=where,
-            where_document=where_document,
-            include=["metadatas", "documents", "distances", "embeddings"],
-        )
-        return self.create_documents(results)
-
     def load_data(
         self,
-        query: str | List[str],
+        query_embedding: List[float] = None,
         limit: int = 10,
         where: dict = {},
         where_document: dict = {},
+        query: Union[str, List[str]] = None,
     ) -> Any:
         """Load data from the collection.
 
         Args:
-            query: Query string or list of query strings.
             limit: Number of results to return.
             where: Filter results by metadata. {"metadata_field": "is_equal_to_this"}
             where_document: Filter results by document. {"$contains":"search_string"}
@@ -125,12 +97,24 @@ class ChromaReader(BaseReader):
         Returns:
             List of documents.
         """
-        query = query if isinstance(query, list) else [query]
-        results = self._collection.query(
-            query_texts=query,
-            n_results=limit,
-            where=where,
-            where_document=where_document,
-            include=["metadatas", "documents", "distances", "embeddings"],
-        )
-        return self.create_documents(results)
+        if query_embedding is not None:
+            results = self._collection.search(
+                query_embedding=query_embedding,
+                n_results=limit,
+                where=where,
+                where_document=where_document,
+                include=["metadatas", "documents", "distances", "embeddings"],
+            )
+            return self.create_documents(results)
+        elif query is not None:
+            query = query if isinstance(query, list) else [query]
+            results = self._collection.query(
+                query_texts=query,
+                n_results=limit,
+                where=where,
+                where_document=where_document,
+                include=["metadatas", "documents", "distances", "embeddings"],
+            )
+            return self.create_documents(results)
+        else:
+            raise ValueError("Please provide either query embedding or query.")
