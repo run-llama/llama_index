@@ -6,7 +6,10 @@ from gpt_index.constants import NUM_OUTPUTS
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.prompt_type import PromptType
-from gpt_index.token_counter.utils import mock_extract_keywords_response
+from gpt_index.token_counter.utils import (
+    mock_extract_keywords_response,
+    mock_extract_kg_triplets_response,
+)
 from gpt_index.utils import globals_helper
 
 # TODO: consolidate with unit tests in tests/mock_utils/mock_predict.py
@@ -69,6 +72,13 @@ def _mock_query_keyword_extract(prompt_args: Dict) -> str:
     return mock_extract_keywords_response(prompt_args["question"])
 
 
+def _mock_knowledge_graph_triplet_extract(prompt_args: Dict, max_triplets: int) -> str:
+    """Mock knowledge graph triplet extract."""
+    return mock_extract_kg_triplets_response(
+        prompt_args["text"], max_triplets=max_triplets
+    )
+
+
 class MockLLMPredictor(LLMPredictor):
     """Mock LLM Predictor."""
 
@@ -99,5 +109,9 @@ class MockLLMPredictor(LLMPredictor):
             return _mock_keyword_extract(prompt_args)
         elif prompt_str == PromptType.QUERY_KEYWORD_EXTRACT:
             return _mock_query_keyword_extract(prompt_args)
+        elif prompt_str == PromptType.KNOWLEDGE_TRIPLET_EXTRACT:
+            return _mock_knowledge_graph_triplet_extract(
+                prompt_args, prompt.partial_dict.get("max_knowledge_triplets", 2)
+            )
         else:
             raise ValueError("Invalid prompt type.")
