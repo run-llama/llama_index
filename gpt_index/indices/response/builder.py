@@ -10,7 +10,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional, Union, cast
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
@@ -19,7 +19,10 @@ from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
 from gpt_index.response.schema import SourceNode
+from gpt_index.response.utils import get_response_text
 from gpt_index.utils import temp_set_attrs
+
+RESPONSE_TEXT_TYPE = Union[str, Generator]
 
 
 class ResponseMode(str, Enum):
@@ -52,6 +55,7 @@ class ResponseBuilder:
         texts: Optional[List[TextChunk]] = None,
         nodes: Optional[List[Node]] = None,
         use_async: bool = False,
+        streaming: bool = False,
     ) -> None:
         """Init params."""
         self.prompt_helper = prompt_helper
@@ -62,6 +66,7 @@ class ResponseBuilder:
         nodes = nodes or []
         self.source_nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
         self._use_async = use_async
+        self._streaming = streaming
 
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
@@ -88,11 +93,15 @@ class ResponseBuilder:
 
     def refine_response_single(
         self,
-        response: str,
+        response: RESPONSE_TEXT_TYPE,
         query_str: str,
         text_chunk: str,
-    ) -> str:
+    ) -> RESPONSE_TEXT_TYPE:
         """Refine response."""
+        # TODO: consolidate with logic in response/schema.py
+        if isinstance(response, Generator):
+            response = get_response_text(response)
+
         fmt_text_chunk = truncate_text(text_chunk, 50)
         logging.debug(f"> Refine context: {fmt_text_chunk}")
         # NOTE: partial format refine template with query_str and existing_answer here
@@ -104,10 +113,16 @@ class ResponseBuilder:
         )
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for cur_text_chunk in text_chunks:
-            response, _ = self.llm_predictor.predict(
-                refine_template,
-                context_msg=cur_text_chunk,
-            )
+            if not self._streaming:
+                response, _ = self.llm_predictor.predict(
+                    refine_template,
+                    context_msg=cur_text_chunk,
+                )
+            else:
+                response, _ = self.llm_predictor.stream(
+                    refine_template,
+                    context_msg=cur_text_chunk,
+                )
             logging.debug(f"> Refined response: {response}")
         return response
 
@@ -115,40 +130,50 @@ class ResponseBuilder:
         self,
         query_str: str,
         text_chunk: str,
-    ) -> str:
+    ) -> RESPONSE_TEXT_TYPE:
         """Give response given a query and a corresponding text chunk."""
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         qa_text_splitter = self.prompt_helper.get_text_splitter_given_prompt(
             text_qa_template, 1
         )
         text_chunks = qa_text_splitter.split_text(text_chunk)
-        response = None
+        response: Optional[RESPONSE_TEXT_TYPE] = None
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
-            if response is None:
+            if response is None and not self._streaming:
                 response, _ = self.llm_predictor.predict(
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
                 logging.debug(f"> Initial response: {response}")
+            elif response is None and self._streaming:
+                response, _ = self.llm_predictor.stream(
+                    text_qa_template,
+                    context_str=cur_text_chunk,
+                )
             else:
                 response = self.refine_response_single(
-                    response,
+                    cast(RESPONSE_TEXT_TYPE, response),
                     query_str,
                     cur_text_chunk,
                 )
-        return response or ""
+        if isinstance(response, str):
+            response = response or "Empty Response"
+        else:
+            response = cast(Generator, response)
+        return response
 
     def get_response_over_chunks(
         self,
         query_str: str,
         text_chunks: List[TextChunk],
         prev_response: Optional[str] = None,
-    ) -> str:
+    ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
-        response = None
+        prev_response_obj = cast(Optional[RESPONSE_TEXT_TYPE], prev_response)
+        response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
-            if prev_response is None:
+            if prev_response_obj is None:
                 # if this is the first chunk, and text chunk already
                 # is an answer, then return it
                 if text_chunk.is_answer:
@@ -161,21 +186,25 @@ class ResponseBuilder:
                     )
             else:
                 response = self.refine_response_single(
-                    prev_response, query_str, text_chunk.text
+                    prev_response_obj, query_str, text_chunk.text
                 )
-            prev_response = response
-        return response or "Empty Response"
+            prev_response_obj = response
+        if isinstance(response, str):
+            response = response or "Empty Response"
+        else:
+            response = cast(Generator, response)
+        return response
 
     def _get_response_default(
         self, query_str: str, prev_response: Optional[str]
-    ) -> str:
+    ) -> RESPONSE_TEXT_TYPE:
         return self.get_response_over_chunks(
             query_str, self._texts, prev_response=prev_response
         )
 
     def _get_response_compact(
         self, query_str: str, prev_response: Optional[str]
-    ) -> str:
+    ) -> RESPONSE_TEXT_TYPE:
         """Get compact response."""
         # use prompt helper to fix compact text_chunks under the prompt limitation
         max_prompt = self.prompt_helper.get_biggest_prompt(
@@ -196,7 +225,7 @@ class ResponseBuilder:
         query_str: str,
         prev_response: Optional[str],
         num_children: int = 10,
-    ) -> str:
+    ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(text_qa_template)
@@ -225,12 +254,15 @@ class ResponseBuilder:
         node_text = self.prompt_helper.get_text_from_nodes(
             node_list, prompt=text_qa_template
         )
+        # NOTE: the final response could be a string or a stream
         response = self.get_response_over_chunks(
             query_str,
             [TextChunk(node_text)],
             prev_response=prev_response,
         )
-        return response or "Empty Response"
+        if isinstance(response, str):
+            response = response or "Empty Response"
+        return response
 
     def get_response(
         self,
@@ -238,7 +270,7 @@ class ResponseBuilder:
         prev_response: Optional[str] = None,
         mode: ResponseMode = ResponseMode.DEFAULT,
         **response_kwargs: Any,
-    ) -> str:
+    ) -> RESPONSE_TEXT_TYPE:
         """Get response."""
         if mode == ResponseMode.DEFAULT:
             return self._get_response_default(query_str, prev_response)
