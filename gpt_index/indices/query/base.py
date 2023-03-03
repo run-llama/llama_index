@@ -69,6 +69,8 @@ class BaseGPTIndexQuery(Generic[IS]):
             through `index.set_text("<text>")`).
         similarity_cutoff (float): Optional float. If set, will filter out nodes with
             similarity below this cutoff threshold when computing the response
+        streaming (bool): Optional bool. If True, will return a StreamingResponse
+            object. If False, will return a Response object.
 
     """
 

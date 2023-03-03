@@ -44,7 +44,9 @@ class SourceNode(DataClassJsonMixin):
 
 @dataclass
 class Response:
-    """Response.
+    """Response object.
+
+    Returned if streaming=False during the `index.query()` call.
 
     Attributes:
         response: The response text.
@@ -72,10 +74,12 @@ class Response:
 
 @dataclass
 class StreamingResponse:
-    """StreamingResponse.
+    """StreamingResponse object.
+
+    Returned if streaming=True during the `index.query()` call.
 
     Attributes:
-        response: The response text.
+        response_gen: The response generator.
 
     """
 
@@ -103,7 +107,7 @@ class StreamingResponse:
         return Response(self.response_txt, self.source_nodes, self.extra_info)
 
     def print_response_stream(self) -> None:
-        """Print the response."""
+        """Print the response stream."""
         if self.response_txt is None:
             response_txt = ""
             for text in self.response_gen:
