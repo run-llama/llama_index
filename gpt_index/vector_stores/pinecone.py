@@ -43,7 +43,7 @@ class PineconeVectorStore(VectorStore):
         try:
             import pinecone  # noqa: F401
         except ImportError:
-            raise ValueError(import_err_msg)
+            raise ImportError(import_err_msg)
         self._pinecone_index = cast(pinecone.Index, pinecone_index)
 
         self._pinecone_kwargs = pinecone_kwargs or {}

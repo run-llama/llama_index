@@ -43,7 +43,7 @@ class FaissVectorStore(VectorStore):
         try:
             import faiss  # noqa: F401
         except ImportError:
-            raise ValueError(import_err_msg)
+            raise ImportError(import_err_msg)
 
         self._faiss_index = cast(faiss.Index, faiss_index)
 
