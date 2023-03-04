@@ -89,6 +89,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             cur_response = response_builder.get_response_over_chunks(
                 query_str, [node_text], prev_response=prev_response
             )
+            cur_response = cast(str, cur_response)
             logging.debug(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query_level(
