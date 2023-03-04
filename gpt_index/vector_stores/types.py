@@ -60,7 +60,10 @@ class VectorStore(Protocol):
         ...
 
     def query(
-        self, query_embedding: List[float], similarity_top_k: int
+        self,
+        query_embedding: List[float],
+        similarity_top_k: int,
+        doc_ids: Optional[List[str]] = None,
     ) -> VectorStoreQueryResult:
         """Query vector store."""
         ...

@@ -100,7 +100,10 @@ class WeaviateVectorStore(VectorStore):
         WeaviateNode.delete_document(self._client, doc_id, self._class_prefix)
 
     def query(
-        self, query_embedding: List[float], similarity_top_k: int
+        self,
+        query_embedding: List[float],
+        similarity_top_k: int,
+        doc_ids: Optional[List[str]] = None,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 

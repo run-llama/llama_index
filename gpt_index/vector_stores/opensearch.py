@@ -193,7 +193,10 @@ class OpensearchVectorStore(VectorStore):
         self._client.delete_doc_id(doc_id)
 
     def query(
-        self, query_embedding: List[float], similarity_top_k: int
+        self,
+        query_embedding: List[float],
+        similarity_top_k: int,
+        doc_ids: Optional[List[str]] = None,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 

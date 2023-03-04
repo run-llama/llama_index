@@ -161,20 +161,39 @@ class QdrantVectorStore(VectorStore):
         self,
         query_embedding: List[float],
         similarity_top_k: int,
+        doc_ids: Optional[List[str]] = None,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
             similarity_top_k (int): top k most similar nodes
+            doc_ids (Optional[List[str]]): list of doc_ids to filter by
 
         """
-        from qdrant_client.http.models.models import Payload
+        from qdrant_client.http.models.models import (
+            FieldCondition,
+            Filter,
+            MatchValue,
+            Payload,
+        )
 
         response = self._client.search(
             collection_name=self._collection_name,
             query_vector=query_embedding,
             limit=cast(int, similarity_top_k),
+            query_filter=None
+            if not doc_ids
+            else Filter(
+                must=[
+                    Filter(
+                        should=[
+                            FieldCondition(key="doc_id", match=MatchValue(value=doc_id))
+                            for doc_id in doc_ids
+                        ],
+                    )
+                ]
+            ),
         )
 
         logging.debug(f"> Top {len(response)} nodes:")
