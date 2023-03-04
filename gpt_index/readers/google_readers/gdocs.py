@@ -39,7 +39,7 @@ class GoogleDocsReader(BaseReader):
             import google_auth_oauthlib  # noqa: F401
             import googleapiclient  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`google_auth_oauthlib`, `googleapiclient` and `google` "
                 "must be installed to use the GoogleDocsReader.\n"
                 "Please run `pip install --upgrade google-api-python-client "

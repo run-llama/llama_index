@@ -29,7 +29,7 @@ class ChromaReader(BaseReader):
         try:
             import chromadb  # noqa: F401
         except ImportError:
-            raise ValueError(import_err_msg)
+            raise ImportError(import_err_msg)
 
         if (collection_name is None) or (persist_directory is None):
             raise ValueError("Please provide a collection name and persist directory.")

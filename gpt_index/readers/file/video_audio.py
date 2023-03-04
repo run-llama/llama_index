@@ -26,7 +26,7 @@ class VideoAudioParser(BaseParser):
         try:
             import whisper
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Please install OpenAI whisper model "
                 "'pip install git+https://github.com/openai/whisper.git' "
                 "to use the model"
@@ -44,7 +44,7 @@ class VideoAudioParser(BaseParser):
             try:
                 from pydub import AudioSegment  # noqa: F401
             except ImportError:
-                raise ValueError("Please install pydub 'pip install pydub' ")
+                raise ImportError("Please install pydub 'pip install pydub' ")
             # open file
             video = AudioSegment.from_file(file, format="mp4")
 
