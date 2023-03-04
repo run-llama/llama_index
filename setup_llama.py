@@ -11,14 +11,12 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 install_requires = [
-    "langchain",
-    "openai>=0.26.4",
     "dataclasses_json",
-    "transformers",
-    "nltk",
+    "langchain",
     "numpy",
-    "tenacity<8.2.0",
+    "openai>=0.26.4",
     "pandas",
+    "tenacity<8.2.0",
 ]
 
 # NOTE: if python version >= 3.9, install tiktoken
