@@ -178,7 +178,9 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         try:
             import networkx as nx
         except ImportError:
-            raise ImportError("Please install networkx to visualize the graph.")
+            raise ImportError(
+                "Please install networkx to visualize the graph: `pip install networkx`"
+            )
 
         g = nx.Graph()
         # add nodes
