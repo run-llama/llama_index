@@ -1,6 +1,6 @@
 """ChatGPT Wrapper."""
 
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import openai
 
@@ -18,7 +18,7 @@ class ChatGPTLLMPredictor(LLMPredictor):
     Args:
         retry_on_throttling (bool): Whether to retry on rate limit errors.
             Defaults to true.
-        prepend_messages (Optional[List[str]]): Messages to prepend to the
+        prepend_messages (Optional[List[Dict[str, str]]]): Messages to prepend to the
             ChatGPT API.
         openai_kwargs (Any): Additional kwargs to pass to the OpenAI API.
             https://platform.openai.com/docs/api-reference/chat/create.
@@ -27,7 +27,7 @@ class ChatGPTLLMPredictor(LLMPredictor):
 
     def __init__(
         self,
-        prepend_messages: Optional[List[str]] = None,
+        prepend_messages: Optional[List[Dict[str, str]]] = None,
         include_role_in_response: bool = False,
         **openai_kwargs: Any
     ) -> None:
