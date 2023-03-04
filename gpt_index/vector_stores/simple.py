@@ -90,7 +90,10 @@ class SimpleVectorStore(VectorStore):
             del self._data.text_id_to_doc_id[text_id]
 
     def query(
-        self, query_embedding: List[float], similarity_top_k: int
+        self,
+        query_embedding: List[float],
+        similarity_top_k: int,
+        doc_ids: Optional[List[str]] = None,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
         # TODO: consolidate with get_query_text_embedding_similarities
