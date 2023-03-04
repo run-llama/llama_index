@@ -94,6 +94,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         use_async: bool = True,
         recursive: bool = False,
         streaming: bool = False,
+        doc_ids: Optional[List[str]] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -132,6 +133,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self.similarity_cutoff = similarity_cutoff
         self._recursive = recursive
         self._streaming = streaming
+        self._doc_ids = doc_ids
 
     def _should_use_node(
         self, node: Node, similarity_tracker: Optional[SimilarityTracker] = None
