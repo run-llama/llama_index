@@ -1,6 +1,6 @@
 """Chroma Reader."""
 
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -20,7 +20,7 @@ class ChromaReader(BaseReader):
     def __init__(
         self,
         collection_name: str,
-        persist_directory: str = None,
+        persist_directory: Optional[str] = None,
         host: str = "localhost",
         port: int = 8000,
     ) -> None:
@@ -53,7 +53,7 @@ class ChromaReader(BaseReader):
             )
         self._collection = self._client.get_collection(collection_name)
 
-    def create_documents(self, results: tuple) -> List[Document]:
+    def create_documents(self, results: Any) -> List[Document]:
         """Create documents from the results.
 
         Args:
@@ -81,11 +81,11 @@ class ChromaReader(BaseReader):
 
     def load_data(
         self,
-        query_embedding: List[float] = None,
+        query_embedding: Optional[List[float]] = None,
         limit: int = 10,
-        where: dict = {},
-        where_document: dict = {},
-        query: Union[str, List[str]] = None,
+        where: Optional[dict] = None,
+        where_document: Optional[dict] = None,
+        query: Optional[Union[str, List[str]]] = None,
     ) -> Any:
         """Load data from the collection.
 
@@ -97,6 +97,8 @@ class ChromaReader(BaseReader):
         Returns:
             List of documents.
         """
+        where = where or {}
+        where_document = where_document or {}
         if query_embedding is not None:
             results = self._collection.search(
                 query_embedding=query_embedding,
