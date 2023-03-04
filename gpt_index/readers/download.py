@@ -6,7 +6,7 @@ import subprocess
 import sys
 from importlib import util
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Type
 
 import pkg_resources
 import requests
@@ -81,7 +81,7 @@ def download_loader(
     loader_hub_url: str = LOADER_HUB_URL,
     refresh_cache: Optional[bool] = False,
     use_gpt_index_import: bool = False,
-) -> BaseReader:
+) -> Type[BaseReader]:
     """Download a single loader from the Loader Hub.
 
     Args:
