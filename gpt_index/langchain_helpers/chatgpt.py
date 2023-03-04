@@ -1,6 +1,6 @@
 """ChatGPT Wrapper."""
 
-from typing import Any, List, Optional, Dict
+from typing import Any, Dict, List, Optional
 
 import openai
 
