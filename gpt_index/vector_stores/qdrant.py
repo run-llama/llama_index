@@ -171,26 +171,30 @@ class QdrantVectorStore(VectorStore):
             doc_ids (Optional[List[str]]): list of doc_ids to filter by
 
         """
-        from qdrant_client.http.models.models import Payload, Filter, FieldCondition, MatchValue
+        from qdrant_client.http.models.models import (
+            FieldCondition,
+            Filter,
+            MatchValue,
+            Payload,
+        )
 
         response = self._client.search(
             collection_name=self._collection_name,
             query_vector=query_embedding,
             limit=cast(int, similarity_top_k),
-            query_filter=None if not doc_ids else Filter(
+            query_filter=None
+            if not doc_ids
+            else Filter(
                 must=[
                     Filter(
                         should=[
-                            FieldCondition(
-                                key="doc_id",
-                                match=MatchValue(value=doc_id)
-                            ) for doc_id in doc_ids
+                            FieldCondition(key="doc_id", match=MatchValue(value=doc_id))
+                            for doc_id in doc_ids
                         ],
                     )
                 ]
-            )
+            ),
         )
-        
 
         logging.debug(f"> Top {len(response)} nodes:")
 
