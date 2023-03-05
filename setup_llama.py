@@ -20,8 +20,11 @@ install_requires = [
 ]
 
 # NOTE: if python version >= 3.9, install tiktoken
+# else install transformers
 if sys.version_info >= (3, 9):
     install_requires.extend(["tiktoken"])
+else:
+    install_requires.extend(["transformers"])
 
 # upload duplicate package to pypi
 setup(
