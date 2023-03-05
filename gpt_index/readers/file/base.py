@@ -189,4 +189,6 @@ class SimpleJSONReader(BaseReader):
             if self.combine_levels == 0 and self.levels_back == 0:
                 """If combine_levels and levels_back aren't set, we just format and make each line a Document"""
                 json_output = json.dumps(data, indent=0)
-                return [Document(line) for line in json_output.split("\n") if not re.match(r"^[{}\[\],]*$", line)]
+                lines = json_output.split("\n")
+                useful_lines = [line for line in lines if not re.match(r"^[{}\[\],]*$", line)]
+                return [Document("\n".join(useful_lines))]
