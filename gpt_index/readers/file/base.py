@@ -166,16 +166,37 @@ class SimpleDirectoryReader(BaseReader):
         else:
             return [Document(d) for d in data_list]
 
+"""A function to do a depth first yield of all of the leaf nodes of a JSON
+
+combines keys in the JSON tree using spaces
+
+levels_back if 0 prints all levels
+"""
+def _depth_first_yield(json_data, levels_back: int = 0, path=[]):
+    if isinstance(json_data, dict):
+        for key, value in json_data.items():
+            new_path = path[:]
+            new_path.append(key)
+            yield from _depth_first_yield(value, levels_back, new_path)
+    elif isinstance(json_data, list):
+        for _, value in enumerate(json_data):
+            yield from _depth_first_yield(value, levels_back, path)
+    else:
+        new_path = path[-levels_back:]
+        new_path.append(str(json_data))
+        yield " ".join(new_path)
+
 class SimpleJSONReader(BaseReader):
     """Simple JSON Reader
     """
 
-    def __init__(self, input_file: str, combine_levels: int = 0, levels_back: int = 0) -> None:
-        """Initialize with parameters."""
+    def __init__(self, input_file: str, levels_back: int = None) -> None:
+        """levels_back is the number of levels to go back in the JSON tree, 0 if you want all levels
+        if levels_back is None, then we just format the JSON and make each line an embedding
+        """
         super().__init__()
 
         self.input_file = input_file
-        self.combine_levels = combine_levels
         self.levels_back = levels_back
 
     def load_data(self) -> List[Document]:
@@ -186,9 +207,13 @@ class SimpleJSONReader(BaseReader):
 
         with open(self.input_file, "r") as f:
             data = json.load(f)
-            if self.combine_levels == 0 and self.levels_back == 0:
-                """If combine_levels and levels_back aren't set, we just format and make each line a Document"""
+            if self.levels_back is None:
+                """If levels_back isn't set, we just format and make each line an embedding"""
                 json_output = json.dumps(data, indent=0)
                 lines = json_output.split("\n")
                 useful_lines = [line for line in lines if not re.match(r"^[{}\[\],]*$", line)]
                 return [Document("\n".join(useful_lines))]
+            elif self.levels_back is not None:
+                """If levels_back is set, we make the embeddings contain the labels from further up the JSON tree"""
+                lines = [*_depth_first_yield(data, self.levels_back)]
+                return [Document("\n".join(lines))]
