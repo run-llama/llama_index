@@ -44,7 +44,8 @@ class GlobalsHelper:
                     import transformers
                 except ImportError:
                     raise ImportError(
-                        "`transformers` package not found, please run `pip install transformers`"
+                        "`transformers` package not found, "
+                        "please run `pip install transformers`"
                     )
 
                 tokenizer = transformers.GPT2TokenizerFast.from_pretrained("gpt2")

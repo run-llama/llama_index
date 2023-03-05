@@ -55,7 +55,8 @@ class DocxParser(BaseParser):
             import docx2txt
         except ImportError:
             raise ImportError(
-                "docx2txt is required to read Microsoft Word files: `pip install docx2txt`"
+                "docx2txt is required to read Microsoft Word files: "
+                "`pip install docx2txt`"
             )
 
         text = docx2txt.process(file)

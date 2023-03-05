@@ -24,13 +24,15 @@ class PptxParser(BaseParser):
             from pptx import Presentation  # noqa: F401
         except ImportError:
             raise ImportError(
-                "The package `python-pptx` is required to read Powerpoint files: `pip install python-pptx`"
+                "The package `python-pptx` is required to read Powerpoint files: "
+                "`pip install python-pptx`"
             )
         try:
             import torch  # noqa: F401
         except ImportError:
             raise ImportError(
-                "The package `pytorch` is required to caption images: `pip install torch`"
+                "The package `pytorch` is required to caption images: "
+                "`pip install torch`"
             )
         try:
             from transformers import (
@@ -40,13 +42,14 @@ class PptxParser(BaseParser):
             )
         except ImportError:
             raise ImportError(
-                "The package `transformers` is required to caption images: `pip install transformers`"
+                "The package `transformers` is required to caption images: "
+                "`pip install transformers`"
             )
         try:
             from PIL import Image  # noqa: F401
         except ImportError:
             raise ImportError(
-                "PIL is required to read image files: `pip install Pillow`"
+                "PIL is required to read image files: " "`pip install Pillow`"
             )
 
         model = VisionEncoderDecoderModel.from_pretrained(
