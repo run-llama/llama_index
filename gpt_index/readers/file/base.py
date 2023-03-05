@@ -165,3 +165,28 @@ class SimpleDirectoryReader(BaseReader):
             return [Document(d, extra_info=m) for d, m in zip(data_list, metadata_list)]
         else:
             return [Document(d) for d in data_list]
+
+class SimpleJSONReader(BaseReader):
+    """Simple JSON Reader
+    """
+
+    def __init__(self, input_file: str, combine_levels: int = 0, levels_back: int = 0) -> None:
+        """Initialize with parameters."""
+        super().__init__()
+
+        self.input_file = input_file
+        self.combine_levels = combine_levels
+        self.levels_back = levels_back
+
+    def load_data(self) -> List[Document]:
+        """Load data from the input file.
+        """
+        import json
+        import re
+
+        with open(self.input_file, "r") as f:
+            data = json.load(f)
+            if self.combine_levels == 0 and self.levels_back == 0:
+                """If combine_levels and levels_back aren't set, we just format and make each line a Document"""
+                json_output = json.dumps(data, indent=0)
+                return [Document(line) for line in json_output.split("\n") if not re.match(r"^[{}\[\],]*$", line)]
