@@ -3,6 +3,7 @@ from copy import deepcopy
 from string import Formatter
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
+from langchain import BasePromptTemplate as BaseLangchainPrompt
 from langchain import PromptTemplate as LangchainPrompt
 
 from gpt_index.prompts.prompt_type import PromptType
@@ -25,7 +26,7 @@ class Prompt:
     def __init__(
         self,
         template: Optional[str] = None,
-        langchain_prompt: Optional[LangchainPrompt] = None,
+        langchain_prompt: Optional[BaseLangchainPrompt] = None,
         **prompt_kwargs: Any,
     ) -> None:
         """Init params."""
@@ -44,7 +45,7 @@ class Prompt:
                     f"required input_variables: {self.input_variables}"
                 )
 
-            self.prompt: LangchainPrompt = LangchainPrompt(
+            self.prompt: BaseLangchainPrompt = LangchainPrompt(
                 input_variables=self.input_variables, template=template, **prompt_kwargs
             )
         else:
@@ -64,7 +65,7 @@ class Prompt:
 
     @classmethod
     def from_langchain_prompt(
-        cls: Type[PMT], prompt: LangchainPrompt, **kwargs: Any
+        cls: Type[PMT], prompt: BaseLangchainPrompt, **kwargs: Any
     ) -> PMT:
         """Load prompt from LangChain prompt."""
         return cls(langchain_prompt=prompt, **kwargs)
@@ -95,6 +96,8 @@ class Prompt:
         partially filled prompt.
 
         """
+        if not isinstance(prompt.prompt, LangchainPrompt):
+            raise ValueError("langchain prompt must be of type PromptTemplate.")
         template = prompt.prompt.template
         tmpl_vars = {v for _, v, _, _ in Formatter().parse(template) if v is not None}
         format_dict = {}
@@ -106,7 +109,7 @@ class Prompt:
         cls_obj: PMT = cls(template_str, **prompt.prompt_kwargs)
         return cls_obj
 
-    def get_langchain_prompt(self) -> LangchainPrompt:
+    def get_langchain_prompt(self) -> BaseLangchainPrompt:
         """Get langchain prompt."""
         return self.prompt
 
