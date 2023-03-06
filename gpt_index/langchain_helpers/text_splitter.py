@@ -79,7 +79,7 @@ class TokenTextSplitter(TextSplitter):
             if num_cur_tokens <= chunk_size:
                 new_splits.append(split)
             else:
-                cur_splits = []
+                cur_splits = [split]
                 if self._backup_separators:
                     for sep in self._backup_separators:
                         if sep in split:
