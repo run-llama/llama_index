@@ -189,6 +189,9 @@ class TokenTextSplitter(TextSplitter):
                     cur_num_tokens = max(len(self.tokenizer(splits[start_idx])), 1)
                     cur_total -= cur_num_tokens
                     start_idx += 1
+                # NOTE: This is a hack, make more general
+                if start_idx == cur_idx:
+                    cur_total = 0
             # Build up the current_doc with term d, and update the total counter with
             # the number of the number of tokens in d, wrt self.tokenizer
 
