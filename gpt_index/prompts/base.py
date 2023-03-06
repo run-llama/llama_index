@@ -3,10 +3,8 @@ from copy import deepcopy
 from string import Formatter
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
-from langchain import (
-    BasePromptTemplate as BaseLangchainPrompt,
-    PromptTemplate as LangchainPrompt
-)
+from langchain import BasePromptTemplate as BaseLangchainPrompt
+from langchain import PromptTemplate as LangchainPrompt
 
 from gpt_index.prompts.prompt_type import PromptType
 
@@ -98,6 +96,8 @@ class Prompt:
         partially filled prompt.
 
         """
+        if not isinstance(prompt.prompt, LangchainPrompt):
+            raise ValueError("langchain prompt must be of type PromptTemplate.")
         template = prompt.prompt.template
         tmpl_vars = {v for _, v, _, _ in Formatter().parse(template) if v is not None}
         format_dict = {}

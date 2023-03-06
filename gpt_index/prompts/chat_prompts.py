@@ -1,12 +1,12 @@
 """Prompts for ChatGPT."""
 
 from langchain.prompts.chat import (
-    HumanMessagePromptTemplate,
     AIMessagePromptTemplate,
     ChatPromptTemplate,
+    HumanMessagePromptTemplate,
 )
-from gpt_index.prompts.prompts import RefinePrompt, RefineTableContextPrompt
 
+from gpt_index.prompts.prompts import RefinePrompt, RefineTableContextPrompt
 
 # Refine Prompt
 CHAT_REFINE_PROMPT_TMPL_MSGS = [
