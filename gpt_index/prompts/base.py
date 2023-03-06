@@ -3,7 +3,10 @@ from copy import deepcopy
 from string import Formatter
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
-from langchain import BasePromptTemplate as BaseLangchainPrompt
+from langchain import (
+    BasePromptTemplate as BaseLangchainPrompt,
+    PromptTemplate as LangchainPrompt
+)
 
 from gpt_index.prompts.prompt_type import PromptType
 
@@ -44,7 +47,7 @@ class Prompt:
                     f"required input_variables: {self.input_variables}"
                 )
 
-            self.prompt: BaseLangchainPrompt = BaseLangchainPrompt(
+            self.prompt: BaseLangchainPrompt = LangchainPrompt(
                 input_variables=self.input_variables, template=template, **prompt_kwargs
             )
         else:
