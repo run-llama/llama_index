@@ -65,7 +65,7 @@ class TokenTextSplitter(TextSplitter):
             )
         return cur_idx
 
-    def _process_splits(self, splits: List[str], chunk_size: int) -> List[str]:
+    def _preprocess_splits(self, splits: List[str], chunk_size: int) -> List[str]:
         """Process splits.
 
         Specifically search for tokens that are too large for chunk size,
@@ -103,6 +103,16 @@ class TokenTextSplitter(TextSplitter):
                 new_splits.extend(cur_splits2)
         return new_splits
 
+    def _postprocess_splits(self, docs: List[TextSplit]) -> List[TextSplit]:
+        """Post-process splits."""
+        # TODO: prune text splits, remove empty spaces
+        new_docs = []
+        for doc in docs:
+            if doc.text_chunk.replace(" ", "") == "":
+                continue
+            new_docs.append(doc)
+        return new_docs
+
     def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
         text_splits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
@@ -131,10 +141,10 @@ class TokenTextSplitter(TextSplitter):
 
         # First we naively split the large input into a bunch of smaller ones.
         splits = text.split(self._separator)
-        splits = self._process_splits(splits, effective_chunk_size)
+        splits = self._preprocess_splits(splits, effective_chunk_size)
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
-        docs = []
+        docs: List[TextSplit] = []
 
         start_idx = 0
         cur_idx = 0
@@ -162,6 +172,7 @@ class TokenTextSplitter(TextSplitter):
                 # after first round, check if last chunk ended after this chunk begins
                 if prev_idx > 0 and prev_idx > start_idx:
                     overlap = sum([len(splits[i]) for i in range(start_idx, prev_idx)])
+
                 docs.append(
                     TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap)
                 )
@@ -173,9 +184,14 @@ class TokenTextSplitter(TextSplitter):
                 # we need to enforce that start_idx <= cur_idx, otherwise
                 # start_idx has a chance of going out of bounds.
                 while cur_total > self._chunk_overlap and start_idx < cur_idx:
+                    # # call tokenizer on entire overlap
+                    # cur_total = self.tokenizer()
                     cur_num_tokens = max(len(self.tokenizer(splits[start_idx])), 1)
                     cur_total -= cur_num_tokens
                     start_idx += 1
+                # NOTE: This is a hack, make more general
+                if start_idx == cur_idx:
+                    cur_total = 0
             # Build up the current_doc with term d, and update the total counter with
             # the number of the number of tokens in d, wrt self.tokenizer
 
@@ -193,6 +209,9 @@ class TokenTextSplitter(TextSplitter):
                 range(start_idx, prev_idx)
             )
         docs.append(TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap))
+
+        # run postprocessing to remove blank spaces
+        docs = self._postprocess_splits(docs)
         return docs
 
     def truncate_text(self, text: str) -> str:
@@ -201,7 +220,7 @@ class TokenTextSplitter(TextSplitter):
             return ""
         # First we naively split the large input into a bunch of smaller ones.
         splits = text.split(self._separator)
-        splits = self._process_splits(splits, self._chunk_size)
+        splits = self._preprocess_splits(splits, self._chunk_size)
 
         start_idx = 0
         cur_idx = 0
