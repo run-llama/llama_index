@@ -28,13 +28,18 @@ def _depth_first_yield(json_data, levels_back: int = 0, path=[]):
         yield " ".join(new_path)
 
 class JSONReader(BaseReader):
-    """JSON parser 
+    """JSON reader
+
+    Reads JSON documents with options to help suss out relationships between nodes.
+
+    Args:
+        levels_back: the number of levels to go back in the JSON tree, 0 if you want all levels
+        If levels_back is None, then we just format the JSON and make each line an embedding
     """
 
     def __init__(self, input_file: str, levels_back: int = None) -> None:
-        """levels_back is the number of levels to go back in the JSON tree, 0 if you want all levels
-        if levels_back is None, then we just format the JSON and make each line an embedding
-        """
+        """Initialize with arguments"""
+        
         super().__init__()
 
         self.input_file = input_file
