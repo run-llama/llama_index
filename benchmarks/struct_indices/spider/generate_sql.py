@@ -76,7 +76,7 @@ if __name__ == "__main__":
         required=True,
         help="Path to the output directory of generated SQL files,"
         " one query on each line, "
-        "to be compared wit the *_gold.sql files in the input directory.",
+        "to be compared with the *_gold.sql files in the input directory.",
     )
     args = parser.parse_args()
 
