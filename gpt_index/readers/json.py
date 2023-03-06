@@ -44,16 +44,14 @@ class JSONReader(BaseReader):
 
     """
 
-    def __init__(self, input_file: str, levels_back: Optional[int] = None) -> None:
+    def __init__(self, levels_back: Optional[int] = None) -> None:
         """Initialize with arguments."""
         super().__init__()
-
-        self.input_file = input_file
         self.levels_back = levels_back
 
-    def load_data(self) -> List[Document]:
+    def load_data(self, input_file: str) -> List[Document]:
         """Load data from the input file."""
-        with open(self.input_file, "r") as f:
+        with open(input_file, "r") as f:
             data = json.load(f)
             if self.levels_back is None:
                 # If levels_back isn't set, we just format and make each
