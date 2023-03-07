@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain.chains.base import Memory
+from langchain.schema import BaseMemory as Memory
 from pydantic import Field
 
 from gpt_index.indices.base import BaseGPTIndex
