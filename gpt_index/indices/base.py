@@ -334,8 +334,7 @@ class BaseGPTIndex(Generic[IS]):
         This also allows subclasses to do validation.
 
         """
-        query_kwargs["llm_predictor"] = self._llm_predictor
-        query_kwargs["embed_model"] = self._embed_model
+        pass
 
     def query(
         self,
