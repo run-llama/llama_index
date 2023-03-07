@@ -9,8 +9,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Callable, Generator, List, Optional, Set, Type, cast
 
-import nltk
-
 
 class GlobalsHelper:
     """Helper to retrieve globals.
@@ -61,6 +59,7 @@ class GlobalsHelper:
         """Get stopwords."""
         if self._stopwords is None:
             try:
+                import nltk
                 from nltk.corpus import stopwords
             except ImportError:
                 raise ImportError(
