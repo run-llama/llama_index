@@ -55,7 +55,7 @@ class OpensearchVectorClient:
         try:
             import httpx  # noqa: F401
         except ImportError:
-            raise ValueError(import_err_msg)
+            raise ImportError(import_err_msg)
         self._embedding_field = embedding_field
         self._client = httpx.Client(base_url=endpoint)
         self._endpoint = endpoint
@@ -153,7 +153,7 @@ class OpensearchVectorStore(VectorStore):
         try:
             import httpx  # noqa: F401
         except ImportError:
-            raise ValueError(import_err_msg)
+            raise ImportError(import_err_msg)
         self._client = client
 
     @property

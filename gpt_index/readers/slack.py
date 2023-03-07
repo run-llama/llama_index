@@ -24,7 +24,7 @@ class SlackReader(BaseReader):
         try:
             from slack_sdk import WebClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`slack_sdk` package not found, please run `pip install slack_sdk`"
             )
         if slack_token is None:

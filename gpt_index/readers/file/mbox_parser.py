@@ -43,9 +43,8 @@ class MboxParser(BaseParser):
         try:
             from bs4 import BeautifulSoup  # noqa: F401
         except ImportError:
-            raise ValueError(
-                "`beautifulsoup4` package not found,"
-                "please run `pip install beautifulsoup4`"
+            raise ImportError(
+                "`beautifulsoup4` package not found: `pip install beautifulsoup4`"
             )
         return {}
 
