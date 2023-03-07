@@ -14,9 +14,9 @@ install_requires = [
     "dataclasses_json",
     "langchain",
     "numpy",
+    "tenacity>=8.2.0,<9.0.0",
     "openai>=0.26.4",
     "pandas",
-    "tenacity<8.2.0",
 ]
 
 # NOTE: if python version >= 3.9, install tiktoken
