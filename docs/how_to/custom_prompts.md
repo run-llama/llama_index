@@ -24,7 +24,7 @@ contains optional prompts that the user may pass in.
 
 ### Example
 
-An example can be found in [this notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/paul_graham_essay/TestEssay.ipynb).
+An example can be found in [this notebook](https://github.com/jerryjliu/gpt_index/blob/main/examples/paul_graham_essay/TestEssay.ipynb).
 
 
 A corresponding snippet is below. We show how to define a custom `QuestionAnswer` prompt which
