@@ -111,41 +111,42 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
             self.schema_extract_prompt, 1
         )
 
-    def _add_document_to_index(
-        self,
-        document: BaseDocument,
-    ) -> None:
-        """Add document to index."""
-        text_chunks = self._text_splitter.split_text(document.get_text())
-        fields = {}
-        for i, text_chunk in enumerate(text_chunks):
-            fmt_text_chunk = truncate_text(text_chunk, 50)
-            logging.info(f"> Adding chunk {i}: {fmt_text_chunk}")
-            # if embedding specified in document, pass it to the Node
-            schema_text = self._get_schema_text()
-            response_str, _ = self._llm_predictor.predict(
-                self.schema_extract_prompt,
-                text=text_chunk,
-                schema=schema_text,
-            )
-            cur_fields = self.output_parser(response_str)
-            if cur_fields is None:
-                continue
-            # validate fields with col_types_map
-            new_cur_fields = self._clean_and_validate_fields(cur_fields)
-            fields.update(new_cur_fields)
+    # @abstractmethod
+    # def _add_document_to_index(
+    #     self,
+    #     document: BaseDocument,
+    # ) -> None:
+    #     """Add document to index."""
+    # text_chunks = self._text_splitter.split_text(document.get_text())
+    # fields = {}
+    # for i, text_chunk in enumerate(text_chunks):
+    #     fmt_text_chunk = truncate_text(text_chunk, 50)
+    #     logging.info(f"> Adding chunk {i}: {fmt_text_chunk}")
+    #     # if embedding specified in document, pass it to the Node
+    #     schema_text = self._get_schema_text()
+    #     response_str, _ = self._llm_predictor.predict(
+    #         self.schema_extract_prompt,
+    #         text=text_chunk,
+    #         schema=schema_text,
+    #     )
+    #     cur_fields = self.output_parser(response_str)
+    #     if cur_fields is None:
+    #         continue
+    #     # validate fields with col_types_map
+    #     new_cur_fields = self._clean_and_validate_fields(cur_fields)
+    #     fields.update(new_cur_fields)
 
-        struct_datapoint = StructDatapoint(fields)
-        if struct_datapoint is not None:
-            self._insert_datapoint(struct_datapoint)
-            logging.debug(f"> Added datapoint: {fields}")
+    # struct_datapoint = StructDatapoint(fields)
+    # if struct_datapoint is not None:
+    #     self._insert_datapoint(struct_datapoint)
+    #     logging.debug(f"> Added datapoint: {fields}")
 
-    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> BST:
-        """Build index from documents."""
-        index_struct = self.index_struct_cls()
-        for d in documents:
-            self._add_document_to_index(d)
-        return index_struct
+    # def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> BST:
+    #     """Build index from documents."""
+    #     index_struct = self.index_struct_cls()
+    #     for d in documents:
+    #         self._add_document_to_index(d)
+    #     return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""

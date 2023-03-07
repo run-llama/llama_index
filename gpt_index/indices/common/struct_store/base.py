@@ -1,7 +1,12 @@
 """Common classes for structured operations."""
 
-from typing import Dict, List, Optional, Sequence, cast
+from typing import Dict, List, Optional, Sequence, cast, Any
 
+from abc import abstractmethod
+import logging
+from gpt_index.data_structs.table import StructDatapoint
+from gpt_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
+from gpt_index.prompts.prompts import SchemaExtractPrompt
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -19,6 +24,7 @@ from gpt_index.prompts.prompts import (
     TableContextPrompt,
 )
 from gpt_index.schema import BaseDocument
+from gpt_index.utils import truncate_text
 
 
 class SQLDocumentContextBuilder:
@@ -110,3 +116,84 @@ class SQLDocumentContextBuilder:
         # feed in the "query_str" or the task
         table_context = response_builder.get_response(self._table_context_task)
         return cast(str, table_context)
+
+
+class BaseStructDatapointExtractor:
+    """Extracts datapoints from a structured document."""
+
+    def __init__(
+        self,
+        llm_predictor: LLMPredictor,
+        text_splitter: TextSplitter,
+        schema_extract_prompt: SchemaExtractPrompt,
+    ) -> None:
+        """Initialize params."""
+        self._llm_predictor = llm_predictor
+        self._text_splitter = text_splitter
+        self._schema_extract_prompt = schema_extract_prompt
+
+    def _clean_and_validate_fields(self, fields: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate fields with col_types_map."""
+        new_fields = {}
+        col_types_map = self._get_col_types_map()
+        for field, value in fields.items():
+            clean_value = value
+            if field not in col_types_map:
+                continue
+            # if expected type is int or float, try to convert value to int or float
+            expected_type = col_types_map[field]
+            if expected_type == int:
+                try:
+                    clean_value = int(value)
+                except ValueError:
+                    continue
+            elif expected_type == float:
+                try:
+                    clean_value = float(value)
+                except ValueError:
+                    continue
+            else:
+                if len(value) == 0:
+                    continue
+                if not isinstance(value, col_types_map[field]):
+                    continue
+            new_fields[field] = clean_value
+        return new_fields
+
+    @abstractmethod
+    def _insert_datapoint(self, datapoint: StructDatapoint) -> None:
+        """Insert datapoint into index."""
+
+    @abstractmethod
+    def _get_col_types_map(self) -> Dict[str, type]:
+        """Get col types map for schema."""
+
+    @abstractmethod
+    def _get_schema_text(self) -> str:
+        """Get schema text for extracting relevant info from unstructured text."""
+
+    def extract_datapoint_from_document(self, document: BaseDocument) -> Dict[str, str]:
+        """Extract datapoint from a document."""
+        text_chunks = self._text_splitter.split_text(document.get_text())
+        fields = {}
+        for i, text_chunk in enumerate(text_chunks):
+            fmt_text_chunk = truncate_text(text_chunk, 50)
+            logging.info(f"> Adding chunk {i}: {fmt_text_chunk}")
+            # if embedding specified in document, pass it to the Node
+            schema_text = self._get_schema_text()
+            response_str, _ = self._llm_predictor.predict(
+                self._schema_extract_prompt,
+                text=text_chunk,
+                schema=schema_text,
+            )
+            cur_fields = self.output_parser(response_str)
+            if cur_fields is None:
+                continue
+            # validate fields with col_types_map
+            new_cur_fields = self._clean_and_validate_fields(cur_fields)
+            fields.update(new_cur_fields)
+
+        struct_datapoint = StructDatapoint(fields)
+        if struct_datapoint is not None:
+            self._insert_datapoint(struct_datapoint)
+            logging.debug(f"> Added datapoint: {fields}")
