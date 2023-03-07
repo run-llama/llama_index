@@ -1,12 +1,10 @@
 """Common classes for structured operations."""
 
-from typing import Dict, List, Optional, Sequence, cast, Any
-
-from abc import abstractmethod
 import logging
+from abc import abstractmethod
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast
+
 from gpt_index.data_structs.table import StructDatapoint
-from gpt_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
-from gpt_index.prompts.prompts import SchemaExtractPrompt
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -14,6 +12,7 @@ from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT,
+    DEFAULT_SCHEMA_EXTRACT_PROMPT,
     DEFAULT_TABLE_CONTEXT_PROMPT,
     DEFAULT_TABLE_CONTEXT_QUERY,
 )
@@ -21,6 +20,7 @@ from gpt_index.prompts.prompts import (
     QuestionAnswerPrompt,
     RefinePrompt,
     RefineTableContextPrompt,
+    SchemaExtractPrompt,
     TableContextPrompt,
 )
 from gpt_index.schema import BaseDocument
@@ -118,6 +118,9 @@ class SQLDocumentContextBuilder:
         return cast(str, table_context)
 
 
+OUTPUT_PARSER_TYPE = Callable[[str], Optional[Dict[str, Any]]]
+
+
 class BaseStructDatapointExtractor:
     """Extracts datapoints from a structured document."""
 
@@ -126,11 +129,13 @@ class BaseStructDatapointExtractor:
         llm_predictor: LLMPredictor,
         text_splitter: TextSplitter,
         schema_extract_prompt: SchemaExtractPrompt,
+        output_parser: OUTPUT_PARSER_TYPE,
     ) -> None:
         """Initialize params."""
         self._llm_predictor = llm_predictor
         self._text_splitter = text_splitter
         self._schema_extract_prompt = schema_extract_prompt
+        self._output_parser = output_parser
 
     def _clean_and_validate_fields(self, fields: Dict[str, Any]) -> Dict[str, Any]:
         """Validate fields with col_types_map."""
@@ -172,8 +177,8 @@ class BaseStructDatapointExtractor:
     def _get_schema_text(self) -> str:
         """Get schema text for extracting relevant info from unstructured text."""
 
-    def extract_datapoint_from_document(self, document: BaseDocument) -> Dict[str, str]:
-        """Extract datapoint from a document."""
+    def insert_datapoint_from_document(self, document: BaseDocument) -> None:
+        """Extract datapoint from a document and insert it."""
         text_chunks = self._text_splitter.split_text(document.get_text())
         fields = {}
         for i, text_chunk in enumerate(text_chunks):
@@ -186,7 +191,7 @@ class BaseStructDatapointExtractor:
                 text=text_chunk,
                 schema=schema_text,
             )
-            cur_fields = self.output_parser(response_str)
+            cur_fields = self._output_parser(response_str)
             if cur_fields is None:
                 continue
             # validate fields with col_types_map
