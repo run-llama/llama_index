@@ -22,15 +22,11 @@ class EpubParser(BaseParser):
             import ebooklib
             from ebooklib import epub
         except ImportError:
-            raise ImportError(
-                "`EbookLib` is required to read Epub files: `pip install EbookLib`"
-            )
+            raise ValueError("`EbookLib` is required to read Epub files.")
         try:
             import html2text
         except ImportError:
-            raise ImportError(
-                "`html2text` is required to parse Epub files: `pip install html2text`"
-            )
+            raise ValueError("`html2text` is required to parse Epub files.")
 
         text_list = []
         book = epub.read_epub(file, options={"ignore_ncx": True})

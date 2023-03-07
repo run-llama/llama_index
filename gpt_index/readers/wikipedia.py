@@ -17,7 +17,7 @@ class WikipediaReader(BaseReader):
         try:
             import wikipedia  # noqa: F401
         except ImportError:
-            raise ImportError(
+            raise ValueError(
                 "`wikipedia` package not found, please run `pip install wikipedia`"
             )
 

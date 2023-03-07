@@ -24,7 +24,7 @@ class SimpleMongoReader(BaseReader):
             import pymongo  # noqa: F401
             from pymongo import MongoClient  # noqa: F401
         except ImportError:
-            raise ImportError(
+            raise ValueError(
                 "`pymongo` package not found, please run `pip install pymongo`"
             )
         self.client: MongoClient = MongoClient(host, port)

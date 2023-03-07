@@ -31,7 +31,7 @@ class FaissReader(BaseReader):
         try:
             import faiss  # noqa: F401
         except ImportError:
-            raise ImportError(import_err_msg)
+            raise ValueError(import_err_msg)
 
         self._index = index
 

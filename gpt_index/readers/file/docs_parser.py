@@ -21,9 +21,7 @@ class PDFParser(BaseParser):
         try:
             import PyPDF2
         except ImportError:
-            raise ImportError(
-                "PyPDF2 is required to read PDF files: `pip install PyPDF2`"
-            )
+            raise ValueError("PyPDF2 is required to read PDF files.")
         text_list = []
         with open(file, "rb") as fp:
             # Create a PDF object
@@ -54,10 +52,7 @@ class DocxParser(BaseParser):
         try:
             import docx2txt
         except ImportError:
-            raise ImportError(
-                "docx2txt is required to read Microsoft Word files: "
-                "`pip install docx2txt`"
-            )
+            raise ValueError("docx2txt is required to read Microsoft Word files.")
 
         text = docx2txt.process(file)
 

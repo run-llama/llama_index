@@ -20,7 +20,7 @@ def validate_client(client: Any) -> None:
 
         client = cast(Client, client)
     except ImportError:
-        raise ImportError(
+        raise ValueError(
             "Weaviate is not installed. "
             "Please install it with `pip install weaviate-client`."
         )

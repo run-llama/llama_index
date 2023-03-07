@@ -11,20 +11,19 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 install_requires = [
-    "dataclasses_json",
     "langchain",
-    "numpy",
     "openai>=0.26.4",
-    "pandas",
+    "dataclasses_json",
+    "transformers",
+    "nltk",
+    "numpy",
     "tenacity<8.2.0",
+    "pandas",
 ]
 
 # NOTE: if python version >= 3.9, install tiktoken
-# else install transformers
 if sys.version_info >= (3, 9):
     install_requires.extend(["tiktoken"])
-else:
-    install_requires.extend(["transformers"])
 
 # upload duplicate package to pypi
 setup(

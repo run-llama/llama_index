@@ -6,8 +6,6 @@ Contains parsers for tabular data files.
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-import pandas as pd
-
 from gpt_index.readers.file.base_parser import BaseParser
 
 
@@ -40,7 +38,7 @@ class CSVParser(BaseParser):
         try:
             import csv
         except ImportError:
-            raise ImportError("csv module is required to read CSV files.")
+            raise ValueError("csv module is required to read CSV files.")
         text_list = []
         with open(file, "r") as fp:
             csv_reader = csv.reader(fp)
@@ -100,6 +98,11 @@ class PandasCSVParser(BaseParser):
 
     def parse_file(self, file: Path, errors: str = "ignore") -> Union[str, List[str]]:
         """Parse file."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ValueError("pandas module is required to read CSV files.")
+
         df = pd.read_csv(file, **self._pandas_config)
 
         text_list = df.apply(
