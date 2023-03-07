@@ -37,6 +37,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
 
     """
 
@@ -104,3 +105,9 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         cur_nodes = self._index_struct.nodes
         nodes_to_keep = [n for n in cur_nodes if n.ref_doc_id != doc_id]
         self._index_struct.nodes = nodes_to_keep
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        if "text_qa_template" not in query_kwargs:
+            query_kwargs["text_qa_template"] = self.text_qa_template
