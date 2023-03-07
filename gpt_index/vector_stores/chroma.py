@@ -36,7 +36,7 @@ class ChromaVectorStore(VectorStore):
         try:
             import chromadb  # noqa: F401
         except ImportError:
-            raise ValueError(import_err_msg)
+            raise ImportError(import_err_msg)
         from chromadb.api.models.Collection import Collection
 
         self._collection = cast(Collection, chroma_collection)
