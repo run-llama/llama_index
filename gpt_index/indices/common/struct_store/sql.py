@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, cast
 
 from sqlalchemy import Table
 
-from gpt_index.data_structs.table import BaseStructTable, StructDatapoint
+from gpt_index.data_structs.table import StructDatapoint
 from gpt_index.indices.common.struct_store.base import (
     OUTPUT_PARSER_TYPE,
     BaseStructDatapointExtractor,
@@ -13,8 +13,6 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.prompts import SchemaExtractPrompt
-from gpt_index.schema import BaseDocument
-from gpt_index.utils import truncate_text
 
 
 class SQLStructDatapointExtractor(BaseStructDatapointExtractor):
