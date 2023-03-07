@@ -33,7 +33,7 @@ class ElasticsearchReader(BaseReader):
         try:
             import httpx  # noqa: F401
         except ImportError:
-            raise ImportError(import_err_msg)
+            raise ValueError(import_err_msg)
         self._client = httpx.Client(base_url=endpoint, **(httpx_client_args or {}))
         self._index = index
         self._endpoint = endpoint
