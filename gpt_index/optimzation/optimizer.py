@@ -2,8 +2,6 @@
 import logging
 from typing import Dict, Optional
 
-import nltk.data
-
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
@@ -48,6 +46,8 @@ class Optimizer:
 
     def optimize(self, query_bundle: QueryBundle, textChunk: TextChunk) -> TextChunk:
         """Optimize a text chunk given the query by shortening the input text."""
+        import nltk.data
+
         if self.is_valid_mode():
 
             if self._split_mode == "sentence":
