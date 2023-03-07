@@ -20,6 +20,7 @@ from gpt_index.indices.response.builder import (
     TextChunk,
 )
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.optimzation.optimizer import Optimizer
 from gpt_index.prompts.default_prompts import (
     DEFAULT_REFINE_PROMPT,
     DEFAULT_TEXT_QA_PROMPT,
@@ -95,6 +96,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         recursive: bool = False,
         streaming: bool = False,
         doc_ids: Optional[List[str]] = None,
+        optimizer: Optional[Optimizer] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -134,6 +136,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._recursive = recursive
         self._streaming = streaming
         self._doc_ids = doc_ids
+        self._optimizer = optimizer
 
     def _should_use_node(
         self, node: Node, similarity_tracker: Optional[SimilarityTracker] = None
@@ -281,7 +284,12 @@ class BaseGPTIndexQuery(Generic[IS]):
                 # these are source nodes from within this node (when it's an index)
                 for source_node in response.source_nodes:
                     response_builder.add_source_node(source_node)
-            response_builder.add_text_chunks([text])
+            if self._optimizer is not None:
+                response_builder.add_text_chunks(
+                    [self._optimizer.optimize(query_bundle, text)]
+                )
+            else:
+                response_builder.add_text_chunks([text])
 
     def _prepare_response_output(
         self,

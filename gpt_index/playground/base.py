@@ -11,6 +11,7 @@ from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store import GPTSimpleVectorIndex
+from gpt_index.optimzation.optimizer import Optimizer
 from gpt_index.readers.schema.base import Document
 
 DEFAULT_INDEX_CLASSES = [GPTSimpleVectorIndex, GPTTreeIndex, GPTListIndex]
@@ -136,6 +137,83 @@ class Playground:
                         "Duration": duration,
                         "LLM Tokens": index.llm_predictor.last_token_usage,
                         "Embedding Tokens": index.embed_model.last_token_usage,
+                    }
+                )
+        print(f"\nRan {len(result)} combinations in total.")
+
+        if to_pandas:
+            return pd.DataFrame(result)
+        else:
+            return result
+
+    def compare_with_optimizer(
+        self, query_text: str, to_pandas: Optional[bool] = True
+    ) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
+        """Compare index outputs on an input query.
+
+        Args:
+            query_text (str): Query to run all indices on.
+            to_pandas (Optional[bool]): Return results in a pandas dataframe.
+                True by default.
+
+        Returns:
+            The output of each index along with other data, such as the time it took to
+            compute. Results are stored in a Pandas Dataframe or a list of Dicts.
+        """
+        print(f"\033[1mQuery:\033[0m\n{query_text}\n")
+        print(f"Trying {len(self._indices) * len(self._modes)} combinations...\n\n")
+        result = []
+        for i, index in enumerate(self._indices):
+            for mode in self._modes:
+                if mode not in index.get_query_map():
+                    continue
+
+                index_name = type(index).__name__
+                print_text(f"\033[1m{index_name}\033[0m, mode = {mode}", end="\n")
+                print_text("Without optimization")
+                start_time = time.time()
+                output = index.query(query_text, mode=mode)
+                duration = time.time() - start_time
+                print_text(str(output), color=self.index_colors[str(i)], end="\n\n")
+
+                result.append(
+                    {
+                        "Index": index_name,
+                        "Mode": mode,
+                        "Output": str(output),
+                        "Duration": duration,
+                        "LLM Tokens": index.llm_predictor.last_token_usage,
+                        "Embedding Tokens": index.embed_model.last_token_usage,
+                        "Optimization": "No",
+                    }
+                )
+
+                print_text("With optimization")
+                start_time = time.time()
+                output = index.query(
+                    query_text,
+                    mode=mode,
+                    optimizer=Optimizer(
+                        split_mode="sentence",
+                        comparison_mode="embedding",
+                        cutoffs={"percentile": 0.5}
+                        # this means that the top 50% of sentences will be used.
+                        # Alternatively, you can set the cutoff using a threshold
+                        # on the similarity score.
+                        # cutoffs={"threshold": 0.7},
+                    ),
+                )
+                duration = time.time() - start_time
+                print_text(str(output), color=self.index_colors[str(i)], end="\n\n")
+                result.append(
+                    {
+                        "Index": index_name,
+                        "Mode": mode,
+                        "Output": str(output),
+                        "Duration": duration,
+                        "LLM Tokens": index.llm_predictor.last_token_usage,
+                        "Embedding Tokens": index.embed_model.last_token_usage,
+                        "Optimization": "Yes",
                     }
                 )
         print(f"\nRan {len(result)} combinations in total.")
