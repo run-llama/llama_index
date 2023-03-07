@@ -85,7 +85,7 @@ class DiscordReader(BaseReader):
         try:
             import discord  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`discord.py` package not found, please run `pip install discord.py`"
             )
         if discord_token is None:

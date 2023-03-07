@@ -41,7 +41,7 @@ class QdrantVectorStore(VectorStore):
         try:
             import qdrant_client  # noqa: F401
         except ImportError:
-            raise ValueError(import_err_msg)
+            raise ImportError(import_err_msg)
 
         if client is None:
             raise ValueError("client cannot be None.")
