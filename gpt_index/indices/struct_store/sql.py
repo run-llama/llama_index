@@ -1,12 +1,13 @@
 """SQL Structured Store."""
 import json
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Dict, Optional, Sequence, Type
 
 from sqlalchemy import Table
 
-from gpt_index.data_structs.table import SQLStructTable, StructDatapoint
+from gpt_index.data_structs.table import SQLStructTable
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
+from gpt_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.sql import (
@@ -17,6 +18,7 @@ from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
+from gpt_index.schema import BaseDocument
 
 
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
@@ -31,6 +33,8 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
     or a natural language query to retrieve their data.
 
     Args:
+        documents (Optional[Sequence[DOCUMENTS_INPUT]]): Documents to index.
+            NOTE: in the SQL index, this is an optional field.
         sql_database (Optional[SQLDatabase]): SQL database to use,
             including table names to specify.
             See :ref:`Ref-Struct-Store` for more details.
@@ -62,27 +66,16 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        # currently the user must specify a table info
-        if table_name is None and table is None:
-            raise ValueError("table_name must be specified")
-        self.table_name = table_name or cast(Table, table).name
         if sql_database is None:
             raise ValueError("sql_database must be specified")
         self.sql_database = sql_database
-        if table is None:
-            table = self.sql_database.metadata_obj.tables[table_name]
-        # if ref_doc_id_column is specified, then we need to check that
-        # it is a valid column in the table
-        col_names = [c.name for c in table.c]
-        if ref_doc_id_column is not None and ref_doc_id_column not in col_names:
-            raise ValueError(
-                f"ref_doc_id_column {ref_doc_id_column} not in table {table_name}"
-            )
-        self.ref_doc_id_column = ref_doc_id_column
-        # then store python types of each column
-        self._col_types_map: Dict[str, type] = {
-            c.name: table.c[c.name].type.python_type for c in table.c
-        }
+        # needed here for data extractor
+        self._ref_doc_id_column = ref_doc_id_column
+        self._table_name = table_name
+        self._table = table
+
+        # if documents aren't specified, pass in a blank []
+        documents = documents or []
 
         super().__init__(
             documents=documents,
@@ -98,6 +91,42 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             sql_context_container = container_builder.build_context_container()
         self.sql_context_container = sql_context_container
 
+    def _build_index_from_documents(
+        self, documents: Sequence[BaseDocument]
+    ) -> SQLStructTable:
+        """Build index from documents."""
+        index_struct = self.index_struct_cls()
+        if len(documents) == 0:
+            return index_struct
+        else:
+            data_extractor = SQLStructDatapointExtractor(
+                self._llm_predictor,
+                self._text_splitter,
+                self.schema_extract_prompt,
+                self.output_parser,
+                self.sql_database,
+                table_name=self._table_name,
+                table=self._table,
+                ref_doc_id_column=self._ref_doc_id_column,
+            )
+            for d in documents:
+                data_extractor.insert_datapoint_from_document(d)
+        return index_struct
+
+    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+        """Insert a document."""
+        data_extractor = SQLStructDatapointExtractor(
+            self._llm_predictor,
+            self._text_splitter,
+            self.schema_extract_prompt,
+            self.output_parser,
+            self.sql_database,
+            table_name=self._table_name,
+            table=self._table,
+            ref_doc_id_column=self._ref_doc_id_column,
+        )
+        data_extractor.insert_datapoint_from_document(document)
+
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
         """Get query map."""
@@ -105,21 +134,6 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             QueryMode.DEFAULT: GPTNLStructStoreIndexQuery,
             QueryMode.SQL: GPTSQLStructStoreIndexQuery,
         }
-
-    def _get_col_types_map(self) -> Dict[str, type]:
-        """Get col types map for schema."""
-        return self._col_types_map
-
-    def _get_schema_text(self) -> str:
-        """Insert datapoint into index."""
-        return self.sql_database.get_single_table_info(self.table_name)
-
-    def _insert_datapoint(self, datapoint: StructDatapoint) -> None:
-        """Insert datapoint into index."""
-        datapoint_dict = datapoint.to_dict()["fields"]
-        self.sql_database.insert_into_table(
-            self.table_name, cast(Dict[Any, Any], datapoint_dict)
-        )
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Preprocess query.
@@ -136,7 +150,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         if "sql_context_container" not in query_kwargs:
             query_kwargs["sql_context_container"] = self.sql_context_container
         if mode == QueryMode.DEFAULT:
-            query_kwargs["ref_doc_id_column"] = self.ref_doc_id_column
+            query_kwargs["ref_doc_id_column"] = self._ref_doc_id_column
 
     @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "BaseGPTIndex":
