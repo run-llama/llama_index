@@ -11,11 +11,10 @@ from gpt_index.vector_stores.types import (
 
 
 class OpensearchVectorClient:
-    """
-    Object encapsulating an Opensearch index that has vector search enabled.
+    """Object encapsulating an Opensearch index that has vector search enabled.
 
     If the index does not yet exist, it is created during init.
-    Therefore, The underlying index is assumed to either:
+    Therefore, the underlying index is assumed to either:
     1) not exist yet or 2) be created due to previous usage of this class.
 
     Args:
@@ -28,12 +27,9 @@ class OpensearchVectorClient:
         method (Optional[dict]): Opensearch "method" JSON obj for configuring
             the KNN index.
             This includes engine, metric, and other config params. Defaults to:
-                {
-                    "name": "hnsw",
-                    "space_type": "l2",
-                    "engine": "faiss",
-                    "parameters": {"ef_construction": 256, "m": 48}
-                }
+            {"name": "hnsw", "space_type": "l2", "engine": "faiss",
+            "parameters": {"ef_construction": 256, "m": 48}}
+
     """
 
     def __init__(
