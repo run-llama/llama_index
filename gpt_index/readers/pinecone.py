@@ -19,7 +19,7 @@ class PineconeReader(BaseReader):
         try:
             import pinecone  # noqa: F401
         except ImportError:
-            raise ImportError(
+            raise ValueError(
                 "`pinecone` package not found, please run `pip install pinecone-client`"
             )
 

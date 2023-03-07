@@ -41,7 +41,7 @@ class TwitterTweetReader(BaseReader):
         try:
             import tweepy
         except ImportError:
-            raise ImportError(
+            raise ValueError(
                 "`tweepy` package not found, please run `pip install tweepy`"
             )
 

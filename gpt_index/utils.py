@@ -36,17 +36,11 @@ class GlobalsHelper:
                 try:
                     import tiktoken
                 except ImportError:
-                    raise ImportError(tiktoken_import_err)
+                    raise ValueError(tiktoken_import_err)
                 enc = tiktoken.get_encoding("gpt2")
                 self._tokenizer = cast(Callable[[str], List], enc.encode)
             else:
-                try:
-                    import transformers
-                except ImportError:
-                    raise ImportError(
-                        "`transformers` package not found, "
-                        "please run `pip install transformers`"
-                    )
+                import transformers
 
                 tokenizer = transformers.GPT2TokenizerFast.from_pretrained("gpt2")
 
@@ -63,7 +57,7 @@ class GlobalsHelper:
             try:
                 from nltk.corpus import stopwords
             except ImportError:
-                raise ImportError(
+                raise ValueError(
                     "`nltk` package not found, please run `pip install nltk`"
                 )
             nltk.download("stopwords")

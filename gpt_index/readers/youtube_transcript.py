@@ -22,7 +22,7 @@ class YoutubeTranscriptReader(BaseReader):
         try:
             from youtube_transcript_api import YouTubeTranscriptApi
         except ImportError:
-            raise ImportError(
+            raise ValueError(
                 "`youtube_transcript_api` package not found, \
                     please run `pip install youtube-transcript-api`"
             )

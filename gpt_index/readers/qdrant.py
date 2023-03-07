@@ -46,7 +46,7 @@ class QdrantReader(BaseReader):
         try:
             import qdrant_client  # noqa: F401
         except ImportError:
-            raise ImportError(import_err_msg)
+            raise ValueError(import_err_msg)
 
         self._client = qdrant_client.QdrantClient(
             url=host,

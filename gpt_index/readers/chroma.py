@@ -31,7 +31,7 @@ class ChromaReader(BaseReader):
         try:
             import chromadb  # noqa: F401
         except ImportError:
-            raise ImportError(import_err_msg)
+            raise ValueError(import_err_msg)
 
         if collection_name is None:
             raise ValueError("Please provide a collection name.")

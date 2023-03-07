@@ -3,6 +3,7 @@
 import re
 from typing import Optional, Set
 
+import nltk
 import pandas as pd
 
 from gpt_index.indices.utils import expand_tokens_with_subtokens
@@ -27,12 +28,7 @@ def rake_extract_keywords(
     expand_with_subtokens: bool = True,
 ) -> Set[str]:
     """Extract keywords with RAKE."""
-    try:
-        import nltk
-
-        nltk.download("punkt")
-    except ImportError:
-        raise ImportError("Please install nltk: `pip install nltk`")
+    nltk.download("punkt")
     try:
         from rake_nltk import Rake
     except ImportError:
