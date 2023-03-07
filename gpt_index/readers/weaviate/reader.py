@@ -30,7 +30,7 @@ class WeaviateReader(BaseReader):
             from weaviate import Client  # noqa: F401
             from weaviate.auth import AuthCredentials  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`weaviate` package not found, please run `pip install weaviate-client`"
             )
 
