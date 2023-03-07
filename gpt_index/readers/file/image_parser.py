@@ -23,20 +23,28 @@ class ImageParser(BaseParser):
         try:
             import torch  # noqa: F401
         except ImportError:
-            raise ValueError("install pytorch to use the model")
+            raise ImportError(
+                "install pytorch to use the model: " "`pip install torch`"
+            )
         try:
             from transformers import DonutProcessor, VisionEncoderDecoderModel
         except ImportError:
-            raise ValueError("transformers is required for using DONUT model.")
+            raise ImportError(
+                "transformers is required for using DONUT model: "
+                "`pip install transformers`"
+            )
         try:
             import sentencepiece  # noqa: F401
         except ImportError:
-            raise ValueError("sentencepiece is required for using DONUT model.")
+            raise ImportError(
+                "sentencepiece is required for using DONUT model: "
+                "`pip install sentencepiece`"
+            )
         try:
             from PIL import Image  # noqa: F401
         except ImportError:
-            raise ValueError(
-                "PIL is required to read image files." "Please run `pip install Pillow`"
+            raise ImportError(
+                "PIL is required to read image files: " "`pip install Pillow`"
             )
 
         processor = DonutProcessor.from_pretrained(

@@ -24,7 +24,7 @@ class SimpleWebPageReader(BaseReader):
         try:
             import html2text  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`html2text` package not found, please run `pip install html2text`"
             )
         self._html_to_text = html_to_text
@@ -72,7 +72,7 @@ class TrafilaturaWebReader(BaseReader):
         try:
             import trafilatura  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`trafilatura` package not found, please run `pip install trafilatura`"
             )
 
@@ -146,7 +146,7 @@ class BeautifulSoupWebReader(BaseReader):
             import requests  # noqa: F401
             from bs4 import BeautifulSoup  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`bs4`, `requests`, and `urllib` must be installed to scrape websites."
                 "Please run `pip install bs4 requests urllib`."
             )
@@ -214,7 +214,7 @@ class RssReader(BaseReader):
         try:
             import feedparser  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "`feedparser` package not found, please run `pip install feedparser`"
             )
 
@@ -222,7 +222,7 @@ class RssReader(BaseReader):
             try:
                 import html2text  # noqa: F401
             except ImportError:
-                raise ValueError(
+                raise ImportError(
                     "`html2text` package not found, please run `pip install html2text`"
                 )
         self._html_to_text = html_to_text

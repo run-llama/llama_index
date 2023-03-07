@@ -47,7 +47,7 @@ class WeaviateVectorStore(VectorStore):
             import weaviate  # noqa: F401
             from weaviate import Client  # noqa: F401
         except ImportError:
-            raise ValueError(import_err_msg)
+            raise ImportError(import_err_msg)
 
         self._client = cast(Client, weaviate_client)
         # validate class prefix starts with a capital letter
