@@ -42,6 +42,7 @@ def test_docstore() -> None:
             "index": 0,
             "child_indices": [],
             "ref_doc_id": None,
+            "ref_doc_hash": None,
             "__type__": "node",
         },
     }
