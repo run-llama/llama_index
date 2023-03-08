@@ -16,6 +16,7 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 
 # structured
 from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
+from gpt_index.indices.empty import GPTEmptyIndex
 
 # indices
 from gpt_index.indices.keyword_table import (
@@ -24,7 +25,6 @@ from gpt_index.indices.keyword_table import (
     GPTSimpleKeywordTableIndex,
 )
 from gpt_index.indices.list import GPTListIndex
-from gpt_index.indices.empty import GPTEmptyIndex
 
 # prompt helper
 from gpt_index.indices.prompt_helper import PromptHelper
