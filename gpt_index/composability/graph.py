@@ -9,6 +9,7 @@ from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.empty.base import GPTEmptyIndex
 from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.list.base import GPTListIndex
@@ -50,6 +51,7 @@ DEFAULT_INDEX_REGISTRY_MAP: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.VECTOR_STORE: GPTVectorStoreIndex,
     IndexStructType.SQL: GPTSQLStructStoreIndex,
     IndexStructType.KG: GPTKnowledgeGraphIndex,
+    IndexStructType.EMPTY: GPTEmptyIndex,
 }
 
 

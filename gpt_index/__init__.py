@@ -16,6 +16,7 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 
 # structured
 from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
+from gpt_index.indices.empty import GPTEmptyIndex
 
 # indices
 from gpt_index.indices.keyword_table import (
@@ -102,6 +103,7 @@ __all__ = [
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
     "GPTListIndex",
+    "GPTEmptyIndex",
     "GPTTreeIndex",
     "GPTFaissIndex",
     "GPTPineconeIndex",
