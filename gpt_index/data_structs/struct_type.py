@@ -63,3 +63,6 @@ class IndexStructType(str, Enum):
     SQL = "sql"
     # for KG index
     KG = "kg"
+
+    # EMPTY
+    EMPTY = "empty"

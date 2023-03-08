@@ -244,3 +244,18 @@ class KnowledgeGraphPrompt(Prompt):
 
     prompt_type: PromptType = PromptType.KNOWLEDGE_TRIPLET_EXTRACT
     input_variables: List[str] = ["max_knowledge_triplets", "text"]
+
+
+class SimpleInputPrompt(Prompt):
+    """Simple Input prompt.
+
+    Required template variables: `query_str`.
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+
+    prompt_type: PromptType = PromptType.SIMPLE_INPUT
+    input_variables: List[str] = ["query_str"]

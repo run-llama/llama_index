@@ -50,6 +50,7 @@ DEFAULT_INDEX_REGISTRY_MAP: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.VECTOR_STORE: GPTVectorStoreIndex,
     IndexStructType.SQL: GPTSQLStructStoreIndex,
     IndexStructType.KG: GPTKnowledgeGraphIndex,
+    IndexStructType.EMPTY: GPTEmptyIndex,
 }
 
 
