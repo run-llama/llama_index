@@ -327,7 +327,7 @@ class BaseGPTIndex(Generic[IS]):
 
     @abstractmethod
     def _find_matching_hash(self, doc_id: str) -> Optional[str]:
-        """Returns the ref_doc_hash from the first matching node."""
+        """Return the ref_doc_hash from the first matching node."""
 
     def refresh(
         self, documents: List[BaseDocument], **update_kwargs: Any

@@ -161,7 +161,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         raise NotImplementedError("Delete is not supported for KG index yet.")
 
     def _find_matching_hash(self, doc_id: str) -> Optional[str]:
-        """Returns the ref_doc_hash from the first matching node."""
+        """Return the ref_doc_hash from the first matching node."""
         raise NotImplementedError("Delete is not supported for KG index yet.")
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:

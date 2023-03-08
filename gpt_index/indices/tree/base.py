@@ -145,5 +145,5 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         raise NotImplementedError("Delete not implemented for tree index.")
 
     def _find_matching_hash(self, doc_id: str) -> Optional[str]:
-        """Returns the ref_doc_hash from the first matching node."""
+        """Return the ref_doc_hash from the first matching node."""
         raise NotImplementedError("Delete is not supported for KG index yet.")

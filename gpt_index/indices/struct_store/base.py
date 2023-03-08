@@ -72,5 +72,5 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         raise NotImplementedError("Delete not implemented for Struct Store Index.")
 
     def _find_matching_hash(self, doc_id: str) -> Optional[str]:
-        """Returns the ref_doc_hash from the first matching node."""
+        """Return the ref_doc_hash from the first matching node."""
         raise NotImplementedError("Delete is not supported for KG index yet.")

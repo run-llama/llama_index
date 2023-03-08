@@ -216,7 +216,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self._vector_store.delete(doc_id)
 
     def _find_matching_hash(self, doc_id: str) -> Optional[str]:
-        """Returns the ref_doc_hash from the first matching node."""
+        """Return the ref_doc_hash from the first matching node."""
         for node in self._index_struct.nodes_dict.values():
             if node.ref_doc_id == doc_id:
                 return node.ref_doc_hash
