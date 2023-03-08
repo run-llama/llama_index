@@ -24,6 +24,7 @@ from gpt_index.indices.keyword_table import (
     GPTSimpleKeywordTableIndex,
 )
 from gpt_index.indices.list import GPTListIndex
+from gpt_index.indices.empty import GPTEmptyIndex
 
 # prompt helper
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -102,6 +103,7 @@ __all__ = [
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
     "GPTListIndex",
+    "GPTEmptyIndex",
     "GPTTreeIndex",
     "GPTFaissIndex",
     "GPTPineconeIndex",
