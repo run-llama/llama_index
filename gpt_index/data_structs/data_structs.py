@@ -380,3 +380,12 @@ class OpensearchIndexDict(IndexDict):
     def get_type(cls) -> str:
         """Get type."""
         return IndexStructType.OPENSEARCH
+
+
+class EmptyIndex(IndexStruct):
+    """Empty index."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.EMPTY
