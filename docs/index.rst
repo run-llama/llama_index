@@ -96,6 +96,7 @@ At the core of LlamaIndex is a **data structure**. Instead of relying on world k
    reference/response.rst
    reference/playground.rst
    reference/example_notebooks.rst
+   reference/langchain_integrations/base.rst
 
 
 .. toctree::
