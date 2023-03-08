@@ -177,6 +177,14 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         for keyword in keywords_to_delete:
             del self._index_struct.table[keyword]
 
+    def _find_matching_hash(self, doc_id: str) -> Optional[str]:
+        """Returns the ref_doc_hash from the first matching node."""
+        for node in self._index_struct.text_chunks.values():
+            if node.ref_doc_id == doc_id:
+                return node.ref_doc_hash
+
+        return None
+
 
 class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
     """GPT Keyword Table Index.

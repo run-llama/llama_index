@@ -104,3 +104,11 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         cur_nodes = self._index_struct.nodes
         nodes_to_keep = [n for n in cur_nodes if n.ref_doc_id != doc_id]
         self._index_struct.nodes = nodes_to_keep
+
+    def _find_matching_hash(self, doc_id: str) -> Optional[str]:
+        """Returns the ref_doc_hash from the first matching node."""
+        for node in self._index_struct.nodes:
+            if node.ref_doc_id == doc_id:
+                return node.ref_doc_hash
+
+        return None

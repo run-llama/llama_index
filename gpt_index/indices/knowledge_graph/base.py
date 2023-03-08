@@ -131,7 +131,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                         )
 
                     embed_outputs = self._embed_model.get_queued_text_embeddings()
-                    for (rel_text, rel_embed) in zip(*embed_outputs):
+                    for rel_text, rel_embed in zip(*embed_outputs):
                         index_struct.add_to_embedding_dict(rel_text, rel_embed)
 
         return index_struct
@@ -158,6 +158,10 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
+        raise NotImplementedError("Delete is not supported for KG index yet.")
+
+    def _find_matching_hash(self, doc_id: str) -> Optional[str]:
+        """Returns the ref_doc_hash from the first matching node."""
         raise NotImplementedError("Delete is not supported for KG index yet.")
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:

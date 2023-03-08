@@ -325,6 +325,31 @@ class BaseGPTIndex(Generic[IS]):
         self.delete(document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {}))
         self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
 
+    @abstractmethod
+    def _find_matching_hash(self, doc_id: str) -> Optional[str]:
+        """Returns the ref_doc_hash from the first matching node."""
+
+    def refresh(
+        self, documents: Sequence[DOCUMENTS_INPUT], **update_kwargs: Any
+    ) -> List[bool]:
+        """Refresh an index with documents that have changed.
+
+        This allows users to save LLM and Embedding model calls, while only updating documents
+        that have any changes in text or extra_info. It will also insert any documents that
+        previously were not stored.
+        """
+        refreshed_documents = [False] * len(documents)
+        for i, document in enumerate(documents):
+            existing_doc_hash = self._find_matching_hash(document.get_doc_id())
+            if existing_doc_hash != document.get_doc_hash():
+                self.update(document, **update_kwargs)
+                refreshed_documents[i] = True
+            elif existing_doc_hash is None:
+                self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+                refreshed_documents[i] = True
+
+        return refreshed_documents
+
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
         """Preprocess query.
 

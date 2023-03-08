@@ -68,6 +68,7 @@ def get_nodes_from_document(
             text=text_chunk,
             index=start_idx + i,
             ref_doc_id=document.get_doc_id(),
+            ref_doc_hash=document.get_doc_hash(),
             embedding=document.embedding,
             extra_info=document.extra_info if include_extra_info else None,
             node_info=index_pos_info,

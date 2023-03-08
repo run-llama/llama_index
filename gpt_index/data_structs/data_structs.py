@@ -53,6 +53,9 @@ class Node(IndexStruct):
     # reference document id
     ref_doc_id: Optional[str] = None
 
+    # reference document hash
+    ref_doc_hash: Optional[str] = None
+
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
 
