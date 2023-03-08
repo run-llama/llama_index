@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import patch
 
 import pytest
+import asyncio
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.list.base import GPTListIndex
@@ -366,3 +367,28 @@ def test_to_from_string(
     assert new_list_index.index_struct.nodes[1].text == "This is a test."
     assert new_list_index.index_struct.nodes[2].text == "This is another test."
     assert new_list_index.index_struct.nodes[3].text == "This is a test v2."
+
+
+@patch_common
+def test_async_query(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test list async query."""
+    index_kwargs, query_kwargs = struct_kwargs
+    index = GPTListIndex(documents, **index_kwargs)
+
+    query_str = "What is?"
+    task = index.aquery(query_str, mode="default", **query_kwargs)
+    response = asyncio.run(task)
+    assert str(response) == ("What is?:Hello world.")
+    node_info = (
+        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+    )
+    assert node_info["start"] == 0
+    assert node_info["end"] == 12
