@@ -67,11 +67,6 @@ class BaseDocument(DataClassJsonMixin):
         return self.doc_hash
 
     @property
-    def is_doc_hash_matching(self, other_doc_hash):
-        """Check if external doc_hash matches this document."""
-        return self.doc_hash == other_doc_hash
-
-    @property
     def is_doc_id_none(self) -> bool:
         """Check if doc_id is None."""
         return self.doc_id is None
