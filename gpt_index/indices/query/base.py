@@ -222,6 +222,15 @@ class BaseGPTIndexQuery(Generic[IS]):
         )
         return response
 
+    async def _agive_response_for_nodes(self, query_str: str) -> RESPONSE_TEXT_TYPE:
+        """Give response for nodes."""
+        response = await self.response_builder.aget_response(
+            query_str,
+            mode=self._response_mode,
+            **self._response_kwargs,
+        )
+        return response
+
     def get_nodes_and_similarities_for_response(
         self, query_bundle: QueryBundle
     ) -> List[Tuple[Node, Optional[float]]]:
@@ -257,26 +266,29 @@ class BaseGPTIndexQuery(Generic[IS]):
         """Get extra info for response."""
         return None
 
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Answer a query."""
-        self.response_builder.reset()
-        # TODO: remove _query and just use query
-        tuples = self.get_nodes_and_similarities_for_response(query_bundle)
-
+    def _prepare_response_builder(
+        self,
+        response_builder: ResponseBuilder,
+        query_bundle: QueryBundle,
+        tuples: List[Tuple[Node, Optional[float]]],
+    ) -> None:
+        """Prepare response builder and return values for query time."""
+        response_builder.reset()
         for node, similarity in tuples:
             text, response = self._get_text_from_node(query_bundle, node)
-            self.response_builder.add_node_as_source(node, similarity=similarity)
+            response_builder.add_node_as_source(node, similarity=similarity)
             if response is not None:
                 # these are source nodes from within this node (when it's an index)
                 for source_node in response.source_nodes:
-                    self.response_builder.add_source_node(source_node)
-            self.response_builder.add_text_chunks([text])
+                    response_builder.add_source_node(source_node)
+            response_builder.add_text_chunks([text])
 
-        if self._response_mode != ResponseMode.NO_TEXT:
-            response_str = self._give_response_for_nodes(query_bundle.query_str)
-        else:
-            response_str = None
-
+    def _prepare_response_output(
+        self,
+        response_str: Optional[RESPONSE_TEXT_TYPE],
+        tuples: List[Tuple[Node, Optional[float]]],
+    ) -> RESPONSE_TYPE:
+        """Prepare response object from response string."""
         response_extra_info = self._get_extra_info_for_response(
             [node for node, _ in tuples]
         )
@@ -295,6 +307,36 @@ class BaseGPTIndexQuery(Generic[IS]):
             )
         else:
             raise ValueError("Response must be a string or a generator.")
+
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Answer a query."""
+        # TODO: remove _query and just use query
+        tuples = self.get_nodes_and_similarities_for_response(query_bundle)
+
+        # prepare response builder
+        self._prepare_response_builder(self.response_builder, query_bundle, tuples)
+
+        if self._response_mode != ResponseMode.NO_TEXT:
+            response_str = self._give_response_for_nodes(query_bundle.query_str)
+        else:
+            response_str = None
+
+        return self._prepare_response_output(response_str, tuples)
+
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Answer a query asynchronously."""
+        # TODO: remove _query and just use query
+        tuples = self.get_nodes_and_similarities_for_response(query_bundle)
+
+        # prepare response builder
+        self._prepare_response_builder(self.response_builder, query_bundle, tuples)
+
+        if self._response_mode != ResponseMode.NO_TEXT:
+            response_str = await self._agive_response_for_nodes(query_bundle.query_str)
+        else:
+            response_str = None
+
+        return self._prepare_response_output(response_str, tuples)
 
     @llm_token_counter("query")
     def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
@@ -322,6 +364,42 @@ class BaseGPTIndexQuery(Generic[IS]):
                 response.response = cast(str, response_str)
             elif isinstance(response, StreamingResponse):
                 response_gen = response_builder.get_response(
+                    query_bundle.query_str,
+                    mode=self._response_mode,
+                    prev_response=str(response.response_gen),
+                )
+                response.response_gen = cast(Generator, response_gen)
+            else:
+                raise ValueError("Response must be a string or a generator.")
+
+        return response
+
+    @llm_token_counter("query")
+    async def aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Answer a query."""
+        response = await self._aquery(query_bundle)
+        # if include_summary is True, then include summary text in answer
+        # summary text is set through `set_text` on the underlying index.
+        # TODO: refactor response builder to be in the __init__
+        if self._response_mode != ResponseMode.NO_TEXT and self._include_summary:
+            response_builder = ResponseBuilder(
+                self._prompt_helper,
+                self._llm_predictor,
+                self.text_qa_template,
+                self.refine_template,
+                texts=[TextChunk(self._index_struct.get_text())],
+                streaming=self._streaming,
+            )
+            if isinstance(response, Response):
+                # NOTE: use create and refine for now (default response mode)
+                response_str = await response_builder.aget_response(
+                    query_bundle.query_str,
+                    mode=self._response_mode,
+                    prev_response=response.response,
+                )
+                response.response = cast(str, response_str)
+            elif isinstance(response, StreamingResponse):
+                response_gen = await response_builder.aget_response(
                     query_bundle.query_str,
                     mode=self._response_mode,
                     prev_response=str(response.response_gen),

@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import patch
+from copy import deepcopy
 
 import pytest
 
@@ -383,8 +384,22 @@ def test_async_query(
     index_kwargs, query_kwargs = struct_kwargs
     index = GPTListIndex(documents, **index_kwargs)
 
+    # test default query mode.
     query_str = "What is?"
     task = index.aquery(query_str, mode="default", **query_kwargs)
+    response = asyncio.run(task)
+    assert str(response) == ("What is?:Hello world.")
+    node_info = (
+        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+    )
+    assert node_info["start"] == 0
+    assert node_info["end"] == 12
+
+    # test tree_summarize mode
+    query_str = "What is?"
+    query_kwargs_copy = deepcopy(query_kwargs)
+    query_kwargs_copy["tree_summarize"] = True
+    task = index.aquery(query_str, mode="default", **query_kwargs_copy)
     response = asyncio.run(task)
     assert str(response) == ("What is?:Hello world.")
     node_info = (

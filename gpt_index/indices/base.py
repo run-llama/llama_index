@@ -435,7 +435,7 @@ class BaseGPTIndex(Generic[IS]):
                 recursive=True,
                 use_async=use_async,
             )
-            return query_runner.query(query_str, self._index_struct)
+            await query_runner.aquery(query_str, self._index_struct)
         else:
             self._preprocess_query(mode_enum, query_kwargs)
             # TODO: pass in query config directly
@@ -455,7 +455,7 @@ class BaseGPTIndex(Generic[IS]):
                 recursive=False,
                 use_async=use_async,
             )
-            return query_runner.query(query_str, self._index_struct)
+            await query_runner.aquery(query_str, self._index_struct)
 
     @classmethod
     @abstractmethod
