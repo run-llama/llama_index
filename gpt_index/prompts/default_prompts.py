@@ -8,13 +8,13 @@ from gpt_index.prompts.prompts import (
     RefinePrompt,
     RefineTableContextPrompt,
     SchemaExtractPrompt,
+    SimpleInputPrompt,
     SummaryPrompt,
     TableContextPrompt,
     TextToSQLPrompt,
     TreeInsertPrompt,
     TreeSelectMultiplePrompt,
     TreeSelectPrompt,
-    SimpleInputPrompt,
 )
 
 ############################################
