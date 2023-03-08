@@ -112,6 +112,13 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
     return response, formatted_prompt
 
 
+async def mock_llmpredictor_apredict(
+    prompt: Prompt, **prompt_args: Any
+) -> Tuple[str, str]:
+    """Mock apredict method of LLMPredictor."""
+    return mock_llmpredictor_predict(prompt, **prompt_args)
+
+
 def mock_llmchain_predict(**full_prompt_args: Any) -> str:
     """Mock LLMChain predict with a generic response."""
     return "generic response from LLMChain.predict()"
