@@ -1,5 +1,6 @@
 """Test recursive queries."""
 
+import asyncio
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Tuple, cast
@@ -542,3 +543,52 @@ def test_recursive_query_vector_table_query_configs(
         # cast to Any to avoid mypy error
         response = graph.query(query_str, query_configs=cast(Any, query_configs))
         assert str(response) == ("Orange?:Hello world.")
+
+
+@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
+@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_recursive_query_vector_table_async(
+    _mock_query_embed: Any,
+    _mock_get_text_embeds: Any,
+    _mock_get_text_embed: Any,
+    _mock_init: Any,
+    _mock_total_tokens_used: Any,
+    _mock_predict: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test async query of table index over vector indices."""
+    index_kwargs, query_configs = struct_kwargs
+    list_kwargs = index_kwargs["list"]
+    table_kwargs = index_kwargs["table"]
+    # try building a tree for a group of 4, then a list
+    # use a diff set of documents
+    # try building a list for every two, then a tree
+    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
+    list1.set_text("foo bar")
+    list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
+    list2.set_text("apple orange")
+    list3 = GPTSimpleVectorIndex(documents[4:6], **list_kwargs)
+    list3.set_text("toronto london")
+    list4 = GPTSimpleVectorIndex(documents[6:8], **list_kwargs)
+    list4.set_text("cat dog")
+
+    table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
+    graph = ComposableGraph.build_from_index(table)
+
+    query_str = "Cat?"
+    task = graph.aquery(query_str, query_configs=query_configs)
+    response = asyncio.run(task)
+    assert str(response) == ("Cat?:This is a test v2.")

@@ -394,6 +394,69 @@ class BaseGPTIndex(Generic[IS]):
             )
             return query_runner.query(query_str, self._index_struct)
 
+    async def aquery(
+        self,
+        query_str: Union[str, QueryBundle],
+        mode: str = QueryMode.DEFAULT,
+        query_transform: Optional[BaseQueryTransform] = None,
+        **query_kwargs: Any,
+    ) -> Response:
+        """Asynchronously answer a query.
+
+        When `query` is called, we query the index with the given `mode` and
+        `query_kwargs`. The `mode` determines the type of query to run, and
+        `query_kwargs` are parameters that are specific to the query type.
+
+        For a comprehensive documentation of available `mode` and `query_kwargs` to
+        query a given index, please visit :ref:`Ref-Query`.
+
+
+        """
+        # TODO: currently we don't have async versions of all
+        # underlying functions. Setting use_async=True
+        # will cause async nesting errors because we assume
+        # it's called in a synchronous setting.
+        use_async = False
+
+        mode_enum = QueryMode(mode)
+        if mode_enum == QueryMode.RECURSIVE:
+            # TODO: deprecated, use ComposableGraph instead.
+            if "query_configs" not in query_kwargs:
+                raise ValueError("query_configs must be provided for recursive mode.")
+            query_configs = query_kwargs["query_configs"]
+            query_runner = QueryRunner(
+                self._llm_predictor,
+                self._prompt_helper,
+                self._embed_model,
+                self._docstore,
+                self._index_registry,
+                query_configs=query_configs,
+                query_transform=query_transform,
+                recursive=True,
+                use_async=use_async,
+            )
+            return await query_runner.aquery(query_str, self._index_struct)
+        else:
+            self._preprocess_query(mode_enum, query_kwargs)
+            # TODO: pass in query config directly
+            query_config = QueryConfig(
+                index_struct_type=self._index_struct.get_type(),
+                query_mode=mode_enum,
+                query_kwargs=query_kwargs,
+            )
+            query_runner = QueryRunner(
+                self._llm_predictor,
+                self._prompt_helper,
+                self._embed_model,
+                self._docstore,
+                self._index_registry,
+                query_configs=[query_config],
+                query_transform=query_transform,
+                recursive=False,
+                use_async=use_async,
+            )
+            return await query_runner.aquery(query_str, self._index_struct)
+
     @classmethod
     @abstractmethod
     def get_query_map(cls) -> Dict[str, Type[BaseGPTIndexQuery]]:

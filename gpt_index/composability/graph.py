@@ -132,6 +132,26 @@ class ComposableGraph:
         )
         return query_runner.query(query_str, self._index_struct)
 
+    async def aquery(
+        self,
+        query_str: Union[str, QueryBundle],
+        query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
+    ) -> Response:
+        """Query the index."""
+        # go over all the indices and create a registry
+        llm_predictor = llm_predictor or self._llm_predictor
+        query_runner = QueryRunner(
+            llm_predictor,
+            self._prompt_helper,
+            self._embed_model,
+            self._docstore,
+            self._index_registry,
+            query_configs=query_configs,
+            recursive=True,
+        )
+        return await query_runner.aquery(query_str, self._index_struct)
+
     def get_index(
         self, index_struct_id: str, index_cls: Type[BaseGPTIndex], **kwargs: Any
     ) -> BaseGPTIndex:
