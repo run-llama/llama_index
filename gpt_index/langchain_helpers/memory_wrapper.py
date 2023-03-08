@@ -2,14 +2,15 @@
 
 from typing import Any, Dict, List, Optional
 
-from langchain.schema import BaseMemory as Memory
 from langchain.memory.chat_memory import BaseChatMemory
+from langchain.schema import AIMessage
+from langchain.schema import BaseMemory as Memory
+from langchain.schema import BaseMessage, HumanMessage
 from pydantic import Field
 
-from gpt_index.utils import get_new_id
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.readers.schema.base import Document
-from langchain.schema import BaseMessage, HumanMessage, AIMessage
+from gpt_index.utils import get_new_id
 
 
 def get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -> str:
@@ -147,7 +148,7 @@ class GPTIndexChatMemory(BaseChatMemory):
                     m for id, m in self.id_to_message.items() if id in source_ids
                 ]
                 # NOTE: type List[BaseMessage]
-                response = source_messages
+                response: Any = source_messages
             else:
                 source_texts = [sn.source_text for sn in source_nodes]
                 response = "\n\n".join(source_texts)
@@ -168,7 +169,7 @@ class GPTIndexChatMemory(BaseChatMemory):
         # a bit different than existing langchain implementation
         # because we want to track id's for messages
         human_message = HumanMessage(content=inputs[prompt_input_key])
-        human_message_id = get_new_id(self.id_to_message.keys())
+        human_message_id = get_new_id(set(self.id_to_message.keys()))
         ai_message = AIMessage(content=outputs[output_key])
         ai_message_id = get_new_id(
             set(self.id_to_message.keys()).union({human_message_id})
