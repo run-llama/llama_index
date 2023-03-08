@@ -37,6 +37,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
 
     """
 
@@ -112,3 +113,10 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
                 return node.ref_doc_hash
 
         return None
+    
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        if "text_qa_template" not in query_kwargs:
+            query_kwargs["text_qa_template"] = self.text_qa_template
+

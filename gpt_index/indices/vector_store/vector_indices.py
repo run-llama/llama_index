@@ -58,6 +58,7 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
 
@@ -128,6 +129,7 @@ class GPTFaissIndex(GPTVectorStoreIndex):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
         faiss_index (faiss.Index): A Faiss Index object (required). Note: the index
             will be reset during index construction.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
@@ -254,6 +256,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
         chunk_size_limit (int): Maximum number of tokens per chunk. NOTE:
@@ -330,6 +333,7 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
     """
@@ -397,6 +401,7 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
         client (Optional[Any]): QdrantClient instance from `qdrant-client` package
@@ -466,6 +471,7 @@ class GPTChromaIndex(GPTVectorStoreIndex):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
         chroma_collection (Optional[Any]): Collection instance from `chromadb` package.
@@ -534,6 +540,7 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
         client (Optional[OpensearchVectorClient]): The client which encapsulates
             logic for using Opensearch as a vector store (that is, it holds stuff
             like endpoint, index_name and performs operations like initializing the
