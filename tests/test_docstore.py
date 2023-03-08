@@ -27,6 +27,7 @@ def test_docstore() -> None:
         "d1": {
             "text": "hello world",
             "doc_id": "d1",
+            "doc_hash": "950fec7ace0281237e5983582c6bb3d76e03cc3931faa695a0fbf039edc69d8c",
             "embedding": None,
             "extra_info": {"foo": "bar"},
             "__type__": "Document",
@@ -34,6 +35,7 @@ def test_docstore() -> None:
         "d2": {
             "text": "my node",
             "doc_id": "d2",
+            "doc_hash": "40d67b32bf21864f2578065c951bb862f99ab0bed0bf527a8680a42b7a027f18",
             "embedding": None,
             "extra_info": None,
             "node_info": {"node": "info"},
