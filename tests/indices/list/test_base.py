@@ -1,11 +1,11 @@
 """Test list index."""
 
 import asyncio
+from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import patch
-from copy import deepcopy
 
 import pytest
 
@@ -17,7 +17,10 @@ from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
 from gpt_index.utils import globals_helper
 from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_predict import mock_llmpredictor_predict
+from tests.mock_utils.mock_predict import (
+    mock_llmpredictor_apredict,
+    mock_llmpredictor_predict,
+)
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 
@@ -371,7 +374,9 @@ def test_to_from_string(
 
 
 @patch_common
+@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_apredict)
 def test_async_query(
+    _mock_async_predict: Any,
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
@@ -398,7 +403,7 @@ def test_async_query(
     # test tree_summarize mode
     query_str = "What is?"
     query_kwargs_copy = deepcopy(query_kwargs)
-    query_kwargs_copy["tree_summarize"] = True
+    query_kwargs_copy["response_mode"] = "tree_summarize"
     task = index.aquery(query_str, mode="default", **query_kwargs_copy)
     response = asyncio.run(task)
     assert str(response) == ("What is?:Hello world.")
