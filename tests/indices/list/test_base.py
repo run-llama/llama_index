@@ -1,12 +1,12 @@
 """Test list index."""
 
+import asyncio
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import patch
 
 import pytest
-import asyncio
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.list.base import GPTListIndex
