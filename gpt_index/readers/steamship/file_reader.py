@@ -8,19 +8,18 @@ from gpt_index.readers.schema.base import Document
 class SteamshipFileReader(BaseReader):
     """Reads persistent Steamship Files and converts them to Documents.
 
+    Args:
+        api_key: Steamship API key. Defaults to STEAMSHIP_API_KEY value if not provided.
+
     Note:
         Requires install of `steamship` package and an active Steamship API Key.
         To get a Steamship API Key, visit: https://steamship.com/account/api.
         Once you have an API Key, expose it via an environment variable named
-        `STEAMSHIP_API_KEY`, or pass it as an init argument (`api_key`).
+        `STEAMSHIP_API_KEY` or pass it as an init argument (`api_key`).
     """
 
     def __init__(self, api_key: Optional[str] = None) -> None:
-        """Initialize the Reader.
-
-        Args:
-            api_key: Steamship API key. Defaults to STEAMSHIP_API_KEY if not provided.
-        """
+        """Initialize the Reader."""
         try:
             import steamship  # noqa: F401
 
