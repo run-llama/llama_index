@@ -62,7 +62,6 @@ class SteamshipFileReader(BaseReader):
         from steamship import File, Steamship
 
         client = Steamship(workspace=workspace, api_key=self.api_key)
-        print(client)
         files = []
         if query:
             files_from_query = File.query(client=client, tag_filter_query=query).files
