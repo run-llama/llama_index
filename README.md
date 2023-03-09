@@ -27,26 +27,28 @@ LlamaHub (community library of data loaders): https://llamahub.ai
 
 **NOTE**: This README is not updated as frequently as the documentation. Please check out the documentation above for the latest updates!
 
-#### Context
-- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning.
-- A big limitation of LLMs is context size (e.g. Davinci's limit is 4096 tokens. Large, but not infinite).
-- The ability to feed "knowledge" to LLMs is restricted to this limited prompt size and model weights.
+### Context
+- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. They are pre-trained on large amounts of publicly available data.
+- How do we best augment LLMs with our own private data?
+- One paradigm that has emerged is *in-context* learning (the other is finetuning), where we insert context into the input prompt. That way,
+we take advantage of the LLM's reasoning capabilities to generate a response.
 
-#### Proposed Solution
+To perform LLM's data augmentation in a performant, efficient, and cheap manner, we need to solve two components:
+- Data Ingestion
+- Data Indexing
 
-At its core, LlamaIndex contains a toolkit designed to easily connect LLM's with your external data.
-LlamaIndex helps to provide the following:
-- A set of **data structures** that allow you to index your data for various LLM tasks, and remove concerns over prompt size limitations.
-- Data connectors to your common data sources (Google Docs, Slack, etc.).
-- Cost transparency + tools that reduce cost while increasing performance.
+### Proposed Solution
 
+That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible interface between your external data and LLMs. It provides the following tools in an easy-to-use fashion:
 
-Each data structure offers distinct use cases and a variety of customizable parameters. These indices can then be 
-*queried* in a general purpose manner, in order to achieve any task that you would typically achieve with an LLM:
-- Question-Answering
-- Summarization
-- Text Generation (Stories, TODO's, emails, etc.)
-- and more!
+- Offers **data connectors** to your existing data sources and data formats (API's, PDF's, docs, SQL, etc.)
+- Provides **indices** over your unstructured and structured data for use with LLM's. 
+These indices help to abstract away common boilerplate and pain points for in-context learning:
+   - Storing context in an easy-to-access format for prompt insertion.
+   - Dealing with prompt limitations (e.g. 4096 tokens for Davinci) when context is too big.
+   - Dealing with text splitting.
+- Provides users an interface to **query** the index (feed in an input prompt) and obtain a knowledge-augmented output.
+- Offers you a comprehensive toolset trading off cost and performance.
 
 
 ## 💡 Contributing
