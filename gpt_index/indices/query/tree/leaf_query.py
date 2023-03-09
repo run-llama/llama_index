@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, cast
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
+from gpt_index.indices.response.builder import ResponseBuilder
 from gpt_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
@@ -90,11 +90,6 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                 # these are source nodes from within this node (when it's an index)
                 for source_node in sub_response.source_nodes:
                     self.response_builder.add_source_node(source_node)
-            # Add optimizer
-            if self._optimizer is not None:
-                node_text = TextChunk(
-                    text=self._optimizer.optimize(query_bundle, node_text.text)
-                )
             cur_response = response_builder.get_response_over_chunks(
                 query_str, [node_text], prev_response=prev_response
             )
