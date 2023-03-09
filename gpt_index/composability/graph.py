@@ -9,6 +9,7 @@ from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.empty.base import GPTEmptyIndex
 from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.list.base import GPTListIndex
@@ -50,6 +51,7 @@ DEFAULT_INDEX_REGISTRY_MAP: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.VECTOR_STORE: GPTVectorStoreIndex,
     IndexStructType.SQL: GPTSQLStructStoreIndex,
     IndexStructType.KG: GPTKnowledgeGraphIndex,
+    IndexStructType.EMPTY: GPTEmptyIndex,
 }
 
 
@@ -129,6 +131,26 @@ class ComposableGraph:
             recursive=True,
         )
         return query_runner.query(query_str, self._index_struct)
+
+    async def aquery(
+        self,
+        query_str: Union[str, QueryBundle],
+        query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
+    ) -> Response:
+        """Query the index."""
+        # go over all the indices and create a registry
+        llm_predictor = llm_predictor or self._llm_predictor
+        query_runner = QueryRunner(
+            llm_predictor,
+            self._prompt_helper,
+            self._embed_model,
+            self._docstore,
+            self._index_registry,
+            query_configs=query_configs,
+            recursive=True,
+        )
+        return await query_runner.aquery(query_str, self._index_struct)
 
     def get_index(
         self, index_struct_id: str, index_cls: Type[BaseGPTIndex], **kwargs: Any
