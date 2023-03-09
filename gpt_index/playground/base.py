@@ -11,7 +11,6 @@ from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store import GPTSimpleVectorIndex
-from gpt_index.optimization.optimizer import SentenceEmbeddingOptimizer
 from gpt_index.readers.schema.base import Document
 
 DEFAULT_INDEX_CLASSES = [GPTSimpleVectorIndex, GPTTreeIndex, GPTListIndex]
@@ -137,63 +136,6 @@ class Playground:
                         "Duration": duration,
                         "LLM Tokens": index.llm_predictor.last_token_usage,
                         "Embedding Tokens": index.embed_model.last_token_usage,
-                    }
-                )
-        print(f"\nRan {len(result)} combinations in total.")
-
-        if to_pandas:
-            return pd.DataFrame(result)
-        else:
-            return result
-
-    def compare_with_optimizer(
-        self, query_text: str, to_pandas: Optional[bool] = True
-    ) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
-        """Compare index outputs on an input query.
-
-        Args:
-            query_text (str): Query to run all indices on.
-            to_pandas (Optional[bool]): Return results in a pandas dataframe.
-                True by default.
-
-        Returns:
-            The output of each index along with other data, such as the time it took to
-            compute. Results are stored in a Pandas Dataframe or a list of Dicts.
-        """
-        print(f"\033[1mQuery:\033[0m\n{query_text}\n")
-        print(f"Trying {len(self._indices) * len(self._modes)} combinations...\n\n")
-        result = []
-        for i, index in enumerate(self._indices):
-            for mode in self._modes:
-                if mode not in index.get_query_map():
-                    continue
-
-                index_name = type(index).__name__
-                print_text(f"\033[1m{index_name}\033[0m, mode = {mode}", end="\n")
-                start_time = time.time()
-                optimizer = SentenceEmbeddingOptimizer(
-                    percentile_cutoff=0.5,
-                    # this means that the top 50% of sentences will be used.
-                    # Alternatively, you can set the cutoff using a threshold
-                    # on the similarity score. In this case only setences with a
-                    # similarity score higher than the threshold will be used.
-                    # threshold_cutoff=0.7
-                    # these cutoffs can also be used together.
-                )
-
-                output = index.query(query_text, mode=mode, optimizer=optimizer)
-                duration = time.time() - start_time
-                print_text(str(output), color=self.index_colors[str(i)], end="\n\n")
-                result.append(
-                    {
-                        "Index": index_name,
-                        "Mode": mode,
-                        "Output": str(output),
-                        "Duration": duration,
-                        "LLM Tokens": index.llm_predictor.last_token_usage,
-                        "Embedding Tokens": index.embed_model.last_token_usage,
-                        # this is ok because a new embed_model is initialized for each run.
-                        "Optimizer Embedding Tokens": optimizer.embed_model.total_tokens_used,
                     }
                 )
         print(f"\nRan {len(result)} combinations in total.")
