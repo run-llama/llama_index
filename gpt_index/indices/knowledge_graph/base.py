@@ -160,10 +160,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         """Delete a document."""
         raise NotImplementedError("Delete is not supported for KG index yet.")
 
-    def _find_matching_hash(self, doc_id: str) -> Optional[str]:
-        """Return the ref_doc_hash from the first matching node."""
-        raise NotImplementedError("Delete is not supported for KG index yet.")
-
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
         """Set the default embedding mode during query based on current index."""
         if (

@@ -106,14 +106,6 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         nodes_to_keep = [n for n in cur_nodes if n.ref_doc_id != doc_id]
         self._index_struct.nodes = nodes_to_keep
 
-    def _find_matching_hash(self, doc_id: str) -> Optional[str]:
-        """Return the ref_doc_hash from the first matching node."""
-        for node in self._index_struct.nodes:
-            if node.ref_doc_id == doc_id:
-                return node.ref_doc_hash
-
-        return None
-
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Preprocess query."""
         super()._preprocess_query(mode, query_kwargs)

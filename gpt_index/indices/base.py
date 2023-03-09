@@ -176,6 +176,7 @@ class BaseGPTIndex(Generic[IS]):
                     )
                 results.append(sub_index_struct)
             elif isinstance(doc, Document):
+                docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
                 results.append(doc)
             else:
                 raise ValueError(f"Invalid document type: {type(doc)}.")
@@ -325,10 +326,6 @@ class BaseGPTIndex(Generic[IS]):
         self.delete(document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {}))
         self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
 
-    @abstractmethod
-    def _find_matching_hash(self, doc_id: str) -> Optional[str]:
-        """Return the ref_doc_hash from the first matching node."""
-
     def refresh(
         self, documents: List[BaseDocument], **update_kwargs: Any
     ) -> List[bool]:
@@ -340,7 +337,7 @@ class BaseGPTIndex(Generic[IS]):
         """
         refreshed_documents = [False] * len(documents)
         for i, document in enumerate(documents):
-            existing_doc_hash = self._find_matching_hash(document.get_doc_id())
+            existing_doc_hash = self._docstore.get_document_hash(document.get_doc_id())
             if existing_doc_hash != document.get_doc_hash():
                 self.update(document, **update_kwargs)
                 refreshed_documents[i] = True

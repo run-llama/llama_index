@@ -70,7 +70,3 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for Struct Store Index.")
-
-    def _find_matching_hash(self, doc_id: str) -> Optional[str]:
-        """Return the ref_doc_hash from the first matching node."""
-        raise NotImplementedError("Delete is not supported for KG index yet.")
