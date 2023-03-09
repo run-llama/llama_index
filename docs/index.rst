@@ -31,7 +31,10 @@ Context
 - How do we best augment LLMs with our own private data?
 - One paradigm that has emerged is *in-context* learning (the other is finetuning), where we insert context into the input prompt. That way,
 we take advantage of the LLM's reasoning capabilities to generate a response.
-- How can we perform data augmentation in a performant, efficient, and cheap manner? 
+
+To perform LLM's data augmentation in a performant, efficient, and cheap manner, we need to solve two components:
+- Data Ingestion
+- Data Indexing
 
 Proposed Solution
 ^^^^^^^^^^^^^^^^^
@@ -45,12 +48,6 @@ These indices help to abstract away common boilerplate and pain points for in-co
    - Dealing with text splitting.
 - Provides users an interface to **query** the index (feed in an input prompt) and obtain a knowledge-augmented output.
 - Offers you a comprehensive toolset trading off cost and performance.
-
-At the core of LlamaIndex is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
-
-- Uses a pre-trained LLM primarily for *reasoning*/*summarization* instead of prior knowledge.
-- Takes as input a large corpus of data and build a structured index over it (using an LLM or heuristics).
-- Allow users to *query* the index by passing in an LLM prompt, and obtaining a response.
 
 
 .. toctree::
