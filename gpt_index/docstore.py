@@ -67,7 +67,10 @@ class DocumentStore(DataClassJsonMixin):
                 doc = type_to_struct[doc_type].from_dict(doc_dict)
                 # doc = index_struct_cls.from_dict(doc_dict)
             docs_obj_dict[doc_id] = doc
-        return cls(docs=docs_obj_dict, ref_doc_info=defaultdict(dict, **docs_dict.get("ref_doc_info", {})))
+        return cls(
+            docs=docs_obj_dict,
+            ref_doc_info=defaultdict(dict, **docs_dict.get("ref_doc_info", {})),
+        )
 
     @classmethod
     def from_documents(cls, docs: List[DOC_TYPE]) -> "DocumentStore":
