@@ -1,6 +1,8 @@
 """Mock chain wrapper."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
+from langchain.llms.base import BaseLLM
 
 from gpt_index.constants import NUM_OUTPUTS
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -82,8 +84,11 @@ def _mock_knowledge_graph_triplet_extract(prompt_args: Dict, max_triplets: int) 
 class MockLLMPredictor(LLMPredictor):
     """Mock LLM Predictor."""
 
-    def __init__(self, max_tokens: int = NUM_OUTPUTS) -> None:
+    def __init__(
+        self, max_tokens: int = NUM_OUTPUTS, llm: Optional[BaseLLM] = None
+    ) -> None:
         """Initialize params."""
+        super().__init__(llm)
         # NOTE: don't call super, we don't want to instantiate LLM
         self.max_tokens = max_tokens
         self._total_tokens_used = 0
