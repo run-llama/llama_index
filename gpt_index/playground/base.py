@@ -170,39 +170,18 @@ class Playground:
 
                 index_name = type(index).__name__
                 print_text(f"\033[1m{index_name}\033[0m, mode = {mode}", end="\n")
-                print_text("Without optimization")
                 start_time = time.time()
-                output = index.query(query_text, mode=mode)
-                duration = time.time() - start_time
-                print_text(str(output), color=self.index_colors[str(i)], end="\n\n")
-
-                result.append(
-                    {
-                        "Index": index_name,
-                        "Mode": mode,
-                        "Output": str(output),
-                        "Duration": duration,
-                        "LLM Tokens": index.llm_predictor.last_token_usage,
-                        "Embedding Tokens": index.embed_model.last_token_usage,
-                        "Optimization": "No",
-                    }
+                optimizer = SentenceEmbeddingOptimizer(
+                    percentile_cutoff=0.5,
+                    # this means that the top 50% of sentences will be used.
+                    # Alternatively, you can set the cutoff using a threshold
+                    # on the similarity score. In this case only setences with a
+                    # similarity score higher than the threshold will be used.
+                    # threshold_cutoff=0.7
+                    # these cutoffs can also be used together.
                 )
 
-                print_text("With optimization")
-                start_time = time.time()
-                output = index.query(
-                    query_text,
-                    mode=mode,
-                    optimizer=SentenceEmbeddingOptimizer(
-                        percentile_cutoff=0.5,
-                        # this means that the top 50% of sentences will be used.
-                        # Alternatively, you can set the cutoff using a threshold
-                        # on the similarity score. In this case only setences with a
-                        # similarity score higher than the threshold will be used.
-                        # threshold_cutoff=0.7
-                        # these cutoffs can also be used together.
-                    ),
-                )
+                output = index.query(query_text, mode=mode, optimizer=optimizer)
                 duration = time.time() - start_time
                 print_text(str(output), color=self.index_colors[str(i)], end="\n\n")
                 result.append(
@@ -213,7 +192,8 @@ class Playground:
                         "Duration": duration,
                         "LLM Tokens": index.llm_predictor.last_token_usage,
                         "Embedding Tokens": index.embed_model.last_token_usage,
-                        "Optimization": "Yes",
+                        # this is ok because a new embed_model is initialized for each run.
+                        "Optimizer Embedding Tokens": optimizer.embed_model.total_tokens_used,
                     }
                 )
         print(f"\nRan {len(result)} combinations in total.")

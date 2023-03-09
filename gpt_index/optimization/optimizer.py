@@ -47,7 +47,7 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
             "<query_str>", optimizer=optimizer
         )
         """
-        self._embed_model = embed_model or OpenAIEmbedding()
+        self.embed_model = embed_model or OpenAIEmbedding()
         self._percentile_cutoff = percentile_cutoff
         self._threshold_cutoff = threshold_cutoff
 
@@ -61,10 +61,12 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
             nltk.download("punkt")
         tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
         split_text = tokenizer.tokenize(text)
-        query_embedding = self._embed_model.get_agg_embedding_from_queries(
+
+        start_embed_token_ct = self.embed_model.total_tokens_used
+        query_embedding = self.embed_model.get_agg_embedding_from_queries(
             query_bundle.embedding_strs
         )
-        text_embeddings = self._embed_model._get_text_embeddings(split_text)
+        text_embeddings = self.embed_model._get_text_embeddings(split_text)
         num_top_k = None
         threshold = None
         if self._percentile_cutoff is not None:
@@ -74,10 +76,14 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
         top_similarities, top_idxs = get_top_k_embeddings(
             query_embedding=query_embedding,
             embeddings=text_embeddings,
-            similarity_fn=self._embed_model.similarity,
+            similarity_fn=self.embed_model.similarity,
             similarity_top_k=num_top_k,
             embedding_ids=[i for i in range(len(text_embeddings))],
             similarity_cutoff=threshold,
+        )
+        net_embed_tokens = self.embed_model.total_tokens_used - start_embed_token_ct
+        logging.info(
+            f"> [optimize] Total embedding token usage: " f"{net_embed_tokens} tokens"
         )
         if len(top_idxs) == 0:
             raise ValueError("Optimizer returned zero sentences.")
