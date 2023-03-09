@@ -1,7 +1,7 @@
 .. _Ref-Indices-Empty:
 
 Empty Index
-===========
+==========
 
 Building the Empty Index
 
