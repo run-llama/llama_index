@@ -11,7 +11,7 @@ from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store import GPTSimpleVectorIndex
-from gpt_index.optimzation.optimizer import Optimizer
+from gpt_index.optimization.optimizer import SentenceEmbeddingOptimizer
 from gpt_index.readers.schema.base import Document
 
 DEFAULT_INDEX_CLASSES = [GPTSimpleVectorIndex, GPTTreeIndex, GPTListIndex]
@@ -193,14 +193,14 @@ class Playground:
                 output = index.query(
                     query_text,
                     mode=mode,
-                    optimizer=Optimizer(
-                        split_mode="sentence",
-                        comparison_mode="embedding",
-                        cutoffs={"percentile": 0.5}
+                    optimizer=SentenceEmbeddingOptimizer(
+                        percentile_cutoff=0.5,
                         # this means that the top 50% of sentences will be used.
                         # Alternatively, you can set the cutoff using a threshold
-                        # on the similarity score.
-                        # cutoffs={"threshold": 0.7},
+                        # on the similarity score. In this case only setences with a
+                        # similarity score higher than the threshold will be used.
+                        # threshold_cutoff=0.7
+                        # these cutoffs can also be used together.
                     ),
                 )
                 duration = time.time() - start_time
