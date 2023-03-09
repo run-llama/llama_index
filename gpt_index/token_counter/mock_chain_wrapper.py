@@ -88,7 +88,7 @@ class MockLLMPredictor(LLMPredictor):
         self, max_tokens: int = NUM_OUTPUTS, llm: Optional[BaseLLM] = None
     ) -> None:
         """Initialize params."""
-        super().__init__(llm=llm)
+        super().__init__(llm)
         # NOTE: don't call super, we don't want to instantiate LLM
         self.max_tokens = max_tokens
         self._total_tokens_used = 0

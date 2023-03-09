@@ -85,7 +85,7 @@ class LLMPredictor:
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         # TODO: refactor mocks in unit tests, this is a stopgap solution
-        if hasattr(self, "_llm"):
+        if hasattr(self, "_llm") and self._llm is not None:
             return _get_llm_metadata(self._llm)
         else:
             return LLMMetadata()
