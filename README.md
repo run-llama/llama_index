@@ -32,7 +32,10 @@ LlamaHub (community library of data loaders): https://llamahub.ai
 - How do we best augment LLMs with our own private data?
 - One paradigm that has emerged is *in-context* learning (the other is finetuning), where we insert context into the input prompt. That way,
 we take advantage of the LLM's reasoning capabilities to generate a response.
-- How can we perform data augmentation in a performant, efficient, and cheap manner? 
+
+To perform LLM's data augmentation in a performant, efficient, and cheap manner, we need to solve two components:
+- Data Ingestion
+- Data Indexing
 
 #### Proposed Solution
 
