@@ -187,7 +187,7 @@ index = GPTSQLStructStoreIndex(
 You can also choose to **extract** context from a set of unstructured Documents.
 To do this, you can call `SQLContextContainerBuilder.from_documents`.
 We use the `TableContextPrompt` and the `RefineTableContextPrompt` (see
-the [reference docs](/reference/prompts.md)).
+the [reference docs](/reference/prompts.rst)).
 
 ```python
 # this is a dummy document that we will extract context from
