@@ -69,7 +69,7 @@ These are found in the following classes:
 - `GPTChromaIndex`
 
 
-An API reference of each vector index is [found here](/reference/indices/vector_store.md).
+An API reference of each vector index is [found here](/reference/indices/vector_store.rst).
 
 Similar to any other index within LlamaIndex (tree, keyword table, list), this index can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.

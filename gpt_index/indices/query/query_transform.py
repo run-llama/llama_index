@@ -27,7 +27,7 @@ class HyDEQueryTransform(BaseQueryTransform):
     and use the resulting documents as embedding strings.
 
     As described in `[Precise Zero-Shot Dense Retrieval without Relevance Labels]
-        (https://arxiv.org/abs/2212.10496)`
+    (https://arxiv.org/abs/2212.10496)`
     """
 
     def __init__(
