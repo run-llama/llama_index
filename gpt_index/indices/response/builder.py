@@ -21,7 +21,6 @@ from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, Summar
 from gpt_index.response.schema import SourceNode
 from gpt_index.response.utils import get_response_text
 from gpt_index.utils import temp_set_attrs
-from langchain.chains.prompt_selector import is_chat_model
 
 RESPONSE_TEXT_TYPE = Union[str, Generator]
 
@@ -115,7 +114,6 @@ class ResponseBuilder:
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for cur_text_chunk in text_chunks:
             if not self._streaming:
-                tmp = refine_template.get_langchain_prompt(llm=self.llm_predictor._llm)
                 response, _ = self.llm_predictor.predict(
                     refine_template,
                     context_msg=cur_text_chunk,
