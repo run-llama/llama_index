@@ -33,8 +33,12 @@ class BaseDocument(DataClassJsonMixin):
         if self.doc_id is None:
             self.doc_id = get_new_id(set())
         if self.doc_hash is None:
-            doc_identity = str(self.text) + str(self.extra_info)
-            self.doc_hash = sha256(doc_identity.encode()).hexdigest()
+            self.doc_hash = self._generate_doc_hash()
+
+    def _generate_doc_hash(self) -> str:
+        """Generate a hash to represent the document."""
+        doc_identity = str(self.text) + str(self.extra_info)
+        return sha256(doc_identity.encode()).hexdigest()
 
     @classmethod
     @abstractmethod
