@@ -1,13 +1,13 @@
 """Test prompts."""
 
 from typing import List
+from unittest.mock import MagicMock
 
 import pytest
 from langchain import PromptTemplate
 from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models.openai import ChatOpenAI
-from unittest.mock import MagicMock
 
 from gpt_index.prompts.base import Prompt
 
@@ -136,5 +136,4 @@ def test_from_langchain_prompt_selector() -> None:
         test_prompt_selector = ConditionalPromptSelector(
             prompt=prompt, conditionals=([is_test], [prompt_2])
         )
-        test_llm = TestLanguageModel()
         prompt_new = TestPrompt.from_langchain_prompt_selector(test_prompt_selector)
