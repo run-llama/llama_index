@@ -20,10 +20,8 @@ from gpt_index.indices.response.builder import (
     TextChunk,
 )
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_REFINE_PROMPT,
-    DEFAULT_TEXT_QA_PROMPT,
-)
+from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
+from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from gpt_index.token_counter.token_counter import llm_token_counter
@@ -116,7 +114,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._response_mode = ResponseMode(response_mode)
 
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self._include_summary = include_summary
 
         self._response_kwargs = response_kwargs or {}
