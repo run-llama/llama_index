@@ -27,7 +27,7 @@ LlamaHub (community library of data loaders): https://llamahub.ai
 
 **NOTE**: This README is not updated as frequently as the documentation. Please check out the documentation above for the latest updates!
 
-#### Context
+### Context
 - LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. They are pre-trained on large amounts of publicly available data.
 - How do we best augment LLMs with our own private data?
 - One paradigm that has emerged is *in-context* learning (the other is finetuning), where we insert context into the input prompt. That way,
@@ -37,7 +37,7 @@ To perform LLM's data augmentation in a performant, efficient, and cheap manner,
 - Data Ingestion
 - Data Indexing
 
-#### Proposed Solution
+### Proposed Solution
 
 That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible interface between your external data and LLMs. It provides the following tools in an easy-to-use fashion:
 
