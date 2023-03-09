@@ -1,5 +1,5 @@
 Querying an Empty Index
-=====================
+=======================
 
 .. automodule:: gpt_index.indices.query.empty
    :members:
