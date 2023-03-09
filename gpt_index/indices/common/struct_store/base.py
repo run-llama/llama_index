@@ -10,13 +10,12 @@ from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.langchain_helpers.text_splitter import TextSplitter
-from gpt_index.prompts.default_prompts import (
-    DEFAULT_REFINE_TABLE_CONTEXT_PROMPT,
-    DEFAULT_TABLE_CONTEXT_PROMPT,
-    DEFAULT_TABLE_CONTEXT_QUERY,
-)
 from gpt_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
+)
+from gpt_index.prompts.default_prompts import (
+    DEFAULT_TABLE_CONTEXT_PROMPT,
+    DEFAULT_TABLE_CONTEXT_QUERY,
 )
 from gpt_index.prompts.prompts import (
     QuestionAnswerPrompt,

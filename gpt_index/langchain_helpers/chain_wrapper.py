@@ -96,7 +96,9 @@ class LLMPredictor:
         If retry_on_throttling is true, we will retry on rate limit errors.
 
         """
-        llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm)
+        llm_chain = LLMChain(
+            prompt=prompt.get_langchain_prompt(llm=self._llm), llm=self._llm
+        )
 
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
@@ -186,7 +188,9 @@ class LLMPredictor:
         If retry_on_throttling is true, we will retry on rate limit errors.
 
         """
-        llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm)
+        llm_chain = LLMChain(
+            prompt=prompt.get_langchain_prompt(llm=self._llm), llm=self._llm
+        )
 
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
