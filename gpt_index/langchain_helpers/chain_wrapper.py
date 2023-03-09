@@ -127,7 +127,7 @@ class LLMPredictor:
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        formatted_prompt = prompt.format(**prompt_args)
+        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = self._predict(prompt, **prompt_args)
         logging.debug(llm_prediction)
 
@@ -153,7 +153,7 @@ class LLMPredictor:
         """
         if not isinstance(self._llm, OpenAI):
             raise ValueError("stream is only supported for OpenAI LLMs")
-        formatted_prompt = prompt.format(**prompt_args)
+        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         raw_response_gen = self._llm.stream(formatted_prompt)
         response_gen = _get_response_gen(raw_response_gen)
         # NOTE/TODO: token counting doesn't work with streaming
@@ -205,7 +205,7 @@ class LLMPredictor:
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        formatted_prompt = prompt.format(**prompt_args)
+        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = await self._apredict(prompt, **prompt_args)
         logging.debug(llm_prediction)
 

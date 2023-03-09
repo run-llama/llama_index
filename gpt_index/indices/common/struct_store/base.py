@@ -15,6 +15,9 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_TABLE_CONTEXT_PROMPT,
     DEFAULT_TABLE_CONTEXT_QUERY,
 )
+from gpt_index.prompts.default_prompt_selectors import (
+    DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
+)
 from gpt_index.prompts.prompts import (
     QuestionAnswerPrompt,
     RefinePrompt,
@@ -67,7 +70,7 @@ class SQLDocumentContextBuilder:
             table_context_prompt or DEFAULT_TABLE_CONTEXT_PROMPT
         )
         self._refine_table_context_prompt = (
-            refine_table_context_prompt or DEFAULT_REFINE_TABLE_CONTEXT_PROMPT
+            refine_table_context_prompt or DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL
         )
         self._table_context_task = table_context_task or DEFAULT_TABLE_CONTEXT_QUERY
 
