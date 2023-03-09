@@ -7,6 +7,7 @@ from langchain import PromptTemplate
 from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models.openai import ChatOpenAI
+from unittest.mock import MagicMock
 
 from gpt_index.prompts.base import Prompt
 
@@ -108,7 +109,7 @@ def test_from_langchain_prompt_selector() -> None:
         default_prompt=prompt, conditionals=[(is_test, prompt_2)]
     )
 
-    test_llm = TestLanguageModel()
+    test_llm = MagicMock(spec=TestLanguageModel)
 
     prompt_new = TestPrompt.from_langchain_prompt_selector(test_prompt_selector)
     assert isinstance(prompt_new, TestPrompt)
