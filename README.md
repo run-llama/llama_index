@@ -41,7 +41,7 @@ To perform LLM's data augmentation in a performant, efficient, and cheap manner,
 
 That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible interface between your external data and LLMs. It provides the following tools in an easy-to-use fashion:
 
-- Offers data connectors to your existing data sources and data formats (API's, PDF's, docs, SQL, etc.)
+- Offers **data connectors** to your existing data sources and data formats (API's, PDF's, docs, SQL, etc.)
 - Provides **indices** over your unstructured and structured data for use with LLM's. 
 These indices help to abstract away common boilerplate and pain points for in-context learning:
    - Storing context in an easy-to-access format for prompt insertion.
