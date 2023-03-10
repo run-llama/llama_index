@@ -85,7 +85,7 @@ class LLMPredictor:
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         # TODO: refactor mocks in unit tests, this is a stopgap solution
-        if hasattr(self, "_llm"):
+        if hasattr(self, "_llm") and self._llm is not None:
             return _get_llm_metadata(self._llm)
         else:
             return LLMMetadata()
@@ -96,7 +96,9 @@ class LLMPredictor:
         If retry_on_throttling is true, we will retry on rate limit errors.
 
         """
-        llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm)
+        llm_chain = LLMChain(
+            prompt=prompt.get_langchain_prompt(llm=self._llm), llm=self._llm
+        )
 
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
@@ -127,7 +129,7 @@ class LLMPredictor:
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        formatted_prompt = prompt.format(**prompt_args)
+        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = self._predict(prompt, **prompt_args)
         logging.debug(llm_prediction)
 
@@ -153,7 +155,7 @@ class LLMPredictor:
         """
         if not isinstance(self._llm, OpenAI):
             raise ValueError("stream is only supported for OpenAI LLMs")
-        formatted_prompt = prompt.format(**prompt_args)
+        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         raw_response_gen = self._llm.stream(formatted_prompt)
         response_gen = _get_response_gen(raw_response_gen)
         # NOTE/TODO: token counting doesn't work with streaming
@@ -186,7 +188,9 @@ class LLMPredictor:
         If retry_on_throttling is true, we will retry on rate limit errors.
 
         """
-        llm_chain = LLMChain(prompt=prompt.get_langchain_prompt(), llm=self._llm)
+        llm_chain = LLMChain(
+            prompt=prompt.get_langchain_prompt(llm=self._llm), llm=self._llm
+        )
 
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
@@ -205,7 +209,7 @@ class LLMPredictor:
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        formatted_prompt = prompt.format(**prompt_args)
+        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = await self._apredict(prompt, **prompt_args)
         logging.debug(llm_prediction)
 

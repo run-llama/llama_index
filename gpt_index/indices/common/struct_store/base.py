@@ -10,8 +10,10 @@ from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.prompts.default_prompt_selectors import (
+    DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
+)
 from gpt_index.prompts.default_prompts import (
-    DEFAULT_REFINE_TABLE_CONTEXT_PROMPT,
     DEFAULT_TABLE_CONTEXT_PROMPT,
     DEFAULT_TABLE_CONTEXT_QUERY,
 )
@@ -67,7 +69,7 @@ class SQLDocumentContextBuilder:
             table_context_prompt or DEFAULT_TABLE_CONTEXT_PROMPT
         )
         self._refine_table_context_prompt = (
-            refine_table_context_prompt or DEFAULT_REFINE_TABLE_CONTEXT_PROMPT
+            refine_table_context_prompt or DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL
         )
         self._table_context_task = table_context_task or DEFAULT_TABLE_CONTEXT_QUERY
 

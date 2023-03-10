@@ -1,7 +1,9 @@
 """Test token predictor."""
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+
+from langchain.llms.base import BaseLLM
 
 from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
 from gpt_index.indices.list.base import GPTListIndex
@@ -24,7 +26,8 @@ def test_token_predictor(mock_split: Any) -> None:
         "This is a test v2."
     )
     document = Document(doc_text)
-    llm_predictor = MockLLMPredictor(max_tokens=256)
+    llm = MagicMock(spec=BaseLLM)
+    llm_predictor = MockLLMPredictor(max_tokens=256, llm=llm)
 
     # test tree index
     index = GPTTreeIndex([document], llm_predictor=llm_predictor)

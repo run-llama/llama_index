@@ -27,23 +27,27 @@ LlamaIndex (GPT Index) is a project that provides a central interface to connect
 
 Context
 ^^^^^^^
-- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning.
-- A big limitation of LLMs is context size (e.g. Davinci's limit is 4096 tokens. Large, but not infinite).
-- The ability to feed "knowledge" to LLMs is restricted to this limited prompt size and model weights.
+- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. They are pre-trained on large amounts of publicly available data.
+- How do we best augment LLMs with our own private data?
+- One paradigm that has emerged is *in-context* learning (the other is finetuning), where we insert context into the input prompt. That way,
+we take advantage of the LLM's reasoning capabilities to generate a response.
+
+To perform LLM's data augmentation in a performant, efficient, and cheap manner, we need to solve two components:
+- Data Ingestion
+- Data Indexing
 
 Proposed Solution
 ^^^^^^^^^^^^^^^^^
-That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible interface between your external data and LLMs. It resolves the following pain points:
+That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible interface between your external data and LLMs. It provides the following tools in an easy-to-use fashion:
 
-- Provides simple data structures to resolve prompt size limitations.
-- Offers data connectors to your external data sources.
+- Offers data connectors to your existing data sources and data formats (API's, PDF's, docs, SQL, etc.)
+- Provides **indices** over your unstructured and structured data for use with LLM's. 
+These indices help to abstract away common boilerplate and pain points for in-context learning:
+   - Storing context in an easy-to-access format for prompt insertion.
+   - Dealing with prompt limitations (e.g. 4096 tokens for Davinci) when context is too big.
+   - Dealing with text splitting.
+- Provides users an interface to **query** the index (feed in an input prompt) and obtain a knowledge-augmented output.
 - Offers you a comprehensive toolset trading off cost and performance.
-
-At the core of LlamaIndex is a **data structure**. Instead of relying on world knowledge encoded in the model weights, a GPT Index data structure does the following:
-
-- Uses a pre-trained LLM primarily for *reasoning*/*summarization* instead of prior knowledge.
-- Takes as input a large corpus of text data and build a structured index over it (using an LLM or heuristics).
-- Allow users to *query* the index by passing in an LLM prompt, and obtaining a response.
 
 
 .. toctree::
