@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Generator, List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
