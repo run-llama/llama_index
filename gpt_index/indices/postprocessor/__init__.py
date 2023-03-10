@@ -1,0 +1,2 @@
+class BasePostprocessor:
+    """Base Postprocessor."""
