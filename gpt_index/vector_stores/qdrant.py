@@ -90,7 +90,7 @@ class QdrantVectorStore(VectorStore):
                     vector_size=len(text_embedding),
                 )
                 self._collection_initialized = True
-            
+
             payload = {
                 "doc_id": result.doc_id,
                 "text": node.get_text(),
