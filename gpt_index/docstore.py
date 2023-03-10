@@ -1,5 +1,6 @@
 """Document store."""
 
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -19,6 +20,9 @@ class DocumentStore(DataClassJsonMixin):
     """Document store."""
 
     docs: Dict[str, DOC_TYPE] = field(default_factory=dict)
+    ref_doc_info: Dict[str, Dict[str, Any]] = field(
+        default_factory=lambda: defaultdict(dict)
+    )
 
     def serialize_to_dict(self) -> Dict[str, Any]:
         """Serialize to dict."""
@@ -27,7 +31,7 @@ class DocumentStore(DataClassJsonMixin):
             doc_dict = doc.to_dict()
             doc_dict[TYPE_KEY] = doc.get_type()
             docs_dict[doc_id] = doc_dict
-        return {"docs": docs_dict}
+        return {"docs": docs_dict, "ref_doc_info": self.ref_doc_info}
 
     def contains_index_struct(self, exclude_ids: Optional[List[str]] = None) -> bool:
         """Check if contains index struct."""
@@ -63,7 +67,10 @@ class DocumentStore(DataClassJsonMixin):
                 doc = type_to_struct[doc_type].from_dict(doc_dict)
                 # doc = index_struct_cls.from_dict(doc_dict)
             docs_obj_dict[doc_id] = doc
-        return cls(docs=docs_obj_dict)
+        return cls(
+            docs=docs_obj_dict,
+            ref_doc_info=defaultdict(dict, **docs_dict.get("ref_doc_info", {})),
+        )
 
     @classmethod
     def from_documents(cls, docs: List[DOC_TYPE]) -> "DocumentStore":
@@ -89,6 +96,7 @@ class DocumentStore(DataClassJsonMixin):
                     "Set allow_update to True to overwrite."
                 )
             self.docs[doc.get_doc_id()] = doc
+            self.ref_doc_info[doc.get_doc_id()]["doc_hash"] = doc.get_doc_hash()
 
     def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[DOC_TYPE]:
         """Get a document from the store."""
@@ -96,6 +104,14 @@ class DocumentStore(DataClassJsonMixin):
         if doc is None and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
         return doc
+
+    def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
+        """Set the hash for a given doc_id."""
+        self.ref_doc_info[doc_id]["doc_hash"] = doc_hash
+
+    def get_document_hash(self, doc_id: str) -> Optional[str]:
+        """Get the stored hash for a document, if it exists."""
+        return self.ref_doc_info[doc_id].get("doc_hash", None)
 
     def document_exists(self, doc_id: str) -> bool:
         """Check if document exists."""
@@ -106,6 +122,7 @@ class DocumentStore(DataClassJsonMixin):
     ) -> Optional[DOC_TYPE]:
         """Delete a document from the store."""
         doc = self.docs.pop(doc_id, None)
+        self.ref_doc_info.pop(doc_id, None)
         if doc is None and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
         return doc
