@@ -61,7 +61,7 @@ class JSONReader(BaseReader):
         ex: if collapse_length = 10, and
         input is {a: [1, 2, 3], b: {"hello": "world", "foo": "bar"}}
         then a would be collapsed into one line, while b would not.
-        Recommend starting around 300 and then adjusting from there.
+        Recommend starting around 100 and then adjusting from there.
 
     """
 
