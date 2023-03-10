@@ -48,6 +48,8 @@ def _get_initial_node_postprocessors(
     """
     postprocessors: List[BaseNodePostprocessor] = []
     if required_keywords is not None or exclude_keywords is not None:
+        required_keywords = required_keywords or []
+        exclude_keywords = exclude_keywords or []
         keyword_postprocessor = KeywordNodePostprocessor(
             required_keywords=required_keywords, exclude_keywords=exclude_keywords
         )
@@ -295,8 +297,9 @@ class BaseGPTIndexQuery(Generic[IS]):
             query_bundle, similarity_tracker=similarity_tracker
         )
 
+        postprocess_info = {"similarity_tracker": similarity_tracker}
         for node_processor in self.node_preprocessors:
-            nodes = node_processor.postprocess_nodes(nodes)
+            nodes = node_processor.postprocess_nodes(nodes, postprocess_info)
 
         # TODO: create a `display` method to allow subclasses to print the Node
         return similarity_tracker.get_zipped_nodes(nodes)
