@@ -23,7 +23,6 @@ def _depth_first_yield(
       of characters, then we collapse it into one line.
 
     """
-
     if isinstance(json_data, dict) or isinstance(json_data, list):
         # only try to collapse if we're not at a leaf node
         json_str = json.dumps(json_data)
