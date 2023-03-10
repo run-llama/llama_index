@@ -90,7 +90,7 @@ class QdrantVectorStore(VectorStore):
                     vector_size=len(text_embedding),
                 )
                 self._collection_initialized = True
-
+            
             payload = {
                 "doc_id": result.doc_id,
                 "text": node.get_text(),
@@ -207,6 +207,7 @@ class QdrantVectorStore(VectorStore):
             node = Node(
                 ref_doc_id=payload.get("doc_id"),
                 text=payload.get("text"),
+                extra_info=payload.get("extra_info"),
             )
             nodes.append(node)
             similarities.append(point.score)
