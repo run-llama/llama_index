@@ -95,6 +95,7 @@ class QdrantVectorStore(VectorStore):
                 "doc_id": result.doc_id,
                 "text": node.get_text(),
                 "index": node.index,
+                "extra_info": node.extra_info,
             }
 
             self._client.upsert(
