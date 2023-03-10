@@ -29,10 +29,10 @@ Context
 ^^^^^^^
 - LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. They are pre-trained on large amounts of publicly available data.
 - How do we best augment LLMs with our own private data?
-- One paradigm that has emerged is *in-context* learning (the other is finetuning), where we insert context into the input prompt. That way,
-we take advantage of the LLM's reasoning capabilities to generate a response.
+- One paradigm that has emerged is *in-context* learning (the other is finetuning), where we insert context into the input prompt. That way, we take advantage of the LLM's reasoning capabilities to generate a response.
 
 To perform LLM's data augmentation in a performant, efficient, and cheap manner, we need to solve two components:
+
 - Data Ingestion
 - Data Indexing
 
@@ -40,9 +40,9 @@ Proposed Solution
 ^^^^^^^^^^^^^^^^^
 That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible interface between your external data and LLMs. It provides the following tools in an easy-to-use fashion:
 
-- Offers data connectors to your existing data sources and data formats (API's, PDF's, docs, SQL, etc.)
-- Provides **indices** over your unstructured and structured data for use with LLM's. 
-These indices help to abstract away common boilerplate and pain points for in-context learning:
+- Offers `data connectors <http://llamahub.ai>`_ to your existing data sources and data formats (API's, PDF's, docs, SQL, etc.)
+- Provides **indices** over your unstructured and structured data for use with LLM's. These indices help to abstract away common boilerplate and pain points for in-context learning:
+
    - Storing context in an easy-to-access format for prompt insertion.
    - Dealing with prompt limitations (e.g. 4096 tokens for Davinci) when context is too big.
    - Dealing with text splitting.
