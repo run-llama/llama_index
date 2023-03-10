@@ -4,10 +4,9 @@ import re
 from abc import abstractmethod
 from typing import Dict, List, cast
 
-from langchain.llms import OpenAI
 from pydantic import BaseModel, Field
 
-from gpt_index.data_structs.data_structs import IndexDict, Node
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.postprocessor import BasePostprocessor
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 
