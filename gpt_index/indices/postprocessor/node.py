@@ -1,21 +1,22 @@
 """Node postprocessor."""
 
+import re
+from abc import abstractmethod
+from typing import Dict, List, cast
+
+from langchain.llms import OpenAI
+from pydantic import BaseModel, Field
+
 from gpt_index.data_structs.data_structs import IndexDict, Node
 from gpt_index.indices.postprocessor import BasePostprocessor
-from pydantic import BaseModel
-from pydantic import Field
-from langchain.llms import OpenAI
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
-from typing import List, Dict, cast
-from abc import abstractmethod
-import re
 
 
 class BaseNodePostprocessor(BasePostprocessor, BaseModel):
     """Node postprocessor."""
 
     @abstractmethod
-    def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> None:
+    def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> List[Node]:
         """Postprocess nodes."""
 
 
@@ -25,7 +26,7 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
     required_keywords: List[str] = Field(default_factory=list)
     exclude_keywords: List[str] = Field(default_factory=list)
 
-    def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> None:
+    def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> List[Node]:
         """Postprocess nodes."""
         new_nodes = []
         for node in nodes:
@@ -52,7 +53,7 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
 
     similarity_cutoff: float = Field(default=None)
 
-    def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> None:
+    def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> List[Node]:
         """Postprocess nodes."""
         new_nodes = []
         for node in nodes:
@@ -79,31 +80,31 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
         return new_nodes
 
 
-class EdgePostprocessor(BaseNodePostprocessor):
-    """Edge-based Node processor."""
+# class EdgePostprocessor(BaseNodePostprocessor):
+#     """Edge-based Node processor."""
 
-    def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> None:
-        """Postprocess nodes."""
-        new_nodes = []
-        for node in nodes:
-            should_use_node = True
-            similarity_tracker = extra_info.get("similarity_tracker")
-            if similarity_tracker is None:
-                raise ValueError(
-                    "Similarity tracker is required for similarity postprocessor."
-                )
-            sim_cutoff_exists = (
-                similarity_tracker is not None and self.similarity_cutoff is not None
-            )
+#     def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> List[Node]:
+#         """Postprocess nodes."""
+#         new_nodes = []
+#         for node in nodes:
+#             should_use_node = True
+#             similarity_tracker = extra_info.get("similarity_tracker")
+#             if similarity_tracker is None:
+#                 raise ValueError(
+#                     "Similarity tracker is required for similarity postprocessor."
+#                 )
+#             sim_cutoff_exists = (
+#                 similarity_tracker is not None and self.similarity_cutoff is not None
+#             )
 
-            if sim_cutoff_exists:
-                similarity = cast(SimilarityTracker, similarity_tracker).find(node)
-                if similarity is None:
-                    should_use_node = False
-                if cast(float, similarity) < cast(float, self.similarity_cutoff):
-                    should_use_node = False
+#             if sim_cutoff_exists:
+#                 similarity = cast(SimilarityTracker, similarity_tracker).find(node)
+#                 if similarity is None:
+#                     should_use_node = False
+#                 if cast(float, similarity) < cast(float, self.similarity_cutoff):
+#                     should_use_node = False
 
-            if should_use_node:
-                new_nodes.append(node)
+#             if should_use_node:
+#                 new_nodes.append(node)
 
-        return new_nodes
+#         return new_nodes
