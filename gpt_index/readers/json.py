@@ -27,7 +27,7 @@ def _depth_first_yield(
     if isinstance(json_data, dict) or isinstance(json_data, list):
         # only try to collapse if we're not at a leaf node
         json_str = json.dumps(json_data)
-        if len(json_str) <= collapse_length:
+        if collapse_length is not None and len(json_str) <= collapse_length:
             new_path = path[-levels_back:]
             new_path.append(json_str)
             yield " ".join(new_path)
