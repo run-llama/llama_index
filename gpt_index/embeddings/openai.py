@@ -88,7 +88,7 @@ _TEXT_MODE_MODEL_DICT = {
 }
 
 
-@retry(wait=wait_random_exponential(min=20, max=60), stop=stop_after_attempt(100))
+@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 def get_embedding(
     text: str,
     engine: Optional[str] = None,
