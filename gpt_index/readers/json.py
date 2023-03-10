@@ -24,20 +24,22 @@ def _depth_first_yield(
 
     """
 
-    json_str = json.dumps(json_data)
-    if len(json_str) <= collapse_length:
-        new_path = path[-levels_back:]
-        new_path.append(json_str)
-        yield " ".join(new_path)
-        return
-    elif isinstance(json_data, dict):
-        for key, value in json_data.items():
-            new_path = path[:]
-            new_path.append(key)
-            yield from _depth_first_yield(value, levels_back, new_path)
-    elif isinstance(json_data, list):
-        for _, value in enumerate(json_data):
-            yield from _depth_first_yield(value, levels_back, path)
+    if isinstance(json_data, dict) or isinstance(json_data, list):
+        # only try to collapse if we're not at a leaf node
+        json_str = json.dumps(json_data)
+        if len(json_str) <= collapse_length:
+            new_path = path[-levels_back:]
+            new_path.append(json_str)
+            yield " ".join(new_path)
+            return
+        elif isinstance(json_data, dict):
+            for key, value in json_data.items():
+                new_path = path[:]
+                new_path.append(key)
+                yield from _depth_first_yield(value, levels_back, new_path)
+        elif isinstance(json_data, list):
+            for _, value in enumerate(json_data):
+                yield from _depth_first_yield(value, levels_back, path)
     else:
         new_path = path[-levels_back:]
         new_path.append(str(json_data))
@@ -55,7 +57,7 @@ class JSONReader(BaseReader):
         JSON and make each line an embedding
 
         collapse_length (int): the maximum number of characters a JSON fragment
-        would be collapsed in the output (leves_back needs to be not None)
+        would be collapsed in the output (levels_back needs to be not None)
         ex: if collapse_length = 10, and
         input is {a: [1, 2, 3], b: {"hello": "world", "foo": "bar"}}
         then a would be collapsed into one line, while b would not.
