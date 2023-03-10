@@ -8,4 +8,4 @@ def get_response_text(response_gen: Generator) -> str:
     response_text = ""
     for response in response_gen:
         response_text += response
-    return response_text
+    return response_text.strip()
