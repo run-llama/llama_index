@@ -176,7 +176,19 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             self.index_struct.text_chunks[idx] for idx in sorted_chunk_indices
         ]
         # filter sorted nodes
-        sorted_nodes = [node for node in sorted_nodes if self._should_use_node(node)]
+        postprocess_info = {"similarity_tracker": similarity_tracker}
+        for node_processor in self.node_preprocessors:
+            sorted_nodes = node_processor.postprocess_nodes(
+                sorted_nodes, postprocess_info
+            )
+
+        # TMP/TODO: also filter rel_texts as nodes until we figure out better
+        # abstraction
+        rel_text_nodes = [Node(text=rel_text) for rel_text in rel_texts]
+        for node_processor in self.node_preprocessors:
+            rel_text_nodes = node_processor.postprocess_nodes(rel_text_nodes)
+        rel_texts = [node.get_text() for node in rel_text_nodes]
+
         for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
             # nodes are found with keyword mapping, give high conf to avoid cutoff
             if similarity_tracker is not None:

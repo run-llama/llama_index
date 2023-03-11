@@ -165,6 +165,11 @@ def test_query(
         "foo": [("bar", "is")],
     }
 
+    # test keyword filter
+    # NOTE: all nodes will be excluded except triplets (and it will be blank)
+    response = index.query("foo", exclude_keywords=["foo"])
+    assert "foo:The following are knowledge triplets" in str(response)
+
     # test specific query class
     query = GPTKGTableQuery(
         index.index_struct,
@@ -227,8 +232,8 @@ def test_query_similarity(
     assert isinstance(response.extra_info, dict)
     assert len(response.extra_info["kg_rel_texts"]) == 2
 
-    # Filters out all embeddings
+    # Filters embeddings
     try:
-        response = index.query("foo", similarity_cutoff=-1.0)
+        response = index.query("foo", similarity_cutoff=10000000)
     except ValueError as e:
         assert str(e) == "kg_rel_map must be found in at least one Node."
