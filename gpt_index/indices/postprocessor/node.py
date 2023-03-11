@@ -61,18 +61,16 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
     ) -> List[Node]:
         """Postprocess nodes."""
         extra_info = extra_info or {}
+        similarity_tracker = extra_info.get("similarity_tracker", None)
+        if similarity_tracker is None:
+            return nodes
+        sim_cutoff_exists = (
+            similarity_tracker is not None and self.similarity_cutoff is not None
+        )
+
         new_nodes = []
         for node in nodes:
             should_use_node = True
-            similarity_tracker = extra_info.get("similarity_tracker")
-            if similarity_tracker is None:
-                raise ValueError(
-                    "Similarity tracker is required for similarity postprocessor."
-                )
-            sim_cutoff_exists = (
-                similarity_tracker is not None and self.similarity_cutoff is not None
-            )
-
             if sim_cutoff_exists:
                 similarity = cast(SimilarityTracker, similarity_tracker).find(node)
                 if similarity is None:

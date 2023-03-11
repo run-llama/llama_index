@@ -176,8 +176,11 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             self.index_struct.text_chunks[idx] for idx in sorted_chunk_indices
         ]
         # filter sorted nodes
+        postprocess_info = {"similarity_tracker": similarity_tracker}
         for node_processor in self.node_preprocessors:
-            sorted_nodes = node_processor.postprocess_nodes(sorted_nodes)
+            sorted_nodes = node_processor.postprocess_nodes(
+                sorted_nodes, postprocess_info
+            )
 
         # TMP/TODO: also filter rel_texts as nodes until we figure out better
         # abstraction
