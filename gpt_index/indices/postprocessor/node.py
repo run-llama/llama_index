@@ -2,7 +2,7 @@
 
 import re
 from abc import abstractmethod
-from typing import Dict, List, cast, Optional
+from typing import Dict, List, Optional, cast
 
 from pydantic import BaseModel, Field
 

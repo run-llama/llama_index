@@ -1,7 +1,6 @@
 """Base query classes."""
 
 import logging
-import re
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar, cast

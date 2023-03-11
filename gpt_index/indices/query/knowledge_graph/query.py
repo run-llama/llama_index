@@ -179,7 +179,8 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         for node_processor in self.node_preprocessors:
             sorted_nodes = node_processor.postprocess_nodes(sorted_nodes)
 
-        # TMP/TODO: also filter rel_texts as nodes until we figure out better abstraction
+        # TMP/TODO: also filter rel_texts as nodes until we figure out better
+        # abstraction
         rel_text_nodes = [Node(text=rel_text) for rel_text in rel_texts]
         for node_processor in self.node_preprocessors:
             rel_text_nodes = node_processor.postprocess_nodes(rel_text_nodes)
