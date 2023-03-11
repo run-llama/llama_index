@@ -165,6 +165,11 @@ def test_query(
         "foo": [("bar", "is")],
     }
 
+    # test keyword filter
+    # NOTE: all nodes will be excluded except triplets (and it will be blank)
+    response = index.query("foo", exclude_keywords=["foo"])
+    assert "foo:The following are knowledge triplets" in str(response)
+
     # test specific query class
     query = GPTKGTableQuery(
         index.index_struct,

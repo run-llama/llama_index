@@ -187,34 +187,6 @@ class BaseGPTIndexQuery(Generic[IS]):
             init_node_preprocessors + node_postprocessors
         )
 
-    def _should_use_node(
-        self, node: Node, similarity_tracker: Optional[SimilarityTracker] = None
-    ) -> bool:
-        """Run node through filters to determine if it should be used."""
-        words = re.findall(r"\w+", node.get_text())
-        if self._required_keywords is not None:
-            for w in self._required_keywords:
-                if w not in words:
-                    return False
-
-        if self._exclude_keywords is not None:
-            for w in self._exclude_keywords:
-                if w in words:
-                    return False
-
-        sim_cutoff_exists = (
-            similarity_tracker is not None and self.similarity_cutoff is not None
-        )
-
-        if sim_cutoff_exists:
-            similarity = cast(SimilarityTracker, similarity_tracker).find(node)
-            if similarity is None:
-                return False
-            if cast(float, similarity) < cast(float, self.similarity_cutoff):
-                return False
-
-        return True
-
     def _get_text_from_node(
         self,
         query_bundle: QueryBundle,

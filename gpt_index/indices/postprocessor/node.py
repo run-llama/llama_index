@@ -2,7 +2,7 @@
 
 import re
 from abc import abstractmethod
-from typing import Dict, List, cast
+from typing import Dict, List, cast, Optional
 
 from pydantic import BaseModel, Field
 
@@ -15,7 +15,9 @@ class BaseNodePostprocessor(BasePostprocessor, BaseModel):
     """Node postprocessor."""
 
     @abstractmethod
-    def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> List[Node]:
+    def postprocess_nodes(
+        self, nodes: List[Node], extra_info: Optional[Dict] = None
+    ) -> List[Node]:
         """Postprocess nodes."""
 
 
@@ -25,7 +27,9 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
     required_keywords: List[str] = Field(default_factory=list)
     exclude_keywords: List[str] = Field(default_factory=list)
 
-    def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> List[Node]:
+    def postprocess_nodes(
+        self, nodes: List[Node], extra_info: Optional[Dict] = None
+    ) -> List[Node]:
         """Postprocess nodes."""
         new_nodes = []
         for node in nodes:
@@ -52,8 +56,11 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
 
     similarity_cutoff: float = Field(default=None)
 
-    def postprocess_nodes(self, nodes: List[Node], extra_info: Dict) -> List[Node]:
+    def postprocess_nodes(
+        self, nodes: List[Node], extra_info: Optional[Dict] = None
+    ) -> List[Node]:
         """Postprocess nodes."""
+        extra_info = extra_info or {}
         new_nodes = []
         for node in nodes:
             should_use_node = True
