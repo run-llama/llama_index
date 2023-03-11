@@ -79,8 +79,8 @@ class SlackReader(BaseReader):
                         channel=channel_id,
                         ts=message_ts,
                         cursor=next_cursor,
-                        oldest=self.earliest_date_timestamp,
-                        latest=self.latest_date_timestamp,
+                        oldest=str(self.earliest_date_timestamp),
+                        latest=str(self.latest_date_timestamp),
                     )
                 messages = result["messages"]
                 messages_text.extend(message["text"] for message in messages)
