@@ -5,8 +5,8 @@ import time
 from datetime import datetime
 from typing import List, Optional
 
-from gpt_index import Document
 from gpt_index.readers.base import BaseReader
+from gpt_index.readers.schema.base import Document
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class SlackReader(BaseReader):
 
         """Read a message."""
 
-        messages_text = []
+        messages_text: List[str] = []
         next_cursor = None
         while True:
             try:
@@ -106,7 +106,7 @@ class SlackReader(BaseReader):
 
         """Read a channel."""
 
-        result_messages = []
+        result_messages: List[str] = []
         next_cursor = None
         while True:
             try:
@@ -152,6 +152,7 @@ class SlackReader(BaseReader):
         self, channel_ids: List[str], reverse_chronological: bool = True
     ) -> List[Document]:
         """Load data from the input directory.
+
         Args:
             channel_ids (List[str]): List of channel ids to read.
         Returns:
