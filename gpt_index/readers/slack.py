@@ -5,8 +5,8 @@ import time
 from datetime import datetime
 from typing import List, Optional
 
-from llama_index import Document
-from llama_index.readers.base import BaseReader
+from gpt_index import Document
+from gpt_index.readers.base import BaseReader
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,10 @@ class SlackReader(BaseReader):
                 "variable `SLACK_BOT_TOKEN`."
             )
         self.client = WebClient(token=slack_token)
+        if latest_date is not None and earliest_date is None:
+            raise ValueError(
+                "Must specify `earliest_date` if `latest_date` is specified."
+            )
         if earliest_date is not None:
             self.earliest_date_timestamp = earliest_date.timestamp()
             if latest_date is not None:
@@ -93,15 +97,11 @@ class SlackReader(BaseReader):
                     )
                     time.sleep(int(e.response.headers["retry-after"]))
                 else:
-                    logger.error(
-                        "Error parsing conversation replies: {}".format(e)
-                    )
+                    logger.error("Error parsing conversation replies: {}".format(e))
 
         return "\n\n".join(messages_text)
 
-    def _read_channel(
-        self, channel_id: str, reverse_chronological: bool
-    ) -> str:
+    def _read_channel(self, channel_id: str, reverse_chronological: bool) -> str:
         from slack_sdk.errors import SlackApiError
 
         """Read a channel."""
@@ -121,9 +121,7 @@ class SlackReader(BaseReader):
                 conversation_history = result["messages"]
                 # Print results
                 logger.info(
-                    "{} messages found in {}".format(
-                        len(conversation_history), id
-                    )
+                    "{} messages found in {}".format(len(conversation_history), id)
                 )
                 result_messages.extend(
                     self._read_message(channel_id, message["ts"])
@@ -142,9 +140,7 @@ class SlackReader(BaseReader):
                     )
                     time.sleep(int(e.response.headers["retry-after"]))
                 else:
-                    logger.error(
-                        "Error parsing conversation replies: {}".format(e)
-                    )
+                    logger.error("Error parsing conversation replies: {}".format(e))
 
         return (
             "\n\n".join(result_messages)
