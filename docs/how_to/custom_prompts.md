@@ -7,47 +7,53 @@ LlamaIndex uses a finite set of *prompt types*, described [here](/reference/prom
 All index classes, along with their associated queries, utilize a subset of these prompts. The user may provide their own prompt.
 If the user does not provide their own prompt, default prompts are used.
 
-An API reference of all index classes and query classes are found below. The definition of each index class and query
+NOTE: The majority of custom prompts are typically passed in during **query-time**, 
+not during **index construction**. For instance, both the `QuestionAnswerPrompt` and `RefinePrompt` are used
+during query-time to synthesize an answer. Some indices do use prompts during index construction
+to build the index; for instance, `GPTTreeIndex` uses a `SummaryPrompt` to hierarchically
+summarize the nodes, and `GPTKeywordTableIndex` uses a `KeywordExtractPrompt` to extract keywords.
+Some indices do allow `QuestionAnswerPrompt` and `RefinePrompt` to be passed in during index
+construction, but that usage is deprecated.
+
+
+An API reference of all query classes and index classes (used for index construction) are found below. The definition of each query class and index class
 contains optional prompts that the user may pass in.
-- [Indices](/reference/indices.rst)
 - [Queries](/reference/query.rst)
+- [Indices](/reference/indices.rst)
 
 
 ### Example
 
-An example can be found in [this notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/paul_graham_essay/TestEssay.ipynb).
+An example can be found in [this notebook](https://github.com/jerryjliu/gpt_index/blob/main/examples/paul_graham_essay/TestEssay.ipynb).
 
-The corresponding snippet is below. We show how to define a custom Summarization Prompt that not only
-contains a `text` field, but also `query_str` field during construction of `GPTTreeIndex`, so that 
-the answer to the query can be simply synthesized from the root nodes.
+
+A corresponding snippet is below. We show how to define a custom `QuestionAnswer` prompt which
+requires both a `context_str` and `query_str` field. The prompt is passed in during query-time.
 
 ```python
 
-from llama_index import SummaryPrompt, GPTTreeIndex, SimpleDirectoryReader
+from llama_index import QuestionAnswerPrompt, GPTSimpleVectorIndex, SimpleDirectoryReader
 
 # load documents
 documents = SimpleDirectoryReader('data').load_data()
 
-# define custom SummaryPrompt
+# define custom QuestionAnswerPrompt
 query_str = "What did the author do growing up?"
-SUMMARY_PROMPT_TMPL = (
-    "Context information is below. \n"
+QA_PROMPT_TMPL = (
+    "We have provided context information below. \n"
     "---------------------\n"
     "{context_str}"
     "\n---------------------\n"
-    "Given the context information and not prior knowledge, "
-    f"answer the question: {query_str}\n"
+    "Given this information, please answer the question: {query_str}\n"
 )
-SUMMARY_PROMPT = SummaryPrompt(SUMMARY_PROMPT_TMPL)
-# Build GPTTreeIndex: pass in custom prompt
-index_with_query = GPTTreeIndex(documents, summary_template=SUMMARY_PROMPT)
+QA_PROMPT = QuestionAnswerPrompt(QA_PROMPT_TMPL)
+# Build GPTSimpleVectorIndex
+index = GPTSimpleVectorIndex(documents)
+
+response = index.query(query_str, text_qa_template=QA_PROMPT)
+print(response)
 
 ```
 
-Once the index is built, we can retrieve our answer:
-```python
-# directly retrieve response from root nodes instead of traversing tree
-response = index_with_query.query(query_str, mode="retrieve")
-```
 
 Check out the [reference documentation](/reference/prompts.rst) for a full set of all prompts.

@@ -131,7 +131,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                         )
 
                     embed_outputs = self._embed_model.get_queued_text_embeddings()
-                    for (rel_text, rel_embed) in zip(*embed_outputs):
+                    for rel_text, rel_embed in zip(*embed_outputs):
                         index_struct.add_to_embedding_dict(rel_text, rel_embed)
 
         return index_struct
@@ -178,7 +178,9 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         try:
             import networkx as nx
         except ImportError:
-            raise ImportError("Please install networkx to visualize the graph.")
+            raise ImportError(
+                "Please install networkx to visualize the graph: `pip install networkx`"
+            )
 
         g = nx.Graph()
         # add nodes

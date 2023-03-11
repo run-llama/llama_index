@@ -7,6 +7,7 @@ from gpt_index.prompts.prompts import (
     QuestionAnswerPrompt,
     RefinePrompt,
     SchemaExtractPrompt,
+    SimpleInputPrompt,
     SummaryPrompt,
     TableContextPrompt,
     TextToSQLPrompt,
@@ -57,3 +58,6 @@ MOCK_KG_TRIPLET_EXTRACT_PROMPT_TMPL = "{max_knowledge_triplets}\n{text}"
 MOCK_KG_TRIPLET_EXTRACT_PROMPT = KnowledgeGraphPrompt(
     MOCK_KG_TRIPLET_EXTRACT_PROMPT_TMPL
 )
+
+MOCK_INPUT_PROMPT_TMPL = "{query_str}"
+MOCK_INPUT_PROMPT = SimpleInputPrompt(MOCK_INPUT_PROMPT_TMPL)

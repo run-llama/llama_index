@@ -126,7 +126,8 @@ class PromptHelper:
         fmt_dict = {
             v: "" for v in prompt.input_variables if v not in prompt.partial_dict
         }
-        empty_prompt_txt = prompt.format(**fmt_dict)
+        # TODO: change later from llm=None
+        empty_prompt_txt = prompt.format(llm=None, **fmt_dict)
         return empty_prompt_txt
 
     def get_biggest_prompt(self, prompts: List[Prompt]) -> Prompt:

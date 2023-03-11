@@ -25,7 +25,7 @@ class MboxReader(BaseReader):
             message_format (str): Message format overriding default.
         """
         docs: List[Document] = []
-        for (dirpath, dirnames, filenames) in os.walk(input_dir):
+        for dirpath, dirnames, filenames in os.walk(input_dir):
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
             for filename in filenames:
                 if filename.endswith(".mbox"):

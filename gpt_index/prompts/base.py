@@ -3,7 +3,10 @@ from copy import deepcopy
 from string import Formatter
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
+from langchain import BasePromptTemplate as BaseLangchainPrompt
 from langchain import PromptTemplate as LangchainPrompt
+from langchain.chains.prompt_selector import ConditionalPromptSelector
+from langchain.schema import BaseLanguageModel
 
 from gpt_index.prompts.prompt_type import PromptType
 
@@ -25,11 +28,18 @@ class Prompt:
     def __init__(
         self,
         template: Optional[str] = None,
-        langchain_prompt: Optional[LangchainPrompt] = None,
+        langchain_prompt: Optional[BaseLangchainPrompt] = None,
+        langchain_prompt_selector: Optional[ConditionalPromptSelector] = None,
         **prompt_kwargs: Any,
     ) -> None:
         """Init params."""
-        if langchain_prompt is None:
+        # first check if langchain_prompt_selector is provided
+        # TODO: self.prompt is deprecated, switch to prompt_selector under the hood
+        if langchain_prompt_selector is not None:
+            self.prompt_selector = langchain_prompt_selector
+            self.prompt: BaseLangchainPrompt = self.prompt_selector.default_prompt
+        # then check if template is provided
+        elif langchain_prompt is None:
             if template is None:
                 raise ValueError(
                     "`template` must be specified if `langchain_prompt` is None"
@@ -44,30 +54,46 @@ class Prompt:
                     f"required input_variables: {self.input_variables}"
                 )
 
-            self.prompt: LangchainPrompt = LangchainPrompt(
+            self.prompt = LangchainPrompt(
                 input_variables=self.input_variables, template=template, **prompt_kwargs
             )
+            self.prompt_selector = ConditionalPromptSelector(default_prompt=self.prompt)
+        # finally, check if langchain_prompt is provided
         else:
             if template:
                 raise ValueError(
                     f"Both template ({template}) and langchain_prompt "
                     f"({langchain_prompt}) are provided, only one should be."
                 )
-            if set(langchain_prompt.input_variables) != set(self.input_variables):
+            self.prompt = langchain_prompt
+            self.prompt_selector = ConditionalPromptSelector(default_prompt=self.prompt)
+
+        # validate all prompts in prompt selector
+        all_lc_prompts = [self.prompt_selector.default_prompt]
+        for _, prompt in self.prompt_selector.conditionals:
+            all_lc_prompts.append(prompt)
+        for lc_prompt in all_lc_prompts:
+            if set(lc_prompt.input_variables) != set(self.input_variables):
                 raise ValueError(
                     f"Invalid prompt: {langchain_prompt}, variables do not match the "
                     f"required input_variables: {self.input_variables}"
                 )
-            self.prompt = langchain_prompt
         self.partial_dict: Dict[str, Any] = {}
         self.prompt_kwargs = prompt_kwargs
 
     @classmethod
     def from_langchain_prompt(
-        cls: Type[PMT], prompt: LangchainPrompt, **kwargs: Any
+        cls: Type[PMT], prompt: BaseLangchainPrompt, **kwargs: Any
     ) -> PMT:
         """Load prompt from LangChain prompt."""
         return cls(langchain_prompt=prompt, **kwargs)
+
+    @classmethod
+    def from_langchain_prompt_selector(
+        cls: Type[PMT], prompt_selector: ConditionalPromptSelector, **kwargs: Any
+    ) -> PMT:
+        """Load prompt from LangChain prompt."""
+        return cls(langchain_prompt_selector=prompt_selector, **kwargs)
 
     def partial_format(self: PMT, **kwargs: Any) -> PMT:
         """Format the prompt partially.
@@ -86,7 +112,9 @@ class Prompt:
         return copy_obj
 
     @classmethod
-    def from_prompt(cls: Type[PMT], prompt: "Prompt") -> PMT:
+    def from_prompt(
+        cls: Type[PMT], prompt: "Prompt", llm: Optional[BaseLanguageModel] = None
+    ) -> PMT:
         """Create a prompt from an existing prompt.
 
         Use case: If the existing prompt is already partially filled,
@@ -95,25 +123,30 @@ class Prompt:
         partially filled prompt.
 
         """
-        template = prompt.prompt.template
-        tmpl_vars = {v for _, v, _, _ in Formatter().parse(template) if v is not None}
+        lc_prompt = prompt.get_langchain_prompt(llm=llm)
+        tmpl_vars = lc_prompt.input_variables
         format_dict = {}
         for var in tmpl_vars:
             if var not in prompt.partial_dict:
                 format_dict[var] = f"{{{var}}}"
 
-        template_str = prompt.format(**format_dict)
+        template_str = prompt.format(llm=llm, **format_dict)
         cls_obj: PMT = cls(template_str, **prompt.prompt_kwargs)
         return cls_obj
 
-    def get_langchain_prompt(self) -> LangchainPrompt:
+    def get_langchain_prompt(
+        self, llm: Optional[BaseLanguageModel] = None
+    ) -> BaseLangchainPrompt:
         """Get langchain prompt."""
-        return self.prompt
+        if llm is None:
+            return self.prompt_selector.default_prompt
+        return self.prompt_selector.get_prompt(llm=llm)
 
-    def format(self, **kwargs: Any) -> str:
+    def format(self, llm: Optional[BaseLanguageModel] = None, **kwargs: Any) -> str:
         """Format the prompt."""
         kwargs.update(self.partial_dict)
-        return self.prompt.format(**kwargs)
+        lc_prompt = self.get_langchain_prompt(llm=llm)
+        return lc_prompt.format(**kwargs)
 
     def get_full_format_args(self, kwargs: Dict) -> Dict[str, Any]:
         """Get dict of all format args.

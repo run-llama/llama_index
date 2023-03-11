@@ -93,7 +93,8 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
             self.index_struct.text_chunks[idx] for idx in sorted_chunk_indices
         ]
         # filter sorted nodes
-        sorted_nodes = [node for node in sorted_nodes if self._should_use_node(node)]
+        for node_processor in self.node_preprocessors:
+            sorted_nodes = node_processor.postprocess_nodes(sorted_nodes)
 
         if logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG:
             for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):

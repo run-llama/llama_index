@@ -23,13 +23,17 @@ class PptxParser(BaseParser):
         try:
             from pptx import Presentation  # noqa: F401
         except ImportError:
-            raise ValueError(
-                "The package `python-pptx` is required to read Powerpoint files."
+            raise ImportError(
+                "The package `python-pptx` is required to read Powerpoint files: "
+                "`pip install python-pptx`"
             )
         try:
             import torch  # noqa: F401
         except ImportError:
-            raise ValueError("The package `pytorch` is required to caption images.")
+            raise ImportError(
+                "The package `pytorch` is required to caption images: "
+                "`pip install torch`"
+            )
         try:
             from transformers import (
                 AutoTokenizer,
@@ -37,14 +41,15 @@ class PptxParser(BaseParser):
                 ViTFeatureExtractor,
             )
         except ImportError:
-            raise ValueError(
-                "The package `transformers` is required to caption images."
+            raise ImportError(
+                "The package `transformers` is required to caption images: "
+                "`pip install transformers`"
             )
         try:
             from PIL import Image  # noqa: F401
         except ImportError:
-            raise ValueError(
-                "PIL is required to read image files." "Please run `pip install Pillow`"
+            raise ImportError(
+                "PIL is required to read image files: " "`pip install Pillow`"
             )
 
         model = VisionEncoderDecoderModel.from_pretrained(

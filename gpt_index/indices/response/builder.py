@@ -10,7 +10,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Generator, List, Optional, Union, cast
+from typing import Any, Dict, Generator, List, Optional, Tuple, Union, cast
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
@@ -220,16 +220,13 @@ class ResponseBuilder:
             )
         return response
 
-    def _get_response_tree_summarize(
+    def _get_tree_index_builder_and_nodes(
         self,
+        summary_template: SummaryPrompt,
         query_str: str,
-        prev_response: Optional[str],
         num_children: int = 10,
-    ) -> RESPONSE_TEXT_TYPE:
-        """Get tree summarize response."""
-        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
-        summary_template = SummaryPrompt.from_prompt(text_qa_template)
-
+    ) -> Tuple[GPTTreeIndexBuilder, Dict]:
+        """Get tree index builder."""
         # first join all the text chunks into a single text
         all_text = "\n\n".join([t.text for t in self._texts])
         # then get text splitter
@@ -249,7 +246,16 @@ class ResponseBuilder:
             text_splitter,
             use_async=self._use_async,
         )
-        root_nodes = index_builder.build_index_from_nodes(all_nodes, all_nodes)
+        return index_builder, all_nodes
+
+    def _get_tree_response_over_root_nodes(
+        self,
+        query_str: str,
+        prev_response: Optional[str],
+        root_nodes: Dict[int, Node],
+        text_qa_template: QuestionAnswerPrompt,
+    ) -> RESPONSE_TEXT_TYPE:
+        """Get response from tree builder over root nodes."""
         node_list = get_sorted_node_list(root_nodes)
         node_text = self.prompt_helper.get_text_from_nodes(
             node_list, prompt=text_qa_template
@@ -263,6 +269,42 @@ class ResponseBuilder:
         if isinstance(response, str):
             response = response or "Empty Response"
         return response
+
+    def _get_response_tree_summarize(
+        self,
+        query_str: str,
+        prev_response: Optional[str],
+        num_children: int = 10,
+    ) -> RESPONSE_TEXT_TYPE:
+        """Get tree summarize response."""
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        summary_template = SummaryPrompt.from_prompt(text_qa_template)
+
+        index_builder, all_nodes = self._get_tree_index_builder_and_nodes(
+            summary_template, query_str, num_children
+        )
+        root_nodes = index_builder.build_index_from_nodes(all_nodes, all_nodes)
+        return self._get_tree_response_over_root_nodes(
+            query_str, prev_response, root_nodes, text_qa_template
+        )
+
+    async def _aget_response_tree_summarize(
+        self,
+        query_str: str,
+        prev_response: Optional[str],
+        num_children: int = 10,
+    ) -> RESPONSE_TEXT_TYPE:
+        """Get tree summarize response."""
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        summary_template = SummaryPrompt.from_prompt(text_qa_template)
+
+        index_builder, all_nodes = self._get_tree_index_builder_and_nodes(
+            summary_template, query_str, num_children
+        )
+        root_nodes = await index_builder.abuild_index_from_nodes(all_nodes, all_nodes)
+        return self._get_tree_response_over_root_nodes(
+            query_str, prev_response, root_nodes, text_qa_template
+        )
 
     def get_response(
         self,
@@ -278,6 +320,26 @@ class ResponseBuilder:
             return self._get_response_compact(query_str, prev_response)
         elif mode == ResponseMode.TREE_SUMMARIZE:
             return self._get_response_tree_summarize(
+                query_str, prev_response, **response_kwargs
+            )
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
+
+    async def aget_response(
+        self,
+        query_str: str,
+        prev_response: Optional[str] = None,
+        mode: ResponseMode = ResponseMode.DEFAULT,
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        """Get response."""
+        # NOTE: for default and compact response modes, return synchronous version
+        if mode == ResponseMode.DEFAULT:
+            return self._get_response_default(query_str, prev_response)
+        elif mode == ResponseMode.COMPACT:
+            return self._get_response_compact(query_str, prev_response)
+        elif mode == ResponseMode.TREE_SUMMARIZE:
+            return await self._aget_response_tree_summarize(
                 query_str, prev_response, **response_kwargs
             )
         else:

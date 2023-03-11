@@ -35,5 +35,8 @@ class PromptType(str, Enum):
     # KG extraction prompt
     KNOWLEDGE_TRIPLET_EXTRACT = "knowledge_triplet_extract"
 
+    # Simple Input prompt
+    SIMPLE_INPUT = "simple_input"
+
     # custom (by default)
     CUSTOM = "custom"
