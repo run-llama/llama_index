@@ -75,7 +75,7 @@ class Response:
             texts.append(source_text)
         return "\n\n".join(texts)
 
-    def display(self, source_length: int = 100) -> None:
+    def display(self, source_length: int = 256) -> None:
         display_response(self, source_length)
 
 

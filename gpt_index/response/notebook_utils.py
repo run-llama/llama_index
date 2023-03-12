@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from IPython.display import Markdown, display
 
@@ -9,14 +9,24 @@ from gpt_index.utils import truncate_text
 DEFAULT_THUMBNAIL_SIZE = (512, 512)
 
 
+def display_image(image: str, size: Tuple[int, int] = DEFAULT_THUMBNAIL_SIZE) -> None:
+    img = b64_2_img(image)
+    img.thumbnail(size)
+    display(img)
+
+
 def display_source_node(source_node: SourceNode, source_length: int = 100):
-    display(Markdown(f"**Document ID:** {source_node.doc_id}"))
     source_text_fmt = truncate_text(source_node.source_text.strip(), source_length)
-    display(Markdown(f"**Node Text:** {source_text_fmt}"))
+    text_md = (
+        f"**Document ID:** {source_node.doc_id}<br>"
+        f"**Node Text:** {source_text_fmt}<br>"
+        f"**Node Image:**"
+        if source_node.image is not None
+        else ""
+    )
+    display(Markdown(text_md))
     if source_node.image is not None:
-        img = b64_2_img(source_node.image)
-        img.thumbnail(DEFAULT_THUMBNAIL_SIZE)
-        display(img)
+        display_image(source_node.image)
 
 
 def display_extra_info(extra_info: Dict[str, Any]):
