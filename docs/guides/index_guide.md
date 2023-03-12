@@ -16,7 +16,7 @@ The list index simply stores Nodes as a sequential chain.
 
 ### Querying
 
-During query time, if no other query parameters are specified, LlamaIndex simply all Nodes in the list into
+During query time, if no other query parameters are specified, LlamaIndex simply loads all Nodes in the list into
 our Reponse Synthesis module.
 
 ![](/_static/indices/list_query.png)
