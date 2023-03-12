@@ -19,11 +19,11 @@ def display_source_node(source_node: SourceNode, source_length: int = 100):
     source_text_fmt = truncate_text(source_node.source_text.strip(), source_length)
     text_md = (
         f"**Document ID:** {source_node.doc_id}<br>"
-        f"**Node Text:** {source_text_fmt}<br>"
-        f"**Node Image:**"
-        if source_node.image is not None
-        else ""
+        f"**Similarity:** {source_node.similarity}<br>"
+        f"**Text:** {source_text_fmt}<br>"
     )
+    if source_node.image is not None:
+        text_md += "**Image:**"
     display(Markdown(text_md))
     if source_node.image is not None:
         display_image(source_node.image)
