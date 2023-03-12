@@ -97,18 +97,18 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         Cache the query embedding and the node text embedding.
 
         """
-        query_embedding = self._embed_model.get_agg_embedding_from_queries(
-            query_bundle.embedding_strs
-        )
+        if query_bundle.embedding is None:
+            query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
+                query_bundle.embedding_strs
+            )
         similarities = []
         for node in nodes:
-            if node.embedding is not None:
-                text_embedding = node.embedding
-            else:
-                text_embedding = self._embed_model.get_text_embedding(node.get_text())
-                node.embedding = text_embedding
+            if node.embedding is None:
+                node.embedding = self._embed_model.get_text_embedding(node.get_text())
 
-            similarity = self._embed_model.similarity(query_embedding, text_embedding)
+            similarity = self._embed_model.similarity(
+                query_bundle.embedding, node.embedding
+            )
             similarities.append(similarity)
         return similarities
 
