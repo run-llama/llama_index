@@ -10,7 +10,7 @@ To start with, you will mostly likely want to use a [Vector Store Index](vector-
 Vector Store Indices
 are a simple and effective tool that allows you to answer a query over a large corpus of data.
 When you define a Vector Store Index over a collection of documents, it embeds each text chunk and stores the 
-embedding in an underlying vector store. To answer a query, the vector store index embedds the query, 
+embedding in an underlying vector store. To answer a query, the vector store index embeds the query, 
 fetches the top-k text chunks by embedding similarity, and runs the LLM over these chunks in order to synthesize the answer.
 [The starter example](/getting_started/starter_example.md) shows how to get started using a Vector Store Index
 (`GPTSimpleVectorIndex`). See [Embedding Support How-To](/how_to/embeddings.md) for a more detailed treatment of all vector
