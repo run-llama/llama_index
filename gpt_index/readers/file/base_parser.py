@@ -8,8 +8,8 @@ from typing import Dict, List, Optional, Union
 
 @dataclass
 class ImageParserOutput:
+    text: str = ""
     image: Optional[str] = None
-    text: Optional[str] = None
 
 
 class BaseParser:

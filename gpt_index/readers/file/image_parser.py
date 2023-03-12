@@ -4,29 +4,13 @@ Contains parsers for image files.
 
 """
 
-import base64
 import re
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, Optional
 
+from gpt_index.img_utils import im_2_b64
 from gpt_index.readers.file.base_parser import BaseParser, ImageParserOutput
-
-
-# Convert Image to Base64
-def im_2_b64(image, format: str = "JPEG"):
-    buff = BytesIO()
-    image.save(buff, format=format)
-    img_str = base64.b64encode(buff.getvalue())
-    return img_str
-
-
-# Convert Base64 to Image
-def b64_2_img(data: str):
-    from PIL import Image
-
-    buff = BytesIO(base64.b64decode(data))
-    return Image.open(buff)
 
 
 class ImageParser(BaseParser):
@@ -102,7 +86,7 @@ class ImageParser(BaseParser):
             image_str = im_2_b64(image)
 
         # Parse image into text
-        text_str: Optional[str] = None
+        text_str: str = ""
         if self._parse_text:
             import torch
 
@@ -139,7 +123,8 @@ class ImageParser(BaseParser):
             )
             # remove first task start token
             text_str = re.sub(r"<.*?>", "", sequence, count=1).strip()
+
         return ImageParserOutput(
-            image=image_str,
             text=text_str,
+            image=image_str,
         )

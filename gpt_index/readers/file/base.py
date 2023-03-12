@@ -32,9 +32,9 @@ DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
 }
 
 IMAGE_FILE_SUFFIX: List[str] = {
-    "jpg",
-    "png",
-    "jpeg",
+    ".jpg",
+    ".png",
+    ".jpeg",
 }
 
 
@@ -161,11 +161,18 @@ class SimpleDirectoryReader(BaseReader):
                 with open(input_file, "r", errors=self.errors) as f:
                     data = f.read()
 
-            if input_file in IMAGE_FILE_SUFFIX:
+            if input_file.suffix in IMAGE_FILE_SUFFIX:
                 # process image
-                assert isinstance(data, ImageParserOutput)
+                if not isinstance(data, ImageParserOutput):
+                    raise ValueError(
+                        f"An image parser should output an ImageParserOutput, \
+                        but got {type(data)} instead."
+                    )
+
                 if self.file_metadata is not None:
-                    extra_info = self.file_metadata(data.text)
+                    extra_info = self.file_metadata(str(input_file))
+                else:
+                    extra_info = None
                 image_docs.append(
                     ImageDocument(
                         text=data.text, extra_info=extra_info, image=data.image

@@ -56,6 +56,8 @@ class Node(IndexStruct):
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
 
+    image: Optional[str] = None
+
     def get_text(self) -> str:
         """Get text."""
         text = super().get_text()
