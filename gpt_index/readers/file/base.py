@@ -1,10 +1,11 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from gpt_index.readers.base import BaseReader
-from gpt_index.readers.file.base_parser import BaseParser
+from gpt_index.readers.file.base_parser import BaseParser, ImageParserOutput
 from gpt_index.readers.file.docs_parser import DocxParser, PDFParser
 from gpt_index.readers.file.epub_parser import EpubParser
 from gpt_index.readers.file.image_parser import ImageParser
@@ -13,7 +14,7 @@ from gpt_index.readers.file.mbox_parser import MboxParser
 from gpt_index.readers.file.slides_parser import PptxParser
 from gpt_index.readers.file.tabular_parser import PandasCSVParser
 from gpt_index.readers.file.video_audio import VideoAudioParser
-from gpt_index.readers.schema.base import Document
+from gpt_index.readers.schema.base import Document, ImageDocument
 
 DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
     ".pdf": PDFParser(),
@@ -28,6 +29,12 @@ DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
     ".epub": EpubParser(),
     ".md": MarkdownParser(),
     ".mbox": MboxParser(),
+}
+
+IMAGE_FILE_SUFFIX: List[str] = {
+    "jpg",
+    "png",
+    "jpeg",
 }
 
 
@@ -142,6 +149,7 @@ class SimpleDirectoryReader(BaseReader):
         data: Union[str, List[str]] = ""
         data_list: List[str] = []
         metadata_list = []
+        image_docs: List[ImageDocument] = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
                 parser = self.file_extractor[input_file.suffix]
@@ -152,16 +160,33 @@ class SimpleDirectoryReader(BaseReader):
                 # do standard read
                 with open(input_file, "r", errors=self.errors) as f:
                     data = f.read()
-            if isinstance(data, List):
-                data_list.extend(data)
+
+            if input_file in IMAGE_FILE_SUFFIX:
+                # process image
+                assert isinstance(data, ImageParserOutput)
+                if self.file_metadata is not None:
+                    extra_info = self.file_metadata(data.text)
+                image_docs.append(
+                    ImageDocument(
+                        text=data.text, extra_info=extra_info, image=data.image
+                    )
+                )
             else:
-                data_list.append(str(data))
-            if self.file_metadata is not None:
-                metadata_list.append(self.file_metadata(str(input_file)))
+                # process text-only
+                if isinstance(data, List):
+                    data_list.extend(data)
+                else:
+                    data_list.append(str(data))
+                if self.file_metadata is not None:
+                    metadata_list.append(self.file_metadata(str(input_file)))
 
         if concatenate:
-            return [Document("\n".join(data_list))]
+            text_docs = [Document("\n".join(data_list))]
         elif self.file_metadata is not None:
-            return [Document(d, extra_info=m) for d, m in zip(data_list, metadata_list)]
+            text_docs = [
+                Document(d, extra_info=m) for d, m in zip(data_list, metadata_list)
+            ]
         else:
-            return [Document(d) for d in data_list]
+            text_docs = [Document(d) for d in data_list]
+
+        return text_docs + image_docs
