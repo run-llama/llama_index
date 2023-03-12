@@ -150,7 +150,7 @@ class SimpleDirectoryReader(BaseReader):
                 data = parser.parse_file(input_file, errors=self.errors)
             else:
                 # do standard read
-                with open(input_file, "r", errors=self.errors) as f:
+                with open(input_file, "r", errors=self.errors, encoding="utf8") as f:
                     data = f.read()
             if isinstance(data, List):
                 data_list.extend(data)
