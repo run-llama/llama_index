@@ -58,11 +58,11 @@ DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT = DecomposeQueryTransformPrompt(
 )
 
 
-class CoTDecomposeQueryTransformPrompt(Prompt):
-    """CoT Decompose prompt for query transformation.
+class StepDecomposeQueryTransformPrompt(Prompt):
+    """Step Decompose prompt for query transformation.
 
     Prompt to "decompose" a query into another query
-    given the existing context + previous reasoning.
+    given the existing context + previous reasoning (the previous steps).
 
     Required template variables: `context_str`, `query_str`, `prev_reasoning`
 
@@ -77,7 +77,7 @@ class CoTDecomposeQueryTransformPrompt(Prompt):
     input_variables: List[str] = ["context_str", "query_str", "prev_reasoning"]
 
 
-DEFAULT_COT_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
+DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
     "The original question is as follows: {query_str}\n"
     "We have an opportunity to answer some, or all of the question from a "
     "knowledge source. "
@@ -87,11 +87,12 @@ DEFAULT_COT_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
     "be answered from "
     "the context. The question can be the same as the original question, "
     "or a new question that represents a subcomponent of the overall question.\n"
+    "If the new question cannot be answered from the context, return 'None'."
     "As an example: "
     "\n\n"
     "Question: How many Grand Slam titles does the winner of the 2020 Australian "
     "Open have?\n"
-    "Knowledge source context: Provides information about the winners of the 2020 "
+    "Knowledge source context: Provides names of the winners of the 2020 "
     "Australian Open\n"
     "Previous reasoning: None."
     "New question: Who was the winner of the 2020 Australian Open? "
@@ -101,6 +102,16 @@ DEFAULT_COT_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
     "Knowledge source context: Provides information about the winners of the 2020 "
     "Australian Open\n"
     "Previous reasoning:\n"
+    "- Who was the winner of the 2020 Australian Open? \n"
+    "- The winner of the 2020 Australian Open was Novak Djokovic.\n"
+    "New question: None"
+    "\n\n"
+    "Question: How many Grand Slam titles does the winner of the 2020 Australian "
+    "Open have?\n"
+    "Knowledge source context: Provides information about the winners of the 2020 "
+    "Australian Open - includes biographical information for each winner\n"
+    "Previous reasoning:\n"
+    "- Who was the winner of the 2020 Australian Open? \n"
     "- The winner of the 2020 Australian Open was Novak Djokovic.\n"
     "New question: How many Grand Slam titles does Novak Djokovic have? "
     "\n\n"
@@ -110,6 +121,6 @@ DEFAULT_COT_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
     "New question: "
 )
 
-DEFAULT_COT_DECOMPOSE_QUERY_TRANSFORM_PROMPT = CoTDecomposeQueryTransformPrompt(
-    DEFAULT_COT_DECOMPOSE_QUERY_TRANSFORM_TMPL
+DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT = StepDecomposeQueryTransformPrompt(
+    DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_TMPL
 )

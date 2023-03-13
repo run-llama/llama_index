@@ -121,6 +121,8 @@ class QueryConfig(DataClassJsonMixin):
 
     # NOTE/TODO: type as Any for now to avoid circular dependency
     query_transform: Optional[Any] = None
+    # NOTE/TODO: type as Any for now to avoid circular dependency
+    query_combiner: Optional[Any] = None
 
 
 @dataclass
