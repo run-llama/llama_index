@@ -8,15 +8,6 @@ from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.prompt_type import PromptType
 
 
-class QueryTransformPromptType(PromptType):
-    """QueryTransform Prompt type."""
-
-    # single decompose
-    DECOMPOSE = "decompose"
-    # chain of thought decompose
-    COT_DECOMPOSE = "cot_decompose"
-
-
 class DecomposeQueryTransformPrompt(Prompt):
     """Decompose prompt for query transformation.
 
@@ -31,7 +22,8 @@ class DecomposeQueryTransformPrompt(Prompt):
 
     """
 
-    prompt_type: PromptType = QueryTransformPromptType.DECOMPOSE
+    # TODO: specify a better prompt type
+    prompt_type: PromptType = PromptType.CUSTOM
     input_variables: List[str] = ["context_str", "query_str"]
 
 
@@ -81,7 +73,8 @@ class CoTDecomposeQueryTransformPrompt(Prompt):
 
     """
 
-    prompt_type: PromptType = QueryTransformPromptType.COT_DECOMPOSE
+    # TODO: specify a better prompt type
+    prompt_type: PromptType = PromptType.CUSTOM
     input_variables: List[str] = ["context_str", "query_str", "prev_reasoning"]
 
 

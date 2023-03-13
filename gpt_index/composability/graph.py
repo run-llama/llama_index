@@ -3,6 +3,7 @@
 import json
 from typing import Any, Dict, List, Optional, Type, Union
 
+from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
@@ -117,6 +118,7 @@ class ComposableGraph:
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         llm_predictor: Optional[LLMPredictor] = None,
+        query_transform: Optional[BaseQueryTransform] = None,
     ) -> Response:
         """Query the index."""
         # go over all the indices and create a registry
@@ -128,6 +130,7 @@ class ComposableGraph:
             self._docstore,
             self._index_registry,
             query_configs=query_configs,
+            query_transform=query_transform,
             recursive=True,
         )
         return query_runner.query(query_str, self._index_struct)
@@ -137,6 +140,7 @@ class ComposableGraph:
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         llm_predictor: Optional[LLMPredictor] = None,
+        query_transform: Optional[BaseQueryTransform] = None,
     ) -> Response:
         """Query the index."""
         # go over all the indices and create a registry
@@ -148,6 +152,7 @@ class ComposableGraph:
             self._docstore,
             self._index_registry,
             query_configs=query_configs,
+            query_transform=query_transform,
             recursive=True,
         )
         return await query_runner.aquery(query_str, self._index_struct)

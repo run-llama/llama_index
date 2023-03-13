@@ -122,7 +122,12 @@ class QueryRunner(BaseQueryRunner):
         """Run query."""
         # NOTE: Currently, query transform is only run once
         # TODO: Consider refactor to support index-specific query transform
-        query_bundle = self._query_transform(query_str_or_bundle)
+        # TODO: abstract query transformation loop into a separate class
+
+        transform_extra_info = {"index_struct": index_struct}
+        query_bundle = self._query_transform(
+            query_str_or_bundle, extra_info=transform_extra_info
+        )
         query_obj = self._get_query_obj(index_struct)
 
         return query_obj.query(query_bundle)

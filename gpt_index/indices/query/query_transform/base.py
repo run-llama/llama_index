@@ -15,6 +15,7 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from gpt_index.response.schema import Response
+from langchain.input import print_text
 
 
 class BaseQueryTransform:
@@ -34,13 +35,14 @@ class BaseQueryTransform:
     def run(
         self,
         query_bundle_or_str: Union[str, QueryBundle],
-        extra_info: Optional[str] = None,
+        extra_info: Optional[Dict] = None,
     ) -> QueryBundle:
         """Run query transform."""
         extra_info = extra_info or {}
-        if isinstance(query_bundle, str):
+        if isinstance(query_bundle_or_str, str):
             query_bundle = QueryBundle(
-                query_str=query_bundle, custom_embedding_strs=[query_bundle]
+                query_str=query_bundle_or_str,
+                custom_embedding_strs=[query_bundle_or_str],
             )
         else:
             query_bundle = query_bundle_or_str
@@ -53,7 +55,7 @@ class BaseQueryTransform:
         extra_info: Optional[Dict] = None,
     ) -> QueryBundle:
         """Run query processor."""
-        return self.run(query_bundle_or_str)
+        return self.run(query_bundle_or_str, extra_info=extra_info)
 
 
 class IdentityQueryTransform(BaseQueryTransform):
@@ -131,6 +133,7 @@ class DecomposeQueryTransform(BaseQueryTransform):
         self,
         llm_predictor: Optional[LLMPredictor] = None,
         decompose_query_prompt: Optional[DecomposeQueryTransformPrompt] = None,
+        verbose: bool = False,
     ) -> None:
         """Init params."""
         super().__init__()
@@ -138,12 +141,15 @@ class DecomposeQueryTransform(BaseQueryTransform):
         self._decompose_query_prompt = (
             decompose_query_prompt or DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT
         )
+        self.verbose = verbose
 
     def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         """Run query transform."""
         index_struct = cast(IndexStruct, extra_info.get("index_struct", None))
         # currently, just get text from the index
-        index_text = index_struct.get_text()
+        index_text = (
+            index_struct.get_text() if not index_struct.is_text_none else "None"
+        )
 
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
@@ -153,6 +159,11 @@ class DecomposeQueryTransform(BaseQueryTransform):
             query_str=query_str,
             context_str=index_text,
         )
+
+        if self.verbose:
+            print_text(f"> Current query: {query_str}\n")
+            print_text(f"> New query: {new_query_str}\n")
+
         return QueryBundle(
             query_str=new_query_str,
             custom_embedding_strs=query_bundle.custom_embedding_strs,
@@ -184,10 +195,10 @@ class CoTDecomposeQueryTransform(BaseQueryTransform):
             cot_decompose_query_prompt or DEFAULT_COT_DECOMPOSE_QUERY_TRANSFORM_PROMPT
         )
 
-    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> List[QueryBundle]:
+    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         """Run query transform."""
-        index_struct = cast(IndexStruct, extra_info.get("index_struct", None))
-        prev_response = cast(Response, extra_info.get("prev_response"), None)
+        index_struct = cast(IndexStruct, extra_info.get("index_struct"))
+        prev_response = cast(Response, extra_info.get("prev_response"))
         # currently, just get text from the index
         index_text = index_struct.get_text()
 
@@ -200,9 +211,7 @@ class CoTDecomposeQueryTransform(BaseQueryTransform):
             query_str=query_str,
             context_str=index_text,
         )
-        return [
-            QueryBundle(
-                query_str=new_query_str,
-                custom_embedding_strs=query_bundle.custom_embedding_strs,
-            )
-        ]
+        return QueryBundle(
+            query_str=new_query_str,
+            custom_embedding_strs=query_bundle.custom_embedding_strs,
+        )
