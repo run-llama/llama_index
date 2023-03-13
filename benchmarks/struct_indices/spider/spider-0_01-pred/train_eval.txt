@@ -1,0 +1,248 @@
+eval_err_num:1
+medium pred: SELECT billing_state, COUNT(*) AS num_invoices FROM invoices WHERE billing_country = 'US' GROUP BY billing_state;
+medium gold: SELECT billing_state ,  COUNT(*) FROM invoices WHERE billing_country  =  "USA" GROUP BY billing_state;
+
+eval_err_num:2
+medium pred: SELECT customer_first_name, customer_last_name, customer_phone FROM Customers INNER JOIN Customers_Cards ON Customers.customer_id = Customers_Cards.customer_id WHERE card_number = '4560596484842';
+medium gold: SELECT T2.customer_first_name ,  T2.customer_last_name ,  T2.customer_phone FROM Customers_cards AS T1 JOIN Customers AS T2 ON T1.customer_id  =  T2.customer_id WHERE T1.card_number  =  "4560596484842"
+
+easy pred: SELECT COUNT(*) FROM advisor;
+easy gold: SELECT count(DISTINCT s_id) FROM advisor
+
+eval_err_num:3
+extra pred: SELECT a.Name, a.Country FROM artist a INNER JOIN exhibition e ON a.Artist_ID = e.Artist_ID GROUP BY a.Name, a.Country ORDER BY COUNT(e.Exhibition_ID) DESC LIMIT 1;
+extra gold: SELECT T2.name , T2.country FROM exhibition AS T1 JOIN artist AS T2 ON T1.artist_id  =  T2.artist_id GROUP BY T1.artist_id ORDER BY count(*) DESC LIMIT 1
+
+eval_err_num:4
+extra pred: SELECT i.i_id, i.title, AVG(r.rating) AS avg_rating FROM item i JOIN review r ON i.i_id = r.i_id GROUP BY i.i_id, i.title ORDER BY avg_rating DESC LIMIT 1;
+extra gold: SELECT T1.title ,  T1.i_id FROM item AS T1 JOIN review AS T2 ON T1.i_id  =  T2.i_id GROUP BY T2.i_id ORDER BY avg(T2.rating) DESC LIMIT 1
+
+eval_err_num:5
+medium pred: SELECT a.name, SUM(c.balance + s.balance) AS total_balance FROM ACCOUNTS a JOIN CHECKING c ON a.custid = c.custid JOIN SAVINGS s ON a.custid = s.custid GROUP BY a.name ORDER BY total_balance ASC;
+medium gold: SELECT T1.balance + T2.balance FROM checking AS T1 JOIN savings AS T2 ON T1.custid  =  T2.custid ORDER BY T1.balance + T2.balance
+
+eval_err_num:6
+hard pred: SELECT a.name, (c.balance + s.balance) AS total_balance FROM ACCOUNTS a INNER JOIN CHECKING c ON a.custid = c.custid INNER JOIN SAVINGS s ON a.custid = s.custid WHERE c.balance > s.balance;
+hard gold: SELECT T1.name ,  T3.balance + T2.balance FROM accounts AS T1 JOIN checking AS T2 ON T1.custid  =  T2.custid JOIN savings AS T3 ON T1.custid  =  T3.custid WHERE T3.balance  <  T2.balance
+
+eval_err_num:7
+medium pred: SELECT COUNT(*) FROM driverStandings INNER JOIN races ON driverStandings.raceId = races.raceId WHERE races.name = 'Australian Grand Prix' AND races.year = 2009; Answer: 22 drivers participated in the race Australian Grand Prix held in 2009.
+medium gold: SELECT count(*) FROM results AS T1 JOIN races AS T2 ON T1.raceid = T2.raceid WHERE T2.name = "Australian Grand Prix" AND YEAR = 2009
+
+eval_err_num:8
+medium pred: SELECT Name FROM people INNER JOIN entrepreneur ON people.People_ID = entrepreneur.People_ID WHERE Investor != 'Rachel Elnaugh';
+medium gold: SELECT T2.Name FROM entrepreneur AS T1 JOIN people AS T2 ON T1.People_ID  =  T2.People_ID WHERE T1.Investor != "Rachel Elnaugh"
+
+eval_err_num:9
+extra pred: SELECT Party, COUNT(Delegate) AS Delegate_Count FROM election GROUP BY Party ORDER BY Delegate_Count DESC LIMIT 1;
+extra gold: SELECT T2.Party FROM election AS T1 JOIN party AS T2 ON T1.Party  =  T2.Party_ID GROUP BY T1.Party ORDER BY COUNT(*) DESC LIMIT 1
+
+eval_err_num:10
+hard pred: SELECT payment_date FROM payment INNER JOIN staff ON payment.staff_id = staff.staff_id WHERE payment.amount > 10 AND staff.first_name = 'Elsa';
+hard gold: SELECT payment_date FROM payment WHERE amount  >  10 UNION SELECT T1.payment_date FROM payment AS T1 JOIN staff AS T2 ON T1.staff_id  =  T2.staff_id WHERE T2.first_name  =  'Elsa'
+
+hard pred: SELECT cust_name FROM customer WHERE acc_type != 'S';
+hard gold: SELECT cust_name FROM customer EXCEPT SELECT cust_name FROM customer WHERE acc_type  =  'saving'
+
+eval_err_num:11
+medium pred: SELECT date_incident_start, date_incident_end FROM Behavior_Incident INNER JOIN Students ON Behavior_Incident.student_id = Students.student_id WHERE last_name = 'Fahey';
+medium gold: SELECT T1.date_incident_start ,  date_incident_end FROM Behavior_Incident AS T1 JOIN Students AS T2 ON T1.student_id  =  T2.student_id WHERE T2.last_name  =  "Fahey"
+
+eval_err_num:12
+medium pred: SELECT Parts.part_name, COUNT(Asset_Parts.asset_id) AS 'Number of Assets' FROM Parts INNER JOIN Asset_Parts ON Parts.part_id = Asset_Parts.part_id GROUP BY Parts.part_name;
+medium gold: SELECT T1.part_name ,  count(*) FROM Parts AS T1 JOIN Asset_Parts AS T2 ON T1.part_id  =  T2.part_id GROUP BY T1.part_name
+
+extra pred: SELECT DEPT_NAME, DEPT_ADDRESS FROM DEPARTMENT WHERE DEPT_CODE = (SELECT DEPT_CODE FROM STUDENT GROUP BY DEPT_CODE ORDER BY COUNT(*) DESC LIMIT 1);
+extra gold: SELECT T2.dept_name ,  T2.dept_address FROM student AS T1 JOIN department AS T2 ON T1.dept_code  =  T2.dept_code GROUP BY T1.dept_code ORDER BY count(*) DESC LIMIT 1
+
+eval_err_num:13
+extra pred: SELECT STU_FNAME FROM STUDENT INNER JOIN ENROLL ON STUDENT.STU_NUM = ENROLL.STU_NUM INNER JOIN CLASS ON ENROLL.CLASS_CODE = CLASS.CLASS_CODE WHERE STU_LNAME LIKE 'S%' AND CRS_CODE = 'ACCT-211';
+extra gold: SELECT T1.stu_fname FROM student AS T1 JOIN enroll AS T2 ON T1.stu_num  =  T2.stu_num JOIN CLASS AS T3 ON T2.class_code  =  T3.class_code WHERE T3.crs_code  =  'ACCT-211' AND T1.stu_lname LIKE 'S%'
+
+eval_err_num:14
+medium pred: SELECT c.COUNTRY_ID, COUNT(l.CITY) FROM countries c JOIN locations l ON c.COUNTRY_ID = l.COUNTRY_ID GROUP BY c.COUNTRY_ID;
+medium gold: SELECT country_id ,  COUNT(*) FROM locations GROUP BY country_id
+
+eval_err_num:15
+medium pred: SELECT f_id FROM song ORDER BY duration DESC LIMIT 1;
+medium gold: SELECT f_id FROM files ORDER BY duration DESC LIMIT 1
+
+eval_err_num:16
+hard pred: SELECT f_id FROM files WHERE formats = 'mp4' AND resolution < 1000;
+hard gold: SELECT f_id FROM files WHERE formats  =  "mp4" INTERSECT SELECT f_id FROM song WHERE resolution  <  1000
+
+eval_err_num:17
+medium pred: SELECT date_of_enrolment, date_of_completion FROM Student_Course_Enrolment INNER JOIN Students ON Student_Course_Enrolment.student_id = Students.student_id WHERE personal_name = 'Karson';
+medium gold: SELECT T1.date_of_enrolment ,  T1.date_of_completion FROM Student_Course_Enrolment AS T1 JOIN Students AS T2 ON T1.student_id  =  T2.student_id WHERE T2.personal_name  =  "Karson"
+
+eval_err_num:18
+medium pred: SELECT Students.student_id, Students.middle_name FROM Students INNER JOIN Student_Course_Enrolment ON Students.student_id = Student_Course_Enrolment.student_id GROUP BY Students.student_id HAVING COUNT(Student_Course_Enrolment.registration_id) <= 2;
+medium gold: SELECT T1.student_id ,  T2.middle_name FROM Student_Course_Enrolment AS T1 JOIN Students AS T2 ON T1.student_id  =  T2.student_id GROUP BY T1.student_id HAVING COUNT(*)  <=  2
+
+eval_err_num:19
+medium pred: SELECT Amount_Claimed, Amount_Settled FROM Settlements INNER JOIN Claims ON Settlements.Claim_ID = Claims.Claim_ID ORDER BY Amount_Settled ASC LIMIT 1;
+medium gold: SELECT Amount_Settled ,  Amount_Claimed FROM Claims ORDER BY Amount_Settled ASC LIMIT 1
+
+eval_err_num:20
+hard pred: SELECT Physician.Name FROM Physician INNER JOIN Trained_In ON Physician.EmployeeID = Trained_In.Physician INNER JOIN Procedures ON Trained_In.Treatment = Procedures.Code WHERE Procedures.Cost > 5000;
+hard gold: SELECT T1.name FROM physician AS T1 JOIN trained_in AS T2 ON T1.employeeid  =  T2.physician JOIN procedures AS T3 ON T3.code  =  T2.treatment WHERE T3.cost  >  5000
+
+eval_err_num:21
+extra pred: SELECT Club.ClubName, COUNT(*) AS NumMembers FROM Club INNER JOIN Member_of_club ON Club.ClubID = Member_of_club.ClubID INNER JOIN Student ON Member_of_club.StuID = Student.StuID WHERE Student.Major = 600 GROUP BY Club.ClubName ORDER BY NumMembers DESC LIMIT 1;
+extra gold: SELECT t1.clubname FROM club AS t1 JOIN member_of_club AS t2 ON t1.clubid  =  t2.clubid JOIN student AS t3 ON t2.stuid  =  t3.stuid WHERE t3.major  =  "600" GROUP BY t1.clubname ORDER BY count(*) DESC LIMIT 1
+
+eval_err_num:22
+medium pred: SELECT o.organisation_id, o.organisation_details FROM Organisations o INNER JOIN Projects p ON o.organisation_id = p.organisation_id INNER JOIN Project_Staff ps ON p.project_id = ps.project_id INNER JOIN Research_Staff rs ON ps.staff_id = rs.staff_id INNER JOIN Grants g ON o.organisation_id = g.organisation_id INNER JOIN Documents d ON g.grant_id = d.grant_id;
+medium gold: SELECT T2.organisation_id ,  T2.organisation_details FROM Grants AS T1 JOIN Organisations AS T2 ON T1.organisation_id  =  T2.organisation_id GROUP BY T2.organisation_id HAVING sum(T1.grant_amount)  >  6000
+
+eval_err_num:23
+hard pred: SELECT Rank FROM Faculty INNER JOIN Member_of ON Faculty.FacID = Member_of.FacID GROUP BY Rank ORDER BY COUNT(*) ASC LIMIT 1;
+hard gold: SELECT Rank FROM FACULTY GROUP BY Rank ORDER BY count(*) ASC LIMIT 1
+
+eval_err_num:24
+hard pred: SELECT c.customer_name FROM Customers c INNER JOIN Customer_Orders co ON c.customer_id = co.customer_id INNER JOIN Order_Items oi ON co.order_id = oi.order_id INNER JOIN Products p ON oi.product_id = p.product_id GROUP BY c.customer_name HAVING COUNT(DISTINCT p.product_name) >= 3;
+hard gold: SELECT DISTINCT T1.customer_name FROM customers AS T1 JOIN customer_orders AS T2 ON T1.customer_id  =  T2.customer_id JOIN order_items AS T3 ON T2.order_id  =  T3.order_id GROUP BY T1.customer_id HAVING COUNT (DISTINCT T3.product_id)  >=  3
+
+eval_err_num:25
+easy pred: SELECT COUNT(DISTINCT state) FROM College c INNER JOIN Tryout t ON c.cName = t.cName INNER JOIN Player p ON t.pID = p.pID WHERE t.pPos = 'mid' AND t.decision != 'GK';
+easy gold: SELECT COUNT(*) FROM (SELECT T1.state FROM college AS T1 JOIN tryout AS T2 ON T1.cName  =  T2.cName WHERE T2.pPos  =  'mid' EXCEPT SELECT T1.state FROM college AS T1 JOIN tryout AS T2 ON T1.cName  =  T2.cName WHERE T2.pPos  =  'goalie')
+
+hard pred: SELECT DISTINCT Product_Name, Product_Price FROM Products WHERE Product_Price > (SELECT AVG(Product_Price) FROM Products);
+hard gold: SELECT DISTINCT Product_Name FROM PRODUCTS WHERE Product_Price  >  (SELECT avg(Product_Price) FROM PRODUCTS)
+
+eval_err_num:26
+medium pred: SELECT COUNT(*) FROM Voting_record INNER JOIN Student ON Voting_record.StuID = Student.StuID WHERE Student.Sex = 'M' AND Voting_record.Election_Cycle = 'Fall' AND Voting_record.Class_Senator_Vote IS NOT NULL;
+medium gold: SELECT count(*) FROM STUDENT AS T1 JOIN VOTING_RECORD AS T2 ON T1.StuID  =  Class_Senator_Vote WHERE T1.Sex  =  "M" AND T2.Election_Cycle  =  "Fall"
+
+eval_err_num:27
+medium pred: SELECT COUNT(DISTINCT Major) AS 'Number of Majors', COUNT(DISTINCT city_code) AS 'Number of City Codes' FROM Student;
+medium gold: SELECT count(DISTINCT major) ,  count(DISTINCT city_code) FROM student
+
+eval_err_num:28
+extra pred: SELECT town_city, COUNT(*) AS num_customers FROM Customers WHERE customer_type_code = 'Good Credit Rating' GROUP BY town_city ORDER BY num_customers ASC LIMIT 1;
+extra gold: SELECT town_city FROM customers WHERE customer_type_code  =  "Good Credit Rating" GROUP BY town_city ORDER BY count(*) LIMIT 1
+
+easy pred: SELECT Name FROM Tourist_Attractions WHERE How_to_Get_There LIKE '%bus%';
+easy gold: SELECT Name FROM TOURIST_ATTRACTIONS WHERE How_to_Get_There  =  "bus"
+
+eval_err_num:29
+easy pred: SELECT country, COUNT(*) AS num_addresses FROM Addresses GROUP BY country HAVING COUNT(*) > 4;
+easy gold: SELECT country FROM addresses GROUP BY country HAVING count(address_id)  >  4
+
+eval_err_num:30
+extra pred: SELECT c.City FROM city c INNER JOIN hosting_city hc ON c.City_ID = hc.Match_ID INNER JOIN temperature t ON c.City_ID = t.City_ID WHERE t.Mar < t.Jul GROUP BY c.City;
+extra gold: SELECT T1.city FROM city AS T1 JOIN temperature AS T2 ON T1.city_id  =  T2.city_id WHERE T2.Mar  <  T2.Jul INTERSECT SELECT T3.city FROM city AS T3 JOIN hosting_city AS T4 ON T3.city_id  =  T4.host_city
+
+hard pred: SELECT Home_city FROM driver WHERE Age < 40;
+hard gold: SELECT home_city FROM driver EXCEPT SELECT home_city FROM driver WHERE age  >  40
+
+eval_err_num:31
+hard pred: SELECT Rank, COUNT(*) AS Num_Members FROM Faculty GROUP BY Rank ORDER BY Num_Members ASC LIMIT 1;
+hard gold: SELECT rank FROM Faculty GROUP BY rank ORDER BY count(*) ASC LIMIT 1
+
+hard pred: SELECT FacID FROM Faculty WHERE FacID NOT IN (SELECT FacID FROM Faculty_Participates_in);
+hard gold: SELECT FacID FROM Faculty EXCEPT SELECT FacID FROM Faculty_participates_in
+
+eval_err_num:32
+extra pred: SELECT airlines.name, COUNT(*) AS num_routes FROM airlines INNER JOIN routes ON airlines.alid = routes.alid GROUP BY airlines.name ORDER BY num_routes DESC LIMIT 1; Answer: The airline with the most number of routes is [name of airline
+extra gold: SELECT T1.name FROM airlines AS T1 JOIN routes AS T2 ON T1.alid  =  T2.alid GROUP BY T1.name ORDER BY count(*) DESC LIMIT 1
+
+eval_err_num:33
+hard pred: SELECT state_name FROM border_info INNER JOIN river ON border_info.border = river.river_name WHERE river.length = (SELECT MAX(length) FROM river)
+hard gold: SELECT traverse FROM river WHERE LENGTH  =  ( SELECT MAX ( LENGTH ) FROM river );
+
+hard pred: SELECT capital, MAX(population) FROM state GROUP BY capital;
+hard gold: SELECT city_name FROM city WHERE population  =  ( SELECT MAX ( t1.population ) FROM state AS t2 JOIN city AS t1 ON t2.capital  =  t1.city_name );
+
+medium pred: SELECT capital FROM state WHERE state_name IN (SELECT state_name FROM city WHERE city_name = 'durham');
+medium gold: SELECT t2.capital FROM state AS t2 JOIN city AS t1 ON t2.state_name  =  t1.state_name WHERE t1.city_name  =  "durham";
+
+eval_err_num:34
+extra pred: SELECT river_name, MIN(length) FROM river WHERE state_name = 'Texas' GROUP BY river_name; Answer: The shortest river in Texas is the Rio Grande with a length of 1,896 miles.
+extra gold: SELECT river_name FROM river WHERE LENGTH  =  ( SELECT MIN ( LENGTH ) FROM river WHERE traverse  =  "texas" ) AND traverse  =  "texas";
+
+eval_err_num:35
+extra pred: SELECT COUNT(*) FROM paper p INNER JOIN writes w ON p.paperId = w.paperId INNER JOIN author a ON w.authorId = a.authorId INNER JOIN venue v ON p.venueId = v.venueId WHERE a.authorName = 'David M. Blei' AND v.venueName = 'AISTATS';
+extra gold: SELECT DISTINCT COUNT ( t3.paperid ) FROM venue AS t4 JOIN paper AS t3 ON t4.venueid  =  t3.venueid JOIN writes AS t2 ON t2.paperid  =  t3.paperid JOIN author AS t1 ON t2.authorid  =  t1.authorid WHERE t1.authorname  =  "David M. Blei" AND t4.venuename  =  "AISTATS";
+
+eval_err_num:36
+extra pred: SELECT paper.title FROM paper INNER JOIN paperKeyphrase ON paper.paperId = paperKeyphrase.paperId INNER JOIN keyphrase ON paperKeyphrase.keyphraseId = keyphrase.keyphraseId INNER JOIN venue ON paper.venueId = venue.venueId WHERE keyphrase.keyphraseName = 'TAIL' AND venue.venueName = 'NIPS';
+extra gold: SELECT DISTINCT t3.paperid FROM paperkeyphrase AS t2 JOIN keyphrase AS t1 ON t2.keyphraseid  =  t1.keyphraseid JOIN paper AS t3 ON t3.paperid  =  t2.paperid JOIN venue AS t4 ON t4.venueid  =  t3.venueid WHERE t1.keyphrasename  =  "TAIL" AND t4.venuename  =  "NIPS";
+
+eval_err_num:37
+extra pred: SELECT paper.title FROM paper INNER JOIN paperKeyphrase ON paper.paperId = paperKeyphrase.paperId INNER JOIN keyphrase ON paperKeyphrase.keyphraseId = keyphrase.keyphraseId WHERE keyphrase.keyphraseName = 'deep learning' ORDER BY paper.year DESC;
+extra gold: SELECT DISTINCT t3.paperid  ,  t3.year FROM paperkeyphrase AS t2 JOIN keyphrase AS t1 ON t2.keyphraseid  =  t1.keyphraseid JOIN paper AS t3 ON t3.paperid  =  t2.paperid WHERE t1.keyphrasename  =  "deep learning" ORDER BY t3.year DESC;
+
+eval_err_num:38
+medium pred: SELECT paper.title FROM paper INNER JOIN venue ON paper.venueId = venue.venueId WHERE venue.venueName = 'PLDI' AND paper.year = 2015;
+medium gold: SELECT DISTINCT t1.paperid FROM venue AS t2 JOIN paper AS t1 ON t2.venueid  =  t1.venueid WHERE t1.year  =  2015 AND t2.venuename  =  "pldi";
+
+eval_err_num:39
+medium pred: SELECT authorName FROM author INNER JOIN writes ON author.authorId = writes.authorId INNER JOIN paper ON writes.paperId = paper.paperId WHERE paper.year = 2015;
+medium gold: SELECT DISTINCT t1.authorid FROM writes AS t1 JOIN paper AS t2 ON t1.paperid  =  t2.paperid WHERE t2.year  =  2015;
+
+eval_err_num:40
+medium pred: SELECT b.name FROM business b INNER JOIN review r ON b.business_id = r.business_id WHERE b.city = 'Dallas' AND r.rating > 4.5;
+medium gold: SELECT t1.name FROM category AS t2 JOIN business AS t1 ON t2.business_id  =  t1.business_id WHERE t1.city  =  "Dallas" AND t1.rating  >  4.5 AND t2.category_name  =  "restaurant";
+
+eval_err_num:41
+extra pred: SELECT a.name FROM author a INNER JOIN organization o ON a.oid = o.oid INNER JOIN writes w ON a.aid = w.aid INNER JOIN publication p ON w.pid = p.pid INNER JOIN cite c ON p.pid = c.citing WHERE o.name = 'University of Michigan' GROUP BY a.name ORDER BY SUM(p.citation_num) DESC LIMIT 1;
+extra gold: SELECT t1.name FROM organization AS t2 JOIN author AS t1 ON t2.oid  =  t1.oid JOIN writes AS t3 ON t3.aid  =  t1.aid JOIN publication AS t4 ON t3.pid  =  t4.pid WHERE t2.name  =  "University of Michigan" GROUP BY t1.name ORDER BY SUM ( t4.citation_num ) DESC LIMIT 1;
+
+eval_err_num:42
+hard pred: SELECT genre FROM genre INNER JOIN classification ON genre.gid = classification.gid INNER JOIN movie ON classification.msid = movie.mid WHERE movie.title = 'Jurassic Park';
+hard gold: SELECT t2.genre FROM genre AS t2 JOIN classification AS t1 ON t2.gid  =  t1.gid JOIN movie AS t3 ON t3.mid  =  t1.msid WHERE t3.title  =  "Jurassic Park";
+
+eval_err_num:43
+hard pred: SELECT actor.name FROM actor INNER JOIN cast ON actor.aid = cast.aid INNER JOIN movie ON cast.msid = movie.mid WHERE movie.title = 'Camp X-Ray';
+hard gold: SELECT t1.name FROM CAST AS t2 JOIN actor AS t1 ON t2.aid  =  t1.aid JOIN movie AS t3 ON t3.mid  =  t2.msid WHERE t3.title  =  "Camp X-Ray";
+
+eval_err_num:44
+extra pred: SELECT title FROM movie INNER JOIN made_by ON movie.mid = made_by.msid INNER JOIN producer ON made_by.pid = producer.pid WHERE producer.name = 'Jim Jarmusch' ORDER BY release_year DESC LIMIT 1;
+extra gold: SELECT t3.title FROM director AS t2 JOIN directed_by AS t1 ON t2.did  =  t1.did JOIN movie AS t3 ON t3.mid  =  t1.msid WHERE t2.name  =  "Jim Jarmusch" ORDER BY t3.release_year DESC LIMIT 1;
+
+eval_err_num:45
+extra pred: SELECT title FROM movie INNER JOIN made_by ON movie.mid = made_by.msid INNER JOIN producer ON made_by.pid = producer.pid WHERE producer.name = 'Jim Jarmusch' ORDER BY release_year DESC LIMIT 1;
+extra gold: SELECT t3.title FROM director AS t2 JOIN directed_by AS t1 ON t2.did  =  t1.did JOIN movie AS t3 ON t3.mid  =  t1.msid WHERE t2.name  =  "Jim Jarmusch" ORDER BY t3.release_year DESC LIMIT 1;
+
+                     easy                 medium               hard                 extra                all                 
+count                24                   28                   17                   17                   86                  
+=====================   EXECUTION ACCURACY     =====================
+execution            0.833                0.357                0.176                0.118                0.407               
+
+====================== EXACT MATCHING ACCURACY =====================
+exact match          0.833                0.321                0.118                0.059                0.372               
+
+---------------------PARTIAL MATCHING ACCURACY----------------------
+select               0.955                1.000                0.714                1.000                0.927               
+select(no AGG)       0.955                1.000                0.714                1.000                0.927               
+where                0.889                0.750                0.500                0.500                0.714               
+where(no OP)         1.000                0.750                0.500                0.500                0.762               
+group(no Having)     1.000                1.000                0.000                1.000                0.750               
+group                1.000                1.000                0.000                1.000                0.750               
+order                1.000                1.000                0.000                1.000                1.000               
+and/or               1.000                0.857                1.000                0.765                0.907               
+IUEN                 0.000                0.000                0.000                0.000                0.000               
+keywords             0.923                0.875                0.429                0.500                0.767               
+---------------------- PARTIAL MATCHING RECALL ----------------------
+select               0.875                0.357                0.294                0.118                0.442               
+select(no AGG)       0.875                0.357                0.294                0.118                0.442               
+where                0.889                0.214                0.273                0.083                0.326               
+where(no OP)         1.000                0.214                0.273                0.083                0.348               
+group(no Having)     0.500                0.167                0.000                0.111                0.150               
+group                0.500                0.167                0.000                0.111                0.150               
+order                1.000                0.500                0.000                0.083                0.304               
+and/or               1.000                1.000                1.000                1.000                1.000               
+IUEN                 0.000                0.000                0.000                0.000                0.000               
+keywords             0.857                0.280                0.176                0.059                0.315               
+---------------------- PARTIAL MATCHING F1 --------------------------
+select               0.913                0.526                0.417                0.211                0.598               
+select(no AGG)       0.913                0.526                0.417                0.211                0.598               
+where                0.889                0.333                0.353                0.143                0.448               
+where(no OP)         1.000                0.333                0.353                0.143                0.478               
+group(no Having)     0.667                0.286                1.000                0.200                0.250               
+group                0.667                0.286                1.000                0.200                0.250               
+order                1.000                0.667                1.000                0.154                0.467               
+and/or               1.000                0.923                1.000                0.867                0.951               
+IUEN                 1.000                1.000                1.000                1.000                1.000               
+keywords             0.889                0.424                0.250                0.105                0.447               
