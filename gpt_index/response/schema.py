@@ -6,7 +6,6 @@ from typing import Any, Dict, Generator, List, Optional, Union
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.data_structs import Node
-from gpt_index.response.notebook_utils import display_response
 from gpt_index.utils import truncate_text
 
 
@@ -74,9 +73,6 @@ class Response:
             source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
             texts.append(source_text)
         return "\n\n".join(texts)
-
-    def display(self, source_length: int = 256) -> None:
-        display_response(self, source_length)
 
 
 @dataclass
