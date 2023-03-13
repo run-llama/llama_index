@@ -3,7 +3,6 @@
 import json
 from typing import Any, Dict, List, Optional, Type, Union
 
-from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
@@ -16,6 +15,7 @@ from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner
+from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex

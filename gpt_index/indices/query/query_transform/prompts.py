@@ -1,7 +1,6 @@
 """Query transform prompts."""
 
 
-from enum import Enum
 from typing import List
 
 from gpt_index.prompts.base import Prompt
@@ -57,22 +56,3 @@ DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
 DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT = DecomposeQueryTransformPrompt(
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL
 )
-
-
-class CoTDecomposeQueryTransformPrompt(Prompt):
-    """CoT Decompose prompt for query transformation.
-
-    Prompt to "decompose" a query into another query
-    given the existing context + previous reasoning.
-
-    Required template variables: `context_str`, `query_str`, `prev_reasoning`
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    # TODO: specify a better prompt type
-    prompt_type: PromptType = PromptType.CUSTOM
-    input_variables: List[str] = ["context_str", "query_str", "prev_reasoning"]

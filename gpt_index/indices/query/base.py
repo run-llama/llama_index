@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar, cast
 
 from langchain.input import print_text
+
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
@@ -230,11 +231,11 @@ class BaseGPTIndexQuery(Generic[IS]):
                 print_text(f">{level_str} Got response: {fmt_response}\n")
             return TextChunk(str(response), is_answer=True), response
         else:
-            response = node.get_text()
-            fmt_response = truncate_text(response, 200)
+            response_txt = node.get_text()
+            fmt_response = truncate_text(response_txt, 200)
             if self._verbose:
                 print_text(f">{level_str} Got response: {fmt_response}\n")
-            return TextChunk(response), None
+            return TextChunk(response_txt), None
 
     @property
     def index_struct(self) -> IS:
