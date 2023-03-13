@@ -75,6 +75,11 @@ class BaseDocument(DataClassJsonMixin):
         """Check if doc_id is None."""
         return self.doc_id is None
 
+    @property
+    def is_text_none(self) -> bool:
+        """Check if text is None."""
+        return self.text is None
+
     def get_embedding(self) -> List[float]:
         """Get embedding.
 

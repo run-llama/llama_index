@@ -23,7 +23,7 @@ class Prompt:
     """
 
     input_variables: List[str]
-    prompt_type: PromptType = PromptType.CUSTOM
+    prompt_type: str = PromptType.CUSTOM
 
     def __init__(
         self,

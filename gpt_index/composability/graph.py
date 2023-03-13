@@ -15,6 +15,7 @@ from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner
+from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
@@ -117,6 +118,7 @@ class ComposableGraph:
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         llm_predictor: Optional[LLMPredictor] = None,
+        query_transform: Optional[BaseQueryTransform] = None,
     ) -> Response:
         """Query the index."""
         # go over all the indices and create a registry
@@ -128,6 +130,7 @@ class ComposableGraph:
             self._docstore,
             self._index_registry,
             query_configs=query_configs,
+            query_transform=query_transform,
             recursive=True,
         )
         return query_runner.query(query_str, self._index_struct)
@@ -137,6 +140,7 @@ class ComposableGraph:
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         llm_predictor: Optional[LLMPredictor] = None,
+        query_transform: Optional[BaseQueryTransform] = None,
     ) -> Response:
         """Query the index."""
         # go over all the indices and create a registry
@@ -148,6 +152,7 @@ class ComposableGraph:
             self._docstore,
             self._index_registry,
             query_configs=query_configs,
+            query_transform=query_transform,
             recursive=True,
         )
         return await query_runner.aquery(query_str, self._index_struct)

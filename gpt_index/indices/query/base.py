@@ -5,6 +5,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar, cast
 
+from langchain.input import print_text
+
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
@@ -130,6 +132,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         doc_ids: Optional[List[str]] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -185,6 +188,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self.node_preprocessors: List[BaseNodePostprocessor] = (
             init_node_preprocessors + node_postprocessors
         )
+        self._verbose = verbose
 
     def _get_text_from_node(
         self,
@@ -222,10 +226,16 @@ class BaseGPTIndexQuery(Generic[IS]):
         if is_index_struct:
             query_runner = cast(BaseQueryRunner, self._query_runner)
             response = query_runner.query(query_bundle, cast(IndexStruct, doc))
+            fmt_response = truncate_text(str(response), 200)
+            if self._verbose:
+                print_text(f">{level_str} Got response: {fmt_response}\n", color="blue")
             return TextChunk(str(response), is_answer=True), response
         else:
-            text = node.get_text()
-            return TextChunk(text), None
+            response_txt = node.get_text()
+            fmt_response = truncate_text(response_txt, 200)
+            if self._verbose:
+                print_text(f">{level_str} Got response: {fmt_response}\n", color="blue")
+            return TextChunk(response_txt), None
 
     @property
     def index_struct(self) -> IS:
