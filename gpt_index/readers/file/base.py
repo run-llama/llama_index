@@ -1,5 +1,6 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
+from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
@@ -141,7 +142,7 @@ class SimpleDirectoryReader(BaseReader):
         """
         data: Union[str, List[str]] = ""
         data_list: List[str] = []
-        metadata_list = []
+        metadata_list: List[dict] = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
                 parser = self.file_extractor[input_file.suffix]
@@ -157,7 +158,12 @@ class SimpleDirectoryReader(BaseReader):
             else:
                 data_list.append(str(data))
             if self.file_metadata is not None:
-                metadata_list.append(self.file_metadata(str(input_file)))
+                metadata: dict = self.file_metadata(str(input_file))
+                if isinstance(data, List):
+                    repeated_metadata = [deepcopy(metadata) for _ in range(len(data))]
+                    metadata_list.extend(repeated_metadata)
+                else:
+                    metadata_list.append(metadata)
 
         if concatenate:
             return [Document("\n".join(data_list))]
