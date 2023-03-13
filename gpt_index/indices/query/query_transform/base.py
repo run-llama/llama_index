@@ -159,8 +159,8 @@ class DecomposeQueryTransform(BaseQueryTransform):
         )
 
         if self.verbose:
-            print_text(f"> Current query: {query_str}\n")
-            print_text(f"> New query: {new_query_str}\n")
+            print_text(f"> Current query: {query_str}\n", color="yellow")
+            print_text(f"> New query: {new_query_str}\n", color="pink")
 
         return QueryBundle(
             query_str=new_query_str,

@@ -228,13 +228,13 @@ class BaseGPTIndexQuery(Generic[IS]):
             response = query_runner.query(query_bundle, cast(IndexStruct, doc))
             fmt_response = truncate_text(str(response), 200)
             if self._verbose:
-                print_text(f">{level_str} Got response: {fmt_response}\n")
+                print_text(f">{level_str} Got response: {fmt_response}\n", color="blue")
             return TextChunk(str(response), is_answer=True), response
         else:
             response_txt = node.get_text()
             fmt_response = truncate_text(response_txt, 200)
             if self._verbose:
-                print_text(f">{level_str} Got response: {fmt_response}\n")
+                print_text(f">{level_str} Got response: {fmt_response}\n", color="blue")
             return TextChunk(response_txt), None
 
     @property
