@@ -119,6 +119,9 @@ class QueryConfig(DataClassJsonMixin):
     # have this field
     index_struct_id: Optional[str] = None
 
+    # NOTE/TODO: type as Any for now to avoid circular dependency
+    query_transform: Optional[Any] = None
+
 
 @dataclass
 class QueryBundle(DataClassJsonMixin):
