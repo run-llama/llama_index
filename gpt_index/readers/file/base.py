@@ -2,7 +2,7 @@
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.base_parser import BaseParser, ImageParserOutput
@@ -146,7 +146,7 @@ class SimpleDirectoryReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        data: Union[str, List[str]] = ""
+        data: Union[str, List[str], ImageDocument] = ""
         data_list: List[str] = []
         metadata_list: List[dict] = []
         image_docs: List[ImageDocument] = []
