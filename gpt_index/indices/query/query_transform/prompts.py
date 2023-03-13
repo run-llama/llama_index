@@ -1,7 +1,6 @@
 """Query transform prompts."""
 
 
-from enum import Enum
 from typing import List
 
 from gpt_index.prompts.base import Prompt

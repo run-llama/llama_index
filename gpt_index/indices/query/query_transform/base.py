@@ -1,21 +1,19 @@
 """Query transform."""
 
-from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Union, cast
+from abc import abstractmethod
+from typing import Dict, Optional, Union, cast
+
+from langchain.input import print_text
 
 from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.indices.query.query_transform.prompts import (
-    DEFAULT_COT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
-    CoTDecomposeQueryTransformPrompt,
     DecomposeQueryTransformPrompt,
 )
-from gpt_index.indices.query.schema import QueryBundle, QueryConfig
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
-from gpt_index.response.schema import Response
-from langchain.input import print_text
 
 
 class BaseQueryTransform:
@@ -161,12 +159,12 @@ class DecomposeQueryTransform(BaseQueryTransform):
         )
 
         if self.verbose:
-            print_text(f"> Current query: {query_str}\n")
-            print_text(f"> New query: {new_query_str}\n")
+            print_text(f"> Current query: {query_str}\n", color="yellow")
+            print_text(f"> New query: {new_query_str}\n", color="pink")
 
         return QueryBundle(
             query_str=new_query_str,
-            custom_embedding_strs=query_bundle.custom_embedding_strs,
+            custom_embedding_strs=[new_query_str],
         )
 
 
