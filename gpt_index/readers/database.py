@@ -91,5 +91,7 @@ class DatabaseReader(BaseReader):
                 result = connection.execute(text(query))
 
             for item in result.fetchall():
-                documents.append(Document(item[0]))
+                # fetch each item
+                doc_str = ", ".join([str(entry) for entry in item])
+                documents.append(Document(doc_str))
         return documents
