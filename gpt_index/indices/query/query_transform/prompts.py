@@ -56,3 +56,32 @@ DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
 DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT = DecomposeQueryTransformPrompt(
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL
 )
+
+class ImageOutputQueryTransformPrompt(Prompt):
+    """Decompose prompt for query transformation.
+
+    Prompt to "decompose" a query into another query
+    given the existing context.
+
+    Required template variables: `context_str`, `query_str`
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+
+    # TODO: specify a better prompt type
+    prompt_type: PromptType = PromptType.CUSTOM
+    input_variables: List[str] = ["query_str", "image_width"]
+
+
+DEFAULT_IMAGE_OUTPUT_TMPL = (
+    '{query_str}'
+    'Show any image with a HTML <img/> tag with {image_width}.'
+    'e.g., <image src="data/img.jpg" width="400" />.'
+)
+
+DEFAULT_IMAGE_OUTPUT_PROMPT = ImageOutputQueryTransformPrompt(
+    DEFAULT_IMAGE_OUTPUT_TMPL
+)

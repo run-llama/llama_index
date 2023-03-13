@@ -146,9 +146,9 @@ class SimpleDirectoryReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        data: Union[str, List[str], ImageDocument] = ""
+        data: Union[str, List[str], ImageParserOutput] = ""
         data_list: List[str] = []
-        metadata_list: List[dict] = []
+        metadata_list: List[Optional[dict]] = []
         image_docs: List[ImageDocument] = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
@@ -161,37 +161,26 @@ class SimpleDirectoryReader(BaseReader):
                 with open(input_file, "r", errors=self.errors, encoding="utf8") as f:
                     data = f.read()
 
-            if input_file.suffix in IMAGE_FILE_SUFFIX:
-                # process image
-                if not isinstance(data, ImageParserOutput):
-                    raise ValueError(
-                        f"An image parser should output an ImageParserOutput, \
-                        but got {type(data)} instead."
-                    )
+            metadata: Optional[dict] = None
+            if self.file_metadata is not None:
+                metadata = self.file_metadata(str(input_file))
 
-                if self.file_metadata is not None:
-                    extra_info = self.file_metadata(str(input_file))
-                else:
-                    extra_info = None
+            if isinstance(data, ImageParserOutput):
+                # process image
                 image_docs.append(
                     ImageDocument(
-                        text=data.text, extra_info=extra_info, image=data.image
+                        text=data.text, extra_info=metadata, image=data.image
                     )
                 )
+            elif isinstance(data, List):
+                # process list of str
+                data_list.extend(data)
+                repeated_metadata: List[dict] = [deepcopy(metadata) for _ in range(len(data))]
+                metadata_list.extend(repeated_metadata)
             else:
-                # process text-only
-                if isinstance(data, List):
-                    data_list.extend(data)
-                else:
-                    data_list.append(str(data))
-
-                if self.file_metadata is not None:
-                    metadata: dict = self.file_metadata(str(input_file))
-                    if isinstance(data, List):
-                        repeated_metadata = [deepcopy(metadata) for _ in range(len(data))]
-                        metadata_list.extend(repeated_metadata)
-                    else:
-                        metadata_list.append(metadata)
+                # process single str
+                data_list.append(str(data))
+                metadata_list.append(metadata)
 
         if concatenate:
             text_docs = [Document("\n".join(data_list))]

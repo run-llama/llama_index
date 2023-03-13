@@ -1,5 +1,6 @@
 """Query transform."""
 
+import dataclasses
 from abc import abstractmethod
 from typing import Dict, Optional, Union, cast
 
@@ -8,7 +9,9 @@ from langchain.input import print_text
 from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
+    DEFAULT_IMAGE_OUTPUT_PROMPT,
     DecomposeQueryTransformPrompt,
+    ImageOutputQueryTransformPrompt,
 )
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -166,3 +169,20 @@ class DecomposeQueryTransform(BaseQueryTransform):
             query_str=new_query_str,
             custom_embedding_strs=[new_query_str],
         )
+
+
+class ImageOutputQueryTransform(BaseQueryTransform):
+    def __init__(
+        self,
+        width: int = 400,
+        query_prompt: Optional[ImageOutputQueryTransformPrompt] = None
+    ) -> None:
+        self._width = width
+        self._query_prompt = query_prompt or DEFAULT_IMAGE_OUTPUT_PROMPT
+
+    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+        new_query_str = self._query_prompt.format(
+            query_str=query_bundle.query_str, image_width=self._width
+        )
+        new_query_bundle = dataclasses.replace(query_bundle, query_str=new_query_str)
+        return new_query_bundle
