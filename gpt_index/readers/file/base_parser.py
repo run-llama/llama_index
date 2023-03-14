@@ -8,7 +8,10 @@ from typing import Dict, List, Optional, Union
 
 @dataclass
 class ImageParserOutput:
+    """Output from an image parser."""
+
     text: str = ""
+    # base64 encoded image str
     image: Optional[str] = None
 
 

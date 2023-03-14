@@ -8,7 +8,6 @@ import re
 from pathlib import Path
 from typing import Dict, Optional
 
-from gpt_index.img_utils import img_2_b64
 from gpt_index.readers.file.base_parser import BaseParser, ImageParserOutput
 
 
@@ -73,6 +72,8 @@ class ImageParser(BaseParser):
     def parse_file(self, file: Path, errors: str = "ignore") -> ImageParserOutput:
         """Parse file."""
         from PIL import Image
+
+        from gpt_index.img_utils import img_2_b64
 
         # load document image
         image = Image.open(file)
