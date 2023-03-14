@@ -182,14 +182,14 @@ class ImageOutputQueryTransform(BaseQueryTransform):
     def __init__(
         self,
         width: int = 400,
-        query_prompt: Optional[ImageOutputQueryTransformPrompt] = None
+        query_prompt: Optional[ImageOutputQueryTransformPrompt] = None,
     ) -> None:
         """Init ImageOutputQueryTransform.
-        
+
         Args:
             width (int): desired image display width in pixels
             query_prompt (ImageOutputQueryTransformPrompt): custom prompt for
-                augmenting query with image output instructions. 
+                augmenting query with image output instructions.
         """
         self._width = width
         self._query_prompt = query_prompt or DEFAULT_IMAGE_OUTPUT_PROMPT

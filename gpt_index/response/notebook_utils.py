@@ -15,7 +15,7 @@ def display_image(image: str, size: Tuple[int, int] = DEFAULT_THUMBNAIL_SIZE) ->
     display(img)
 
 
-def display_source_node(source_node: SourceNode, source_length: int = 100):
+def display_source_node(source_node: SourceNode, source_length: int = 100) -> None:
     source_text_fmt = truncate_text(source_node.source_text.strip(), source_length)
     text_md = (
         f"**Document ID:** {source_node.doc_id}<br>"
@@ -29,12 +29,17 @@ def display_source_node(source_node: SourceNode, source_length: int = 100):
         display_image(source_node.image)
 
 
-def display_extra_info(extra_info: Dict[str, Any]):
+def display_extra_info(extra_info: Dict[str, Any]) -> None:
     display(extra_info)
 
 
-def display_response(response: Response, source_length: int = 100):
-    display(Markdown(f"**`Final Response:`** {response.response.strip()}"))
+def display_response(response: Response, source_length: int = 100) -> None:
+    if response.response is None:
+        response_text = "None"
+    else:
+        response_text = response.response.strip()
+
+    display(Markdown(f"**`Final Response:`** {response_text}"))
     for ind, source_node in enumerate(response.source_nodes):
         display(Markdown("---"))
         display(Markdown(f"**`Source Node {ind + 1}/{len(response.source_nodes)}`**"))

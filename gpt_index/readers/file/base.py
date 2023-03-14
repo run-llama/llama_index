@@ -2,7 +2,7 @@
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, cast
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.base_parser import BaseParser, ImageParserOutput
@@ -163,14 +163,14 @@ class SimpleDirectoryReader(BaseReader):
             if isinstance(data, ImageParserOutput):
                 # process image
                 image_docs.append(
-                    ImageDocument(
-                        text=data.text, extra_info=metadata, image=data.image
-                    )
+                    ImageDocument(text=data.text, extra_info=metadata, image=data.image)
                 )
             elif isinstance(data, List):
                 # process list of str
                 data_list.extend(data)
-                repeated_metadata: List[dict] = [deepcopy(metadata) for _ in range(len(data))]
+                repeated_metadata: List[Optional[dict]] = [
+                    deepcopy(metadata) for _ in range(len(data))
+                ]
                 metadata_list.extend(repeated_metadata)
             else:
                 # process single str
@@ -186,4 +186,4 @@ class SimpleDirectoryReader(BaseReader):
         else:
             text_docs = [Document(d) for d in data_list]
 
-        return text_docs + image_docs
+        return text_docs + cast(List[Document], image_docs)
