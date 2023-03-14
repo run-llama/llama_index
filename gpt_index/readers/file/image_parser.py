@@ -5,7 +5,6 @@ Contains parsers for image files.
 """
 
 import re
-from io import BytesIO
 from pathlib import Path
 from typing import Dict, Optional
 
