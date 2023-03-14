@@ -5,7 +5,7 @@ import logging
 import os
 import re
 
-from langchain import OpenAI
+from langchain.llms import OpenAI, OpenAIChat
 from sqlalchemy import create_engine
 from tqdm import tqdm
 
@@ -22,37 +22,33 @@ _sql_from_error_msg = re.compile(r"\[SQL: (.*?)\]", re.DOTALL)
 def _generate_sql(
     llama_index: GPTSQLStructStoreIndex,
     nl_query_text: str,
+    mode: str,
 ) -> str:
     """Generate SQL query for the given NL query text."""
-    try:
-        response = llama_index.query(nl_query_text, mode="default")
-        if (
-            response.extra_info is None
-            or "sql_query" not in response.extra_info
-            or response.extra_info["sql_query"] is None
-        ):
-            raise RuntimeError("No SQL query generated.")
-        query = response.extra_info["sql_query"]
-    except Exception as e:
-        # Try to extract the SQL query from the error message.
-        match = _sql_from_error_msg.search(str(e))
-        if match is None:
-            raise e
-        query = match.group(1)
+    response = llama_index.query(nl_query_text, mode=mode)
+    if (
+        response.extra_info is None
+        or "sql_query" not in response.extra_info
+        or response.extra_info["sql_query"] is None
+    ):
+        raise RuntimeError("No SQL query generated.")
+    query = response.extra_info["sql_query"]
     # Remove newlines and extra spaces.
     query = _newlines.sub(" ", query)
     query = _spaces.sub(" ", query)
     return query.strip()
 
 
-def generate_sql(llama_indexes: dict, examples: list, output_file: str) -> None:
+def generate_sql(
+    llama_indexes: dict, examples: list, output_file: str, mode: str
+) -> None:
     """Generate SQL queries for the given examples and write them to the output file."""
     with open(output_file, "w") as f:
         for example in tqdm(examples, desc=f"Generating {output_file}"):
             db_name = example["db_id"]
             nl_query_text = example["question"]
             try:
-                sql_query = _generate_sql(llama_indexes[db_name], nl_query_text)
+                sql_query = _generate_sql(llama_indexes[db_name], nl_query_text, mode)
             except Exception as e:
                 print(
                     f"Failed to generate SQL query for question: "
@@ -78,6 +74,11 @@ if __name__ == "__main__":
         " one query on each line, "
         "to be compared with the *_gold.sql files in the input directory.",
     )
+    parser.add_argument(
+        "--sql-checker",
+        action="store_true",
+        help="Whether to use the SQL checker to validate the generated SQL queries.",
+    )
     args = parser.parse_args()
 
     # Create the output directory if it does not exist.
@@ -100,12 +101,13 @@ if __name__ == "__main__":
             continue
         db_path = os.path.join(args.input, "database", db_name, db_name + ".sqlite")
         engine = create_engine("sqlite:///" + db_path)
-        databases[db_name] = (SQLDatabase(engine=engine), engine)
+        databases[db_name] = (
+            SQLDatabase(engine=engine),
+            engine,
+        )
 
     # Create the LlamaIndexes for all databases.
-    llm_predictor = LLMPredictor(
-        llm=OpenAI(temperature=0, model_name="text-davinci-003")
-    )
+    llm_predictor = LLMPredictor(llm=OpenAIChat(temperature=0))
     llm_indexes = {}
     for db_name, (db, engine) in databases.items():
         # Get the name of the first table in the database.
@@ -121,14 +123,19 @@ if __name__ == "__main__":
             table_name=table_name,
         )
 
+    # Set mode.
+    mode = "sql-checker" if args.sql_checker else "default"
+
     # Generate SQL queries.
     generate_sql(
         llama_indexes=llm_indexes,
         examples=train_spider + train_others,
         output_file=os.path.join(args.output, "train_pred.sql"),
+        mode=mode,
     )
     generate_sql(
         llama_indexes=llm_indexes,
         examples=dev,
         output_file=os.path.join(args.output, "dev_pred.sql"),
+        mode=mode,
     )
