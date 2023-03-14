@@ -1,8 +1,18 @@
 """Base parser and config class."""
 
 from abc import abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Union
+
+
+@dataclass
+class ImageParserOutput:
+    """Output from an image parser."""
+
+    text: str = ""
+    # base64 encoded image str
+    image: Optional[str] = None
 
 
 class BaseParser:
@@ -34,5 +44,7 @@ class BaseParser:
         """Initialize the parser with the config."""
 
     @abstractmethod
-    def parse_file(self, file: Path, errors: str = "ignore") -> Union[str, List[str]]:
+    def parse_file(
+        self, file: Path, errors: str = "ignore"
+    ) -> Union[str, List[str], ImageParserOutput]:
         """Parse file."""

@@ -25,6 +25,10 @@ class SourceNode(DataClassJsonMixin):
     # distance score between node and query, if applicable
     similarity: Optional[float] = None
 
+    # TODO: store reference instead of actual image
+    # base64 encoded image str
+    image: Optional[str] = None
+
     @classmethod
     def from_node(cls, node: Node, similarity: Optional[float] = None) -> "SourceNode":
         """Create a SourceNode from a Node."""
@@ -34,6 +38,7 @@ class SourceNode(DataClassJsonMixin):
             extra_info=node.extra_info,
             node_info=node.node_info,
             similarity=similarity,
+            image=node.image,
         )
 
     @classmethod
