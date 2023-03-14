@@ -63,9 +63,10 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
         split_text = tokenizer.tokenize(text)
 
         start_embed_token_ct = self.embed_model.total_tokens_used
-        query_embedding = self.embed_model.get_agg_embedding_from_queries(
-            query_bundle.embedding_strs
-        )
+        if query_bundle.embedding is None:
+            query_bundle.embedding = self.embed_model.get_agg_embedding_from_queries(
+                query_bundle.embedding_strs
+            )
         text_embeddings = self.embed_model._get_text_embeddings(split_text)
         num_top_k = None
         threshold = None
@@ -74,7 +75,7 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
         if self._threshold_cutoff is not None:
             threshold = self._threshold_cutoff
         top_similarities, top_idxs = get_top_k_embeddings(
-            query_embedding=query_embedding,
+            query_embedding=query_bundle.embedding,
             embeddings=text_embeddings,
             similarity_fn=self.embed_model.similarity,
             similarity_top_k=num_top_k,
