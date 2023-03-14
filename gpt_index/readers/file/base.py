@@ -2,8 +2,7 @@
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
-import glob
+from typing import Callable, Dict, Generator, List, Optional, Union
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.base_parser import BaseParser
@@ -41,7 +40,8 @@ class SimpleDirectoryReader(BaseReader):
 
     Args:
         input_dir (str): Path to the directory.
-        input_files (List): List of file paths to read (Optional; overrides input_dir, exclude)
+        input_files (List): List of file paths to read
+            (Optional; overrides input_dir, exclude)
         exclude (List): glob of python file paths to exclude (Optional)
         exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
         errors (str): how encoding and decoding errors are to be handled,
@@ -61,17 +61,17 @@ class SimpleDirectoryReader(BaseReader):
     """
 
     def __init__(
-            self,
-            input_dir: Optional[str] = None,
-            input_files: Optional[List] = None,
-            exclude: Optional[List] = None,
-            exclude_hidden: bool = True,
-            errors: str = "ignore",
-            recursive: bool = False,
-            required_exts: Optional[List[str]] = None,
-            file_extractor: Optional[Dict[str, BaseParser]] = None,
-            num_files_limit: Optional[int] = None,
-            file_metadata: Optional[Callable[[str], Dict]] = None,
+        self,
+        input_dir: Optional[str] = None,
+        input_files: Optional[List] = None,
+        exclude: Optional[List] = None,
+        exclude_hidden: bool = True,
+        errors: str = "ignore",
+        recursive: bool = False,
+        required_exts: Optional[List[str]] = None,
+        file_extractor: Optional[Dict[str, BaseParser]] = None,
+        num_files_limit: Optional[int] = None,
+        file_metadata: Optional[Callable[[str], Dict]] = None,
     ) -> None:
         """Initialize with parameters."""
         super().__init__()
@@ -116,20 +116,28 @@ class SimpleDirectoryReader(BaseReader):
                     for file in input_dir.glob(excluded_pattern):
                         rejected_files.add(Path(file))
 
-        file_refs: List[Path] = []
+        file_refs: Generator[Path, None, None]
         if self.recursive:
-            file_refs = Path(input_dir).rglob('*')
+            file_refs = Path(input_dir).rglob("*")
         else:
-            file_refs = Path(input_dir).glob('*')
+            file_refs = Path(input_dir).glob("*")
 
         for ref in file_refs:
-            # Manually check if file is hidden or directory instead of in glob for backwards compatibility.
+            # Manually check if file is hidden or directory instead of
+            # in glob for backwards compatibility.
             is_dir = ref.is_dir()
-            skip_because_hidden = self.exclude_hidden and ref.name.startswith('.')
-            skip_because_bad_ext = (self.required_exts is not None and ref.suffix not in self.required_exts)
-            skip_because_excluded = (ref in rejected_files)
+            skip_because_hidden = self.exclude_hidden and ref.name.startswith(".")
+            skip_because_bad_ext = (
+                self.required_exts is not None and ref.suffix not in self.required_exts
+            )
+            skip_because_excluded = ref in rejected_files
 
-            if is_dir or skip_because_hidden or skip_because_bad_ext or skip_because_excluded:
+            if (
+                is_dir
+                or skip_because_hidden
+                or skip_because_bad_ext
+                or skip_because_excluded
+            ):
                 continue
             else:
                 all_files.add(ref)
@@ -137,7 +145,7 @@ class SimpleDirectoryReader(BaseReader):
         new_input_files = sorted(list(all_files))
 
         if self.num_files_limit is not None and self.num_files_limit > 0:
-            new_input_files = new_input_files[0: self.num_files_limit]
+            new_input_files = new_input_files[0 : self.num_files_limit]
 
         # print total number of files added
         logging.debug(

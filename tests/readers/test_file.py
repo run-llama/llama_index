@@ -212,6 +212,7 @@ def test_file_metadata() -> None:
 
 
 def test_excluded_files() -> None:
+    """Tests if files are excluded properly."""
     # test recursive
     with TemporaryDirectory() as tmp_dir:
         with open(f"{tmp_dir}/test1.txt", "w") as f:
@@ -225,7 +226,9 @@ def test_excluded_files() -> None:
                 with open(f"{tmp_sub_sub_dir}/test4.txt", "w") as f:
                     f.write("test4")
 
-                    reader = SimpleDirectoryReader(tmp_dir, recursive=True, exclude=['test3.txt'])
+                    reader = SimpleDirectoryReader(
+                        tmp_dir, recursive=True, exclude=["test3.txt"]
+                    )
                     input_file_names = [f.name for f in reader.input_files]
                     assert len(reader.input_files) == 3
                     assert set(input_file_names) == {
@@ -248,7 +251,7 @@ def test_excluded_files() -> None:
             f.write("test5")
 
         # test exclude hidden
-        reader = SimpleDirectoryReader(tmp_dir, recursive=False, exclude=['*.py'])
+        reader = SimpleDirectoryReader(tmp_dir, recursive=False, exclude=["*.py"])
         input_file_names = [f.name for f in reader.input_files]
         assert len(reader.input_files) == 3
         assert input_file_names == ["test2.txt", "test3.txt", "test4.txt"]
@@ -267,7 +270,7 @@ def test_excluded_files() -> None:
                     f.write("test4")
 
                     reader = SimpleDirectoryReader(
-                        tmp_dir, recursive=True, exclude=['*.md']
+                        tmp_dir, recursive=True, exclude=["*.md"]
                     )
                     input_file_names = [f.name for f in reader.input_files]
                     assert len(reader.input_files) == 2
