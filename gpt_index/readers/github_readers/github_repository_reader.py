@@ -358,7 +358,9 @@ class GithubRepositoryReader(BaseReader):
                     try:
                         parsed_file = parser.parse_file(pathlib.Path(tmpfile.name))
                         if isinstance(parsed_file, ImageParserOutput):
-                            raise ValueError("Reader does not support ImageParserOutput")
+                            raise ValueError(
+                                "Reader does not support ImageParserOutput"
+                            )
                         parsed_file = "\n\n".join(parsed_file)
                     except Exception as e:
                         print_if_verbose(
