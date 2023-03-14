@@ -132,9 +132,9 @@ class SimpleDirectoryReader(BaseReader):
         """Load data from the input directory.
 
         Args:
-            concatenate (bool): whether to concatenate all text docs into one doc.
+            concatenate (bool): whether to concatenate all text docs into a single doc.
                 If set to True, file metadata is ignored. False by default.
-                Does not apply to image docs.
+                This setting does not apply to image docs (always one doc per image).
 
         Returns:
             List[Document]: A list of documents.

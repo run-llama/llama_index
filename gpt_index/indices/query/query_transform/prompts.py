@@ -58,17 +58,11 @@ DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT = DecomposeQueryTransformPrompt(
 )
 
 class ImageOutputQueryTransformPrompt(Prompt):
-    """Decompose prompt for query transformation.
+    """Image output prompt for query transformation.
 
-    Prompt to "decompose" a query into another query
-    given the existing context.
+    Prompt to add instructions for formatting image output.
 
-    Required template variables: `context_str`, `query_str`
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
+    Required template variables: `query_str`, `image_width`
     """
 
     # TODO: specify a better prompt type
