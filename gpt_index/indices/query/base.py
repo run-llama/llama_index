@@ -36,6 +36,8 @@ from gpt_index.utils import truncate_text
 
 IS = TypeVar("IS", bound=IndexStruct)
 
+logger = logging.getLogger(__name__)
+
 
 def _get_initial_node_postprocessors(
     required_keywords: Optional[List[str]] = None,
@@ -204,7 +206,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         """
         level_str = "" if level is None else f"[Level {level}]"
         fmt_text_chunk = truncate_text(node.get_text(), 50)
-        logging.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
+        logger.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
         is_index_struct = False
         # if recursive and self._query_runner is not None,

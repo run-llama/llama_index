@@ -13,6 +13,8 @@ from typing import List, Optional
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
 
+logger = logging.getLogger(__name__)
+
 
 async def read_channel(
     discord_token: str, channel_id: int, limit: Optional[int], oldest_first: bool
@@ -31,7 +33,7 @@ async def read_channel(
     class CustomClient(discord.Client):
         async def on_ready(self) -> None:
             try:
-                logging.info(f"{self.user} has connected to Discord!")
+                logger.info(f"{self.user} has connected to Discord!")
                 channel = client.get_channel(channel_id)
                 # only work for text channels for now
                 if not isinstance(channel, discord.TextChannel):
@@ -55,7 +57,7 @@ async def read_channel(
                         ):
                             messages.append(thread_msg)
             except Exception as e:
-                logging.error("Encountered error: " + str(e))
+                logger.error("Encountered error: " + str(e))
             finally:
                 await self.close()
 
@@ -145,6 +147,6 @@ class DiscordReader(BaseReader):
 
 if __name__ == "__main__":
     reader = DiscordReader()
-    logging.info("initialized reader")
+    logger.info("initialized reader")
     output = reader.load_data(channel_ids=[1057178784895348746], limit=10)
-    logging.info(output)
+    logger.info(output)

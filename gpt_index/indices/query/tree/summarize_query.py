@@ -10,6 +10,8 @@ from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseMode
 from gpt_index.indices.utils import get_sorted_node_list
 
+logger = logging.getLogger(__name__)
+
 
 class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
     """GPT Tree Index summarize query.
@@ -54,7 +56,7 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        logging.info(f"> Starting query: {query_bundle.query_str}")
+        logger.info(f"> Starting query: {query_bundle.query_str}")
         index_struct = cast(IndexGraph, self._index_struct)
         sorted_node_list = get_sorted_node_list(index_struct.all_nodes)
         return sorted_node_list

@@ -31,6 +31,8 @@ DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
     ".mbox": MboxParser(),
 }
 
+logger = logging.getLogger(__name__)
+
 
 class SimpleDirectoryReader(BaseReader):
     """Simple directory reader.
@@ -148,7 +150,7 @@ class SimpleDirectoryReader(BaseReader):
             new_input_files = new_input_files[0 : self.num_files_limit]
 
         # print total number of files added
-        logging.debug(
+        logger.debug(
             f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}"
         )
 

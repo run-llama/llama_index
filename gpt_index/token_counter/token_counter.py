@@ -8,6 +8,8 @@ from typing import Any, Callable, cast
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
+logger = logging.getLogger(__name__)
+
 
 def llm_token_counter(method_name_str: str) -> Callable:
     """
@@ -63,10 +65,10 @@ def llm_token_counter(method_name_str: str) -> Callable:
             embed_model.last_token_usage = net_embed_tokens
 
             # print outputs
-            logging.info(
+            logger.info(
                 f"> [{method_name_str}] Total LLM token usage: {net_tokens} tokens"
             )
-            logging.info(
+            logger.info(
                 f"> [{method_name_str}] Total embedding token usage: "
                 f"{net_embed_tokens} tokens"
             )
