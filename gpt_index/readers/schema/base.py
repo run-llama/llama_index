@@ -1,5 +1,6 @@
 """Base schema for readers."""
 from dataclasses import dataclass
+from typing import Optional
 
 from langchain.docstore.document import Document as LCDocument
 
@@ -34,3 +35,11 @@ class Document(BaseDocument):
     def from_langchain_format(cls, doc: LCDocument) -> "Document":
         """Convert struct from LangChain document format."""
         return cls(text=doc.page_content, extra_info=doc.metadata)
+
+
+@dataclass
+class ImageDocument(Document):
+    """Data document containing an image."""
+
+    # base64 encoded image str
+    image: Optional[str] = None
