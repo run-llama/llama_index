@@ -31,12 +31,6 @@ DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
     ".mbox": MboxParser(),
 }
 
-IMAGE_FILE_SUFFIX: List[str] = {
-    ".jpg",
-    ".png",
-    ".jpeg",
-}
-
 
 class SimpleDirectoryReader(BaseReader):
     """Simple directory reader.
@@ -138,14 +132,15 @@ class SimpleDirectoryReader(BaseReader):
         """Load data from the input directory.
 
         Args:
-            concatenate (bool): whether to concatenate all files into one document.
-                If set to True, file metadata is ignored.
-                False by default.
+            concatenate (bool): whether to concatenate all text docs into one doc.
+                If set to True, file metadata is ignored. False by default.
+                Does not apply to image docs.
 
         Returns:
             List[Document]: A list of documents.
 
         """
+        # TODO: refactor parser output interface
         data: Union[str, List[str], ImageParserOutput] = ""
         data_list: List[str] = []
         metadata_list: List[Optional[dict]] = []
