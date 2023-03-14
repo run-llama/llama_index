@@ -50,7 +50,7 @@ class SingleQueryCombiner(BaseQueryCombiner):
 
 def default_stop_fn(stop_dict: Dict) -> bool:
     """Default stop function for multi-step query combiner."""
-    query_bundle = cast(QueryBundle, stop_dict.get(["query_bundle"]))
+    query_bundle = cast(QueryBundle, stop_dict.get("query_bundle"))
     if query_bundle is None:
         raise ValueError("Response must be provided to stop function.")
 
