@@ -15,6 +15,8 @@ from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.prompts import SummaryPrompt
 from gpt_index.schema import BaseDocument
 
+logger = logging.getLogger(__name__)
+
 
 class GPTTreeIndexBuilder:
     """GPT tree index builder.
@@ -92,7 +94,7 @@ class GPTTreeIndexBuilder:
     ) -> Tuple[List[int], List[List[Node]], List[str]]:
         """Prepare node and text chunks."""
         cur_node_list = get_sorted_node_list(cur_nodes)
-        logging.info(
+        logger.info(
             f"> Building index from nodes: {len(cur_nodes) // self.num_children} chunks"
         )
         indices, cur_nodes_chunks, text_chunks = [], [], []
@@ -118,7 +120,7 @@ class GPTTreeIndexBuilder:
         for i, cur_nodes_chunk, new_summary in zip(
             indices, cur_nodes_chunks, summaries
         ):
-            logging.debug(
+            logger.debug(
                 f"> {i}/{len(cur_nodes_chunk)}, "
                 "summary: {truncate_text(new_summary, 50)}"
             )

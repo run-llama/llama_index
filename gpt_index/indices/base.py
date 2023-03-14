@@ -38,6 +38,8 @@ IS = TypeVar("IS", bound=IndexStruct)
 
 DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
 
+logger = logging.getLogger(__name__)
+
 
 class BaseGPTIndex(Generic[IS]):
     """Base LlamaIndex.
@@ -311,7 +313,7 @@ class BaseGPTIndex(Generic[IS]):
             doc_id (str): document id
 
         """
-        logging.debug(f"> Deleting document: {doc_id}")
+        logger.debug(f"> Deleting document: {doc_id}")
         self._delete(doc_id, **delete_kwargs)
 
     def update(self, document: DOCUMENTS_INPUT, **update_kwargs: Any) -> None:

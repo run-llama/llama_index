@@ -8,6 +8,8 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
 from gpt_index.indices.query.schema import QueryBundle
 
+logger = logging.getLogger(__name__)
+
 
 class BaseTokenUsageOptimizer:
     """Base class for optimizers that should be overwritten."""
@@ -83,14 +85,14 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
             similarity_cutoff=threshold,
         )
         net_embed_tokens = self.embed_model.total_tokens_used - start_embed_token_ct
-        logging.info(
+        logger.info(
             f"> [optimize] Total embedding token usage: " f"{net_embed_tokens} tokens"
         )
         if len(top_idxs) == 0:
             raise ValueError("Optimizer returned zero sentences.")
         top_sentences = [split_text[i] for i in top_idxs]
 
-        logging.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
+        logger.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
         for i in range(len(top_idxs)):
-            logging.debug(f"{i}. {top_sentences[i]} ({top_similarities[i]})")
+            logger.debug(f"{i}. {top_sentences[i]} ({top_similarities[i]})")
         return " ".join(top_sentences)

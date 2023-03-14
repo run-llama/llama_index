@@ -9,6 +9,7 @@ from gpt_index.readers.schema.base import Document
 
 SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
 
+logger = logging.getLogger(__name__)
 
 # Copyright 2019 Google LLC
 #
@@ -152,6 +153,6 @@ class GoogleDocsReader(BaseReader):
 
 if __name__ == "__main__":
     reader = GoogleDocsReader()
-    logging.info(
+    logger.info(
         reader.load_data(document_ids=["11ctUj_tEf5S8vs_dk8_BNi-Zk8wW5YFhXkKqtmU_4B8"])
     )

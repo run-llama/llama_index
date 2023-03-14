@@ -11,6 +11,8 @@ from gpt_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class ChromaVectorStore(VectorStore):
     """Chroma vector store.
@@ -105,7 +107,7 @@ class ChromaVectorStore(VectorStore):
             query_embeddings=query_embedding, n_results=similarity_top_k
         )
 
-        logging.debug(f"> Top {len(results['documents'])} nodes:")
+        logger.debug(f"> Top {len(results['documents'])} nodes:")
         nodes = []
         similarities = []
         ids = []
@@ -127,7 +129,7 @@ class ChromaVectorStore(VectorStore):
             similarity_score = 1.0 - math.exp(-result[3][0])
             similarities.append(similarity_score)
 
-            logging.debug(
+            logger.debug(
                 f"> [Node {result[0][0]}] [Similarity score: {similarity_score}] "
                 f"{truncate_text(str(result[1][0]), 100)}"
             )

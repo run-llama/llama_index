@@ -17,6 +17,8 @@ from gpt_index.utils import (
     retry_on_exceptions_with_backoff,
 )
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class LLMMetadata:
@@ -131,7 +133,7 @@ class LLMPredictor:
         """
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = self._predict(prompt, **prompt_args)
-        logging.debug(llm_prediction)
+        logger.debug(llm_prediction)
 
         # We assume that the value of formatted_prompt is exactly the thing
         # eventually sent to OpenAI, or whatever LLM downstream
@@ -211,7 +213,7 @@ class LLMPredictor:
         """
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = await self._apredict(prompt, **prompt_args)
-        logging.debug(llm_prediction)
+        logger.debug(llm_prediction)
 
         # We assume that the value of formatted_prompt is exactly the thing
         # eventually sent to OpenAI, or whatever LLM downstream

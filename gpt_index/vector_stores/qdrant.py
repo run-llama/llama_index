@@ -14,6 +14,8 @@ from gpt_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class QdrantVectorStore(VectorStore):
     """Qdrant Vector Store.
@@ -197,7 +199,7 @@ class QdrantVectorStore(VectorStore):
             ),
         )
 
-        logging.debug(f"> Top {len(response)} nodes:")
+        logger.debug(f"> Top {len(response)} nodes:")
 
         nodes = []
         similarities = []
