@@ -9,7 +9,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Dict, Optional
 
-from gpt_index.img_utils import im_2_b64
+from gpt_index.img_utils import img_2_b64
 from gpt_index.readers.file.base_parser import BaseParser, ImageParserOutput
 
 
@@ -83,7 +83,7 @@ class ImageParser(BaseParser):
         # Encode image into base64 string and keep in document
         image_str: Optional[str] = None
         if self._keep_image:
-            image_str = im_2_b64(image)
+            image_str = img_2_b64(image)
 
         # Parse image into text
         text_str: str = ""
