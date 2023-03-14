@@ -2,7 +2,7 @@
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union, cast
+from typing import Callable, Dict, Generator, List, Optional, Union, cast
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.base_parser import BaseParser, ImageParserOutput
@@ -40,7 +40,9 @@ class SimpleDirectoryReader(BaseReader):
 
     Args:
         input_dir (str): Path to the directory.
-        input_files (List): List of file paths to read (Optional; overrides input_dir)
+        input_files (List): List of file paths to read
+            (Optional; overrides input_dir, exclude)
+        exclude (List): glob of python file paths to exclude (Optional)
         exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
         errors (str): how encoding and decoding errors are to be handled,
               see https://docs.python.org/3/library/functions.html#open
@@ -62,6 +64,7 @@ class SimpleDirectoryReader(BaseReader):
         self,
         input_dir: Optional[str] = None,
         input_files: Optional[List] = None,
+        exclude: Optional[List] = None,
         exclude_hidden: bool = True,
         errors: str = "ignore",
         recursive: bool = False,
@@ -78,6 +81,7 @@ class SimpleDirectoryReader(BaseReader):
 
         self.errors = errors
 
+        self.exclude = exclude
         self.recursive = recursive
         self.exclude_hidden = exclude_hidden
         self.required_exts = required_exts
@@ -90,6 +94,7 @@ class SimpleDirectoryReader(BaseReader):
                 self.input_files.append(input_file)
         elif input_dir:
             self.input_dir = Path(input_dir)
+            self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
 
         self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
@@ -97,26 +102,47 @@ class SimpleDirectoryReader(BaseReader):
 
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
-        input_files = sorted(input_dir.iterdir())
-        new_input_files = []
-        dirs_to_explore = []
-        for input_file in input_files:
-            if input_file.is_dir():
+        all_files = set()
+        rejected_files = set()
+
+        if self.exclude is not None:
+            for excluded_pattern in self.exclude:
                 if self.recursive:
-                    dirs_to_explore.append(input_file)
-            elif self.exclude_hidden and input_file.name.startswith("."):
-                continue
-            elif (
-                self.required_exts is not None
-                and input_file.suffix not in self.required_exts
+                    # Recursive glob
+                    for file in input_dir.rglob(excluded_pattern):
+                        rejected_files.add(Path(file))
+                else:
+                    # Non-recursive glob
+                    for file in input_dir.glob(excluded_pattern):
+                        rejected_files.add(Path(file))
+
+        file_refs: Generator[Path, None, None]
+        if self.recursive:
+            file_refs = Path(input_dir).rglob("*")
+        else:
+            file_refs = Path(input_dir).glob("*")
+
+        for ref in file_refs:
+            # Manually check if file is hidden or directory instead of
+            # in glob for backwards compatibility.
+            is_dir = ref.is_dir()
+            skip_because_hidden = self.exclude_hidden and ref.name.startswith(".")
+            skip_because_bad_ext = (
+                self.required_exts is not None and ref.suffix not in self.required_exts
+            )
+            skip_because_excluded = ref in rejected_files
+
+            if (
+                is_dir
+                or skip_because_hidden
+                or skip_because_bad_ext
+                or skip_because_excluded
             ):
                 continue
             else:
-                new_input_files.append(input_file)
+                all_files.add(ref)
 
-        for dir_to_explore in dirs_to_explore:
-            sub_input_files = self._add_files(dir_to_explore)
-            new_input_files.extend(sub_input_files)
+        new_input_files = sorted(list(all_files))
 
         if self.num_files_limit is not None and self.num_files_limit > 0:
             new_input_files = new_input_files[0 : self.num_files_limit]
