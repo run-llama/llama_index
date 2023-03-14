@@ -75,16 +75,14 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         self, query_bundle: QueryBundle, nodes: List[Node]
     ) -> Tuple[List[float], List[List[float]]]:
         """Get top nodes by similarity to the query."""
-        query_embedding = self._embed_model.get_agg_embedding_from_queries(
-            query_bundle.embedding_strs
-        )
+        if query_bundle.embedding is None:
+            query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
+                query_bundle.embedding_strs
+            )
         node_embeddings: List[List[float]] = []
         for node in self.index_struct.nodes:
-            if node.embedding is not None:
-                text_embedding = node.embedding
-            else:
-                text_embedding = self._embed_model.get_text_embedding(node.get_text())
-                node.embedding = text_embedding
+            if node.embedding is None:
+                node.embedding = self._embed_model.get_text_embedding(node.get_text())
 
-            node_embeddings.append(text_embedding)
-        return query_embedding, node_embeddings
+            node_embeddings.append(node.embedding)
+        return query_bundle.embedding, node_embeddings
