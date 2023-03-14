@@ -73,7 +73,7 @@ class ImageOutputQueryTransformPrompt(Prompt):
 DEFAULT_IMAGE_OUTPUT_TMPL = (
     '{query_str}'
     'Show any image with a HTML <img/> tag with {image_width}.'
-    'e.g., <image src="data/img.jpg" width="400" />.'
+    'e.g., <image src="data/img.jpg" width="{image_width}" />.'
 )
 
 DEFAULT_IMAGE_OUTPUT_PROMPT = ImageOutputQueryTransformPrompt(
