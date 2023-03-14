@@ -17,6 +17,7 @@ from typing import Any, Callable, List, Optional, Tuple
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.file.base import DEFAULT_FILE_EXTRACTOR
+from gpt_index.readers.file.base_parser import ImageParserOutput
 from gpt_index.readers.github_readers.github_api_client import (
     GitBranchResponseModel,
     GitCommitResponseModel,
@@ -356,6 +357,10 @@ class GithubRepositoryReader(BaseReader):
                     tmpfile.close()
                     try:
                         parsed_file = parser.parse_file(pathlib.Path(tmpfile.name))
+                        if isinstance(parsed_file, ImageParserOutput):
+                            raise ValueError(
+                                "Reader does not support ImageParserOutput"
+                            )
                         parsed_file = "\n\n".join(parsed_file)
                     except Exception as e:
                         print_if_verbose(

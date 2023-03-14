@@ -2,10 +2,10 @@
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, cast
 
 from gpt_index.readers.base import BaseReader
-from gpt_index.readers.file.base_parser import BaseParser
+from gpt_index.readers.file.base_parser import BaseParser, ImageParserOutput
 from gpt_index.readers.file.docs_parser import DocxParser, PDFParser
 from gpt_index.readers.file.epub_parser import EpubParser
 from gpt_index.readers.file.image_parser import ImageParser
@@ -14,7 +14,7 @@ from gpt_index.readers.file.mbox_parser import MboxParser
 from gpt_index.readers.file.slides_parser import PptxParser
 from gpt_index.readers.file.tabular_parser import PandasCSVParser
 from gpt_index.readers.file.video_audio import VideoAudioParser
-from gpt_index.readers.schema.base import Document
+from gpt_index.readers.schema.base import Document, ImageDocument
 
 DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
     ".pdf": PDFParser(),
@@ -132,17 +132,19 @@ class SimpleDirectoryReader(BaseReader):
         """Load data from the input directory.
 
         Args:
-            concatenate (bool): whether to concatenate all files into one document.
-                If set to True, file metadata is ignored.
-                False by default.
+            concatenate (bool): whether to concatenate all text docs into a single doc.
+                If set to True, file metadata is ignored. False by default.
+                This setting does not apply to image docs (always one doc per image).
 
         Returns:
             List[Document]: A list of documents.
 
         """
-        data: Union[str, List[str]] = ""
+        # TODO: refactor parser output interface
+        data: Union[str, List[str], ImageParserOutput] = ""
         data_list: List[str] = []
-        metadata_list: List[dict] = []
+        metadata_list: List[Optional[dict]] = []
+        image_docs: List[ImageDocument] = []
         for input_file in self.input_files:
             if input_file.suffix in self.file_extractor:
                 parser = self.file_extractor[input_file.suffix]
@@ -153,21 +155,35 @@ class SimpleDirectoryReader(BaseReader):
                 # do standard read
                 with open(input_file, "r", errors=self.errors, encoding="utf8") as f:
                     data = f.read()
-            if isinstance(data, List):
-                data_list.extend(data)
-            else:
-                data_list.append(str(data))
+
+            metadata: Optional[dict] = None
             if self.file_metadata is not None:
-                metadata: dict = self.file_metadata(str(input_file))
-                if isinstance(data, List):
-                    repeated_metadata = [deepcopy(metadata) for _ in range(len(data))]
-                    metadata_list.extend(repeated_metadata)
-                else:
-                    metadata_list.append(metadata)
+                metadata = self.file_metadata(str(input_file))
+
+            if isinstance(data, ImageParserOutput):
+                # process image
+                image_docs.append(
+                    ImageDocument(text=data.text, extra_info=metadata, image=data.image)
+                )
+            elif isinstance(data, List):
+                # process list of str
+                data_list.extend(data)
+                repeated_metadata: List[Optional[dict]] = [
+                    deepcopy(metadata) for _ in range(len(data))
+                ]
+                metadata_list.extend(repeated_metadata)
+            else:
+                # process single str
+                data_list.append(str(data))
+                metadata_list.append(metadata)
 
         if concatenate:
-            return [Document("\n".join(data_list))]
+            text_docs = [Document("\n".join(data_list))]
         elif self.file_metadata is not None:
-            return [Document(d, extra_info=m) for d, m in zip(data_list, metadata_list)]
+            text_docs = [
+                Document(d, extra_info=m) for d, m in zip(data_list, metadata_list)
+            ]
         else:
-            return [Document(d) for d in data_list]
+            text_docs = [Document(d) for d in data_list]
+
+        return text_docs + cast(List[Document], image_docs)
