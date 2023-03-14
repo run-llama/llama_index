@@ -25,6 +25,8 @@ class SourceNode(DataClassJsonMixin):
     # distance score between node and query, if applicable
     similarity: Optional[float] = None
 
+    # TODO: store reference instead of actual image
+    # base64 encoded image str
     image: Optional[str] = None
 
     @classmethod

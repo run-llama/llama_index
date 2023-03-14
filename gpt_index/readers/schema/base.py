@@ -41,4 +41,5 @@ class Document(BaseDocument):
 class ImageDocument(Document):
     """Data document containing an image."""
 
+    # base64 encoded image str
     image: Optional[str] = None

@@ -56,6 +56,8 @@ class Node(IndexStruct):
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
 
+    # TODO: store reference instead of actual image
+    # base64 encoded image str
     image: Optional[str] = None
 
     def get_text(self) -> str:

@@ -2,8 +2,11 @@
 import base64
 from io import BytesIO
 
+from PIL import Image
 
-def im_2_b64(image, format: str = "JPEG"):
+
+def im_2_b64(image: Image, format: str = "JPEG") -> str:
+    """Convert a PIL.Image to a base64 encoded image str."""
     buff = BytesIO()
     image.save(buff, format=format)
     img_str = base64.b64encode(buff.getvalue())
@@ -11,8 +14,7 @@ def im_2_b64(image, format: str = "JPEG"):
 
 
 # Convert Base64 to Image
-def b64_2_img(data: str):
-    from PIL import Image
-
+def b64_2_img(data: str) -> Image:
+    """Convert base64 encoded image str to a PIL.Image."""
     buff = BytesIO(base64.b64decode(data))
     return Image.open(buff)
