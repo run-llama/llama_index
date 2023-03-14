@@ -14,6 +14,8 @@ from gpt_index.readers.schema.base import ImageDocument
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import truncate_text
 
+logger = logging.getLogger(__name__)
+
 
 def get_text_splits_from_document(
     document: BaseDocument,
@@ -55,7 +57,7 @@ def get_nodes_from_document(
     index_counter = 0
     for i, text_split in enumerate(text_splits):
         text_chunk = text_split.text_chunk
-        logging.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
+        logger.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
         index_pos_info = None
         if text_split.num_char_overlap is not None:
             index_pos_info = {

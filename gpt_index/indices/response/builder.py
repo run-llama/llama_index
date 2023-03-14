@@ -24,6 +24,8 @@ from gpt_index.utils import temp_set_attrs
 
 RESPONSE_TEXT_TYPE = Union[str, Generator]
 
+logger = logging.getLogger(__name__)
+
 
 class ResponseMode(str, Enum):
     """Response modes."""
@@ -103,7 +105,7 @@ class ResponseBuilder:
             response = get_response_text(response)
 
         fmt_text_chunk = truncate_text(text_chunk, 50)
-        logging.debug(f"> Refine context: {fmt_text_chunk}")
+        logger.debug(f"> Refine context: {fmt_text_chunk}")
         # NOTE: partial format refine template with query_str and existing_answer here
         refine_template = self.refine_template.partial_format(
             query_str=query_str, existing_answer=response
@@ -123,7 +125,7 @@ class ResponseBuilder:
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
-            logging.debug(f"> Refined response: {response}")
+            logger.debug(f"> Refined response: {response}")
         return response
 
     def give_response_single(
@@ -145,7 +147,7 @@ class ResponseBuilder:
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
-                logging.debug(f"> Initial response: {response}")
+                logger.debug(f"> Initial response: {response}")
             elif response is None and self._streaming:
                 response, _ = self.llm_predictor.stream(
                     text_qa_template,

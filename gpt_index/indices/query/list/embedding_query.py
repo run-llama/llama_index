@@ -11,6 +11,8 @@ from gpt_index.indices.query.embedding_utils import (
 from gpt_index.indices.query.list.query import BaseGPTListIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
 
+logger = logging.getLogger(__name__)
+
 
 class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     """GPTListIndex query.
@@ -66,9 +68,9 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
             for node, similarity in zip(top_k_nodes, top_similarities):
                 similarity_tracker.add(node, similarity)
 
-        logging.debug(f"> Top {len(top_idxs)} nodes:\n")
+        logger.debug(f"> Top {len(top_idxs)} nodes:\n")
         nl = "\n"
-        logging.debug(f"{ nl.join([n.get_text() for n in top_k_nodes]) }")
+        logger.debug(f"{ nl.join([n.get_text() for n in top_k_nodes]) }")
         return top_k_nodes
 
     def _get_embeddings(

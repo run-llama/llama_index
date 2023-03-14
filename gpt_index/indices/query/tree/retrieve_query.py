@@ -8,6 +8,8 @@ from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.utils import get_sorted_node_list
 
+logger = logging.getLogger(__name__)
+
 
 class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
     """GPT Tree Index retrieve query.
@@ -34,7 +36,7 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        logging.info(f"> Starting query: {query_bundle.query_str}")
+        logger.info(f"> Starting query: {query_bundle.query_str}")
         node_list = get_sorted_node_list(self.index_struct.root_nodes)
         text_qa_template = self.text_qa_template.partial_format(
             query_str=query_bundle.query_str

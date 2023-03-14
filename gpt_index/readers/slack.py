@@ -171,4 +171,4 @@ class SlackReader(BaseReader):
 
 if __name__ == "__main__":
     reader = SlackReader()
-    logging.info(reader.load_data(channel_ids=["C04DC2VUY3F"]))
+    logger.info(reader.load_data(channel_ids=["C04DC2VUY3F"]))

@@ -7,6 +7,8 @@ import requests
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
 
+logger = logging.getLogger(__name__)
+
 
 class SimpleWebPageReader(BaseReader):
     """Simple web page reader.
@@ -265,4 +267,4 @@ class RssReader(BaseReader):
 
 if __name__ == "__main__":
     reader = SimpleWebPageReader()
-    logging.info(reader.load_data(["http://www.google.com"]))
+    logger.info(reader.load_data(["http://www.google.com"]))
