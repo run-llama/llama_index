@@ -39,7 +39,7 @@ def test_levels_back0() -> None:
 def test_collapse_length() -> None:
     """Test JSON reader using the collapse_length function."""
     with TemporaryDirectory() as tmp_dir:
-        file_name = f"{tmp_dir}/test4.json"
+        file_name = f"{tmp_dir}/test3.json"
         with open(file_name, "w") as f:
             f.write('{ "a": { "b": "c" } }')
 
