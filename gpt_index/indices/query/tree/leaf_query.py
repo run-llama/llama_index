@@ -166,6 +166,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         logger.debug(
             f">[Level {level}] current prompt template: {formatted_query_prompt}"
         )
+        debug_str = f">[Level {level}] Current response: {response}"
+        logger.debug(debug_str)
+        if self._verbose:
+            print_text(debug_str, end="\n")
 
         numbers = extract_numbers_given_response(response, n=self.child_branch_factor)
         if numbers is None:
