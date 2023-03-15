@@ -21,6 +21,7 @@ from gpt_index.utils import (
 logger = logging.getLogger(__name__)
 
 GPT4_CONTEXT_SIZE = 8192
+GPT4_32K_CONTEXT_SIZE = 32768
 
 
 @dataclass
@@ -48,6 +49,11 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         if llm.model_name == 'gpt-4':
             return LLMMetadata(
                 max_input_size=GPT4_CONTEXT_SIZE,
+                num_output=llm.max_tokens
+            )
+        elif llm.model_name == 'gpt-4-32k':
+            return LLMMetadata(
+                max_input_size=GPT4_32K_CONTEXT_SIZE,
                 num_output=llm.max_tokens
             )
         else:
