@@ -29,7 +29,7 @@ index = GPTTreeIndex(documents)
 # save index
 index.save_to_disk('index_tree.json')
 # load index from disk
-index = GPTListIndex.load_from_disk('index_tree.json')
+index = GPTTreeIndex.load_from_disk('index_tree.json')
 # query
 response = index.query("<question text>", mode="default")
 ```
