@@ -7,7 +7,7 @@ from typing import Any, Generator, Optional, Tuple
 import openai
 from langchain import Cohere, LLMChain, OpenAI
 from langchain.llms import AI21
-from langchain.llms.base import BaseLLM
+from langchain.schema import BaseLanguageModel
 
 from gpt_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.prompts.base import Prompt
@@ -32,9 +32,9 @@ class LLMMetadata:
     num_output: int = NUM_OUTPUTS
 
 
-def _get_llm_metadata(llm: BaseLLM) -> LLMMetadata:
+def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
     """Get LLM metadata from llm."""
-    if not isinstance(llm, BaseLLM):
+    if not isinstance(llm, BaseLanguageModel):
         raise ValueError("llm must be an instance of langchain.llms.base.LLM")
     if isinstance(llm, OpenAI):
         return LLMMetadata(
@@ -75,7 +75,7 @@ class LLMPredictor:
     """
 
     def __init__(
-        self, llm: Optional[BaseLLM] = None, retry_on_throttling: bool = True
+        self, llm: Optional[BaseLanguageModel] = None, retry_on_throttling: bool = True
     ) -> None:
         """Initialize params."""
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
