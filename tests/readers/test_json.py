@@ -6,7 +6,7 @@ from gpt_index.readers.json import JSONReader
 
 
 def test_basic() -> None:
-    """Test JSON reader in basic mode"""
+    """Test JSON reader in basic mode."""
     with TemporaryDirectory() as tmp_dir:
         file_name = f"{tmp_dir}/test1.json"
 
@@ -21,7 +21,7 @@ def test_basic() -> None:
 
 
 def test_levels_back0() -> None:
-    """Test JSON reader using the levels_back function"""
+    """Test JSON reader using the levels_back function."""
     with TemporaryDirectory() as tmp_dir:
         file_name = f"{tmp_dir}/test2.json"
         with open(file_name, "w") as f:
@@ -37,7 +37,7 @@ def test_levels_back0() -> None:
 
 
 def test_collapse_length() -> None:
-    """Test JSON reader using the collapse_length function"""
+    """Test JSON reader using the collapse_length function."""
     with TemporaryDirectory() as tmp_dir:
         file_name = f"{tmp_dir}/test4.json"
         with open(file_name, "w") as f:
