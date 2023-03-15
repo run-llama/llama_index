@@ -167,7 +167,7 @@ client = qdrant_client.QdrantClient(
 )
 collection_name = "paul_graham"
 
-# Load documents, build the GPTFaissIndex
+# Load documents, build the GPTQdrantIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTQdrantIndex(documents, collection_name=collection_name, client=client)
 
@@ -186,7 +186,7 @@ from gpt_index import GPTChromaIndex, SimpleDirectoryReader
 chroma_client = chromadb.Client()
 chroma_collection = chroma_client.create_collection("quickstart")
 
-# Load documents, build the GPTFaissIndex
+# Load documents, build the GPTChromaIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTChromaIndex(documents, chroma_collection=chroma_collection)
 

@@ -7,7 +7,10 @@ from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery, BaseQueryRunner
-from gpt_index.indices.query.query_transform import BaseQueryTransform
+from gpt_index.indices.query.query_transform.base import (
+    BaseQueryTransform,
+    IdentityQueryTransform,
+)
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -60,7 +63,7 @@ class QueryRunner(BaseQueryRunner):
         self._embed_model = embed_model
         self._docstore = docstore
         self._index_registry = index_registry
-        self._query_transform = query_transform or BaseQueryTransform()
+        self._query_transform = query_transform or IdentityQueryTransform()
         self._recursive = recursive
         self._use_async = use_async
 
@@ -79,11 +82,8 @@ class QueryRunner(BaseQueryRunner):
             query_kwargs["embed_model"] = self._embed_model
         return query_kwargs
 
-    def _get_query_obj(
-        self,
-        index_struct: IndexStruct,
-    ) -> BaseGPTIndexQuery:
-        """Get query object."""
+    def _get_query_config(self, index_struct: IndexStruct) -> QueryConfig:
+        """Get query config."""
         index_struct_id = index_struct.get_doc_id()
         index_struct_type = index_struct.get_type()
         if index_struct_id in self._id_to_config_dict:
@@ -94,6 +94,24 @@ class QueryRunner(BaseQueryRunner):
             config = QueryConfig(
                 index_struct_type=index_struct_type, query_mode=QueryMode.DEFAULT
             )
+        return config
+
+    def _get_query_transform(self, index_struct: IndexStruct) -> BaseQueryTransform:
+        """Get query transform."""
+        config = self._get_query_config(index_struct)
+        if config.query_transform is not None:
+            query_transform = cast(BaseQueryTransform, config.query_transform)
+        else:
+            query_transform = self._query_transform
+        return query_transform
+
+    def _get_query_obj(
+        self,
+        index_struct: IndexStruct,
+    ) -> BaseGPTIndexQuery:
+        """Get query object."""
+        index_struct_type = index_struct.get_type()
+        config = self._get_query_config(index_struct)
         mode = config.query_mode
 
         query_cls = self._index_registry.type_to_query[index_struct_type][mode]
@@ -119,11 +137,15 @@ class QueryRunner(BaseQueryRunner):
         """Run query."""
         # NOTE: Currently, query transform is only run once
         # TODO: Consider refactor to support index-specific query transform
-        if isinstance(query_str_or_bundle, str):
-            query_bundle = self._query_transform(query_str_or_bundle)
-        else:
-            query_bundle = query_str_or_bundle
+        # TODO: abstract query transformation loop into a separate class
+
+        query_transform = self._get_query_transform(index_struct)
+        transform_extra_info = {"index_struct": index_struct}
+        query_bundle = query_transform(
+            query_str_or_bundle, extra_info=transform_extra_info
+        )
         query_obj = self._get_query_obj(index_struct)
+
         return query_obj.query(query_bundle)
 
     async def aquery(
@@ -134,9 +156,11 @@ class QueryRunner(BaseQueryRunner):
         """Run query."""
         # NOTE: Currently, query transform is only run once
         # TODO: Consider refactor to support index-specific query transform
-        if isinstance(query_str_or_bundle, str):
-            query_bundle = self._query_transform(query_str_or_bundle)
-        else:
-            query_bundle = query_str_or_bundle
+        query_transform = self._get_query_transform(index_struct)
+        transform_extra_info = {"index_struct": index_struct}
+        query_bundle = query_transform(
+            query_str_or_bundle, extra_info=transform_extra_info
+        )
         query_obj = self._get_query_obj(index_struct)
+
         return await query_obj.aquery(query_bundle)

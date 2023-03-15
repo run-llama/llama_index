@@ -119,6 +119,9 @@ class QueryConfig(DataClassJsonMixin):
     # have this field
     index_struct_id: Optional[str] = None
 
+    # NOTE/TODO: type as Any for now to avoid circular dependency
+    query_transform: Optional[Any] = None
+
 
 @dataclass
 class QueryBundle(DataClassJsonMixin):
@@ -132,10 +135,12 @@ class QueryBundle(DataClassJsonMixin):
             This is currently used by all non embedding-based queries.
         embedding_strs (list[str]): list of strings used for embedding the query.
             This is currently used by all embedding-based queries.
+        embedding (list[float]): the stored embedding for the query.
     """
 
     query_str: str
     custom_embedding_strs: Optional[List[str]] = None
+    embedding: Optional[List[float]] = None
 
     @property
     def embedding_strs(self) -> List[str]:

@@ -27,6 +27,8 @@ from gpt_index.prompts.prompts import (
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import truncate_text
 
+logger = logging.getLogger(__name__)
+
 
 class SQLDocumentContextBuilder:
     """Builder that builds context for a given set of SQL tables.
@@ -184,7 +186,7 @@ class BaseStructDatapointExtractor:
         fields = {}
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
-            logging.info(f"> Adding chunk {i}: {fmt_text_chunk}")
+            logger.info(f"> Adding chunk {i}: {fmt_text_chunk}")
             # if embedding specified in document, pass it to the Node
             schema_text = self._get_schema_text()
             response_str, _ = self._llm_predictor.predict(
@@ -202,4 +204,4 @@ class BaseStructDatapointExtractor:
         struct_datapoint = StructDatapoint(fields)
         if struct_datapoint is not None:
             self._insert_datapoint(struct_datapoint)
-            logging.debug(f"> Added datapoint: {fields}")
+            logger.debug(f"> Added datapoint: {fields}")

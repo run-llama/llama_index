@@ -1,6 +1,7 @@
 """Base schema for data structures."""
 from abc import abstractmethod
 from dataclasses import dataclass
+from hashlib import sha256
 from typing import Any, Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
@@ -21,6 +22,7 @@ class BaseDocument(DataClassJsonMixin):
     text: Optional[str] = None
     doc_id: Optional[str] = None
     embedding: Optional[List[float]] = None
+    doc_hash: Optional[str] = None
 
     # extra fields
     extra_info: Optional[Dict[str, Any]] = None
@@ -30,6 +32,13 @@ class BaseDocument(DataClassJsonMixin):
         # assign doc_id if not set
         if self.doc_id is None:
             self.doc_id = get_new_id(set())
+        if self.doc_hash is None:
+            self.doc_hash = self._generate_doc_hash()
+
+    def _generate_doc_hash(self) -> str:
+        """Generate a hash to represent the document."""
+        doc_identity = str(self.text) + str(self.extra_info)
+        return sha256(doc_identity.encode()).hexdigest()
 
     @classmethod
     @abstractmethod
@@ -55,10 +64,21 @@ class BaseDocument(DataClassJsonMixin):
             raise ValueError("doc_id not set.")
         return self.doc_id
 
+    def get_doc_hash(self) -> str:
+        """Get doc_hash."""
+        if self.doc_hash is None:
+            raise ValueError("doc_hash is not set.")
+        return self.doc_hash
+
     @property
     def is_doc_id_none(self) -> bool:
         """Check if doc_id is None."""
         return self.doc_id is None
+
+    @property
+    def is_text_none(self) -> bool:
+        """Check if text is None."""
+        return self.text is None
 
     def get_embedding(self) -> List[float]:
         """Get embedding.

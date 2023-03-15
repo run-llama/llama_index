@@ -23,7 +23,7 @@ from gpt_index.indices.node_utils import get_nodes_from_document
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
-from gpt_index.indices.query.query_transform import BaseQueryTransform
+from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -37,6 +37,8 @@ IS = TypeVar("IS", bound=IndexStruct)
 
 
 DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
+
+logger = logging.getLogger(__name__)
 
 
 class BaseGPTIndex(Generic[IS]):
@@ -176,6 +178,7 @@ class BaseGPTIndex(Generic[IS]):
                     )
                 results.append(sub_index_struct)
             elif isinstance(doc, Document):
+                docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
                 results.append(doc)
             else:
                 raise ValueError(f"Invalid document type: {type(doc)}.")
@@ -185,7 +188,9 @@ class BaseGPTIndex(Generic[IS]):
         """Validate documents."""
         for doc in documents:
             if not isinstance(doc, BaseDocument):
-                raise ValueError("Documents must be of type BaseDocument.")
+                raise ValueError(
+                    f"Documents must be of type BaseDocument, got {type(doc)} instead."
+                )
 
     @property
     def index_struct(self) -> IS:
@@ -308,7 +313,7 @@ class BaseGPTIndex(Generic[IS]):
             doc_id (str): document id
 
         """
-        logging.debug(f"> Deleting document: {doc_id}")
+        logger.debug(f"> Deleting document: {doc_id}")
         self._delete(doc_id, **delete_kwargs)
 
     def update(self, document: DOCUMENTS_INPUT, **update_kwargs: Any) -> None:
@@ -324,6 +329,27 @@ class BaseGPTIndex(Generic[IS]):
         """
         self.delete(document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {}))
         self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+
+    def refresh(
+        self, documents: List[BaseDocument], **update_kwargs: Any
+    ) -> List[bool]:
+        """Refresh an index with documents that have changed.
+
+        This allows users to save LLM and Embedding model calls, while only
+        updating documents that have any changes in text or extra_info. It
+        will also insert any documents that previously were not stored.
+        """
+        refreshed_documents = [False] * len(documents)
+        for i, document in enumerate(documents):
+            existing_doc_hash = self._docstore.get_document_hash(document.get_doc_id())
+            if existing_doc_hash != document.get_doc_hash():
+                self.update(document, **update_kwargs)
+                refreshed_documents[i] = True
+            elif existing_doc_hash is None:
+                self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+                refreshed_documents[i] = True
+
+        return refreshed_documents
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
         """Preprocess query.

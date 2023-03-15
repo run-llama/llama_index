@@ -1,15 +1,21 @@
 """Base query classes."""
 
 import logging
-import re
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar, cast
+
+from langchain.input import print_text
 
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.indices.postprocessor.node import (
+    BaseNodePostprocessor,
+    KeywordNodePostprocessor,
+    SimilarityPostprocessor,
+)
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
@@ -29,6 +35,35 @@ from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.utils import truncate_text
 
 IS = TypeVar("IS", bound=IndexStruct)
+
+logger = logging.getLogger(__name__)
+
+
+def _get_initial_node_postprocessors(
+    required_keywords: Optional[List[str]] = None,
+    exclude_keywords: Optional[List[str]] = None,
+    similarity_cutoff: Optional[float] = None,
+) -> List[BaseNodePostprocessor]:
+    """Get initial node postprocessors.
+
+    This function is to help support deprecated keyword arguments.
+
+    """
+    postprocessors: List[BaseNodePostprocessor] = []
+    if required_keywords is not None or exclude_keywords is not None:
+        required_keywords = required_keywords or []
+        exclude_keywords = exclude_keywords or []
+        keyword_postprocessor = KeywordNodePostprocessor(
+            required_keywords=required_keywords, exclude_keywords=exclude_keywords
+        )
+        postprocessors.append(keyword_postprocessor)
+
+    if similarity_cutoff is not None:
+        similarity_postprocessor = SimilarityPostprocessor(
+            similarity_cutoff=similarity_cutoff
+        )
+        postprocessors.append(similarity_postprocessor)
+    return postprocessors
 
 
 @dataclass
@@ -82,19 +117,24 @@ class BaseGPTIndexQuery(Generic[IS]):
         embed_model: Optional[BaseEmbedding] = None,
         docstore: Optional[DocumentStore] = None,
         query_runner: Optional[BaseQueryRunner] = None,
+        # TODO: deprecated
         required_keywords: Optional[List[str]] = None,
+        # TODO: deprecated
         exclude_keywords: Optional[List[str]] = None,
         response_mode: ResponseMode = ResponseMode.DEFAULT,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         include_summary: bool = False,
         response_kwargs: Optional[Dict] = None,
+        # TODO: deprecated
         similarity_cutoff: Optional[float] = None,
         use_async: bool = True,
         recursive: bool = False,
         streaming: bool = False,
         doc_ids: Optional[List[str]] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -111,7 +151,9 @@ class BaseGPTIndexQuery(Generic[IS]):
             raise ValueError("prompt_helper must be provided.")
         self._prompt_helper = cast(PromptHelper, prompt_helper)
 
+        # TODO: deprecated
         self._required_keywords = required_keywords
+        # TODO: deprecated
         self._exclude_keywords = exclude_keywords
         self._response_mode = ResponseMode(response_mode)
 
@@ -130,39 +172,25 @@ class BaseGPTIndexQuery(Generic[IS]):
             streaming=streaming,
         )
 
+        # TODO: deprecated
         self.similarity_cutoff = similarity_cutoff
+
         self._recursive = recursive
         self._streaming = streaming
         self._doc_ids = doc_ids
         self._optimizer = optimizer
 
-    def _should_use_node(
-        self, node: Node, similarity_tracker: Optional[SimilarityTracker] = None
-    ) -> bool:
-        """Run node through filters to determine if it should be used."""
-        words = re.findall(r"\w+", node.get_text())
-        if self._required_keywords is not None:
-            for w in self._required_keywords:
-                if w not in words:
-                    return False
-
-        if self._exclude_keywords is not None:
-            for w in self._exclude_keywords:
-                if w in words:
-                    return False
-
-        sim_cutoff_exists = (
-            similarity_tracker is not None and self.similarity_cutoff is not None
+        # set default postprocessors
+        init_node_preprocessors = _get_initial_node_postprocessors(
+            required_keywords=required_keywords,
+            exclude_keywords=exclude_keywords,
+            similarity_cutoff=similarity_cutoff,
         )
-
-        if sim_cutoff_exists:
-            similarity = cast(SimilarityTracker, similarity_tracker).find(node)
-            if similarity is None:
-                return False
-            if cast(float, similarity) < cast(float, self.similarity_cutoff):
-                return False
-
-        return True
+        node_postprocessors = node_postprocessors or []
+        self.node_preprocessors: List[BaseNodePostprocessor] = (
+            init_node_preprocessors + node_postprocessors
+        )
+        self._verbose = verbose
 
     def _get_text_from_node(
         self,
@@ -178,7 +206,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         """
         level_str = "" if level is None else f"[Level {level}]"
         fmt_text_chunk = truncate_text(node.get_text(), 50)
-        logging.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
+        logger.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
         is_index_struct = False
         # if recursive and self._query_runner is not None,
@@ -200,10 +228,16 @@ class BaseGPTIndexQuery(Generic[IS]):
         if is_index_struct:
             query_runner = cast(BaseQueryRunner, self._query_runner)
             response = query_runner.query(query_bundle, cast(IndexStruct, doc))
+            fmt_response = truncate_text(str(response), 200)
+            if self._verbose:
+                print_text(f">{level_str} Got response: {fmt_response}\n", color="blue")
             return TextChunk(str(response), is_answer=True), response
         else:
-            text = node.get_text()
-            return TextChunk(text), None
+            response_txt = node.get_text()
+            fmt_response = truncate_text(response_txt, 200)
+            if self._verbose:
+                print_text(f">{level_str} Got response: {fmt_response}\n", color="blue")
+            return TextChunk(response_txt), None
 
     @property
     def index_struct(self) -> IS:
@@ -245,9 +279,10 @@ class BaseGPTIndexQuery(Generic[IS]):
         nodes = self._get_nodes_for_response(
             query_bundle, similarity_tracker=similarity_tracker
         )
-        nodes = [
-            node for node in nodes if self._should_use_node(node, similarity_tracker)
-        ]
+
+        postprocess_info = {"similarity_tracker": similarity_tracker}
+        for node_processor in self.node_preprocessors:
+            nodes = node_processor.postprocess_nodes(nodes, postprocess_info)
 
         # TODO: create a `display` method to allow subclasses to print the Node
         return similarity_tracker.get_zipped_nodes(nodes)

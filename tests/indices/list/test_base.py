@@ -15,6 +15,7 @@ from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQu
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
+from gpt_index.schema import BaseDocument
 from gpt_index.utils import globals_helper
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_predict import (
@@ -67,6 +68,45 @@ def test_build_list(
     assert list_index.index_struct.nodes[1].text == "This is a test."
     assert list_index.index_struct.nodes[2].text == "This is another test."
     assert list_index.index_struct.nodes[3].text == "This is a test v2."
+
+
+@patch_common
+def test_refresh_list(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    documents: List[BaseDocument],
+) -> None:
+    """Test build list."""
+    # add extra document
+    more_documents = documents + [Document("Test document 2")]
+
+    # ensure documents have doc_id
+    for i in range(len(more_documents)):
+        more_documents[i].doc_id = str(i)
+
+    # create index
+    list_index = GPTListIndex(documents=more_documents)
+
+    # check that no documents are refreshed
+    refreshed_docs = list_index.refresh(more_documents)
+    assert refreshed_docs[0] is False
+    assert refreshed_docs[1] is False
+
+    # modify a document and test again
+    more_documents = documents + [Document("Test document 2, now with changes!")]
+    for i in range(len(more_documents)):
+        more_documents[i].doc_id = str(i)
+
+    # second document should refresh
+    refreshed_docs = list_index.refresh(more_documents)
+    assert refreshed_docs[0] is False
+    assert refreshed_docs[1] is True
+    assert (
+        list_index.index_struct.nodes[-1].text == "Test document 2, now with changes!"
+    )
 
 
 @patch_common

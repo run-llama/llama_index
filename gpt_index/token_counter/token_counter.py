@@ -1,10 +1,14 @@
 """Token counter function."""
 
+import asyncio
 import logging
+from contextlib import contextmanager
 from typing import Any, Callable, cast
 
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+
+logger = logging.getLogger(__name__)
 
 
 def llm_token_counter(method_name_str: str) -> Callable:
@@ -32,7 +36,8 @@ def llm_token_counter(method_name_str: str) -> Callable:
     """
 
     def wrap(f: Callable) -> Callable:
-        def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
+        @contextmanager
+        def wrapper_logic(_self: Any) -> Any:
             llm_predictor = getattr(_self, "_llm_predictor", None)
             if llm_predictor is None:
                 raise ValueError(
@@ -52,7 +57,7 @@ def llm_token_counter(method_name_str: str) -> Callable:
             start_token_ct = llm_predictor.total_tokens_used
             start_embed_token_ct = embed_model.total_tokens_used
 
-            f_return_val = f(_self, *args, **kwargs)
+            yield
 
             net_tokens = llm_predictor.total_tokens_used - start_token_ct
             llm_predictor.last_token_usage = net_tokens
@@ -60,16 +65,31 @@ def llm_token_counter(method_name_str: str) -> Callable:
             embed_model.last_token_usage = net_embed_tokens
 
             # print outputs
-            logging.info(
+            logger.info(
                 f"> [{method_name_str}] Total LLM token usage: {net_tokens} tokens"
             )
-            logging.info(
+            logger.info(
                 f"> [{method_name_str}] Total embedding token usage: "
                 f"{net_embed_tokens} tokens"
             )
 
+        async def wrapped_async_llm_predict(
+            _self: Any, *args: Any, **kwargs: Any
+        ) -> Any:
+            with wrapper_logic(_self):
+                f_return_val = await f(_self, *args, **kwargs)
+
             return f_return_val
 
-        return wrapped_llm_predict
+        def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
+            with wrapper_logic(_self):
+                f_return_val = f(_self, *args, **kwargs)
+
+            return f_return_val
+
+        if asyncio.iscoroutinefunction(f):
+            return wrapped_async_llm_predict
+        else:
+            return wrapped_llm_predict
 
     return wrap

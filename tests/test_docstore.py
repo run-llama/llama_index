@@ -23,26 +23,29 @@ def test_docstore() -> None:
 
     # test serialize/deserialize
     doc_dict = docstore.serialize_to_dict()
-    assert doc_dict["docs"] == {
-        "d1": {
-            "text": "hello world",
-            "doc_id": "d1",
-            "embedding": None,
-            "extra_info": {"foo": "bar"},
-            "__type__": "Document",
-        },
-        "d2": {
-            "text": "my node",
-            "doc_id": "d2",
-            "embedding": None,
-            "extra_info": None,
-            "node_info": {"node": "info"},
-            "index": 0,
-            "child_indices": [],
-            "ref_doc_id": None,
-            "__type__": "node",
-        },
+    d1_expected: dict = {
+        "text": "hello world",
+        "doc_id": "d1",
+        "embedding": None,
+        "extra_info": {"foo": "bar"},
+        "__type__": "Document",
     }
+    d2_expected: dict = {
+        "text": "my node",
+        "doc_id": "d2",
+        "embedding": None,
+        "extra_info": None,
+        "node_info": {"node": "info"},
+        "index": 0,
+        "child_indices": [],
+        "ref_doc_id": None,
+        "image": None,
+        "__type__": "node",
+    }
+    doc_dict["docs"]["d1"].pop("doc_hash")
+    doc_dict["docs"]["d2"].pop("doc_hash")
+    assert doc_dict["docs"]["d1"] == d1_expected
+    assert doc_dict["docs"]["d2"] == d2_expected
 
     docstore_loaded = DocumentStore.load_from_dict(doc_dict, type_to_struct)
     assert docstore_loaded == docstore
