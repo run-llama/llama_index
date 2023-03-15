@@ -66,7 +66,10 @@ Ask questions about the Real Housewives of Beverly Hills.
 [[Tweet thread]](https://twitter.com/YourBuddyConner/status/1616504644439789568?s=20&t=bCHa3im7mjoIXLuKo5PttQ)
 [[Website]](https://realhousewivesai.com/)
 
+###### Mynd
 
+A journaling app that uses AI to uncover insights and patterns over time.
+[[Website]](https://mynd.so)
 
 
 
