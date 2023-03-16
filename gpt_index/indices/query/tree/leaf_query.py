@@ -9,11 +9,7 @@ from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseBuilder
-from gpt_index.indices.utils import (
-    extract_numbers_given_response,
-    get_sorted_node_list,
-    truncate_text,
-)
+from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
     DEFAULT_QUERY_PROMPT_MULTIPLE,
@@ -167,6 +163,9 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         logger.debug(
             f">[Level {level}] current prompt template: {formatted_query_prompt}"
         )
+        self._llama_logger.add_log(
+            {"formatted_prompt_template": formatted_query_prompt, "level": level}
+        )
         debug_str = f">[Level {level}] Current response: {response}"
         logger.debug(debug_str)
         if self._verbose:
@@ -206,7 +205,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
-                f"{ truncate_text(debug_str, 100) }"
+                f"{ selected_node.get_text() }"
             )
             logger.debug(full_debug_str)
             if self._verbose:
