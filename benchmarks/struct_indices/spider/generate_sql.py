@@ -7,6 +7,7 @@ import re
 
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
+from langchain.schema import BaseLanguageModel
 from sqlalchemy import create_engine
 from tqdm import tqdm
 
@@ -104,7 +105,7 @@ if __name__ == "__main__":
 
     # Create the LlamaIndexes for all databases.
     if args.model in ["gpt-3.5-turbo", "gpt-4"]:
-        llm = ChatOpenAI(model=args.model, temperature=0)
+        llm: BaseLanguageModel = ChatOpenAI(model=args.model, temperature=0)
     else:
         llm = OpenAI(model=args.model, temperature=0)
     llm_predictor = LLMPredictor(llm=llm)
