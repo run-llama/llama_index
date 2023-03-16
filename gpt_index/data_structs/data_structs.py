@@ -60,6 +60,10 @@ class Node(IndexStruct):
     # base64 encoded image str
     image: Optional[str] = None
 
+    # node_id obtained from doc_id
+    prev_node_id: Optional[str] = None
+    next_node_id: Optional[str] = None
+
     def get_text(self) -> str:
         """Get text."""
         text = super().get_text()
