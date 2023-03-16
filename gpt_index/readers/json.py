@@ -2,30 +2,45 @@
 
 import json
 import re
-from typing import Dict, Generator, List, Optional
+from typing import Any, Generator, List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
 
 
 def _depth_first_yield(
-    json_data: Dict, levels_back: int, path: List[str]
+    json_data: Any,
+    levels_back: int,
+    collapse_length: Optional[int],
+    path: List[str],
 ) -> Generator[str, None, None]:
     """Do depth first yield of all of the leaf nodes of a JSON.
 
     Combines keys in the JSON tree using spaces.
 
     If levels_back is set to 0, prints all levels.
+    If collapse_length is not None and the json_data is <= that number
+      of characters, then we collapse it into one line.
 
     """
-    if isinstance(json_data, dict):
-        for key, value in json_data.items():
-            new_path = path[:]
-            new_path.append(key)
-            yield from _depth_first_yield(value, levels_back, new_path)
-    elif isinstance(json_data, list):
-        for _, value in enumerate(json_data):
-            yield from _depth_first_yield(value, levels_back, path)
+    if isinstance(json_data, dict) or isinstance(json_data, list):
+        # only try to collapse if we're not at a leaf node
+        json_str = json.dumps(json_data)
+        if collapse_length is not None and len(json_str) <= collapse_length:
+            new_path = path[-levels_back:]
+            new_path.append(json_str)
+            yield " ".join(new_path)
+            return
+        elif isinstance(json_data, dict):
+            for key, value in json_data.items():
+                new_path = path[:]
+                new_path.append(key)
+                yield from _depth_first_yield(
+                    value, levels_back, collapse_length, new_path
+                )
+        elif isinstance(json_data, list):
+            for _, value in enumerate(json_data):
+                yield from _depth_first_yield(value, levels_back, collapse_length, path)
     else:
         new_path = path[-levels_back:]
         new_path.append(str(json_data))
@@ -42,12 +57,22 @@ class JSONReader(BaseReader):
         if you want all levels. If levels_back is None, then we just format the
         JSON and make each line an embedding
 
+        collapse_length (int): the maximum number of characters a JSON fragment
+        would be collapsed in the output (levels_back needs to be not None)
+        ex: if collapse_length = 10, and
+        input is {a: [1, 2, 3], b: {"hello": "world", "foo": "bar"}}
+        then a would be collapsed into one line, while b would not.
+        Recommend starting around 100 and then adjusting from there.
+
     """
 
-    def __init__(self, levels_back: Optional[int] = None) -> None:
+    def __init__(
+        self, levels_back: Optional[int] = None, collapse_length: Optional[int] = None
+    ) -> None:
         """Initialize with arguments."""
         super().__init__()
         self.levels_back = levels_back
+        self.collapse_length = collapse_length
 
     def load_data(self, input_file: str) -> List[Document]:
         """Load data from the input file."""
@@ -65,5 +90,9 @@ class JSONReader(BaseReader):
             elif self.levels_back is not None:
                 # If levels_back is set, we make the embeddings contain the labels
                 # from further up the JSON tree
-                lines = [*_depth_first_yield(data, self.levels_back, [])]
+                lines = [
+                    *_depth_first_yield(
+                        data, self.levels_back, self.collapse_length, []
+                    )
+                ]
                 return [Document("\n".join(lines))]
