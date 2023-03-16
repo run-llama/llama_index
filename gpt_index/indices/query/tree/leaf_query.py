@@ -3,6 +3,8 @@
 import logging
 from typing import Any, Dict, Optional, cast
 
+from langchain.input import print_text
+
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
@@ -18,7 +20,6 @@ from gpt_index.prompts.default_prompts import (
 )
 from gpt_index.prompts.prompts import TreeSelectMultiplePrompt, TreeSelectPrompt
 from gpt_index.response.schema import Response
-from langchain.input import print_text
 
 logger = logging.getLogger(__name__)
 
