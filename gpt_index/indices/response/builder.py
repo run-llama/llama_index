@@ -59,7 +59,7 @@ class ResponseBuilder:
         nodes: Optional[List[Node]] = None,
         use_async: bool = False,
         streaming: bool = False,
-        llama_logger: Optional[Any] = None,
+        llama_logger: Optional[LlamaLogger] = None,
     ) -> None:
         """Init params."""
         self.prompt_helper = prompt_helper
@@ -260,6 +260,7 @@ class ResponseBuilder:
             self.prompt_helper,
             text_splitter,
             use_async=self._use_async,
+            llama_logger=self._llama_logger,
         )
         return index_builder, all_nodes
 

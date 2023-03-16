@@ -1,17 +1,15 @@
 """Logger class."""
 
-from typing import Dict
-
-from pydantic import BaseModel
+from typing import Any, Dict, List, Set
 
 
 class LlamaLogger:
     """Logger class."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Init params."""
-        self._logs = []
-        self._metadata = {}
+        self._logs: List[Dict] = []
+        self._metadata: Dict[str, Any] = {}
 
     def reset(self) -> None:
         """Reset logs."""
@@ -21,7 +19,7 @@ class LlamaLogger:
         """Set metadata."""
         self._metadata.update(metadata)
 
-    def unset_metadata(self, metadata_keys: Dict) -> None:
+    def unset_metadata(self, metadata_keys: Set) -> None:
         """Unset metadata."""
         for key in metadata_keys:
             self._metadata.pop(key, None)
@@ -36,6 +34,6 @@ class LlamaLogger:
         # TODO: figure out better abstraction
         self._logs.append(updated_log)
 
-    def get_logs(self) -> Dict:
+    def get_logs(self) -> List[Dict]:
         """Get logs."""
         return self._logs

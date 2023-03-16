@@ -120,6 +120,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self._prompt_helper,
             self._text_splitter,
             use_async=self._use_async,
+            llama_logger=self._llama_logger,
         )
         index_graph = index_builder.build_from_text(
             documents, build_tree=self.build_tree
