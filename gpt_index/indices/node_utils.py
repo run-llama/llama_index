@@ -87,7 +87,7 @@ def get_nodes_from_document(
 
 
 def get_nodes_from_docstore(
-    docstore: DocumentStore, node_ids: List[Node], raise_error: bool = True
+    docstore: DocumentStore, node_ids: List[str], raise_error: bool = True
 ) -> List[Node]:
     """Get nodes from docstore."""
 

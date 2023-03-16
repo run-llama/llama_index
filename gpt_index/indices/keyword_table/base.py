@@ -12,7 +12,7 @@ from abc import abstractmethod
 from typing import Any, Dict, Optional, Sequence, Set, Type
 
 from gpt_index.async_utils import run_async_tasks
-from gpt_index.data_structs.data_structs import KeywordTable
+from gpt_index.data_structs.data_structs_v2 import KeywordTable
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -118,6 +118,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         for n in nodes:
             keywords = self._extract_keywords(n.get_text())
             index_struct.add_node(list(keywords), n)
+            self._docstore.add_documents([n])
 
     async def _async_add_document_to_index(
         self, index_struct: KeywordTable, document: BaseDocument
@@ -127,6 +128,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         for n in nodes:
             keywords = await self._async_extract_keywords(n.get_text())
             index_struct.add_node(list(keywords), n)
+            self._docstore.add_documents([n])
 
     def _build_index_from_documents(
         self, documents: Sequence[BaseDocument]
@@ -152,6 +154,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         for n in nodes:
             keywords = self._extract_keywords(n.get_text())
             self._index_struct.add_node(list(keywords), n)
+            self._docstore.add_documents([n])
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

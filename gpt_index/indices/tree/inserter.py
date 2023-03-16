@@ -13,6 +13,7 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from gpt_index.schema import BaseDocument
+from gpt_index.docstore import DocumentStore
 
 
 class GPTIndexInserter:
@@ -27,6 +28,7 @@ class GPTIndexInserter:
         num_children: int = 10,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
+        docstore: Optional[DocumentStore] = None,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -38,6 +40,7 @@ class GPTIndexInserter:
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
         self._text_splitter = text_splitter
+        self._docstore = docstore or DocumentStore()
 
     def _insert_under_parent_and_consolidate(
         self, text_chunk: str, doc: BaseDocument, parent_node: Optional[Node]
@@ -57,6 +60,7 @@ class GPTIndexInserter:
             extra_info=doc.extra_info,
         )
         self.index_graph.insert_under_parent(text_node, parent_node)
+        self._docstore.add_documents([text_node])
 
         # if under num_children limit, then we're fine
         if len(self.index_graph.get_children(parent_node)) <= self.num_children:
@@ -103,7 +107,9 @@ class GPTIndexInserter:
             else:
                 self.index_graph.root_nodes = {}
             self.index_graph.insert_under_parent(node1, parent_node)
+            self._docstore.add_documents([text_node])
             self.index_graph.insert_under_parent(node2, parent_node)
+            self._docstore.add_documents([text_node])
 
     def _insert_node(
         self, text_chunk: str, doc: BaseDocument, parent_node: Optional[Node]

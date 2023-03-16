@@ -2,7 +2,8 @@
 
 from typing import Any, Dict, Optional, Sequence, Type
 
-from gpt_index.data_structs.data_structs import IndexGraph
+# from gpt_index.data_structs.data_structs import IndexGraph
+from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -121,6 +122,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self._text_splitter,
             use_async=self._use_async,
             llama_logger=self._llama_logger,
+            docstore=self._docstore,
         )
         index_graph = index_builder.build_from_text(
             documents, build_tree=self.build_tree
@@ -138,6 +140,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             llm_predictor=self._llm_predictor,
             prompt_helper=self._prompt_helper,
             text_splitter=self._text_splitter,
+            docstore=self._docstore,
         )
         inserter.insert(document)
 

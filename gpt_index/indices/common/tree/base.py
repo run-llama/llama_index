@@ -6,7 +6,8 @@ import logging
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from gpt_index.async_utils import run_async_tasks
-from gpt_index.data_structs.data_structs import IndexGraph, Node
+from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.indices.node_utils import get_text_splits_from_document
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
@@ -15,6 +16,7 @@ from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import SummaryPrompt
 from gpt_index.schema import BaseDocument
+from gpt_index.docstore import DocumentStore
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +36,7 @@ class GPTTreeIndexBuilder:
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
         text_splitter: TextSplitter,
+        docstore: Optional[DocumentStore] = None,
         use_async: bool = False,
         llama_logger: Optional[LlamaLogger] = None,
     ) -> None:
@@ -46,28 +49,36 @@ class GPTTreeIndexBuilder:
         self._prompt_helper = prompt_helper
         self._text_splitter = text_splitter
         self._use_async = use_async
+        self._docstore = docstore or DocumentStore()
         self._llama_logger = llama_logger or LlamaLogger()
 
-    def _get_nodes_from_document(
+    def docstore(self) -> DocumentStore:
+        """Return docstore."""
+        return self._docstore
+
+    def _create_nodes_from_document(
         self, start_idx: int, document: BaseDocument
-    ) -> Dict[int, Node]:
+    ) -> Dict[int, str]:
         """Add document to index."""
         # NOTE: summary prompt does not need to be partially formatted
         text_splits = get_text_splits_from_document(
             document=document, text_splitter=self._text_splitter
         )
         text_chunks = [text_split.text_chunk for text_split in text_splits]
-        doc_nodes = {
-            (start_idx + i): Node(
+
+        doc_node_ids = {}
+        for i, t in enumerate(text_chunks):
+            node = Node(
                 text=t,
                 index=(start_idx + i),
                 ref_doc_id=document.get_doc_id(),
                 embedding=document.embedding,
                 extra_info=document.extra_info,
             )
-            for i, t in enumerate(text_chunks)
-        }
-        return doc_nodes
+            doc_node_ids[(start_idx + i)] = node.get_doc_id()
+            self._docstore.add_documents([node])
+
+        return doc_node_ids
 
     def build_from_text(
         self,
@@ -80,9 +91,9 @@ class GPTTreeIndexBuilder:
             IndexGraph: graph object consisting of all_nodes, root_nodes
 
         """
-        all_nodes: Dict[int, Node] = {}
+        all_nodes: Dict[int, str] = {}
         for d in documents:
-            all_nodes.update(self._get_nodes_from_document(len(all_nodes), d))
+            all_nodes.update(self._create_nodes_from_document(len(all_nodes), d))
 
         if build_tree:
             # instantiate all_nodes from initial text chunks
@@ -117,8 +128,12 @@ class GPTTreeIndexBuilder:
         indices: List[int],
         cur_nodes_chunks: List[List[Node]],
         summaries: List[str],
-    ) -> Dict[int, Node]:
-        """Construct parent nodes."""
+    ) -> Dict[int, str]:
+        """Construct parent nodes.
+
+        Save nodes to docstore.
+
+        """
         new_node_dict = {}
         for i, cur_nodes_chunk, new_summary in zip(
             indices, cur_nodes_chunks, summaries
@@ -132,13 +147,14 @@ class GPTTreeIndexBuilder:
                 index=cur_index,
                 child_indices={n.index for n in cur_nodes_chunk},
             )
-            new_node_dict[cur_index] = new_node
+            new_node_dict[cur_index] = new_node.get_doc_id()
+            self._docstore.add_documents([new_node])
             cur_index += 1
         return new_node_dict
 
     def build_index_from_nodes(
-        self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node], level: int = 0
-    ) -> Dict[int, Node]:
+        self, cur_nodes: Dict[int, str], all_nodes: Dict[int, str], level: int = 0
+    ) -> Dict[int, str]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         cur_index = len(all_nodes)
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
@@ -176,8 +192,8 @@ class GPTTreeIndexBuilder:
             )
 
     async def abuild_index_from_nodes(
-        self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node], level: int = 0
-    ) -> Dict[int, Node]:
+        self, cur_nodes: Dict[int, str], all_nodes: Dict[int, str], level: int = 0
+    ) -> Dict[int, str]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         cur_index = len(all_nodes)
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(

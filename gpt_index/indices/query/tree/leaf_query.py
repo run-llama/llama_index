@@ -5,7 +5,9 @@ from typing import Any, Dict, Optional, cast
 
 from langchain.input import print_text
 
-from gpt_index.data_structs.data_structs import IndexGraph, Node
+from gpt_index.indices.node_utils import get_nodes_from_docstore
+from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseBuilder
@@ -122,12 +124,16 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
     def _query_level(
         self,
-        cur_nodes: Dict[int, Node],
+        cur_node_ids: Dict[int, str],
         query_bundle: QueryBundle,
         level: int = 0,
     ) -> str:
         """Answer a query recursively."""
         query_str = query_bundle.query_str
+        cur_nodes = {
+            index: get_nodes_from_docstore(self._docstore, [node_id])[0]
+            for index, node_id in cur_node_ids.items()
+        }
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         if len(cur_node_list) == 1:

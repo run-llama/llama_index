@@ -5,6 +5,7 @@ from gpt_index.data_structs.data_structs import IndexList, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.node_utils import get_nodes_from_docstore
 
 
 class BaseGPTListIndexQuery(BaseGPTIndexQuery[IndexList]):
@@ -43,4 +44,5 @@ class GPTListIndexQuery(BaseGPTListIndexQuery):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        return self.index_struct.nodes
+        node_ids = self.index_struct.nodes
+        nodes = get_nodes_from_docstore(self._docstore, node_ids)
