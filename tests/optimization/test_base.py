@@ -50,7 +50,6 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 )
 def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
     """Test optimizer."""
-
     optimizer = SentenceEmbeddingOptimizer(
         tokenizer_fn=mock_tokenizer_fn, percentile_cutoff=0.5
     )
