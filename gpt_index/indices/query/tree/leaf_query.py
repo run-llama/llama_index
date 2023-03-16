@@ -3,6 +3,8 @@
 import logging
 from typing import Any, Dict, Optional, cast
 
+from langchain.input import print_text
+
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
@@ -165,12 +167,19 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         logger.debug(
             f">[Level {level}] current prompt template: {formatted_query_prompt}"
         )
+        debug_str = f">[Level {level}] Current response: {response}"
+        logger.debug(debug_str)
+        if self._verbose:
+            print_text(debug_str, end="\n")
 
         numbers = extract_numbers_given_response(response, n=self.child_branch_factor)
         if numbers is None:
-            logger.debug(
+            debug_str = (
                 f">[Level {level}] Could not retrieve response - no numbers present"
             )
+            logger.debug(debug_str)
+            if self._verbose:
+                print_text(debug_str, end="\n")
             # just join text from current nodes as response
             return response
         result_response = None
@@ -186,16 +195,22 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             # number is 1-indexed, so subtract 1
             selected_node = cur_node_list[number - 1]
 
-            logger.info(
+            info_str = (
                 f">[Level {level}] Selected node: "
                 f"[{number}]/[{','.join([str(int(n)) for n in numbers])}]"
             )
+            logger.info(info_str)
+            if self._verbose:
+                print_text(info_str, end="\n")
             debug_str = " ".join(selected_node.get_text().splitlines())
-            logger.debug(
+            full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
                 f"{ truncate_text(debug_str, 100) }"
             )
+            logger.debug(full_debug_str)
+            if self._verbose:
+                print_text(full_debug_str, end="\n")
             result_response = self._query_with_selected_node(
                 selected_node,
                 query_bundle,
@@ -208,7 +223,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         # NOTE: this overrides the _query method in the base class
-        logger.info(f"> Starting query: {query_bundle.query_str}")
+        info_str = f"> Starting query: {query_bundle.query_str}"
+        logger.info(info_str)
+        if self._verbose:
+            print_text(info_str, end="\n")
         response_str = self._query_level(
             self.index_struct.root_nodes,
             query_bundle,

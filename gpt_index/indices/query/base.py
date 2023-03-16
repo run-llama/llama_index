@@ -236,7 +236,9 @@ class BaseGPTIndexQuery(Generic[IS]):
             response_txt = node.get_text()
             fmt_response = truncate_text(response_txt, 200)
             if self._verbose:
-                print_text(f">{level_str} Got response: {fmt_response}\n", color="blue")
+                print_text(
+                    f">{level_str} Got node text: {fmt_response}\n", color="blue"
+                )
             return TextChunk(response_txt), None
 
     @property
