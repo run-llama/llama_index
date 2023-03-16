@@ -3,6 +3,8 @@
 import logging
 from typing import Any, Dict, Optional, cast
 
+from langchain.input import print_text
+
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
