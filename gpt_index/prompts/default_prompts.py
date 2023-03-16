@@ -170,20 +170,31 @@ DEFAULT_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(DEFAULT_SCHEMA_EXTRACT_TMPL)
 # NOTE: taken from langchain and adapted
 # https://tinyurl.com/b772sd77
 DEFAULT_TEXT_TO_SQL_TMPL = (
-    "Given an input question, first create a syntactically correct SQL query "
-    "to run, then look at the results of the query and return the answer.\n"
+    "Given an input question, first create a syntactically correct {dialect} "
+    "query to run, then look at the results of the query and return the answer. "
+    "You can order the results by a relevant column to return the most "
+    "interesting examples in the database.\n"
+    "Never query for all the columns from a specific table, only ask for a the "
+    "few relevant columns given the question.\n"
+    "Pay attention to use only the column names that you can see in the schema "
+    "description. "
+    "Be careful to not query for columns that do not exist. "
+    "Pay attention to which column is in which table. "
+    "Also, qualify column names with the table name when needed.\n"
     "Use the following format:\n"
-    'Question: "Question here"\n'
-    'SQLQuery: "SQL Query to run"\n'
-    "The following is a schema of the table:\n"
-    "---------------------\n"
+    "Question: Question here\n"
+    "SQLQuery: SQL Query to run\n"
+    "SQLResult: Result of the SQLQuery\n"
+    "Answer: Final answer here\n"
+    "Only use the tables listed below.\n"
     "{schema}\n"
-    "---------------------\n"
     "Question: {query_str}\n"
     "SQLQuery: "
 )
 
-DEFAULT_TEXT_TO_SQL_PROMPT = TextToSQLPrompt(DEFAULT_TEXT_TO_SQL_TMPL)
+DEFAULT_TEXT_TO_SQL_PROMPT = TextToSQLPrompt(
+    DEFAULT_TEXT_TO_SQL_TMPL, stop_token="\nSQLResult:"
+)
 
 
 # NOTE: by partially filling schema, we can reduce to a QuestionAnswer prompt
