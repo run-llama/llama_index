@@ -18,6 +18,8 @@ from gpt_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
+logger = logging.getLogger(__name__)
+
 
 class KGQueryMode(str, Enum):
     """Query mode enum for Knowledge Graphs.
@@ -108,9 +110,9 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        logging.info(f"> Starting query: {query_bundle.query_str}")
+        logger.info(f"> Starting query: {query_bundle.query_str}")
         keywords = self._get_keywords(query_bundle.query_str)
-        logging.info(f"> Query keywords: {keywords}")
+        logger.info(f"> Query keywords: {keywords}")
         rel_texts = []
         cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
@@ -143,10 +145,10 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
                 embedding_ids=all_rel_texts,
                 similarity_cutoff=self.similarity_cutoff,
             )
-            logging.debug(
+            logger.debug(
                 f"Found the following rel_texts+query similarites: {str(similarities)}"
             )
-            logging.debug(f"Found the following top_k rel_texts: {str(rel_texts)}")
+            logger.debug(f"Found the following top_k rel_texts: {str(rel_texts)}")
             rel_texts.extend(top_rel_texts)
             if self._include_text:
                 keywords = self._extract_rel_text_keywords(top_rel_texts)
@@ -158,7 +160,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
                 for node_id in node_ids:
                     chunk_indices_count[node_id] += 1
         elif len(self.index_struct.embedding_dict) == 0:
-            logging.error(
+            logger.error(
                 "Index was not constructed with embeddings, skipping embedding usage..."
             )
 
@@ -193,7 +195,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             # nodes are found with keyword mapping, give high conf to avoid cutoff
             if similarity_tracker is not None:
                 similarity_tracker.add(node, 1000.0)
-            logging.info(
+            logger.info(
                 f"> Querying with idx: {chunk_idx}: "
                 f"{truncate_text(node.get_text(), 80)}"
             )
@@ -214,7 +216,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         if similarity_tracker is not None:
             similarity_tracker.add(rel_text_node, 1000.0)
         rel_info_text = "\n".join(rel_info)
-        logging.info(f"> Extracted relationships: {rel_info_text}")
+        logger.info(f"> Extracted relationships: {rel_info_text}")
         sorted_nodes.append(rel_text_node)
 
         return sorted_nodes

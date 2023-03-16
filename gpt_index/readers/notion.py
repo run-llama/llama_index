@@ -13,6 +13,8 @@ BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
 DATABASE_URL_TMPL = "https://api.notion.com/v1/databases/{database_id}/query"
 SEARCH_URL = "https://api.notion.com/v1/search"
 
+logger = logging.getLogger(__name__)
+
 
 # TODO: Notion DB reader coming soon!
 class NotionPageReader(BaseReader):
@@ -164,4 +166,4 @@ class NotionPageReader(BaseReader):
 
 if __name__ == "__main__":
     reader = NotionPageReader()
-    logging.info(reader.search("What I"))
+    logger.info(reader.search("What I"))

@@ -3,17 +3,20 @@
 
 import asyncio
 import logging
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import IndexGraph, Node
 from gpt_index.indices.node_utils import get_text_splits_from_document
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.utils import get_sorted_node_list
+from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import SummaryPrompt
 from gpt_index.schema import BaseDocument
+
+logger = logging.getLogger(__name__)
 
 
 class GPTTreeIndexBuilder:
@@ -32,6 +35,7 @@ class GPTTreeIndexBuilder:
         prompt_helper: PromptHelper,
         text_splitter: TextSplitter,
         use_async: bool = False,
+        llama_logger: Optional[LlamaLogger] = None,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
@@ -42,6 +46,7 @@ class GPTTreeIndexBuilder:
         self._prompt_helper = prompt_helper
         self._text_splitter = text_splitter
         self._use_async = use_async
+        self._llama_logger = llama_logger or LlamaLogger()
 
     def _get_nodes_from_document(
         self, start_idx: int, document: BaseDocument
@@ -81,7 +86,7 @@ class GPTTreeIndexBuilder:
 
         if build_tree:
             # instantiate all_nodes from initial text chunks
-            root_nodes = self.build_index_from_nodes(all_nodes, all_nodes)
+            root_nodes = self.build_index_from_nodes(all_nodes, all_nodes, level=0)
         else:
             # if build_tree is False, then don't surface any root nodes
             root_nodes = {}
@@ -92,7 +97,7 @@ class GPTTreeIndexBuilder:
     ) -> Tuple[List[int], List[List[Node]], List[str]]:
         """Prepare node and text chunks."""
         cur_node_list = get_sorted_node_list(cur_nodes)
-        logging.info(
+        logger.info(
             f"> Building index from nodes: {len(cur_nodes) // self.num_children} chunks"
         )
         indices, cur_nodes_chunks, text_chunks = [], [], []
@@ -118,9 +123,9 @@ class GPTTreeIndexBuilder:
         for i, cur_nodes_chunk, new_summary in zip(
             indices, cur_nodes_chunks, summaries
         ):
-            logging.debug(
+            logger.debug(
                 f"> {i}/{len(cur_nodes_chunk)}, "
-                "summary: {truncate_text(new_summary, 50)}"
+                f"summary: {truncate_text(new_summary, 50)}"
             )
             new_node = Node(
                 text=new_summary,
@@ -132,9 +137,7 @@ class GPTTreeIndexBuilder:
         return new_node_dict
 
     def build_index_from_nodes(
-        self,
-        cur_nodes: Dict[int, Node],
-        all_nodes: Dict[int, Node],
+        self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node], level: int = 0
     ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         cur_index = len(all_nodes)
@@ -158,6 +161,7 @@ class GPTTreeIndexBuilder:
                 )[0]
                 for text_chunk in text_chunks
             ]
+        self._llama_logger.add_log({"summaries": summaries, "level": level})
 
         new_node_dict = self._construct_parent_nodes(
             cur_index, indices, cur_nodes_chunks, summaries
@@ -167,12 +171,12 @@ class GPTTreeIndexBuilder:
         if len(new_node_dict) <= self.num_children:
             return new_node_dict
         else:
-            return self.build_index_from_nodes(new_node_dict, all_nodes)
+            return self.build_index_from_nodes(
+                new_node_dict, all_nodes, level=level + 1
+            )
 
     async def abuild_index_from_nodes(
-        self,
-        cur_nodes: Dict[int, Node],
-        all_nodes: Dict[int, Node],
+        self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node], level: int = 0
     ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         cur_index = len(all_nodes)
@@ -186,6 +190,7 @@ class GPTTreeIndexBuilder:
         ]
         outputs: List[Tuple[str, str]] = await asyncio.gather(*tasks)
         summaries = [output[0] for output in outputs]
+        self._llama_logger.add_log({"summaries": summaries, "level": level})
 
         new_node_dict = self._construct_parent_nodes(
             cur_index, indices, cur_nodes_chunks, summaries
@@ -195,4 +200,6 @@ class GPTTreeIndexBuilder:
         if len(new_node_dict) <= self.num_children:
             return new_node_dict
         else:
-            return self.build_index_from_nodes(new_node_dict, all_nodes)
+            return await self.abuild_index_from_nodes(
+                new_node_dict, all_nodes, level=level + 1
+            )
