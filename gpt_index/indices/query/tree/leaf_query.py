@@ -164,9 +164,11 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                 context_list=numbered_node_text,
             )
 
-        logger.debug(
-            f">[Level {level}] current prompt template: {formatted_query_prompt}"
-        )
+        formatted_query_str= f">[Level {level}] current prompt template: {formatted_query_prompt}"
+        logger.debug(formatted_query_str)
+        if self._verbose:
+            print_text(formatted_query_str)
+
         debug_str = f">[Level {level}] Current response: {response}"
         logger.debug(debug_str)
         if self._verbose:
