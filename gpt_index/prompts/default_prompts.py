@@ -182,10 +182,10 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
     "Pay attention to which column is in which table. "
     "Also, qualify column names with the table name when needed.\n"
     "Use the following format:\n"
-    'Question: "Question here"\n'
-    'SQLQuery: "SQL Query to run"\n'
-    'SQLResult: "Result of the SQLQuery"\n'
-    'Answer: "Final answer here"\n'
+    "Question: Question here\n"
+    'SQLQuery: SQL Query to run"\n'
+    "SQLResult: Result of the SQLQuery\n"
+    "Answer: Final answer here\n"
     "Only use the tables listed below.\n"
     "{schema}\n"
     "Question: {query_str}\n"
