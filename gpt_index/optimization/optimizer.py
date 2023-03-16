@@ -1,7 +1,7 @@
 """Optimization related classes and functions."""
 import logging
 from abc import abstractmethod
-from typing import Optional, Callable, List
+from typing import Callable, List, Optional
 
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding

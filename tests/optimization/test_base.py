@@ -1,10 +1,11 @@
 """Test optimization."""
 
-from gpt_index.optimization.optimizer import SentenceEmbeddingOptimizer
-from typing import List, Any
+from typing import Any, List
 from unittest.mock import patch
+
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.optimization.optimizer import SentenceEmbeddingOptimizer
 
 
 def mock_tokenizer_fn(text: str) -> List[str]:
@@ -47,7 +48,7 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 @patch.object(
     OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
-def test_optimizer(_mock_embeds: Any, _mock_embed: Any):
+def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
     """Test optimizer."""
 
     optimizer = SentenceEmbeddingOptimizer(
