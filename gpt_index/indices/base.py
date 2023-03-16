@@ -28,6 +28,7 @@ from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
+from gpt_index.logger import LlamaLogger
 from gpt_index.readers.schema.base import Document
 from gpt_index.response.schema import Response
 from gpt_index.schema import BaseDocument
@@ -73,6 +74,7 @@ class BaseGPTIndex(Generic[IS]):
         text_splitter: Optional[TextSplitter] = None,
         chunk_size_limit: Optional[int] = None,
         include_extra_info: bool = True,
+        llama_logger: Optional[LlamaLogger] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
@@ -94,6 +96,8 @@ class BaseGPTIndex(Generic[IS]):
         # build index struct in the init function
         self._docstore = docstore or DocumentStore()
         self._index_registry = index_registry or IndexRegistry()
+
+        self._llama_logger = llama_logger or LlamaLogger()
 
         if index_struct is not None:
             if not isinstance(index_struct, self.index_struct_cls):
