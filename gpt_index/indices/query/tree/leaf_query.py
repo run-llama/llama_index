@@ -20,7 +20,6 @@ from gpt_index.prompts.default_prompts import (
 )
 from gpt_index.prompts.prompts import TreeSelectMultiplePrompt, TreeSelectPrompt
 from gpt_index.response.schema import Response
-from langchain.input import print_text
 
 logger = logging.getLogger(__name__)
 
