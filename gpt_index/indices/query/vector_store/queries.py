@@ -3,7 +3,7 @@
 
 from typing import Any, Dict, Optional
 
-from gpt_index.data_structs.data_structs import IndexDict
+from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
 from gpt_index.vector_stores import (
     ChromaVectorStore,

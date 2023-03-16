@@ -4,6 +4,7 @@
 import logging
 from typing import List, Optional
 
+from gpt_index.docstore import DocumentStore
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.langchain_helpers.text_splitter import (
     TextSplit,
@@ -82,4 +83,18 @@ def get_nodes_from_document(
             image=image,
         )
         nodes.append(node)
+    return nodes
+
+
+def get_nodes_from_docstore(
+    docstore: DocumentStore, node_ids: List[Node], raise_error: bool = True
+) -> List[Node]:
+    """Get nodes from docstore."""
+
+    nodes = []
+    for node_id in node_ids:
+        doc = docstore.get_document(node_id, raise_error=raise_error)
+        if not isinstance(doc, Node):
+            raise ValueError(f"Document {node_id} is not a Node.")
+        nodes.append(doc)
     return nodes

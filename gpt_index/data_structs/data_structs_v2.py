@@ -1,109 +1,46 @@
-"""File for core data structures."""
+"""Data structures v2.
 
-import random
-import sys
+Nodes are decoupled from the indices.
+
+"""
+
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
-
-from dataclasses_json import DataClassJsonMixin
-
+from typing import Dict, Optional, Set, List, Tuple
+from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.data_structs.data_structs import IndexGraph as V0IndexGraph
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.schema import BaseDocument
-from gpt_index.utils import get_new_int_id
+from dataclasses_json import DataClassJsonMixin
+import random
+import sys
 
 
 @dataclass
-class IndexStruct(BaseDocument, DataClassJsonMixin):
+class V2IndexStruct(BaseDocument, DataClassJsonMixin):
     """A base data struct for a LlamaIndex."""
 
-    # NOTE: the text field, inherited from BaseDocument,
-    # represents a summary of the content of the index struct.
-    # primarily used for composing indices with other indices
-
-    # NOTE: the doc_id field, inherited from BaseDocument,
-    # represents a unique identifier for the index struct
-    # that will be put in the docstore.
-    # Not all index_structs need to have a doc_id. Only index_structs that
-    # represent a complete data structure (e.g. IndexGraph, IndexList),
-    # and are used to compose a higher level index, will have a doc_id.
-
-
-@dataclass
-class Node(IndexStruct):
-    """A generic node of data.
-
-    Base struct used in most indices.
-
-    """
-
-    def __post_init__(self) -> None:
-        """Post init."""
-        super().__post_init__()
-        # NOTE: for Node objects, the text field is required
-        if self.text is None:
-            raise ValueError("text field not set.")
-
-    # used for GPTTreeIndex
-    index: int = 0
-    child_indices: Set[int] = field(default_factory=set)
-
-    # embeddings
-    embedding: Optional[List[float]] = None
-
-    # reference document id
-    ref_doc_id: Optional[str] = None
-
-    # extra node info
-    node_info: Optional[Dict[str, Any]] = None
-
-    # TODO: store reference instead of actual image
-    # base64 encoded image str
-    image: Optional[str] = None
-
-    # node_id obtained from doc_id
-    prev_node_id: Optional[str] = None
-    next_node_id: Optional[str] = None
-
+    # @abstractmethod
     @classmethod
-    def get_from_docstore(
-        cls, docstore, node_ids: List[str], raise_error: bool = True
-    ) -> List["Node"]:
-        """Get node from docstore."""
-        nodes: List[Node] = []
-        for node_id in node_ids:
-            doc = docstore.get_document(node_id, raise_error=raise_error)
-            if not isinstance(doc, Node):
-                raise ValueError(f"Document {node_id} is not a Node.")
-        return cls.from_dict(doc)
-
-    def get_text(self) -> str:
-        """Get text."""
-        text = super().get_text()
-        result_text = (
-            text if self.extra_info_str is None else f"{self.extra_info_str}\n\n{text}"
-        )
-        return result_text
-
-    @classmethod
-    def get_type(cls) -> str:
-        """Get type."""
-        # TODO: consolidate with IndexStructType
-        return "node"
+    def from_v0_struct(cls, v0_struct: IndexStruct) -> "V2IndexStruct":
+        """Convert from v0 struct."""
+        raise NotImplementedError()
 
 
 @dataclass
 class IndexGraph(IndexStruct):
     """A graph representing the tree-structured index."""
 
-    all_nodes: Dict[int, Node] = field(default_factory=dict)
-    root_nodes: Dict[int, Node] = field(default_factory=dict)
+    # mapping from index in tree to Node doc id.
+    all_nodes: Dict[int, str] = field(default_factory=dict)
+    root_nodes: Dict[int, str] = field(default_factory=dict)
 
     @property
     def size(self) -> int:
         """Get the size of the graph."""
         return len(self.all_nodes)
 
-    def get_children(self, parent_node: Optional[Node]) -> Dict[int, Node]:
+    def get_children(self, parent_node: Optional[Node]) -> Dict[int, str]:
         """Get nodes given indices."""
         if parent_node is None:
             return self.root_nodes
@@ -117,49 +54,38 @@ class IndexGraph(IndexStruct):
                 "Cannot insert a new node with the same index as an existing node."
             )
         if parent_node is None:
-            self.root_nodes[node.index] = node
+            self.root_nodes[node.index] = node.get_doc_id()
         else:
             parent_node.child_indices.add(node.index)
 
-        self.all_nodes[node.index] = node
+        self.all_nodes[node.index] = node.get_doc_id()
 
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
         return "tree"
 
+    @classmethod
+    def from_v0_struct(cls, v0_struct: V0IndexGraph) -> "IndexGraph":
+        """Convert from old struct."""
+        return IndexGraph(
+            all_nodes={i: n.get_doc_id() for i, n in v0_struct.all_nodes.items()},
+            root_nodes={i: n.get_doc_id() for i, n in v0_struct.root_nodes.items()},
+        )
+
 
 @dataclass
 class KeywordTable(IndexStruct):
     """A table of keywords mapping keywords to text chunks."""
 
-    table: Dict[str, Set[int]] = field(default_factory=dict)
-    text_chunks: Dict[int, Node] = field(default_factory=dict)
+    table: Dict[str, Set[str]] = field(default_factory=dict)
 
-    def _get_index(self) -> int:
-        """Get the next index for the text chunk."""
-        # randomly generate until we get a unique index
-        while True:
-            idx = random.randint(0, sys.maxsize)
-            if idx not in self.text_chunks:
-                break
-        return idx
-
-    def add_node(self, keywords: List[str], node: Node) -> int:
+    def add_node(self, keywords: List[str], node: Node) -> None:
         """Add text to table."""
-        cur_idx = self._get_index()
         for keyword in keywords:
             if keyword not in self.table:
                 self.table[keyword] = set()
-            self.table[keyword].add(cur_idx)
-        self.text_chunks[cur_idx] = node
-        return cur_idx
-
-    def get_texts(self, keyword: str) -> List[str]:
-        """Get texts given keyword."""
-        if keyword not in self.table:
-            raise ValueError("Keyword not found in table.")
-        return [self.text_chunks[idx].get_text() for idx in self.table[keyword]]
+            self.table[keyword].add(node.get_doc_id())
 
     @property
     def keywords(self) -> Set[str]:
@@ -181,12 +107,12 @@ class KeywordTable(IndexStruct):
 class IndexList(IndexStruct):
     """A list of documents."""
 
-    nodes: List[Node] = field(default_factory=list)
+    nodes: List[str] = field(default_factory=list)
 
     def add_node(self, node: Node) -> None:
         """Add text to table, return current position in list."""
         # don't worry about child indices for now, nodes are all in order
-        self.nodes.append(node)
+        self.nodes.append(node.get_doc_id())
 
     @classmethod
     def get_type(cls) -> str:
@@ -198,8 +124,9 @@ class IndexList(IndexStruct):
 class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
-    nodes_dict: Dict[int, Node] = field(default_factory=dict)
-    id_map: Dict[str, int] = field(default_factory=dict)
+    # nodes_dict: Dict[int, Node] = field(default_factory=dict)
+    # id_map: Dict[str, int] = field(default_factory=dict)
+    nodes_set: Set[Node]
 
     # TODO: temporary hack to store embeddings for simple vector index
     # this should be empty for all other indices
@@ -208,54 +135,62 @@ class IndexDict(IndexStruct):
     def add_node(
         self,
         node: Node,
+        # NOTE: unused
         text_id: Optional[str] = None,
     ) -> str:
         """Add text to table, return current position in list."""
-        int_id = get_new_int_id(set(self.nodes_dict.keys()))
-        if text_id in self.id_map:
-            raise ValueError("text_id cannot already exist in index.")
-        elif text_id is not None and not isinstance(text_id, str):
-            raise ValueError("text_id must be a string.")
-        elif text_id is None:
-            text_id = str(int_id)
-        self.id_map[text_id] = int_id
+        # int_id = get_new_int_id(set(self.nodes_dict.keys()))
+        # if text_id in self.id_map:
+        #     raise ValueError("text_id cannot already exist in index.")
+        # elif text_id is not None and not isinstance(text_id, str):
+        #     raise ValueError("text_id must be a string.")
+        # elif text_id is None:
+        #     text_id = str(int_id)
+        # self.id_map[text_id] = int_id
 
-        # don't worry about child indices for now, nodes are all in order
-        self.nodes_dict[int_id] = node
-        return text_id
+        # # don't worry about child indices for now, nodes are all in order
+        # self.nodes_dict[int_id] = node
+        node_id = text_id if text_id is not None else node.get_doc_id()
+        self.nodes_set.add(node_id)
 
-    def get_nodes(self, text_ids: List[str]) -> List[Node]:
-        """Get nodes."""
-        nodes = []
-        for text_id in text_ids:
-            if text_id not in self.id_map:
-                raise ValueError("text_id not found in id_map")
-            elif not isinstance(text_id, str):
-                raise ValueError("text_id must be a string.")
-            int_id = self.id_map[text_id]
-            if int_id not in self.nodes_dict:
-                raise ValueError("int_id not found in nodes_dict")
-            nodes.append(self.nodes_dict[int_id])
-        return nodes
+        return node_id
 
-    def get_node(self, text_id: str) -> Node:
-        """Get node."""
-        return self.get_nodes([text_id])[0]
+    # def get_nodes(self, text_ids: List[str]) -> List[Node]:
+    #     """Get nodes."""
+    #     nodes = []
+    #     for text_id in text_ids:
+    #         if text_id not in self.id_map:
+    #             raise ValueError("text_id not found in id_map")
+    #         elif not isinstance(text_id, str):
+    #             raise ValueError("text_id must be a string.")
+    #         int_id = self.id_map[text_id]
+    #         if int_id not in self.nodes_dict:
+    #             raise ValueError("int_id not found in nodes_dict")
+    #         nodes.append(self.nodes_dict[int_id])
+    #     return nodes
+
+    # def get_node(self, text_id: str) -> Node:
+    #     """Get node."""
+    #     return self.get_nodes([text_id])[0]
 
     def delete(self, doc_id: str) -> None:
-        """Delete a document."""
-        text_ids_to_delete = set()
-        int_ids_to_delete = set()
-        for text_id, int_id in self.id_map.items():
-            node = self.nodes_dict[int_id]
-            if node.ref_doc_id != doc_id:
-                continue
-            text_ids_to_delete.add(text_id)
-            int_ids_to_delete.add(int_id)
+        """Delete a Node."""
+        self.nodes_set.remove(doc_id)
+        if doc_id in self.embeddings_dict:
+            del self.embeddings_dict[doc_id]
 
-        for int_id, text_id in zip(int_ids_to_delete, text_ids_to_delete):
-            del self.nodes_dict[int_id]
-            del self.id_map[text_id]
+        # text_ids_to_delete = set()
+        # int_ids_to_delete = set()
+        # for text_id, int_id in self.id_map.items():
+        #     node = self.nodes_dict[int_id]
+        #     if node.ref_doc_id != doc_id:
+        #         continue
+        #     text_ids_to_delete.add(text_id)
+        #     int_ids_to_delete.add(int_id)
+
+        # for int_id, text_id in zip(int_ids_to_delete, text_ids_to_delete):
+        #     del self.nodes_dict[int_id]
+        #     del self.id_map[text_id]
 
     @classmethod
     def get_type(cls) -> str:
@@ -270,7 +205,7 @@ class KG(IndexStruct):
     # Unidirectional
 
     table: Dict[str, Set[str]] = field(default_factory=dict)
-    text_chunks: Dict[str, Node] = field(default_factory=dict)
+    # text_chunks: Dict[str, Node] = field(default_factory=dict)
     rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
 
@@ -293,7 +228,7 @@ class KG(IndexStruct):
             if keyword not in self.table:
                 self.table[keyword] = set()
             self.table[keyword].add(node_id)
-        self.text_chunks[node_id] = node
+        # self.text_chunks[node_id] = node
 
     def get_rel_map_texts(self, keyword: str) -> List[str]:
         """Get the corresponding knowledge for a given keyword."""
