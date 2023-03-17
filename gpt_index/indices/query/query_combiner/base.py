@@ -11,6 +11,12 @@ from gpt_index.indices.query.query_transform.base import (
     StepDecomposeQueryTransform,
 )
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from gpt_index.indices.response.builder import ResponseMode
+from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
+from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from gpt_index.indices.response.builder import ResponseBuilder
 
 
 class BaseQueryCombiner:
@@ -72,15 +78,25 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         index_struct: IndexStruct,
         query_transform: Optional[BaseQueryTransform] = None,
         llm_predictor: Optional[LLMPredictor] = None,
-        num_steps: Optional[int] = 5,
+        prompt_helper: Optional[PromptHelper] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
+        response_mode: ResponseMode = ResponseMode.DEFAULT,
+        response_kwargs: Optional[Dict] = None,
+        num_steps: Optional[int] = 3,
         early_stopping: bool = True,
         stop_fn: Optional[Callable[[Dict], bool]] = None,
+        use_async: bool = True,
     ) -> None:
         """Init params."""
         super().__init__(index_struct, query_transform=query_transform)
         self._index_struct = index_struct
         self._query_transform = query_transform
         self._llm_predictor = llm_predictor or LLMPredictor()
+        # TODO: make this a required param
+        if prompt_helper is None:
+            raise ValueError("prompt_helper must be provided.")
+        self._prompt_helper = cast(PromptHelper, prompt_helper)
         self._num_steps = num_steps
         self._early_stopping = early_stopping
         # TODO: make interface to stop function better
@@ -88,6 +104,18 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         # num_steps must be provided if early_stopping is False
         if not self._early_stopping and self._num_steps is None:
             raise ValueError("Must specify num_steps if early_stopping is False.")
+
+        self._response_mode = ResponseMode(response_mode)
+        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
+        self.response_builder = ResponseBuilder(
+            self._prompt_helper,
+            self._llm_predictor,
+            self.text_qa_template,
+            self.refine_template,
+            use_async=use_async,
+        )
+        self._response_kwargs = response_kwargs or {}
 
     def _combine_queries(
         self, query_bundle: QueryBundle, prev_reasoning: str
@@ -109,6 +137,10 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         cur_response = None
         should_stop = False
         cur_steps = 0
+
+        # use response
+        self.response_builder.reset()
+
         while not should_stop:
             if cur_steps >= self._num_steps:
                 should_stop = True
@@ -125,12 +157,28 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
                 break
 
             cur_response = query_obj.query(updated_query_bundle)
+
+            # append to response builder
+            cur_qa_text = (
+                f"\nQuestion: {updated_query_bundle.query_str}\n"
+                f"Answer: {cur_response.response}"
+            )
+            self.response_builder.add_text_chunks([cur_qa_text])
+            for source_node in cur_response.source_nodes:
+                self.response_builder.add_source_node(source_node)
+
             prev_reasoning += (
                 f"- {updated_query_bundle.query_str}\n" f"- {cur_response.response}\n"
             )
             cur_steps += 1
 
-        return cast(Response, cur_response)
+        # synthesize a final response
+        final_response = self.response_builder.get_response(
+            query_bundle.query_str,
+            mode=self._response_mode,
+            **self._response_kwargs,
+        )
+        return final_response
 
 
 def get_default_query_combiner(

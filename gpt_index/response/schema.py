@@ -36,6 +36,16 @@ class SourceNode(DataClassJsonMixin):
             similarity=similarity,
         )
 
+    def to_node(self) -> "Node":
+        """Create a Node from a SourceNode."""
+        return Node(
+            text=self.source_text,
+            ref_doc_id=self.doc_id,
+            extra_info=self.extra_info,
+            node_info=self.node_info,
+            similarity=self.similarity,
+        )
+
     @classmethod
     def from_nodes(cls, nodes: List[Node]) -> List["SourceNode"]:
         """Create a list of SourceNodes from a list of Nodes."""
