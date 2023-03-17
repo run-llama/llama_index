@@ -1,7 +1,7 @@
 """Optimization related classes and functions."""
 import logging
 from abc import abstractmethod
-from typing import Optional
+from typing import Callable, List, Optional
 
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
@@ -28,6 +28,7 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
         embed_model: Optional[BaseEmbedding] = None,
         percentile_cutoff: Optional[float] = None,
         threshold_cutoff: Optional[float] = None,
+        tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
     ):
         """Optimizer class that is passed into BaseGPTIndexQuery.
 
@@ -53,16 +54,20 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
         self._percentile_cutoff = percentile_cutoff
         self._threshold_cutoff = threshold_cutoff
 
+        if tokenizer_fn is None:
+            import nltk.data
+
+            try:
+                nltk.data.find("tokenizers/punkt")
+            except LookupError:
+                nltk.download("punkt")
+            tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
+            tokenizer_fn = tokenizer.tokenize
+        self._tokenizer_fn = tokenizer_fn
+
     def optimize(self, query_bundle: QueryBundle, text: str) -> str:
         """Optimize a text chunk given the query by shortening the input text."""
-        import nltk.data
-
-        try:
-            nltk.data.find("tokenizers/punkt")
-        except LookupError:
-            nltk.download("punkt")
-        tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
-        split_text = tokenizer.tokenize(text)
+        split_text = self._tokenizer_fn(text)
 
         start_embed_token_ct = self.embed_model.total_tokens_used
         if query_bundle.embedding is None:
