@@ -9,11 +9,11 @@ from langchain.input import print_text
 from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
+    DEFAULT_IMAGE_OUTPUT_PROMPT,
     DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DecomposeQueryTransformPrompt,
-    StepDecomposeQueryTransformPrompt,
-    DEFAULT_IMAGE_OUTPUT_PROMPT,
     ImageOutputQueryTransformPrompt,
+    StepDecomposeQueryTransformPrompt,
 )
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
