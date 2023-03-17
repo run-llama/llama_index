@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import List
+from typing import List, Optional
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.langchain_helpers.text_splitter import (
@@ -10,8 +10,11 @@ from gpt_index.langchain_helpers.text_splitter import (
     TextSplitter,
     TokenTextSplitter,
 )
+from gpt_index.readers.schema.base import ImageDocument
 from gpt_index.schema import BaseDocument
 from gpt_index.utils import truncate_text
+
+logger = logging.getLogger(__name__)
 
 
 def get_text_splits_from_document(
@@ -54,7 +57,7 @@ def get_nodes_from_document(
     index_counter = 0
     for i, text_split in enumerate(text_splits):
         text_chunk = text_split.text_chunk
-        logging.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
+        logger.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
         index_pos_info = None
         if text_split.num_char_overlap is not None:
             index_pos_info = {
@@ -63,6 +66,11 @@ def get_nodes_from_document(
                 "end": index_counter - text_split.num_char_overlap + len(text_chunk),
             }
         index_counter += len(text_chunk) + 1
+
+        image: Optional[str] = None
+        if isinstance(document, ImageDocument):
+            image = document.image
+
         # if embedding specified in document, pass it to the Node
         node = Node(
             text=text_chunk,
@@ -71,6 +79,7 @@ def get_nodes_from_document(
             embedding=document.embedding,
             extra_info=document.extra_info if include_extra_info else None,
             node_info=index_pos_info,
+            image=image,
         )
         nodes.append(node)
     return nodes

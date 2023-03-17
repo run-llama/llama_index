@@ -12,6 +12,8 @@ from gpt_index.prompts.prompts import TextToSQLPrompt
 from gpt_index.response.schema import Response
 from gpt_index.token_counter.token_counter import llm_token_counter
 
+logger = logging.getLogger(__name__)
+
 
 class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     """GPT SQL query over a structured database.
@@ -54,13 +56,14 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     """GPT natural language query over a structured database.
 
     Given a natural language query, we will extract the query to SQL.
-    Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made here.
+    Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made during
+    the SQL execution.
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
 
     .. code-block:: python
 
-        response = index.query("<query_str>", mode="sql")
+        response = index.query("<query_str>", mode="default")
 
     """
 
@@ -119,16 +122,17 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
-        logging.info(f"> Table desc str: {table_desc_str}")
+        logger.info(f"> Table desc str: {table_desc_str}")
         response_str, _ = self._llm_predictor.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
+            dialect=self._sql_database.dialect,
         )
 
         sql_query_str = self._parse_response_to_sql(response_str)
         # assume that it's a valid SQL query
-        logging.debug(f"> Predicted SQL query: {sql_query_str}")
+        logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
         response_str, extra_info = self._sql_database.run_sql(sql_query_str)
         extra_info["sql_query"] = sql_query_str

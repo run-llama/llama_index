@@ -1,5 +1,6 @@
 """Query transform."""
 
+import dataclasses
 from abc import abstractmethod
 from typing import Dict, Optional, Union, cast
 
@@ -11,6 +12,8 @@ from gpt_index.indices.query.query_transform.prompts import (
     DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DecomposeQueryTransformPrompt,
     StepDecomposeQueryTransformPrompt,
+    DEFAULT_IMAGE_OUTPUT_PROMPT,
+    ImageOutputQueryTransformPrompt,
 )
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -169,6 +172,39 @@ class DecomposeQueryTransform(BaseQueryTransform):
             query_str=new_query_str,
             custom_embedding_strs=[new_query_str],
         )
+
+
+class ImageOutputQueryTransform(BaseQueryTransform):
+    """Image output query transform.
+
+    Adds instructions for formatting image output.
+    By default, this prompts the LLM to format image output as an HTML <img> tag,
+    which can be displayed nicely in jupyter notebook.
+    """
+
+    def __init__(
+        self,
+        width: int = 400,
+        query_prompt: Optional[ImageOutputQueryTransformPrompt] = None,
+    ) -> None:
+        """Init ImageOutputQueryTransform.
+
+        Args:
+            width (int): desired image display width in pixels
+            query_prompt (ImageOutputQueryTransformPrompt): custom prompt for
+                augmenting query with image output instructions.
+        """
+        self._width = width
+        self._query_prompt = query_prompt or DEFAULT_IMAGE_OUTPUT_PROMPT
+
+    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+        """Run query transform."""
+        del extra_info  # Unused
+        new_query_str = self._query_prompt.format(
+            query_str=query_bundle.query_str, image_width=self._width
+        )
+        new_query_bundle = dataclasses.replace(query_bundle, query_str=new_query_str)
+        return new_query_bundle
 
 
 class StepDecomposeQueryTransform(BaseQueryTransform):

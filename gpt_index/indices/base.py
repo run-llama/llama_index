@@ -28,6 +28,7 @@ from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
+from gpt_index.logger import LlamaLogger
 from gpt_index.readers.schema.base import Document
 from gpt_index.response.schema import Response
 from gpt_index.schema import BaseDocument
@@ -37,6 +38,8 @@ IS = TypeVar("IS", bound=IndexStruct)
 
 
 DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
+
+logger = logging.getLogger(__name__)
 
 
 class BaseGPTIndex(Generic[IS]):
@@ -71,6 +74,7 @@ class BaseGPTIndex(Generic[IS]):
         text_splitter: Optional[TextSplitter] = None,
         chunk_size_limit: Optional[int] = None,
         include_extra_info: bool = True,
+        llama_logger: Optional[LlamaLogger] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and documents is None:
@@ -92,6 +96,8 @@ class BaseGPTIndex(Generic[IS]):
         # build index struct in the init function
         self._docstore = docstore or DocumentStore()
         self._index_registry = index_registry or IndexRegistry()
+
+        self._llama_logger = llama_logger or LlamaLogger()
 
         if index_struct is not None:
             if not isinstance(index_struct, self.index_struct_cls):
@@ -186,7 +192,9 @@ class BaseGPTIndex(Generic[IS]):
         """Validate documents."""
         for doc in documents:
             if not isinstance(doc, BaseDocument):
-                raise ValueError("Documents must be of type BaseDocument.")
+                raise ValueError(
+                    f"Documents must be of type BaseDocument, got {type(doc)} instead."
+                )
 
     @property
     def index_struct(self) -> IS:
@@ -309,7 +317,7 @@ class BaseGPTIndex(Generic[IS]):
             doc_id (str): document id
 
         """
-        logging.debug(f"> Deleting document: {doc_id}")
+        logger.debug(f"> Deleting document: {doc_id}")
         self._delete(doc_id, **delete_kwargs)
 
     def update(self, document: DOCUMENTS_INPUT, **update_kwargs: Any) -> None:

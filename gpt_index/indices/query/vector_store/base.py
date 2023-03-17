@@ -42,12 +42,13 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
-        query_embedding = self._embed_model.get_agg_embedding_from_queries(
-            query_bundle.embedding_strs
-        )
+        if query_bundle.embedding is None:
+            query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
+                query_bundle.embedding_strs
+            )
 
         query_result = self._vector_store.query(
-            query_embedding, self._similarity_top_k, self._doc_ids
+            query_bundle.embedding, self._similarity_top_k, self._doc_ids
         )
 
         if query_result.nodes is None:

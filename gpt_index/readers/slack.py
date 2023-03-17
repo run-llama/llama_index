@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from datetime import datetime
+from ssl import SSLContext
 from typing import List, Optional
 
 from gpt_index.readers.base import BaseReader
@@ -21,6 +22,8 @@ class SlackReader(BaseReader):
     Args:
         slack_token (Optional[str]): Slack token. If not provided, we
             assume the environment variable `SLACK_BOT_TOKEN` is set.
+        ssl (Optional[str]): Custom SSL context. If not provided, it is assumed
+            there is already an SSL context available.
         earliest_date (Optional[datetime]): Earliest date from which
             to read conversations. If not provided, we read all messages.
         latest_date (Optional[datetime]): Latest date from which to
@@ -31,6 +34,7 @@ class SlackReader(BaseReader):
     def __init__(
         self,
         slack_token: Optional[str] = None,
+        ssl: Optional[SSLContext] = None,
         earliest_date: Optional[datetime] = None,
         latest_date: Optional[datetime] = None,
     ) -> None:
@@ -44,7 +48,10 @@ class SlackReader(BaseReader):
                 "Must specify `slack_token` or set environment "
                 "variable `SLACK_BOT_TOKEN`."
             )
-        self.client = WebClient(token=slack_token)
+        if ssl is None:
+            self.client = WebClient(token=slack_token)
+        else:
+            self.client = WebClient(token=slack_token, ssl=ssl)
         if latest_date is not None and earliest_date is None:
             raise ValueError(
                 "Must specify `earliest_date` if `latest_date` is specified."
@@ -171,4 +178,4 @@ class SlackReader(BaseReader):
 
 if __name__ == "__main__":
     reader = SlackReader()
-    logging.info(reader.load_data(channel_ids=["C04DC2VUY3F"]))
+    logger.info(reader.load_data(channel_ids=["C04DC2VUY3F"]))

@@ -1,0 +1,57 @@
+hard pred: SELECT winner_name FROM matches WHERE tourney_name = 'Australian Open' AND winner_rank_points = (SELECT MAX(winner_rank_points) FROM matches WHERE tourney_name = 'Australian Open')
+hard gold: SELECT winner_name FROM matches WHERE tourney_name  =  'Australian Open' ORDER BY winner_rank_points DESC LIMIT 1
+
+easy pred: SELECT Name FROM people WHERE Nationality != 'Russia' ORDER BY Name ASC
+easy gold: SELECT Name FROM people WHERE Nationality != "Russia"
+
+hard pred: SELECT grade, COUNT(*) FROM Highschooler GROUP BY grade ORDER BY COUNT(*) DESC LIMIT 1;
+hard gold: SELECT grade FROM Highschooler GROUP BY grade ORDER BY count(*) DESC LIMIT 1
+
+eval_err_num:1
+hard pred: SELECT d.name FROM Dogs d JOIN Treatments t ON d.dog_id = t.dog_id GROUP BY d.dog_id HAVING SUM(t.cost_of_treatment) <= 1000
+hard gold: select name from dogs where dog_id not in ( select dog_id from treatments group by dog_id having sum(cost_of_treatment)  >  1000 )
+
+extra pred: SELECT COUNT(DISTINCT professional_id) FROM Professionals WHERE professional_id NOT IN (SELECT DISTINCT professional_id FROM Treatments)
+extra gold: SELECT count(*) FROM Professionals WHERE professional_id NOT IN ( SELECT professional_id FROM Treatments )
+
+                     easy                 medium               hard                 extra                all                 
+count                3                    3                    3                    1                    10                  
+=====================   EXECUTION ACCURACY     =====================
+execution            1.000                1.000                0.333                0.000                0.700               
+
+====================== EXACT MATCHING ACCURACY =====================
+exact match          0.667                1.000                0.000                0.000                0.500               
+
+---------------------PARTIAL MATCHING ACCURACY----------------------
+select               1.000                1.000                0.500                0.000                0.778               
+select(no AGG)       1.000                1.000                0.500                0.000                0.778               
+where                1.000                1.000                0.000                0.000                0.600               
+where(no OP)         1.000                1.000                0.000                1.000                0.800               
+group(no Having)     0.000                0.000                1.000                0.000                1.000               
+group                0.000                0.000                1.000                0.000                1.000               
+order                0.000                1.000                1.000                0.000                0.667               
+and/or               1.000                1.000                1.000                1.000                1.000               
+IUEN                 0.000                0.000                0.000                0.000                0.000               
+keywords             0.500                1.000                0.500                1.000                0.714               
+---------------------- PARTIAL MATCHING RECALL ----------------------
+select               1.000                1.000                0.333                0.000                0.700               
+select(no AGG)       1.000                1.000                0.333                0.000                0.700               
+where                1.000                1.000                0.000                0.000                0.500               
+where(no OP)         1.000                1.000                0.000                1.000                0.667               
+group(no Having)     0.000                0.000                1.000                0.000                1.000               
+group                0.000                0.000                1.000                0.000                1.000               
+order                0.000                1.000                0.500                0.000                0.667               
+and/or               1.000                1.000                0.667                1.000                0.900               
+IUEN                 0.000                0.000                0.000                0.000                0.000               
+keywords             0.500                1.000                0.333                1.000                0.625               
+---------------------- PARTIAL MATCHING F1 --------------------------
+select               1.000                1.000                0.400                1.000                0.737               
+select(no AGG)       1.000                1.000                0.400                1.000                0.737               
+where                1.000                1.000                1.000                1.000                0.545               
+where(no OP)         1.000                1.000                1.000                1.000                0.727               
+group(no Having)     1.000                1.000                1.000                1.000                1.000               
+group                1.000                1.000                1.000                1.000                1.000               
+order                1.000                1.000                0.667                1.000                0.667               
+and/or               1.000                1.000                0.800                1.000                0.947               
+IUEN                 1.000                1.000                1.000                1.000                1.000               
+keywords             0.500                1.000                0.400                1.000                0.667               

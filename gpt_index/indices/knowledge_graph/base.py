@@ -28,6 +28,8 @@ from gpt_index.utils import get_new_id
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
+logger = logging.getLogger(__name__)
+
 
 class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
     """GPT Knowledge Graph Index.
@@ -120,7 +122,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 n.doc_id = node_id
 
                 triplets = self._extract_triplets(n.get_text())
-                logging.debug(f"> Extracted triplets: {triplets}")
+                logger.debug(f"> Extracted triplets: {triplets}")
                 for triplet in triplets:
                     index_struct.upsert_triplet(triplet, n)
 
@@ -145,7 +147,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             n.doc_id = node_id
 
             triplets = self._extract_triplets(n.get_text())
-            logging.debug(f"Extracted triplets: {triplets}")
+            logger.debug(f"Extracted triplets: {triplets}")
             for triplet in triplets:
                 triplet_str = str(triplet)
                 self._index_struct.upsert_triplet(triplet, n)

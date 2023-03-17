@@ -22,6 +22,8 @@ from gpt_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
+logger = logging.getLogger(__name__)
+
 
 class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     """Base GPT Keyword Table Index Query.
@@ -72,14 +74,14 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        logging.info(f"> Starting query: {query_bundle.query_str}")
+        logger.info(f"> Starting query: {query_bundle.query_str}")
         keywords = self._get_keywords(query_bundle.query_str)
-        logging.info(f"query keywords: {keywords}")
+        logger.info(f"query keywords: {keywords}")
 
         # go through text chunks in order of most matching keywords
         chunk_indices_count: Dict[int, int] = defaultdict(int)
         keywords = [k for k in keywords if k in self.index_struct.keywords]
-        logging.info(f"> Extracted keywords: {keywords}")
+        logger.info(f"> Extracted keywords: {keywords}")
         for k in keywords:
             for text_chunk_idx in self.index_struct.table[k]:
                 chunk_indices_count[text_chunk_idx] += 1
@@ -98,7 +100,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
 
         if logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG:
             for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
-                logging.debug(
+                logger.debug(
                     f"> Querying with idx: {chunk_idx}: "
                     f"{truncate_text(node.get_text(), 50)}"
                 )
