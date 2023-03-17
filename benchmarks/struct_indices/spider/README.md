@@ -18,7 +18,7 @@ python sample_benchmark.py --input <benchmark path> --output spider-0_001 --samp
 3. Use `generate_sql.py` to generate the predicted SQL queries given the input benchmark.
 
 ```bash
-python generate_sql.py --input spider-0_001 --output spider-0_001-pred
+python generate_sql.py --input spider-0_001 --output spider-0_001-pred --model gpt-3.5-turbo
 # Predicted SQLs are saved in the output directory.
 ```
 

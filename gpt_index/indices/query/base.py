@@ -26,6 +26,7 @@ from gpt_index.indices.response.builder import (
     TextChunk,
 )
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.logger.base import LlamaLogger
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -134,6 +135,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         doc_ids: Optional[List[str]] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        llama_logger: Optional[LlamaLogger] = None,
         verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
@@ -163,6 +165,16 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         self._response_kwargs = response_kwargs or {}
         self._use_async = use_async
+
+        self._llama_logger = llama_logger or LlamaLogger()
+        # initialize logger with metadata
+        self._llama_logger.set_metadata(
+            {
+                "index_type": self._index_struct.get_type(),
+                "doc_id": self._index_struct.get_doc_id(),
+            }
+        )
+
         self.response_builder = ResponseBuilder(
             self._prompt_helper,
             self._llm_predictor,
@@ -170,6 +182,7 @@ class BaseGPTIndexQuery(Generic[IS]):
             self.refine_template,
             use_async=use_async,
             streaming=streaming,
+            llama_logger=self._llama_logger,
         )
 
         # TODO: deprecated
@@ -190,6 +203,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self.node_preprocessors: List[BaseNodePostprocessor] = (
             init_node_preprocessors + node_postprocessors
         )
+
         self._verbose = verbose
 
     def _get_text_from_node(

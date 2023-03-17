@@ -56,13 +56,14 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     """GPT natural language query over a structured database.
 
     Given a natural language query, we will extract the query to SQL.
-    Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made here.
+    Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made during
+    the SQL execution.
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
 
     .. code-block:: python
 
-        response = index.query("<query_str>", mode="sql")
+        response = index.query("<query_str>", mode="default")
 
     """
 
@@ -126,6 +127,7 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
+            dialect=self._sql_database.dialect,
         )
 
         sql_query_str = self._parse_response_to_sql(response_str)

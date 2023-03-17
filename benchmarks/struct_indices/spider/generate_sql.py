@@ -5,7 +5,9 @@ import logging
 import os
 import re
 
-from langchain import OpenAI
+from langchain.chat_models import ChatOpenAI
+from langchain.llms import OpenAI
+from langchain.schema import BaseLanguageModel
 from sqlalchemy import create_engine
 from tqdm import tqdm
 
@@ -16,7 +18,6 @@ logging.getLogger("root").setLevel(logging.WARNING)
 
 _spaces = re.compile(r"\s+")
 _newlines = re.compile(r"\n+")
-_sql_from_error_msg = re.compile(r"\[SQL: (.*?)\]", re.DOTALL)
 
 
 def _generate_sql(
@@ -24,21 +25,14 @@ def _generate_sql(
     nl_query_text: str,
 ) -> str:
     """Generate SQL query for the given NL query text."""
-    try:
-        response = llama_index.query(nl_query_text, mode="default")
-        if (
-            response.extra_info is None
-            or "sql_query" not in response.extra_info
-            or response.extra_info["sql_query"] is None
-        ):
-            raise RuntimeError("No SQL query generated.")
-        query = response.extra_info["sql_query"]
-    except Exception as e:
-        # Try to extract the SQL query from the error message.
-        match = _sql_from_error_msg.search(str(e))
-        if match is None:
-            raise e
-        query = match.group(1)
+    response = llama_index.query(nl_query_text)
+    if (
+        response.extra_info is None
+        or "sql_query" not in response.extra_info
+        or response.extra_info["sql_query"] is None
+    ):
+        raise RuntimeError("No SQL query generated.")
+    query = response.extra_info["sql_query"]
     # Remove newlines and extra spaces.
     query = _newlines.sub(" ", query)
     query = _spaces.sub(" ", query)
@@ -78,6 +72,13 @@ if __name__ == "__main__":
         " one query on each line, "
         "to be compared with the *_gold.sql files in the input directory.",
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["gpt-4", "gpt-3.5-turbo", "text-davinci-003", "code-davinci-002"],
+        required=True,
+        help="The model to use for generating SQL queries.",
+    )
     args = parser.parse_args()
 
     # Create the output directory if it does not exist.
@@ -103,9 +104,11 @@ if __name__ == "__main__":
         databases[db_name] = (SQLDatabase(engine=engine), engine)
 
     # Create the LlamaIndexes for all databases.
-    llm_predictor = LLMPredictor(
-        llm=OpenAI(temperature=0, model_name="text-davinci-003")
-    )
+    if args.model in ["gpt-3.5-turbo", "gpt-4"]:
+        llm: BaseLanguageModel = ChatOpenAI(model=args.model, temperature=0)
+    else:
+        llm = OpenAI(model=args.model, temperature=0)
+    llm_predictor = LLMPredictor(llm=llm)
     llm_indexes = {}
     for db_name, (db, engine) in databases.items():
         # Get the name of the first table in the database.

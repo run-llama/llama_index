@@ -17,6 +17,7 @@ from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
 from gpt_index.response.schema import SourceNode
 from gpt_index.response.utils import get_response_text
@@ -58,6 +59,7 @@ class ResponseBuilder:
         nodes: Optional[List[Node]] = None,
         use_async: bool = False,
         streaming: bool = False,
+        llama_logger: Optional[LlamaLogger] = None,
     ) -> None:
         """Init params."""
         self.prompt_helper = prompt_helper
@@ -69,6 +71,7 @@ class ResponseBuilder:
         self.source_nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
         self._use_async = use_async
         self._streaming = streaming
+        self._llama_logger = llama_logger or LlamaLogger()
 
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
@@ -92,6 +95,10 @@ class ResponseBuilder:
     def get_sources(self) -> List[SourceNode]:
         """Get sources."""
         return self.source_nodes
+
+    def get_logger(self) -> LlamaLogger:
+        """Get logger."""
+        return self._llama_logger
 
     def refine_response_single(
         self,
@@ -126,6 +133,9 @@ class ResponseBuilder:
                     context_msg=cur_text_chunk,
                 )
             logger.debug(f"> Refined response: {response}")
+            self._llama_logger.add_log(
+                {"refined_response": response or "Empty Response"}
+            )
         return response
 
     def give_response_single(
@@ -148,6 +158,9 @@ class ResponseBuilder:
                     context_str=cur_text_chunk,
                 )
                 logger.debug(f"> Initial response: {response}")
+                self._llama_logger.add_log(
+                    {"initial_response": response or "Empty Response"}
+                )
             elif response is None and self._streaming:
                 response, _ = self.llm_predictor.stream(
                     text_qa_template,
@@ -247,6 +260,7 @@ class ResponseBuilder:
             self.prompt_helper,
             text_splitter,
             use_async=self._use_async,
+            llama_logger=self._llama_logger,
         )
         return index_builder, all_nodes
 
