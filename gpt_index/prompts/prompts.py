@@ -106,7 +106,7 @@ class RefinePrompt(Prompt):
     input_variables: List[str] = ["query_str", "existing_answer", "context_msg"]
 
 
-class QuestionAnswerPrompt(Prommpt):
+class QuestionAnswerPrompt(Prompt):
     """Question Answer prompt.
 
     Prompt to answer a question `query_str` given a context `context_str`.
