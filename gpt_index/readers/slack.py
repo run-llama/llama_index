@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from datetime import datetime
+from ssl import SSLContext
 from typing import List, Optional
 
 from gpt_index.readers.base import BaseReader
@@ -31,6 +32,7 @@ class SlackReader(BaseReader):
     def __init__(
         self,
         slack_token: Optional[str] = None,
+        ssl: Optional[SSLContext] = None,
         earliest_date: Optional[datetime] = None,
         latest_date: Optional[datetime] = None,
     ) -> None:
@@ -44,7 +46,10 @@ class SlackReader(BaseReader):
                 "Must specify `slack_token` or set environment "
                 "variable `SLACK_BOT_TOKEN`."
             )
-        self.client = WebClient(token=slack_token)
+        if ssl is None:
+            self.client = WebClient(token=slack_token)
+        else:
+            self.client = WebClient(token=slack_token, ssl=ssl)
         if latest_date is not None and earliest_date is None:
             raise ValueError(
                 "Must specify `earliest_date` if `latest_date` is specified."
