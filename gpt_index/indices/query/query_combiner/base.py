@@ -1,22 +1,22 @@
 """Query combiner class."""
 
-from abc import ABC, abstractmethod
-from typing import List, Optional, cast, Dict, Callable
-from gpt_index.response.schema import Response
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from abc import abstractmethod
+from typing import Any, Callable, Dict, Generator, Optional, cast
+
 from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_transform.base import (
     BaseQueryTransform,
     StepDecomposeQueryTransform,
 )
+from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.indices.response.builder import ResponseMode, TextChunk
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.indices.response.builder import ResponseBuilder
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from gpt_index.response.schema import Response
 
 
 class BaseQueryCombiner:
@@ -25,7 +25,7 @@ class BaseQueryCombiner:
     def __init__(
         self,
         index_struct: IndexStruct,
-        query_transform: Optional[BaseQueryTransform] = None,
+        query_transform: BaseQueryTransform,
     ) -> None:
         """Init params."""
         self._index_struct = index_struct
@@ -55,7 +55,7 @@ class SingleQueryCombiner(BaseQueryCombiner):
 
 
 def default_stop_fn(stop_dict: Dict) -> bool:
-    """Default stop function for multi-step query combiner."""
+    """Stop function for multi-step query combiner."""
     query_bundle = cast(QueryBundle, stop_dict.get("query_bundle"))
     if query_bundle is None:
         raise ValueError("Response must be provided to stop function.")
@@ -76,7 +76,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
     def __init__(
         self,
         index_struct: IndexStruct,
-        query_transform: Optional[BaseQueryTransform] = None,
+        query_transform: BaseQueryTransform,
         llm_predictor: Optional[LLMPredictor] = None,
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
@@ -131,7 +131,6 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
 
     def run(self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle) -> Response:
         """Run query combiner."""
-
         prev_reasoning = ""
         cur_response = None
         should_stop = False
@@ -139,9 +138,10 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
 
         # use response
         self.response_builder.reset()
+        final_response_extra_info: Dict[str, Any] = {"subresponses": []}
 
         while not should_stop:
-            if cur_steps >= self._num_steps:
+            if self._num_steps is not None and cur_steps >= self._num_steps:
                 should_stop = True
                 break
             elif should_stop:
@@ -165,6 +165,8 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
             self.response_builder.add_text_chunks([TextChunk(cur_qa_text)])
             for source_node in cur_response.source_nodes:
                 self.response_builder.add_source_node(source_node)
+            # update extra info
+            final_response_extra_info["subresponses"].append(cur_response.extra_info)
 
             prev_reasoning += (
                 f"- {updated_query_bundle.query_str}\n" f"- {cur_response.response}\n"
@@ -172,12 +174,18 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
             cur_steps += 1
 
         # synthesize a final response
-        final_response = self.response_builder.get_response(
+        final_response_str = self.response_builder.get_response(
             query_bundle.query_str,
             mode=self._response_mode,
             **self._response_kwargs,
         )
-        return final_response
+        if isinstance(final_response_str, Generator):
+            raise ValueError("Currently streaming is not supported for query combiner.")
+        return Response(
+            response=final_response_str,
+            source_nodes=self.response_builder.get_sources(),
+            extra_info=final_response_extra_info,
+        )
 
 
 def get_default_query_combiner(

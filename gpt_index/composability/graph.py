@@ -3,7 +3,6 @@
 import json
 from typing import Any, Dict, List, Optional, Type, Union
 
-from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore

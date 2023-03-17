@@ -7,13 +7,13 @@ from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery, BaseQueryRunner
-from gpt_index.indices.query.query_transform.base import (
-    BaseQueryTransform,
-    IdentityQueryTransform,
-)
 from gpt_index.indices.query.query_combiner.base import (
     BaseQueryCombiner,
     get_default_query_combiner,
+)
+from gpt_index.indices.query.query_transform.base import (
+    BaseQueryTransform,
+    IdentityQueryTransform,
 )
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
@@ -117,7 +117,9 @@ class QueryRunner(BaseQueryRunner):
         """Get query transform."""
         config = self._get_query_config(index_struct)
         if config.query_combiner is not None:
-            query_combiner = cast(BaseQueryTransform, config.query_combiner)
+            query_combiner: Optional[BaseQueryCombiner] = cast(
+                BaseQueryCombiner, config.query_combiner
+            )
         else:
             query_combiner = self._query_combiner
 
@@ -130,7 +132,7 @@ class QueryRunner(BaseQueryRunner):
                 index_struct, query_transform, extra_kwargs=extra_kwargs
             )
 
-        return query_combiner
+        return cast(BaseQueryCombiner, query_combiner)
 
     def _get_query_obj(
         self,

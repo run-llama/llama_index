@@ -12,11 +12,11 @@ from gpt_index.indices.query.query_transform.prompts import (
     DecomposeQueryTransformPrompt,
     StepDecomposeQueryTransformPrompt,
 )
-from gpt_index.response.schema import Response
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
+from gpt_index.response.schema import Response
 
 
 class BaseQueryTransform:

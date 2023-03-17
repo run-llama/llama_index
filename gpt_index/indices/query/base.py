@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar, cast
 
 from langchain.input import print_text
+
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
