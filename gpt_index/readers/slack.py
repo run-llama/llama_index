@@ -22,6 +22,8 @@ class SlackReader(BaseReader):
     Args:
         slack_token (Optional[str]): Slack token. If not provided, we
             assume the environment variable `SLACK_BOT_TOKEN` is set.
+        ssl (Optional[str]): Custom SSL context. If not provided, it is assumed
+            there is already an SSL context available.
         earliest_date (Optional[datetime]): Earliest date from which
             to read conversations. If not provided, we read all messages.
         latest_date (Optional[datetime]): Latest date from which to
