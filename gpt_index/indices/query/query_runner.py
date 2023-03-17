@@ -171,11 +171,6 @@ class QueryRunner(BaseQueryRunner):
         query_transform = self._get_query_transform(index_struct)
         query_combiner = self._get_query_combiner(index_struct, query_transform)
 
-        # transform_extra_info = {"index_struct": index_struct}
-        # query_bundle = query_transform(
-        #     query_str_or_bundle, extra_info=transform_extra_info
-        # )
-
         query_obj = self._get_query_obj(index_struct)
         if isinstance(query_str_or_bundle, str):
             query_bundle = QueryBundle(
