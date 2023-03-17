@@ -88,14 +88,15 @@ def _get_answers(
             "answer": None,
         }
         results.append(result)
-        if sql_query == "ERROR":
-            continue
+        if sql_query.strip() == "ERROR":
+            result["sql_result"] = "ERROR"
+            result["answer"] = "ERROR"
         try:
             resp = indexes[db_name].query(sql_query, mode="sql")
             result["sql_result"] = resp.response
             result["answer"] = _answer(llm, question, sql_query, resp.response)
         except Exception as e:
-            print(f"Error {e} encountered when answering question ({question})")
+            print(f"Error encountered when answering question ({question}): {e}")
     with open(output_filename, "w") as f:
         json.dump(results, f, indent=2)
     return results
