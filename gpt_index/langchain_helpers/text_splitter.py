@@ -354,7 +354,7 @@ class SentenceSplitter(TokenTextSplitter):
             if cur_len > effective_chunk_size:
                 raise ValueError("Single token exceed chunk size")
             if cur_tokens + cur_len > effective_chunk_size:
-                docs.append(TextSplit("".join(cur_doc_list)))
+                docs.append(TextSplit("".join(cur_doc_list).strip()))
                 cur_doc_list = []
                 cur_tokens = 0
             else:
@@ -366,11 +366,11 @@ class SentenceSplitter(TokenTextSplitter):
                     cur_doc_list.append(cur_token.text)
                     new_splits.pop(0)
                 else:
-                    docs.append(TextSplit("".join(cur_doc_list)))
+                    docs.append(TextSplit("".join(cur_doc_list).strip()))
                     cur_doc_list = []
                     cur_tokens = 0
 
-        docs.append(TextSplit("".join(cur_doc_list)))
+        docs.append(TextSplit("".join(cur_doc_list).strip()))
 
         # run postprocessing to remove blank spaces
         docs = self._postprocess_splits(docs)
