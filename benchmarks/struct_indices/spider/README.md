@@ -33,7 +33,7 @@ evaluation metrics.
 
 5. **New**! Use `evaluate.py` to evalaute the generated SQLs against
 golden SQLs by matching the natural language answers generated from their
-respective execution outputs.
+respective execution outputs. This is called [Answer Accuracy](https://ekzhu.medium.com/human-aligned-text-to-sql-evaluation-399123fa0a64).
 
 ```bash
 python evaluate.py --spider-dir spider-0_001 --predict-dir spider-0_001-pred \
@@ -47,12 +47,12 @@ the evaluation results in the `--predict-dir` directory.
 
 Based on 96 examples (86 train + 10 dev) sampled from Spider benchmark.
 
-|    Model          | Answer Match Accuracy |
-| ----------------- | --------------------- |
-| code-davinci-002  |        0.7917         |
-| text-davinci-003  |        0.8854         |
-| gpt-3.5-turbo     |        0.8542         |
-| gpt-4             |        0.8958         |
+|    Model          | Answer Accuracy |
+| ----------------- | --------------- |
+| code-davinci-002  |  0.7917         |
+| text-davinci-003  |  0.8854         |
+| gpt-3.5-turbo     |  0.8542         |
+| gpt-4             |  0.8958         |
 
 ## TODO
 

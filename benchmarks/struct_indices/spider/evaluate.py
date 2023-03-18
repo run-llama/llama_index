@@ -156,13 +156,13 @@ def _match_answers(
         for e in results
         if e["exec_match"] is not None and e["answer_match"] is not None
     ]
-    overall_frac = sum(
+    answer_accuracy = sum(
         [e["exec_match"] or e["answer_match"] for e in valid_results]
     ) / float(len(valid_results))
     with open(output_filename, "w") as f:
         json.dump(
             {
-                "overall_match_fraction": overall_frac,
+                "answer_accuracy": answer_accuracy,
                 "total": len(results),
                 "valid": len(valid_results),
                 "results": results,
@@ -170,12 +170,12 @@ def _match_answers(
             f,
             indent=2,
         )
-    return overall_frac
+    return answer_accuracy
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Evaluate generated SQL queries against gold SQL queries by matching the NL answers generated from their respective execution outputs."
+        description="Evaluate answer accuracy of generated SQL queries by checking the NL answer generated from execution output."
     )
     parser.add_argument(
         "--spider-dir", type=str, required=True, help="Path to the Spider directory."
