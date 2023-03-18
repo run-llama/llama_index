@@ -1,4 +1,5 @@
 import argparse
+import ast
 import json
 import logging
 import os
@@ -116,25 +117,60 @@ def _match_answers(
     ):
         assert gold["question"] == example["question"]
         assert pred["question"] == example["question"]
-        if pred["answer"] is None or gold["answer"] is None:
-            match = None
+
+        # Match execution results.
+        if pred["sql_result"] is None or gold["sql_result"] is None:
+            exec_match = None
+        elif pred["sql_result"] == "ERROR":
+            exec_match = False
         else:
-            match = _match(llm, example["question"], gold["answer"], pred["answer"])
-        results.append({"match": match, "gold": gold, "pred": pred})
-    valid = [e for e in results if e["match"] is not None]
-    frac = sum([e["match"] for e in valid]) / float(len(valid))
+            try:
+                p_tuples = set(ast.literal_eval(pred["sql_result"]))
+                g_tuples = set(ast.literal_eval(gold["sql_result"]))
+                exec_match = p_tuples == g_tuples
+            except Exception as e:
+                print("Error encountered when parsing SQL result: ", e)
+                exec_match = None
+
+        # Match NL answers.
+        if pred["answer"] is None or gold["answer"] is None:
+            answer_match = None
+        elif pred["answer"] == "ERROR":
+            answer_match = False
+        else:
+            answer_match = _match(
+                llm, example["question"], gold["answer"], pred["answer"]
+            )
+
+        results.append(
+            {
+                "db": example["db_id"],
+                "exec_match": exec_match,
+                "answer_match": answer_match,
+                "gold": gold,
+                "pred": pred,
+            }
+        )
+    valid_results = [
+        e
+        for e in results
+        if e["exec_match"] is not None and e["answer_match"] is not None
+    ]
+    overall_frac = sum(
+        [e["exec_match"] or e["answer_match"] for e in valid_results]
+    ) / float(len(valid_results))
     with open(output_filename, "w") as f:
         json.dump(
             {
-                "overall_match_fraction": frac,
+                "overall_match_fraction": overall_frac,
                 "total": len(results),
-                "valid": len(valid),
+                "valid": len(valid_results),
                 "results": results,
             },
             f,
             indent=2,
         )
-    return frac
+    return overall_frac
 
 
 if __name__ == "__main__":
