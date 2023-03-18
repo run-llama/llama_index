@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Tuple
 
 from langchain.sql_database import SQLDatabase as LangchainSQLDatabase
-from sqlalchemy import MetaData, create_engine, insert
+from sqlalchemy import MetaData, create_engine, insert, text
 from sqlalchemy.engine import Engine
 
 
@@ -75,7 +75,7 @@ class SQLDatabase(LangchainSQLDatabase):
         If the statement returns no rows, an empty string is returned.
         """
         with self._engine.connect() as connection:
-            cursor = connection.exec_driver_sql(command)
+            cursor = connection.execute(text(command))
             if cursor.returns_rows:
                 result = cursor.fetchall()
                 return str(result), {"result": result}
