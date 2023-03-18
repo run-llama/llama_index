@@ -10,13 +10,16 @@ from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,
+    DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DecomposeQueryTransformPrompt,
     ImageOutputQueryTransformPrompt,
+    StepDecomposeQueryTransformPrompt,
 )
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
+from gpt_index.response.schema import Response
 
 
 class BaseQueryTransform:
@@ -202,3 +205,58 @@ class ImageOutputQueryTransform(BaseQueryTransform):
         )
         new_query_bundle = dataclasses.replace(query_bundle, query_str=new_query_str)
         return new_query_bundle
+
+
+class StepDecomposeQueryTransform(BaseQueryTransform):
+    """Step decompose query transform.
+
+    Decomposes query into a subquery given the current index struct
+    and previous reasoning.
+
+    NOTE: doesn't work yet.
+
+    Args:
+        llm_predictor (Optional[LLMPredictor]): LLM for generating
+            hypothetical documents
+
+    """
+
+    def __init__(
+        self,
+        llm_predictor: Optional[LLMPredictor] = None,
+        step_decompose_query_prompt: Optional[StepDecomposeQueryTransformPrompt] = None,
+        verbose: bool = False,
+    ) -> None:
+        """Init params."""
+        super().__init__()
+        self._llm_predictor = llm_predictor or LLMPredictor()
+        self._step_decompose_query_prompt = (
+            step_decompose_query_prompt or DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT
+        )
+        self.verbose = verbose
+
+    def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
+        """Run query transform."""
+        index_struct = cast(IndexStruct, extra_info.get("index_struct"))
+        prev_reasoning = cast(Response, extra_info.get("prev_reasoning"))
+        fmt_prev_reasoning = f"\n{prev_reasoning}" if prev_reasoning else "None"
+        # currently, just get text from the index
+        index_text = index_struct.get_text()
+
+        # given the text from the index, we can use the query bundle to generate
+        # a new query bundle
+        query_str = query_bundle.query_str
+        new_query_str, formatted_prompt = self._llm_predictor.predict(
+            self._step_decompose_query_prompt,
+            prev_reasoning=fmt_prev_reasoning,
+            query_str=query_str,
+            context_str=index_text,
+        )
+        if self.verbose:
+            print_text(f"> Current query: {query_str}\n", color="yellow")
+            print_text(f"> Formatted prompt: {formatted_prompt}\n", color="pink")
+            print_text(f"> New query: {new_query_str}\n", color="pink")
+        return QueryBundle(
+            query_str=new_query_str,
+            custom_embedding_strs=query_bundle.custom_embedding_strs,
+        )
