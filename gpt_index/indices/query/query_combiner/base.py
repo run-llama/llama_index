@@ -138,7 +138,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
 
         # use response
         self.response_builder.reset()
-        final_response_extra_info: Dict[str, Any] = {"subresponses": []}
+        final_response_extra_info: Dict[str, Any] = {"sub_qa": []}
 
         while not should_stop:
             if self._num_steps is not None and cur_steps >= self._num_steps:
@@ -166,7 +166,9 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
             for source_node in cur_response.source_nodes:
                 self.response_builder.add_source_node(source_node)
             # update extra info
-            final_response_extra_info["subresponses"].append(cur_response.extra_info)
+            final_response_extra_info["sub_qa"].append(
+                (updated_query_bundle.query_str, cur_response)
+            )
 
             prev_reasoning += (
                 f"- {updated_query_bundle.query_str}\n" f"- {cur_response.response}\n"
