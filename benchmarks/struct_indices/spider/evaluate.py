@@ -8,8 +8,8 @@ from typing import Dict, List
 from langchain import OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
+from spider_utils import create_indexes, load_examples
 from tqdm import tqdm
-from utils import create_indexes, load_examples
 
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 
