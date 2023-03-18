@@ -7,6 +7,10 @@ from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery, BaseQueryRunner
+from gpt_index.indices.query.query_combiner.base import (
+    BaseQueryCombiner,
+    get_default_query_combiner,
+)
 from gpt_index.indices.query.query_transform.base import (
     BaseQueryTransform,
     IdentityQueryTransform,
@@ -36,6 +40,7 @@ class QueryRunner(BaseQueryRunner):
         index_registry: IndexRegistry,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
+        query_combiner: Optional[BaseQueryCombiner] = None,
         recursive: bool = False,
         use_async: bool = False,
     ) -> None:
@@ -64,6 +69,7 @@ class QueryRunner(BaseQueryRunner):
         self._docstore = docstore
         self._index_registry = index_registry
         self._query_transform = query_transform or IdentityQueryTransform()
+        self._query_combiner = query_combiner
         self._recursive = recursive
         self._use_async = use_async
 
@@ -105,6 +111,29 @@ class QueryRunner(BaseQueryRunner):
             query_transform = self._query_transform
         return query_transform
 
+    def _get_query_combiner(
+        self, index_struct: IndexStruct, query_transform: BaseQueryTransform
+    ) -> BaseQueryCombiner:
+        """Get query transform."""
+        config = self._get_query_config(index_struct)
+        if config.query_combiner is not None:
+            query_combiner: Optional[BaseQueryCombiner] = cast(
+                BaseQueryCombiner, config.query_combiner
+            )
+        else:
+            query_combiner = self._query_combiner
+
+        # if query_combiner is still None, use default
+        if query_combiner is None:
+            extra_kwargs = {
+                "llm_predictor": self._llm_predictor,
+            }
+            query_combiner = get_default_query_combiner(
+                index_struct, query_transform, extra_kwargs=extra_kwargs
+            )
+
+        return cast(BaseQueryCombiner, query_combiner)
+
     def _get_query_obj(
         self,
         index_struct: IndexStruct,
@@ -140,13 +169,19 @@ class QueryRunner(BaseQueryRunner):
         # TODO: abstract query transformation loop into a separate class
 
         query_transform = self._get_query_transform(index_struct)
-        transform_extra_info = {"index_struct": index_struct}
-        query_bundle = query_transform(
-            query_str_or_bundle, extra_info=transform_extra_info
-        )
-        query_obj = self._get_query_obj(index_struct)
+        query_combiner = self._get_query_combiner(index_struct, query_transform)
 
-        return query_obj.query(query_bundle)
+        query_obj = self._get_query_obj(index_struct)
+        if isinstance(query_str_or_bundle, str):
+            query_bundle = QueryBundle(
+                query_str=query_str_or_bundle,
+                custom_embedding_strs=[query_str_or_bundle],
+            )
+        else:
+            query_bundle = query_str_or_bundle
+
+        return query_combiner.run(query_obj, query_bundle)
+        # return query_obj.query(query_bundle)
 
     async def aquery(
         self,

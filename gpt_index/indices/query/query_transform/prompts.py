@@ -78,3 +78,79 @@ DEFAULT_IMAGE_OUTPUT_TMPL = (
 )
 
 DEFAULT_IMAGE_OUTPUT_PROMPT = ImageOutputQueryTransformPrompt(DEFAULT_IMAGE_OUTPUT_TMPL)
+
+
+class StepDecomposeQueryTransformPrompt(Prompt):
+    """Step Decompose prompt for query transformation.
+
+    Prompt to "decompose" a query into another query
+    given the existing context + previous reasoning (the previous steps).
+
+    Required template variables: `context_str`, `query_str`, `prev_reasoning`
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+
+    # TODO: specify a better prompt type
+    prompt_type: PromptType = PromptType.CUSTOM
+    input_variables: List[str] = ["context_str", "query_str", "prev_reasoning"]
+
+
+DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
+    "The original question is as follows: {query_str}\n"
+    "We have an opportunity to answer some, or all of the question from a "
+    "knowledge source. "
+    "Context information for the knowledge source is provided below, as "
+    "well as previous reasoning steps.\n"
+    "Given the context and previous reasoning, return a question that can "
+    "be answered from "
+    "the context. This question can be the same as the original question, "
+    "or this question can represent a subcomponent of the overall question."
+    "It should not be irrelevant to the original question.\n"
+    "If we cannot extract more information from the context, provide 'None' "
+    "as the answer. "
+    "Some examples are given below: "
+    "\n\n"
+    "Question: How many Grand Slam titles does the winner of the 2020 Australian "
+    "Open have?\n"
+    "Knowledge source context: Provides names of the winners of the 2020 "
+    "Australian Open\n"
+    "Previous reasoning: None\n"
+    "Next question: Who was the winner of the 2020 Australian Open? "
+    "\n\n"
+    "Question: Who was the winner of the 2020 Australian Open?\n"
+    "Knowledge source context: Provides names of the winners of the 2020 "
+    "Australian Open\n"
+    "Previous reasoning: None.\n"
+    "New question: Who was the winner of the 2020 Australian Open? "
+    "\n\n"
+    "Question: How many Grand Slam titles does the winner of the 2020 Australian "
+    "Open have?\n"
+    "Knowledge source context: Provides information about the winners of the 2020 "
+    "Australian Open\n"
+    "Previous reasoning:\n"
+    "- Who was the winner of the 2020 Australian Open? \n"
+    "- The winner of the 2020 Australian Open was Novak Djokovic.\n"
+    "New question: None"
+    "\n\n"
+    "Question: How many Grand Slam titles does the winner of the 2020 Australian "
+    "Open have?\n"
+    "Knowledge source context: Provides information about the winners of the 2020 "
+    "Australian Open - includes biographical information for each winner\n"
+    "Previous reasoning:\n"
+    "- Who was the winner of the 2020 Australian Open? \n"
+    "- The winner of the 2020 Australian Open was Novak Djokovic.\n"
+    "New question: How many Grand Slam titles does Novak Djokovic have? "
+    "\n\n"
+    "Question: {query_str}\n"
+    "Knowledge source context: {context_str}\n"
+    "Previous reasoning: {prev_reasoning}\n"
+    "New question: "
+)
+
+DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT = StepDecomposeQueryTransformPrompt(
+    DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_TMPL
+)

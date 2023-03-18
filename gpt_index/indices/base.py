@@ -36,7 +36,6 @@ from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
 
-
 DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
 
 logger = logging.getLogger(__name__)
@@ -601,7 +600,9 @@ class BaseGPTIndex(Generic[IS]):
         out_dict = self.save_to_dict(**save_kwargs)
         return json.dumps(out_dict, **save_kwargs)
 
-    def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
+    def save_to_disk(
+        self, save_path: str, encoding: str = "ascii", **save_kwargs: Any
+    ) -> None:
         """Save to file.
 
         This method stores the index into a JSON file stored on disk.
@@ -612,8 +613,9 @@ class BaseGPTIndex(Generic[IS]):
 
         Args:
             save_path (str): The save_path of the file.
+            encoding (str): The encoding of the file.
 
         """
         index_string = self.save_to_string(**save_kwargs)
-        with open(save_path, "w") as f:
+        with open(save_path, "wt", encoding=encoding) as f:
             f.write(index_string)
