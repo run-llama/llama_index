@@ -203,6 +203,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         self.node_preprocessors: List[BaseNodePostprocessor] = (
             init_node_preprocessors + node_postprocessors
         )
+        self._verbose = verbose
 
         self._verbose = verbose
 
