@@ -214,6 +214,7 @@ class GPTFaissIndex(GPTVectorStoreIndex):
     def save_to_disk(
         self,
         save_path: str,
+        encoding: str = "ascii",
         faiss_index_save_path: Optional[str] = None,
         **save_kwargs: Any,
     ) -> None:
@@ -228,11 +229,12 @@ class GPTFaissIndex(GPTVectorStoreIndex):
 
         Args:
             save_path (str): The save_path of the file.
+            encoding (str): The encoding to use when saving the file.
             faiss_index_save_path (Optional[str]): The save_path of the
                 Faiss index file. If not specified, the Faiss index
                 will not be saved to disk.
         """
-        super().save_to_disk(save_path, **save_kwargs)
+        super().save_to_disk(save_path, encoding=encoding, **save_kwargs)
 
         if faiss_index_save_path is not None:
             import faiss
