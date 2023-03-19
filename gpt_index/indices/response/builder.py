@@ -229,7 +229,7 @@ class ResponseBuilder:
         summary_template: SummaryPrompt,
         query_str: str,
         num_children: int = 10,
-    ) -> Tuple[GPTTreeIndexBuilder, Dict]:
+    ) -> Tuple[GPTTreeIndexBuilder, Dict[int, str]]:
         """Get tree index builder."""
         # first join all the text chunks into a single text
         all_text = "\n\n".join([t.text for t in self._texts])
@@ -251,7 +251,9 @@ class ResponseBuilder:
             use_async=self._use_async,
             llama_logger=self._llama_logger,
         )
-        return index_builder, all_nodes
+        index_builder.register_leaf_nodes(list(all_nodes.values()))
+        all_node_ids = {i: n.get_doc_id() for i, n in all_nodes.items()}
+        return index_builder, all_node_ids
 
     def _get_tree_response_over_root_nodes(
         self,

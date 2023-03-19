@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
@@ -44,7 +45,8 @@ def test_build_table(
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
     table = GPTSimpleKeywordTableIndex(documents)
-    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    nodes = get_nodes_from_docstore(table.docstore, list(table.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 4
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
@@ -86,7 +88,8 @@ def test_build_table_async(
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
     table = GPTSimpleKeywordTableIndex(documents, use_async=True)
-    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    nodes = get_nodes_from_docstore(table.docstore, list(table.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 4
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
@@ -125,7 +128,8 @@ def test_insert(
     table = GPTSimpleKeywordTableIndex([])
     assert len(table.index_struct.table.keys()) == 0
     table.insert(documents[0])
-    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    nodes = get_nodes_from_docstore(table.docstore, list(table.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
     assert "This is another test." in table_chunks
@@ -154,10 +158,13 @@ def test_insert(
     chunk_index1_2 = list(table.index_struct.table["is"])[0]
     chunk_index2_1 = list(table.index_struct.table["test"])[0]
     chunk_index2_2 = list(table.index_struct.table["v3"])[0]
-    assert table.index_struct.text_chunks[chunk_index1_1].ref_doc_id == "test_id1"
-    assert table.index_struct.text_chunks[chunk_index1_2].ref_doc_id == "test_id1"
-    assert table.index_struct.text_chunks[chunk_index2_1].ref_doc_id == "test_id2"
-    assert table.index_struct.text_chunks[chunk_index2_2].ref_doc_id == "test_id2"
+    nodes = get_nodes_from_docstore(
+        table.docstore, [chunk_index1_1, chunk_index1_2, chunk_index2_1, chunk_index2_2]
+    )
+    assert nodes[0].ref_doc_id == "test_id1"
+    assert nodes[1].ref_doc_id == "test_id1"
+    assert nodes[2].ref_doc_id == "test_id2"
+    assert nodes[3].ref_doc_id == "test_id2"
 
 
 @patch_common
@@ -186,14 +193,16 @@ def test_delete(
     assert len(table.index_struct.table.keys()) == 6
     print(table.index_struct.table.keys())
     assert len(table.index_struct.table["this"]) == 2
-    node_texts = {n.text for n in table.index_struct.text_chunks.values()}
+    nodes = get_nodes_from_docstore(table.docstore, list(table.index_struct.node_ids))
+    node_texts = {n.get_text() for n in nodes}
     assert node_texts == {"This is another test.", "This is a test v2."}
 
     table = GPTSimpleKeywordTableIndex(new_documents)
     table.delete("test_id_2")
     assert len(table.index_struct.table.keys()) == 7
     assert len(table.index_struct.table["this"]) == 2
-    node_texts = {n.text for n in table.index_struct.text_chunks.values()}
+    nodes = get_nodes_from_docstore(table.docstore, list(table.index_struct.node_ids))
+    node_texts = {n.get_text() for n in nodes}
     assert node_texts == {"Hello world.", "This is a test.", "This is a test v2."}
 
 

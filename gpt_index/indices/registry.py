@@ -3,7 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, Type
 
-from gpt_index.data_structs.data_structs import IndexStruct
+# from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 
 # map from mode to query class
@@ -22,7 +23,7 @@ class IndexRegistry:
 
     """
 
-    type_to_struct: Dict[str, Type[IndexStruct]] = field(default_factory=dict)
+    type_to_struct: Dict[str, Type[V2IndexStruct]] = field(default_factory=dict)
     type_to_query: Dict[str, QUERY_MAP_TYPE] = field(default_factory=dict)
 
     def update(self, other: "IndexRegistry") -> None:

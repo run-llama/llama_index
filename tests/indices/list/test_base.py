@@ -11,6 +11,7 @@ import pytest
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.list.base import GPTListIndex
+from gpt_index.indices.node_utils import get_node_from_docstore, get_nodes_from_docstore
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -64,10 +65,12 @@ def test_build_list(
     list_index = GPTListIndex(documents=documents)
     assert len(list_index.index_struct.nodes) == 4
     # check contents of nodes
-    assert list_index.index_struct.nodes[0].text == "Hello world."
-    assert list_index.index_struct.nodes[1].text == "This is a test."
-    assert list_index.index_struct.nodes[2].text == "This is another test."
-    assert list_index.index_struct.nodes[3].text == "This is a test v2."
+    node_ids = list_index.index_struct.nodes
+    nodes = get_nodes_from_docstore(list_index.docstore, node_ids)
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
 
 
 @patch_common
@@ -104,9 +107,11 @@ def test_refresh_list(
     refreshed_docs = list_index.refresh(more_documents)
     assert refreshed_docs[0] is False
     assert refreshed_docs[1] is True
-    assert (
-        list_index.index_struct.nodes[-1].text == "Test document 2, now with changes!"
+
+    test_node = get_node_from_docstore(
+        list_index.docstore, list_index.index_struct.nodes[-1]
     )
+    assert test_node.text == "Test document 2, now with changes!"
 
 
 @patch_common
@@ -124,11 +129,12 @@ def test_build_list_multiple(
     ]
     list_index = GPTListIndex(documents=documents)
     assert len(list_index.index_struct.nodes) == 4
+    nodes = get_nodes_from_docstore(list_index.docstore, list_index.index_struct.nodes)
     # check contents of nodes
-    assert list_index.index_struct.nodes[0].text == "Hello world."
-    assert list_index.index_struct.nodes[1].text == "This is a test."
-    assert list_index.index_struct.nodes[2].text == "This is another test."
-    assert list_index.index_struct.nodes[3].text == "This is a test v2."
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
 
 
 @patch_common
@@ -144,11 +150,12 @@ def test_list_insert(
     list_index = GPTListIndex([])
     assert len(list_index.index_struct.nodes) == 0
     list_index.insert(documents[0])
+    nodes = get_nodes_from_docstore(list_index.docstore, list_index.index_struct.nodes)
     # check contents of nodes
-    assert list_index.index_struct.nodes[0].text == "Hello world."
-    assert list_index.index_struct.nodes[1].text == "This is a test."
-    assert list_index.index_struct.nodes[2].text == "This is another test."
-    assert list_index.index_struct.nodes[3].text == "This is a test v2."
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
 
     # test insert with ID
     document = documents[0]
@@ -156,7 +163,9 @@ def test_list_insert(
     list_index = GPTListIndex([])
     list_index.insert(document)
     # check contents of nodes
-    for node in list_index.index_struct.nodes:
+    nodes = get_nodes_from_docstore(list_index.docstore, list_index.index_struct.nodes)
+    # check contents of nodes
+    for node in nodes:
         assert node.ref_doc_id == "test_id"
 
 
@@ -180,10 +189,11 @@ def test_list_delete(
     list_index = GPTListIndex(new_documents)
     list_index.delete("test_id_1")
     assert len(list_index.index_struct.nodes) == 2
-    assert list_index.index_struct.nodes[0].ref_doc_id == "test_id_2"
-    assert list_index.index_struct.nodes[0].text == "This is another test."
-    assert list_index.index_struct.nodes[1].ref_doc_id == "test_id_3"
-    assert list_index.index_struct.nodes[1].text == "This is a test v2."
+    nodes = get_nodes_from_docstore(list_index.docstore, list_index.index_struct.nodes)
+    assert nodes[0].ref_doc_id == "test_id_2"
+    assert nodes[0].text == "This is another test."
+    assert nodes[1].ref_doc_id == "test_id_3"
+    assert nodes[1].text == "This is a test v2."
     # check that not in docstore anymore
     source_doc = list_index.docstore.get_document("test_id_1", raise_error=False)
     assert source_doc is None
@@ -191,12 +201,13 @@ def test_list_delete(
     list_index = GPTListIndex(new_documents)
     list_index.delete("test_id_2")
     assert len(list_index.index_struct.nodes) == 3
-    assert list_index.index_struct.nodes[0].ref_doc_id == "test_id_1"
-    assert list_index.index_struct.nodes[0].text == "Hello world."
-    assert list_index.index_struct.nodes[1].ref_doc_id == "test_id_1"
-    assert list_index.index_struct.nodes[1].text == "This is a test."
-    assert list_index.index_struct.nodes[2].ref_doc_id == "test_id_3"
-    assert list_index.index_struct.nodes[2].text == "This is a test v2."
+    nodes = get_nodes_from_docstore(list_index.docstore, list_index.index_struct.nodes)
+    assert nodes[0].ref_doc_id == "test_id_1"
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].ref_doc_id == "test_id_1"
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].ref_doc_id == "test_id_3"
+    assert nodes[2].text == "This is a test v2."
 
 
 def _get_embeddings(
@@ -359,10 +370,11 @@ def test_extra_info(
     extra_info = {"extra_info": "extra_info", "foo": "bar"}
     new_document = Document(doc_text, extra_info=extra_info)
     list_index = GPTListIndex(documents=[new_document])
-    assert list_index.index_struct.nodes[0].get_text() == (
+    nodes = get_nodes_from_docstore(list_index.docstore, list_index.index_struct.nodes)
+    assert nodes[0].get_text() == (
         "extra_info: extra_info\n" "foo: bar\n\n" "Hello world."
     )
-    assert list_index.index_struct.nodes[3].get_text() == (
+    assert nodes[3].get_text() == (
         "extra_info: extra_info\n" "foo: bar\n\n" "This is a test v2."
     )
 
@@ -384,11 +396,14 @@ def test_to_from_disk(
             GPTListIndex, GPTListIndex.load_from_disk(str(Path(tmp_dir) / "tmp.json"))
         )
         assert len(new_list_index.index_struct.nodes) == 4
+        nodes = get_nodes_from_docstore(
+            new_list_index.docstore, new_list_index.index_struct.nodes
+        )
         # check contents of nodes
-        assert new_list_index.index_struct.nodes[0].text == "Hello world."
-        assert new_list_index.index_struct.nodes[1].text == "This is a test."
-        assert new_list_index.index_struct.nodes[2].text == "This is another test."
-        assert new_list_index.index_struct.nodes[3].text == "This is a test v2."
+        assert nodes[0].text == "Hello world."
+        assert nodes[1].text == "This is a test."
+        assert nodes[2].text == "This is another test."
+        assert nodes[3].text == "This is a test v2."
 
 
 @patch_common
@@ -406,11 +421,14 @@ def test_to_from_string(
         GPTListIndex, GPTListIndex.load_from_string(list_index.save_to_string())
     )
     assert len(new_list_index.index_struct.nodes) == 4
+    nodes = get_nodes_from_docstore(
+        new_list_index.docstore, new_list_index.index_struct.nodes
+    )
     # check contents of nodes
-    assert new_list_index.index_struct.nodes[0].text == "Hello world."
-    assert new_list_index.index_struct.nodes[1].text == "This is a test."
-    assert new_list_index.index_struct.nodes[2].text == "This is another test."
-    assert new_list_index.index_struct.nodes[3].text == "This is a test v2."
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
 
 
 @patch_common

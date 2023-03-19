@@ -60,6 +60,11 @@ class GPTTreeIndexBuilder:
         """Return docstore."""
         return self._docstore
 
+    def register_leaf_nodes(self, all_nodes: List[Node]) -> None:
+        """Register leaf nodes."""
+        for node in all_nodes:
+            self._docstore.add_documents([node])
+
     def _create_nodes_from_document(
         self, start_idx: int, document: BaseDocument
     ) -> Dict[int, str]:
@@ -71,6 +76,7 @@ class GPTTreeIndexBuilder:
         text_chunks = [text_split.text_chunk for text_split in text_splits]
 
         doc_node_ids = {}
+        created_nodes = []
         for i, t in enumerate(text_chunks):
             node = Node(
                 text=t,
@@ -79,8 +85,9 @@ class GPTTreeIndexBuilder:
                 embedding=document.embedding,
                 extra_info=document.extra_info,
             )
+            created_nodes.append(node)
             doc_node_ids[(start_idx + i)] = node.get_doc_id()
-            self._docstore.add_documents([node])
+        self.register_leaf_nodes(created_nodes)
 
         return doc_node_ids
 

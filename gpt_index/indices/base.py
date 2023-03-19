@@ -504,14 +504,13 @@ class BaseGPTIndex(Generic[IS]):
         else:
             raise ValueError("index_struct or index_struct_id must be provided.")
 
-        type_to_struct = {cls.index_struct_cls.get_type(): cls.index_struct_cls}
-
         # NOTE: index_struct can have multiple types for backwards compatibility,
         # map to same class
         type_to_struct = {
             index_type: cls.index_struct_cls
             for index_type in cls.index_struct_cls.get_types()
         }
+        type_to_struct[Node.get_type()] = Node
 
         docstore = DocumentStore.load_from_dict(
             result_dict["docstore"],

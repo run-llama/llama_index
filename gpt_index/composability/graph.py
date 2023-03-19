@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, List, Optional, Type, Union
 
-from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
@@ -62,6 +62,8 @@ def _get_default_index_registry() -> IndexRegistry:
     for index_type, index_class in DEFAULT_INDEX_REGISTRY_MAP.items():
         index_registry.type_to_struct[index_type] = index_class.index_struct_cls
         index_registry.type_to_query[index_type] = index_class.get_query_map()
+    # add Node class
+    index_registry.type_to_struct[IndexStructType.NODE] = Node
     return index_registry
 
 
