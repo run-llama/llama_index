@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.indices.node_utils import get_node_from_docstore, get_nodes_from_docstore
 from gpt_index.indices.vector_store.vector_indices import (
     GPTFaissIndex,
     GPTSimpleVectorIndex,
@@ -169,11 +170,33 @@ def test_build_faiss(
 
     index = GPTFaissIndex(documents=documents, faiss_index=faiss_index, **index_kwargs)
     assert len(index.index_struct.nodes_dict) == 4
-    # check contents of nodes
-    assert index.index_struct.get_node("0").text == "Hello world."
-    assert index.index_struct.get_node("1").text == "This is a test."
-    assert index.index_struct.get_node("2").text == "This is another test."
-    assert index.index_struct.get_node("3").text == "This is a test v2."
+
+    node_ids = list(index.index_struct.nodes_dict.values())
+    nodes = get_nodes_from_docstore(index.docstore, node_ids)
+    node_texts = [node.text for node in nodes]
+    assert "Hello world." in node_texts
+    assert "This is a test." in node_texts
+    assert "This is another test." in node_texts
+    assert "This is a test v2." in node_texts
+
+    # # check contents of nodes
+    # assert get_node_from_docstore(index.docstore, "0") == "Hello world."
+    # assert (
+    #     get_node_from_docstore(index.docstore, index.index_struct.nodes_set("1"))
+    #     == "This is a test."
+    # )
+    # assert (
+    #     get_node_from_docstore(index.docstore, index.index_struct.nodes_set("2"))
+    #     == "This is another test."
+    # )
+    # assert (
+    #     get_node_from_docstore(index.docstore, index.index_struct.nodes_set("3"))
+    #     == "This is a test v2."
+    # )
+    # assert index.index_struct.get_node("0").text == "Hello world."
+    # assert index.index_struct.get_node("1").text == "This is a test."
+    # assert index.index_struct.get_node("2").text == "This is another test."
+    # assert index.index_struct.get_node("3").text == "This is a test v2."
 
 
 @patch_common
@@ -206,9 +229,12 @@ def test_faiss_insert(
     # insert into index
     index.insert(Document(text="This is a test v3."))
 
-    # check contenst of nodes
-    assert index.index_struct.get_node("3").text == "This is a test v2."
-    assert index.index_struct.get_node("4").text == "This is a test v3."
+    # check contents of nodes
+    node_ids = list(index.index_struct.nodes_dict.values())
+    nodes = get_nodes_from_docstore(index.docstore, node_ids)
+    node_texts = [node.text for node in nodes]
+    assert "This is a test v2." in node_texts
+    assert "This is a test v3." in node_texts
 
 
 @patch_common
@@ -278,8 +304,9 @@ def test_build_simple(
         ("This is another test.", [0, 0, 1, 0, 0]),
         ("This is a test v2.", [0, 0, 0, 1, 0]),
     ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
+    for text_id in index.index_struct.nodes_dict.keys():
+        node_id = index.index_struct.nodes_dict[text_id]
+        node = get_node_from_docstore(index.docstore, node_id)
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
@@ -319,8 +346,9 @@ def test_simple_insert(
         ("This is a test v2.", [0, 0, 0, 1, 0]),
         ("This is a test v3.", [0, 0, 0, 0, 1]),
     ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
+    for text_id in index.index_struct.nodes_dict.keys():
+        node_id = index.index_struct.nodes_dict[text_id]
+        node = get_node_from_docstore(index.docstore, node_id)
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
@@ -359,14 +387,14 @@ def test_simple_delete(
     # test delete
     index.delete("test_id_0")
     assert len(index.index_struct.nodes_dict) == 3
-    assert len(index.index_struct.id_map) == 3
     actual_node_tups = [
         ("This is a test.", [0, 1, 0, 0, 0], "test_id_1"),
         ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),
         ("This is a test v2.", [0, 0, 0, 1, 0], "test_id_3"),
     ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
+    for text_id in index.index_struct.nodes_dict.keys():
+        node_id = index.index_struct.nodes_dict[text_id]
+        node = get_node_from_docstore(index.docstore, node_id)
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
@@ -375,15 +403,15 @@ def test_simple_delete(
     # test insert
     index.insert(Document("Hello world backup.", doc_id="test_id_0"))
     assert len(index.index_struct.nodes_dict) == 4
-    assert len(index.index_struct.id_map) == 4
     actual_node_tups = [
         ("Hello world backup.", [1, 0, 0, 0, 0], "test_id_0"),
         ("This is a test.", [0, 1, 0, 0, 0], "test_id_1"),
         ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),
         ("This is a test v2.", [0, 0, 0, 1, 0], "test_id_3"),
     ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
+    for text_id in index.index_struct.nodes_dict.keys():
+        node_id = index.index_struct.nodes_dict[text_id]
+        node = get_node_from_docstore(index.docstore, node_id)
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
@@ -587,8 +615,9 @@ def test_simple_async(
         ("This is another test.", [0, 0, 1, 0, 0]),
         ("This is a test v2.", [0, 0, 0, 1, 0]),
     ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
+    for text_id in index.index_struct.nodes_dict.keys():
+        node_id = index.index_struct.nodes_dict[text_id]
+        node = get_node_from_docstore(index.docstore, node_id)
         vector_store = cast(SimpleVectorStore, index._vector_store)
         embedding = vector_store.get(text_id)
         assert (node.text, embedding) in actual_node_tups

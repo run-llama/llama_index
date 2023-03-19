@@ -15,6 +15,7 @@ from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs_v2 import KeywordTable
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
+from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.keyword_table.query import (
     GPTKeywordTableGPTQuery,
@@ -160,12 +161,14 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         """Delete a document."""
         # get set of ids that correspond to node
         node_idxs_to_delete = set()
-        for node_idx, node in self._index_struct.text_chunks.items():
+        node_id_list = list(self._index_struct.node_ids)
+        nodes = get_nodes_from_docstore(self._docstore, node_id_list)
+        for node_idx, node in zip(node_id_list, nodes):
             if node.ref_doc_id != doc_id:
                 continue
             node_idxs_to_delete.add(node_idx)
         for node_idx in node_idxs_to_delete:
-            del self._index_struct.text_chunks[node_idx]
+            self._docstore.delete_document(node_idx)
 
         # delete node_idxs from keyword to node idxs mapping
         keywords_to_delete = set()

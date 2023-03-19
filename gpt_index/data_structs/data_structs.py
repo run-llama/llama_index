@@ -64,18 +64,6 @@ class Node(IndexStruct):
     prev_node_id: Optional[str] = None
     next_node_id: Optional[str] = None
 
-    @classmethod
-    def get_from_docstore(
-        cls, docstore, node_ids: List[str], raise_error: bool = True
-    ) -> List["Node"]:
-        """Get node from docstore."""
-        nodes: List[Node] = []
-        for node_id in node_ids:
-            doc = docstore.get_document(node_id, raise_error=raise_error)
-            if not isinstance(doc, Node):
-                raise ValueError(f"Document {node_id} is not a Node.")
-        return cls.from_dict(doc)
-
     def get_text(self) -> str:
         """Get text."""
         text = super().get_text()

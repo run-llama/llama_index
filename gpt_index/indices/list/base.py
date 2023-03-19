@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional, Sequence, Type
 
 from gpt_index.data_structs.data_structs_v2 import IndexList
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.query.list.query import GPTListIndexQuery
@@ -104,9 +105,10 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
-        cur_nodes = self._index_struct.nodes
+        cur_node_ids = self._index_struct.nodes
+        cur_nodes = get_nodes_from_docstore(self._docstore, cur_node_ids)
         nodes_to_keep = [n for n in cur_nodes if n.ref_doc_id != doc_id]
-        self._index_struct.nodes = nodes_to_keep
+        self._index_struct.nodes = [n.get_doc_id() for n in nodes_to_keep]
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Preprocess query."""

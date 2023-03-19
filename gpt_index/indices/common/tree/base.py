@@ -8,7 +8,11 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.indices.node_utils import get_text_splits_from_document
+from gpt_index.docstore import DocumentStore
+from gpt_index.indices.node_utils import (
+    get_node_from_docstore,
+    get_text_splits_from_document,
+)
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -16,7 +20,6 @@ from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import SummaryPrompt
 from gpt_index.schema import BaseDocument
-from gpt_index.docstore import DocumentStore
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +55,7 @@ class GPTTreeIndexBuilder:
         self._docstore = docstore or DocumentStore()
         self._llama_logger = llama_logger or LlamaLogger()
 
+    @property
     def docstore(self) -> DocumentStore:
         """Return docstore."""
         return self._docstore
@@ -104,9 +108,13 @@ class GPTTreeIndexBuilder:
         return IndexGraph(all_nodes=all_nodes, root_nodes=root_nodes)
 
     def _prepare_node_and_text_chunks(
-        self, cur_nodes: Dict[int, Node]
+        self, cur_node_ids: Dict[int, str]
     ) -> Tuple[List[int], List[List[Node]], List[str]]:
         """Prepare node and text chunks."""
+        cur_nodes = {
+            index: get_node_from_docstore(self._docstore, node_id)
+            for index, node_id in cur_node_ids.items()
+        }
         cur_node_list = get_sorted_node_list(cur_nodes)
         logger.info(
             f"> Building index from nodes: {len(cur_nodes) // self.num_children} chunks"
@@ -153,12 +161,12 @@ class GPTTreeIndexBuilder:
         return new_node_dict
 
     def build_index_from_nodes(
-        self, cur_nodes: Dict[int, str], all_nodes: Dict[int, str], level: int = 0
+        self, cur_node_ids: Dict[int, str], all_node_ids: Dict[int, str], level: int = 0
     ) -> Dict[int, str]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
-        cur_index = len(all_nodes)
+        cur_index = len(all_node_ids)
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
-            cur_nodes
+            cur_node_ids
         )
 
         if self._use_async:
@@ -182,22 +190,22 @@ class GPTTreeIndexBuilder:
         new_node_dict = self._construct_parent_nodes(
             cur_index, indices, cur_nodes_chunks, summaries
         )
-        all_nodes.update(new_node_dict)
+        all_node_ids.update(new_node_dict)
 
         if len(new_node_dict) <= self.num_children:
             return new_node_dict
         else:
             return self.build_index_from_nodes(
-                new_node_dict, all_nodes, level=level + 1
+                new_node_dict, all_node_ids, level=level + 1
             )
 
     async def abuild_index_from_nodes(
-        self, cur_nodes: Dict[int, str], all_nodes: Dict[int, str], level: int = 0
+        self, cur_node_ids: Dict[int, str], all_node_ids: Dict[int, str], level: int = 0
     ) -> Dict[int, str]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
-        cur_index = len(all_nodes)
+        cur_index = len(all_node_ids)
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
-            cur_nodes
+            cur_node_ids
         )
 
         tasks = [
@@ -211,11 +219,11 @@ class GPTTreeIndexBuilder:
         new_node_dict = self._construct_parent_nodes(
             cur_index, indices, cur_nodes_chunks, summaries
         )
-        all_nodes.update(new_node_dict)
+        all_node_ids.update(new_node_dict)
 
         if len(new_node_dict) <= self.num_children:
             return new_node_dict
         else:
             return await self.abuild_index_from_nodes(
-                new_node_dict, all_nodes, level=level + 1
+                new_node_dict, all_node_ids, level=level + 1
             )

@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.data_structs.data_structs import IndexGraph, Node
+from gpt_index.indices.node_utils import get_node_from_docstore
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMChain,
@@ -87,10 +88,18 @@ def test_build_tree(
     tree = GPTTreeIndex(documents, **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
-    assert tree.index_struct.all_nodes[0].text == "Hello world."
-    assert tree.index_struct.all_nodes[1].text == "This is a test."
-    assert tree.index_struct.all_nodes[2].text == "This is another test."
-    assert tree.index_struct.all_nodes[3].text == "This is a test v2."
+    assert get_node_from_docstore(tree.index_struct.all_nodes[0]).text == "Hello world."
+    assert (
+        get_node_from_docstore(tree.index_struct.all_nodes[1]).text == "This is a test."
+    )
+    assert (
+        get_node_from_docstore(tree.index_struct.all_nodes[2]).text
+        == "This is another test."
+    )
+    assert (
+        get_node_from_docstore(tree.index_struct.all_nodes[3]).text
+        == "This is a test v2."
+    )
     assert tree.index_struct.all_nodes[4].text == ("Hello world.\nThis is a test.")
     assert tree.index_struct.all_nodes[5].text == (
         "This is another test.\nThis is a test v2."

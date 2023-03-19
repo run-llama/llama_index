@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_utils import mock_extract_keywords
@@ -39,7 +40,8 @@ def test_write_ascii(
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
     table = GPTSimpleKeywordTableIndex(documents)
-    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    node_ids = list(table.index_struct.node_ids)
+    table_chunks = [n.text for n in get_nodes_from_docstore(table.docstore, node_ids)]
     assert len(table_chunks) == 1
     assert "á" in table_chunks
 
@@ -60,12 +62,9 @@ def test_write_ascii(
             data = json.loads(escaped)
 
             docs = data["docstore"]["docs"]
-            doc_key = list(docs.keys())[0]
-            text_chunk_id = list(docs[doc_key]["text_chunks"].keys())[0]
-
-            # "\u00e1" is the escaped unicode character for "á"
-            assert docs[doc_key]["text_chunks"][text_chunk_id]["text"] == "\\u00e1"
-            assert docs[doc_key]["text_chunks"][text_chunk_id]["text"] != "á"
+            doc_key = list(node_ids)[0]
+            node_dict = docs[doc_key]
+            assert node_dict["text"] == "\\u00e1"
 
 
 @patch_common
@@ -86,7 +85,8 @@ def test_write_utf8(
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
     table = GPTSimpleKeywordTableIndex(documents)
-    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    node_ids = table.index_struct.node_ids
+    table_chunks = [n.text for n in get_nodes_from_docstore(table.docstore, node_ids)]
     assert len(table_chunks) == 1
     assert "á" in table_chunks
 
@@ -107,9 +107,6 @@ def test_write_utf8(
             data = json.loads(escaped)
 
             docs = data["docstore"]["docs"]
-            doc_key = list(docs.keys())[0]
-            text_chunk_id = list(docs[doc_key]["text_chunks"].keys())[0]
-
-            # "\u00e1" is the escaped unicode character for "á"
-            assert docs[doc_key]["text_chunks"][text_chunk_id]["text"] != "\\u00e1"
-            assert docs[doc_key]["text_chunks"][text_chunk_id]["text"] == "á"
+            doc_key = list(node_ids)[0]
+            node_dict = docs[doc_key]
+            assert node_dict["text"] == "á"

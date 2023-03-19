@@ -4,16 +4,18 @@ Nodes are decoupled from the indices.
 
 """
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Dict, Optional, Set, List, Tuple
-from gpt_index.data_structs.data_structs import IndexStruct, Node
-from gpt_index.data_structs.data_structs import IndexGraph as V0IndexGraph
-from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.schema import BaseDocument
-from dataclasses_json import DataClassJsonMixin
 import random
 import sys
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Set, Tuple
+
+from dataclasses_json import DataClassJsonMixin
+
+from gpt_index.data_structs.data_structs import IndexGraph as V0IndexGraph
+from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.data_structs.struct_type import IndexStructType
+from gpt_index.schema import BaseDocument
 
 
 @dataclass
@@ -88,6 +90,11 @@ class KeywordTable(IndexStruct):
             self.table[keyword].add(node.get_doc_id())
 
     @property
+    def node_ids(self) -> Set[str]:
+        """Get all node ids."""
+        return set.union(*self.table.values())
+
+    @property
     def keywords(self) -> Set[str]:
         """Get all keywords in the table."""
         return set(self.table.keys())
@@ -126,7 +133,12 @@ class IndexDict(IndexStruct):
 
     # nodes_dict: Dict[int, Node] = field(default_factory=dict)
     # id_map: Dict[str, int] = field(default_factory=dict)
-    nodes_set: Set[Node]
+    # nodes_set: Set[str] = field(default_factory=set)
+
+    # mapping from vector store id to node id
+    nodes_dict: Dict[str, str] = field(default_factory=dict)
+    # mapping from doc_id to vector store id
+    doc_id_dict: Dict[str, List[str]] = field(default_factory=dict)
 
     # TODO: temporary hack to store embeddings for simple vector index
     # this should be empty for all other indices
@@ -150,10 +162,14 @@ class IndexDict(IndexStruct):
 
         # # don't worry about child indices for now, nodes are all in order
         # self.nodes_dict[int_id] = node
-        node_id = text_id if text_id is not None else node.get_doc_id()
-        self.nodes_set.add(node_id)
+        vector_id = text_id if text_id is not None else node.get_doc_id()
+        self.nodes_dict[vector_id] = node.get_doc_id()
+        if node.ref_doc_id is not None:
+            if node.ref_doc_id not in self.doc_id_dict:
+                self.doc_id_dict[node.ref_doc_id] = []
+            self.doc_id_dict[node.ref_doc_id].append(vector_id)
 
-        return node_id
+        return vector_id
 
     # def get_nodes(self, text_ids: List[str]) -> List[Node]:
     #     """Get nodes."""
@@ -175,9 +191,19 @@ class IndexDict(IndexStruct):
 
     def delete(self, doc_id: str) -> None:
         """Delete a Node."""
-        self.nodes_set.remove(doc_id)
-        if doc_id in self.embeddings_dict:
-            del self.embeddings_dict[doc_id]
+        if doc_id not in self.doc_id_dict:
+            raise ValueError("doc_id not found in doc_id_dict")
+        for vector_id in self.doc_id_dict[doc_id]:
+            del self.nodes_dict[vector_id]
+
+        # for vector_id, node_id in self.nodes_dict.items():
+        #     if node_id == doc_id:
+        #         del self.nodes_dict[vector_id]
+        #         break
+
+        # self.nodes_set.remove(doc_id)
+        # if doc_id in self.embeddings_dict:
+        #     del self.embeddings_dict[doc_id]
 
         # text_ids_to_delete = set()
         # int_ids_to_delete = set()

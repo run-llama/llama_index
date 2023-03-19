@@ -571,7 +571,7 @@ class BaseGPTIndex(Generic[IS]):
     def save_to_dict(self, **save_kwargs: Any) -> dict:
         """Save to dict."""
         if self.docstore.contains_index_struct(
-            exclude_ids=[self.index_struct.get_doc_id()]
+            exclude_ids=[self.index_struct.get_doc_id()], exclude_types=[Node]
         ):
             raise ValueError(
                 "Cannot call save index if index is composed on top of "

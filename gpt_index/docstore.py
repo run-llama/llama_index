@@ -33,11 +33,20 @@ class DocumentStore(DataClassJsonMixin):
             docs_dict[doc_id] = doc_dict
         return {"docs": docs_dict, "ref_doc_info": self.ref_doc_info}
 
-    def contains_index_struct(self, exclude_ids: Optional[List[str]] = None) -> bool:
+    def contains_index_struct(
+        self,
+        exclude_ids: Optional[List[str]] = None,
+        exclude_types: Optional[List[Type[IndexStruct]]] = None,
+    ) -> bool:
         """Check if contains index struct."""
         exclude_ids = exclude_ids or []
+        exclude_types = exclude_types or []
         for doc in self.docs.values():
-            if isinstance(doc, IndexStruct) and doc.get_doc_id() not in exclude_ids:
+            if doc.get_doc_id() in exclude_ids:
+                continue
+            if isinstance(doc, tuple(exclude_types)):
+                continue
+            if isinstance(doc, IndexStruct):
                 return True
         return False
 

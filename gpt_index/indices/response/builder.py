@@ -14,6 +14,7 @@ from typing import Any, Dict, Generator, List, Optional, Tuple, Union, cast
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
+from gpt_index.indices.node_utils import get_node_from_docstore
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -24,8 +25,6 @@ from gpt_index.response.utils import get_response_text
 from gpt_index.utils import temp_set_attrs
 
 RESPONSE_TEXT_TYPE = Union[str, Generator]
-
-logger = logging.getLogger(__name__)
 
 
 class ResponseMode(str, Enum):
@@ -55,23 +54,23 @@ class ResponseBuilder:
         llm_predictor: LLMPredictor,
         text_qa_template: QuestionAnswerPrompt,
         refine_template: RefinePrompt,
+        llama_logger: Optional[LlamaLogger] = None,
         texts: Optional[List[TextChunk]] = None,
         nodes: Optional[List[Node]] = None,
         use_async: bool = False,
         streaming: bool = False,
-        llama_logger: Optional[LlamaLogger] = None,
     ) -> None:
         """Init params."""
         self.prompt_helper = prompt_helper
         self.llm_predictor = llm_predictor
         self.text_qa_template = text_qa_template
         self.refine_template = refine_template
+        self._llama_logger = llama_logger or LlamaLogger()
         self._texts = texts or []
         nodes = nodes or []
         self.source_nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
         self._use_async = use_async
         self._streaming = streaming
-        self._llama_logger = llama_logger or LlamaLogger()
 
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
@@ -96,10 +95,6 @@ class ResponseBuilder:
         """Get sources."""
         return self.source_nodes
 
-    def get_logger(self) -> LlamaLogger:
-        """Get logger."""
-        return self._llama_logger
-
     def refine_response_single(
         self,
         response: RESPONSE_TEXT_TYPE,
@@ -112,7 +107,7 @@ class ResponseBuilder:
             response = get_response_text(response)
 
         fmt_text_chunk = truncate_text(text_chunk, 50)
-        logger.debug(f"> Refine context: {fmt_text_chunk}")
+        logging.debug(f"> Refine context: {fmt_text_chunk}")
         # NOTE: partial format refine template with query_str and existing_answer here
         refine_template = self.refine_template.partial_format(
             query_str=query_str, existing_answer=response
@@ -132,10 +127,7 @@ class ResponseBuilder:
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
-            logger.debug(f"> Refined response: {response}")
-            self._llama_logger.add_log(
-                {"refined_response": response or "Empty Response"}
-            )
+            logging.debug(f"> Refined response: {response}")
         return response
 
     def give_response_single(
@@ -157,10 +149,7 @@ class ResponseBuilder:
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
-                logger.debug(f"> Initial response: {response}")
-                self._llama_logger.add_log(
-                    {"initial_response": response or "Empty Response"}
-                )
+                logging.debug(f"> Initial response: {response}")
             elif response is None and self._streaming:
                 response, _ = self.llm_predictor.stream(
                     text_qa_template,
@@ -299,7 +288,11 @@ class ResponseBuilder:
         index_builder, all_nodes = self._get_tree_index_builder_and_nodes(
             summary_template, query_str, num_children
         )
-        root_nodes = index_builder.build_index_from_nodes(all_nodes, all_nodes)
+        root_node_ids = index_builder.build_index_from_nodes(all_nodes, all_nodes)
+        root_nodes = {
+            index: get_node_from_docstore(index_builder.docstore, node_id)
+            for index, node_id in root_node_ids.items()
+        }
         return self._get_tree_response_over_root_nodes(
             query_str, prev_response, root_nodes, text_qa_template
         )
@@ -317,7 +310,13 @@ class ResponseBuilder:
         index_builder, all_nodes = self._get_tree_index_builder_and_nodes(
             summary_template, query_str, num_children
         )
-        root_nodes = await index_builder.abuild_index_from_nodes(all_nodes, all_nodes)
+        root_node_ids = await index_builder.abuild_index_from_nodes(
+            all_nodes, all_nodes
+        )
+        root_nodes = {
+            index: get_node_from_docstore(index_builder.docstore, node_id)
+            for index, node_id in root_node_ids.items()
+        }
         return self._get_tree_response_over_root_nodes(
             query_str, prev_response, root_nodes, text_qa_template
         )

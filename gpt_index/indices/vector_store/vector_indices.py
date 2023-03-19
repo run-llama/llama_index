@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Optional, Sequence, Type, cast
 
-from gpt_index.data_structs.data_structs import (
+from gpt_index.data_structs.data_structs_v2 import (
     ChromaIndexDict,
     FaissIndexDict,
     IndexDict,

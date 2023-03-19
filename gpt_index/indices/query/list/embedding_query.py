@@ -2,8 +2,10 @@
 import logging
 from typing import Any, List, Optional, Tuple
 
-from gpt_index.data_structs.data_structs import IndexList, Node
+from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.data_structs_v2 import IndexList
 from gpt_index.embeddings.base import BaseEmbedding
+from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.embedding_utils import (
     SimilarityTracker,
     get_top_k_embeddings,
@@ -51,8 +53,9 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        nodes = self.index_struct.nodes
+        node_ids = self.index_struct.nodes
         # top k nodes
+        nodes = get_nodes_from_docstore(self._docstore, node_ids)
         query_embedding, node_embeddings = self._get_embeddings(query_bundle, nodes)
 
         top_similarities, top_idxs = get_top_k_embeddings(
@@ -82,7 +85,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
                 query_bundle.embedding_strs
             )
         node_embeddings: List[List[float]] = []
-        for node in self.index_struct.nodes:
+        for node in nodes:
             if node.embedding is None:
                 node.embedding = self._embed_model.get_text_embedding(node.get_text())
 

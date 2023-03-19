@@ -146,6 +146,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._llm_predictor = llm_predictor or LLMPredictor()
         # NOTE: the embed_model isn't used in all indices
         self._embed_model = embed_model or OpenAIEmbedding()
+        if docstore is None:
+            raise ValueError("docstore must be provided.")
         self._docstore = docstore
         self._query_runner = query_runner
         # TODO: make this a required param

@@ -10,6 +10,7 @@ from gpt_index.indices.keyword_table.utils import (
     rake_extract_keywords,
     simple_extract_keywords,
 )
+from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
@@ -19,7 +20,6 @@ from gpt_index.prompts.default_prompts import (
 )
 from gpt_index.prompts.prompts import KeywordExtractPrompt, QueryKeywordExtractPrompt
 from gpt_index.utils import truncate_text
-from gpt_index.indices.node_utils import get_nodes_from_docstore
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -80,7 +80,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         logger.info(f"query keywords: {keywords}")
 
         # go through text chunks in order of most matching keywords
-        chunk_indices_count: Dict[int, int] = defaultdict(int)
+        chunk_indices_count: Dict[str, int] = defaultdict(int)
         keywords = [k for k in keywords if k in self.index_struct.keywords]
         logger.info(f"> Extracted keywords: {keywords}")
         for k in keywords:
