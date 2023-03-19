@@ -38,5 +38,8 @@ class PromptType(str, Enum):
     # Simple Input prompt
     SIMPLE_INPUT = "simple_input"
 
+    # Pandas prompt
+    PANDAS = "pandas"
+
     # custom (by default)
     CUSTOM = "custom"

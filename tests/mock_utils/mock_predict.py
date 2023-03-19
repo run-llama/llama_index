@@ -84,6 +84,12 @@ def _mock_decompose_query(prompt_args: Dict) -> str:
     return prompt_args["query_str"] + ":" + prompt_args["context_str"]
 
 
+def _mock_pandas(prompt_args: Dict) -> str:
+    """Mock pandas prompt."""
+    query_str = prompt_args["query_str"]
+    return f'df["{query_str}"].iloc[0]'
+
+
 def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
     """Mock predict method of LLMPredictor.
 
@@ -119,6 +125,8 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
             response = _mock_decompose_query(full_prompt_args)
         else:
             raise ValueError("Invalid prompt to use with mocks.")
+    elif prompt.prompt_type == PromptType.PANDAS:
+        response = _mock_pandas(full_prompt_args)
     else:
         raise ValueError("Invalid prompt to use with mocks.")
 
