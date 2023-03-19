@@ -7,6 +7,7 @@ import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
+from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.readers.schema.base import Document
@@ -92,7 +93,8 @@ def test_build_kg(
     """Test build knowledge graph."""
     index = GPTKnowledgeGraphIndex(documents)
     # NOTE: in these unit tests, document text == triplets
-    table_chunks = {n.text for n in index.index_struct.text_chunks.values()}
+    nodes = get_nodes_from_docstore(index.docstore, list(index.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 3
     assert "(foo, is, bar)" in table_chunks
     assert "(hello, is not, world)" in table_chunks

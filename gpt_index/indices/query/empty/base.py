@@ -1,7 +1,7 @@
 """Default query for GPTEmptyIndex."""
 from typing import Any, Optional
 
-from gpt_index.data_structs.data_structs import EmptyIndex
+from gpt_index.data_structs.data_structs_v2 import EmptyIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT

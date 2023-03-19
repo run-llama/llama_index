@@ -8,7 +8,7 @@ import random
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -17,20 +17,22 @@ from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.schema import BaseDocument
 
+# OIS = TypeVar("IS", bound=IndexStruct)
+
 
 @dataclass
-class V2IndexStruct(BaseDocument, DataClassJsonMixin):
+class V2IndexStruct(IndexStruct, DataClassJsonMixin):
     """A base data struct for a LlamaIndex."""
 
-    # @abstractmethod
-    @classmethod
-    def from_v0_struct(cls, v0_struct: IndexStruct) -> "V2IndexStruct":
-        """Convert from v0 struct."""
-        raise NotImplementedError()
+    # # @abstractmethod
+    # @classmethod
+    # def from_v0_struct(cls, v0_struct: OIS) -> "V2IndexStruct":
+    #     """Convert from v0 struct."""
+    #     raise NotImplementedError()
 
 
 @dataclass
-class IndexGraph(IndexStruct):
+class IndexGraph(V2IndexStruct):
     """A graph representing the tree-structured index."""
 
     # mapping from index in tree to Node doc id.
@@ -67,17 +69,17 @@ class IndexGraph(IndexStruct):
         """Get type."""
         return "tree"
 
-    @classmethod
-    def from_v0_struct(cls, v0_struct: V0IndexGraph) -> "IndexGraph":
-        """Convert from old struct."""
-        return IndexGraph(
-            all_nodes={i: n.get_doc_id() for i, n in v0_struct.all_nodes.items()},
-            root_nodes={i: n.get_doc_id() for i, n in v0_struct.root_nodes.items()},
-        )
+    # @classmethod
+    # def from_v0_struct(cls, v0_struct: V0IndexGraph) -> "IndexGraph":
+    #     """Convert from old struct."""
+    #     return IndexGraph(
+    #         all_nodes={i: n.get_doc_id() for i, n in v0_struct.all_nodes.items()},
+    #         root_nodes={i: n.get_doc_id() for i, n in v0_struct.root_nodes.items()},
+    #     )
 
 
 @dataclass
-class KeywordTable(IndexStruct):
+class KeywordTable(V2IndexStruct):
     """A table of keywords mapping keywords to text chunks."""
 
     table: Dict[str, Set[str]] = field(default_factory=dict)
@@ -111,7 +113,7 @@ class KeywordTable(IndexStruct):
 
 
 @dataclass
-class IndexList(IndexStruct):
+class IndexList(V2IndexStruct):
     """A list of documents."""
 
     nodes: List[str] = field(default_factory=list)
@@ -128,7 +130,7 @@ class IndexList(IndexStruct):
 
 
 @dataclass
-class IndexDict(IndexStruct):
+class IndexDict(V2IndexStruct):
     """A simple dictionary of documents."""
 
     # nodes_dict: Dict[int, Node] = field(default_factory=dict)
@@ -225,7 +227,7 @@ class IndexDict(IndexStruct):
 
 
 @dataclass
-class KG(IndexStruct):
+class KG(V2IndexStruct):
     """A table of keywords mapping keywords to text chunks."""
 
     # Unidirectional
@@ -234,6 +236,11 @@ class KG(IndexStruct):
     # text_chunks: Dict[str, Node] = field(default_factory=dict)
     rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
+
+    @property
+    def node_ids(self) -> Set[str]:
+        """Get all node ids."""
+        return set.union(*self.table.values())
 
     def add_to_embedding_dict(self, triplet_str: str, embedding: List[float]) -> None:
         """Add embedding to dict."""
@@ -363,7 +370,7 @@ class OpensearchIndexDict(IndexDict):
         return IndexStructType.OPENSEARCH
 
 
-class EmptyIndex(IndexStruct):
+class EmptyIndex(IndexDict):
     """Empty index."""
 
     @classmethod

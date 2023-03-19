@@ -3,7 +3,7 @@
 import re
 from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar
 
-from gpt_index.data_structs.table import BaseStructTable
+from gpt_index.data_structs.table_v2 import BaseStructTable
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TextSplitter

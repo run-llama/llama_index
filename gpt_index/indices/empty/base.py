@@ -7,7 +7,7 @@ pure LLM calls.
 
 from typing import Any, Dict, Optional, Sequence, Type
 
-from gpt_index.data_structs.data_structs import EmptyIndex
+from gpt_index.data_structs.data_structs_v2 import EmptyIndex
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.empty.base import GPTEmptyIndexQuery

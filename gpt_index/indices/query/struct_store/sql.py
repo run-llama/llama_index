@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Optional
 
-from gpt_index.data_structs.table import SQLStructTable
+from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle, QueryMode

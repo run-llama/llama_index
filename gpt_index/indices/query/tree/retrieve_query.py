@@ -2,7 +2,12 @@
 import logging
 from typing import List, Optional
 
-from gpt_index.data_structs.data_structs import IndexGraph, Node
+from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.data_structs_v2 import IndexGraph
+from gpt_index.indices.node_utils import (
+    get_node_dict_from_docstore,
+    get_nodes_from_docstore,
+)
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
@@ -37,7 +42,10 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
     ) -> List[Node]:
         """Get nodes for response."""
         logger.info(f"> Starting query: {query_bundle.query_str}")
-        node_list = get_sorted_node_list(self.index_struct.root_nodes)
+        root_nodes = get_node_dict_from_docstore(
+            self._docstore, self.index_struct.root_nodes
+        )
+        node_list = get_sorted_node_list(root_nodes)
         text_qa_template = self.text_qa_template.partial_format(
             query_str=query_bundle.query_str
         )

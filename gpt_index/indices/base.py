@@ -15,7 +15,8 @@ from typing import (
     cast,
 )
 
-from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.docstore import DOC_TYPE, DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
@@ -34,7 +35,7 @@ from gpt_index.response.schema import Response
 from gpt_index.schema import BaseDocument
 from gpt_index.token_counter.token_counter import llm_token_counter
 
-IS = TypeVar("IS", bound=IndexStruct)
+IS = TypeVar("IS", bound=V2IndexStruct)
 
 DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
 

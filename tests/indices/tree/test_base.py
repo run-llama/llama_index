@@ -7,6 +7,7 @@ import pytest
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.node_utils import (
     get_node_dict_from_docstore,
     get_node_from_docstore,
@@ -63,7 +64,10 @@ def documents() -> List[Document]:
 
 
 def _get_left_or_right_node(
-    index_graph: IndexGraph, node: Optional[Node], left: bool = True
+    docstore: DocumentStore,
+    index_graph: IndexGraph,
+    node: Optional[Node],
+    left: bool = True,
 ) -> Node:
     """Get 'left' or 'right' node."""
     if node is None:
@@ -75,7 +79,8 @@ def _get_left_or_right_node(
 
     if index not in index_graph.all_nodes:
         raise ValueError(f"Node {index} not in index_graph.all_nodes")
-    return index_graph.all_nodes[index]
+    node_id = index_graph.all_nodes[index]
+    return get_node_from_docstore(docstore, node_id)
 
 
 @patch_common
@@ -281,14 +286,18 @@ def test_insert(
     # of the left root node.
     # "This is a test", "This is a new doc." are the children of
     # "This is a test\n.This is a new doc."
-    left_root = _get_left_or_right_node(tree.index_struct, None)
+    left_root = _get_left_or_right_node(tree.docstore, tree.index_struct, None)
     assert left_root.text == "Hello world.\nThis is a test.\nThis is a new doc."
-    left_root2 = _get_left_or_right_node(tree.index_struct, left_root)
-    right_root2 = _get_left_or_right_node(tree.index_struct, left_root, left=False)
+    left_root2 = _get_left_or_right_node(tree.docstore, tree.index_struct, left_root)
+    right_root2 = _get_left_or_right_node(
+        tree.docstore, tree.index_struct, left_root, left=False
+    )
     assert left_root2.text == "Hello world."
     assert right_root2.text == "This is a test.\nThis is a new doc."
-    left_root3 = _get_left_or_right_node(tree.index_struct, right_root2)
-    right_root3 = _get_left_or_right_node(tree.index_struct, right_root2, left=False)
+    left_root3 = _get_left_or_right_node(tree.docstore, tree.index_struct, right_root2)
+    right_root3 = _get_left_or_right_node(
+        tree.docstore, tree.index_struct, right_root2, left=False
+    )
     assert left_root3.text == "This is a test."
     assert right_root3.text == "This is a new doc."
     assert right_root3.ref_doc_id == "new_doc"
