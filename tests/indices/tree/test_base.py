@@ -99,6 +99,9 @@ def test_build_tree(
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
 
+    print(tree.docstore.docs)
+    print(len(tree.docstore.docs))
+    print(tree.index_struct.all_nodes)
     nodes = get_nodes_from_docstore(
         tree.docstore, list(tree.index_struct.all_nodes.values())
     )

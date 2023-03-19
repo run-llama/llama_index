@@ -53,6 +53,14 @@ class GPTTreeIndexBuilder:
         self._text_splitter = text_splitter
         self._use_async = use_async
         self._docstore = docstore or DocumentStore()
+        # print("prepre init docstore: ", docstore)
+        # if docstore is None:
+        #     print("wtf")
+        # self._docstore = docstore or DocumentStore()
+        # if docstore != self._docstore:
+        #     print("wtf2")
+
+        print("pre init docstore: ", self._docstore)
         self._llama_logger = llama_logger or LlamaLogger()
 
     @property
@@ -112,6 +120,7 @@ class GPTTreeIndexBuilder:
         else:
             # if build_tree is False, then don't surface any root nodes
             root_nodes = {}
+        print("current docstore0", self._docstore)
         return IndexGraph(all_nodes=all_nodes, root_nodes=root_nodes)
 
     def _prepare_node_and_text_chunks(
