@@ -46,18 +46,20 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
             num_output=llm.max_tokens,
         )
     elif isinstance(llm, ChatOpenAI):
-        if llm.model_name == 'gpt-4':
+        # TODO: remove hardcoded context size once available via langchain.
+        if llm.model_name == "gpt-4":
             return LLMMetadata(
-                max_input_size=GPT4_CONTEXT_SIZE,
-                num_output=llm.max_tokens
+                max_input_size=GPT4_CONTEXT_SIZE, num_output=llm.max_tokens
             )
-        elif llm.model_name == 'gpt-4-32k':
+        elif llm.model_name == "gpt-4-32k":
             return LLMMetadata(
-                max_input_size=GPT4_32K_CONTEXT_SIZE,
-                num_output=llm.max_tokens
+                max_input_size=GPT4_32K_CONTEXT_SIZE, num_output=llm.max_tokens
             )
         else:
-            raise NotImplementedError(f'Not yet implemented for {llm.model_name}')
+            logger.warn(
+                "Unknown max input size for %s, using defaults.", llm.model_name
+            )
+            return LLMMetadata()
     elif isinstance(llm, Cohere):
         # TODO: figure out max input size for cohere
         return LLMMetadata(num_output=llm.max_tokens)
