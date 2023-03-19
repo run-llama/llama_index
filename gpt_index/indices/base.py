@@ -20,8 +20,6 @@ from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.node_parser.interface import NodeParser
-from gpt_index.indices.node_parser.simple import SimpleNodeParser
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
@@ -30,6 +28,8 @@ from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.logger import LlamaLogger
+from gpt_index.node_parser.interface import NodeParser
+from gpt_index.node_parser.simple import SimpleNodeParser
 from gpt_index.readers.schema.base import Document
 from gpt_index.response.schema import Response
 from gpt_index.schema import BaseDocument
