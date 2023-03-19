@@ -106,12 +106,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         # by default just call sync version
         return self._extract_keywords(text)
 
-    def _build_fallback_text_splitter(self) -> TextSplitter:
-        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
-        return self._prompt_helper.get_text_splitter_given_prompt(
-            self.keyword_extract_template, 1
-        )
-
     def _add_nodes_to_index(
         self, index_struct: KeywordTable, nodes: Sequence[Node]
     ) -> None:

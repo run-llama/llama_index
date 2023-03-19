@@ -149,12 +149,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             )
         return result_tups
 
-    def _build_fallback_text_splitter(self) -> TextSplitter:
-        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
-        return self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
-        )
-
     async def _async_add_nodes_to_index(
         self,
         index_struct: IndexDict,

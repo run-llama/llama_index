@@ -61,11 +61,6 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
             **kwargs,
         )
 
-    def _build_fallback_text_splitter(self) -> TextSplitter:
-        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
-        return self._prompt_helper.get_text_splitter_given_prompt(
-            self.schema_extract_prompt, 1
-        )
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

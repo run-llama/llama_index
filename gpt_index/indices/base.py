@@ -73,7 +73,6 @@ class BaseGPTIndex(Generic[IS]):
         docstore: Optional[DocumentStore] = None,
         index_registry: Optional[IndexRegistry] = None,
         prompt_helper: Optional[PromptHelper] = None,
-        text_splitter: Optional[TextSplitter] = None,
         chunk_size_limit: Optional[int] = None,
         include_extra_info: bool = True,
         llama_logger: Optional[LlamaLogger] = None,
@@ -93,24 +92,17 @@ class BaseGPTIndex(Generic[IS]):
         self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
             self._llm_predictor, chunk_size_limit=chunk_size_limit
         )
-        self._text_splitter = text_splitter or self._build_fallback_text_splitter()
 
-        # build index struct in the init function
         self._docstore = docstore or DocumentStore()
         self._index_registry = index_registry or IndexRegistry()
-
         self._llama_logger = llama_logger or LlamaLogger()
 
-        if index_struct is not None:
-            if not isinstance(index_struct, self.index_struct_cls):
-                raise ValueError(
-                    f"index_struct must be of type {self.index_struct_cls}"
-                )
-            self._index_struct = index_struct
-        else:
-            # TODO: introduce document store outside __init__ function
-            self._index_struct = self.build_index_from_nodes(nodes)
-
+        self._index_struct = index_struct or self.build_index_from_nodes(nodes)
+        if not isinstance(index_struct, self.index_struct_cls):
+            raise ValueError(
+                f"index_struct must be of type {self.index_struct_cls}"
+            )
+        self._index_struct = index_struct
         # update index registry and docstore with index_struct
         self._update_index_registry_and_docstore()
 
@@ -302,10 +294,6 @@ class BaseGPTIndex(Generic[IS]):
         if self._index_struct.doc_id is None:
             raise ValueError("Index must have doc_id property set.")
         return self._index_struct.doc_id
-
-    def _build_fallback_text_splitter(self) -> TextSplitter:
-        """Build the text splitter if not specified in args."""
-        return TokenTextSplitter()
 
     @abstractmethod
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
