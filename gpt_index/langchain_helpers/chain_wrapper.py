@@ -6,6 +6,7 @@ from typing import Any, Generator, Optional, Tuple
 
 import openai
 from langchain import Cohere, LLMChain, OpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.llms import AI21
 from langchain.schema import BaseLanguageModel
 
@@ -18,6 +19,9 @@ from gpt_index.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+GPT4_CONTEXT_SIZE = 8192
+GPT4_32K_CONTEXT_SIZE = 32768
 
 
 @dataclass
@@ -41,6 +45,21 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
             max_input_size=llm.modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens,
         )
+    elif isinstance(llm, ChatOpenAI):
+        # TODO: remove hardcoded context size once available via langchain.
+        if llm.model_name == "gpt-4":
+            return LLMMetadata(
+                max_input_size=GPT4_CONTEXT_SIZE, num_output=llm.max_tokens
+            )
+        elif llm.model_name == "gpt-4-32k":
+            return LLMMetadata(
+                max_input_size=GPT4_32K_CONTEXT_SIZE, num_output=llm.max_tokens
+            )
+        else:
+            logger.warn(
+                "Unknown max input size for %s, using defaults.", llm.model_name
+            )
+            return LLMMetadata()
     elif isinstance(llm, Cohere):
         # TODO: figure out max input size for cohere
         return LLMMetadata(num_output=llm.max_tokens)
