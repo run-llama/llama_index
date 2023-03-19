@@ -13,12 +13,11 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
-from gpt_index.docstore import DOC_TYPE, DocumentStore
+from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.node_parser.interface import NodeParser
@@ -111,8 +110,15 @@ class BaseGPTIndex(Generic[IS]):
     def from_documents(
         cls, 
         documents: Sequence[Document], 
-        node_parser: Optional[NodeParser] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         docstore: Optional[DocumentStore] = None,
+        index_registry: Optional[IndexRegistry] = None,
+        prompt_helper: Optional[PromptHelper] = None,
+        node_parser: Optional[NodeParser] = None,
+        chunk_size_limit: Optional[int] = None,
+        include_extra_info: bool = True,
+        llama_logger: Optional[LlamaLogger] = None,
     ) -> "BaseGPTIndex":
         # TODO: parse documents to nodes
         node_parser: NodeParser = node_parser or SimpleNodeParser()
@@ -131,31 +137,25 @@ class BaseGPTIndex(Generic[IS]):
         nodes = node_parser.get_nodes_from_documents(documents)
         docstore.add_documents(nodes)
 
-        return cls.from_nodes(nodes=nodes, docstore=docstore, node_parser=node_parser)
+        return cls(
+            nodes=nodes, 
+            llm_predictor=llm_predictor,
+            embed_model=embed_model,
+            index_registry=index_registry,
+            prompt_helper=prompt_helper,
+            docstore=docstore, 
+            node_parser=node_parser,
+            chunk_size_limit=chunk_size_limit,
+            include_extra_info=include_extra_info,
+            llama_logger=llama_logger,
+        )
 
 
-    @classmethod
-    def from_nodes(cls, 
-        nodes: Sequence[Node],
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        docstore: Optional[DocumentStore] = None,
-        index_registry: Optional[IndexRegistry] = None,
-        prompt_helper: Optional[PromptHelper] = None,
-        node_parser: Optional[NodeParser]=None,
-        chunk_size_limit: Optional[int] = None,
-        include_extra_info: bool = True,
-        llama_logger: Optional[LlamaLogger] = None,
-    ) -> "BaseGPTIndex":
-        """Alternative ctor to build index on collection of Nodes that are already parsed."""
-        # TODO: build index from nodes
-        return cls(nodes, node_parse=node_parser)
-    
     @classmethod
     def from_indices(
         cls,
         indices: Sequence["BaseGPTIndex"],
-    )
+    ) -> "BaseGPTIndex":
         # TODO: figure out how this impacts composability
         pass
 
