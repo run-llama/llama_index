@@ -4,6 +4,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.table import StructDatapoint
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
@@ -180,9 +181,9 @@ class BaseStructDatapointExtractor:
     def _get_schema_text(self) -> str:
         """Get schema text for extracting relevant info from unstructured text."""
 
-    def insert_datapoint_from_document(self, document: BaseDocument) -> None:
+    def insert_datapoint_from_nodes(self, nodes: Sequence[Node]) -> None:
         """Extract datapoint from a document and insert it."""
-        text_chunks = self._text_splitter.split_text(document.get_text())
+        text_chunks = [node.get_text() for node in nodes]
         fields = {}
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)
