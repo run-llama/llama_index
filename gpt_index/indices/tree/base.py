@@ -2,6 +2,8 @@
 
 from typing import Any, Dict, Optional, Sequence, Type
 
+from gpt_index.data_structs.data_structs import Node
+
 # from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
@@ -109,8 +111,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         super()._preprocess_query(mode, query_kwargs)
         self._validate_build_tree_required(mode)
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
+    def _build_index_from_nodes(
+        self, nodes: Sequence[Node]
     ) -> IndexGraph:
         """Build the index from documents."""
         print("0 docstore", self._docstore)
@@ -126,7 +128,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             docstore=self._docstore,
         )
         index_graph = index_builder.build_from_text(
-            documents, build_tree=self.build_tree
+            nodes, build_tree=self.build_tree
         )
         print("current docstore", self._docstore)
         print("tree builder docstore", index_builder.docstore)

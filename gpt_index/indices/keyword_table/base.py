@@ -12,6 +12,7 @@ from abc import abstractmethod
 from typing import Any, Dict, Optional, Sequence, Set, Type
 
 from gpt_index.async_utils import run_async_tasks
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import KeywordTable
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
@@ -111,41 +112,37 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             self.keyword_extract_template, 1
         )
 
-    def _add_document_to_index(
-        self, index_struct: KeywordTable, document: BaseDocument
+    def _add_nodes_to_index(
+        self, index_struct: KeywordTable, nodes: Sequence[Node]
     ) -> None:
         """Add document to index."""
-        nodes = self._get_nodes_from_document(document)
         for n in nodes:
             keywords = self._extract_keywords(n.get_text())
             index_struct.add_node(list(keywords), n)
             self._docstore.add_documents([n])
 
-    async def _async_add_document_to_index(
-        self, index_struct: KeywordTable, document: BaseDocument
+    async def _async_add_nodes_to_index(
+        self, index_struct: KeywordTable, nodes: Sequence[Node]
     ) -> None:
         """Add document to index."""
-        nodes = self._get_nodes_from_document(document)
         for n in nodes:
             keywords = await self._async_extract_keywords(n.get_text())
             index_struct.add_node(list(keywords), n)
             self._docstore.add_documents([n])
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
+    def _build_index_from_nodes(
+        self, nodes: Sequence[Node]
     ) -> KeywordTable:
         """Build the index from documents."""
         # do simple concatenation
         index_struct = KeywordTable(table={})
-        for d in documents:
-            if self._use_async:
-                tasks = [
-                    self._async_add_document_to_index(index_struct, d)
-                    for d in documents
-                ]
-                run_async_tasks(tasks)
-            else:
-                self._add_document_to_index(index_struct, d)
+        if self._use_async:
+            tasks = [
+                self._async_add_nodes_to_index(index_struct, nodes)
+            ]
+            run_async_tasks(tasks)
+        else:
+            self._add_nodes_to_index(index_struct, nodes)
 
         return index_struct
 

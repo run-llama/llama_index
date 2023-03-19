@@ -85,31 +85,3 @@ def get_nodes_from_document(
         nodes.append(node)
     return nodes
 
-
-def get_nodes_from_docstore(
-    docstore: DocumentStore, node_ids: List[str], raise_error: bool = True
-) -> List[Node]:
-    """Get nodes from docstore."""
-
-    nodes = []
-    for node_id in node_ids:
-        doc = docstore.get_document(node_id, raise_error=raise_error)
-        if not isinstance(doc, Node):
-            raise ValueError(f"Document {node_id} is not a Node.")
-        nodes.append(doc)
-    return nodes
-
-
-def get_node_from_docstore(docstore: DocumentStore, node_id: str) -> Node:
-    """Get node from docstore."""
-    return get_nodes_from_docstore(docstore, [node_id])[0]
-
-
-def get_node_dict_from_docstore(
-    docstore: DocumentStore, node_id_dict: Dict[int, str]
-) -> Dict[int, Node]:
-    """Get node dict from docstore given a mapping of index to node ids."""
-    return {
-        index: get_node_from_docstore(docstore, node_id)
-        for index, node_id in node_id_dict.items()
-    }

@@ -7,6 +7,7 @@ pure LLM calls.
 
 from typing import Any, Dict, Optional, Sequence, Type
 
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import EmptyIndex
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -53,8 +54,8 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
             QueryMode.DEFAULT: GPTEmptyIndexQuery,
         }
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
+    def _build_index_from_nodes(
+        self, nodes: Sequence[Node]
     ) -> EmptyIndex:
         """Build the index from documents.
 

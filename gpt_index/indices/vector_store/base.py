@@ -113,7 +113,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         return result_tups
 
     async def _aget_node_embedding_results(
-        self, nodes: List[Node], existing_node_ids: Set, doc_id: str
+        self, nodes: List[Node], existing_node_ids: Set,
     ) -> List[NodeEmbeddingResult]:
         """Asynchronously get tuples of id, node, and embedding.
 
@@ -145,7 +145,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         result_tups = []
         for id, embed in id_to_embed_map.items():
             result_tups.append(
-                NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
+                NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=id_to_node_map[id].ref_doc_id)
             )
         return result_tups
 
@@ -155,15 +155,14 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             self.text_qa_template, 1
         )
 
-    async def _async_add_document_to_index(
+    async def _async_add_nodes_to_index(
         self,
         index_struct: IndexDict,
-        document: BaseDocument,
+        nodes: Sequence[Node]
     ) -> None:
         """Asynchronously add document to index."""
-        nodes = self._get_nodes_from_document(document)
         embedding_results = await self._aget_node_embedding_results(
-            nodes, set(), document.get_doc_id()
+            nodes, set(),
         )
 
         new_ids = self._vector_store.add(embedding_results)
@@ -195,14 +194,14 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
                 index_struct.add_node(result.node, text_id=new_id)
                 self._docstore.add_documents([result.node])
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
+    def _build_index_from_nodes(
+        self, documents: Sequence[Node]
     ) -> IndexDict:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
         if self._use_async:
             tasks = [
-                self._async_add_document_to_index(index_struct, d) for d in documents
+                self._async_add_nodes_to_index(index_struct, d) for d in documents
             ]
             run_async_tasks(tasks)
         else:

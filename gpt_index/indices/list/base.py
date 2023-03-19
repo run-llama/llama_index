@@ -7,6 +7,7 @@ in sequence in order to answer a given query.
 
 from typing import Any, Dict, Optional, Sequence, Type
 
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexList
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.node_utils import get_nodes_from_docstore
@@ -77,8 +78,8 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             self.text_qa_template, 1
         )
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
+    def _build_index_from_nodes(
+        self, nodes: Sequence[Node]
     ) -> IndexList:
         """Build the index from documents.
 
@@ -89,11 +90,9 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             IndexList: The created list index.
         """
         index_struct = IndexList()
-        for d in documents:
-            nodes = self._get_nodes_from_document(d)
-            for n in nodes:
-                index_struct.add_node(n)
-                self._docstore.add_documents([n])
+        for n in nodes:
+            index_struct.add_node(n)
+            self._docstore.add_documents([n])
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:

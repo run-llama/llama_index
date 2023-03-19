@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Sequence, Type
 
 from sqlalchemy import Table
 
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
@@ -91,12 +92,12 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             sql_context_container = container_builder.build_context_container()
         self.sql_context_container = sql_context_container
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
+    def _build_index_from_nodes(
+        self, nodes: Sequence[Node]
     ) -> SQLStructTable:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
-        if len(documents) == 0:
+        if len(nodes) == 0:
             return index_struct
         else:
             data_extractor = SQLStructDatapointExtractor(
@@ -109,8 +110,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
                 table=self._table,
                 ref_doc_id_column=self._ref_doc_id_column,
             )
-            for d in documents:
-                data_extractor.insert_datapoint_from_document(d)
+            data_extractor.insert_datapoint_from_nodes(nodes)
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:

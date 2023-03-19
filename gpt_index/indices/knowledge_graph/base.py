@@ -11,6 +11,7 @@ existing keywords in the table.
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import KG
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -110,31 +111,29 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             self.kg_triple_extract_template, 1
         )
 
-    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> KG:
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> KG:
         """Build the index from documents."""
         # do simple concatenation
         index_struct = KG(table={})
-        for d in documents:
-            nodes = self._get_nodes_from_document(d)
-            for n in nodes:
-                # set doc id
-                node_id = get_new_id(set())
-                n.doc_id = node_id
+        for n in nodes:
+            # set doc id
+            node_id = get_new_id(set())
+            n.doc_id = node_id
 
-                triplets = self._extract_triplets(n.get_text())
-                logger.debug(f"> Extracted triplets: {triplets}")
-                for triplet in triplets:
-                    index_struct.upsert_triplet(triplet, n)
+            triplets = self._extract_triplets(n.get_text())
+            logger.debug(f"> Extracted triplets: {triplets}")
+            for triplet in triplets:
+                index_struct.upsert_triplet(triplet, n)
 
-                if self.include_embeddings:
-                    for i, triplet in enumerate(triplets):
-                        self._embed_model.queue_text_for_embeddding(
-                            str(triplet), str(triplet)
-                        )
+            if self.include_embeddings:
+                for i, triplet in enumerate(triplets):
+                    self._embed_model.queue_text_for_embeddding(
+                        str(triplet), str(triplet)
+                    )
 
-                    embed_outputs = self._embed_model.get_queued_text_embeddings()
-                    for rel_text, rel_embed in zip(*embed_outputs):
-                        index_struct.add_to_embedding_dict(rel_text, rel_embed)
+                embed_outputs = self._embed_model.get_queued_text_embeddings()
+                for rel_text, rel_embed in zip(*embed_outputs):
+                    index_struct.add_to_embedding_dict(rel_text, rel_embed)
 
         return index_struct
 
