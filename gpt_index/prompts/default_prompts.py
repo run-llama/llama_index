@@ -3,6 +3,7 @@
 from gpt_index.prompts.prompts import (
     KeywordExtractPrompt,
     KnowledgeGraphPrompt,
+    PandasPrompt,
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,
     RefinePrompt,
@@ -294,3 +295,22 @@ DEFAULT_HYDE_PROMPT = SummaryPrompt(HYDE_TMPL)
 
 DEFAULT_SIMPLE_INPUT_TMPL = "{query_str}"
 DEFAULT_SIMPLE_INPUT_PROMPT = SimpleInputPrompt(DEFAULT_SIMPLE_INPUT_TMPL)
+
+
+############################################
+# Pandas
+############################################
+
+DEFAULT_PANDAS_TMPL = (
+    "You are working with a pandas dataframe in Python.\n"
+    "The name of the dataframe is `df`.\n"
+    "This is the result of `print(df.head())`:\n"
+    "{df_str}\n\n"
+    "Here is the input query: {query_str}.\n"
+    "Given the df information and the input query, please follow "
+    "these instructions:\n"
+    "{instruction_str}"
+    "Output:\n"
+)
+
+DEFAULT_PANDAS_PROMPT = PandasPrompt(DEFAULT_PANDAS_TMPL)
