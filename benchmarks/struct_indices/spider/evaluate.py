@@ -95,6 +95,8 @@ def _get_answers(
         try:
             resp = indexes[db_name].query(sql_query, mode="sql")
             result["sql_result"] = resp.response
+            if resp.response is None:
+                result["answer"] = ""
             result["answer"] = _answer(llm, question, sql_query, resp.response)
         except Exception as e:
             print(f"Error encountered when answering question ({question}): {e}")
@@ -201,10 +203,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Create the LlamaIndexes for all databases.
-    if args.model in ["gpt-3.5-turbo", "gpt-4"]:
-        llm = ChatOpenAI(model=args.model, temperature=0)
-    else:
-        llm = OpenAI(model=args.model, temperature=0)
+    llm = ChatOpenAI(model=args.model, temperature=0)
 
     # Load all examples.
     train, dev = load_examples(args.spider_dir)
@@ -232,7 +231,7 @@ if __name__ == "__main__":
             dev_dbs.append(line[1])
 
     # Create Llama indexes on the databases.
-    indexes = create_indexes(spider_dir=args.spider_dir, llm=llm, temperature=0.0)
+    indexes = create_indexes(spider_dir=args.spider_dir, llm=llm)
 
     # Run SQL queries on the indexes and get NL answers.
     train_pred_results = _get_answers(

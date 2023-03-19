@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Tuple
+from typing import Dict, Tuple, Union
 
 from langchain import OpenAI
 from langchain.chat_models import ChatOpenAI
@@ -19,7 +19,9 @@ def load_examples(spider_dir: str) -> Tuple[list, list]:
     return train_spider + train_others, dev
 
 
-def create_indexes(spider_dir: str, llm: ChatOpenAI, temperature: float = 0.0):
+def create_indexes(
+    spider_dir: str, llm: Union[ChatOpenAI, OpenAI]
+) -> Dict[GPTSQLStructStoreIndex]:
     # Create all necessary SQL database objects.
     databases = {}
     for db_name in os.listdir(os.path.join(spider_dir, "database")):
