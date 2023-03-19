@@ -13,6 +13,7 @@ from gpt_index.prompts.prompts import (
     TextToSQLPrompt,
     TreeInsertPrompt,
     TreeSelectPrompt,
+    PandasPrompt,
 )
 
 MOCK_SUMMARY_PROMPT_TMPL = "{context_str}\n"
@@ -61,3 +62,6 @@ MOCK_KG_TRIPLET_EXTRACT_PROMPT = KnowledgeGraphPrompt(
 
 MOCK_INPUT_PROMPT_TMPL = "{query_str}"
 MOCK_INPUT_PROMPT = SimpleInputPrompt(MOCK_INPUT_PROMPT_TMPL)
+
+MOCK_PANDAS_PROMPT_TMPL = "{query_str}\n{df_str}\n{instruction_str}"
+MOCK_PANDAS_PROMPT = PandasPrompt(MOCK_PANDAS_PROMPT_TMPL)
