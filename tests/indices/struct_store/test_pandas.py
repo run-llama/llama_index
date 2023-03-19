@@ -1,22 +1,20 @@
 """Test pandas index."""
 
-import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Tuple, cast
 
+import pandas as pd
 import pytest
+
 from gpt_index.indices.struct_store.pandas import GPTPandasIndex
-from gpt_index.readers.schema.base import Document
-from gpt_index.schema import BaseDocument
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_PANDAS_PROMPT
-import pandas as pd
 
 
 @pytest.fixture
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
     # NOTE: QuestionAnswer and Refine templates aren't technically used
-    index_kwargs = {}
+    index_kwargs: Dict[str, Any] = {}
     query_kwargs = {
         "pandas_prompt": MOCK_PANDAS_PROMPT,
     }
@@ -43,5 +41,11 @@ def test_pandas_index(
     index = GPTPandasIndex(df=df)
     # the mock prompt just takes the first item in the given column
     response = index.query("population", verbose=True)
-    assert response.response == "2930000"
-    assert response.extra_info["pandas_instruction_str"] == ('df["population"].iloc[0]')
+    import sys
+
+    if sys.version_info < (3, 9):
+        assert response.response == 'df["population"].iloc[0]'
+    else:
+        assert response.response == "2930000"
+    extra_info = cast(Dict[str, Any], response.extra_info)
+    assert extra_info["pandas_instruction_str"] == ('df["population"].iloc[0]')

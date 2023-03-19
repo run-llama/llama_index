@@ -3,6 +3,7 @@
 from gpt_index.prompts.prompts import (
     KeywordExtractPrompt,
     KnowledgeGraphPrompt,
+    PandasPrompt,
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,
     RefinePrompt,
@@ -13,7 +14,6 @@ from gpt_index.prompts.prompts import (
     TextToSQLPrompt,
     TreeInsertPrompt,
     TreeSelectPrompt,
-    PandasPrompt,
 )
 
 MOCK_SUMMARY_PROMPT_TMPL = "{context_str}\n"

@@ -83,10 +83,11 @@ def _mock_decompose_query(prompt_args: Dict) -> str:
     """Mock decompose query."""
     return prompt_args["query_str"] + ":" + prompt_args["context_str"]
 
+
 def _mock_pandas(prompt_args: Dict) -> str:
     """Mock pandas prompt."""
     query_str = prompt_args["query_str"]
-    return f"df[\"{query_str}\"].iloc[0]"
+    return f'df["{query_str}"].iloc[0]'
 
 
 def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:

@@ -33,10 +33,13 @@ def default_output_processor(
     import traceback
 
     if sys.version_info < (3, 9):
-        raise ValueError(
+        logger.warn(
             "Python version must be >= 3.9 in order to use "
-            "the default output processor."
+            "the default output processor, which executes "
+            "the Python query. Instead, we will return the "
+            "raw Python instructions as a string."
         )
+        return output
 
     local_vars = {"df": df}
 
