@@ -8,18 +8,12 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.docstore import DocumentStore
-from gpt_index.indices.node_utils import (
-    get_node_from_docstore,
-    get_text_splits_from_document,
-)
+from gpt_index.docstore import DocumentStore, get_node_from_docstore
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import SummaryPrompt
-from gpt_index.schema import BaseDocument
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +32,6 @@ class GPTTreeIndexBuilder:
         summary_prompt: SummaryPrompt,
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
-        text_splitter: TextSplitter,
         docstore: Optional[DocumentStore] = None,
         use_async: bool = False,
         llama_logger: Optional[LlamaLogger] = None,
@@ -50,7 +43,6 @@ class GPTTreeIndexBuilder:
         self.summary_prompt = summary_prompt
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
-        self._text_splitter = text_splitter
         self._use_async = use_async
         self._docstore = docstore or DocumentStore()
         # print("prepre init docstore: ", docstore)
@@ -68,40 +60,9 @@ class GPTTreeIndexBuilder:
         """Return docstore."""
         return self._docstore
 
-    def register_leaf_nodes(self, all_nodes: List[Node]) -> None:
-        """Register leaf nodes."""
-        for node in all_nodes:
-            self._docstore.add_documents([node])
-
-    def _create_nodes_from_document(
-        self, start_idx: int, document: BaseDocument
-    ) -> Dict[int, str]:
-        """Add document to index."""
-        # NOTE: summary prompt does not need to be partially formatted
-        text_splits = get_text_splits_from_document(
-            document=document, text_splitter=self._text_splitter
-        )
-        text_chunks = [text_split.text_chunk for text_split in text_splits]
-
-        doc_node_ids = {}
-        created_nodes = []
-        for i, t in enumerate(text_chunks):
-            node = Node(
-                text=t,
-                index=(start_idx + i),
-                ref_doc_id=document.get_doc_id(),
-                embedding=document.embedding,
-                extra_info=document.extra_info,
-            )
-            created_nodes.append(node)
-            doc_node_ids[(start_idx + i)] = node.get_doc_id()
-        self.register_leaf_nodes(created_nodes)
-
-        return doc_node_ids
-
-    def build_from_text(
+    def build_from_nodes(
         self,
-        documents: Sequence[BaseDocument],
+        nodes: Sequence[Node],
         build_tree: bool = True,
     ) -> IndexGraph:
         """Build from text.
@@ -111,8 +72,7 @@ class GPTTreeIndexBuilder:
 
         """
         all_nodes: Dict[int, str] = {}
-        for d in documents:
-            all_nodes.update(self._create_nodes_from_document(len(all_nodes), d))
+        all_nodes.update(nodes)
 
         if build_tree:
             # instantiate all_nodes from initial text chunks

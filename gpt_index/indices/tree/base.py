@@ -8,6 +8,7 @@ from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
+from gpt_index.indices.node_parser.interface import NodeParser
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
@@ -62,7 +63,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         insert_prompt: Optional[TreeInsertPrompt] = None,
         num_children: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        node_parser: Optional[NodeParser] = None,
         build_tree: bool = True,
         use_async: bool = False,
         **kwargs: Any,
@@ -78,7 +79,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             documents=documents,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
-            text_splitter=text_splitter,
+            node_parser=node_parser,
             **kwargs,
         )
 
@@ -116,12 +117,12 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self.summary_template,
             self._llm_predictor,
             self._prompt_helper,
-            self._text_splitter,
+            self._node_parser,
             use_async=self._use_async,
             llama_logger=self._llama_logger,
             docstore=self._docstore,
         )
-        index_graph = index_builder.build_from_text(
+        index_graph = index_builder.build_from_nodes(
             nodes, build_tree=self.build_tree
         )
         print("current docstore", self._docstore)
@@ -138,7 +139,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             summary_prompt=self.summary_template,
             llm_predictor=self._llm_predictor,
             prompt_helper=self._prompt_helper,
-            text_splitter=self._text_splitter,
+            node_parser=self._node_parser,
             docstore=self._docstore,
         )
         inserter.insert(document)

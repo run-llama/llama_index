@@ -4,15 +4,15 @@ from typing import Optional
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.docstore import DocumentStore
-from gpt_index.indices.node_utils import (
+from gpt_index.docstore import (
+    DocumentStore,
     get_node_dict_from_docstore,
     get_nodes_from_docstore,
 )
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
@@ -29,7 +29,7 @@ class GPTIndexInserter:
         index_graph: IndexGraph,
         llm_predictor: LLMPredictor,
         prompt_helper: PromptHelper,
-        text_splitter: TextSplitter,
+        node_parser: NodeParser,
         num_children: int = 10,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
@@ -44,11 +44,11 @@ class GPTIndexInserter:
         self.index_graph = index_graph
         self._llm_predictor = llm_predictor
         self._prompt_helper = prompt_helper
-        self._text_splitter = text_splitter
+        self._node_parser = node_parser
         self._docstore = docstore or DocumentStore()
 
     def _insert_under_parent_and_consolidate(
-        self, text_chunk: str, doc: BaseDocument, parent_node: Optional[Node]
+        self, text_node: Node, parent_node: Optional[Node]
     ) -> None:
         """Insert node under parent and consolidate.
 
@@ -57,13 +57,6 @@ class GPTIndexInserter:
 
         """
         # perform insertion
-        text_node = Node(
-            text=text_chunk,
-            index=self.index_graph.size,
-            ref_doc_id=doc.get_doc_id(),
-            embedding=doc.embedding,
-            extra_info=doc.extra_info,
-        )
         self.index_graph.insert_under_parent(text_node, parent_node)
         self._docstore.add_documents([text_node])
 
@@ -120,7 +113,7 @@ class GPTIndexInserter:
             self._docstore.add_documents([text_node])
 
     def _insert_node(
-        self, text_chunk: str, doc: BaseDocument, parent_node: Optional[Node]
+        self, node: Node, parent_node: Optional[Node]
     ) -> None:
         """Insert node."""
         cur_graph_node_ids = self.index_graph.get_children(parent_node)
@@ -131,10 +124,10 @@ class GPTIndexInserter:
         # if cur_graph_nodes is empty (start with empty graph), then insert under
         # parent (insert new root node)
         if len(cur_graph_nodes) == 0:
-            self._insert_under_parent_and_consolidate(text_chunk, doc, parent_node)
+            self._insert_under_parent_and_consolidate(node, parent_node)
         # check if leaf nodes, then just insert under parent
         elif len(cur_graph_node_list[0].child_indices) == 0:
-            self._insert_under_parent_and_consolidate(text_chunk, doc, parent_node)
+            self._insert_under_parent_and_consolidate(node, parent_node)
         # else try to find the right summary node to insert under
         else:
             numbered_text = self._prompt_helper.get_numbered_text_from_nodes(
@@ -142,20 +135,20 @@ class GPTIndexInserter:
             )
             response, _ = self._llm_predictor.predict(
                 self.insert_prompt,
-                new_chunk_text=text_chunk,
+                new_chunk_text=node.get_text(),
                 num_chunks=len(cur_graph_node_list),
                 context_list=numbered_text,
             )
             numbers = extract_numbers_given_response(response)
             if numbers is None or len(numbers) == 0:
                 # NOTE: if we can't extract a number, then we just insert under parent
-                self._insert_under_parent_and_consolidate(text_chunk, doc, parent_node)
+                self._insert_under_parent_and_consolidate(node, parent_node)
             elif int(numbers[0]) > len(cur_graph_node_list):
                 # NOTE: if number is out of range, then we just insert under parent
-                self._insert_under_parent_and_consolidate(text_chunk, doc, parent_node)
+                self._insert_under_parent_and_consolidate(node, parent_node)
             else:
                 selected_node = cur_graph_node_list[int(numbers[0]) - 1]
-                self._insert_node(text_chunk, doc, selected_node)
+                self._insert_node(node, selected_node)
 
         # now we need to update summary for parent node, since we
         # need to bubble updated summaries up the tree
@@ -177,7 +170,7 @@ class GPTIndexInserter:
 
     def insert(self, doc: BaseDocument) -> None:
         """Insert into index_graph."""
-        text_chunks = self._text_splitter.split_text(doc.get_text())
+        nodes = self._node_parser.get_nodes_from_document(doc, start_idx=self.index_graph.size)
 
-        for text_chunk in text_chunks:
-            self._insert_node(text_chunk, doc, None)
+        for node in nodes:
+            self._insert_node(node, None)

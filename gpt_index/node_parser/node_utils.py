@@ -2,10 +2,9 @@
 
 
 import logging
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from gpt_index.data_structs.data_structs import Node
-from gpt_index.docstore import DocumentStore
 from gpt_index.langchain_helpers.text_splitter import (
     TextSplit,
     TextSplitter,
