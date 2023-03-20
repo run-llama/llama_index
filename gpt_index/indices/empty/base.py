@@ -14,8 +14,7 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.empty.base import GPTEmptyIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
-from gpt_index.schema import BaseDocument
+from gpt_index.node_parser.interface import NodeParser
 
 
 class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
@@ -35,7 +34,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
         self,
         index_struct: Optional[EmptyIndex] = None,
         llm_predictor: Optional[LLMPredictor] = None,
-        node_parser: Optional[NodeParser] = None, 
+        node_parser: Optional[NodeParser] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -71,6 +70,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
 
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
+        del nodes  # Unused
         raise NotImplementedError("Cannot insert into an empty index.")
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:

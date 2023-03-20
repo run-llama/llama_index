@@ -4,18 +4,14 @@ Nodes are decoupled from the indices.
 
 """
 
-import random
-import sys
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar
+from typing import Dict, List, Optional, Set, Tuple, TypeVar
 
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.data_structs import IndexGraph as V0IndexGraph
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.schema import BaseDocument
 
 # OIS = TypeVar("IS", bound=IndexStruct)
 
