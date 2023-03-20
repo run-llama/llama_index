@@ -57,7 +57,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexGraph] = None,
         summary_template: Optional[SummaryPrompt] = None,
         insert_prompt: Optional[TreeInsertPrompt] = None,

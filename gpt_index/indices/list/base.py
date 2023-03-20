@@ -47,11 +47,11 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexList] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        node_parser: Optional[NodeParser] = None, 
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -60,7 +60,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
-            text_splitter=text_splitter,
+            node_parser=node_parser,
             **kwargs,
         )
 

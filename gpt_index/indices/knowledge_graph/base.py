@@ -48,12 +48,12 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[KG] = None,
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        node_parser: Optional[NodeParser] = None, 
         include_embeddings: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -74,7 +74,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
-            text_splitter=text_splitter,
+            node_parser=node_parser,
             **kwargs,
         )
 

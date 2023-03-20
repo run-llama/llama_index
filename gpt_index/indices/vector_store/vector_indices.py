@@ -69,7 +69,7 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -141,7 +141,7 @@ class GPTFaissIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         faiss_index: Optional[Any] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
@@ -270,7 +270,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         pinecone_index: Optional[Any] = None,
         pinecone_kwargs: Optional[Dict] = None,
         index_struct: Optional[IndexDict] = None,
@@ -345,7 +345,7 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         weaviate_client: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
@@ -415,7 +415,7 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         client: Optional[Any] = None,
         collection_name: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
@@ -485,7 +485,7 @@ class GPTChromaIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         chroma_collection: Optional[Any] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
@@ -556,7 +556,7 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         client: Optional[OpensearchVectorClient] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,

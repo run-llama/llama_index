@@ -40,12 +40,12 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[BST] = None,
         schema_extract_prompt: Optional[SchemaExtractPrompt] = None,
         output_parser: Optional[OUTPUT_PARSER_TYPE] = None,
         llm_predictor: Optional[LLMPredictor] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        node_parser: Optional[NodeParser] = None, 
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -57,7 +57,7 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
             nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
-            text_splitter=text_splitter,
+            node_parser=node_parser,
             **kwargs,
         )
 

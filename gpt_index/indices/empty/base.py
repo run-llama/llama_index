@@ -35,7 +35,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
         self,
         index_struct: Optional[EmptyIndex] = None,
         llm_predictor: Optional[LLMPredictor] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        node_parser: Optional[NodeParser] = None, 
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -43,7 +43,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
             documents=[],
             index_struct=index_struct,
             llm_predictor=llm_predictor,
-            text_splitter=text_splitter,
+            node_parser=node_parser,
             **kwargs,
         )
 

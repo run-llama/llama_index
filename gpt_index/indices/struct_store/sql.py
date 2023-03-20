@@ -56,7 +56,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[SQLStructTable] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         sql_database: Optional[SQLDatabase] = None,

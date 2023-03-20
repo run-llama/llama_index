@@ -47,13 +47,13 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]]=None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         vector_store: Optional[VectorStore] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        node_parser: Optional[NodeParser] = None, 
         use_async: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -67,7 +67,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
-            text_splitter=text_splitter,
+            node_parser=node_parser,
             **kwargs,
         )
 
