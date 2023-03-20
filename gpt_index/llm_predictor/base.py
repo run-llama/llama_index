@@ -1,9 +1,9 @@
 """Wrapper functions around an LLM chain."""
 
 import logging
+from abc import abstractmethod
 from dataclasses import dataclass
-from abc import ABC, abstractmethod
-from typing import Any, Generator, Optional, Tuple, Protocol
+from typing import Any, Generator, Optional, Protocol, Tuple
 
 import openai
 from langchain import Cohere, LLMChain, OpenAI
@@ -78,6 +78,8 @@ def _get_response_gen(openai_response_stream: Generator) -> Generator:
 
 
 class BaseLLMPredictor(Protocol):
+    """Base LLM Predictor."""
+
     @abstractmethod
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""

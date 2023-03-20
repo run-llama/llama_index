@@ -1,11 +1,11 @@
 """LLM predictor tests."""
 
-import pytest
-from gpt_index.llm_predictor.structured import StructuredLLMPredictor, LLMPredictor
-from gpt_index.prompts.prompts import Prompt, SimpleInputPrompt
 from typing import Any, Tuple
 from unittest.mock import patch
+
+from gpt_index.llm_predictor.structured import LLMPredictor, StructuredLLMPredictor
 from gpt_index.output_parsers.base import BaseOutputParser
+from gpt_index.prompts.prompts import Prompt, SimpleInputPrompt
 
 
 class MockOutputParser(BaseOutputParser):

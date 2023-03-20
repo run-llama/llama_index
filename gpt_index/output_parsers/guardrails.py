@@ -1,16 +1,20 @@
+"""Guardrails output parser.
+
+See https://github.com/ShreyaR/guardrails.
+
+"""
 try:
     from guardrails import Guard
-    from guardrails.llm_providers import PromptCallable
 except ImportError:
     Guard = None
     PromptCallable = None
 
-from typing import Optional, Callable, Any
-from gpt_index.output_parsers.base import BaseOutputParser
+from copy import deepcopy
+from typing import Any, Callable, Optional
 
 from langchain.llms.base import BaseLLM
-from langchain.prompts.base import BasePromptTemplate
-from copy import deepcopy
+
+from gpt_index.output_parsers.base import BaseOutputParser
 
 
 def get_callable(llm: Optional[BaseLLM]) -> Optional[Callable]:
@@ -39,6 +43,7 @@ class GuardrailsOutputParser(BaseOutputParser):
     def from_rail(
         cls, rail: str, llm: Optional[BaseLLM] = None
     ) -> "GuardrailsOutputParser":
+        """From rail."""
         if Guard is None:
             raise ImportError(
                 "Guardrails is not installed. Run `pip install guardrails-ai`. "
@@ -50,6 +55,7 @@ class GuardrailsOutputParser(BaseOutputParser):
     def from_rail_string(
         cls, rail_string: str, llm: Optional[BaseLLM] = None
     ) -> "GuardrailsOutputParser":
+        """From rail string."""
         if Guard is None:
             raise ImportError(
                 "Guardrails is not installed. Run `pip install guardrails-ai`. "

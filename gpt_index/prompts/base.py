@@ -8,8 +8,8 @@ from langchain import PromptTemplate as LangchainPrompt
 from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.schema import BaseLanguageModel
 
-from gpt_index.prompts.prompt_type import PromptType
 from gpt_index.output_parsers.base import BaseOutputParser
+from gpt_index.prompts.prompt_type import PromptType
 
 PMT = TypeVar("PMT", bound="Prompt")
 

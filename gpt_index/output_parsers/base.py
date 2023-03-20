@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Any, Protocol
+from typing import Any, Optional, Protocol
 
 
 @dataclass
