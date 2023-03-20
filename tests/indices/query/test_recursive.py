@@ -305,7 +305,7 @@ def test_recursive_query_list_table(
 
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
-@patch("gpt_index.langchain_helpers.chain_wrapper.OpenAI")
+@patch("gpt_index.llm_predictor.base.OpenAI")
 @patch.object(LLMPredictor, "get_llm_metadata", return_value=LLMMetadata())
 @patch.object(LLMChain, "__init__", return_value=None)
 def test_recursive_query_list_tree_token_count(
