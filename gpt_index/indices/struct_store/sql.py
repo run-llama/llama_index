@@ -6,7 +6,7 @@ from sqlalchemy import Table
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -19,7 +19,6 @@ from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.schema import BaseDocument
 
 
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):

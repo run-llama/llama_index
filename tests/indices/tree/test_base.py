@@ -8,11 +8,6 @@ import pytest
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.docstore import DocumentStore
-from gpt_index.indices.node_utils import (
-    get_node_dict_from_docstore,
-    get_node_from_docstore,
-    get_nodes_from_docstore,
-)
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMChain,
@@ -80,7 +75,7 @@ def _get_left_or_right_node(
     if index not in index_graph.all_nodes:
         raise ValueError(f"Node {index} not in index_graph.all_nodes")
     node_id = index_graph.all_nodes[index]
-    return get_node_from_docstore(docstore, node_id)
+    return docstore.get_node(node_id)
 
 
 @patch_common
@@ -102,9 +97,7 @@ def test_build_tree(
     print(tree.docstore.docs)
     print(len(tree.docstore.docs))
     print(tree.index_struct.all_nodes)
-    nodes = get_nodes_from_docstore(
-        tree.docstore, list(tree.index_struct.all_nodes.values())
-    )
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
     assert nodes[0].text == "Hello world."
     assert nodes[1].text == "This is a test."
     assert nodes[2].text == "This is another test."
@@ -135,7 +128,7 @@ def test_build_tree_with_embed(
     tree = GPTTreeIndex([document], **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
-    all_nodes = get_node_dict_from_docstore(tree.docstore, tree.index_struct.all_nodes)
+    all_nodes = tree.docstore.get_node_dict(tree.index_struct.all_nodes)
     assert all_nodes[0].text == "Hello world."
     assert all_nodes[1].text == "This is a test."
     assert all_nodes[2].text == "This is another test."
@@ -172,9 +165,7 @@ def test_build_tree_async(
     tree = GPTTreeIndex(documents, use_async=True, **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
-    nodes = get_nodes_from_docstore(
-        tree.docstore, list(tree.index_struct.all_nodes.values())
-    )
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
     assert nodes[0].text == "Hello world."
     assert nodes[1].text == "This is a test."
     assert nodes[2].text == "This is another test."
@@ -202,9 +193,7 @@ def test_build_tree_multiple(
     tree = GPTTreeIndex(new_docs, **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
-    nodes = get_nodes_from_docstore(
-        tree.docstore, list(tree.index_struct.all_nodes.values())
-    )
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
     assert nodes[0].text == "Hello world."
     assert nodes[1].text == "This is a test."
     assert nodes[2].text == "This is another test."
@@ -309,9 +298,7 @@ def test_insert(
     tree = GPTTreeIndex([], **index_kwargs)
     new_doc = Document("This is a new doc.")
     tree.insert(new_doc)
-    nodes = get_nodes_from_docstore(
-        tree.docstore, list(tree.index_struct.all_nodes.values())
-    )
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
     assert len(nodes) == 1
     assert nodes[0].text == "This is a new doc."
 
@@ -319,9 +306,7 @@ def test_insert(
     tree = GPTTreeIndex([], **index_kwargs)
     new_doc = Document("This is a new doc.", doc_id="new_doc_test")
     tree.insert(new_doc)
-    nodes = get_nodes_from_docstore(
-        tree.docstore, list(tree.index_struct.all_nodes.values())
-    )
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
     assert len(nodes) == 1
     assert nodes[0].text == "This is a new doc."
     assert nodes[0].ref_doc_id == "new_doc_test"
