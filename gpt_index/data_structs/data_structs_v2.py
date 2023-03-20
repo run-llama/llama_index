@@ -43,7 +43,7 @@ class IndexGraph(V2IndexStruct):
         return len(self.all_nodes)
 
     def get_index(self, node: Node) -> int:
-        return self.node_id_to_index[node.doc_id()]
+        return self.node_id_to_index[node.get_doc_id()]
 
     def insert(self, node: Node, index : Optional[int] = None, children_nodes: Optional[Sequence[Node]] = None) -> None:
         index = index or self.size

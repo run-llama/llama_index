@@ -13,6 +13,7 @@ from enum import Enum
 from typing import Any, Dict, Generator, List, Optional, Tuple, Union, cast
 
 from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -291,7 +292,9 @@ class ResponseBuilder:
         index_builder, all_nodes = self._get_tree_index_builder_and_nodes(
             summary_template, query_str, num_children
         )
-        root_node_ids = index_builder.build_index_from_nodes(all_nodes, all_nodes)
+        index_graph = IndexGraph()
+        index_graph = index_builder.build_index_from_nodes(index_graph, all_nodes, all_nodes)
+        root_node_ids = index_graph.root_nodes
         root_nodes = {
             index: index_builder.docstore.get_node(node_id)
             for index, node_id in root_node_ids.items()
