@@ -113,9 +113,18 @@ class Prompt:
                 raise ValueError(
                     f"Invalid input variable: {k}, not found in input_variables"
                 )
+        try:
+            # NOTE: this is a hack to get around deepcopy failing on output parser
+            output_parser = self.output_parser
+            self.output_parser = None
 
-        copy_obj = deepcopy(self)
-        copy_obj.partial_dict.update(kwargs)
+            copy_obj = deepcopy(self)
+            copy_obj.output_parser = output_parser
+            copy_obj.partial_dict.update(kwargs)
+            self.output_parser = output_parser
+        except Exception as e:
+            raise e
+
         return copy_obj
 
     @classmethod

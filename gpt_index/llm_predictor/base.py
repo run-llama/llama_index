@@ -164,6 +164,11 @@ class LLMPredictor(BaseLLMPredictor):
         self.flag = True
         self._last_token_usage: Optional[int] = None
 
+    @property
+    def llm(self) -> BaseLanguageModel:
+        """Get LLM."""
+        return self._llm
+
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         # TODO: refactor mocks in unit tests, this is a stopgap solution
