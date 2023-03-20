@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import KG
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import (
     SimilarityTracker,
@@ -176,7 +175,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             reverse=True,
         )
         sorted_chunk_indices = sorted_chunk_indices[: self.num_chunks_per_query]
-        sorted_nodes = get_nodes_from_docstore(self._docstore, sorted_chunk_indices)
+        sorted_nodes = self._docstore.get_nodes(sorted_chunk_indices)
         # filter sorted nodes
         postprocess_info = {"similarity_tracker": similarity_tracker}
         for node_processor in self.node_preprocessors:

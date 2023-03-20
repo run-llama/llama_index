@@ -3,7 +3,6 @@ from typing import List, Optional
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexList
-from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
@@ -46,5 +45,5 @@ class GPTListIndexQuery(BaseGPTListIndexQuery):
     ) -> List[Node]:
         """Get nodes for response."""
         node_ids = self.index_struct.nodes
-        nodes = get_nodes_from_docstore(self._docstore, node_ids)
+        nodes = self._docstore.get_nodes(node_ids)
         return nodes

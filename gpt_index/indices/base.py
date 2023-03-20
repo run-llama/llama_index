@@ -64,7 +64,7 @@ class BaseGPTIndex(Generic[IS]):
 
     def __init__(
         self,
-        nodes: Optional[Set[Node]] = None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IS] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
@@ -108,8 +108,8 @@ class BaseGPTIndex(Generic[IS]):
 
     @classmethod
     def from_documents(
-        cls, 
-        documents: Sequence[Document], 
+        cls,
+        documents: Sequence[Document],
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         docstore: Optional[DocumentStore] = None,
@@ -121,7 +121,7 @@ class BaseGPTIndex(Generic[IS]):
         llama_logger: Optional[LlamaLogger] = None,
     ) -> "BaseGPTIndex":
         # TODO: parse documents to nodes
-        node_parser: NodeParser = node_parser or SimpleNodeParser()
+        node_parser = node_parser or SimpleNodeParser()
         docstore = docstore or DocumentStore()
 
         # documents = cast(Sequence[DOCUMENTS_INPUT], documents)
@@ -138,12 +138,12 @@ class BaseGPTIndex(Generic[IS]):
         docstore.add_documents(nodes)
 
         return cls(
-            nodes=nodes, 
+            nodes=nodes,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
             index_registry=index_registry,
             prompt_helper=prompt_helper,
-            docstore=docstore, 
+            docstore=docstore,
             node_parser=node_parser,
             chunk_size_limit=chunk_size_limit,
             include_extra_info=include_extra_info,
@@ -314,22 +314,24 @@ class BaseGPTIndex(Generic[IS]):
         return self._build_index_from_nodes(nodes)
 
     @abstractmethod
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
-        """Insert a document."""
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+        """Insert nodes."""
 
     @llm_token_counter("insert")
-    def insert(self, document: DOCUMENTS_INPUT, **insert_kwargs: Any) -> None:
+    def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document.
 
         Args:
             document (Union[BaseDocument, BaseGPTIndex]): document to insert
 
         """
-        processed_doc = self._process_documents(
-            [document], self._docstore, self._index_registry
-        )[0]
-        self._validate_documents([processed_doc])
-        self._insert(processed_doc, **insert_kwargs)
+        # processed_doc = self._process_documents(
+        #     [document], self._docstore, self._index_registry
+        # )[0]
+        # self._validate_documents([processed_doc])
+        nodes = self._node_parser.get_nodes_from_document(document)
+        self.docstore.add_documents(nodes)
+        self._insert(nodes, **insert_kwargs)
 
     @abstractmethod
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:

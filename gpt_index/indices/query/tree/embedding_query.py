@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
 from gpt_index.indices.utils import get_sorted_node_list
@@ -73,7 +72,7 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
     ) -> str:
         """Answer a query recursively."""
         cur_nodes = {
-            index: get_nodes_from_docstore(self._docstore, [node_id])[0]
+            index: self._docstore.get_node(node_id)
             for index, node_id in cur_node_ids.items()
         }
         cur_node_list = get_sorted_node_list(cur_nodes)

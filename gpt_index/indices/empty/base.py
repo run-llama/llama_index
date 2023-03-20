@@ -68,7 +68,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
         index_struct = EmptyIndex()
         return index_struct
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         raise NotImplementedError("Cannot insert into an empty index.")
 

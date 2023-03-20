@@ -10,7 +10,6 @@ from gpt_index.indices.keyword_table.utils import (
     rake_extract_keywords,
     simple_extract_keywords,
 )
-from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
@@ -92,7 +91,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
             reverse=True,
         )
         sorted_chunk_indices = sorted_chunk_indices[: self.num_chunks_per_query]
-        sorted_nodes = get_nodes_from_docstore(self._docstore, sorted_chunk_indices)
+        sorted_nodes = self._docstore.get_nodes(sorted_chunk_indices)
         # filter sorted nodes
         for node_processor in self.node_preprocessors:
             sorted_nodes = node_processor.postprocess_nodes(sorted_nodes)

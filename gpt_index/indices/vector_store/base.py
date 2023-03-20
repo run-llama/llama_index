@@ -201,9 +201,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             self._add_nodes_to_index(index_struct, nodes)
         return index_struct
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
-        self._add_document_to_index(self._index_struct, document)
+        self._add_nodes_to_index(self._index_struct, nodes)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

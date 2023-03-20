@@ -4,11 +4,7 @@ from typing import Optional
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.docstore import (
-    DocumentStore,
-    get_node_dict_from_docstore,
-    get_nodes_from_docstore,
-)
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -66,9 +62,7 @@ class GPTIndexInserter:
         else:
             # perform consolidation
             cur_graph_node_ids = self.index_graph.get_children(parent_node)
-            cur_graph_nodes = get_node_dict_from_docstore(
-                self._docstore, cur_graph_node_ids
-            )
+            cur_graph_nodes = self._docstore.get_node_dict(cur_graph_node_ids)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
             # this layer is all leaf nodes, consolidate and split leaf nodes
             cur_node_index = self.index_graph.size
@@ -117,9 +111,7 @@ class GPTIndexInserter:
     ) -> None:
         """Insert node."""
         cur_graph_node_ids = self.index_graph.get_children(parent_node)
-        cur_graph_nodes = get_node_dict_from_docstore(
-            self._docstore, cur_graph_node_ids
-        )
+        cur_graph_nodes = self._docstore.get_node_dict(cur_graph_node_ids)
         cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
         # if cur_graph_nodes is empty (start with empty graph), then insert under
         # parent (insert new root node)
@@ -155,9 +147,7 @@ class GPTIndexInserter:
         if parent_node is not None:
             # refetch children
             cur_graph_node_ids = self.index_graph.get_children(parent_node)
-            cur_graph_nodes = get_node_dict_from_docstore(
-                self._docstore, cur_graph_node_ids
-            )
+            cur_graph_nodes = self._docstore.get_node_dict(cur_graph_node_ids)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
             text_chunk = self._prompt_helper.get_text_from_nodes(
                 cur_graph_node_list, prompt=self.summary_prompt

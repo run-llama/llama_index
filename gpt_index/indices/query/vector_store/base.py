@@ -7,7 +7,6 @@ from typing import Any, List, Optional
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
@@ -62,7 +61,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
                 )
             assert isinstance(self._index_struct, IndexDict)
             node_ids = [self._index_struct.nodes_dict[idx] for idx in query_result.ids]
-            nodes = get_nodes_from_docstore(self._docstore, node_ids)
+            nodes = self._docstore.get_nodes(node_ids)
             query_result.nodes = nodes
 
         log_vector_store_query_result(query_result)

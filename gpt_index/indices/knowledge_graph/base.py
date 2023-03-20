@@ -132,9 +132,8 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
         return index_struct
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
-        nodes = self._get_nodes_from_document(document)
         for n in nodes:
             # set doc id
             node_id = get_new_id(set())

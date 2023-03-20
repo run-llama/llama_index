@@ -102,7 +102,6 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         else:
             data_extractor = SQLStructDatapointExtractor(
                 self._llm_predictor,
-                self._text_splitter,
                 self.schema_extract_prompt,
                 self.output_parser,
                 self.sql_database,
@@ -113,11 +112,10 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             data_extractor.insert_datapoint_from_nodes(nodes)
         return index_struct
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         data_extractor = SQLStructDatapointExtractor(
             self._llm_predictor,
-            self._text_splitter,
             self.schema_extract_prompt,
             self.output_parser,
             self.sql_database,
@@ -125,7 +123,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             table=self._table,
             ref_doc_id_column=self._ref_doc_id_column,
         )
-        data_extractor.insert_datapoint_from_document(document)
+        data_extractor.insert_datapoint_from_nodes(nodes)
 
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:

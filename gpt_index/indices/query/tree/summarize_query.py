@@ -5,10 +5,6 @@ from typing import Any, List, Optional, cast
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.indices.node_utils import (
-    get_node_dict_from_docstore,
-    get_nodes_from_docstore,
-)
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
@@ -63,6 +59,6 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
         """Get nodes for response."""
         logger.info(f"> Starting query: {query_bundle.query_str}")
         index_struct = cast(IndexGraph, self._index_struct)
-        all_nodes = get_node_dict_from_docstore(self._docstore, index_struct.all_nodes)
+        all_nodes = self._docstore.get_node_dict(index_struct.all_nodes)
         sorted_node_list = get_sorted_node_list(all_nodes)
         return sorted_node_list

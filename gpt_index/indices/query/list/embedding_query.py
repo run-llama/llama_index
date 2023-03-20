@@ -5,7 +5,6 @@ from typing import Any, List, Optional, Tuple
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexList
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.embedding_utils import (
     SimilarityTracker,
     get_top_k_embeddings,
@@ -55,7 +54,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         """Get nodes for response."""
         node_ids = self.index_struct.nodes
         # top k nodes
-        nodes = get_nodes_from_docstore(self._docstore, node_ids)
+        nodes = self._docstore.get_nodes(node_ids)
         query_embedding, node_embeddings = self._get_embeddings(query_bundle, nodes)
 
         top_similarities, top_idxs = get_top_k_embeddings(

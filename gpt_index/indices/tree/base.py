@@ -128,7 +128,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         print("tree builder docstore", index_builder.docstore)
         return index_graph
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         # TODO: allow to customize insert prompt
         inserter = GPTIndexInserter(
@@ -141,7 +141,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             node_parser=self._node_parser,
             docstore=self._docstore,
         )
-        inserter.insert(document)
+        inserter.insert(nodes)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

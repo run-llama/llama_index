@@ -14,9 +14,8 @@ from typing import Any, Dict, Optional, Sequence, Set, Type
 from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import KeywordTable
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.keyword_table.query import (
     GPTKeywordTableGPTQuery,
@@ -25,13 +24,12 @@ from gpt_index.indices.query.keyword_table.query import (
 )
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from gpt_index.prompts.prompts import KeywordExtractPrompt
-from gpt_index.schema import BaseDocument
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -65,7 +63,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         max_keywords_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
-        node_parser: Optional[NodeParser] = None, 
+        node_parser: Optional[NodeParser] = None,
         use_async: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -140,9 +138,8 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 
         return index_struct
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
-        """Insert a document."""
-        nodes = self._get_nodes_from_document(document)
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+        """Insert nodes."""
         for n in nodes:
             keywords = self._extract_keywords(n.get_text())
             self._index_struct.add_node(list(keywords), n)
@@ -153,7 +150,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         # get set of ids that correspond to node
         node_idxs_to_delete = set()
         node_id_list = list(self._index_struct.node_ids)
-        nodes = get_nodes_from_docstore(self._docstore, node_id_list)
+        nodes = self._docstore.get_nodes(node_id_list)
         for node_idx, node in zip(node_id_list, nodes):
             if node.ref_doc_id != doc_id:
                 continue
