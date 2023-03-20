@@ -1,0 +1,1469 @@
+{
+    "answer_accuracy": 0.8837209302325582,
+    "total": 86,
+    "valid": 86,
+    "results": [
+        {
+            "db": "department_management",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "What are the names of the states where at least 3 heads were born?",
+                "sql_query": "SELECT born_state FROM head GROUP BY born_state HAVING count(*)  >=  3",
+                "sql_result": "[('California',)]",
+                "answer": "California"
+            },
+            "pred": {
+                "question": "What are the names of the states where at least 3 heads were born?",
+                "sql_query": "SELECT born_state, COUNT(*) FROM head GROUP BY born_state HAVING COUNT(*) >= 3;\n",
+                "sql_result": "[('California', 4)]",
+                "answer": "The only state where at least 3 heads were born is California."
+            }
+        },
+        {
+            "db": "student_assessment",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What are the first names of the people in alphabetical order?",
+                "sql_query": "SELECT first_name FROM people ORDER BY first_name",
+                "sql_result": "[('Dariana',), ('Hoyt',), ('Lizeth',), ('Mayra',), ('Nova',), ('Shannon',), ('Verna',), ('Virginie',)]",
+                "answer": "The first names of the people in alphabetical order are Dariana, Hoyt, Lizeth, Mayra, Nova, Shannon, Verna, and Virginie."
+            },
+            "pred": {
+                "question": "What are the first names of the people in alphabetical order?",
+                "sql_query": "SELECT first_name FROM People ORDER BY first_name ASC;\n",
+                "sql_result": "[('Dariana',), ('Hoyt',), ('Lizeth',), ('Mayra',), ('Nova',), ('Shannon',), ('Verna',), ('Virginie',)]",
+                "answer": "Dariana, Hoyt, Lizeth, Mayra, Nova, Shannon, Verna, Virginie"
+            }
+        },
+        {
+            "db": "store_1",
+            "exec_match": true,
+            "answer_match": false,
+            "gold": {
+                "question": "List the number of invoices from the US, grouped by state.",
+                "sql_query": "SELECT billing_state ,  COUNT(*) FROM invoices WHERE billing_country  =  \"USA\" GROUP BY billing_state;",
+                "sql_result": "[('AZ', 7), ('CA', 21), ('FL', 7), ('IL', 7), ('MA', 7), ('NV', 7), ('NY', 7), ('TX', 7), ('UT', 7), ('WA', 7), ('WI', 7)]",
+                "answer": "There are 11 states in the US with invoices, and the number of invoices in each state is listed in the SQLResult."
+            },
+            "pred": {
+                "question": "List the number of invoices from the US, grouped by state.",
+                "sql_query": "SELECT billing_state, COUNT(*) AS num_invoices FROM invoices WHERE billing_country = 'USA' GROUP BY billing_state;\n",
+                "sql_result": "[('AZ', 7), ('CA', 21), ('FL', 7), ('IL', 7), ('MA', 7), ('NV', 7), ('NY', 7), ('TX', 7), ('UT', 7), ('WA', 7), ('WI', 7)]",
+                "answer": "The number of invoices from the US, grouped by state are:\n- Arizona: 7\n- California: 21\n- Florida: 7\n- Illinois: 7\n- Massachusetts: 7\n- Nevada: 7\n- New York: 7\n- Texas: 7\n- Utah: 7\n- Washington: 7\n- Wisconsin: 7"
+            }
+        },
+        {
+            "db": "customers_card_transactions",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Return the full name and phone of the customer who has card number 4560596484842.",
+                "sql_query": "SELECT T2.customer_first_name ,  T2.customer_last_name ,  T2.customer_phone FROM Customers_cards AS T1 JOIN Customers AS T2 ON T1.customer_id  =  T2.customer_id WHERE T1.card_number  =  \"4560596484842\"",
+                "sql_result": "[('Blanche', 'Huels', '(703)950-4708x8972')]",
+                "answer": "Blanche Huels, (703)950-4708x8972"
+            },
+            "pred": {
+                "question": "Return the full name and phone of the customer who has card number 4560596484842.",
+                "sql_query": "SELECT Customers.customer_first_name, Customers.customer_last_name, Customers.customer_phone FROM Customers INNER JOIN Customers_Cards ON Customers.customer_id = Customers_Cards.customer_id WHERE Customers_Cards.card_number = '4560596484842';\n",
+                "sql_result": "[('Blanche', 'Huels', '(703)950-4708x8972')]",
+                "answer": "Blanche Huels, (703)950-4708x8972"
+            }
+        },
+        {
+            "db": "race_track",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What are the distinct classes that races can have?",
+                "sql_query": "SELECT DISTINCT CLASS FROM race",
+                "sql_result": "[('DP/GT',), ('GT',)]",
+                "answer": "Final answer here: The distinct classes that races can have are DP/GT and GT."
+            },
+            "pred": {
+                "question": "What are the distinct classes that races can have?",
+                "sql_query": "SELECT DISTINCT Class FROM race;\n",
+                "sql_result": "[('DP/GT',), ('GT',)]",
+                "answer": "Final answer here: The distinct classes that races can have are DP/GT and GT."
+            }
+        },
+        {
+            "db": "college_2",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Count the number of students who have advisors.",
+                "sql_query": "SELECT count(DISTINCT s_id) FROM advisor",
+                "sql_result": "[(2000,)]",
+                "answer": "There are 2000 students who have advisors."
+            },
+            "pred": {
+                "question": "Count the number of students who have advisors.",
+                "sql_query": "SELECT COUNT(*) FROM advisor;\n",
+                "sql_result": "[(2000,)]",
+                "answer": "There are 2000 students who have advisors."
+            }
+        },
+        {
+            "db": "theme_gallery",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "Return the name and country corresponding to the artist who has had the most exhibitions.",
+                "sql_query": "SELECT T2.name , T2.country FROM exhibition AS T1 JOIN artist AS T2 ON T1.artist_id  =  T2.artist_id GROUP BY T1.artist_id ORDER BY count(*) DESC LIMIT 1",
+                "sql_result": "[('Vijay Singh', 'Fiji')]",
+                "answer": "Name: Vijay Singh\nCountry: Fiji"
+            },
+            "pred": {
+                "question": "Return the name and country corresponding to the artist who has had the most exhibitions.",
+                "sql_query": "SELECT a.Name, a.Country FROM artist a INNER JOIN exhibition e ON a.Artist_ID = e.Artist_ID INNER JOIN exhibition_record er ON e.Exhibition_ID = er.Exhibition_ID GROUP BY a.Name, a.Country ORDER BY SUM(er.Attendance) DESC LIMIT 1;\n",
+                "sql_result": "[('Nick Price', 'Zimbabwe')]",
+                "answer": "Nick Price, Zimbabwe"
+            }
+        },
+        {
+            "db": "epinions_1",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the name and id of the item with the highest average rating.",
+                "sql_query": "SELECT T1.title ,  T1.i_id FROM item AS T1 JOIN review AS T2 ON T1.i_id  =  T2.i_id GROUP BY T2.i_id ORDER BY avg(T2.rating) DESC LIMIT 1",
+                "sql_result": "[('cup', 7)]",
+                "answer": "The item with the highest average rating is \"cup\" with an id of 7."
+            },
+            "pred": {
+                "question": "Find the name and id of the item with the highest average rating.",
+                "sql_query": "SELECT item.i_id, item.title, AVG(review.rating) AS avg_rating FROM item INNER JOIN review ON item.i_id = review.i_id GROUP BY item.i_id ORDER BY avg_rating DESC LIMIT 1;\n",
+                "sql_result": "[(7, 'cup', 8.0)]",
+                "answer": "The item with the highest average rating is 'cup' with an id of 7."
+            }
+        },
+        {
+            "db": "gymnast",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What are the names of the five oldest people?",
+                "sql_query": "SELECT Name FROM People ORDER BY Age DESC LIMIT 5",
+                "sql_result": "[('Paul Hamm',), ('Endis de los Santos \u00c1lvarez',), ('Rosa Clarissa Ort\u00edz Melo',), ('Nadia Caba Rodr\u00edguez',), ('Lorraine S\u00faarez Carmona',)]",
+                "answer": "The names of the five oldest people are Paul Hamm, Endis de los Santos \u00c1lvarez, Rosa Clarissa Ort\u00edz Melo, Nadia Caba Rodr\u00edguez, and Lorraine S\u00faarez Carmona."
+            },
+            "pred": {
+                "question": "What are the names of the five oldest people?",
+                "sql_query": "SELECT Name FROM people ORDER BY Age DESC LIMIT 5;\n",
+                "sql_result": "[('Paul Hamm',), ('Endis de los Santos \u00c1lvarez',), ('Rosa Clarissa Ort\u00edz Melo',), ('Nadia Caba Rodr\u00edguez',), ('Lorraine S\u00faarez Carmona',)]",
+                "answer": "The names of the five oldest people are Paul Hamm, Endis de los Santos \u00c1lvarez, Rosa Clarissa Ort\u00edz Melo, Nadia Caba Rodr\u00edguez, and Lorraine S\u00faarez Carmona."
+            }
+        },
+        {
+            "db": "small_bank_1",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the total checking and saving balance of all accounts sorted by the total balance in ascending order.",
+                "sql_query": "SELECT T1.balance + T2.balance FROM checking AS T1 JOIN savings AS T2 ON T1.custid  =  T2.custid ORDER BY T1.balance + T2.balance",
+                "sql_result": "[(317.0,), (7060.0,), (90000.0,), (210000.0,), (233000.0,), (1000001999.0,)]",
+                "answer": "The total checking and saving balance of all accounts sorted by the total balance in ascending order is:\n317.0\n7060.0\n90000.0\n210000.0\n233000.0\n1000001999.0"
+            },
+            "pred": {
+                "question": "Find the total checking and saving balance of all accounts sorted by the total balance in ascending order.",
+                "sql_query": "SELECT a.name, SUM(s.balance + c.balance) AS total_balance FROM ACCOUNTS a JOIN SAVINGS s ON a.custid = s.custid JOIN CHECKING c ON a.custid = c.custid GROUP BY a.name ORDER BY total_balance ASC;\n",
+                "sql_result": "[('Porter', 317.0), ('Weeks', 7060.0), ('Granger', 90000.0), ('Brown', 210000.0), (\"O'mahony\", 233000.0), ('Wang', 1000001999.0)]",
+                "answer": "The total checking and saving balance of all accounts sorted by the total balance in ascending order is:\n- Porter: $317\n- Weeks: $7,060\n- Granger: $90,000\n- Brown: $210,000\n- O'mahony: $233,000\n- Wang: $1,000,001,999"
+            }
+        },
+        {
+            "db": "small_bank_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What are the names of customers who have a savings balance lower than their checking balance, and what is the total of their checking and savings balances?",
+                "sql_query": "SELECT T1.name ,  T3.balance + T2.balance FROM accounts AS T1 JOIN checking AS T2 ON T1.custid  =  T2.custid JOIN savings AS T3 ON T1.custid  =  T3.custid WHERE T3.balance  <  T2.balance",
+                "sql_result": "[('Weeks', 7060.0)]",
+                "answer": "The name of the customer is Weeks and their total checking and savings balance is $7060."
+            },
+            "pred": {
+                "question": "What are the names of customers who have a savings balance lower than their checking balance, and what is the total of their checking and savings balances?",
+                "sql_query": "SELECT a.name, c.balance + s.balance AS total FROM ACCOUNTS a INNER JOIN CHECKING c ON a.custid = c.custid INNER JOIN SAVINGS s ON a.custid = s.custid WHERE c.balance > s.balance ORDER BY total DESC;\n",
+                "sql_result": "[('Weeks', 7060.0)]",
+                "answer": "The name of the customer with a savings balance lower than their checking balance is \"Weeks\" and their total checking and savings balance is $7060."
+            }
+        },
+        {
+            "db": "products_for_hire",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What are all the distinct payment types?",
+                "sql_query": "SELECT DISTINCT payment_type_code FROM payments",
+                "sql_result": "[('Check',), ('Cash',), ('Credit Card',), ('Direct Debit',)]",
+                "answer": "The distinct payment types are Check, Cash, Credit Card, and Direct Debit."
+            },
+            "pred": {
+                "question": "What are all the distinct payment types?",
+                "sql_query": "SELECT DISTINCT payment_type_code FROM Payments;\n",
+                "sql_result": "[('Check',), ('Cash',), ('Credit Card',), ('Direct Debit',)]",
+                "answer": "Distinct payment types are Check, Cash, Credit Card, and Direct Debit."
+            }
+        },
+        {
+            "db": "gas_company",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "What is the name of the manager with the most gas stations that opened after 2000?",
+                "sql_query": "SELECT manager_name FROM gas_station WHERE open_year  >  2000 GROUP BY manager_name ORDER BY count(*) DESC LIMIT 1",
+                "sql_result": "[('Colin Denman',)]",
+                "answer": "Colin Denman"
+            },
+            "pred": {
+                "question": "What is the name of the manager with the most gas stations that opened after 2000?",
+                "sql_query": "SELECT Manager_Name, COUNT(*) AS Num_Stations FROM gas_station WHERE Open_Year > 2000 GROUP BY Manager_Name ORDER BY Num_Stations DESC LIMIT 1;\n",
+                "sql_result": "[('Colin Denman', 2)]",
+                "answer": "The name of the manager with the most gas stations that opened after 2000 is Colin Denman."
+            }
+        },
+        {
+            "db": "cre_Doc_Control_Systems",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What is draft detail of the document with id 7?",
+                "sql_query": "SELECT draft_details FROM Document_Drafts WHERE document_id = 7;",
+                "sql_result": "[('m',)]",
+                "answer": "The draft detail of the document with id 7 is 'm'."
+            },
+            "pred": {
+                "question": "What is draft detail of the document with id 7?",
+                "sql_query": "SELECT Document_Drafts.draft_details FROM Document_Drafts WHERE Document_Drafts.document_id = 7;\n",
+                "sql_result": "[('m',)]",
+                "answer": "The draft detail of the document with id 7 is 'm'."
+            }
+        },
+        {
+            "db": "formula_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "How many drivers participated in the race Australian Grand Prix held in 2009?",
+                "sql_query": "SELECT count(*) FROM results AS T1 JOIN races AS T2 ON T1.raceid = T2.raceid WHERE T2.name = \"Australian Grand Prix\" AND YEAR = 2009",
+                "sql_result": "[(20,)]",
+                "answer": "There were 20 drivers who participated in the race Australian Grand Prix held in 2009."
+            },
+            "pred": {
+                "question": "How many drivers participated in the race Australian Grand Prix held in 2009?",
+                "sql_query": "SELECT COUNT(DISTINCT driverId) FROM results INNER JOIN races ON results.raceId = races.raceId WHERE races.name = 'Australian Grand Prix' AND races.year = 2009;\n",
+                "sql_result": "[(20,)]",
+                "answer": "There were 20 drivers who participated in the race Australian Grand Prix held in 2009."
+            }
+        },
+        {
+            "db": "machine_repair",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What is the name of the technician whose team is not 'NYY'?",
+                "sql_query": "SELECT Name FROM technician WHERE Team != \"NYY\"",
+                "sql_result": "[('Tony Sewell',), ('Mark Sewell',), ('Charlie Hollocher',), ('Lou Boudreau',), ('Eddie Collins',), ('Joe Cochrane',), ('Eddie Collins',), ('Mickey Cochrane',)]",
+                "answer": "The name of the technician whose team is not 'NYY' are Tony Sewell, Mark Sewell, Charlie Hollocher, Lou Boudreau, Eddie Collins, Joe Cochrane, Eddie Collins, and Mickey Cochrane."
+            },
+            "pred": {
+                "question": "What is the name of the technician whose team is not 'NYY'?",
+                "sql_query": "SELECT Name FROM technician WHERE Team != 'NYY';\n",
+                "sql_result": "[('Tony Sewell',), ('Mark Sewell',), ('Charlie Hollocher',), ('Lou Boudreau',), ('Eddie Collins',), ('Joe Cochrane',), ('Eddie Collins',), ('Mickey Cochrane',)]",
+                "answer": "The names of the technicians whose team is not 'NYY' are Tony Sewell, Mark Sewell, Charlie Hollocher, Lou Boudreau, Eddie Collins, Joe Cochrane, Eddie Collins, and Mickey Cochrane."
+            }
+        },
+        {
+            "db": "entrepreneur",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Return the names of entrepreneurs do no not have the investor Rachel Elnaugh.",
+                "sql_query": "SELECT T2.Name FROM entrepreneur AS T1 JOIN people AS T2 ON T1.People_ID  =  T2.People_ID WHERE T1.Investor != \"Rachel Elnaugh\"",
+                "sql_result": "[('Francesco Postiglione',), ('Leonardo Binchi',), ('Roberto Calcaterra',), ('Goran Fiorentini',), ('Maurizio Felugo',)]",
+                "answer": "Francesco Postiglione, Leonardo Binchi, Roberto Calcaterra, Goran Fiorentini, Maurizio Felugo"
+            },
+            "pred": {
+                "question": "Return the names of entrepreneurs do no not have the investor Rachel Elnaugh.",
+                "sql_query": "SELECT Name FROM people INNER JOIN entrepreneur ON people.People_ID = entrepreneur.People_ID WHERE Investor != 'Rachel Elnaugh';\n",
+                "sql_result": "[('Francesco Postiglione',), ('Leonardo Binchi',), ('Roberto Calcaterra',), ('Goran Fiorentini',), ('Maurizio Felugo',)]",
+                "answer": "Francesco Postiglione, Leonardo Binchi, Roberto Calcaterra, Goran Fiorentini, Maurizio Felugo"
+            }
+        },
+        {
+            "db": "storm_record",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "List all region names in alphabetical order.",
+                "sql_query": "SELECT region_name FROM region ORDER BY region_name",
+                "sql_result": "[('Afghanistan',), ('Albania',), ('Algeria',), ('American Samoa',), ('Andorra',), ('Angola',), ('Anguilla',), ('Antarctica',), ('Antigua and Barbuda',), ('Cyprus',), ('Czech Republic',), ('Denmark',), ('Djibouti',)]",
+                "answer": "Afghanistan, Albania, Algeria, American Samoa, Andorra, Angola, Anguilla, Antarctica, Antigua and Barbuda, Cyprus, Czech Republic, Denmark, Djibouti (in alphabetical order)"
+            },
+            "pred": {
+                "question": "List all region names in alphabetical order.",
+                "sql_query": "SELECT Region_name FROM region ORDER BY Region_name ASC;\n",
+                "sql_result": "[('Afghanistan',), ('Albania',), ('Algeria',), ('American Samoa',), ('Andorra',), ('Angola',), ('Anguilla',), ('Antarctica',), ('Antigua and Barbuda',), ('Cyprus',), ('Czech Republic',), ('Denmark',), ('Djibouti',)]",
+                "answer": "Afghanistan, Albania, Algeria, American Samoa, Andorra, Angola, Anguilla, Antarctica, Antigua and Barbuda, Cyprus, Czech Republic, Denmark, Djibouti"
+            }
+        },
+        {
+            "db": "election",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Which party has the largest number of delegates?",
+                "sql_query": "SELECT T2.Party FROM election AS T1 JOIN party AS T2 ON T1.Party  =  T2.Party_ID GROUP BY T1.Party ORDER BY COUNT(*) DESC LIMIT 1",
+                "sql_result": "[('Democratic',)]",
+                "answer": "Democratic"
+            },
+            "pred": {
+                "question": "Which party has the largest number of delegates?",
+                "sql_query": "SELECT Party, COUNT(Delegate) AS Delegate_Count FROM election GROUP BY Party ORDER BY Delegate_Count DESC LIMIT 1;\n",
+                "sql_result": "[(1, 3)]",
+                "answer": "The party with the largest number of delegates is the one with the highest Delegate_Count value in the SQLResult. However, the SQLResult provided only shows the first row of the result set, so the answer cannot be determined without additional information."
+            }
+        },
+        {
+            "db": "restaurant_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Which student's age is older than 18 and is majoring in 600? List each student's first and last name.",
+                "sql_query": "SELECT Fname , Lname FROM Student WHERE Age  >  18 AND Major = 600;",
+                "sql_result": "[('Tracy', 'Kim'), ('Shiela', 'Jones'), ('Dinesh', 'Kumar'), ('Paul', 'Gompers'), ('Jandy', 'Nelson'), ('Eric', 'Tai'), ('David', 'Adams'), ('Steven', 'Davis'), ('Bruce', 'Wilson'), ('Michael', 'Leighton')]",
+                "answer": "Tracy Kim, Shiela Jones, Dinesh Kumar, Paul Gompers, Jandy Nelson, Eric Tai, David Adams, Steven Davis, Bruce Wilson, Michael Leighton"
+            },
+            "pred": {
+                "question": "Which student's age is older than 18 and is majoring in 600? List each student's first and last name.",
+                "sql_query": "SELECT Fname, LName FROM Student WHERE Age > 18 AND Major = 600;\n",
+                "sql_result": "[('Tracy', 'Kim'), ('Shiela', 'Jones'), ('Dinesh', 'Kumar'), ('Paul', 'Gompers'), ('Jandy', 'Nelson'), ('Eric', 'Tai'), ('David', 'Adams'), ('Steven', 'Davis'), ('Bruce', 'Wilson'), ('Michael', 'Leighton')]",
+                "answer": "Tracy Kim, Shiela Jones, Dinesh Kumar, Paul Gompers, Jandy Nelson, Eric Tai, David Adams, Steven Davis, Bruce Wilson, and Michael Leighton."
+            }
+        },
+        {
+            "db": "sakila_1",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "Find all the payment dates for the payments with an amount larger than 10 and the payments handled by a staff person with the first name Elsa.",
+                "sql_query": "SELECT payment_date FROM payment WHERE amount  >  10 UNION SELECT T1.payment_date FROM payment AS T1 JOIN staff AS T2 ON T1.staff_id  =  T2.staff_id WHERE T2.first_name  =  'Elsa'",
+                "sql_result": "[('2005-05-25 18:18:19',), ('2005-05-25 21:58:58',), ('2005-05-26 02:26:23',), ('2005-05-29 01:01:26',), ('2005-05-30 02:45:16',), ('2005-06-15 09:46:33',), ('2005-06-15 18:30:46',), ('2005-06-16 14:52:02',), ('2005-06-17 04:05:12',), ('2005-06-17 18:09:04',), ('2005-06-17 23:51:21',), ('2005-06-18 08:33:23',), ('2005-06-19 10:50:02',), ('2005-06-19 18:40:29',), ('2005-06-20 06:53:47',), ('2005-06-20 07:39:33',), ('2005-06-20 08:15:27',), ('2005-06-21 01:04:35',), ('2005-06-21 05:18:27',), ('2005-06-21 21:10:39',), ('2005-07-06 01:03:29',), ('2005-07-06 10:26:56',), ('2005-07-06 16:01:16',), ('2005-07-06 22:05:47',), ('2005-07-06 22:58:31',), ('2005-07-07 18:01:22',), ('2005-07-07 20:45:51',), ('2005-07-08 10:11:45',), ('2005-07-08 11:59:19',), ('2005-07-08 23:27:16',), ('2005-07-09 05:59:47',), ('2005-07-09 15:36:17',), ('2005-07-09 21:55:19',), ('2005-07-10 03:54:38',), ('2005-07-10 10:09:17',), ('2005-07-10 15:02:17',), ('2005-07-10 18:54:05',), ('2005-07-12 16:37:55',), ('2005-07-26 22:56:00',), ('2005-07-27 01:03:06',), ('2005-07-27 19:01:03',), ('2005-07-27 20:23:12',), ('2005-07-27 21:14:28',), ('2005-07-28 10:21:52',), ('2005-07-28 11:25:39',), ('2005-07-28 15:36:48',), ('2005-07-29 09:20:16',), ('2005-07-29 11:15:36',), ('2005-07-29 11:19:59',), ('2005-07-29 12:32:20',), ('2005-07-29 21:46:21',), ('2005-07-29 22:37:41',), ('2005-07-30 00:36:31',), ('2005-07-30 05:21:32',), ('2005-07-30 11:58:50',), ('2005-07-30 13:47:43',), ('2005-07-30 17:44:24',), ('2005-07-30 18:03:13',), ('2005-07-30 22:20:29',), ('2005-07-31 05:40:35',), ('2005-07-31 07:09:55',), ('2005-07-31 08:05:31',), ('2005-07-31 10:26:19',), ('2005-07-31 11:51:46',), ('2005-07-31 12:14:19',), ('2005-07-31 21:29:28',), ('2005-07-31 23:29:51',), ('2005-08-01 05:53:49',), ('2005-08-01 06:50:26',), ('2005-08-01 14:25:40',), ('2005-08-01 20:12:33',), ('2005-08-01 20:59:58',), ('2005-08-01 21:35:01',), ('2005-08-02 03:16:31',), ('2005-08-02 07:38:44',), ('2005-08-02 09:19:22',), ('2005-08-02 11:16:19',), ('2005-08-02 13:45:05',), ('2005-08-02 14:05:42',), ('2005-08-02 17:42:49',), ('2005-08-02 22:18:13',), ('2005-08-16 23:10:34',), ('2005-08-17 04:25:47',), ('2005-08-17 18:27:22',), ('2005-08-18 09:13:42',), ('2005-08-18 11:58:48',), ('2005-08-18 19:11:45',), ('2005-08-18 22:15:18',), ('2005-08-18 22:37:39',), ('2005-08-19 09:31:48',), ('2005-08-19 11:27:32',), ('2005-08-19 17:26:55',), ('2005-08-19 20:28:48',), ('2005-08-20 07:54:54',), ('2005-08-20 18:16:26',), ('2005-08-20 21:13:58',), ('2005-08-20 21:31:52',), ('2005-08-21 06:26:48',), ('2005-08-21 08:18:18',), ('2005-08-21 13:41:14',), ('2005-08-21 21:00:03',), ('2005-08-21 23:28:58',), ('2005-08-21 23:34:00',), ('2005-08-22 08:24:32',), ('2005-08-22 11:01:15',), ('2005-08-22 16:24:42',), ('2005-08-22 17:20:17',), ('2005-08-22 19:28:02',), ('2005-08-22 23:48:56',), ('2005-08-23 00:05:57',), ('2005-08-23 05:17:23',), ('2005-08-23 06:18:43',), ('2005-08-23 14:47:26',), ('2005-08-23 22:19:33',)]",
+                "answer": "There are multiple payment dates that match the criteria, see SQLResult for the full list."
+            },
+            "pred": {
+                "question": "Find all the payment dates for the payments with an amount larger than 10 and the payments handled by a staff person with the first name Elsa.",
+                "sql_query": "SELECT payment_date FROM payment INNER JOIN staff ON payment.staff_id = staff.staff_id WHERE amount > 10 AND staff.first_name = 'Elsa';\n",
+                "sql_result": "[]",
+                "answer": "There are no payments that meet the criteria specified in the query."
+            }
+        },
+        {
+            "db": "loan_1",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "What are the names of customers who do not have saving accounts?",
+                "sql_query": "SELECT cust_name FROM customer EXCEPT SELECT cust_name FROM customer WHERE acc_type  =  'saving'",
+                "sql_result": "[('Jack',)]",
+                "answer": "The name of the customer who does not have a saving account is Jack."
+            },
+            "pred": {
+                "question": "What are the names of customers who do not have saving accounts?",
+                "sql_query": "SELECT cust_name FROM customer WHERE acc_type != 'S';\n",
+                "sql_result": "[('Mary',), ('Jack',), ('Owen',)]",
+                "answer": "Mary, Jack, Owen"
+            }
+        },
+        {
+            "db": "behavior_monitoring",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the start and end dates of behavior incidents of students with last name \"Fahey\".",
+                "sql_query": "SELECT T1.date_incident_start ,  date_incident_end FROM Behavior_Incident AS T1 JOIN Students AS T2 ON T1.student_id  =  T2.student_id WHERE T2.last_name  =  \"Fahey\"",
+                "sql_result": "[('2017-07-09 10:04:13', '2018-03-08 14:08:54')]",
+                "answer": "The start date of the behavior incident for a student with last name \"Fahey\" is 2017-07-09 10:04:13 and the end date is 2018-03-08 14:08:54."
+            },
+            "pred": {
+                "question": "Find the start and end dates of behavior incidents of students with last name \"Fahey\".",
+                "sql_query": "SELECT date_incident_start, date_incident_end FROM Behavior_Incident INNER JOIN Students ON Behavior_Incident.student_id = Students.student_id WHERE Students.last_name = 'Fahey'\n",
+                "sql_result": "[('2017-07-09 10:04:13', '2018-03-08 14:08:54')]",
+                "answer": "The start date of behavior incidents for students with last name \"Fahey\" is July 9th, 2017 and the end date is March 8th, 2018."
+            }
+        },
+        {
+            "db": "assets_maintenance",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "How many assets can each parts be used in? List the part name and the number.",
+                "sql_query": "SELECT T1.part_name ,  count(*) FROM Parts AS T1 JOIN Asset_Parts AS T2 ON T1.part_id  =  T2.part_id GROUP BY T1.part_name",
+                "sql_result": "[('middle', 5), ('package', 6), ('top', 4)]",
+                "answer": "Each part can be used in the following number of assets:\n- Middle: 5\n- Package: 6\n- Top: 4"
+            },
+            "pred": {
+                "question": "How many assets can each parts be used in? List the part name and the number.",
+                "sql_query": "SELECT Parts.part_name, COUNT(Asset_Parts.asset_id) AS num_assets FROM Parts INNER JOIN Asset_Parts ON Parts.part_id = Asset_Parts.part_id GROUP BY Parts.part_name ORDER BY num_assets DESC;\n",
+                "sql_result": "[('package', 6), ('middle', 5), ('top', 4)]",
+                "answer": "Each part can be used in the following number of assets:\n- Package: 6\n- Middle: 5\n- Top: 4"
+            }
+        },
+        {
+            "db": "college_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What is the name and address of the department with the most students?",
+                "sql_query": "SELECT T2.dept_name ,  T2.dept_address FROM student AS T1 JOIN department AS T2 ON T1.dept_code  =  T2.dept_code GROUP BY T1.dept_code ORDER BY count(*) DESC LIMIT 1",
+                "sql_result": "[('Accounting', 'KLR 211, Box 52')]",
+                "answer": "The name and address of the department with the most students is Accounting, located at KLR 211, Box 52."
+            },
+            "pred": {
+                "question": "What is the name and address of the department with the most students?",
+                "sql_query": "SELECT DEPT_NAME, DEPT_ADDRESS FROM DEPARTMENT INNER JOIN STUDENT ON DEPARTMENT.DEPT_CODE = STUDENT.DEPT_CODE GROUP BY DEPT_NAME, DEPT_ADDRESS ORDER BY COUNT(STU_NUM) DESC LIMIT 1;\n",
+                "sql_result": "[('Accounting', 'KLR 211, Box 52')]",
+                "answer": "The name and address of the department with the most students is Accounting, located at KLR 211, Box 52."
+            }
+        },
+        {
+            "db": "college_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What is the first name of the student whose last name starts with the letter S and is taking ACCT-211?",
+                "sql_query": "SELECT T1.stu_fname FROM student AS T1 JOIN enroll AS T2 ON T1.stu_num  =  T2.stu_num JOIN CLASS AS T3 ON T2.class_code  =  T3.class_code WHERE T3.crs_code  =  'ACCT-211' AND T1.stu_lname LIKE 'S%'",
+                "sql_result": "[('Anne',)]",
+                "answer": "Anne"
+            },
+            "pred": {
+                "question": "What is the first name of the student whose last name starts with the letter S and is taking ACCT-211?",
+                "sql_query": "SELECT STU_FNAME FROM STUDENT INNER JOIN ENROLL ON STUDENT.STU_NUM = ENROLL.STU_NUM INNER JOIN CLASS ON ENROLL.CLASS_CODE = CLASS.CLASS_CODE WHERE STU_LNAME LIKE 'S%' AND CLASS.CRS_CODE = 'ACCT-211';\n",
+                "sql_result": "[('Anne',)]",
+                "answer": "Anne"
+            }
+        },
+        {
+            "db": "sports_competition",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "List the distinct region of clubs in ascending alphabetical order.",
+                "sql_query": "SELECT DISTINCT Region FROM club ORDER BY Region ASC",
+                "sql_result": "[('Brazil',), ('China',), ('England',), ('Japan',), ('UK',), ('USA',)]",
+                "answer": "Brazil, China, England, Japan, UK, USA"
+            },
+            "pred": {
+                "question": "List the distinct region of clubs in ascending alphabetical order.",
+                "sql_query": "SELECT DISTINCT Region FROM club ORDER BY Region ASC;\n",
+                "sql_result": "[('Brazil',), ('China',), ('England',), ('Japan',), ('UK',), ('USA',)]",
+                "answer": "Brazil, China, England, Japan, UK, USA"
+            }
+        },
+        {
+            "db": "hr_1",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "display the country ID and number of cities for each country.",
+                "sql_query": "SELECT country_id ,  COUNT(*) FROM locations GROUP BY country_id",
+                "sql_result": "[('\"', 1), ('AU', 1), ('BR', 1), ('CA', 2), ('CH', 2), ('CN', 1), ('DE', 1), ('IN', 1), ('IT', 2), ('JP', 2), ('NL', 1), ('Ox', 1), ('SG', 1), ('UK', 2), ('US', 4)]",
+                "answer": "The country ID and number of cities for each country are:\n- \"\": 1\n- AU: 1\n- BR: 1\n- CA: 2\n- CH: 2\n- CN: 1\n- DE: 1\n- IN: 1\n- IT: 2\n- JP: 2\n- NL: 1\n- Ox: 1\n- SG: 1\n- UK: 2\n- US: 4"
+            },
+            "pred": {
+                "question": "display the country ID and number of cities for each country.",
+                "sql_query": "SELECT countries.COUNTRY_ID, COUNT(locations.CITY) AS num_cities FROM countries JOIN locations ON countries.COUNTRY_ID = locations.COUNTRY_ID GROUP BY countries.COUNTRY_ID;\n",
+                "sql_result": "[('AU', 1), ('BR', 1), ('CA', 2), ('CH', 2), ('CN', 1), ('DE', 1), ('IN', 1), ('IT', 2), ('JP', 2), ('NL', 1), ('SG', 1), ('UK', 2), ('US', 4)]",
+                "answer": "The country ID and number of cities for each country are:\n- AU: 1\n- BR: 1\n- CA: 2\n- CH: 2\n- CN: 1\n- DE: 1\n- IN: 1\n- IT: 2\n- JP: 2\n- NL: 1\n- SG: 1\n- UK: 2\n- US: 4"
+            }
+        },
+        {
+            "db": "music_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the id of the song that lasts the longest.",
+                "sql_query": "SELECT f_id FROM files ORDER BY duration DESC LIMIT 1",
+                "sql_result": "[(4,)]",
+                "answer": "4"
+            },
+            "pred": {
+                "question": "Find the id of the song that lasts the longest.",
+                "sql_query": "SELECT f_id FROM files ORDER BY duration DESC LIMIT 1;\n",
+                "sql_result": "[(4,)]",
+                "answer": "4"
+            }
+        },
+        {
+            "db": "music_1",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "Find the id of songs that are available in mp4 format and have resolution lower than 1000.",
+                "sql_query": "SELECT f_id FROM files WHERE formats  =  \"mp4\" INTERSECT SELECT f_id FROM song WHERE resolution  <  1000",
+                "sql_result": "[(3,), (6,)]",
+                "answer": "The id of songs that are available in mp4 format and have resolution lower than 1000 are 3 and 6."
+            },
+            "pred": {
+                "question": "Find the id of songs that are available in mp4 format and have resolution lower than 1000.",
+                "sql_query": "ERROR\n",
+                "sql_result": "ERROR",
+                "answer": "ERROR"
+            }
+        },
+        {
+            "db": "music_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What are the names of all genres in alphabetical order, combined with its ratings?",
+                "sql_query": "SELECT g_name ,  rating FROM genre ORDER BY g_name",
+                "sql_result": "[('blues', '7'), ('folk', '9'), ('modern', '8'), ('nazrul', '7'), ('pop', '9'), ('tagore', '8')]",
+                "answer": "blues - 7, folk - 9, modern - 8, nazrul - 7, pop - 9, tagore - 8"
+            },
+            "pred": {
+                "question": "What are the names of all genres in alphabetical order, combined with its ratings?",
+                "sql_query": "SELECT g_name, rating FROM genre ORDER BY g_name ASC;\n",
+                "sql_result": "[('blues', '7'), ('folk', '9'), ('modern', '8'), ('nazrul', '7'), ('pop', '9'), ('tagore', '8')]",
+                "answer": "blues - 7, folk - 9, modern - 8, nazrul - 7, pop - 9, tagore - 8"
+            }
+        },
+        {
+            "db": "e_learning",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the number of distinct students enrolled in courses.",
+                "sql_query": "SELECT count(DISTINCT student_id) FROM Student_Course_Enrolment",
+                "sql_result": "[(12,)]",
+                "answer": "There are 12 distinct students enrolled in courses."
+            },
+            "pred": {
+                "question": "Find the number of distinct students enrolled in courses.",
+                "sql_query": "SELECT COUNT(DISTINCT student_id) FROM Student_Course_Enrolment;\n",
+                "sql_result": "[(12,)]",
+                "answer": "There are 12 distinct students enrolled in courses."
+            }
+        },
+        {
+            "db": "e_learning",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "List the dates of enrollment and completion of the student with personal name \"Karson\".",
+                "sql_query": "SELECT T1.date_of_enrolment ,  T1.date_of_completion FROM Student_Course_Enrolment AS T1 JOIN Students AS T2 ON T1.student_id  =  T2.student_id WHERE T2.personal_name  =  \"Karson\"",
+                "sql_result": "[('2017-11-22 18:29:18', '2018-03-09 17:56:18')]",
+                "answer": "The student with personal name \"Karson\" enrolled on November 22, 2017 and completed the course on March 9, 2018."
+            },
+            "pred": {
+                "question": "List the dates of enrollment and completion of the student with personal name \"Karson\".",
+                "sql_query": "SELECT date_of_enrolment, date_of_completion FROM Student_Course_Enrolment INNER JOIN Students ON Student_Course_Enrolment.student_id = Students.student_id WHERE Students.personal_name = 'Karson';\n",
+                "sql_result": "[('2017-11-22 18:29:18', '2018-03-09 17:56:18')]",
+                "answer": "The student with personal name \"Karson\" enrolled on November 22, 2017 and completed the course on March 9, 2018."
+            }
+        },
+        {
+            "db": "e_learning",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the student ID and middle name for all the students with at most two enrollments.",
+                "sql_query": "SELECT T1.student_id ,  T2.middle_name FROM Student_Course_Enrolment AS T1 JOIN Students AS T2 ON T1.student_id  =  T2.student_id GROUP BY T1.student_id HAVING COUNT(*)  <=  2",
+                "sql_result": "[(2, 'Luella'), (3, 'Brandt'), (4, 'Casimir'), (6, 'Asa'), (9, 'Kailey'), (10, 'Vicente'), (11, 'Kolby'), (12, 'Karley'), (13, 'Camilla'), (14, 'Ursula')]",
+                "answer": "The student ID and middle name for all the students with at most two enrollments are:\n(2, 'Luella'), (3, 'Brandt'), (4, 'Casimir'), (6, 'Asa'), (9, 'Kailey'), (10, 'Vicente'), (11, 'Kolby'), (12, 'Karley'), (13, 'Camilla'), (14, 'Ursula')"
+            },
+            "pred": {
+                "question": "Find the student ID and middle name for all the students with at most two enrollments.",
+                "sql_query": "SELECT Students.student_id, Students.middle_name FROM Students INNER JOIN Student_Course_Enrolment ON Students.student_id = Student_Course_Enrolment.student_id GROUP BY Students.student_id HAVING COUNT(Student_Course_Enrolment.registration_id) <= 2;\n",
+                "sql_result": "[(2, 'Luella'), (3, 'Brandt'), (4, 'Casimir'), (6, 'Asa'), (9, 'Kailey'), (10, 'Vicente'), (11, 'Kolby'), (12, 'Karley'), (13, 'Camilla'), (14, 'Ursula')]",
+                "answer": "The student ID and middle name for all the students with at most two enrollments are:\n(2, 'Luella')\n(3, 'Brandt')\n(4, 'Casimir')\n(6, 'Asa')\n(9, 'Kailey')\n(10, 'Vicente')\n(11, 'Kolby')\n(12, 'Karley')\n(13, 'Camilla')\n(14, 'Ursula')"
+            }
+        },
+        {
+            "db": "insurance_policies",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Among all the claims, what is the amount claimed in the claim with the least amount settled? List both the settlement amount and claim amount.",
+                "sql_query": "SELECT Amount_Settled ,  Amount_Claimed FROM Claims ORDER BY Amount_Settled ASC LIMIT 1",
+                "sql_result": "[(930, 49743)]",
+                "answer": "The amount claimed in the claim with the least amount settled is $49,743 and the settlement amount is $930."
+            },
+            "pred": {
+                "question": "Among all the claims, what is the amount claimed in the claim with the least amount settled? List both the settlement amount and claim amount.",
+                "sql_query": "SELECT Amount_Claimed, Amount_Settled FROM Claims ORDER BY Amount_Settled ASC LIMIT 1;\n",
+                "sql_result": "[(49743, 930)]",
+                "answer": "The amount claimed in the claim with the least amount settled is $49,743 and the settlement amount is $930."
+            }
+        },
+        {
+            "db": "hospital_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the physicians who are trained in a procedure that costs more than 5000.",
+                "sql_query": "SELECT T1.name FROM physician AS T1 JOIN trained_in AS T2 ON T1.employeeid  =  T2.physician JOIN procedures AS T3 ON T3.code  =  T2.treatment WHERE T3.cost  >  5000",
+                "sql_result": "[('Christopher Turk',), ('Todd Quinlan',), ('John Wen',), ('John Wen',)]",
+                "answer": "Christopher Turk, Todd Quinlan, John Wen"
+            },
+            "pred": {
+                "question": "Find the physicians who are trained in a procedure that costs more than 5000.",
+                "sql_query": "SELECT Physician.Name FROM Physician INNER JOIN Trained_In ON Physician.EmployeeID = Trained_In.Physician INNER JOIN Procedures ON Trained_In.Treatment = Procedures.Code WHERE Procedures.Cost > 5000;\n",
+                "sql_result": "[('Christopher Turk',), ('Todd Quinlan',), ('John Wen',), ('John Wen',)]",
+                "answer": "The physicians who are trained in a procedure that costs more than 5000 are Christopher Turk, Todd Quinlan, and John Wen."
+            }
+        },
+        {
+            "db": "student_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "How many students are there?",
+                "sql_query": "SELECT count(*) FROM list",
+                "sql_result": "[(60,)]",
+                "answer": "There are 60 students."
+            },
+            "pred": {
+                "question": "How many students are there?",
+                "sql_query": "SELECT COUNT(*) FROM list;\n",
+                "sql_result": "[(60,)]",
+                "answer": "There are 60 students."
+            }
+        },
+        {
+            "db": "student_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "For each classroom, show the classroom number and count the number of distinct grades that use the room.",
+                "sql_query": "SELECT classroom ,  count(DISTINCT grade) FROM list GROUP BY classroom",
+                "sql_result": "[(101, 1), (102, 1), (103, 1), (104, 1), (105, 1), (106, 1), (107, 1), (108, 1), (109, 1), (110, 1), (111, 1), (112, 1)]",
+                "answer": "This query cannot be answered without the data from the \"list\" table. The SQLResult shows the count of distinct grades for each classroom, but without the actual data, we cannot determine the final answer."
+            },
+            "pred": {
+                "question": "For each classroom, show the classroom number and count the number of distinct grades that use the room.",
+                "sql_query": "SELECT Classroom, COUNT(DISTINCT Grade) FROM list GROUP BY Classroom;\n",
+                "sql_result": "[(101, 1), (102, 1), (103, 1), (104, 1), (105, 1), (106, 1), (107, 1), (108, 1), (109, 1), (110, 1), (111, 1), (112, 1)]",
+                "answer": "The SQLResult shows the count of distinct grades for each classroom. The answer cannot be determined without additional information about the data in the \"list\" table."
+            }
+        },
+        {
+            "db": "film_rank",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Count the number of films.",
+                "sql_query": "SELECT count(*) FROM film",
+                "sql_result": "[(13,)]",
+                "answer": "There are 13 films."
+            },
+            "pred": {
+                "question": "Count the number of films.",
+                "sql_query": "SELECT COUNT(*) FROM film;\n",
+                "sql_result": "[(13,)]",
+                "answer": "There are 13 films."
+            }
+        },
+        {
+            "db": "cre_Doc_Tracking_DB",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What is the date when the document \"Marry CV\" was stored?",
+                "sql_query": "SELECT date_stored FROM All_documents WHERE Document_name  =  \"Marry CV\"",
+                "sql_result": "[('1986-10-14 17:53:39',)]",
+                "answer": "The date when the document \"Marry CV\" was stored is 1986-10-14 17:53:39."
+            },
+            "pred": {
+                "question": "What is the date when the document \"Marry CV\" was stored?",
+                "sql_query": "SELECT Date_Stored FROM All_Documents WHERE Document_Name = 'Marry CV';\n",
+                "sql_result": "[('1986-10-14 17:53:39',)]",
+                "answer": "The date when the document \"Marry CV\" was stored is 1986-10-14 17:53:39."
+            }
+        },
+        {
+            "db": "cre_Doc_Tracking_DB",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Show the location code, the starting date and ending data in that location for all the documents.",
+                "sql_query": "SELECT location_code ,  date_in_location_from ,  date_in_locaton_to FROM Document_locations",
+                "sql_result": "[('e', '2017-01-06 23:17:22', '2008-06-08 12:45:38'), ('x', '2017-01-06 23:17:22', '2012-07-03 09:48:46'), ('c', '1972-03-31 09:47:22', '1987-11-05 06:11:22'), ('c', '2017-01-06 23:17:22', '2010-11-26 19:22:50'), ('x', '2008-06-08 12:45:38', '1976-06-15 03:40:06'), ('x', '1986-10-14 17:53:39', '2010-11-26 19:22:50'), ('b', '2017-01-06 23:17:22', '1995-01-01 03:52:11'), ('b', '1985-05-13 12:19:43', '1986-10-14 17:53:39'), ('b', '1986-10-14 17:53:39', '2010-11-26 19:22:50'), ('x', '1997-03-10 15:24:00', '1976-06-15 03:40:06'), ('e', '1972-03-31 09:47:22', '1987-11-05 06:11:22'), ('e', '2010-11-26 19:22:50', '2017-01-06 23:17:22'), ('n', '2017-01-06 23:17:22', '1997-03-10 15:24:00'), ('x', '1972-03-31 09:47:22', '2009-08-18 03:29:08'), ('e', '2009-08-18 03:29:08', '1986-10-14 17:53:39')]",
+                "answer": "Location code, starting date and ending date for all documents are shown in the SQLResult."
+            },
+            "pred": {
+                "question": "Show the location code, the starting date and ending data in that location for all the documents.",
+                "sql_query": "SELECT Document_Locations.Location_Code, Document_Locations.Date_in_Location_From, Document_Locations.Date_in_Locaton_To FROM Document_Locations ORDER BY Document_Locations.Location_Code;\n",
+                "sql_result": "[('b', '2017-01-06 23:17:22', '1995-01-01 03:52:11'), ('b', '1985-05-13 12:19:43', '1986-10-14 17:53:39'), ('b', '1986-10-14 17:53:39', '2010-11-26 19:22:50'), ('c', '1972-03-31 09:47:22', '1987-11-05 06:11:22'), ('c', '2017-01-06 23:17:22', '2010-11-26 19:22:50'), ('e', '2017-01-06 23:17:22', '2008-06-08 12:45:38'), ('e', '1972-03-31 09:47:22', '1987-11-05 06:11:22'), ('e', '2010-11-26 19:22:50', '2017-01-06 23:17:22'), ('e', '2009-08-18 03:29:08', '1986-10-14 17:53:39'), ('n', '2017-01-06 23:17:22', '1997-03-10 15:24:00'), ('x', '2017-01-06 23:17:22', '2012-07-03 09:48:46'), ('x', '2008-06-08 12:45:38', '1976-06-15 03:40:06'), ('x', '1986-10-14 17:53:39', '2010-11-26 19:22:50'), ('x', '1997-03-10 15:24:00', '1976-06-15 03:40:06'), ('x', '1972-03-31 09:47:22', '2009-08-18 03:29:08')]",
+                "answer": "The location code, starting date, and ending date for all documents are listed in the SQLResult."
+            }
+        },
+        {
+            "db": "club_1",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Which club has the most members majoring in \"600\"?",
+                "sql_query": "SELECT t1.clubname FROM club AS t1 JOIN member_of_club AS t2 ON t1.clubid  =  t2.clubid JOIN student AS t3 ON t2.stuid  =  t3.stuid WHERE t3.major  =  \"600\" GROUP BY t1.clubname ORDER BY count(*) DESC LIMIT 1",
+                "sql_result": "[('Bootup Baltimore',)]",
+                "answer": "Bootup Baltimore"
+            },
+            "pred": {
+                "question": "Which club has the most members majoring in \"600\"?",
+                "sql_query": "SELECT Club.ClubName, COUNT(*) AS MemberCount FROM Club INNER JOIN Member_of_club ON Club.ClubID = Member_of_club.ClubID INNER JOIN Student ON Member_of_club.StuID = Student.StuID WHERE Student.Major = '600' GROUP BY Club.ClubName ORDER BY MemberCount DESC;\n",
+                "sql_result": "[('Bootup Baltimore', 2), ('Tennis Club', 1), ('Hopkins Student Enterprises', 1)]",
+                "answer": "Bootup Baltimore"
+            }
+        },
+        {
+            "db": "tracking_grants_for_research",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "Find the organisation ids and details of the organisations which are involved in",
+                "sql_query": "SELECT T2.organisation_id ,  T2.organisation_details FROM Grants AS T1 JOIN Organisations AS T2 ON T1.organisation_id  =  T2.organisation_id GROUP BY T2.organisation_id HAVING sum(T1.grant_amount)  >  6000",
+                "sql_result": "[(2, 'eius'), (7, 'itaque'), (9, 'a'), (10, 'officiis'), (12, 'itaque'), (14, 'quo')]",
+                "answer": "The organisation ids and details of the organisations involved in are:\n- Organisation ID 2 with details 'eius'\n- Organisation ID 7 with details 'itaque'\n- Organisation ID 9 with details 'a'\n- Organisation ID 10 with details 'officiis'\n- Organisation ID 12 with details 'itaque'\n- Organisation ID 14 with details 'quo'"
+            },
+            "pred": {
+                "question": "Find the organisation ids and details of the organisations which are involved in",
+                "sql_query": "SELECT o.organisation_id, o.organisation_details FROM Organisations o INNER JOIN Projects p ON o.organisation_id = p.organisation_id INNER JOIN Project_Staff ps ON p.project_id = ps.project_id INNER JOIN Research_Staff rs ON ps.staff_id = rs.staff_id INNER JOIN Grants g ON o.organisation_id = g.organisation_id INNER JOIN Documents d ON g.grant_id = d.grant_id GROUP BY o.organisation_id;\n",
+                "sql_result": "[]",
+                "answer": "There are no results for the given query."
+            }
+        },
+        {
+            "db": "college_3",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the rank of the faculty that the fewest faculties belong to.",
+                "sql_query": "SELECT Rank FROM FACULTY GROUP BY Rank ORDER BY count(*) ASC LIMIT 1",
+                "sql_result": "[('AssocProf',)]",
+                "answer": "The rank of the faculty that the fewest faculties belong to is AssocProf."
+            },
+            "pred": {
+                "question": "Find the rank of the faculty that the fewest faculties belong to.",
+                "sql_query": "SELECT Rank, COUNT(*) AS Count FROM Faculty GROUP BY Rank ORDER BY Count ASC LIMIT 1;\n",
+                "sql_result": "[('AssocProf', 8)]",
+                "answer": "The rank of the faculty that the fewest faculties belong to is AssocProf, with only 8 faculties in that rank."
+            }
+        },
+        {
+            "db": "department_store",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the names of customers who have bought by at least three distinct products.",
+                "sql_query": "SELECT DISTINCT T1.customer_name FROM customers AS T1 JOIN customer_orders AS T2 ON T1.customer_id  =  T2.customer_id JOIN order_items AS T3 ON T2.order_id  =  T3.order_id GROUP BY T1.customer_id HAVING COUNT (DISTINCT T3.product_id)  >=  3",
+                "sql_result": "[('Lexus',), ('Jon',)]",
+                "answer": "The names of customers who have bought at least three distinct products are Lexus and Jon."
+            },
+            "pred": {
+                "question": "Find the names of customers who have bought by at least three distinct products.",
+                "sql_query": "SELECT customer_name FROM Customers INNER JOIN Customer_Orders ON Customers.customer_id = Customer_Orders.customer_id INNER JOIN Order_Items ON Customer_Orders.order_id = Order_Items.order_id GROUP BY customer_name HAVING COUNT(DISTINCT product_id) >= 3;\n",
+                "sql_result": "[('Jon',), ('Lexus',)]",
+                "answer": "The names of customers who have bought at least three distinct products are Jon and Lexus."
+            }
+        },
+        {
+            "db": "soccer_2",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "How many students are enrolled in college?",
+                "sql_query": "SELECT sum(enr) FROM College",
+                "sql_result": "[(71000,)]",
+                "answer": "71000"
+            },
+            "pred": {
+                "question": "How many students are enrolled in college?",
+                "sql_query": "SELECT SUM(enr) FROM College;\n",
+                "sql_result": "[(71000,)]",
+                "answer": "71000"
+            }
+        },
+        {
+            "db": "soccer_2",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "What is the count of states with college students playing in the mid position but not as goalies?",
+                "sql_query": "SELECT COUNT(*) FROM (SELECT T1.state FROM college AS T1 JOIN tryout AS T2 ON T1.cName  =  T2.cName WHERE T2.pPos  =  'mid' EXCEPT SELECT T1.state FROM college AS T1 JOIN tryout AS T2 ON T1.cName  =  T2.cName WHERE T2.pPos  =  'goalie')",
+                "sql_result": "[(1,)]",
+                "answer": "There is 1 state with college students playing in the mid position but not as goalies."
+            },
+            "pred": {
+                "question": "What is the count of states with college students playing in the mid position but not as goalies?",
+                "sql_query": "SELECT COUNT(DISTINCT state) FROM College INNER JOIN Tryout ON College.cName = Tryout.cName WHERE pPos = 'mid' AND decision = 'yes' AND pPos != 'goalie';\n",
+                "sql_result": "[(0,)]",
+                "answer": "There are 0 states with college students playing in the mid position but not as goalies."
+            }
+        },
+        {
+            "db": "cre_Drama_Workshop_Groups",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Show all the distinct product names with price higher than the average.",
+                "sql_query": "SELECT DISTINCT Product_Name FROM PRODUCTS WHERE Product_Price  >  (SELECT avg(Product_Price) FROM PRODUCTS)",
+                "sql_result": "[('film',), ('photo',)]",
+                "answer": "Film and photo are the distinct product names with price higher than the average."
+            },
+            "pred": {
+                "question": "Show all the distinct product names with price higher than the average.",
+                "sql_query": "SELECT DISTINCT Product_Name, Product_Price FROM Products WHERE Product_Price > (SELECT AVG(Product_Price) FROM Products);\n",
+                "sql_result": "[('film', 17622723), ('film', 49097627), ('photo', 22082866)]",
+                "answer": "The distinct product names with price higher than the average are: film and photo."
+            }
+        },
+        {
+            "db": "manufactory_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the name of companies whose revenue is between 100 and 150.",
+                "sql_query": "SELECT name FROM manufacturers WHERE revenue BETWEEN 100 AND 150",
+                "sql_result": "[('Sony',), ('Creative Labs',), ('Fujitsu',)]",
+                "answer": "The name of companies whose revenue is between 100 and 150 are Sony, Creative Labs, and Fujitsu."
+            },
+            "pred": {
+                "question": "Find the name of companies whose revenue is between 100 and 150.",
+                "sql_query": "SELECT Name FROM Manufacturers WHERE Revenue BETWEEN 100 AND 150;\n",
+                "sql_result": "[('Sony',), ('Creative Labs',), ('Fujitsu',)]",
+                "answer": "The name of companies whose revenue is between 100 and 150 are Sony, Creative Labs, and Fujitsu."
+            }
+        },
+        {
+            "db": "manufactory_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What is the total revenue of companies with revenue greater than the lowest revenue of any manufacturer in Austin?",
+                "sql_query": "SELECT sum(revenue) FROM manufacturers WHERE revenue  >  (SELECT min(revenue) FROM manufacturers WHERE headquarter  =  'Austin')",
+                "sql_result": "[(450.0,)]",
+                "answer": "The total revenue of companies with revenue greater than the lowest revenue of any manufacturer in Austin is $450.0 million."
+            },
+            "pred": {
+                "question": "What is the total revenue of companies with revenue greater than the lowest revenue of any manufacturer in Austin?",
+                "sql_query": "SELECT SUM(Revenue) FROM Manufacturers WHERE Revenue > (SELECT MIN(Revenue) FROM Manufacturers WHERE Headquarter = 'Austin');\n",
+                "sql_result": "[(450.0,)]",
+                "answer": "The total revenue of companies with revenue greater than the lowest revenue of any manufacturer in Austin is $450."
+            }
+        },
+        {
+            "db": "voter_2",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "How many male (sex is M) students have class senator votes in the fall election cycle?",
+                "sql_query": "SELECT count(*) FROM STUDENT AS T1 JOIN VOTING_RECORD AS T2 ON T1.StuID  =  Class_Senator_Vote WHERE T1.Sex  =  \"M\" AND T2.Election_Cycle  =  \"Fall\"",
+                "sql_result": "[(5,)]",
+                "answer": "There are 5 male students with class senator votes in the fall election cycle."
+            },
+            "pred": {
+                "question": "How many male (sex is M) students have class senator votes in the fall election cycle?",
+                "sql_query": "SELECT COUNT(*) FROM Voting_record INNER JOIN Student ON Voting_record.Class_Senator_Vote = Student.StuID WHERE Election_Cycle = 'Fall' AND Sex = 'M';\n",
+                "sql_result": "[(5,)]",
+                "answer": "There are 5 male students with class senator votes in the fall election cycle."
+            }
+        },
+        {
+            "db": "swimming",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the names of stadiums which have never had any event.",
+                "sql_query": "SELECT name FROM stadium WHERE id NOT IN (SELECT stadium_id FROM event)",
+                "sql_result": "[('Ferenc Pusk\u00e1s Stadion',), ('Stade des Lumi\u00e8res',), ('Northumberland Development Project',), ('Arena Baltika',)]",
+                "answer": "The names of stadiums which have never had any event are: Ferenc Pusk\u00e1s Stadion, Stade des Lumi\u00e8res, Northumberland Development Project, and Arena Baltika."
+            },
+            "pred": {
+                "question": "Find the names of stadiums which have never had any event.",
+                "sql_query": "SELECT name FROM stadium WHERE ID NOT IN (SELECT Stadium_ID FROM event);\n",
+                "sql_result": "[('Ferenc Pusk\u00e1s Stadion',), ('Stade des Lumi\u00e8res',), ('Northumberland Development Project',), ('Arena Baltika',)]",
+                "answer": "The names of stadiums which have never had any event are: Ferenc Pusk\u00e1s Stadion, Stade des Lumi\u00e8res, Northumberland Development Project, and Arena Baltika."
+            }
+        },
+        {
+            "db": "railway",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "What is the maximum level of managers in countries that are not \"Australia\"?",
+                "sql_query": "SELECT max(LEVEL) FROM manager WHERE Country != \"Australia \"",
+                "sql_result": "[(12,)]",
+                "answer": "The maximum level of managers in countries that are not \"Australia\" is 12."
+            },
+            "pred": {
+                "question": "What is the maximum level of managers in countries that are not \"Australia\"?",
+                "sql_query": "SELECT MAX(Level) FROM manager WHERE Country != 'Australia';\n",
+                "sql_result": "[(11,)]",
+                "answer": "The maximum level of managers in countries that are not \"Australia\" is 11."
+            }
+        },
+        {
+            "db": "dorm_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What are the names of all the dorms that can accomdate more than 300 students?",
+                "sql_query": "SELECT dorm_name FROM dorm WHERE student_capacity  >  300",
+                "sql_result": "[('Fawlty Towers',), ('Dorm-plex 2000',)]",
+                "answer": "The names of all the dorms that can accommodate more than 300 students are Fawlty Towers and Dorm-plex 2000."
+            },
+            "pred": {
+                "question": "What are the names of all the dorms that can accomdate more than 300 students?",
+                "sql_query": "SELECT dorm_name FROM Dorm WHERE student_capacity > 300;\n",
+                "sql_result": "[('Fawlty Towers',), ('Dorm-plex 2000',)]",
+                "answer": "The names of all the dorms that can accommodate more than 300 students are Fawlty Towers and Dorm-plex 2000."
+            }
+        },
+        {
+            "db": "dorm_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "How many different majors are there and how many different city codes are there for each student?",
+                "sql_query": "SELECT count(DISTINCT major) ,  count(DISTINCT city_code) FROM student",
+                "sql_result": "[(6, 19)]",
+                "answer": "There are 6 different majors and 19 different city codes for each student."
+            },
+            "pred": {
+                "question": "How many different majors are there and how many different city codes are there for each student?",
+                "sql_query": "SELECT COUNT(DISTINCT Major) AS 'Number of Majors', COUNT(DISTINCT city_code) AS 'Number of City Codes' FROM Student;\n",
+                "sql_result": "[(6, 19)]",
+                "answer": "There are 6 different majors and 19 different city codes for each student."
+            }
+        },
+        {
+            "db": "customer_complaints",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Return the city with the customer type code \"Good Credit Rating\" that had the fewest customers.",
+                "sql_query": "SELECT town_city FROM customers WHERE customer_type_code  =  \"Good Credit Rating\" GROUP BY town_city ORDER BY count(*) LIMIT 1",
+                "sql_result": "[('Hansenbury',)]",
+                "answer": "The city with the customer type code \"Good Credit Rating\" that had the fewest customers is Hansenbury."
+            },
+            "pred": {
+                "question": "Return the city with the customer type code \"Good Credit Rating\" that had the fewest customers.",
+                "sql_query": "SELECT town_city, customer_type_code, COUNT(*) AS num_customers FROM Customers WHERE customer_type_code = 'Good Credit Rating' GROUP BY town_city ORDER BY num_customers ASC LIMIT 1;\n",
+                "sql_result": "[('Hansenbury', 'Good Credit Rating', 1)]",
+                "answer": "The city with the customer type code \"Good Credit Rating\" that had the fewest customers is Hansenbury."
+            }
+        },
+        {
+            "db": "cre_Theme_park",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Which tourist attractions can we get to by bus? Tell me the names of the attractions.",
+                "sql_query": "SELECT Name FROM TOURIST_ATTRACTIONS WHERE How_to_Get_There  =  \"bus\"",
+                "sql_result": "[('art museum',), ('film festival',), ('haunted mansion',), ('impressions de France',), ('jungle cruise',), ('cafe',)]",
+                "answer": "The tourist attractions that can be reached by bus are: art museum, film festival, haunted mansion, impressions de France, jungle cruise, and cafe."
+            },
+            "pred": {
+                "question": "Which tourist attractions can we get to by bus? Tell me the names of the attractions.",
+                "sql_query": "SELECT Name FROM Tourist_Attractions WHERE How_to_Get_There LIKE '%bus%' ORDER BY Name;\n",
+                "sql_result": "[('art museum',), ('cafe',), ('film festival',), ('haunted mansion',), ('impressions de France',), ('jungle cruise',)]",
+                "answer": "The tourist attractions that can be reached by bus are: art museum, cafe, film festival, haunted mansion, impressions de France, and jungle cruise."
+            }
+        },
+        {
+            "db": "customers_and_addresses",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "How many customers are there?",
+                "sql_query": "SELECT count(*) FROM customers",
+                "sql_result": "[(15,)]",
+                "answer": "There are 15 customers."
+            },
+            "pred": {
+                "question": "How many customers are there?",
+                "sql_query": "SELECT COUNT(*) FROM Customers;\n",
+                "sql_result": "[(15,)]",
+                "answer": "There are 15 customers."
+            }
+        },
+        {
+            "db": "customers_and_addresses",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the name of all customers whose name contains \"Alex\".",
+                "sql_query": "SELECT customer_name FROM customers WHERE customer_name LIKE \"%Alex%\"",
+                "sql_result": "[('Prof. Alexzander Hamill',), ('Alexane Kilback',)]",
+                "answer": "The name of all customers whose name contains \"Alex\" are Prof. Alexzander Hamill and Alexane Kilback."
+            },
+            "pred": {
+                "question": "Find the name of all customers whose name contains \"Alex\".",
+                "sql_query": "SELECT customer_name FROM Customers WHERE customer_name LIKE '%Alex%';\n",
+                "sql_result": "[('Prof. Alexzander Hamill',), ('Alexane Kilback',)]",
+                "answer": "The name of all customers whose name contains \"Alex\" are Prof. Alexzander Hamill and Alexane Kilback."
+            }
+        },
+        {
+            "db": "customers_and_addresses",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "List the countries having more than 4 addresses listed.",
+                "sql_query": "SELECT country FROM addresses GROUP BY country HAVING count(address_id)  >  4",
+                "sql_result": "[('USA',)]",
+                "answer": "USA"
+            },
+            "pred": {
+                "question": "List the countries having more than 4 addresses listed.",
+                "sql_query": "SELECT country, COUNT(*) AS num_addresses FROM Addresses GROUP BY country HAVING num_addresses > 4 ORDER BY num_addresses DESC;\n",
+                "sql_result": "[('USA', 15)]",
+                "answer": "USA"
+            }
+        },
+        {
+            "db": "city_record",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Which cities have lower temperature in March than in July and have been once host cities?",
+                "sql_query": "SELECT T1.city FROM city AS T1 JOIN temperature AS T2 ON T1.city_id  =  T2.city_id WHERE T2.Mar  <  T2.Jul INTERSECT SELECT T3.city FROM city AS T3 JOIN hosting_city AS T4 ON T3.city_id  =  T4.host_city",
+                "sql_result": "[('Jiaxing ( Zhejiang )',), ('Nanjing ( Jiangsu )',), ('Shanghai',), ('Wuxi ( Jiangsu )',)]",
+                "answer": "Jiaxing (Zhejiang), Nanjing (Jiangsu), Shanghai, and Wuxi (Jiangsu)"
+            },
+            "pred": {
+                "question": "Which cities have lower temperature in March than in July and have been once host cities?",
+                "sql_query": "SELECT c.City, c.Hanzi, c.Hanyu_Pinyin, t.Mar, t.Jul FROM city c JOIN temperature t ON c.City_ID = t.City_ID JOIN hosting_city hc ON c.City_ID = hc.Host_City WHERE t.Mar < t.Jul GROUP BY c.City\n",
+                "sql_result": "[('Jiaxing ( Zhejiang )', '\u5609\u5174/ \u5609\u8208', 'Ji\u0101x\u012bng', 26.6, 28.9), ('Nanjing ( Jiangsu )', '\u5357\u4eac', 'N\u00e1nj\u012bng', 26.1, 27.8), ('Shanghai', '\u4e0a\u6d77', 'Sh\u00e0ngh\u01cei', 18.3, 20.6), ('Wuxi ( Jiangsu )', '\u65e0\u9521/ \u7121\u932b', 'W\u00fax\u012b', 18.3, 21.7)]",
+                "answer": "The cities that have lower temperature in March than in July and have been once host cities are Jiaxing, Nanjing, Shanghai, and Wuxi."
+            }
+        },
+        {
+            "db": "e_government",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What is the payment method code and party phone of the party with the email 'enrico09@example.com'?",
+                "sql_query": "SELECT payment_method_code ,  party_phone FROM parties WHERE party_email  =  \"enrico09@example.com\"",
+                "sql_result": "[('Cheque', '05374656172')]",
+                "answer": "The payment method code is 'Cheque' and the party phone is '05374656172'."
+            },
+            "pred": {
+                "question": "What is the payment method code and party phone of the party with the email 'enrico09@example.com'?",
+                "sql_query": "SELECT payment_method_code, party_phone FROM Parties WHERE party_email = 'enrico09@example.com';\n",
+                "sql_result": "[('Cheque', '05374656172')]",
+                "answer": "Payment method code is 'Cheque' and party phone is '05374656172'."
+            }
+        },
+        {
+            "db": "school_bus",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "Show all home cities except for those having a driver older than 40.",
+                "sql_query": "SELECT home_city FROM driver EXCEPT SELECT home_city FROM driver WHERE age  >  40",
+                "sql_result": "[('Bethel',), ('Coventry',), ('East Hartford',)]",
+                "answer": "Bethel, Coventry, and East Hartford are the home cities of drivers who are not older than 40."
+            },
+            "pred": {
+                "question": "Show all home cities except for those having a driver older than 40.",
+                "sql_query": "SELECT Home_city FROM driver WHERE Age < 40;\n",
+                "sql_result": "[('Bethel',), ('Hartford',), ('Coventry',), ('East Hartford',), ('East Hartford',), ('East Hartford',)]",
+                "answer": "The SQL query is incorrect for the given question. It is selecting home cities where the driver's age is less than 40, which is the opposite of what the question is asking for. The correct query would be:\n\nSQLQuery: SELECT DISTINCT Home_city FROM driver WHERE NOT Age > 40;\n\nSQLResult: [('Bethel',), ('Hartford',), ('Coventry',)]\n\nAnswer: The home cities of drivers who are not older than 40 are Bethel, Hartford, and Coventry."
+            }
+        },
+        {
+            "db": "flight_company",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "List the id, country, city and name of the airports ordered alphabetically by the name.",
+                "sql_query": "SELECT id ,  country ,  city ,  name FROM airport ORDER BY name",
+                "sql_result": "[(1, 'Iceland', 'Akureyri', 'Akureyri Airport'), (4, 'United States', 'Baltimore', 'Baltimore-Washington Airport'), (6, 'Norway', 'Bergen', 'Bergen Airport'), (7, 'Denmark', 'Billund', 'Billund Airport'), (5, 'Spain', 'Barcelona', 'El Prat Airport'), (8, 'United States', 'Boston', 'Logan International Airport'), (9, 'Belgium', 'Brussels', 'National Airport'), (2, 'Netherlands', 'Amsterdam', 'Schiphol Airport'), (3, 'United States', 'Anchorage', 'Ted Stevens Airport')]",
+                "answer": "[(1, 'Iceland', 'Akureyri', 'Akureyri Airport'), (4, 'United States', 'Baltimore', 'Baltimore-Washington Airport'), (6, 'Norway', 'Bergen', 'Bergen Airport'), (7, 'Denmark', 'Billund', 'Billund Airport'), (5, 'Spain', 'Barcelona', 'El Prat Airport'), (8, 'United States', 'Boston', 'Logan International Airport'), (9, 'Belgium', 'Brussels', 'National Airport'), (2, 'Netherlands', 'Amsterdam', 'Schiphol Airport'), (3, 'United States', 'Anchorage', 'Ted Stevens Airport')]\n\nThe airports are listed alphabetically by name."
+            },
+            "pred": {
+                "question": "List the id, country, city and name of the airports ordered alphabetically by the name.",
+                "sql_query": "SELECT id, Country, City, name FROM airport ORDER BY name ASC;\n",
+                "sql_result": "[(1, 'Iceland', 'Akureyri', 'Akureyri Airport'), (4, 'United States', 'Baltimore', 'Baltimore-Washington Airport'), (6, 'Norway', 'Bergen', 'Bergen Airport'), (7, 'Denmark', 'Billund', 'Billund Airport'), (5, 'Spain', 'Barcelona', 'El Prat Airport'), (8, 'United States', 'Boston', 'Logan International Airport'), (9, 'Belgium', 'Brussels', 'National Airport'), (2, 'Netherlands', 'Amsterdam', 'Schiphol Airport'), (3, 'United States', 'Anchorage', 'Ted Stevens Airport')]",
+                "answer": "[(1, 'Iceland', 'Akureyri', 'Akureyri Airport'), (4, 'United States', 'Baltimore', 'Baltimore-Washington Airport'), (6, 'Norway', 'Bergen', 'Bergen Airport'), (7, 'Denmark', 'Billund', 'Billund Airport'), (5, 'Spain', 'Barcelona', 'El Prat Airport'), (8, 'United States', 'Boston', 'Logan International Airport'), (9, 'Belgium', 'Brussels', 'National Airport'), (2, 'Netherlands', 'Amsterdam', 'Schiphol Airport'), (3, 'United States', 'Anchorage', 'Ted Stevens Airport')]\n\nAnswer: The id, country, city and name of the airports ordered alphabetically by the name are shown in the SQLResult."
+            }
+        },
+        {
+            "db": "cre_Docs_and_Epenses",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "List all statement ids and statement details.",
+                "sql_query": "SELECT STATEMENT_ID ,  statement_details FROM Statements",
+                "sql_result": "[(57, 'Open Project'), (192, 'Private Project')]",
+                "answer": "[(57, 'Open Project'), (192, 'Private Project')]"
+            },
+            "pred": {
+                "question": "List all statement ids and statement details.",
+                "sql_query": "SELECT Statements.Statement_ID, Statements.Statement_Details FROM Statements;\n",
+                "sql_result": "[(57, 'Open Project'), (192, 'Private Project')]",
+                "answer": "[(57, 'Open Project'), (192, 'Private Project')]"
+            }
+        },
+        {
+            "db": "wine_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "What are the prices of wines produced before the year of 2010?",
+                "sql_query": "SELECT Price FROM WINE WHERE YEAR  <  2010",
+                "sql_result": "[(44,), (35,), (40,), (38,), (44,), (15,), (18,), (48,), (36,), (25,), (30,), (28,), (48,), (28,), (26,), (16,), (23,), (22,), (26,), (25,), (19,), (60,), (25,), (32,), (20,), (27,), (25,), (21,), (24,), (24,), (18,), (32,), (15,), (27,), (12,), (10,), (25,), (16,), (15,), (16,), (24,), (12,), (20,), (14,), (12,), (12,), (12,), (135,), (130,), (48,), (85,), (50,), (125,), (125,), (95,), (50,), (135,), (175,), (60,), (72,), (72,), (72,), (70,), (56,), (75,), (52,), (72,), (72,), (100,), (72,), (72,), (65,), (70,), (42,), (55,), (45,), (72,), (68,), (52,), (40,), (17,), (43,), (43,), (40,), (28,), (45,), (50,), (36,), (32,), (30,), (30,), (32,), (13,), (36,), (24,), (21,), (40,), (50,), (18,), (40,), (15,), (60,), (76,), (12,), (11,), (225,), (80,), (130,), (115,), (78,), (40,), (40,), (90,), (27,), (25,), (200,), (36,), (35,), (48,), (39,), (42,), (38,), (48,), (48,), (34,), (75,), (35,), (11,), (48,), (54,), (48,), (45,), (45,), (51,), (48,), (48,), (45,), (29,), (29,), (45,), (45,), (48,), (45,), (45,), (29,), (48,), (48,), (45,), (36,), (69,), (45,), (29,), (20,), (14,), (200,), (65,), (40,), (45,), (36,), (36,), (42,), (55,), (38,), (40,), (40,), (27,), (44,), (50,), (55,), (38,), (22,), (35,), (17,), (40,), (20,), (60,), (45,), (25,), (25,), (38,), (40,), (30,), (35,), (45,), (30,), (24,), (18,), (9,), (43,), (29,), (34,), (32,), (42,), (40,), (28,), (38,), (24,), (20,), (18,), (18,), (30,), (13,), (45,), (48,), (36,), (48,), (40,), (15,), (38,), (60,), (28,), (52,), (45,), (25,), (24,), (75,), (45,), (45,), (55,), (75,), (75,), (75,), (50,), (60,), (35,), (39,), (30,), (60,), (29,), (55,), (60,), (45,), (35,), (37,), (20,), (135,), (95,), (125,), (135,), (125,), (75,), (60,), (60,), (40,), (60,), (85,), (100,), (85,), (55,), (55,), (100,), (50,), (75,), (85,), (45,), (60,), (42,), (75,), (75,), (80,), (75,), (40,), (25,), (60,), (75,), (40,), (70,), (55,), (40,), (48,), (30,), (40,), (40,), (25,), (45,), (45,), (44,), (70,), (60,), (75,), (40,), (49,), (80,), (70,), (26,), (50,), (30,), (60,), (32,), (28,), (20,), (35,), (55,), (25,), (40,), (26,), (35,), (56,), (36,), (40,), (60,), (44,), (49,), (35,), (48,), (40,), (32,), (26,), (26,), (60,), (39,), (20,), (17,), (26,), (43,), (38,), (35,), (45,), (80,), (30,), (42,), (48,), (25,), (38,), (40,), (40,), (24,), (39,), (24,), (30,), (38,), (26,), (13,), (30,), (22,), (17,), (13,), (18,), (10,), (46,), (42,), (35,), (44,), (36,), (45,), (34,), (48,), (54,), (50,), (38,), (44,), (48,), (45,), (42,), (40,), (40,), (25,), (25,), (43,), (43,), (75,), (38,), (55,), (75,), (36,), (35,), (30,), (33,), (48,), (40,), (23,), (43,), (27,), (50,), (27,), (20,), (18,), (18,), (19,), (18,), (18,), (35,), (26,), (20,), (20,), (15,), (12,), (10,), (25,), (60,), (25,), (12,), (130,), (75,), (100,), (90,), (40,), (90,), (78,), (55,), (20,), (35,), (32,), (20,), (10,), (75,), (35,), (25,), (22,), (25,), (17,), (150,), (75,), (60,), (65,), (75,), (90,), (125,), (45,), (50,), (50,), (40,), (40,), (92,), (90,), (39,), (135,), (65,), (70,), (18,), (18,), (47,), (46,), (55,), (10,), (100,), (135,), (15,), (60,), (40,), (26,), (15,), (39,), (76,), (45,), (80,), (76,), (76,), (70,), (25,), (20,), (44,), (33,), (59,), (40,), (30,), (20,), (40,), (20,), (25,), (45,), (135,), (40,), (18,), (45,), (16,), (33,), (55,), (35,), (35,), (38,), (41,), (32,), (32,), (28,), (34,), (50,), (35,), (28,), (30,), (28,), (18,), (22,), (25,), (24,), (27,), (30,), (18,), (45,), (45,), (24,), (18,), (14,), (12,), (100,), (48,), (17,), (25,), (11,)]",
+                "answer": "[(44,), (35,), (40,), (38,), (44,), (15,), (18,), (48,), (36,), (25,), (30,), (28,), (48,), (28,), (26,), (16,), (23,), (22,), (26,), (25,), (19,), (60,), (25,), (32,), (20,), (27,), (25,), (21,), (24,), (24,), (18,), (32,), (15,), (27,), (12,), (10,), (25,), (16,), (15,), (16,), (24,), (12,), (20,), (14,), (12,), (12,), (12,), (135,), (130,), (48,), (85,), (50,), (125,), (125,), (95,), (50,), (135,), (175,), (60,), (72,), (72,), (72,), (70,), (56,), (75,), (52,), (72,), (72,), (100,), (72,), (72,), (65,), (70,), (42,), (55,), (45,), (72,), (68,), (52,), (40,), (17,), (43,), (43,), (40,), (28,),"
+            },
+            "pred": {
+                "question": "What are the prices of wines produced before the year of 2010?",
+                "sql_query": "SELECT Price FROM wine WHERE Year < 2010;\n",
+                "sql_result": "[(44,), (35,), (40,), (38,), (44,), (15,), (18,), (48,), (36,), (25,), (30,), (28,), (48,), (28,), (26,), (16,), (23,), (22,), (26,), (25,), (19,), (60,), (25,), (32,), (20,), (27,), (25,), (21,), (24,), (24,), (18,), (32,), (15,), (27,), (12,), (10,), (25,), (16,), (15,), (16,), (24,), (12,), (20,), (14,), (12,), (12,), (12,), (135,), (130,), (48,), (85,), (50,), (125,), (125,), (95,), (50,), (135,), (175,), (60,), (72,), (72,), (72,), (70,), (56,), (75,), (52,), (72,), (72,), (100,), (72,), (72,), (65,), (70,), (42,), (55,), (45,), (72,), (68,), (52,), (40,), (17,), (43,), (43,), (40,), (28,), (45,), (50,), (36,), (32,), (30,), (30,), (32,), (13,), (36,), (24,), (21,), (40,), (50,), (18,), (40,), (15,), (60,), (76,), (12,), (11,), (225,), (80,), (130,), (115,), (78,), (40,), (40,), (90,), (27,), (25,), (200,), (36,), (35,), (48,), (39,), (42,), (38,), (48,), (48,), (34,), (75,), (35,), (11,), (48,), (54,), (48,), (45,), (45,), (51,), (48,), (48,), (45,), (29,), (29,), (45,), (45,), (48,), (45,), (45,), (29,), (48,), (48,), (45,), (36,), (69,), (45,), (29,), (20,), (14,), (200,), (65,), (40,), (45,), (36,), (36,), (42,), (55,), (38,), (40,), (40,), (27,), (44,), (50,), (55,), (38,), (22,), (35,), (17,), (40,), (20,), (60,), (45,), (25,), (25,), (38,), (40,), (30,), (35,), (45,), (30,), (24,), (18,), (9,), (43,), (29,), (34,), (32,), (42,), (40,), (28,), (38,), (24,), (20,), (18,), (18,), (30,), (13,), (45,), (48,), (36,), (48,), (40,), (15,), (38,), (60,), (28,), (52,), (45,), (25,), (24,), (75,), (45,), (45,), (55,), (75,), (75,), (75,), (50,), (60,), (35,), (39,), (30,), (60,), (29,), (55,), (60,), (45,), (35,), (37,), (20,), (135,), (95,), (125,), (135,), (125,), (75,), (60,), (60,), (40,), (60,), (85,), (100,), (85,), (55,), (55,), (100,), (50,), (75,), (85,), (45,), (60,), (42,), (75,), (75,), (80,), (75,), (40,), (25,), (60,), (75,), (40,), (70,), (55,), (40,), (48,), (30,), (40,), (40,), (25,), (45,), (45,), (44,), (70,), (60,), (75,), (40,), (49,), (80,), (70,), (26,), (50,), (30,), (60,), (32,), (28,), (20,), (35,), (55,), (25,), (40,), (26,), (35,), (56,), (36,), (40,), (60,), (44,), (49,), (35,), (48,), (40,), (32,), (26,), (26,), (60,), (39,), (20,), (17,), (26,), (43,), (38,), (35,), (45,), (80,), (30,), (42,), (48,), (25,), (38,), (40,), (40,), (24,), (39,), (24,), (30,), (38,), (26,), (13,), (30,), (22,), (17,), (13,), (18,), (10,), (46,), (42,), (35,), (44,), (36,), (45,), (34,), (48,), (54,), (50,), (38,), (44,), (48,), (45,), (42,), (40,), (40,), (25,), (25,), (43,), (43,), (75,), (38,), (55,), (75,), (36,), (35,), (30,), (33,), (48,), (40,), (23,), (43,), (27,), (50,), (27,), (20,), (18,), (18,), (19,), (18,), (18,), (35,), (26,), (20,), (20,), (15,), (12,), (10,), (25,), (60,), (25,), (12,), (130,), (75,), (100,), (90,), (40,), (90,), (78,), (55,), (20,), (35,), (32,), (20,), (10,), (75,), (35,), (25,), (22,), (25,), (17,), (150,), (75,), (60,), (65,), (75,), (90,), (125,), (45,), (50,), (50,), (40,), (40,), (92,), (90,), (39,), (135,), (65,), (70,), (18,), (18,), (47,), (46,), (55,), (10,), (100,), (135,), (15,), (60,), (40,), (26,), (15,), (39,), (76,), (45,), (80,), (76,), (76,), (70,), (25,), (20,), (44,), (33,), (59,), (40,), (30,), (20,), (40,), (20,), (25,), (45,), (135,), (40,), (18,), (45,), (16,), (33,), (55,), (35,), (35,), (38,), (41,), (32,), (32,), (28,), (34,), (50,), (35,), (28,), (30,), (28,), (18,), (22,), (25,), (24,), (27,), (30,), (18,), (45,), (45,), (24,), (18,), (14,), (12,), (100,), (48,), (17,), (25,), (11,)]",
+                "answer": "[(44,), (35,), (40,), (38,), (44,), (15,), (18,), (48,), (36,), (25,), (30,), (28,), (48,), (28,), (26,), (16,), (23,), (22,), (26,), (25,), (19,), (60,), (25,), (32,), (20,), (27,), (25,), (21,), (24,), (24,), (18,), (32,), (15,), (27,), (12,), (10,), (25,), (16,), (15,), (16,), (24,), (12,), (20,), (14,), (12,), (12,), (12,), (135,), (130,), (48,), (85,), (50,), (125,), (125,), (95,), (50,), (135,), (175,), (60,), (72,), (72,), (72,), (70,), (56,), (75,), (52,), (72,), (72,), (100,), (72,), (72,), (65,), (70,), (42,), (55,), (45,), (72,), (68,), (52,), (40,), (17,), (43,), (43,), (40,), (28,),"
+            }
+        },
+        {
+            "db": "activity_1",
+            "exec_match": false,
+            "answer_match": true,
+            "gold": {
+                "question": "Find the faculty rank that has the least members.",
+                "sql_query": "SELECT rank FROM Faculty GROUP BY rank ORDER BY count(*) ASC LIMIT 1",
+                "sql_result": "[('AssocProf',)]",
+                "answer": "AssocProf"
+            },
+            "pred": {
+                "question": "Find the faculty rank that has the least members.",
+                "sql_query": "SELECT Rank, COUNT(*) AS Count FROM Faculty GROUP BY Rank ORDER BY Count ASC LIMIT 1;\n",
+                "sql_result": "[('AssocProf', 8)]",
+                "answer": "The faculty rank with the least members is AssocProf, with a count of 8."
+            }
+        },
+        {
+            "db": "activity_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "List all the activities we have.",
+                "sql_query": "SELECT activity_name FROM Activity",
+                "sql_result": "[('Mountain Climbing',), ('Canoeing',), ('Kayaking',), ('Spelunking',), ('Extreme Canasta',), ('Soccer',), ('Baseball',), ('Accordion Ensemble',), ('Football',), ('Volleyball',), ('Canasta',), ('Chess',), ('Crossword Puzzles',), ('Proselytizing',), ('Square Dancing',), ('Bungee Jumping',)]",
+                "answer": "Mountain Climbing, Canoeing, Kayaking, Spelunking, Extreme Canasta, Soccer, Baseball, Accordion Ensemble, Football, Volleyball, Canasta, Chess, Crossword Puzzles, Proselytizing, Square Dancing, Bungee Jumping"
+            },
+            "pred": {
+                "question": "List all the activities we have.",
+                "sql_query": "SELECT activity_name FROM Activity;\n",
+                "sql_result": "[('Mountain Climbing',), ('Canoeing',), ('Kayaking',), ('Spelunking',), ('Extreme Canasta',), ('Soccer',), ('Baseball',), ('Accordion Ensemble',), ('Football',), ('Volleyball',), ('Canasta',), ('Chess',), ('Crossword Puzzles',), ('Proselytizing',), ('Square Dancing',), ('Bungee Jumping',)]",
+                "answer": "Mountain Climbing, Canoeing, Kayaking, Spelunking, Extreme Canasta, Soccer, Baseball, Accordion Ensemble, Football, Volleyball, Canasta, Chess, Crossword Puzzles, Proselytizing, Square Dancing, Bungee Jumping"
+            }
+        },
+        {
+            "db": "activity_1",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Which faculty do not participate in any activity? Find their faculty ids.",
+                "sql_query": "SELECT FacID FROM Faculty EXCEPT SELECT FacID FROM Faculty_participates_in",
+                "sql_result": "[(1148,), (1172,), (1823,), (2028,), (2119,), (2291,), (2311,), (2738,), (6191,), (6330,), (6541,), (6910,), (6925,), (7134,), (7231,), (7271,), (7506,), (7712,), (7792,), (8102,), (8118,), (8122,), (8423,), (8722,), (8723,), (8772,), (8791,), (8989,), (9011,), (9172,), (9191,), (9199,), (9210,), (9379,), (9514,), (9643,), (9811,), (9823,), (9824,), (9826,)]",
+                "answer": "Faculty ids of faculties who do not participate in any activity are: 1148, 1172, 1823, 2028, 2119, 2291, 2311, 2738, 6191, 6330, 6541, 6910, 6925, 7134, 7231, 7271, 7506, 7712, 7792, 8102, 8118, 8122, 8423, 8722, 8723, 8772, 8791, 8989, 9011, 9172, 9191, 9199, 9210, 9379, 9514, 9643, 9811, 9823, 9824, 9826."
+            },
+            "pred": {
+                "question": "Which faculty do not participate in any activity? Find their faculty ids.",
+                "sql_query": "SELECT FacID FROM Faculty WHERE FacID NOT IN (SELECT FacID FROM Faculty_Participates_in);\n",
+                "sql_result": "[(1148,), (1172,), (1823,), (2028,), (2119,), (2291,), (2311,), (2738,), (6191,), (6330,), (6541,), (6910,), (6925,), (7134,), (7231,), (7271,), (7506,), (7712,), (7792,), (8102,), (8118,), (8122,), (8423,), (8722,), (8723,), (8772,), (8791,), (8989,), (9011,), (9172,), (9191,), (9199,), (9210,), (9379,), (9514,), (9643,), (9811,), (9823,), (9824,), (9826,)]",
+                "answer": "Faculty ids of those who do not participate in any activity are: 1148, 1172, 1823, 2028, 2119, 2291, 2311, 2738, 6191, 6330, 6541, 6910, 6925, 7134, 7231, 7271, 7506, 7712, 7792, 8102, 8118, 8122, 8423, 8722, 8723, 8772, 8791, 8989, 9011, 9172, 9191, 9199, 9210, 9379, 9514, 9643, 9811, 9823, 9824, 9826."
+            }
+        },
+        {
+            "db": "flight_4",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "Find the name of airline which runs the most number of routes.",
+                "sql_query": "SELECT T1.name FROM airlines AS T1 JOIN routes AS T2 ON T1.alid  =  T2.alid GROUP BY T1.name ORDER BY count(*) DESC LIMIT 1",
+                "sql_result": "[('Ryanair',)]",
+                "answer": "Ryanair"
+            },
+            "pred": {
+                "question": "Find the name of airline which runs the most number of routes.",
+                "sql_query": "SELECT airline, COUNT(*) AS num_routes FROM routes GROUP BY airline ORDER BY num_routes DESC LIMIT 1;\n",
+                "sql_result": "[('S', 2987)]",
+                "answer": "The name of the airline which runs the most number of routes is 'S'."
+            }
+        },
+        {
+            "db": "geo",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "what are the states through which the longest river runs",
+                "sql_query": "SELECT traverse FROM river WHERE LENGTH  =  ( SELECT MAX ( LENGTH ) FROM river );",
+                "sql_result": "[]",
+                "answer": "There seems to be an error in the SQL query as the SQLResult is an empty list. However, assuming the query is corrected and returns the correct result, the answer would be the list of states through which the longest river runs."
+            },
+            "pred": {
+                "question": "what are the states through which the longest river runs",
+                "sql_query": "ERROR\n",
+                "sql_result": "ERROR",
+                "answer": "ERROR"
+            }
+        },
+        {
+            "db": "geo",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "what is the largest capital",
+                "sql_query": "SELECT city_name FROM city WHERE population  =  ( SELECT MAX ( t1.population ) FROM state AS t2 JOIN city AS t1 ON t2.capital  =  t1.city_name );",
+                "sql_result": "[]",
+                "answer": "There is no answer as the SQLResult is an empty set. This could be due to the fact that the database being queried does not have any cities with a population that matches the maximum population of a state capital."
+            },
+            "pred": {
+                "question": "what is the largest capital",
+                "sql_query": "SELECT capital, population FROM state ORDER BY population DESC LIMIT 1;\n",
+                "sql_result": "[]",
+                "answer": "Final answer here (Depends on the data in the state table)"
+            }
+        },
+        {
+            "db": "geo",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "what is the capital of states that have cities named durham",
+                "sql_query": "SELECT t2.capital FROM state AS t2 JOIN city AS t1 ON t2.state_name  =  t1.state_name WHERE t1.city_name  =  \"durham\";",
+                "sql_result": "[]",
+                "answer": "There is no answer to this question as the SQL query did not return any results."
+            },
+            "pred": {
+                "question": "what is the capital of states that have cities named durham",
+                "sql_query": "SELECT state.capital FROM state INNER JOIN city ON state.state_name = city.state_name WHERE city.city_name = 'Durham';\n",
+                "sql_result": "[]",
+                "answer": "There is no answer provided as the SQLResult is empty. This means there are no states with cities named Durham in the database."
+            }
+        },
+        {
+            "db": "geo",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "what is the shortest river in texas",
+                "sql_query": "SELECT river_name FROM river WHERE LENGTH  =  ( SELECT MIN ( LENGTH ) FROM river WHERE traverse  =  \"texas\" ) AND traverse  =  \"texas\";",
+                "sql_result": "[]",
+                "answer": "There is no result for the given query, which means there is no river in Texas with the shortest length."
+            },
+            "pred": {
+                "question": "what is the shortest river in texas",
+                "sql_query": "SELECT river_name, length FROM river WHERE traverse = 'Texas' ORDER BY length ASC LIMIT 1;\n",
+                "sql_result": "[]",
+                "answer": "There is no result because the query returned an empty set, meaning there are no rivers in Texas in the database."
+            }
+        },
+        {
+            "db": "scholar",
+            "exec_match": true,
+            "answer_match": false,
+            "gold": {
+                "question": "How many papers David M. Blei has in AISTATS ?",
+                "sql_query": "SELECT DISTINCT COUNT ( t3.paperid ) FROM venue AS t4 JOIN paper AS t3 ON t4.venueid  =  t3.venueid JOIN writes AS t2 ON t2.paperid  =  t3.paperid JOIN author AS t1 ON t2.authorid  =  t1.authorid WHERE t1.authorname  =  \"David M. Blei\" AND t4.venuename  =  \"AISTATS\";",
+                "sql_result": "[(0,)]",
+                "answer": "David M. Blei has 6 papers in AISTATS."
+            },
+            "pred": {
+                "question": "How many papers David M. Blei has in AISTATS ?",
+                "sql_query": "SELECT COUNT(*) FROM paper INNER JOIN writes ON paper.paperId = writes.paperId INNER JOIN author ON author.authorId = writes.authorId INNER JOIN venue ON venue.venueId = paper.venueId WHERE author.authorName = 'David M. Blei' AND venue.venueName = 'AISTATS';\n",
+                "sql_result": "[(0,)]",
+                "answer": "David M. Blei has 0 papers in AISTATS."
+            }
+        },
+        {
+            "db": "scholar",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Papers about TAIL in NIPS",
+                "sql_query": "SELECT DISTINCT t3.paperid FROM paperkeyphrase AS t2 JOIN keyphrase AS t1 ON t2.keyphraseid  =  t1.keyphraseid JOIN paper AS t3 ON t3.paperid  =  t2.paperid JOIN venue AS t4 ON t4.venueid  =  t3.venueid WHERE t1.keyphrasename  =  \"TAIL\" AND t4.venuename  =  \"NIPS\";",
+                "sql_result": "[]",
+                "answer": "There are no papers about TAIL in NIPS."
+            },
+            "pred": {
+                "question": "Papers about TAIL in NIPS",
+                "sql_query": "SELECT paper.title, paper.year FROM paper INNER JOIN paperKeyphrase ON paper.paperId = paperKeyphrase.paperId INNER JOIN keyphrase ON paperKeyphrase.keyphraseId = keyphrase.keyphraseId WHERE keyphrase.keyphraseName = 'TAIL' AND paper.venueId = (SELECT venueId FROM venue WHERE venueName = 'NIPS') ORDER BY paper.year DESC;\n",
+                "sql_result": "[]",
+                "answer": "Answer: There are no papers about TAIL in NIPS in the database."
+            }
+        },
+        {
+            "db": "scholar",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "latest deep learning papers",
+                "sql_query": "SELECT DISTINCT t3.paperid  ,  t3.year FROM paperkeyphrase AS t2 JOIN keyphrase AS t1 ON t2.keyphraseid  =  t1.keyphraseid JOIN paper AS t3 ON t3.paperid  =  t2.paperid WHERE t1.keyphrasename  =  \"deep learning\" ORDER BY t3.year DESC;",
+                "sql_result": "[]",
+                "answer": "There are no results for the latest deep learning papers in the database."
+            },
+            "pred": {
+                "question": "latest deep learning papers",
+                "sql_query": "SELECT paper.title, paper.year FROM paper INNER JOIN paperKeyphrase ON paper.paperId = paperKeyphrase.paperId INNER JOIN keyphrase ON paperKeyphrase.keyphraseId = keyphrase.keyphraseId WHERE keyphrase.keyphraseName = 'deep learning' ORDER BY paper.year DESC;\n",
+                "sql_result": "[]",
+                "answer": "There are no results for the given query."
+            }
+        },
+        {
+            "db": "scholar",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "pldi papers in 2015",
+                "sql_query": "SELECT DISTINCT t1.paperid FROM venue AS t2 JOIN paper AS t1 ON t2.venueid  =  t1.venueid WHERE t1.year  =  2015 AND t2.venuename  =  \"pldi\";",
+                "sql_result": "[]",
+                "answer": "There were no papers in the PLDI venue in 2015."
+            },
+            "pred": {
+                "question": "pldi papers in 2015",
+                "sql_query": "SELECT paper.title FROM paper INNER JOIN venue ON paper.venueId = venue.venueId WHERE venue.venueName = 'PLDI' AND paper.year = 2015 ORDER BY paper.numCiting DESC;\n",
+                "sql_result": "[]",
+                "answer": "There were no papers published in PLDI in 2015."
+            }
+        },
+        {
+            "db": "scholar",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Which authors published papers in 2015 ?",
+                "sql_query": "SELECT DISTINCT t1.authorid FROM writes AS t1 JOIN paper AS t2 ON t1.paperid  =  t2.paperid WHERE t2.year  =  2015;",
+                "sql_result": "[]",
+                "answer": "There are no authors who published papers in 2015 in the given database."
+            },
+            "pred": {
+                "question": "Which authors published papers in 2015 ?",
+                "sql_query": "SELECT authorName FROM author INNER JOIN writes ON author.authorId = writes.authorId INNER JOIN paper ON writes.paperId = paper.paperId WHERE paper.year = 2015 ORDER BY authorName;\n",
+                "sql_result": "[]",
+                "answer": "There are no results in the SQLResult, so the answer is: There were no authors who published papers in 2015 in the database."
+            }
+        },
+        {
+            "db": "yelp",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "Find all Dallas restaurant with a rating above 4.5",
+                "sql_query": "SELECT t1.name FROM category AS t2 JOIN business AS t1 ON t2.business_id  =  t1.business_id WHERE t1.city  =  \"Dallas\" AND t1.rating  >  4.5 AND t2.category_name  =  \"restaurant\";",
+                "sql_result": "[]",
+                "answer": "No results found."
+            },
+            "pred": {
+                "question": "Find all Dallas restaurant with a rating above 4.5",
+                "sql_query": "SELECT b.name, b.rating FROM business b INNER JOIN neighbourhood n ON b.business_id = n.business_id WHERE n.neighbourhood_name = 'Dallas' AND b.rating > 4.5 ORDER BY b.rating DESC;\n",
+                "sql_result": "[]",
+                "answer": "No answer provided as the SQLResult is missing."
+            }
+        },
+        {
+            "db": "academic",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "return me the references of \" Making database systems usable \" .",
+                "sql_query": "SELECT reference_num FROM publication WHERE title  =  \"Making database systems usable\";",
+                "sql_result": "[]",
+                "answer": "There seems to be an error in the SQL query as the SQLResult is an empty list. Please check the database and query syntax."
+            },
+            "pred": {
+                "question": "return me the references of \" Making database systems usable \" .",
+                "sql_query": "SELECT reference_num FROM publication WHERE title = 'Making database systems usable';\n",
+                "sql_result": "[]",
+                "answer": "There is no answer provided as the SQLResult is an empty list. It is possible that there are no publications in the database with the exact title \"Making database systems usable\"."
+            }
+        },
+        {
+            "db": "academic",
+            "exec_match": true,
+            "answer_match": true,
+            "gold": {
+                "question": "return me the author in the \" University of Michigan \" whose papers have the most total citations .",
+                "sql_query": "SELECT t1.name FROM organization AS t2 JOIN author AS t1 ON t2.oid  =  t1.oid JOIN writes AS t3 ON t3.aid  =  t1.aid JOIN publication AS t4 ON t3.pid  =  t4.pid WHERE t2.name  =  \"University of Michigan\" GROUP BY t1.name ORDER BY SUM ( t4.citation_num ) DESC LIMIT 1;",
+                "sql_result": "[]",
+                "answer": "There is no answer to this question as the SQLResult is an empty list. This could mean that there are no authors from the University of Michigan in the database, or that none of their papers have any citations."
+            },
+            "pred": {
+                "question": "return me the author in the \" University of Michigan \" whose papers have the most total citations .",
+                "sql_query": "SELECT author.name, SUM(publication.citation_num) AS total_citations FROM author INNER JOIN writes ON author.aid = writes.aid INNER JOIN publication ON writes.pid = publication.pid INNER JOIN domain_author ON author.aid = domain_author.aid INNER JOIN domain ON domain_author.did = domain.did WHERE domain.name = 'University of Michigan' GROUP BY author.name ORDER BY total_citations DESC\n",
+                "sql_result": "[]",
+                "answer": "Without any data, it is not possible to provide a SQLResult or final answer."
+            }
+        },
+        {
+            "db": "imdb",
+            "exec_match": true,
+            "answer_match": false,
+            "gold": {
+                "question": "What is the genre of the movie \" Jurassic Park \" ?",
+                "sql_query": "SELECT t2.genre FROM genre AS t2 JOIN classification AS t1 ON t2.gid  =  t1.gid JOIN movie AS t3 ON t3.mid  =  t1.msid WHERE t3.title  =  \"Jurassic Park\";",
+                "sql_result": "[]",
+                "answer": "The SQLResult is an empty set, which means there is no genre associated with the movie \"Jurassic Park\" in the database. Therefore, the answer is that the genre of the movie \"Jurassic Park\" is not available in the database."
+            },
+            "pred": {
+                "question": "What is the genre of the movie \" Jurassic Park \" ?",
+                "sql_query": "SELECT genre FROM movie JOIN classification ON movie.mid = classification.msid JOIN genre ON classification.gid = genre.gid WHERE title = 'Jurassic Park';\n",
+                "sql_result": "[]",
+                "answer": "The SQLResult is empty, which means there is no movie in the database with the title \"Jurassic Park\". Therefore, we cannot determine the genre of the movie."
+            }
+        },
+        {
+            "db": "imdb",
+            "exec_match": false,
+            "answer_match": false,
+            "gold": {
+                "question": "Find the actors who played in the movie \" Camp X-Ray \"",
+                "sql_query": "SELECT t1.name FROM CAST AS t2 JOIN actor AS t1 ON t2.aid  =  t1.aid JOIN movie AS t3 ON t3.mid  =  t2.msid WHERE t3.title  =  \"Camp X-Ray\";",
+                "sql_result": "[]",
+                "answer": "There are no actors who played in the movie \"Camp X-Ray\" in the database."
+            },
+            "pred": {
+                "question": "Find the actors who played in the movie \" Camp X-Ray \"",
+                "sql_query": "ERROR\n",
+                "sql_result": "ERROR",
+                "answer": "ERROR"
+            }
+        },
+        {
+            "db": "imdb",
+            "exec_match": true,
+            "answer_match": false,
+            "gold": {
+                "question": "What is the latest movie by \" Jim Jarmusch \"",
+                "sql_query": "SELECT t3.title FROM director AS t2 JOIN directed_by AS t1 ON t2.did  =  t1.did JOIN movie AS t3 ON t3.mid  =  t1.msid WHERE t2.name  =  \"Jim Jarmusch\" ORDER BY t3.release_year DESC LIMIT 1;",
+                "sql_result": "[]",
+                "answer": "Final answer here: The latest movie by Jim Jarmusch is [insert movie title here]. (Note: the SQLResult would show the actual movie title returned by the query)"
+            },
+            "pred": {
+                "question": "What is the latest movie by \" Jim Jarmusch \"",
+                "sql_query": "SELECT title, release_year FROM movie INNER JOIN directed_by ON movie.mid = directed_by.msid INNER JOIN director ON directed_by.did = director.did WHERE director.name = 'Jim Jarmusch' ORDER BY release_year DESC LIMIT 1;\n",
+                "sql_result": "[]",
+                "answer": "There is no answer to this question as the SQLResult is an empty set, indicating that there are no movies directed by Jim Jarmusch in the database."
+            }
+        },
+        {
+            "db": "imdb",
+            "exec_match": true,
+            "answer_match": false,
+            "gold": {
+                "question": "What is the latest movie by \" Jim Jarmusch \"",
+                "sql_query": "SELECT t3.title FROM director AS t2 JOIN directed_by AS t1 ON t2.did  =  t1.did JOIN movie AS t3 ON t3.mid  =  t1.msid WHERE t2.name  =  \"Jim Jarmusch\" ORDER BY t3.release_year DESC LIMIT 1;",
+                "sql_result": "[]",
+                "answer": "Final answer here: The latest movie by Jim Jarmusch is [insert movie title here]. (Note: the SQLResult would show the actual movie title returned by the query)"
+            },
+            "pred": {
+                "question": "What is the latest movie by \" Jim Jarmusch \"",
+                "sql_query": "SELECT title, release_year FROM movie INNER JOIN directed_by ON movie.mid = directed_by.msid INNER JOIN director ON directed_by.did = director.did WHERE director.name = 'Jim Jarmusch' ORDER BY release_year DESC LIMIT 1;\n",
+                "sql_result": "[]",
+                "answer": "There is no answer to this question as the SQLResult is an empty set, indicating that there are no movies directed by Jim Jarmusch in the database."
+            }
+        }
+    ]
+}
