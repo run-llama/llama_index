@@ -47,7 +47,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -63,7 +63,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             embed_model=embed_model,

@@ -48,7 +48,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         index_struct: Optional[KG] = None,
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
@@ -71,7 +71,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             )
         )
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             text_splitter=text_splitter,

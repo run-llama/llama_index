@@ -40,7 +40,7 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         index_struct: Optional[BST] = None,
         schema_extract_prompt: Optional[SchemaExtractPrompt] = None,
         output_parser: Optional[OUTPUT_PARSER_TYPE] = None,
@@ -54,7 +54,7 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         )
         self.output_parser = output_parser or default_output_parser
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             text_splitter=text_splitter,

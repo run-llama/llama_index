@@ -57,7 +57,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         index_struct: Optional[IndexGraph] = None,
         summary_template: Optional[SummaryPrompt] = None,
         insert_prompt: Optional[TreeInsertPrompt] = None,
@@ -76,7 +76,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.build_tree = build_tree
         self._use_async = use_async
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             node_parser=node_parser,
@@ -117,7 +117,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             self.summary_template,
             self._llm_predictor,
             self._prompt_helper,
-            self._node_parser,
             use_async=self._use_async,
             llama_logger=self._llama_logger,
             docstore=self._docstore,

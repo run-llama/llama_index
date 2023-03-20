@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, Optional, Sequence, Type, cast
 
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import (
     ChromaIndexDict,
     FaissIndexDict,
@@ -68,7 +69,7 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -82,7 +83,7 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         )
 
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -140,7 +141,7 @@ class GPTFaissIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         faiss_index: Optional[Any] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
@@ -154,7 +155,7 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         vector_store = FaissVectorStore(faiss_index)
 
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -269,7 +270,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         pinecone_index: Optional[Any] = None,
         pinecone_kwargs: Optional[Dict] = None,
         index_struct: Optional[IndexDict] = None,
@@ -292,7 +293,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         )
 
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -344,7 +345,7 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         weaviate_client: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
@@ -361,7 +362,7 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         )
 
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -414,7 +415,7 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         client: Optional[Any] = None,
         collection_name: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
@@ -431,7 +432,7 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
 
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -484,7 +485,7 @@ class GPTChromaIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         chroma_collection: Optional[Any] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
@@ -498,7 +499,7 @@ class GPTChromaIndex(GPTVectorStoreIndex):
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -555,7 +556,7 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         client: Optional[OpensearchVectorClient] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
@@ -568,7 +569,7 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
             raise ValueError("client is required.")
         vector_store = OpensearchVectorStore(client)
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,

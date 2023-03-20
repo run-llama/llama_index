@@ -60,7 +60,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         index_struct: Optional[KeywordTable] = None,
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         max_keywords_per_chunk: int = 10,
@@ -81,7 +81,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         )
         self._use_async = use_async
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             text_splitter=text_splitter,

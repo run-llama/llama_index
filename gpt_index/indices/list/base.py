@@ -47,7 +47,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]]=None,
         index_struct: Optional[IndexList] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -57,7 +57,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         """Initialize params."""
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         super().__init__(
-            documents=documents,
+            nodes=nodes
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             text_splitter=text_splitter,
