@@ -8,6 +8,7 @@ from langchain import PromptTemplate as LangchainPrompt
 from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.schema import BaseLanguageModel
 
+from gpt_index.output_parsers.base import BaseOutputParser
 from gpt_index.prompts.prompt_type import PromptType
 
 PMT = TypeVar("PMT", bound="Prompt")
@@ -32,6 +33,7 @@ class Prompt:
         langchain_prompt: Optional[BaseLangchainPrompt] = None,
         langchain_prompt_selector: Optional[ConditionalPromptSelector] = None,
         stop_token: Optional[str] = None,
+        output_parser: Optional[BaseOutputParser] = None,
         **prompt_kwargs: Any,
     ) -> None:
         """Init params."""
@@ -84,6 +86,8 @@ class Prompt:
         self.prompt_kwargs = prompt_kwargs
         self.stop_token = stop_token
 
+        self.output_parser = output_parser
+
     @classmethod
     def from_langchain_prompt(
         cls: Type[PMT], prompt: BaseLangchainPrompt, **kwargs: Any
@@ -109,9 +113,18 @@ class Prompt:
                 raise ValueError(
                     f"Invalid input variable: {k}, not found in input_variables"
                 )
+        try:
+            # NOTE: this is a hack to get around deepcopy failing on output parser
+            output_parser = self.output_parser
+            self.output_parser = None
 
-        copy_obj = deepcopy(self)
-        copy_obj.partial_dict.update(kwargs)
+            copy_obj = deepcopy(self)
+            copy_obj.output_parser = output_parser
+            copy_obj.partial_dict.update(kwargs)
+            self.output_parser = output_parser
+        except Exception as e:
+            raise e
+
         return copy_obj
 
     @classmethod
