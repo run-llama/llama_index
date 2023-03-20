@@ -105,7 +105,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             results.append((subj.strip(), pred.strip(), obj.strip()))
         return results
 
-
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> KG:
         """Build the index from documents."""
         # do simple concatenation

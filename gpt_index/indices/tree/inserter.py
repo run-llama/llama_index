@@ -1,6 +1,6 @@
 """GPT Tree Index inserter."""
 
-from typing import Optional
+from typing import Optional, Sequence
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
@@ -158,9 +158,7 @@ class GPTIndexInserter:
 
             parent_node.text = new_summary
 
-    def insert(self, doc: BaseDocument) -> None:
+    def insert(self, nodes: Sequence[Node]) -> None:
         """Insert into index_graph."""
-        nodes = self._node_parser.get_nodes_from_document(doc, start_idx=self.index_graph.size)
-
         for node in nodes:
             self._insert_node(node, None)

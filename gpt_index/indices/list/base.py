@@ -18,7 +18,6 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.schema import BaseDocument
 
 # This query is used to summarize the contents of the index.
 GENERATE_TEXT_QUERY = "What is a concise summary of this document?"
@@ -71,7 +70,6 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             QueryMode.EMBEDDING: GPTListIndexEmbeddingQuery,
         }
 
-
     def _build_index_from_nodes(
         self, nodes: Sequence[Node]
     ) -> IndexList:
@@ -86,14 +84,12 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         index_struct = IndexList()
         for n in nodes:
             index_struct.add_node(n)
-            self._docstore.add_documents([n])
         return index_struct
 
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         for n in nodes:
             self._index_struct.add_node(n)
-            self._docstore.add_documents([n])
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

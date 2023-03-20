@@ -65,6 +65,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
         Returns:
             IndexList: The created list index.
         """
+        del nodes  # Unused
         index_struct = EmptyIndex()
         return index_struct
 

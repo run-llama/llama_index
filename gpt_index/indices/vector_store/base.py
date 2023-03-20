@@ -80,7 +80,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         }
 
     def _get_node_embedding_results(
-        self, nodes: List[Node], existing_node_ids: Set
+        self, nodes: Sequence[Node], existing_node_ids: Set
     ) -> List[NodeEmbeddingResult]:
         """Get tuples of id, node, and embedding.
 
