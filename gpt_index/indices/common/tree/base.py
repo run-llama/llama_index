@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.docstore import DocumentStore, get_node_from_docstore
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -88,7 +88,7 @@ class GPTTreeIndexBuilder:
     ) -> Tuple[List[int], List[List[Node]], List[str]]:
         """Prepare node and text chunks."""
         cur_nodes = {
-            index: get_node_from_docstore(self._docstore, node_id)
+            index: self._docstore.get_node(node_id)
             for index, node_id in cur_node_ids.items()
         }
         cur_node_list = get_sorted_node_list(cur_nodes)

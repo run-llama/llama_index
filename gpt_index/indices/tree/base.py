@@ -109,7 +109,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     def _build_index_from_nodes(
         self, nodes: Sequence[Node]
     ) -> IndexGraph:
-        """Build the index from documents."""
+        """Build the index from nodes."""
         print("0 docstore", self._docstore)
         # do simple concatenation
         index_builder = GPTTreeIndexBuilder(

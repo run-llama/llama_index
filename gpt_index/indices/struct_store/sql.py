@@ -95,7 +95,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
     def _build_index_from_nodes(
         self, nodes: Sequence[Node]
     ) -> SQLStructTable:
-        """Build index from documents."""
+        """Build index from nodes."""
         index_struct = self.index_struct_cls()
         if len(nodes) == 0:
             return index_struct

@@ -125,7 +125,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     def _build_index_from_nodes(
         self, nodes: Sequence[Node]
     ) -> KeywordTable:
-        """Build the index from documents."""
+        """Build the index from nodes."""
         # do simple concatenation
         index_struct = KeywordTable(table={})
         if self._use_async:

@@ -2,18 +2,7 @@
 import json
 import logging
 from abc import abstractmethod
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
@@ -95,7 +84,7 @@ class BaseGPTIndex(Generic[IS]):
         self._docstore = docstore or DocumentStore()
         self._index_registry = index_registry or IndexRegistry()
         self._llama_logger = llama_logger or LlamaLogger()
-        self._node_parser = node_parser or NodeParser()
+        self._node_parser = node_parser or SimpleNodeParser()
 
         self._index_struct = index_struct or self.build_index_from_nodes(nodes)
         if not isinstance(index_struct, self.index_struct_cls):
@@ -120,7 +109,6 @@ class BaseGPTIndex(Generic[IS]):
         include_extra_info: bool = True,
         llama_logger: Optional[LlamaLogger] = None,
     ) -> "BaseGPTIndex":
-        # TODO: parse documents to nodes
         node_parser = node_parser or SimpleNodeParser()
         docstore = docstore or DocumentStore()
 
@@ -306,11 +294,11 @@ class BaseGPTIndex(Generic[IS]):
 
     @abstractmethod
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
-        """Build the index from documents."""
+        """Build the index from nodes."""
 
     @llm_token_counter("build_index_from_nodes")
     def build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
-        """Build the index from documents."""
+        """Build the index from nodes."""
         return self._build_index_from_nodes(nodes)
 
     @abstractmethod

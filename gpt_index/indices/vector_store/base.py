@@ -10,15 +10,14 @@ from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
@@ -42,7 +41,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     """
 
-    # index_struct_cls = IndexDict
     index_struct_cls = IndexDict
 
     def __init__(
@@ -53,7 +51,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         vector_store: Optional[VectorStore] = None,
-        node_parser: Optional[NodeParser] = None, 
+        node_parser: Optional[NodeParser] = None,
         use_async: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -113,7 +111,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         return result_tups
 
     async def _aget_node_embedding_results(
-        self, nodes: List[Node], existing_node_ids: Set,
+        self, nodes: Sequence[Node], existing_node_ids: Set,
     ) -> List[NodeEmbeddingResult]:
         """Asynchronously get tuples of id, node, and embedding.
 
@@ -154,7 +152,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         index_struct: IndexDict,
         nodes: Sequence[Node]
     ) -> None:
-        """Asynchronously add document to index."""
+        """Asynchronously add nodes to index."""
         embedding_results = await self._aget_node_embedding_results(
             nodes, set(),
         )
@@ -190,7 +188,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     def _build_index_from_nodes(
         self, nodes: Sequence[Node]
     ) -> IndexDict:
-        """Build index from documents."""
+        """Build index from nodes."""
         index_struct = self.index_struct_cls()
         if self._use_async:
             tasks = [
