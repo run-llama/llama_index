@@ -2,6 +2,7 @@
 
 
 import asyncio
+import dataclasses
 import logging
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -74,14 +75,11 @@ class GPTTreeIndexBuilder:
         all_nodes: Dict[int, str] = {}
         all_nodes.update({node.index: node.get_doc_id() for node in nodes})
 
+        index_graph = IndexGraph(all_nodes=all_nodes, root_nodes={})
         if build_tree:
-            # instantiate all_nodes from initial text chunks
-            root_nodes = self.build_index_from_nodes(all_nodes, all_nodes, level=0)
+            return self.build_index_from_nodes(index_graph, all_nodes, all_nodes, level=0)
         else:
-            # if build_tree is False, then don't surface any root nodes
-            root_nodes = {}
-        print("current docstore0", self._docstore)
-        return IndexGraph(all_nodes=all_nodes, root_nodes=root_nodes)
+            return index_graph
 
     def _prepare_node_and_text_chunks(
         self, cur_node_ids: Dict[int, str]
@@ -108,6 +106,7 @@ class GPTTreeIndexBuilder:
 
     def _construct_parent_nodes(
         self,
+        index_graph: IndexGraph,
         cur_index: int,
         indices: List[int],
         cur_nodes_chunks: List[List[Node]],
@@ -128,16 +127,15 @@ class GPTTreeIndexBuilder:
             )
             new_node = Node(
                 text=new_summary,
-                index=cur_index,
-                child_indices={n.index for n in cur_nodes_chunk},
             )
+            index_graph.insert(new_node, cur_index, children_nodes=cur_nodes_chunks)
             new_node_dict[cur_index] = new_node.get_doc_id()
             self._docstore.add_documents([new_node])
             cur_index += 1
         return new_node_dict
 
     def build_index_from_nodes(
-        self, cur_node_ids: Dict[int, str], all_node_ids: Dict[int, str], level: int = 0
+        self, index_graph: IndexGraph, cur_node_ids: Dict[int, str], all_node_ids: Dict[int, str], level: int = 0
     ) -> Dict[int, str]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         cur_index = len(all_node_ids)
@@ -164,19 +162,21 @@ class GPTTreeIndexBuilder:
         self._llama_logger.add_log({"summaries": summaries, "level": level})
 
         new_node_dict = self._construct_parent_nodes(
-            cur_index, indices, cur_nodes_chunks, summaries
+            index_graph, cur_index, indices, cur_nodes_chunks, summaries
         )
         all_node_ids.update(new_node_dict)
 
+        index_graph.root_nodes = new_node_dict
+
         if len(new_node_dict) <= self.num_children:
-            return new_node_dict
+            return index_graph
         else:
             return self.build_index_from_nodes(
-                new_node_dict, all_node_ids, level=level + 1
+                index_graph, new_node_dict, all_node_ids, level=level + 1
             )
 
     async def abuild_index_from_nodes(
-        self, cur_node_ids: Dict[int, str], all_node_ids: Dict[int, str], level: int = 0
+        self, index_graph: IndexGraph, cur_node_ids: Dict[int, str], all_node_ids: Dict[int, str], level: int = 0
     ) -> Dict[int, str]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         cur_index = len(all_node_ids)
@@ -197,9 +197,11 @@ class GPTTreeIndexBuilder:
         )
         all_node_ids.update(new_node_dict)
 
+        index_graph.root_nodes = new_node_dict
+
         if len(new_node_dict) <= self.num_children:
-            return new_node_dict
+            return index_graph
         else:
-            return await self.abuild_index_from_nodes(
-                new_node_dict, all_node_ids, level=level + 1
+            return await self.build_index_from_nodes(
+                index_graph, new_node_dict, all_node_ids, level=level + 1
             )

@@ -13,6 +13,7 @@ from enum import Enum
 from typing import Any, Dict, Generator, List, Optional, Tuple, Union, cast
 
 from gpt_index.data_structs.data_structs import Node
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
@@ -241,11 +242,14 @@ class ResponseBuilder:
             i: Node(text=t) for i, t in enumerate(text_chunks)
         }
 
+        docstore = DocumentStore()
+        docstore.add_documents(list(all_nodes.values()))
         index_builder = GPTTreeIndexBuilder(
             num_children,
             summary_template,
             self.llm_predictor,
             self.prompt_helper,
+            docstore=docstore,
             use_async=self._use_async,
             llama_logger=self._llama_logger,
         )

@@ -5,7 +5,7 @@ Nodes are decoupled from the indices.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -34,30 +34,50 @@ class IndexGraph(V2IndexStruct):
     all_nodes: Dict[int, str] = field(default_factory=dict)
     root_nodes: Dict[int, str] = field(default_factory=dict)
 
+    node_id_to_index = Dict[str, int] = field(default_factory=dict)
+    node_id_to_child_indices: Dict[str, Set[int]] = field(default_factory=dict)
+
     @property
     def size(self) -> int:
         """Get the size of the graph."""
         return len(self.all_nodes)
+
+    def get_index(self, node: Node) -> int:
+        return self.node_id_to_index[node.doc_id()]
+
+    def insert(self, node: Node, index : int, children_nodes: Optional[Sequence[Node]] = None) -> None:
+        node_id = node.get_doc_id()
+        self.all_nodes[index] = node_id
+        self.node_id_to_index[node_id] = index
+        if children_nodes is None:
+            children_nodes = []
+        children_indices = set(self.get_index(n) for n in children_nodes)
+        self.node_id_to_child_indices[node_id] = children_indices
+
 
     def get_children(self, parent_node: Optional[Node]) -> Dict[int, str]:
         """Get nodes given indices."""
         if parent_node is None:
             return self.root_nodes
         else:
-            return {i: self.all_nodes[i] for i in parent_node.child_indices}
+            return {i: self.all_nodes[i] for i in self.node_id_to_child_indices[parent_node.get_doc_id()]}
 
     def insert_under_parent(self, node: Node, parent_node: Optional[Node]) -> None:
         """Insert under parent node."""
-        if node.index in self.all_nodes:
-            raise ValueError(
-                "Cannot insert a new node with the same index as an existing node."
-            )
+        new_index = self.size
         if parent_node is None:
-            self.root_nodes[node.index] = node.get_doc_id()
+            self.root_nodes[new_index] = node.get_doc_id()
         else:
-            parent_node.child_indices.add(node.index)
+            if parent_node.doc_id not in self.node_id_to_child_indices:
+                self.node_id_to_child_indices[parent_node.doc_id] = set()
+            self.node_id_to_child_indices[parent_node.doc_id].add(new_index)
 
-        self.all_nodes[node.index] = node.get_doc_id()
+        self.all_nodes[new_index] = node.get_doc_id()
+    
+    def get_children_indices(self, parent_node: Optional[Node]) -> Set[int]:
+        if parent_node is None:
+            return set(self.root_nodes.keys())
+        return self.node_id_to_child_indices[parent_node.get_doc_id()]
 
     @classmethod
     def get_type(cls) -> str:

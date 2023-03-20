@@ -43,10 +43,6 @@ class Node(IndexStruct):
         if self.text is None:
             raise ValueError("text field not set.")
 
-    # used for GPTTreeIndex
-    index: int = 0
-    child_indices: Set[int] = field(default_factory=set)
-
     # embeddings
     embedding: Optional[List[float]] = None
 

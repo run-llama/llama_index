@@ -65,10 +65,7 @@ def _get_left_or_right_node(
     left: bool = True,
 ) -> Node:
     """Get 'left' or 'right' node."""
-    if node is None:
-        indices = set(index_graph.root_nodes.keys())
-    else:
-        indices = node.child_indices
+    indices = index_graph.get_children_indices(node)
 
     index = min(indices) if left else max(indices)
 

@@ -140,18 +140,14 @@ class DocumentStore(DataClassJsonMixin):
         self, node_ids: List[str], raise_error: bool = True
     ) -> List[Node]:
         """Get nodes from docstore."""
+        return [self.get_node(node_id, raise_error=raise_error) for node_id in node_ids]
 
-        nodes = []
-        for node_id in node_ids:
-            doc = self.get_document(node_id, raise_error=raise_error)
-            if not isinstance(doc, Node):
-                raise ValueError(f"Document {node_id} is not a Node.")
-            nodes.append(doc)
-        return nodes
-
-    def get_node(self, node_id: str) -> Node:
+    def get_node(self, node_id: str, raise_error: bool = True) -> Node:
         """Get node from docstore."""
-        return self.get_nodes([node_id])[0]
+        doc = self.get_document(node_id, raise_error=raise_error)
+        if not isinstance(doc, Node):
+            raise ValueError(f"Document {node_id} is not a Node.")
+        return doc
 
     def get_node_dict(
         self, node_id_dict: Dict[int, str]
