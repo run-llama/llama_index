@@ -26,7 +26,8 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
 
 
 @patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
-def test_struct_llm_predictor(mock_predict: Any) -> None:
+@patch.object(LLMPredictor, "__init__", return_value=None)
+def test_struct_llm_predictor(mock_init: Any, mock_predict: Any) -> None:
     """Test LLM predictor."""
     llm_predictor = StructuredLLMPredictor()
     output_parser = MockOutputParser()
