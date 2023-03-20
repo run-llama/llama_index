@@ -4,7 +4,7 @@ LlamaIndex is a python library, which means that integrating it with a full-stac
 
 This guide seeks to walk through the steps needed to create a basic API service written in python, and how this interacts with a TypeScript+React frontend.
 
-All code examples here are available from the [llama_index_start_pack](https://github.com/logan-markewich/llama_index_starter_pack/tree/main/flask_react) in the flask_react folder.
+All code examples here are available from the [llama_index_starter_pack](https://github.com/logan-markewich/llama_index_starter_pack/tree/main/flask_react) in the flask_react folder.
 
 The main technologies used in this guide are as follows:
 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5601)
 ```
 
-~flask_demo.py~
+_flask_demo.py_
 
 If you run this file (`python flask_demo.py`), it will launch a server on port 5601. If you visit `http://localhost:5601/`, you will see the "Hello World!" text rendered in your browser. Nice!
 
@@ -41,7 +41,7 @@ The next step is deciding what functions we want to include in our server, and t
 
 To keep things simple, the most basic operation we can provide is querying an existing index. Using the [paul graham essay](https://github.com/jerryjliu/llama_index/blob/main/examples/paul_graham_essay/data/paul_graham_essay.txt) from LlamaIndex, create a documents folder and download+place the essay text file inside of it.
 
-### Basic Flask
+### Basic Flask - Handling User Index Queries
 
 Now, let's write some code to initialize our index:
 
@@ -88,11 +88,11 @@ Now, we've introduced a few new concepts to our server:
 - if the `text` parameter is missing, then we return an error message and an appropriate HTML response code
 - otherwise, we query the index, and return the response as a string
 
-A full query example that you can test in your browser might look something like this: `http://localhost:5601/query?text=what did the author do growing up`
+A full query example that you can test in your browser might look something like this: `http://localhost:5601/query?text=what did the author do growing up` (once you press enter, the browser will convert the spaces into "%20" characters).
 
 Things are looking pretty good! We now have a functional API. Using your own documents, you can easily provide an interface for any application to call the flask API and get answers to queries.
 
-### Advanced Flask
+### Advanced Flask - Handling User Document Uploads
 
 Things are looking pretty cool, but how can we take this a step further? What if we want to allow users to build their own indexes by uploading their own documents? Have no fear, Flask can handle it all :muscle:.
 
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     server.serve_forever()
 ```
 
-~index_server.py~
+_index_server.py_
 
 So, we've moved our functions, introduced the `Lock` object which ensures sequential access to the global index, registered our single function in the server, and started the server on port 5602 with the password `password`.
 
@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
 ```
 
-~flask_demo.py~
+_flask_demo.py_
 
 The two main changes are connecting to our existing `BaseManager` server and registering the functions, as well as calling the function through the manager in the `/query` endpoint.
 
