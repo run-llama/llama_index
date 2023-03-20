@@ -1,10 +1,12 @@
 """LlamaIndex Tool classes."""
 
+from typing import Dict, List, cast
+
 from langchain.tools import BaseTool
+from pydantic import BaseModel, Field
+
+from gpt_index.composability.graph import QUERY_CONFIG_TYPE, ComposableGraph
 from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.composability.graph import ComposableGraph
-from typing import Dict, List, Optional
-from pydantic import Field, BaseModel
 
 
 class IndexToolConfig(BaseModel):
@@ -83,9 +85,11 @@ class LlamaGraphTool(BaseTool):
         )
 
     def _run(self, tool_input: str) -> str:
-        response = self.graph.query(tool_input, query_configs=self.query_configs)
+        query_configs = cast(List[QUERY_CONFIG_TYPE], self.query_configs)
+        response = self.graph.query(tool_input, query_configs=query_configs)
         return str(response)
 
     async def _arun(self, tool_input: str) -> str:
-        response = await self.graph.aquery(tool_input, query_configs=self.query_configs)
+        query_configs = cast(List[QUERY_CONFIG_TYPE], self.query_configs)
+        response = await self.graph.aquery(tool_input, query_configs=query_configs)
         return str(response)

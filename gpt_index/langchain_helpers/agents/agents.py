@@ -1,11 +1,12 @@
 """Create LlamaIndex agents."""
 
-from typing import Optional, Any
-from gpt_index.langchain_helpers.agents.toolkits import LlamaToolkit
-from langchain.llms.base import BaseLLM
-from langchain.agents.loading import AGENT_TO_CLASS
+from typing import Any, Optional
+
 from langchain.agents import AgentExecutor, initialize_agent
 from langchain.callbacks import BaseCallbackManager
+from langchain.llms.base import BaseLLM
+
+from gpt_index.langchain_helpers.agents.toolkits import LlamaToolkit
 
 
 def create_llama_agent(

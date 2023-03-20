@@ -1,18 +1,17 @@
 """LlamaIndex toolkit."""
 
-from typing import List, Dict
+from typing import List
 
 from langchain.agents.agent_toolkits.base import BaseToolkit
 from langchain.tools import BaseTool
+from pydantic import Field
+
 from gpt_index.langchain_helpers.agents.tools import (
-    LlamaIndexTool,
-    LlamaGraphTool,
-    IndexToolConfig,
     GraphToolConfig,
+    IndexToolConfig,
+    LlamaGraphTool,
+    LlamaIndexTool,
 )
-from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.composability.graph import ComposableGraph
-from pydantic import Field, BaseModel
 
 
 class LlamaToolkit(BaseToolkit):
@@ -28,11 +27,11 @@ class LlamaToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        index_tools = [
+        index_tools: List[BaseTool] = [
             LlamaIndexTool.from_tool_config(tool_config=tool_config)
             for tool_config in self.index_configs
         ]
-        graph_tools = [
+        graph_tools: List[BaseTool] = [
             LlamaGraphTool.from_tool_config(tool_config=tool_config)
             for tool_config in self.graph_configs
         ]
