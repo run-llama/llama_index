@@ -86,10 +86,10 @@ class BaseGPTIndex(Generic[IS]):
         self._llama_logger = llama_logger or LlamaLogger()
         self._node_parser = node_parser or SimpleNodeParser()
 
-        self._index_struct = index_struct or self.build_index_from_nodes(nodes)
+        index_struct = index_struct or self.build_index_from_nodes(nodes)
         if not isinstance(index_struct, self.index_struct_cls):
             raise ValueError(
-                f"index_struct must be of type {self.index_struct_cls}"
+                f"index_struct must be of type {self.index_struct_cls} but got {type(index_struct)}"
             )
         self._index_struct = index_struct
         # update index registry and docstore with index_struct
@@ -99,15 +99,9 @@ class BaseGPTIndex(Generic[IS]):
     def from_documents(
         cls,
         documents: Sequence[Document],
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         docstore: Optional[DocumentStore] = None,
-        index_registry: Optional[IndexRegistry] = None,
-        prompt_helper: Optional[PromptHelper] = None,
         node_parser: Optional[NodeParser] = None,
-        chunk_size_limit: Optional[int] = None,
-        include_extra_info: bool = True,
-        llama_logger: Optional[LlamaLogger] = None,
+        **kwargs: Any,
     ) -> "BaseGPTIndex":
         node_parser = node_parser or SimpleNodeParser()
         docstore = docstore or DocumentStore()
@@ -127,15 +121,9 @@ class BaseGPTIndex(Generic[IS]):
 
         return cls(
             nodes=nodes,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            index_registry=index_registry,
-            prompt_helper=prompt_helper,
             docstore=docstore,
             node_parser=node_parser,
-            chunk_size_limit=chunk_size_limit,
-            include_extra_info=include_extra_info,
-            llama_logger=llama_logger,
+            **kwargs,
         )
 
 

@@ -246,11 +246,9 @@ class ResponseBuilder:
             summary_template,
             self.llm_predictor,
             self.prompt_helper,
-            text_splitter,
             use_async=self._use_async,
             llama_logger=self._llama_logger,
         )
-        index_builder.register_leaf_nodes(list(all_nodes.values()))
         all_node_ids = {i: n.get_doc_id() for i, n in all_nodes.items()}
         return index_builder, all_node_ids
 

@@ -5,11 +5,10 @@ Nodes are decoupled from the indices.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, TypeVar
+from typing import Dict, List, Optional, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.data_structs.data_structs import IndexGraph as V0IndexGraph
 from gpt_index.data_structs.data_structs import IndexStruct, Node
 from gpt_index.data_structs.struct_type import IndexStructType
 

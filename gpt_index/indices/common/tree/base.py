@@ -72,7 +72,7 @@ class GPTTreeIndexBuilder:
 
         """
         all_nodes: Dict[int, str] = {}
-        all_nodes.update(nodes)
+        all_nodes.update({node.index: node.get_doc_id() for node in nodes})
 
         if build_tree:
             # instantiate all_nodes from initial text chunks

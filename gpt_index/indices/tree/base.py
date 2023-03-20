@@ -108,8 +108,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self, nodes: Sequence[Node]
     ) -> IndexGraph:
         """Build the index from nodes."""
-        print("0 docstore", self._docstore)
-        # do simple concatenation
         index_builder = GPTTreeIndexBuilder(
             self.num_children,
             self.summary_template,
@@ -122,8 +120,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         index_graph = index_builder.build_from_nodes(
             nodes, build_tree=self.build_tree
         )
-        print("current docstore", self._docstore)
-        print("tree builder docstore", index_builder.docstore)
         return index_graph
 
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
