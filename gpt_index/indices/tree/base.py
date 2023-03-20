@@ -76,7 +76,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.build_tree = build_tree
         self._use_async = use_async
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             node_parser=node_parser,

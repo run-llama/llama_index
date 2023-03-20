@@ -83,7 +83,7 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         )
 
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -155,7 +155,7 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         vector_store = FaissVectorStore(faiss_index)
 
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -293,7 +293,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         )
 
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -362,7 +362,7 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         )
 
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -432,7 +432,7 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
 
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -499,7 +499,7 @@ class GPTChromaIndex(GPTVectorStoreIndex):
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,
@@ -569,7 +569,7 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
             raise ValueError("client is required.")
         vector_store = OpensearchVectorStore(client)
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             text_qa_template=text_qa_template,
             llm_predictor=llm_predictor,

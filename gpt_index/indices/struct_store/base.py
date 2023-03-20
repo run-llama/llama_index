@@ -54,7 +54,7 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         )
         self.output_parser = output_parser or default_output_parser
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             text_splitter=text_splitter,

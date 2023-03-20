@@ -79,7 +79,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         documents = documents or []
 
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             **kwargs,

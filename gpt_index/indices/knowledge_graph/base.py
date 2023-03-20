@@ -71,7 +71,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             )
         )
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             text_splitter=text_splitter,

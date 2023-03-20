@@ -63,7 +63,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
         super().__init__(
-            nodes=nodes
+            nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
