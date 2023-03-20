@@ -53,7 +53,6 @@ class GPTIndexInserter:
         """
         # perform insertion
         self.index_graph.insert_under_parent(text_node, parent_node)
-        self._docstore.add_documents([text_node])
 
         # if under num_children limit, then we're fine
         if len(self.index_graph.get_children(parent_node)) <= self.num_children:
@@ -64,7 +63,6 @@ class GPTIndexInserter:
             cur_graph_nodes = self._docstore.get_node_dict(cur_graph_node_ids)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
             # this layer is all leaf nodes, consolidate and split leaf nodes
-            cur_node_index = self.index_graph.size
             # consolidate and split leaf nodes in half
             # TODO: do better splitting (with a GPT prompt etc.)
             half1 = cur_graph_node_list[: len(cur_graph_nodes) // 2]
@@ -78,9 +76,8 @@ class GPTIndexInserter:
             )
             node1 = Node(
                 text=summary1,
-                index=cur_node_index,
-                child_indices={n.index for n in half1},
             )
+            self.index_graph.insert(node1, children_nodes=half1)
 
             text_chunk2 = self._prompt_helper.get_text_from_nodes(
                 half2, prompt=self.summary_prompt
@@ -90,19 +87,18 @@ class GPTIndexInserter:
             )
             node2 = Node(
                 text=summary2,
-                index=cur_node_index + 1,
-                child_indices={n.index for n in half2},
             )
+            self.index_graph.insert(node2, children_nodes=half2)
 
             # insert half1 and half2 as new children of parent_node
             # first remove child indices from parent node
             if parent_node is not None:
-                parent_node.child_indices = set()
+                self.index_graph.node_id_to_child_indices[parent_node.get_doc_id()] = set()
             else:
                 self.index_graph.root_nodes = {}
-            self.index_graph.insert_under_parent(node1, parent_node)
+            self.index_graph.insert_under_parent(node1, parent_node, new_index=self.index_graph.get_index(node1))
             self._docstore.add_documents([text_node])
-            self.index_graph.insert_under_parent(node2, parent_node)
+            self.index_graph.insert_under_parent(node2, parent_node, new_index=self.index_graph.get_index(node2))
             self._docstore.add_documents([text_node])
 
     def _insert_node(

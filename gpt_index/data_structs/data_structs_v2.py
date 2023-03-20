@@ -46,6 +46,7 @@ class IndexGraph(V2IndexStruct):
         return self.node_id_to_index[node.get_doc_id()]
 
     def insert(self, node: Node, index : Optional[int] = None, children_nodes: Optional[Sequence[Node]] = None) -> None:
+        print(f'Inserting {node.get_doc_id()}')
         index = index or self.size
         node_id = node.get_doc_id()
         self.all_nodes[index] = node_id
@@ -62,9 +63,9 @@ class IndexGraph(V2IndexStruct):
         else:
             return {i: self.all_nodes[i] for i in self.node_id_to_child_indices[parent_node.get_doc_id()]}
 
-    def insert_under_parent(self, node: Node, parent_node: Optional[Node]) -> None:
+    def insert_under_parent(self, node: Node, parent_node: Optional[Node], new_index: Optional[int] = None) -> None:
         """Insert under parent node."""
-        new_index = self.size
+        new_index = new_index or self.size
         if parent_node is None:
             self.root_nodes[new_index] = node.get_doc_id()
         else:

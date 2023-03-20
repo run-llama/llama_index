@@ -53,7 +53,7 @@ class GPTTreeIndexBuilder:
         # if docstore != self._docstore:
         #     print("wtf2")
 
-        print("pre init docstore: ", self._docstore)
+        # print("pre init docstore: ", self._docstore)
         self._llama_logger = llama_logger or LlamaLogger()
 
     @property
