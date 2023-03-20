@@ -43,7 +43,6 @@ def get_text_splits_from_document(
 def get_nodes_from_document(
     document: BaseDocument,
     text_splitter: TextSplitter,
-    start_idx: int = 0,
     include_extra_info: bool = True,
 ) -> List[Node]:
     """Add document to index."""
@@ -74,7 +73,6 @@ def get_nodes_from_document(
         # if embedding specified in document, pass it to the Node
         node = Node(
             text=text_chunk,
-            index=start_idx + i,
             ref_doc_id=document.get_doc_id(),
             embedding=document.embedding,
             extra_info=document.extra_info if include_extra_info else None,

@@ -72,12 +72,12 @@ class GPTTreeIndexBuilder:
             IndexGraph: graph object consisting of all_nodes, root_nodes
 
         """
-        all_nodes: Dict[int, str] = {}
-        all_nodes.update({node.index: node.get_doc_id() for node in nodes})
+        index_graph = IndexGraph()
+        for node in nodes:
+            index_graph.insert(node)
 
-        index_graph = IndexGraph(all_nodes=all_nodes, root_nodes={})
         if build_tree:
-            return self.build_index_from_nodes(index_graph, all_nodes, all_nodes, level=0)
+            return self.build_index_from_nodes(index_graph, index_graph.all_nodes, index_graph.all_nodes, level=0)
         else:
             return index_graph
 
@@ -128,7 +128,7 @@ class GPTTreeIndexBuilder:
             new_node = Node(
                 text=new_summary,
             )
-            index_graph.insert(new_node, cur_index, children_nodes=cur_nodes_chunks)
+            index_graph.insert(new_node, cur_index, children_nodes=cur_nodes_chunk)
             new_node_dict[cur_index] = new_node.get_doc_id()
             self._docstore.add_documents([new_node])
             cur_index += 1

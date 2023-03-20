@@ -37,7 +37,6 @@ def test_get_nodes_from_document(
     nodes = get_nodes_from_document(
         documents[0],
         text_splitter,
-        start_idx=0,
         include_extra_info=False,
     )
     assert len(nodes) == 2
@@ -56,7 +55,6 @@ def test_get_nodes_from_document_with_extra_info(
     nodes = get_nodes_from_document(
         documents[0],
         text_splitter,
-        start_idx=0,
         include_extra_info=True,
     )
     assert len(nodes) == 3

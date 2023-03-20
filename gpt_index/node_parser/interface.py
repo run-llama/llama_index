@@ -16,7 +16,6 @@ class NodeParser(Protocol):
     def get_nodes_from_document(
         self,
         document: Set[Document],
-        start_idx: int = 0,
         include_extra_info: bool = True,
     ) -> List[Node]:
         ...

@@ -30,12 +30,10 @@ class SimpleNodeParser:
     def get_nodes_from_document(
         self,
         document: Document,
-        start_idx: int = 0,
         include_extra_info: bool = True,
     ) -> List[Node]:
         return get_nodes_from_document(
             document,
             self._text_splitter,
-            start_idx,
             include_extra_info
         )

@@ -34,7 +34,7 @@ class IndexGraph(V2IndexStruct):
     all_nodes: Dict[int, str] = field(default_factory=dict)
     root_nodes: Dict[int, str] = field(default_factory=dict)
 
-    node_id_to_index = Dict[str, int] = field(default_factory=dict)
+    node_id_to_index: Dict[str, int] = field(default_factory=dict)
     node_id_to_child_indices: Dict[str, Set[int]] = field(default_factory=dict)
 
     @property
@@ -45,7 +45,8 @@ class IndexGraph(V2IndexStruct):
     def get_index(self, node: Node) -> int:
         return self.node_id_to_index[node.doc_id()]
 
-    def insert(self, node: Node, index : int, children_nodes: Optional[Sequence[Node]] = None) -> None:
+    def insert(self, node: Node, index : Optional[int] = None, children_nodes: Optional[Sequence[Node]] = None) -> None:
+        index = index or self.size
         node_id = node.get_doc_id()
         self.all_nodes[index] = node_id
         self.node_id_to_index[node_id] = index
@@ -53,7 +54,6 @@ class IndexGraph(V2IndexStruct):
             children_nodes = []
         children_indices = set(self.get_index(n) for n in children_nodes)
         self.node_id_to_child_indices[node_id] = children_indices
-
 
     def get_children(self, parent_node: Optional[Node]) -> Dict[int, str]:
         """Get nodes given indices."""
