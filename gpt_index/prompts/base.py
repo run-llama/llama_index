@@ -9,6 +9,7 @@ from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.schema import BaseLanguageModel
 
 from gpt_index.prompts.prompt_type import PromptType
+from gpt_index.output_parsers.base import BaseOutputParser
 
 PMT = TypeVar("PMT", bound="Prompt")
 
@@ -32,6 +33,7 @@ class Prompt:
         langchain_prompt: Optional[BaseLangchainPrompt] = None,
         langchain_prompt_selector: Optional[ConditionalPromptSelector] = None,
         stop_token: Optional[str] = None,
+        output_parser: Optional[BaseOutputParser] = None,
         **prompt_kwargs: Any,
     ) -> None:
         """Init params."""
@@ -83,6 +85,8 @@ class Prompt:
         self.partial_dict: Dict[str, Any] = {}
         self.prompt_kwargs = prompt_kwargs
         self.stop_token = stop_token
+
+        self.output_parser = output_parser
 
     @classmethod
     def from_langchain_prompt(
