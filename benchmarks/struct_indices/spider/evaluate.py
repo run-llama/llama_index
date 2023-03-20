@@ -1,9 +1,10 @@
+"""Spider evaluation script."""
 import argparse
 import ast
 import json
 import logging
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from langchain import OpenAI
 from langchain.chat_models import ChatOpenAI
@@ -42,7 +43,9 @@ HypothesisAnswer: {hypothesis_answer}
 HypothesisAnswerCorrect: """
 
 
-def _answer(llm: ChatOpenAI, question: str, sql_query: str, sql_result: str) -> str:
+def _answer(
+    llm: ChatOpenAI, question: str, sql_query: str, sql_result: Optional[str]
+) -> str:
     prompt = answer_template.format(
         question=question, sql_query=sql_query, sql_result=sql_result
     )
@@ -221,14 +224,14 @@ if __name__ == "__main__":
     dev_gold_sqls = []
     with open(os.path.join(args.spider_dir, "train_gold.sql"), "r") as f:
         for line in f.readlines():
-            line = line.strip().split("\t")
-            train_gold_sqls.append(line[0])
-            train_dbs.append(line[1])
+            line_tokens = line.strip().split("\t")
+            train_gold_sqls.append(line_tokens[0])
+            train_dbs.append(line_tokens[1])
     with open(os.path.join(args.spider_dir, "dev_gold.sql"), "r") as f:
         for line in f.readlines():
-            line = line.strip().split("\t")
-            dev_gold_sqls.append(line[0])
-            dev_dbs.append(line[1])
+            line_tokens = line.strip().split("\t")
+            dev_gold_sqls.append(line_tokens[0])
+            dev_dbs.append(line_tokens[1])
 
     # Create Llama indexes on the databases.
     indexes = create_indexes(spider_dir=args.spider_dir, llm=llm)

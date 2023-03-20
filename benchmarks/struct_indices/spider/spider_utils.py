@@ -1,3 +1,5 @@
+"""Utilities for Spider module."""
+
 import json
 import os
 from typing import Dict, Tuple, Union
@@ -21,7 +23,7 @@ def load_examples(spider_dir: str) -> Tuple[list, list]:
 
 def create_indexes(
     spider_dir: str, llm: Union[ChatOpenAI, OpenAI]
-) -> Dict[GPTSQLStructStoreIndex]:
+) -> Dict[str, GPTSQLStructStoreIndex]:
     # Create all necessary SQL database objects.
     databases = {}
     for db_name in os.listdir(os.path.join(spider_dir, "database")):
