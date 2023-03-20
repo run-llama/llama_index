@@ -12,6 +12,7 @@ from gpt_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
 
 
 def load_examples(spider_dir: str) -> Tuple[list, list]:
+    """Load examples."""
     with open(os.path.join(spider_dir, "train_spider.json"), "r") as f:
         train_spider = json.load(f)
     with open(os.path.join(spider_dir, "train_others.json"), "r") as f:
@@ -24,6 +25,7 @@ def load_examples(spider_dir: str) -> Tuple[list, list]:
 def create_indexes(
     spider_dir: str, llm: Union[ChatOpenAI, OpenAI]
 ) -> Dict[str, GPTSQLStructStoreIndex]:
+    """Create indexes for all databases."""
     # Create all necessary SQL database objects.
     databases = {}
     for db_name in os.listdir(os.path.join(spider_dir, "database")):

@@ -6,7 +6,6 @@ import logging
 import os
 from typing import Dict, List, Optional
 
-from langchain import OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 from spider_utils import create_indexes, load_examples
@@ -30,7 +29,8 @@ answer_template = (
     "Answer: "
 )
 
-match_template = """Given a question, a reference answer and a hypothesis answer, determine if the hypothesis answer is correct. Use the following format:
+match_template = """Given a question, a reference answer and a hypothesis answer, \
+    determine if the hypothesis answer is correct. Use the following format:
 
 Question: Question here
 ReferenceAnswer: Reference answer here
@@ -180,7 +180,10 @@ def _match_answers(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Evaluate answer accuracy of generated SQL queries by checking the NL answer generated from execution output."
+        description=(
+            "Evaluate answer accuracy of generated SQL queries by "
+            "checking the NL answer generated from execution output."
+        )
     )
     parser.add_argument(
         "--spider-dir", type=str, required=True, help="Path to the Spider directory."
