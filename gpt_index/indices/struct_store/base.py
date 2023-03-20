@@ -3,10 +3,11 @@
 import re
 from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar
 
+from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.table_v2 import BaseStructTable
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from gpt_index.prompts.prompts import SchemaExtractPrompt
 
@@ -45,7 +46,7 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         schema_extract_prompt: Optional[SchemaExtractPrompt] = None,
         output_parser: Optional[OUTPUT_PARSER_TYPE] = None,
         llm_predictor: Optional[LLMPredictor] = None,
-        node_parser: Optional[NodeParser] = None, 
+        node_parser: Optional[NodeParser] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""

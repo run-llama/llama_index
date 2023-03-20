@@ -14,7 +14,6 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
-from gpt_index.schema import BaseDocument
 
 
 class GPTIndexInserter:

@@ -6,9 +6,8 @@ from gpt_index.data_structs.data_structs import Node
 
 # from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
-from gpt_index.indices.node_parser.interface import NodeParser
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
@@ -17,13 +16,12 @@ from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
 from gpt_index.prompts.prompts import SummaryPrompt, TreeInsertPrompt
-from gpt_index.schema import BaseDocument
 
 REQUIRE_TREE_MODES = {
     QueryMode.DEFAULT,

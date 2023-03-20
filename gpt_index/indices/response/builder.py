@@ -14,7 +14,6 @@ from typing import Any, Dict, Generator, List, Optional, Tuple, Union, cast
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
-from gpt_index.indices.node_utils import get_node_from_docstore
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -292,7 +291,7 @@ class ResponseBuilder:
         )
         root_node_ids = index_builder.build_index_from_nodes(all_nodes, all_nodes)
         root_nodes = {
-            index: get_node_from_docstore(index_builder.docstore, node_id)
+            index: index_builder.docstore.get_node(node_id)
             for index, node_id in root_node_ids.items()
         }
         return self._get_tree_response_over_root_nodes(
@@ -316,7 +315,7 @@ class ResponseBuilder:
             all_nodes, all_nodes
         )
         root_nodes = {
-            index: get_node_from_docstore(index_builder.docstore, node_id)
+            index: index_builder.docstore.get_node(node_id)
             for index, node_id in root_node_ids.items()
         }
         return self._get_tree_response_over_root_nodes(

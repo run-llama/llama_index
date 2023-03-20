@@ -53,7 +53,7 @@ class SQLDocumentContextBuilder:
         sql_database: SQLDatabase,
         llm_predictor: Optional[LLMPredictor] = None,
         prompt_helper: Optional[PromptHelper] = None,
-        node_parser: Optional[NodeParser] = None, 
+        text_splitter: Optional[TextSplitter] = None,
         table_context_prompt: Optional[TableContextPrompt] = None,
         refine_table_context_prompt: Optional[RefineTableContextPrompt] = None,
         table_context_task: Optional[str] = None,

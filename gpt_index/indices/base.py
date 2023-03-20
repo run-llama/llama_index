@@ -139,13 +139,13 @@ class BaseGPTIndex(Generic[IS]):
         )
 
 
-    @classmethod
-    def from_indices(
-        cls,
-        indices: Sequence["BaseGPTIndex"],
-    ) -> "BaseGPTIndex":
-        # TODO: figure out how this impacts composability
-        pass
+    # @classmethod
+    # def from_indices(
+    #     cls,
+    #     indices: Sequence["BaseGPTIndex"],
+    # ) -> "BaseGPTIndex":
+    #     # TODO: figure out how this impacts composability
+    #     pass
 
     @property
     def prompt_helper(self) -> PromptHelper:
