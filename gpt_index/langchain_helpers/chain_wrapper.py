@@ -47,13 +47,13 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         )
     elif isinstance(llm, ChatOpenAI):
         # TODO: remove hardcoded context size once available via langchain.
+        # NOTE: if max tokens isn't specified, set to 4096
+        max_tokens = llm.max_tokens or 4096
         if llm.model_name == "gpt-4":
-            return LLMMetadata(
-                max_input_size=GPT4_CONTEXT_SIZE, num_output=llm.max_tokens
-            )
+            return LLMMetadata(max_input_size=GPT4_CONTEXT_SIZE, num_output=max_tokens)
         elif llm.model_name == "gpt-4-32k":
             return LLMMetadata(
-                max_input_size=GPT4_32K_CONTEXT_SIZE, num_output=llm.max_tokens
+                max_input_size=GPT4_32K_CONTEXT_SIZE, num_output=max_tokens
             )
         else:
             logger.warn(
