@@ -65,6 +65,7 @@ from gpt_index.prompts.prompts import (
 from gpt_index.readers import (
     BeautifulSoupWebReader,
     ChromaReader,
+    ConfluenceReader,
     DiscordReader,
     Document,
     FaissReader,
@@ -159,6 +160,7 @@ __all__ = [
     "TwitterTweetReader",
     "download_loader",
     "GithubRepositoryReader",
+    "ConfluenceReader",
 ]
 
 # NOTE: keep for backwards compatibility

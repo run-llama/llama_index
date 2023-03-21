@@ -1,5 +1,6 @@
 # requirements for external data
 
+atlassian-python-api
 wikipedia
 pymongo
 slack_sdk
