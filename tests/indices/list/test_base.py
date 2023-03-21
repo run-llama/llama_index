@@ -236,7 +236,7 @@ def test_query(
 ) -> None:
     """Test list query."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents, **index_kwargs)
+    index = GPTListIndex.from_documents(documents, **index_kwargs)
 
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
@@ -275,7 +275,7 @@ def test_index_overlap(
         tokenizer=globals_helper.tokenizer,
     )
 
-    index = GPTListIndex(documents, text_splitter=_text_splitter, **index_kwargs)
+    index = GPTListIndex.from_documents(documents, text_splitter=_text_splitter, **index_kwargs)
 
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
@@ -307,7 +307,7 @@ def test_query_with_keywords(
 ) -> None:
     """Test list query with keywords."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents, **index_kwargs)
+    index = GPTListIndex.from_documents(documents, **index_kwargs)
 
     # test query with keywords
     query_str = "What is?"
@@ -338,7 +338,7 @@ def test_embedding_query(
 ) -> None:
     """Test embedding query."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents, **index_kwargs)
+    index = GPTListIndex.from_documents(documents, **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
@@ -439,7 +439,7 @@ def test_async_query(
 ) -> None:
     """Test list async query."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents, **index_kwargs)
+    index = GPTListIndex.from_documents(documents, **index_kwargs)
 
     # test default query mode.
     query_str = "What is?"
