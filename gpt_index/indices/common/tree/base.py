@@ -75,6 +75,11 @@ class GPTTreeIndexBuilder:
         index_graph = IndexGraph()
         for node in nodes:
             index_graph.insert(node)
+        
+        print('node_id_to_index')
+        print(index_graph.node_id_to_index)
+        print('all_nodes')
+        print(index_graph.all_nodes)
 
         if build_tree:
             return self.build_index_from_nodes(index_graph, index_graph.all_nodes, index_graph.all_nodes, level=0)
@@ -107,7 +112,6 @@ class GPTTreeIndexBuilder:
     def _construct_parent_nodes(
         self,
         index_graph: IndexGraph,
-        cur_index: int,
         indices: List[int],
         cur_nodes_chunks: List[List[Node]],
         summaries: List[str],
@@ -128,20 +132,20 @@ class GPTTreeIndexBuilder:
             new_node = Node(
                 text=new_summary,
             )
-            index_graph.insert(new_node, cur_index, children_nodes=cur_nodes_chunk)
-            new_node_dict[cur_index] = new_node.get_doc_id()
+            index_graph.insert(new_node, children_nodes=cur_nodes_chunk)
+            index = index_graph.get_index(new_node)
+            new_node_dict[index] = new_node.get_doc_id()
             self._docstore.add_documents([new_node])
-            cur_index += 1
         return new_node_dict
 
     def build_index_from_nodes(
         self, index_graph: IndexGraph, cur_node_ids: Dict[int, str], all_node_ids: Dict[int, str], level: int = 0
     ) -> IndexGraph:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
-        cur_index = len(all_node_ids)
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_node_ids
         )
+        print(cur_nodes_chunks)
 
         if self._use_async:
             tasks = [
@@ -161,9 +165,12 @@ class GPTTreeIndexBuilder:
             ]
         self._llama_logger.add_log({"summaries": summaries, "level": level})
 
-        new_node_dict = self._construct_parent_nodes(
-            index_graph, cur_index, indices, cur_nodes_chunks, summaries
-        )
+        try:
+            new_node_dict = self._construct_parent_nodes(
+                index_graph, indices, cur_nodes_chunks, summaries
+            )
+        except KeyError:
+            breakpoint()
         all_node_ids.update(new_node_dict)
 
         index_graph.root_nodes = new_node_dict
@@ -179,7 +186,6 @@ class GPTTreeIndexBuilder:
         self, index_graph: IndexGraph, cur_node_ids: Dict[int, str], all_node_ids: Dict[int, str], level: int = 0
     ) -> IndexGraph:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
-        cur_index = len(all_node_ids)
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_node_ids
         )
@@ -193,7 +199,7 @@ class GPTTreeIndexBuilder:
         self._llama_logger.add_log({"summaries": summaries, "level": level})
 
         new_node_dict = self._construct_parent_nodes(
-            cur_index, indices, cur_nodes_chunks, summaries
+            indices, cur_nodes_chunks, summaries
         )
         all_node_ids.update(new_node_dict)
 

@@ -23,8 +23,7 @@ class SimpleNodeParser:
                 document,
                 include_extra_info=include_extra_info
             )
-
-        all_nodes.extend(nodes)
+            all_nodes.extend(nodes)
         return all_nodes
 
     def get_nodes_from_document(

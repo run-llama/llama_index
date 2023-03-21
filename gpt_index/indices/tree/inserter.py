@@ -97,12 +97,12 @@ class GPTIndexInserter:
             else:
                 self.index_graph.root_nodes = {}
             self.index_graph.insert_under_parent(node1, parent_node, new_index=self.index_graph.get_index(node1))
-            self._docstore.add_documents([text_node])
+            self._docstore.add_documents([node1])
             self.index_graph.insert_under_parent(node2, parent_node, new_index=self.index_graph.get_index(node2))
-            self._docstore.add_documents([text_node])
+            self._docstore.add_documents([node2])
 
     def _insert_node(
-        self, node: Node, parent_node: Optional[Node]
+        self, node: Node, parent_node: Optional[Node] = None
     ) -> None:
         """Insert node."""
         cur_graph_node_ids = self.index_graph.get_children(parent_node)
@@ -156,4 +156,4 @@ class GPTIndexInserter:
     def insert(self, nodes: Sequence[Node]) -> None:
         """Insert into index_graph."""
         for node in nodes:
-            self._insert_node(node, None)
+            self._insert_node(node)

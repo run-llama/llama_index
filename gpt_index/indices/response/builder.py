@@ -230,7 +230,7 @@ class ResponseBuilder:
         summary_template: SummaryPrompt,
         query_str: str,
         num_children: int = 10,
-    ) -> Tuple[GPTTreeIndexBuilder, Dict[int, str]]:
+    ) -> Tuple[GPTTreeIndexBuilder, List[Node]]:
         """Get tree index builder."""
         # first join all the text chunks into a single text
         all_text = "\n\n".join([t.text for t in self._texts])
@@ -239,12 +239,10 @@ class ResponseBuilder:
             summary_template, num_children
         )
         text_chunks = text_splitter.split_text(all_text)
-        all_nodes: Dict[int, Node] = {
-            i: Node(text=t) for i, t in enumerate(text_chunks)
-        }
+        nodes = [Node(text=t) for t in text_chunks]
 
         docstore = DocumentStore()
-        docstore.add_documents(list(all_nodes.values()))
+        docstore.add_documents(nodes)
         index_builder = GPTTreeIndexBuilder(
             num_children,
             summary_template,
@@ -254,8 +252,7 @@ class ResponseBuilder:
             use_async=self._use_async,
             llama_logger=self._llama_logger,
         )
-        all_node_ids = {i: n.get_doc_id() for i, n in all_nodes.items()}
-        return index_builder, all_node_ids
+        return index_builder, nodes
 
     def _get_tree_response_over_root_nodes(
         self,
@@ -289,11 +286,13 @@ class ResponseBuilder:
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(text_qa_template)
 
-        index_builder, all_nodes = self._get_tree_index_builder_and_nodes(
+        index_builder, nodes = self._get_tree_index_builder_and_nodes(
             summary_template, query_str, num_children
         )
         index_graph = IndexGraph()
-        index_graph = index_builder.build_index_from_nodes(index_graph, all_nodes, all_nodes)
+        for node in nodes:
+            index_graph.insert(node)
+        index_graph = index_builder.build_index_from_nodes(index_graph, index_graph.all_nodes, index_graph.all_nodes)
         root_node_ids = index_graph.root_nodes
         root_nodes = {
             index: index_builder.docstore.get_node(node_id)
