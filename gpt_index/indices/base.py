@@ -86,11 +86,14 @@ class BaseGPTIndex(Generic[IS]):
         self._llama_logger = llama_logger or LlamaLogger()
         self._node_parser = node_parser or SimpleNodeParser()
 
-        index_struct = index_struct or self.build_index_from_nodes(nodes)
-        if not isinstance(index_struct, self.index_struct_cls):
-            raise ValueError(
-                f"index_struct must be of type {self.index_struct_cls} but got {type(index_struct)}"
-            )
+        if nodes is not None: 
+            docstore.add_documents(nodes)
+            index_struct = self.build_index_from_nodes(nodes)
+            if not isinstance(index_struct, self.index_struct_cls):
+                raise ValueError(
+                    f"index_struct must be of type {self.index_struct_cls} but got {type(index_struct)}"
+                )
+
         self._index_struct = index_struct
         # update index registry and docstore with index_struct
         self._update_index_registry_and_docstore()
@@ -112,7 +115,7 @@ class BaseGPTIndex(Generic[IS]):
         # )
         # self._validate_documents(documents)
 
-        # TODO: why?
+        # TODO: why do we do this?
         for doc in documents:
             docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
 
@@ -126,23 +129,6 @@ class BaseGPTIndex(Generic[IS]):
             **kwargs,
         )
     
-    @classmethod
-    def from_nodes(
-        nodes: Sequence[Node],
-        docstore: Optional[DocumentStore] = None,
-        **kwargs: Any,
-    ) -> "BaseGPTIndex":
-        docstore = docstore or DocumentStore()
-        docstore.add_documents(nodes)
-
-        return cls(
-            nodes=nodes,
-            docstore=docstore,
-            **kwargs,
-        )
-
-
-
 
     # @classmethod
     # def from_indices(
