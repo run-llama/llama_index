@@ -81,11 +81,7 @@ class GuardrailsOutputParser(BaseOutputParser):
 
     def format(self, query: str) -> str:
         """Format a query with structured output formatting instructions."""
-        from guardrails.utils.reask_utils import extract_prompt_from_xml
-
-        output_schema_text = extract_prompt_from_xml(
-            deepcopy(self.guard.output_schema.parsed_rail)
-        )
+        output_schema_text = deepcopy(self.guard.rail.prompt)
 
         # Add format instructions here.
         format_instructions_tmpl = self.guard.raw_prompt.format_instructions
