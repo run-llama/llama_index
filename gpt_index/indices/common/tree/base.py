@@ -75,11 +75,6 @@ class GPTTreeIndexBuilder:
         index_graph = IndexGraph()
         for node in nodes:
             index_graph.insert(node)
-        
-        print('node_id_to_index')
-        print(index_graph.node_id_to_index)
-        print('all_nodes')
-        print(index_graph.all_nodes)
 
         if build_tree:
             return self.build_index_from_nodes(index_graph, index_graph.all_nodes, index_graph.all_nodes, level=0)
@@ -145,7 +140,6 @@ class GPTTreeIndexBuilder:
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_node_ids
         )
-        print(cur_nodes_chunks)
 
         if self._use_async:
             tasks = [
@@ -165,12 +159,9 @@ class GPTTreeIndexBuilder:
             ]
         self._llama_logger.add_log({"summaries": summaries, "level": level})
 
-        try:
-            new_node_dict = self._construct_parent_nodes(
-                index_graph, indices, cur_nodes_chunks, summaries
-            )
-        except KeyError:
-            breakpoint()
+        new_node_dict = self._construct_parent_nodes(
+            index_graph, indices, cur_nodes_chunks, summaries
+        )
         all_node_ids.update(new_node_dict)
 
         index_graph.root_nodes = new_node_dict
@@ -199,7 +190,7 @@ class GPTTreeIndexBuilder:
         self._llama_logger.add_log({"summaries": summaries, "level": level})
 
         new_node_dict = self._construct_parent_nodes(
-            indices, cur_nodes_chunks, summaries
+            index_graph, indices, cur_nodes_chunks, summaries
         )
         all_node_ids.update(new_node_dict)
 

@@ -312,12 +312,16 @@ class ResponseBuilder:
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(text_qa_template)
 
-        index_builder, all_nodes = self._get_tree_index_builder_and_nodes(
+        index_builder, nodes = self._get_tree_index_builder_and_nodes(
             summary_template, query_str, num_children
         )
-        root_node_ids = await index_builder.abuild_index_from_nodes(
-            all_nodes, all_nodes
+        index_graph = IndexGraph()
+        for node in nodes:
+            index_graph.insert(node)
+        index_graph = await index_builder.abuild_index_from_nodes(
+            index_graph, index_graph.all_nodes, index_graph.all_nodes
         )
+        root_node_ids = index_graph.root_nodes
         root_nodes = {
             index: index_builder.docstore.get_node(node_id)
             for index, node_id in root_node_ids.items()
