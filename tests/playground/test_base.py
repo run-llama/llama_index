@@ -62,7 +62,7 @@ def test_get_set_compare(
 
     indices = [
         GPTSimpleVectorIndex(documents=documents),
-        GPTListIndex(documents=documents),
+        GPTListIndex.from_documents(documents),
         GPTTreeIndex(documents=documents),
     ]
 

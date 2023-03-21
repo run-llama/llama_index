@@ -307,6 +307,8 @@ class BaseGPTIndex(Generic[IS]):
         # self._validate_documents([processed_doc])
         nodes = self._node_parser.get_nodes_from_document(document)
         self.docstore.add_documents(nodes)
+        for node in nodes:
+            print('added node to docstore: ', node.get_doc_id())
         self._insert(nodes, **insert_kwargs)
 
     @abstractmethod

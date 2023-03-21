@@ -61,7 +61,7 @@ def test_build_list(
     documents: List[Document],
 ) -> None:
     """Test build list."""
-    list_index = GPTListIndex(documents=documents)
+    list_index = GPTListIndex.from_documents(documents)
     assert len(list_index.index_struct.nodes) == 4
     # check contents of nodes
     node_ids = list_index.index_struct.nodes
@@ -90,7 +90,7 @@ def test_refresh_list(
         more_documents[i].doc_id = str(i)
 
     # create index
-    list_index = GPTListIndex(documents=more_documents)
+    list_index = GPTListIndex.from_documents(more_documents)
 
     # check that no documents are refreshed
     refreshed_docs = list_index.refresh(more_documents)
@@ -107,7 +107,7 @@ def test_refresh_list(
     assert refreshed_docs[0] is False
     assert refreshed_docs[1] is True
 
-    test_node = list_index.docstore.get_nodes(list_index.index_struct.nodes[-1])
+    test_node = list_index.docstore.get_node(list_index.index_struct.nodes[-1])
     assert test_node.text == "Test document 2, now with changes!"
 
 
@@ -124,9 +124,9 @@ def test_build_list_multiple(
         Document("Hello world.\nThis is a test."),
         Document("This is another test.\nThis is a test v2."),
     ]
-    list_index = GPTListIndex(documents=documents)
+    list_index = GPTListIndex.from_documents(documents)
     assert len(list_index.index_struct.nodes) == 4
-    nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes))
+    nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     # check contents of nodes
     assert nodes[0].text == "Hello world."
     assert nodes[1].text == "This is a test."
@@ -183,7 +183,7 @@ def test_list_delete(
     ]
 
     # delete from documents
-    list_index = GPTListIndex(new_documents)
+    list_index = GPTListIndex.from_documents(new_documents)
     list_index.delete("test_id_1")
     assert len(list_index.index_struct.nodes) == 2
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
@@ -195,7 +195,7 @@ def test_list_delete(
     source_doc = list_index.docstore.get_document("test_id_1", raise_error=False)
     assert source_doc is None
 
-    list_index = GPTListIndex(new_documents)
+    list_index = GPTListIndex.from_documents(new_documents)
     list_index.delete("test_id_2")
     assert len(list_index.index_struct.nodes) == 3
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
@@ -366,7 +366,7 @@ def test_extra_info(
     )
     extra_info = {"extra_info": "extra_info", "foo": "bar"}
     new_document = Document(doc_text, extra_info=extra_info)
-    list_index = GPTListIndex(documents=[new_document])
+    list_index = GPTListIndex.from_documents([new_document])
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     assert nodes[0].get_text() == (
         "extra_info: extra_info\n" "foo: bar\n\n" "Hello world."
@@ -386,7 +386,7 @@ def test_to_from_disk(
     documents: List[Document],
 ) -> None:
     """Test saving to disk and from disk."""
-    list_index = GPTListIndex(documents=documents)
+    list_index = GPTListIndex.from_documents(documents)
     with TemporaryDirectory() as tmp_dir:
         list_index.save_to_disk(str(Path(tmp_dir) / "tmp.json"))
         new_list_index = cast(
@@ -411,7 +411,7 @@ def test_to_from_string(
     documents: List[Document],
 ) -> None:
     """Test saving to disk and from disk."""
-    list_index = GPTListIndex(documents=documents)
+    list_index = GPTListIndex.from_documents(documents)
     new_list_index = cast(
         GPTListIndex, GPTListIndex.load_from_string(list_index.save_to_string())
     )
