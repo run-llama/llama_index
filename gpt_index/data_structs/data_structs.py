@@ -29,7 +29,7 @@ class IndexStruct(BaseDocument, DataClassJsonMixin):
 
 
 @dataclass
-class Node(IndexStruct):
+class Node(BaseDocument):
     """A generic node of data.
 
     Base struct used in most indices.
