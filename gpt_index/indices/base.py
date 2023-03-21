@@ -125,6 +125,23 @@ class BaseGPTIndex(Generic[IS]):
             node_parser=node_parser,
             **kwargs,
         )
+    
+    @classmethod
+    def from_nodes(
+        nodes: Sequence[Node],
+        docstore: Optional[DocumentStore] = None,
+        **kwargs: Any,
+    ) -> "BaseGPTIndex":
+        docstore = docstore or DocumentStore()
+        docstore.add_documents(nodes)
+
+        return cls(
+            nodes=nodes,
+            docstore=docstore,
+            **kwargs,
+        )
+
+
 
 
     # @classmethod

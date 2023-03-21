@@ -493,7 +493,7 @@ def test_query_and_count_tokens(
     )
     document = Document(doc_text)
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTSimpleVectorIndex([document], **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents([document], **index_kwargs)
     assert index.embed_model.total_tokens_used == 20
 
     # test embedding query
@@ -532,7 +532,7 @@ def test_query_and_similarity_scores(
     )
     document = Document(doc_text)
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTSimpleVectorIndex([document], **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents([document], **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
@@ -571,7 +571,7 @@ def test_query_and_similarity_scores_with_cutoff(
     )
     document = Document(doc_text)
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTSimpleVectorIndex([document], **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents([document], **index_kwargs)
 
     # test embedding query - no nodes
     query_str = "What is?"
