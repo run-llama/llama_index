@@ -199,7 +199,6 @@ class BaseStructDatapointExtractor:
             # validate fields with col_types_map
             new_cur_fields = self._clean_and_validate_fields(cur_fields)
             fields.update(new_cur_fields)
-
         struct_datapoint = StructDatapoint(fields)
         if struct_datapoint is not None:
             self._insert_datapoint(struct_datapoint)

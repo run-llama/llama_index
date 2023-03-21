@@ -108,7 +108,7 @@ def test_sql_index(
     delete_stmt = delete(test_table)
     with engine.connect() as connection:
         connection.execute(delete_stmt)
-    docs = [Document(text="user_id:2\nfoo:bar"), Document(text="user_id:8\nfoo:hello")]
+    docs = [Document(text="user_id:2,foo:bar\nuser_id:8,foo:hello")]
     index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )

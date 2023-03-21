@@ -108,7 +108,8 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
                 table=self._table,
                 ref_doc_id_column=self._ref_doc_id_column,
             )
-            data_extractor.insert_datapoint_from_nodes(nodes)
+            for node in nodes:
+                data_extractor.insert_datapoint_from_nodes([node])
         return index_struct
 
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
