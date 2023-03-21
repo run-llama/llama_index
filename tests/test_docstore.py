@@ -36,9 +36,7 @@ def test_docstore() -> None:
         "embedding": None,
         "extra_info": None,
         "node_info": {"node": "info"},
-        "index": 0,
-        "child_indices": [],
-        "ref_doc_id": None,
+        "relationships": {},
         "image": None,
         "__type__": "node",
     }
