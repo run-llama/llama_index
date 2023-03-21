@@ -108,7 +108,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         if prev_response is None:
             return cur_response
         else:
-            context_msg = "\n".join([selected_node.get_text(), cur_response])
+            context_msg = selected_node.get_text()
             cur_response, formatted_refine_prompt = self._llm_predictor.predict(
                 self.refine_template,
                 query_str=query_str,
