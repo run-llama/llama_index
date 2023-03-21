@@ -164,7 +164,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         if not self._vector_store.stores_text:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
-                self._docstore.add_documents([result.node])
 
     def _add_nodes_to_index(
         self,
@@ -183,7 +182,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         if not self._vector_store.stores_text:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
-                self._docstore.add_documents([result.node])
 
     def _build_index_from_nodes(
         self, nodes: Sequence[Node]
