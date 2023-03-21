@@ -127,7 +127,7 @@ def test_insert(
     table = GPTSimpleKeywordTableIndex([])
     assert len(table.index_struct.table.keys()) == 0
     table.insert(documents[0])
-    nodes = table.docstore.get_node(list(table.index_struct.node_ids)))
+    nodes = table.docstore.get_node(list(table.index_struct.node_ids))
     table_chunks = {n.get_text() for n in nodes}
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks

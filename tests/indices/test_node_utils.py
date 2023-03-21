@@ -4,8 +4,8 @@ from typing import List
 
 import pytest
 
-from gpt_index.indices.node_utils import get_nodes_from_document
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.node_parser.node_utils import get_nodes_from_document
 from gpt_index.readers.schema.base import Document
 
 

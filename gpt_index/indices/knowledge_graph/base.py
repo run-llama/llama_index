@@ -13,18 +13,16 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import KG
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, KGQueryMode
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from gpt_index.prompts.prompts import KnowledgeGraphPrompt
-from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -53,7 +51,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
-        node_parser: Optional[NodeParser] = None, 
         include_embeddings: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -74,7 +71,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
-            node_parser=node_parser,
             **kwargs,
         )
 
