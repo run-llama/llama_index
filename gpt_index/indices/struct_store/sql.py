@@ -75,7 +75,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         self._table = table
 
         # if documents aren't specified, pass in a blank []
-        documents = documents or []
+        nodes = nodes or []
 
         super().__init__(
             nodes=nodes,

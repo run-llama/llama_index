@@ -131,13 +131,11 @@ class BaseStructDatapointExtractor:
     def __init__(
         self,
         llm_predictor: LLMPredictor,
-        text_splitter: TextSplitter,
         schema_extract_prompt: SchemaExtractPrompt,
         output_parser: OUTPUT_PARSER_TYPE,
     ) -> None:
         """Initialize params."""
         self._llm_predictor = llm_predictor
-        self._text_splitter = text_splitter
         self._schema_extract_prompt = schema_extract_prompt
         self._output_parser = output_parser
 

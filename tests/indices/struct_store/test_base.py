@@ -93,7 +93,7 @@ def test_sql_index(
     index_kwargs, _ = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     sql_database = SQLDatabase(engine)
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
 
@@ -109,7 +109,7 @@ def test_sql_index(
     with engine.connect() as connection:
         connection.execute(delete_stmt)
     docs = [Document(text="user_id:2\nfoo:bar"), Document(text="user_id:8\nfoo:hello")]
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
     # test that the document is inserted
@@ -159,7 +159,7 @@ def test_sql_index_with_context(
         sql_database, context_dict=table_context_dict
     ).build_context_container(ignore_db_schema=True)
 
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
@@ -175,7 +175,7 @@ def test_sql_index_with_context(
         sql_database, context_dict=table_context_dict
     ).build_context_container()
 
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
@@ -204,7 +204,7 @@ def test_sql_index_with_context(
     sql_context_container = sql_context_builder.build_context_container(
         ignore_db_schema=True
     )
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
@@ -304,7 +304,7 @@ def test_sql_index_with_index_context(
     assert context_response == "Context query?:table_name: test_table"
     assert sql_context_container.context_str == context_response
 
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
@@ -340,7 +340,7 @@ def test_sql_index_query(
     metadata_obj.create_all()
     sql_database = SQLDatabase(engine)
     # NOTE: we can use the default output parser for this
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
 
