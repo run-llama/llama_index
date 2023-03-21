@@ -68,6 +68,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    guides/index_guide.md
    guides/sql_guide.md
    guides/fullstack_app_guide.md
+   guides/building_a_chatbot.md
 
 
 .. toctree::
