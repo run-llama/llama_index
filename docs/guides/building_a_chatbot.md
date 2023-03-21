@@ -116,7 +116,7 @@ from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import initialize_agent
 
-from gpt_index.langchain_helpers.agents import LlamaToolkit, create_llama_chat_agent, IndexToolConfig, GraphToolConfig
+from llama_index.langchain_helpers.agents import LlamaToolkit, create_llama_chat_agent, IndexToolConfig, GraphToolConfig
 ```
 
 We want to define a separate Tool for each index (corresponding to a given year), as well 
@@ -126,7 +126,7 @@ Below, we define a `GraphToolConfig` for our graph. Note that we also import a `
 
 ```python
 # define a decompose transform
-from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
     llm_predictor, verbose=True
 )
@@ -266,16 +266,16 @@ Action Input: Compare/contrast the risk factors described in the Uber 10-K acros
 > New query:  What are the risk factors described in the Uber 10-K for the 2022 fiscal year?
 > Current query: Compare/contrast the risk factors described in the Uber 10-K across years.
 > New query:  What are the risk factors described in the Uber 10-K for the 2022 fiscal year?
-INFO:gpt_index.token_counter.token_counter:> [query] Total LLM token usage: 964 tokens
-INFO:gpt_index.token_counter.token_counter:> [query] Total embedding token usage: 18 tokens
+INFO:llama_index.token_counter.token_counter:> [query] Total LLM token usage: 964 tokens
+INFO:llama_index.token_counter.token_counter:> [query] Total embedding token usage: 18 tokens
 > Got response: 
 The risk factors described in the Uber 10-K for the 2022 fiscal year include: the potential for changes in the classification of Drivers, the potential for increased competition, the potential for...
 > Current query: Compare/contrast the risk factors described in the Uber 10-K across years.
 > New query:  What are the risk factors described in the Uber 10-K for the 2021 fiscal year?
 > Current query: Compare/contrast the risk factors described in the Uber 10-K across years.
 > New query:  What are the risk factors described in the Uber 10-K for the 2021 fiscal year?
-INFO:gpt_index.token_counter.token_counter:> [query] Total LLM token usage: 590 tokens
-INFO:gpt_index.token_counter.token_counter:> [query] Total embedding token usage: 18 tokens
+INFO:llama_index.token_counter.token_counter:> [query] Total LLM token usage: 590 tokens
+INFO:llama_index.token_counter.token_counter:> [query] Total embedding token usage: 18 tokens
 > Got response: 
 1. The COVID-19 pandemic and the impact of actions to mitigate the pandemic have adversely affected and may continue to adversely affect parts of our business.
 
@@ -284,21 +284,21 @@ INFO:gpt_index.token_counter.token_counter:> [query] Total embedding token usage
 > New query:  What are the risk factors described in the Uber 10-K for the 2020 fiscal year?
 > Current query: Compare/contrast the risk factors described in the Uber 10-K across years.
 > New query:  What are the risk factors described in the Uber 10-K for the 2020 fiscal year?
-INFO:gpt_index.token_counter.token_counter:> [query] Total LLM token usage: 516 tokens
-INFO:gpt_index.token_counter.token_counter:> [query] Total embedding token usage: 18 tokens
+INFO:llama_index.token_counter.token_counter:> [query] Total LLM token usage: 516 tokens
+INFO:llama_index.token_counter.token_counter:> [query] Total embedding token usage: 18 tokens
 > Got response: 
 The risk factors described in the Uber 10-K for the 2020 fiscal year include: the timing of widespread adoption of vaccines against the virus, additional actions that may be taken by governmental ...
 > Current query: Compare/contrast the risk factors described in the Uber 10-K across years.
 > New query:  What are the risk factors described in the Uber 10-K for the 2019 fiscal year?
 > Current query: Compare/contrast the risk factors described in the Uber 10-K across years.
 > New query:  What are the risk factors described in the Uber 10-K for the 2019 fiscal year?
-INFO:gpt_index.token_counter.token_counter:> [query] Total LLM token usage: 1020 tokens
-INFO:gpt_index.token_counter.token_counter:> [query] Total embedding token usage: 18 tokens
-INFO:gpt_index.indices.common.tree.base:> Building index from nodes: 0 chunks
+INFO:llama_index.token_counter.token_counter:> [query] Total LLM token usage: 1020 tokens
+INFO:llama_index.token_counter.token_counter:> [query] Total embedding token usage: 18 tokens
+INFO:llama_index.indices.common.tree.base:> Building index from nodes: 0 chunks
 > Got response: 
 Risk factors described in the Uber 10-K for the 2019 fiscal year include: competition from other transportation providers; the impact of government regulations; the impact of litigation; the impac...
-INFO:gpt_index.token_counter.token_counter:> [query] Total LLM token usage: 7039 tokens
-INFO:gpt_index.token_counter.token_counter:> [query] Total embedding token usage: 72 tokens
+INFO:llama_index.token_counter.token_counter:> [query] Total LLM token usage: 7039 tokens
+INFO:llama_index.token_counter.token_counter:> [query] Total embedding token usage: 72 tokens
 
 Observation: 
 In 2020, the risk factors included the timing of widespread adoption of vaccines against the virus, additional actions that may be taken by governmental authorities, the further impact on the business of Drivers
