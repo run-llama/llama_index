@@ -8,7 +8,6 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
-from gpt_index.indices.node_utils import get_nodes_from_docstore
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_utils import mock_extract_keywords
@@ -41,7 +40,7 @@ def test_write_ascii(
     # the regex-based keyword extractor, not GPT
     table = GPTSimpleKeywordTableIndex(documents)
     node_ids = list(table.index_struct.node_ids)
-    table_chunks = [n.text for n in get_nodes_from_docstore(table.docstore, node_ids)]
+    table_chunks = [n.text for n in table.docstore.get_nodes(node_ids)]
     assert len(table_chunks) == 1
     assert "á" in table_chunks
 
@@ -86,7 +85,7 @@ def test_write_utf8(
     # the regex-based keyword extractor, not GPT
     table = GPTSimpleKeywordTableIndex(documents)
     node_ids = list(table.index_struct.node_ids)
-    table_chunks = get_nodes_from_docstore(table.docstore, node_ids)
+    table_chunks = table.docstore.get_nodes(node_ids)
     assert len(table_chunks) == 1
     assert "á" in table_chunks
 

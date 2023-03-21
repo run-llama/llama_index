@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.node_utils import get_node_from_docstore, get_nodes_from_docstore
 from gpt_index.indices.vector_store.vector_indices import (
     GPTFaissIndex,
     GPTSimpleVectorIndex,
@@ -172,7 +171,7 @@ def test_build_faiss(
     assert len(index.index_struct.nodes_dict) == 4
 
     node_ids = list(index.index_struct.nodes_dict.values())
-    nodes = get_nodes_from_docstore(index.docstore, node_ids)
+    nodes = index.docstore.get_nodes(node_ids)
     node_texts = [node.text for node in nodes]
     assert "Hello world." in node_texts
     assert "This is a test." in node_texts
@@ -231,7 +230,7 @@ def test_faiss_insert(
 
     # check contents of nodes
     node_ids = list(index.index_struct.nodes_dict.values())
-    nodes = get_nodes_from_docstore(index.docstore, node_ids)
+    nodes = index.docstore.get_nodes(node_ids)
     node_texts = [node.text for node in nodes]
     assert "This is a test v2." in node_texts
     assert "This is a test v3." in node_texts
@@ -348,7 +347,7 @@ def test_simple_insert(
     ]
     for text_id in index.index_struct.nodes_dict.keys():
         node_id = index.index_struct.nodes_dict[text_id]
-        node = get_node_from_docstore(index.docstore, node_id)
+        node = index.docstore.get_node(node_id)
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
