@@ -62,8 +62,9 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
             )
             return LLMMetadata()
     elif isinstance(llm, Cohere):
+        max_tokens = llm.max_tokens or 2048
         # TODO: figure out max input size for cohere
-        return LLMMetadata(num_output=llm.max_tokens)
+        return LLMMetadata(num_output=max_tokens)
     elif isinstance(llm, AI21):
         # TODO: figure out max input size for AI21
         return LLMMetadata(num_output=llm.maxTokens)

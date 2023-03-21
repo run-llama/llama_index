@@ -10,11 +10,13 @@ LlamaIndex (GPT Index) is a project that provides a central interface to connect
 
    ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! We will carry out this transition gradually.
 
+   **3/20/2023**: Most instances of `gpt_index` should be renamed to `llama_index`. We will preserve the name "GPT Index" as a backup name for now.
+
    **2/19/2023**: By default, our docs/notebooks/instructions now use the `llama-index` package. However the `gpt-index` package still exists as a duplicate!
 
    **2/16/2023**: We have a duplicate `llama-index` pip package. Simply replace all imports of `gpt_index` with `llama_index` if you choose to `pip install llama-index`.
 
-- Github: https://github.com/jerryjliu/gpt_index
+- Github: https://github.com/jerryjliu/llama_index
 - PyPi:
    - LlamaIndex: https://pypi.org/project/llama-index/.
    - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
