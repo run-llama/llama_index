@@ -132,36 +132,52 @@ Here is a small example using locally running FLAN-T5 model and Huggingface's pi
 
 ```python
 import torch
-from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex
-from llama_index import LLMPredictor
 from langchain.llms.base import LLM
+from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex, PromptHelper
+from llama_index import LLMPredictor
 from transformers import pipeline
+from typing import Optional, List, Mapping, Any
 
 
-class FlanLLM(LLM):
-    model_name = "google/flan-t5-xl"
-    pipeline = pipeline("text2text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
+# define prompt helper
+# set maximum input size
+max_input_size = 2048
+# set number of output tokens
+num_output = 256
+# set maximum chunk overlap
+max_chunk_overlap = 20
+prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
-    def _call(self, prompt, stop=None):
-        return self.pipeline(prompt, max_length=512)[0]["generated_text"]
 
-    def _identifying_params(self):
+class CustomLLM(LLM):
+    model_name = "facebook/opt-iml-max-30b"
+    pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        prompt_length = len(prompt)
+        response = self.pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
+
+        # only return newly generated tokens
+        return response[prompt_length:]
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
         return {"name_of_model": self.model_name}
 
-    def _llm_type(self):
+    @property
+    def _llm_type(self) -> str:
         return "custom"
 
+# define our LLM
+llm_predictor = LLMPredictor(llm=CustomLLM())
 
-llm_predictor = LLMPredictor(llm=FlanLLM())
+# Load the your data
+documents = SimpleDirectoryReader('./data').load_data()
+index = GPTListIndex(documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper)
 
-
-documents = SimpleDirectoryReader('data').load_data()
-index = GPTListIndex(documents, llm_predictor=llm_predictor)
-
-index.save_to_disk('index.json')
-
-new_index = GPTListIndex.load_from_disk('index.json', embed_model=embed_model)
-new_index.query("<query_text>")
+# Query and print response
+response = new_index.query("<query_text>")
+print(response)
 ```
 
 Using this method, you can use any LLM. Maybe you have one running locally, or running on your own server. As long as the class is implemented and the generated tokens are returned, it should work out.
