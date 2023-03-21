@@ -135,7 +135,7 @@ class BaseGPTIndex(Generic[IS]):
     #     cls,
     #     indices: Sequence["BaseGPTIndex"],
     # ) -> "BaseGPTIndex":
-    #     # TODO: figure out how this impacts composability
+    #     # TODO: figure out how to implement composability
     #     pass
 
     @property
@@ -177,46 +177,6 @@ class BaseGPTIndex(Generic[IS]):
         # if we want to break BW compatibility, we can just remove this line
         # and only insert into docstore during index construction.
         self._docstore.add_documents([self.index_struct], allow_update=True)
-
-    # def _process_documents(
-    #     self,
-    #     documents: Sequence[DOCUMENTS_INPUT],
-    #     docstore: DocumentStore,
-    #     index_registry: IndexRegistry,
-    # ) -> List[BaseDocument]:
-    #     """Process documents."""
-    #     results: List[DOC_TYPE] = []
-    #     for doc in documents:
-    #         if isinstance(doc, BaseGPTIndex):
-    #             # if user passed in another index, we need to do the following:
-    #             # - update docstore with the docstore in the index
-    #             # - validate that the index is in the docstore
-    #             # - update the index registry
-
-    #             index_registry.update(doc.index_registry)
-    #             docstore.update_docstore(doc.docstore)
-    #             # assert that the doc exists within the docstore
-    #             sub_index_struct = doc.index_struct_with_text
-    #             if not docstore.document_exists(sub_index_struct.get_doc_id()):
-    #                 raise ValueError(
-    #                     "The index struct of the sub-index must exist in the docstore. "
-    #                     f"Invalid doc ID: {sub_index_struct.get_doc_id()}"
-    #                 )
-    #             results.append(sub_index_struct)
-    #         elif isinstance(doc, Document):
-    #             docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
-    #             results.append(doc)
-    #         else:
-    #             raise ValueError(f"Invalid document type: {type(doc)}.")
-    #     return cast(List[BaseDocument], results)
-
-    # def _validate_documents(self, documents: Sequence[BaseDocument]) -> None:
-    #     """Validate documents."""
-    #     for doc in documents:
-    #         if not isinstance(doc, BaseDocument):
-    #             raise ValueError(
-    #                 f"Documents must be of type BaseDocument, got {type(doc)} instead."
-    #             )
 
     @property
     def index_struct(self) -> IS:
