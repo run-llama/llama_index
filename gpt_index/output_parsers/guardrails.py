@@ -70,7 +70,7 @@ class GuardrailsOutputParser(BaseOutputParser):
         num_reasks: Optional[int] = 1,
         *args: Any,
         **kwargs: Any
-    ) -> str:
+    ) -> Any:
         """Parse, validate, and correct errors programmatically."""
         llm = llm or self.llm
         llm_fn = get_callable(llm)
