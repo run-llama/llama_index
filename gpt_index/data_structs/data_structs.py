@@ -3,7 +3,6 @@
 import random
 import sys
 from dataclasses import dataclass, field
-from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
@@ -28,14 +27,9 @@ class IndexStruct(BaseDocument, DataClassJsonMixin):
     # represent a complete data structure (e.g. IndexGraph, IndexList),
     # and are used to compose a higher level index, will have a doc_id.
 
-class DocumentRelationship(Enum):
-    SOURCE = auto()
-    PREVIOUS = auto()
-    NEXT = auto()
-
 
 @dataclass
-class Node(BaseDocument):
+class Node(IndexStruct):
     """A generic node of data.
 
     Base struct used in most indices.
@@ -49,8 +43,15 @@ class Node(BaseDocument):
         if self.text is None:
             raise ValueError("text field not set.")
 
+    # used for GPTTreeIndex
+    index: int = 0
+    child_indices: Set[int] = field(default_factory=set)
+
     # embeddings
     embedding: Optional[List[float]] = None
+
+    # reference document id
+    ref_doc_id: Optional[str] = None
 
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
@@ -58,29 +59,6 @@ class Node(BaseDocument):
     # TODO: store reference instead of actual image
     # base64 encoded image str
     image: Optional[str] = None
-
-    # document relationships
-    relationships: Dict[DocumentRelationship, str] = field(default_factory=dict)
-
-    @property
-    def ref_doc_id(self) -> str:
-        """reference document id."""
-        if DocumentRelationship.SOURCE not in self.relationships:
-            raise ValueError('Node does not have source doc')
-        return self.relationships[DocumentRelationship.SOURCE]
-    
-    @property
-    def prev_node_id(self) -> str:
-        if DocumentRelationship.PREVIOUS not in self.relationships:
-            raise ValueError('Node does not have previous node')
-        return self.relationships[DocumentRelationship.PREVIOUS]
-
-
-    @property
-    def next_node_id(self) -> str:
-        if DocumentRelationship.NEXT not in self.relationships:
-            raise ValueError('Node does not have next node')
-        return self.relationships[DocumentRelationship.NEXT]
 
     def get_text(self) -> str:
         """Get text."""

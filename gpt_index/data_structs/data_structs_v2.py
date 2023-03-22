@@ -9,21 +9,13 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.data_structs.node_v2 import V2Node as Node
 from gpt_index.data_structs.struct_type import IndexStructType
-
-# OIS = TypeVar("IS", bound=IndexStruct)
 
 
 @dataclass
-class V2IndexStruct(IndexStruct, DataClassJsonMixin):
+class V2IndexStruct(DataClassJsonMixin):
     """A base data struct for a LlamaIndex."""
-
-    # # @abstractmethod
-    # @classmethod
-    # def from_v0_struct(cls, v0_struct: OIS) -> "V2IndexStruct":
-    #     """Convert from v0 struct."""
-    #     raise NotImplementedError()
 
 
 @dataclass
@@ -87,14 +79,6 @@ class IndexGraph(V2IndexStruct):
     def get_type(cls) -> str:
         """Get type."""
         return "tree"
-
-    # @classmethod
-    # def from_v0_struct(cls, v0_struct: V0IndexGraph) -> "IndexGraph":
-    #     """Convert from old struct."""
-    #     return IndexGraph(
-    #         all_nodes={i: n.get_doc_id() for i, n in v0_struct.all_nodes.items()},
-    #         root_nodes={i: n.get_doc_id() for i, n in v0_struct.root_nodes.items()},
-    #     )
 
 
 @dataclass
