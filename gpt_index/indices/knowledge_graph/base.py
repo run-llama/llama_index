@@ -106,10 +106,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         # do simple concatenation
         index_struct = KG(table={})
         for n in nodes:
-            # set doc id
-            node_id = get_new_id(set())
-            n.doc_id = node_id
-
             triplets = self._extract_triplets(n.get_text())
             logger.debug(f"> Extracted triplets: {triplets}")
             for triplet in triplets:
@@ -130,10 +126,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         for n in nodes:
-            # set doc id
-            node_id = get_new_id(set())
-            n.doc_id = node_id
-
             triplets = self._extract_triplets(n.get_text())
             logger.debug(f"Extracted triplets: {triplets}")
             for triplet in triplets:

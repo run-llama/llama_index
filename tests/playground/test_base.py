@@ -63,7 +63,7 @@ def test_get_set_compare(
     indices = [
         GPTSimpleVectorIndex.from_documents(documents=documents),
         GPTListIndex.from_documents(documents),
-        GPTTreeIndex(documents=documents),
+        GPTTreeIndex.from_documents(documents=documents),
     ]
 
     playground = Playground(indices=indices)  # type: ignore

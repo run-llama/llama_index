@@ -40,11 +40,9 @@ class Node(BaseDocument):
     relationships: Dict[DocumentRelationship, str] = field(default_factory=dict)
 
     @property
-    def ref_doc_id(self) -> str:
+    def ref_doc_id(self) -> Optional[str]:
         """reference document id."""
-        if DocumentRelationship.SOURCE not in self.relationships:
-            raise ValueError("Node does not have source doc")
-        return self.relationships[DocumentRelationship.SOURCE]
+        return self.relationships.get(DocumentRelationship.SOURCE, None)
 
     @property
     def prev_node_id(self) -> str:
