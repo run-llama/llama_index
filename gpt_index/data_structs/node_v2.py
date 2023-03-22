@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from gpt_index.schema import BaseDocument
 
 
-class DocumentRelationship(Enum):
+class DocumentRelationship(str, Enum):
     SOURCE = auto()
     PREVIOUS = auto()
     NEXT = auto()
