@@ -13,7 +13,7 @@ class DocumentRelationship(Enum):
 
 
 @dataclass
-class V2Node(BaseDocument):
+class Node(BaseDocument):
     """A generic node of data.
 
     Base struct used in most indices.

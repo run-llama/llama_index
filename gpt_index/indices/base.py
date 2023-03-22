@@ -4,8 +4,8 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union
 
-from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
@@ -109,13 +109,6 @@ class BaseGPTIndex(Generic[IS]):
         node_parser = node_parser or SimpleNodeParser()
         docstore = docstore or DocumentStore()
 
-        # documents = cast(Sequence[DOCUMENTS_INPUT], documents)
-        # documents = self._process_documents(
-        #     documents, self._docstore, self._index_registry
-        # )
-        # self._validate_documents(documents)
-
-        # TODO: why do we do this?
         for doc in documents:
             docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
 
@@ -129,15 +122,6 @@ class BaseGPTIndex(Generic[IS]):
             **kwargs,
         )
     
-
-    # @classmethod
-    # def from_indices(
-    #     cls,
-    #     indices: Sequence["BaseGPTIndex"],
-    # ) -> "BaseGPTIndex":
-    #     # TODO: figure out how to implement composability
-    #     pass
-
     @property
     def prompt_helper(self) -> PromptHelper:
         """Get the prompt helper corresponding to the index."""
@@ -264,10 +248,6 @@ class BaseGPTIndex(Generic[IS]):
             document (Union[BaseDocument, BaseGPTIndex]): document to insert
 
         """
-        # processed_doc = self._process_documents(
-        #     [document], self._docstore, self._index_registry
-        # )[0]
-        # self._validate_documents([processed_doc])
         nodes = self._node_parser.get_nodes_from_document(document)
         self.docstore.add_documents(nodes)
         for node in nodes:

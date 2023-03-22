@@ -2,8 +2,8 @@
 import logging
 from typing import Any, List, Optional, Tuple
 
-from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexList
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.embedding_utils import (
     SimilarityTracker,

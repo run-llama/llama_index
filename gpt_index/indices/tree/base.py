@@ -2,10 +2,9 @@
 
 from typing import Any, Dict, Optional, Sequence, Type
 
-from gpt_index.data_structs.data_structs import Node
-
 # from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.query.base import BaseGPTIndexQuery

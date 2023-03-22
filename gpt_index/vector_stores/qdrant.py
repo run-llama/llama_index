@@ -6,7 +6,7 @@ An index that is built on top of an existing Qdrant collection.
 import logging
 from typing import Any, List, Optional, cast
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.utils import get_new_id
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,

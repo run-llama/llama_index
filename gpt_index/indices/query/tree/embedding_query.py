@@ -3,8 +3,8 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery

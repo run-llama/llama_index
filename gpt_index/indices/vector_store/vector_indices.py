@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, Optional, Sequence, Type, cast
 
-from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import (
     ChromaIndexDict,
     FaissIndexDict,
@@ -13,6 +12,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     SimpleIndexDict,
     WeaviateIndexDict,
 )
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery

@@ -11,8 +11,8 @@ existing keywords in the table.
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
-from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import KG
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, KGQueryMode

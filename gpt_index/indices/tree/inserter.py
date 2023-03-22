@@ -2,8 +2,8 @@
 
 from typing import Optional, Sequence
 
-from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list

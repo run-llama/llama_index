@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Sequence, Type
 
 from sqlalchemy import Table
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer

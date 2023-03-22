@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor

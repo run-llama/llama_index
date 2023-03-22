@@ -1,7 +1,7 @@
 
 from typing import List, Protocol, Set
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.readers.schema.base import Document
 
 

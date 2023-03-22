@@ -8,7 +8,7 @@ structs but keeping token limitations in mind.
 from typing import Callable, List, Optional
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.prompts.base import Prompt

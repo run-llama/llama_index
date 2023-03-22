@@ -7,8 +7,8 @@ An index that that is built on top of an existing vector store.
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type
 
 from gpt_index.async_utils import run_async_tasks
-from gpt_index.data_structs.data_structs import Node
 from gpt_index.data_structs.data_structs_v2 import IndexDict
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery

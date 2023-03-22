@@ -6,7 +6,7 @@ An index that that is built on top of an existing vector store.
 
 from typing import Any, Dict, List, Optional, cast
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
