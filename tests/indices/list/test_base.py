@@ -277,7 +277,9 @@ def test_index_overlap(
     )
     _node_parser = SimpleNodeParser(text_splitter=_text_splitter)
 
-    index = GPTListIndex.from_documents(documents, node_parser=_node_parser, **index_kwargs)
+    index = GPTListIndex.from_documents(
+        documents, node_parser=_node_parser, **index_kwargs
+    )
 
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)

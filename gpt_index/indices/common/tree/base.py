@@ -77,7 +77,9 @@ class GPTTreeIndexBuilder:
             index_graph.insert(node)
 
         if build_tree:
-            return self.build_index_from_nodes(index_graph, index_graph.all_nodes, index_graph.all_nodes, level=0)
+            return self.build_index_from_nodes(
+                index_graph, index_graph.all_nodes, index_graph.all_nodes, level=0
+            )
         else:
             return index_graph
 
@@ -134,7 +136,11 @@ class GPTTreeIndexBuilder:
         return new_node_dict
 
     def build_index_from_nodes(
-        self, index_graph: IndexGraph, cur_node_ids: Dict[int, str], all_node_ids: Dict[int, str], level: int = 0
+        self,
+        index_graph: IndexGraph,
+        cur_node_ids: Dict[int, str],
+        all_node_ids: Dict[int, str],
+        level: int = 0,
     ) -> IndexGraph:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
@@ -174,7 +180,11 @@ class GPTTreeIndexBuilder:
             )
 
     async def abuild_index_from_nodes(
-        self, index_graph: IndexGraph, cur_node_ids: Dict[int, str], all_node_ids: Dict[int, str], level: int = 0
+        self,
+        index_graph: IndexGraph,
+        cur_node_ids: Dict[int, str],
+        all_node_ids: Dict[int, str],
+        level: int = 0,
     ) -> IndexGraph:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(

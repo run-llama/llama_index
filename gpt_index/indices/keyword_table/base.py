@@ -122,16 +122,12 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             index_struct.add_node(list(keywords), n)
             self._docstore.add_documents([n])
 
-    def _build_index_from_nodes(
-        self, nodes: Sequence[Node]
-    ) -> KeywordTable:
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> KeywordTable:
         """Build the index from nodes."""
         # do simple concatenation
         index_struct = KeywordTable(table={})
         if self._use_async:
-            tasks = [
-                self._async_add_nodes_to_index(index_struct, nodes)
-            ]
+            tasks = [self._async_add_nodes_to_index(index_struct, nodes)]
             run_async_tasks(tasks)
         else:
             self._add_nodes_to_index(index_struct, nodes)

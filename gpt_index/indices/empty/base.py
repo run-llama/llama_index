@@ -53,9 +53,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
             QueryMode.DEFAULT: GPTEmptyIndexQuery,
         }
 
-    def _build_index_from_nodes(
-        self, nodes: Sequence[Node]
-    ) -> EmptyIndex:
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> EmptyIndex:
         """Build the index from documents.
 
         Args:

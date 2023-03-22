@@ -107,7 +107,9 @@ class DocumentStore(DataClassJsonMixin):
             self.docs[doc.get_doc_id()] = doc
             self.ref_doc_info[doc.get_doc_id()]["doc_hash"] = doc.get_doc_hash()
 
-    def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseDocument]:
+    def get_document(
+        self, doc_id: str, raise_error: bool = True
+    ) -> Optional[BaseDocument]:
         """Get a document from the store."""
         doc = self.docs.get(doc_id, None)
         if doc is None and raise_error:
@@ -136,9 +138,7 @@ class DocumentStore(DataClassJsonMixin):
             raise ValueError(f"doc_id {doc_id} not found.")
         return doc
 
-    def get_nodes(
-        self, node_ids: List[str], raise_error: bool = True
-    ) -> List[Node]:
+    def get_nodes(self, node_ids: List[str], raise_error: bool = True) -> List[Node]:
         """Get nodes from docstore."""
         return [self.get_node(node_id, raise_error=raise_error) for node_id in node_ids]
 
@@ -149,11 +149,8 @@ class DocumentStore(DataClassJsonMixin):
             raise ValueError(f"Document {node_id} is not a Node.")
         return doc
 
-    def get_node_dict(
-        self, node_id_dict: Dict[int, str]
-    ) -> Dict[int, Node]:
+    def get_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, Node]:
         """Get node dict from docstore given a mapping of index to node ids."""
         return {
-            index: self.get_node(node_id)
-            for index, node_id in node_id_dict.items()
+            index: self.get_node(node_id) for index, node_id in node_id_dict.items()
         }

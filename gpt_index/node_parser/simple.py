@@ -1,5 +1,3 @@
-
-
 from typing import List, Optional, Set
 
 from gpt_index.data_structs.node_v2 import Node
@@ -20,8 +18,7 @@ class SimpleNodeParser:
         all_nodes = []
         for document in documents:
             nodes = self.get_nodes_from_document(
-                document,
-                include_extra_info=include_extra_info
+                document, include_extra_info=include_extra_info
             )
             all_nodes.extend(nodes)
         return all_nodes
@@ -32,7 +29,5 @@ class SimpleNodeParser:
         include_extra_info: bool = True,
     ) -> List[Node]:
         return get_nodes_from_document(
-            document,
-            self._text_splitter,
-            include_extra_info
+            document, self._text_splitter, include_extra_info
         )

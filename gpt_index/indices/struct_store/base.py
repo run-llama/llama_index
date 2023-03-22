@@ -62,7 +62,6 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
             **kwargs,
         )
 
-
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete not implemented for Struct Store Index.")

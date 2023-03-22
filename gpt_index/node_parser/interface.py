@@ -1,4 +1,3 @@
-
 from typing import List, Protocol, Set
 
 from gpt_index.data_structs.node_v2 import Node

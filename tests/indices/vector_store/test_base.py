@@ -167,7 +167,9 @@ def test_build_faiss(
 
     index_kwargs, query_kwargs = struct_kwargs
 
-    index = GPTFaissIndex.from_documents(documents=documents, faiss_index=faiss_index, **index_kwargs)
+    index = GPTFaissIndex.from_documents(
+        documents=documents, faiss_index=faiss_index, **index_kwargs
+    )
     assert len(index.index_struct.nodes_dict) == 4
 
     node_ids = list(index.index_struct.nodes_dict.values())
@@ -224,7 +226,9 @@ def test_faiss_insert(
 
     index_kwargs, query_kwargs = struct_kwargs
 
-    index = GPTFaissIndex.from_documents(documents=documents, faiss_index=faiss_index, **index_kwargs)
+    index = GPTFaissIndex.from_documents(
+        documents=documents, faiss_index=faiss_index, **index_kwargs
+    )
     # insert into index
     index.insert(Document(text="This is a test v3."))
 
@@ -265,7 +269,9 @@ def test_faiss_query(
     faiss_index = MockFaissIndex()
 
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTFaissIndex.from_documents(documents=documents, faiss_index=faiss_index, **index_kwargs)
+    index = GPTFaissIndex.from_documents(
+        documents=documents, faiss_index=faiss_index, **index_kwargs
+    )
 
     # test embedding query
     query_str = "What is?"
@@ -605,7 +611,9 @@ def test_simple_async(
     """Test simple vector index with use_async."""
     index_kwargs, query_kwargs = struct_kwargs
 
-    index = GPTSimpleVectorIndex.from_documents(documents=documents, use_async=True, **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents(
+        documents=documents, use_async=True, **index_kwargs
+    )
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
     actual_node_tups = [

@@ -93,17 +93,21 @@ class GPTIndexInserter:
             # insert half1 and half2 as new children of parent_node
             # first remove child indices from parent node
             if parent_node is not None:
-                self.index_graph.node_id_to_child_indices[parent_node.get_doc_id()] = set()
+                self.index_graph.node_id_to_child_indices[
+                    parent_node.get_doc_id()
+                ] = set()
             else:
                 self.index_graph.root_nodes = {}
-            self.index_graph.insert_under_parent(node1, parent_node, new_index=self.index_graph.get_index(node1))
+            self.index_graph.insert_under_parent(
+                node1, parent_node, new_index=self.index_graph.get_index(node1)
+            )
             self._docstore.add_documents([node1])
-            self.index_graph.insert_under_parent(node2, parent_node, new_index=self.index_graph.get_index(node2))
+            self.index_graph.insert_under_parent(
+                node2, parent_node, new_index=self.index_graph.get_index(node2)
+            )
             self._docstore.add_documents([node2])
 
-    def _insert_node(
-        self, node: Node, parent_node: Optional[Node] = None
-    ) -> None:
+    def _insert_node(self, node: Node, parent_node: Optional[Node] = None) -> None:
         """Insert node."""
         cur_graph_node_ids = self.index_graph.get_children(parent_node)
         cur_graph_nodes = self._docstore.get_node_dict(cur_graph_node_ids)

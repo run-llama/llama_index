@@ -157,7 +157,9 @@ def test_insert(
     chunk_index1_2 = list(table.index_struct.table["is"])[0]
     chunk_index2_1 = list(table.index_struct.table["test"])[0]
     chunk_index2_2 = list(table.index_struct.table["v3"])[0]
-    nodes = table.docstore.get_nodes([chunk_index1_1, chunk_index1_2, chunk_index2_1, chunk_index2_2])
+    nodes = table.docstore.get_nodes(
+        [chunk_index1_1, chunk_index1_2, chunk_index2_1, chunk_index2_2]
+    )
     assert nodes[0].ref_doc_id == "test_id1"
     assert nodes[1].ref_doc_id == "test_id1"
     assert nodes[2].ref_doc_id == "test_id2"

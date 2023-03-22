@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass, field
 from enum import auto
 from typing import Any, Dict, List, Optional
@@ -44,20 +43,19 @@ class Node(BaseDocument):
     def ref_doc_id(self) -> str:
         """reference document id."""
         if DocumentRelationship.SOURCE not in self.relationships:
-            raise ValueError('Node does not have source doc')
+            raise ValueError("Node does not have source doc")
         return self.relationships[DocumentRelationship.SOURCE]
-    
+
     @property
     def prev_node_id(self) -> str:
         if DocumentRelationship.PREVIOUS not in self.relationships:
-            raise ValueError('Node does not have previous node')
+            raise ValueError("Node does not have previous node")
         return self.relationships[DocumentRelationship.PREVIOUS]
-
 
     @property
     def next_node_id(self) -> str:
         if DocumentRelationship.NEXT not in self.relationships:
-            raise ValueError('Node does not have next node')
+            raise ValueError("Node does not have next node")
         return self.relationships[DocumentRelationship.NEXT]
 
     def get_text(self) -> str:

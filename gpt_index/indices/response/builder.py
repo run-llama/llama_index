@@ -292,7 +292,9 @@ class ResponseBuilder:
         index_graph = IndexGraph()
         for node in nodes:
             index_graph.insert(node)
-        index_graph = index_builder.build_index_from_nodes(index_graph, index_graph.all_nodes, index_graph.all_nodes)
+        index_graph = index_builder.build_index_from_nodes(
+            index_graph, index_graph.all_nodes, index_graph.all_nodes
+        )
         root_node_ids = index_graph.root_nodes
         root_nodes = {
             index: index_builder.docstore.get_node(node_id)

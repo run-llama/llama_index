@@ -103,9 +103,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         super()._preprocess_query(mode, query_kwargs)
         self._validate_build_tree_required(mode)
 
-    def _build_index_from_nodes(
-        self, nodes: Sequence[Node]
-    ) -> IndexGraph:
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexGraph:
         """Build the index from nodes."""
         index_builder = GPTTreeIndexBuilder(
             self.num_children,
@@ -116,9 +114,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             llama_logger=self._llama_logger,
             docstore=self._docstore,
         )
-        index_graph = index_builder.build_from_nodes(
-            nodes, build_tree=self.build_tree
-        )
+        index_graph = index_builder.build_from_nodes(nodes, build_tree=self.build_tree)
         return index_graph
 
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:

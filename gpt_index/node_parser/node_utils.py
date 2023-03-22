@@ -81,4 +81,3 @@ def get_nodes_from_document(
         )
         nodes.append(node)
     return nodes
-

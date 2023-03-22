@@ -86,7 +86,7 @@ class BaseGPTIndex(Generic[IS]):
         self._llama_logger = llama_logger or LlamaLogger()
         self._node_parser = node_parser or SimpleNodeParser()
 
-        if nodes is not None: 
+        if nodes is not None:
             docstore.add_documents(nodes)
             index_struct = self.build_index_from_nodes(nodes)
             if not isinstance(index_struct, self.index_struct_cls):
@@ -121,7 +121,7 @@ class BaseGPTIndex(Generic[IS]):
             node_parser=node_parser,
             **kwargs,
         )
-    
+
     @property
     def prompt_helper(self) -> PromptHelper:
         """Get the prompt helper corresponding to the index."""
