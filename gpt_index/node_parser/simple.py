@@ -17,17 +17,8 @@ class SimpleNodeParser:
     ) -> List[Node]:
         all_nodes = []
         for document in documents:
-            nodes = self.get_nodes_from_document(
-                document, include_extra_info=include_extra_info
+            nodes = get_nodes_from_document(
+                document, self._text_splitter, include_extra_info
             )
             all_nodes.extend(nodes)
         return all_nodes
-
-    def get_nodes_from_document(
-        self,
-        document: Document,
-        include_extra_info: bool = True,
-    ) -> List[Node]:
-        return get_nodes_from_document(
-            document, self._text_splitter, include_extra_info
-        )

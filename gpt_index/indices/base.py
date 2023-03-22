@@ -254,7 +254,7 @@ class BaseGPTIndex(Generic[IS]):
             document (Union[BaseDocument, BaseGPTIndex]): document to insert
 
         """
-        nodes = self._node_parser.get_nodes_from_document(document)
+        nodes = self._node_parser.get_nodes_from_documents([document])
         self.docstore.add_documents(nodes)
         self._insert(nodes, **insert_kwargs)
 

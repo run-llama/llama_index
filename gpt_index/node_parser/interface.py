@@ -11,10 +11,3 @@ class NodeParser(Protocol):
         include_extra_info: bool = True,
     ) -> List[Node]:
         ...
-
-    def get_nodes_from_document(
-        self,
-        document: Document,
-        include_extra_info: bool = True,
-    ) -> List[Node]:
-        ...
