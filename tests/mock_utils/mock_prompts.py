@@ -3,6 +3,7 @@
 from gpt_index.prompts.prompts import (
     KeywordExtractPrompt,
     KnowledgeGraphPrompt,
+    PandasPrompt,
     QueryKeywordExtractPrompt,
     QuestionAnswerPrompt,
     RefinePrompt,
@@ -61,3 +62,6 @@ MOCK_KG_TRIPLET_EXTRACT_PROMPT = KnowledgeGraphPrompt(
 
 MOCK_INPUT_PROMPT_TMPL = "{query_str}"
 MOCK_INPUT_PROMPT = SimpleInputPrompt(MOCK_INPUT_PROMPT_TMPL)
+
+MOCK_PANDAS_PROMPT_TMPL = "{query_str}\n{df_str}\n{instruction_str}"
+MOCK_PANDAS_PROMPT = PandasPrompt(MOCK_PANDAS_PROMPT_TMPL)

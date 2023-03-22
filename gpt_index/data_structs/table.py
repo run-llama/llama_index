@@ -32,3 +32,13 @@ class SQLStructTable(BaseStructTable):
         """Get type."""
         # TODO: consolidate with IndexStructType
         return "sql"
+
+
+@dataclass
+class PandasStructTable(BaseStructTable):
+    """Pandas struct outputs."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return "pandas"

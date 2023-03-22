@@ -308,7 +308,7 @@
 
 
 # @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
-# @patch("gpt_index.langchain_helpers.chain_wrapper.OpenAI")
+# @patch("gpt_index.llm_predictor.base.OpenAI")
 # @patch.object(LLMPredictor, "get_llm_metadata", return_value=LLMMetadata())
 # @patch.object(LLMChain, "__init__", return_value=None)
 # def test_recursive_query_list_tree_token_count(
@@ -324,13 +324,13 @@
 #     list_kwargs = index_kwargs["list"]
 #     tree_kwargs = index_kwargs["tree"]
 #     # try building a list for every two, then a tree
-#     list1 = GPTListIndex.from_documents(documents[0:2], **list_kwargs)
+#     list1 = GPTListIndex(documents[0:2], **list_kwargs)
 #     list1.set_text("summary1")
-#     list2 = GPTListIndex.from_documents(documents[2:4], **list_kwargs)
+#     list2 = GPTListIndex(documents[2:4], **list_kwargs)
 #     list2.set_text("summary2")
-#     list3 = GPTListIndex.from_documents(documents[4:6], **list_kwargs)
+#     list3 = GPTListIndex(documents[4:6], **list_kwargs)
 #     list3.set_text("summary3")
-#     list4 = GPTListIndex.from_documents(documents[6:8], **list_kwargs)
+#     list4 = GPTListIndex(documents[6:8], **list_kwargs)
 #     list4.set_text("summary4")
 
 #     # there are two root nodes in this tree: one containing [list1, list2]

@@ -31,8 +31,30 @@ evaluation metrics.
 ./evaluate.sh spider-0_001 spider-0_001-pred
 ```
 
+5. **New**! Use `evaluate.py` to evalaute the generated SQLs against
+golden SQLs by matching the natural language answers generated from their
+respective execution outputs. This is called [Answer Accuracy](https://ekzhu.medium.com/human-aligned-text-to-sql-evaluation-399123fa0a64).
+
+```bash
+python evaluate.py --spider-dir spider-0_001 --predict-dir spider-0_001-pred \
+    --model gpt-3.5-turbo
+```
+
+This will produce two JSON files `train_eval.json` and `dev_eval.json` with
+the evaluation results in the `--predict-dir` directory.
+
+## Result
+
+Based on 96 examples (86 train + 10 dev) sampled from Spider benchmark.
+
+|    Model          | Answer Accuracy |
+| ----------------- | --------------- |
+| code-davinci-002  |  0.7917         |
+| text-davinci-003  |  0.8854         |
+| gpt-3.5-turbo     |  0.8542         |
+| gpt-4             |  0.8958         |
+
 ## TODO
 
-1. Include the complete schema in the prompt.
-2. Auto-course-correction encountering SQL errors using Langchain agent.
-3. Use training set to generate in-context learning examples.
+1. Auto-course-correction encountering SQL errors using Langchain agent.
+2. Use training set to generate in-context learning examples.

@@ -259,3 +259,18 @@ class SimpleInputPrompt(Prompt):
 
     prompt_type: PromptType = PromptType.SIMPLE_INPUT
     input_variables: List[str] = ["query_str"]
+
+
+class PandasPrompt(Prompt):
+    """Pandas prompt. Convert query to python code.
+
+    Required template variables: `query_str`, `df_str`, `instruction_str`.
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+
+    prompt_type: PromptType = PromptType.PANDAS
+    input_variables: List[str] = ["query_str", "df_str", "instruction_str"]

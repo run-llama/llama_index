@@ -1,4 +1,4 @@
-"""Default query for GPTFaissIndex."""
+"""Default query for GPTSQLStructStoreIndex."""
 import logging
 from typing import Any, Optional
 
