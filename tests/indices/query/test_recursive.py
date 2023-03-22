@@ -430,7 +430,9 @@ def test_recursive_query_vector_table(
     list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **list_kwargs)
     list4.set_text("cat dog")
 
-    table = GPTSimpleKeywordTableIndex.from_indices([list1, list2, list3, list4], **table_kwargs)
+    table = GPTSimpleKeywordTableIndex.from_indices(
+        [list1, list2, list3, list4], **table_kwargs
+    )
     query_str = "Foo?"
     response = table.query(query_str, mode="recursive", query_configs=query_configs)
     assert str(response) == ("Foo?:This is another test.")

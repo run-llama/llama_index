@@ -105,10 +105,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         result_tups = []
         for id, embed in id_to_embed_map.items():
+            doc_id = id_to_node_map[id].ref_doc_id
+            if doc_id is None:
+                raise ValueError("Reference doc id is None.")
             result_tups.append(
-                NodeEmbeddingResult(
-                    id, id_to_node_map[id], embed, doc_id=id_to_node_map[id].ref_doc_id
-                )
+                NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
             )
         return result_tups
 
@@ -146,10 +147,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         result_tups = []
         for id, embed in id_to_embed_map.items():
+            doc_id = id_to_node_map[id].ref_doc_id
+            if doc_id is None:
+                raise ValueError("Reference doc id is None.")
             result_tups.append(
-                NodeEmbeddingResult(
-                    id, id_to_node_map[id], embed, doc_id=id_to_node_map[id].ref_doc_id
-                )
+                NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
             )
         return result_tups
 
