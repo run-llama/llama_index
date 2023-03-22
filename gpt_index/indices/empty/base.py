@@ -39,7 +39,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
     ) -> None:
         """Initialize params."""
         super().__init__(
-            documents=[],
+            nodes=[],
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             node_parser=node_parser,

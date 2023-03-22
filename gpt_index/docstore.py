@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Sequence, Type
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -35,8 +35,8 @@ class DocumentStore(DataClassJsonMixin):
 
     def contains_index_struct(
         self,
-        exclude_ids: Optional[List[str]] = None,
-        exclude_types: Optional[List[Type[IndexStruct]]] = None,
+        exclude_ids: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[Type]] = None,
     ) -> bool:
         """Check if contains index struct."""
         exclude_ids = exclude_ids or []
@@ -54,7 +54,7 @@ class DocumentStore(DataClassJsonMixin):
     def load_from_dict(
         cls,
         docs_dict: Dict[str, Any],
-        type_to_struct: Optional[Dict[str, Type[IndexStruct]]] = None,
+        type_to_struct: Optional[Dict[str, Type[BaseDocument]]] = None,
     ) -> "DocumentStore":
         """Load from dict."""
         docs_obj_dict = {}
@@ -82,7 +82,7 @@ class DocumentStore(DataClassJsonMixin):
         )
 
     @classmethod
-    def from_documents(cls, docs: List[BaseDocument]) -> "DocumentStore":
+    def from_documents(cls, docs: Sequence[BaseDocument]) -> "DocumentStore":
         """Create from documents."""
         obj = cls()
         obj.add_documents(docs)
@@ -93,7 +93,7 @@ class DocumentStore(DataClassJsonMixin):
         self.docs.update(other.docs)
 
     def add_documents(
-        self, docs: List[BaseDocument], allow_update: bool = False
+        self, docs: Sequence[BaseDocument], allow_update: bool = False
     ) -> None:
         """Add a document to the store."""
         for doc in docs:

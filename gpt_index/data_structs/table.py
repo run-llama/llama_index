@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 
 
 @dataclass

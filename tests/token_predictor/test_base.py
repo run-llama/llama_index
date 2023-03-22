@@ -30,13 +30,15 @@ def test_token_predictor(mock_split: Any) -> None:
     llm_predictor = MockLLMPredictor(max_tokens=256, llm=llm)
 
     # test tree index
-    index = GPTTreeIndex([document], llm_predictor=llm_predictor)
+    index = GPTTreeIndex.from_documents([document], llm_predictor=llm_predictor)
     index.query("What is?", llm_predictor=llm_predictor)
 
     # test keyword table index
-    index_keyword = GPTKeywordTableIndex([document], llm_predictor=llm_predictor)
+    index_keyword = GPTKeywordTableIndex.from_documents(
+        [document], llm_predictor=llm_predictor
+    )
     index_keyword.query("What is?", llm_predictor=llm_predictor)
 
     # test list index
-    index_list = GPTListIndex([document], llm_predictor=llm_predictor)
+    index_list = GPTListIndex.from_documents([document], llm_predictor=llm_predictor)
     index_list.query("What is?", llm_predictor=llm_predictor)

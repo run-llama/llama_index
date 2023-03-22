@@ -38,7 +38,7 @@ def test_write_ascii(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex(documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(documents)
     node_ids = list(table.index_struct.node_ids)
     table_chunks = [n.text for n in table.docstore.get_nodes(node_ids)]
     assert len(table_chunks) == 1
@@ -83,7 +83,7 @@ def test_write_utf8(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex(documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(documents)
     node_ids = list(table.index_struct.node_ids)
     table_chunks = table.docstore.get_nodes(node_ids)
     assert len(table_chunks) == 1

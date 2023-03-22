@@ -84,7 +84,8 @@ class BaseGPTIndex(Generic[IS]):
         self._llama_logger = llama_logger or LlamaLogger()
         self._node_parser = node_parser or SimpleNodeParser()
 
-        if nodes is not None:
+        if index_struct is None:
+            assert nodes is not None
             self._docstore.add_documents(nodes)
             index_struct = self.build_index_from_nodes(nodes)
             if not isinstance(index_struct, self.index_struct_cls):
@@ -111,7 +112,6 @@ class BaseGPTIndex(Generic[IS]):
             docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
 
         nodes = node_parser.get_nodes_from_documents(documents)
-        docstore.add_documents(nodes)
 
         return cls(
             nodes=nodes,
@@ -119,6 +119,14 @@ class BaseGPTIndex(Generic[IS]):
             node_parser=node_parser,
             **kwargs,
         )
+
+    @classmethod
+    def from_indices(
+        cls,
+        indices: Sequence["BaseGPTIndex"],
+        **kwargs: Any,
+    ) -> "BaseGPTIndex":
+        raise NotImplementedError()
 
     @property
     def prompt_helper(self) -> PromptHelper:

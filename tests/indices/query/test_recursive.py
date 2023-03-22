@@ -142,7 +142,7 @@ def test_recursive_query_list_tree(
 
     # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
-    tree = GPTTreeIndex(
+    tree = GPTTreeIndex.from_indices(
         [
             list1,
             list2,
@@ -188,7 +188,7 @@ def test_recursive_query_tree_list(
 
     # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
-    list_index = GPTListIndex([tree1, tree2], **list_kwargs)
+    list_index = GPTListIndex.from_indices([tree1, tree2], **list_kwargs)
     query_str = "What is?"
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
@@ -228,7 +228,7 @@ def test_recursive_query_table_list(
     table1.set_doc_id("table1")
     table2.set_doc_id("table2")
 
-    list_index = GPTListIndex([table1, table2], **list_kwargs)
+    list_index = GPTListIndex.from_indices([table1, table2], **list_kwargs)
     query_str = "World?"
     response = list_index.query(
         query_str, mode="recursive", query_configs=query_configs
@@ -283,7 +283,9 @@ def test_recursive_query_list_table(
     list4 = GPTListIndex.from_documents(documents[6:8], **list_kwargs)
     list4.set_text("cat dog")
 
-    table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
+    table = GPTSimpleKeywordTableIndex.from_indices(
+        [list1, list2, list3, list4], **table_kwargs
+    )
     query_str = "Foo?"
     response = table.query(query_str, mode="recursive", query_configs=query_configs)
     assert str(response) == ("Foo?:This is a test v2.")
@@ -333,7 +335,7 @@ def test_recursive_query_list_tree_token_count(
     # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
     # import pdb; pdb.set_trace()
-    tree = GPTTreeIndex(
+    tree = GPTTreeIndex.from_indices(
         [
             list1,
             list2,
@@ -428,7 +430,7 @@ def test_recursive_query_vector_table(
     list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **list_kwargs)
     list4.set_text("cat dog")
 
-    table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
+    table = GPTSimpleKeywordTableIndex.from_indices([list1, list2, list3, list4], **table_kwargs)
     query_str = "Foo?"
     response = table.query(query_str, mode="recursive", query_configs=query_configs)
     assert str(response) == ("Foo?:This is another test.")
@@ -526,7 +528,7 @@ def test_recursive_query_vector_table_query_configs(
     list2.set_text("apple orange")
     list2.set_doc_id("vector2")
 
-    table = GPTSimpleKeywordTableIndex([list1, list2], **table_kwargs)
+    table = GPTSimpleKeywordTableIndex.from_indices([list1, list2], **table_kwargs)
     query_str = "Foo?"
     response = table.query(query_str, mode="recursive", query_configs=query_configs)
     assert str(response) == ("Foo?:This is a test v2.")
@@ -585,7 +587,9 @@ def test_recursive_query_vector_table_async(
     list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **list_kwargs)
     list4.set_text("cat dog")
 
-    table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
+    table = GPTSimpleKeywordTableIndex.from_indices(
+        [list1, list2, list3, list4], **table_kwargs
+    )
     graph = ComposableGraph.build_from_index(table)
 
     query_str = "Cat?"
