@@ -1,7 +1,7 @@
 """Test Output parsers."""
 
 
-from langchain.output_parsers import BaseOutputParser as LCOutputParser
+from langchain.agents.conversational_chat.base import BaseOutputParser as LCOutputParser
 from langchain.output_parsers import ResponseSchema
 
 from gpt_index.output_parsers.langchain import LangchainOutputParser

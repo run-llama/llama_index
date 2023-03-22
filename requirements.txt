@@ -21,4 +21,4 @@ flake8-docstrings==1.6.0
 pylint==2.15.10
 
 # lock
-langchain==0.0.118
+langchain==0.0.119
