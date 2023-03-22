@@ -111,7 +111,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         for n in nodes:
             keywords = self._extract_keywords(n.get_text())
             index_struct.add_node(list(keywords), n)
-            self._docstore.add_documents([n])
 
     async def _async_add_nodes_to_index(
         self, index_struct: KeywordTable, nodes: Sequence[Node]
@@ -120,7 +119,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         for n in nodes:
             keywords = await self._async_extract_keywords(n.get_text())
             index_struct.add_node(list(keywords), n)
-            self._docstore.add_documents([n])
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> KeywordTable:
         """Build the index from nodes."""
@@ -139,7 +137,6 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         for n in nodes:
             keywords = self._extract_keywords(n.get_text())
             self._index_struct.add_node(list(keywords), n)
-            self._docstore.add_documents([n])
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

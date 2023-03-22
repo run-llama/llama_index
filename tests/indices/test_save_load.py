@@ -85,7 +85,7 @@ def test_write_utf8(
     # the regex-based keyword extractor, not GPT
     table = GPTSimpleKeywordTableIndex.from_documents(documents)
     node_ids = list(table.index_struct.node_ids)
-    table_chunks = table.docstore.get_nodes(node_ids)
+    table_chunks = [n.text for n in table.docstore.get_nodes(node_ids)]
     assert len(table_chunks) == 1
     assert "á" in table_chunks
 
