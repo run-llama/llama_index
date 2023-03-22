@@ -2,14 +2,14 @@
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.readers.schema.base import Document
-
-DOC_TYPE = Union[IndexStruct, Document]
+from gpt_index.schema import BaseDocument
 
 # type key: used to store type of document
 TYPE_KEY = "__type__"
@@ -19,7 +19,7 @@ TYPE_KEY = "__type__"
 class DocumentStore(DataClassJsonMixin):
     """Document store."""
 
-    docs: Dict[str, DOC_TYPE] = field(default_factory=dict)
+    docs: Dict[str, BaseDocument] = field(default_factory=dict)
     ref_doc_info: Dict[str, Dict[str, Any]] = field(
         default_factory=lambda: defaultdict(dict)
     )
@@ -61,7 +61,7 @@ class DocumentStore(DataClassJsonMixin):
         for doc_id, doc_dict in docs_dict["docs"].items():
             doc_type = doc_dict.pop(TYPE_KEY, None)
             if doc_type == "Document" or doc_type is None:
-                doc: DOC_TYPE = Document.from_dict(doc_dict)
+                doc: BaseDocument = Document.from_dict(doc_dict)
             else:
                 if type_to_struct is None:
                     raise ValueError(
@@ -82,7 +82,7 @@ class DocumentStore(DataClassJsonMixin):
         )
 
     @classmethod
-    def from_documents(cls, docs: List[DOC_TYPE]) -> "DocumentStore":
+    def from_documents(cls, docs: List[BaseDocument]) -> "DocumentStore":
         """Create from documents."""
         obj = cls()
         obj.add_documents(docs)
@@ -92,7 +92,7 @@ class DocumentStore(DataClassJsonMixin):
         """Update docstore."""
         self.docs.update(other.docs)
 
-    def add_documents(self, docs: List[DOC_TYPE], allow_update: bool = False) -> None:
+    def add_documents(self, docs: List[Base], allow_update: bool = False) -> None:
         """Add a document to the store."""
         for doc in docs:
             if doc.is_doc_id_none:
@@ -107,7 +107,7 @@ class DocumentStore(DataClassJsonMixin):
             self.docs[doc.get_doc_id()] = doc
             self.ref_doc_info[doc.get_doc_id()]["doc_hash"] = doc.get_doc_hash()
 
-    def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[DOC_TYPE]:
+    def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseDocument]:
         """Get a document from the store."""
         doc = self.docs.get(doc_id, None)
         if doc is None and raise_error:
@@ -128,7 +128,7 @@ class DocumentStore(DataClassJsonMixin):
 
     def delete_document(
         self, doc_id: str, raise_error: bool = True
-    ) -> Optional[DOC_TYPE]:
+    ) -> Optional[BaseDocument]:
         """Delete a document from the store."""
         doc = self.docs.pop(doc_id, None)
         self.ref_doc_info.pop(doc_id, None)
