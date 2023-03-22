@@ -63,8 +63,6 @@ def _get_default_index_registry() -> IndexRegistry:
     for index_type, index_class in DEFAULT_INDEX_REGISTRY_MAP.items():
         index_registry.type_to_struct[index_type] = index_class.index_struct_cls
         index_registry.type_to_query[index_type] = index_class.get_query_map()
-    # add Node class
-    index_registry.type_to_struct[IndexStructType.NODE] = Node
     return index_registry
 
 
