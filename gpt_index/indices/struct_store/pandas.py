@@ -52,9 +52,7 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
             **kwargs,
         )
 
-    def _build_index_from_nodes(
-        self, nodes: Sequence[Node]
-    ) -> PandasStructTable:
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> PandasStructTable:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
         return index_struct
