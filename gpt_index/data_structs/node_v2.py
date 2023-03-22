@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from enum import auto
+from enum import Enum, auto
 from typing import Any, Dict, List, Optional
 
 from gpt_index.schema import BaseDocument

@@ -43,7 +43,7 @@ def test_build_table(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex(documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(documents)
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 4
@@ -86,7 +86,7 @@ def test_build_table_async(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex(documents, use_async=True)
+    table = GPTSimpleKeywordTableIndex.from_documents(documents, use_async=True)
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 4
@@ -226,7 +226,7 @@ def test_query(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex(documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(documents)
 
     response = table.query("Hello", mode="simple")
     assert str(response) == "Hello:Hello world."
@@ -236,7 +236,7 @@ def test_query(
         "Hello world\n" "Hello foo\n" "This is another test\n" "This is a test v2"
     )
     documents2 = [Document(doc_text)]
-    table2 = GPTSimpleKeywordTableIndex(documents2)
+    table2 = GPTSimpleKeywordTableIndex.from_documents(documents2)
     # NOTE: required keywords are somewhat redundant
     response = table2.query("This", mode="simple", required_keywords=["v2"])
     assert str(response) == "This:This is a test v2"

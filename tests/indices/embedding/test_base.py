@@ -109,7 +109,7 @@ def test_embedding_query(
 ) -> None:
     """Test embedding query."""
     index_kwargs, query_kwargs = struct_kwargs
-    tree = GPTTreeIndex(documents, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
@@ -141,7 +141,7 @@ def test_query_and_count_tokens(
     document_token_count = 24
     llmchain_mock_resp_token_count = 10
     # build the tree
-    tree = GPTTreeIndex(documents, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
     assert (
         tree._llm_predictor.total_tokens_used
         == document_token_count + llmchain_mock_resp_token_count

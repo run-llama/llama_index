@@ -75,8 +75,8 @@ class IndexGraph(V2IndexStruct):
             self.root_nodes[new_index] = node.get_doc_id()
         else:
             if parent_node.doc_id not in self.node_id_to_child_indices:
-                self.node_id_to_child_indices[parent_node.doc_id] = set()
-            self.node_id_to_child_indices[parent_node.doc_id].add(new_index)
+                self.node_id_to_child_indices[parent_node.get_doc_id()] = set()
+            self.node_id_to_child_indices[parent_node.get_doc_id()].add(new_index)
 
         self.all_nodes[new_index] = node.get_doc_id()
 

@@ -92,7 +92,9 @@ class DocumentStore(DataClassJsonMixin):
         """Update docstore."""
         self.docs.update(other.docs)
 
-    def add_documents(self, docs: List[Base], allow_update: bool = False) -> None:
+    def add_documents(
+        self, docs: List[BaseDocument], allow_update: bool = False
+    ) -> None:
         """Add a document to the store."""
         for doc in docs:
             if doc.is_doc_id_none:
