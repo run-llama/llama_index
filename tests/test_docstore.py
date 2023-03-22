@@ -2,7 +2,8 @@
 
 from typing import Dict, Type
 
-from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.readers.schema.base import Document
 

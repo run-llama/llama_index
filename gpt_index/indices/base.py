@@ -26,8 +26,6 @@ from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=V2IndexStruct)
 
-DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
-
 logger = logging.getLogger(__name__)
 
 
@@ -87,7 +85,7 @@ class BaseGPTIndex(Generic[IS]):
         self._node_parser = node_parser or SimpleNodeParser()
 
         if nodes is not None:
-            docstore.add_documents(nodes)
+            self._docstore.add_documents(nodes)
             index_struct = self.build_index_from_nodes(nodes)
             if not isinstance(index_struct, self.index_struct_cls):
                 raise ValueError(
@@ -167,66 +165,6 @@ class BaseGPTIndex(Generic[IS]):
         """Get the index struct."""
         return self._index_struct
 
-    @property
-    def index_struct_with_text(self) -> IS:
-        """Get the index struct with text.
-
-        If text not set, raise an error.
-        For use when composing indices with other indices.
-
-        """
-        # make sure that we generate text for index struct
-        if self._index_struct.text is None:
-            # NOTE: set text to be empty string for now
-            raise ValueError(
-                "Index must have text property set in order "
-                "to be composed with other indices. "
-                "In order to set text, please run `index.set_text()`."
-            )
-        return self._index_struct
-
-    def set_text(self, text: str) -> None:
-        """Set summary text for index struct.
-
-        This allows index_struct_with_text to be used to compose indices
-        with other indices.
-
-        """
-        self._index_struct.text = text
-
-    def set_extra_info(self, extra_info: Dict[str, Any]) -> None:
-        """Set extra info (metadata) for index struct.
-
-        If this index is used as a subindex for a parent index, the metadata
-        will be propagated to all nodes derived from this subindex, in the
-        parent index.
-
-        """
-        self._index_struct.extra_info = extra_info
-
-    def set_doc_id(self, doc_id: str) -> None:
-        """Set doc_id for index struct.
-
-        This is used to uniquely identify the index struct in the docstore.
-        If you wish to delete the index struct, you can use this doc_id.
-
-        """
-        old_doc_id = self._index_struct.get_doc_id()
-        self._index_struct.doc_id = doc_id
-        # Note: we also need to delete old doc_id, and update docstore
-        self._docstore.delete_document(old_doc_id)
-        self._docstore.add_documents([self._index_struct], allow_update=True)
-
-    def get_doc_id(self) -> str:
-        """Get doc_id for index struct.
-
-        If doc_id not set, raise an error.
-
-        """
-        if self._index_struct.doc_id is None:
-            raise ValueError("Index must have doc_id property set.")
-        return self._index_struct.doc_id
-
     @abstractmethod
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""
@@ -268,7 +206,7 @@ class BaseGPTIndex(Generic[IS]):
         logger.debug(f"> Deleting document: {doc_id}")
         self._delete(doc_id, **delete_kwargs)
 
-    def update(self, document: DOCUMENTS_INPUT, **update_kwargs: Any) -> None:
+    def update(self, document: Document, **update_kwargs: Any) -> None:
         """Update a document.
 
         This is equivalent to deleting the document and then inserting it again.
@@ -283,7 +221,7 @@ class BaseGPTIndex(Generic[IS]):
         self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
 
     def refresh(
-        self, documents: List[BaseDocument], **update_kwargs: Any
+        self, documents: Sequence[Document], **update_kwargs: Any
     ) -> List[bool]:
         """Refresh an index with documents that have changed.
 

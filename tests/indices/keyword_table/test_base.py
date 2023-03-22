@@ -127,7 +127,7 @@ def test_insert(
     table = GPTSimpleKeywordTableIndex([])
     assert len(table.index_struct.table.keys()) == 0
     table.insert(documents[0])
-    nodes = table.docstore.get_node(list(table.index_struct.node_ids))
+    nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     table_chunks = {n.get_text() for n in nodes}
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
@@ -187,7 +187,7 @@ def test_delete(
     ]
 
     # test delete
-    table = GPTSimpleKeywordTableIndex(new_documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(new_documents)
     table.delete("test_id_1")
     assert len(table.index_struct.table.keys()) == 6
     print(table.index_struct.table.keys())
@@ -196,7 +196,7 @@ def test_delete(
     node_texts = {n.get_text() for n in nodes}
     assert node_texts == {"This is another test.", "This is a test v2."}
 
-    table = GPTSimpleKeywordTableIndex(new_documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(new_documents)
     table.delete("test_id_2")
     assert len(table.index_struct.table.keys()) == 7
     assert len(table.index_struct.table["this"]) == 2

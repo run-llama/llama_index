@@ -16,7 +16,6 @@ from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.node_parser.simple import SimpleNodeParser
 from gpt_index.readers.schema.base import Document
-from gpt_index.schema import BaseDocument
 from gpt_index.utils import globals_helper
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_predict import (
@@ -80,7 +79,7 @@ def test_refresh_list(
     _mock_total_tokens_used: Any,
     _mock_split_text_overlap: Any,
     _mock_split_text: Any,
-    documents: List[BaseDocument],
+    documents: List[Document],
 ) -> None:
     """Test build list."""
     # add extra document

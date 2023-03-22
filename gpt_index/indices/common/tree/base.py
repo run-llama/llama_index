@@ -209,6 +209,6 @@ class GPTTreeIndexBuilder:
         if len(new_node_dict) <= self.num_children:
             return index_graph
         else:
-            return await self.build_index_from_nodes(
+            return await self.abuild_index_from_nodes(
                 index_graph, new_node_dict, all_node_ids, level=level + 1
             )

@@ -1,4 +1,4 @@
-from typing import List, Optional, Set
+from typing import List, Optional, Sequence
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
@@ -12,7 +12,7 @@ class SimpleNodeParser:
 
     def get_nodes_from_documents(
         self,
-        documents: Set[Document],
+        documents: Sequence[Document],
         include_extra_info: bool = True,
     ) -> List[Node]:
         all_nodes = []
