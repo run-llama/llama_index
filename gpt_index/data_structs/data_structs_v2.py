@@ -11,10 +11,11 @@ from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
+from gpt_index.schema import BaseDocument
 
 
 @dataclass
-class V2IndexStruct(DataClassJsonMixin):
+class V2IndexStruct(BaseDocument):
     """A base data struct for a LlamaIndex."""
 
 

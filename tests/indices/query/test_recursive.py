@@ -131,13 +131,13 @@ def test_recursive_query_list_tree(
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
     # try building a list for every two, then a tree
-    list1 = GPTListIndex(documents[0:2], **list_kwargs)
+    list1 = GPTListIndex.from_documents(documents[0:2], **list_kwargs)
     list1.set_text("summary1")
-    list2 = GPTListIndex(documents[2:4], **list_kwargs)
+    list2 = GPTListIndex.from_documents(documents[2:4], **list_kwargs)
     list2.set_text("summary2")
-    list3 = GPTListIndex(documents[4:6], **list_kwargs)
+    list3 = GPTListIndex.from_documents(documents[4:6], **list_kwargs)
     list3.set_text("summary3")
-    list4 = GPTListIndex(documents[6:8], **list_kwargs)
+    list4 = GPTListIndex.from_documents(documents[6:8], **list_kwargs)
     list4.set_text("summary4")
 
     # there are two root nodes in this tree: one containing [list1, list2]
@@ -181,8 +181,8 @@ def test_recursive_query_tree_list(
     tree_kwargs = index_kwargs["tree"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    tree1 = GPTTreeIndex(documents[2:6], **tree_kwargs)
-    tree2 = GPTTreeIndex(documents[:2] + documents[6:], **tree_kwargs)
+    tree1 = GPTTreeIndex.from_documents(documents[2:6], **tree_kwargs)
+    tree2 = GPTTreeIndex.from_documents(documents[:2] + documents[6:], **tree_kwargs)
     tree1.set_text("tree_summary1")
     tree2.set_text("tree_summary2")
 
@@ -221,8 +221,8 @@ def test_recursive_query_table_list(
     table_kwargs = index_kwargs["table"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    table1 = GPTSimpleKeywordTableIndex(documents[4:6], **table_kwargs)
-    table2 = GPTSimpleKeywordTableIndex(documents[2:3], **table_kwargs)
+    table1 = GPTSimpleKeywordTableIndex.from_documents(documents[4:6], **table_kwargs)
+    table2 = GPTSimpleKeywordTableIndex.from_documents(documents[2:3], **table_kwargs)
     table1.set_text("table_summary1")
     table2.set_text("table_summary2")
     table1.set_doc_id("table1")
@@ -274,13 +274,13 @@ def test_recursive_query_list_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTListIndex(documents[0:2], **list_kwargs)
+    list1 = GPTListIndex.from_documents(documents[0:2], **list_kwargs)
     list1.set_text("foo bar")
-    list2 = GPTListIndex(documents[2:4], **list_kwargs)
+    list2 = GPTListIndex.from_documents(documents[2:4], **list_kwargs)
     list2.set_text("apple orange")
-    list3 = GPTListIndex(documents[4:6], **list_kwargs)
+    list3 = GPTListIndex.from_documents(documents[4:6], **list_kwargs)
     list3.set_text("toronto london")
-    list4 = GPTListIndex(documents[6:8], **list_kwargs)
+    list4 = GPTListIndex.from_documents(documents[6:8], **list_kwargs)
     list4.set_text("cat dog")
 
     table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
@@ -321,13 +321,13 @@ def test_recursive_query_list_tree_token_count(
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
     # try building a list for every two, then a tree
-    list1 = GPTListIndex(documents[0:2], **list_kwargs)
+    list1 = GPTListIndex.from_documents(documents[0:2], **list_kwargs)
     list1.set_text("summary1")
-    list2 = GPTListIndex(documents[2:4], **list_kwargs)
+    list2 = GPTListIndex.from_documents(documents[2:4], **list_kwargs)
     list2.set_text("summary2")
-    list3 = GPTListIndex(documents[4:6], **list_kwargs)
+    list3 = GPTListIndex.from_documents(documents[4:6], **list_kwargs)
     list3.set_text("summary3")
-    list4 = GPTListIndex(documents[6:8], **list_kwargs)
+    list4 = GPTListIndex.from_documents(documents[6:8], **list_kwargs)
     list4.set_text("summary4")
 
     # there are two root nodes in this tree: one containing [list1, list2]
@@ -419,13 +419,13 @@ def test_recursive_query_vector_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
+    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
     list1.set_text("foo bar")
-    list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
+    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
     list2.set_text("apple orange")
-    list3 = GPTSimpleVectorIndex(documents[4:6], **list_kwargs)
+    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **list_kwargs)
     list3.set_text("toronto london")
-    list4 = GPTSimpleVectorIndex(documents[6:8], **list_kwargs)
+    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **list_kwargs)
     list4.set_text("cat dog")
 
     table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
@@ -519,10 +519,10 @@ def test_recursive_query_vector_table_query_configs(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
+    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
     list1.set_text("foo bar")
     list1.set_doc_id("vector1")
-    list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
+    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
     list2.set_text("apple orange")
     list2.set_doc_id("vector2")
 
@@ -576,13 +576,13 @@ def test_recursive_query_vector_table_async(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
+    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
     list1.set_text("foo bar")
-    list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
+    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
     list2.set_text("apple orange")
-    list3 = GPTSimpleVectorIndex(documents[4:6], **list_kwargs)
+    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **list_kwargs)
     list3.set_text("toronto london")
-    list4 = GPTSimpleVectorIndex(documents[6:8], **list_kwargs)
+    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **list_kwargs)
     list4.set_text("cat dog")
 
     table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)

@@ -165,6 +165,66 @@ class BaseGPTIndex(Generic[IS]):
         """Get the index struct."""
         return self._index_struct
 
+    @property
+    def index_struct_with_text(self) -> IS:
+        """Get the index struct with text.
+
+        If text not set, raise an error.
+        For use when composing indices with other indices.
+
+        """
+        # make sure that we generate text for index struct
+        if self._index_struct.text is None:
+            # NOTE: set text to be empty string for now
+            raise ValueError(
+                "Index must have text property set in order "
+                "to be composed with other indices. "
+                "In order to set text, please run `index.set_text()`."
+            )
+        return self._index_struct
+
+    def set_text(self, text: str) -> None:
+        """Set summary text for index struct.
+
+        This allows index_struct_with_text to be used to compose indices
+        with other indices.
+
+        """
+        self._index_struct.text = text
+
+    def set_extra_info(self, extra_info: Dict[str, Any]) -> None:
+        """Set extra info (metadata) for index struct.
+
+        If this index is used as a subindex for a parent index, the metadata
+        will be propagated to all nodes derived from this subindex, in the
+        parent index.
+
+        """
+        self._index_struct.extra_info = extra_info
+
+    def set_doc_id(self, doc_id: str) -> None:
+        """Set doc_id for index struct.
+
+        This is used to uniquely identify the index struct in the docstore.
+        If you wish to delete the index struct, you can use this doc_id.
+
+        """
+        old_doc_id = self._index_struct.get_doc_id()
+        self._index_struct.doc_id = doc_id
+        # Note: we also need to delete old doc_id, and update docstore
+        self._docstore.delete_document(old_doc_id)
+        self._docstore.add_documents([self._index_struct], allow_update=True)
+
+    def get_doc_id(self) -> str:
+        """Get doc_id for index struct.
+
+        If doc_id not set, raise an error.
+
+        """
+        if self._index_struct.doc_id is None:
+            raise ValueError("Index must have doc_id property set.")
+        return self._index_struct.doc_id
+
     @abstractmethod
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""
