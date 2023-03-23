@@ -68,7 +68,6 @@ class SingleQueryCombiner(BaseQueryCombiner):
         self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle
     ) -> Response:
         """Run query combiner."""
-        print("IN QUERY COMBINER: ", query_bundle.query_str)
         updated_query_bundle = self._prepare_update(query_bundle)
         return await query_obj.aquery(updated_query_bundle)
 

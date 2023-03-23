@@ -140,7 +140,6 @@ class GPTTreeIndexBuilder:
         self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node], level: int = 0
     ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
-        print(f"building index from nodes: {len(all_nodes)}")
         if len(cur_nodes) <= self.num_children:
             return cur_nodes
 
@@ -172,15 +171,17 @@ class GPTTreeIndexBuilder:
         )
         all_nodes.update(new_node_dict)
 
-        return self.build_index_from_nodes(new_node_dict, all_nodes, level=level + 1)
+        if len(new_node_dict) <= self.num_children:
+            return new_node_dict
+        else:
+            return self.build_index_from_nodes(
+                new_node_dict, all_nodes, level=level + 1
+            )
 
     async def abuild_index_from_nodes(
         self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node], level: int = 0
     ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
-        if len(cur_nodes) <= self.num_children:
-            return cur_nodes
-
         cur_index = len(all_nodes)
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_nodes
@@ -199,6 +200,9 @@ class GPTTreeIndexBuilder:
         )
         all_nodes.update(new_node_dict)
 
-        return await self.abuild_index_from_nodes(
-            new_node_dict, all_nodes, level=level + 1
-        )
+        if len(new_node_dict) <= self.num_children:
+            return new_node_dict
+        else:
+            return await self.abuild_index_from_nodes(
+                new_node_dict, all_nodes, level=level + 1
+            )
