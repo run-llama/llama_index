@@ -18,7 +18,7 @@ class SimpleMongoReader(BaseReader):
 
     """
 
-    def __init__(self, host: str, port: int, max_docs: int = 1000) -> None:
+    def __init__(self, host: str = None, port: int = None, uri: str = None, max_docs: int = 1000) -> None:
         """Initialize with parameters."""
         try:
             import pymongo  # noqa: F401
@@ -27,7 +27,10 @@ class SimpleMongoReader(BaseReader):
             raise ImportError(
                 "`pymongo` package not found, please run `pip install pymongo`"
             )
-        self.client: MongoClient = MongoClient(host, port)
+        if uri:
+            self.client: MongoClient = MongoClient(uri)
+        else:
+            self.client: MongoClient = MongoClient(host, port)
         self.max_docs = max_docs
 
     def load_data(
