@@ -227,6 +227,7 @@ class LLMPredictor(BaseLLMPredictor):
         # eventually sent to OpenAI, or whatever LLM downstream
         prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
+        print((prompt_tokens_count, prediction_tokens_count))
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
         return llm_prediction, formatted_prompt
 
