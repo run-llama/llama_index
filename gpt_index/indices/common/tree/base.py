@@ -140,6 +140,9 @@ class GPTTreeIndexBuilder:
         self, cur_nodes: Dict[int, Node], all_nodes: Dict[int, Node], level: int = 0
     ) -> Dict[int, Node]:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
+        if len(cur_nodes) <= self.num_children:
+            return cur_nodes
+
         cur_index = len(all_nodes)
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_nodes
