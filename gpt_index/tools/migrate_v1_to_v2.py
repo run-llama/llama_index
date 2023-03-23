@@ -1,9 +1,11 @@
 """Tool for migrating Index built with V1 data structs to V2."""
 import json
-import os
 from typing import Dict, List, Optional, Tuple, Type
 
-import fire
+try:
+    import fire
+except ImportError:
+    print('Please run `pip install fire`')
 
 from gpt_index.data_structs.data_structs import (
     KG,
@@ -21,8 +23,10 @@ from gpt_index.data_structs.data_structs import (
     SimpleIndexDict,
     WeaviateIndexDict,
 )
+from gpt_index.data_structs.data_structs_v2 import IndexDict as V2IndexDict
 from gpt_index.data_structs.data_structs_v2 import IndexGraph as V2IndexGraph
 from gpt_index.data_structs.data_structs_v2 import IndexList as V2IndexList
+from gpt_index.data_structs.data_structs_v2 import KeywordTable as V2KeywordTable
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import DocumentRelationship
 from gpt_index.data_structs.node_v2 import Node as V2Node
@@ -94,11 +98,46 @@ def index_list_to_v2(struct: IndexList) -> Tuple[V2IndexList, List[V2Node]]:
     nodes_v2 = [node_to_v2(node) for node in struct.nodes]
     return struct_v2, nodes_v2
 
+def keyword_table_to_v2(struct: KeywordTable) -> Tuple[V2KeywordTable, List[V2Node]]:
+    table_v2 = {
+        keyword: set(struct.text_chunks[index].get_doc_id() for index in indices)
+        for keyword, indices in struct.table.items()
+    }
+    struct_v2 = V2KeywordTable(table=table_v2)
+    nodes_v2 =  [node_to_v2(node) for node in struct.text_chunks.values()]
+    return struct_v2, nodes_v2
+
+def index_dict_to_v2(struct: IndexDict) -> Tuple[V2IndexDict]:
+    nodes_dict_v2 = {
+        vector_id: struct.nodes_dict[int_id].get_doc_id() for 
+        vector_id, int_id in struct.id_map
+    }
+
+    node_id_to_vector_id = {
+        node_id: vector_id for vector_id, node_id in nodes_dict_v2.items()
+    }
+    doc_id_dict_v2 = {}
+    for node in struct.nodes_dict.values():
+        node_id = node.get_doc_id()
+        vector_id = node_id_to_vector_id[node_id]
+        if node.ref_doc_id is not None:
+            if node.ref_doc_id not in doc_id_dict_v2:
+                doc_id_dict_v2[node.ref_doc_id] = []
+            doc_id_dict_v2[node.ref_doc_id].append(vector_id)
+
+    embeddings_dict_v2 = struct.embeddings_dict
+
+    struct_v2 = V2IndexDict(nodes_dict=nodes_dict_v2, doc_id_dict=doc_id_dict_v2, embeddings_dict=embeddings_dict_v2)
+    nodes_v2 = [node_to_v2(node) for node in node in struct.nodes_dict.values()]
+    return struct_v2, nodes_v2
+
 def convert_to_v2(index_struct: IndexStruct, docstore: DocumentStore) -> Tuple[V2IndexStruct, DocumentStore]:
     if isinstance(index_struct, IndexGraph):
         struct_v2, nodes_v2 = index_graph_to_v2(index_struct)
     elif isinstance(index_struct, IndexList):
         struct_v2, nodes_v2 = index_list_to_v2(index_struct)
+    elif isinstance(index_struct, IndexDict):
+        struct_v2, nodes_v2 = index_dict_to_v2(index_struct)
     else:
         raise NotImplementedError(f"Cannot migrate {type(index_struct)} yet.")
     
