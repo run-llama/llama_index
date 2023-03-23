@@ -30,8 +30,9 @@ logger = logging.getLogger(__name__)
 # map from mode to query class
 QueryMap = Dict[str, Type[BaseGPTIndexQuery]]
 
+
 class BaseGPTIndex(Generic[IS]):
-    
+
     """Base LlamaIndex.
 
     Args:

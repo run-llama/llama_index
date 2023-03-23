@@ -14,8 +14,7 @@ from gpt_index.data_structs.data_structs_v2 import (
 )
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.queries import (
     GPTChromaIndexQuery,

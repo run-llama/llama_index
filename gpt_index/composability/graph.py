@@ -125,11 +125,7 @@ class ComposableGraph:
     ) -> BaseGPTIndex:
         """Get index."""
         index_struct = _safe_get_index_struct(self._docstore, index_struct_id)
-        return index_cls(
-            index_struct=index_struct,
-            docstore=self._docstore,
-            **kwargs
-        )
+        return index_cls(index_struct=index_struct, docstore=self._docstore, **kwargs)
 
     @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "ComposableGraph":
@@ -148,9 +144,7 @@ class ComposableGraph:
 
         """
         result_dict = json.loads(index_string)
-        docstore = DocumentStore.load_from_dict(
-            result_dict["docstore"]
-        )
+        docstore = DocumentStore.load_from_dict(result_dict["docstore"])
         index_struct = _safe_get_index_struct(docstore, result_dict["index_struct_id"])
         return cls(docstore, index_struct, **kwargs)
 

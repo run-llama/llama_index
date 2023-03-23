@@ -5,12 +5,11 @@ in sequence in order to answer a given query.
 
 """
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Optional, Sequence
 
 from gpt_index.data_structs.data_structs_v2 import IndexList
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.query.list.query import GPTListIndexQuery
 from gpt_index.indices.query.schema import QueryMode

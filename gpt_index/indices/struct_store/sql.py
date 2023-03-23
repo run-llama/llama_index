@@ -1,15 +1,14 @@
 """SQL Structured Store."""
 import json
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Dict, Optional, Sequence
 
 from sqlalchemy import Table
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
-from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.sql import (
     GPTNLStructStoreIndexQuery,
