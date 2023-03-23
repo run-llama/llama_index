@@ -24,7 +24,7 @@ class IndexGraph(V2IndexStruct):
     # mapping from index in tree to Node doc id.
     all_nodes: Dict[int, str] = field(default_factory=dict)
     root_nodes: Dict[int, str] = field(default_factory=dict)
-    node_id_to_child_indices: Dict[str, Set[int]] = field(default_factory=dict)
+    node_id_to_children_ids: Dict[str, List[str]] = field(default_factory=dict)
 
     @property
     def node_id_to_index(self) -> Dict[str, int]:
@@ -54,17 +54,19 @@ class IndexGraph(V2IndexStruct):
 
         if children_nodes is None:
             children_nodes = []
-        children_indices = set(self.get_index(n) for n in children_nodes)
-        self.node_id_to_child_indices[node_id] = children_indices
+        children_ids = [n.get_doc_id() for n in children_nodes]
+        self.node_id_to_children_ids[node_id] = children_ids
 
     def get_children(self, parent_node: Optional[Node]) -> Dict[int, str]:
         """Get children nodes."""
         if parent_node is None:
             return self.root_nodes
         else:
+            parent_id = parent_node.get_doc_id()
+            children_ids = self.node_id_to_children_ids[parent_id]
             return {
-                i: self.all_nodes[i]
-                for i in self.node_id_to_child_indices[parent_node.get_doc_id()]
+                self.node_id_to_index[child_id]: child_id
+                for child_id in children_ids
             }
 
     def insert_under_parent(
@@ -75,9 +77,9 @@ class IndexGraph(V2IndexStruct):
         if parent_node is None:
             self.root_nodes[new_index] = node.get_doc_id()
         else:
-            if parent_node.doc_id not in self.node_id_to_child_indices:
-                self.node_id_to_child_indices[parent_node.get_doc_id()] = set()
-            self.node_id_to_child_indices[parent_node.get_doc_id()].add(new_index)
+            if parent_node.doc_id not in self.node_id_to_children_ids:
+                self.node_id_to_children_ids[parent_node.get_doc_id()] = []
+            self.node_id_to_children_ids[parent_node.get_doc_id()].append(node.get_doc_id())
 
         self.all_nodes[new_index] = node.get_doc_id()
 

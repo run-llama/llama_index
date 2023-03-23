@@ -8,7 +8,6 @@ from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
 
@@ -58,8 +57,6 @@ class DocumentStore(DataClassJsonMixin):
         type_to_struct: Optional[Dict[str, Type[BaseDocument]]] = None,
     ) -> "DocumentStore":
         """Load from dict."""
-        type_to_struct = type_to_struct or INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS
-
         docs_obj_dict = {}
         for doc_id, doc_dict in docs_dict["docs"].items():
             doc_type = doc_dict.pop(TYPE_KEY, None)

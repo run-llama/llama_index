@@ -11,7 +11,6 @@ from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -333,6 +332,8 @@ class BaseGPTIndex(Generic[IS]):
 
 
         """
+        from gpt_index.indices.query.query_runner import QueryRunner
+
         mode_enum = QueryMode(mode)
         if mode_enum == QueryMode.RECURSIVE:
             # TODO: deprecated, use ComposableGraph instead.
