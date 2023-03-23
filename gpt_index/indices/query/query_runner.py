@@ -16,7 +16,6 @@ from gpt_index.indices.query.query_transform.base import (
     IdentityQueryTransform,
 )
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
-from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
 
@@ -37,7 +36,6 @@ class QueryRunner(BaseQueryRunner):
         prompt_helper: PromptHelper,
         embed_model: BaseEmbedding,
         docstore: DocumentStore,
-        index_registry: IndexRegistry,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
         query_combiner: Optional[BaseQueryCombiner] = None,

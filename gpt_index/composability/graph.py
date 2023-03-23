@@ -17,7 +17,6 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
-from gpt_index.indices.registry import IndexRegistry
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
@@ -52,7 +51,6 @@ class ComposableGraph:
     def __init__(
         self,
         docstore: DocumentStore,
-        index_registry: IndexRegistry,
         index_struct: IndexStruct,
         llm_predictor: Optional[LLMPredictor] = None,
         prompt_helper: Optional[PromptHelper] = None,
@@ -61,7 +59,6 @@ class ComposableGraph:
     ) -> None:
         """Init params."""
         self._docstore = docstore
-        self._index_registry = index_registry
         # this represents the "root" index struct
         self._index_struct = index_struct
 
@@ -76,7 +73,6 @@ class ComposableGraph:
         """Build from index."""
         return ComposableGraph(
             index.docstore,
-            index.index_registry,
             # this represents the "root" index struct
             index.index_struct,
             llm_predictor=index.llm_predictor,
@@ -92,14 +88,12 @@ class ComposableGraph:
         query_transform: Optional[BaseQueryTransform] = None,
     ) -> Response:
         """Query the index."""
-        # go over all the indices and create a registry
         llm_predictor = llm_predictor or self._llm_predictor
         query_runner = QueryRunner(
             llm_predictor,
             self._prompt_helper,
             self._embed_model,
             self._docstore,
-            self._index_registry,
             query_configs=query_configs,
             query_transform=query_transform,
             recursive=True,
@@ -114,14 +108,12 @@ class ComposableGraph:
         query_transform: Optional[BaseQueryTransform] = None,
     ) -> Response:
         """Query the index."""
-        # go over all the indices and create a registry
         llm_predictor = llm_predictor or self._llm_predictor
         query_runner = QueryRunner(
             llm_predictor,
             self._prompt_helper,
             self._embed_model,
             self._docstore,
-            self._index_registry,
             query_configs=query_configs,
             query_transform=query_transform,
             recursive=True,
@@ -136,7 +128,6 @@ class ComposableGraph:
         return index_cls(
             index_struct=index_struct,
             docstore=self._docstore,
-            index_registry=self._index_registry,
             **kwargs
         )
 
@@ -157,13 +148,11 @@ class ComposableGraph:
 
         """
         result_dict = json.loads(index_string)
-        # TODO: this is hardcoded for now, allow it to be specified by the user
-        index_registry = _get_default_index_registry()
         docstore = DocumentStore.load_from_dict(
-            result_dict["docstore"], index_registry.type_to_struct
+            result_dict["docstore"]
         )
         index_struct = _safe_get_index_struct(docstore, result_dict["index_struct_id"])
-        return cls(docstore, index_registry, index_struct, **kwargs)
+        return cls(docstore, index_struct, **kwargs)
 
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "ComposableGraph":
