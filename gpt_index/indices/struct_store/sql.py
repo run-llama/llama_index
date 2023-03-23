@@ -125,7 +125,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         data_extractor.insert_datapoint_from_nodes(nodes)
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTNLStructStoreIndexQuery,

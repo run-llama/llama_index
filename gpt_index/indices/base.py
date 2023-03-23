@@ -14,7 +14,6 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
-from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.logger import LlamaLogger
 from gpt_index.node_parser.interface import NodeParser
@@ -28,7 +27,11 @@ IS = TypeVar("IS", bound=V2IndexStruct)
 logger = logging.getLogger(__name__)
 
 
+# map from mode to query class
+QueryMap = Dict[str, Type[BaseGPTIndexQuery]]
+
 class BaseGPTIndex(Generic[IS]):
+    
     """Base LlamaIndex.
 
     Args:
@@ -55,7 +58,6 @@ class BaseGPTIndex(Generic[IS]):
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         docstore: Optional[DocumentStore] = None,
-        index_registry: Optional[IndexRegistry] = None,
         prompt_helper: Optional[PromptHelper] = None,
         node_parser: Optional[NodeParser] = None,
         chunk_size_limit: Optional[int] = None,
@@ -79,7 +81,6 @@ class BaseGPTIndex(Generic[IS]):
         )
 
         self._docstore = docstore or DocumentStore()
-        self._index_registry = index_registry or IndexRegistry()
         self._llama_logger = llama_logger or LlamaLogger()
         self._node_parser = node_parser or SimpleNodeParser()
 
@@ -94,8 +95,8 @@ class BaseGPTIndex(Generic[IS]):
                 )
 
         self._index_struct = index_struct
-        # update index registry and docstore with index_struct
-        self._update_index_registry_and_docstore()
+        # update docstore with index_struct
+        self._update_docstore()
 
     @classmethod
     def from_documents(
@@ -141,11 +142,6 @@ class BaseGPTIndex(Generic[IS]):
         return self._docstore
 
     @property
-    def index_registry(self) -> IndexRegistry:
-        """Get the index registry corresponding to the index."""
-        return self._index_registry
-
-    @property
     def llm_predictor(self) -> LLMPredictor:
         """Get the llm predictor."""
         return self._llm_predictor
@@ -155,13 +151,8 @@ class BaseGPTIndex(Generic[IS]):
         """Get the llm predictor."""
         return self._embed_model
 
-    def _update_index_registry_and_docstore(self) -> None:
+    def _update_docstore(self) -> None:
         """Update index registry and docstore."""
-        # update index registry with current struct
-        cur_type = self.index_struct_cls.get_type()
-        self._index_registry.type_to_struct[cur_type] = self.index_struct_cls
-        self._index_registry.type_to_query[cur_type] = self.get_query_map()
-
         # update docstore with current struct
         # NOTE: we call allow_update=True: in old versions of the docstore,
         # the index_struct was not stored in the docstore. whereas
@@ -352,7 +343,6 @@ class BaseGPTIndex(Generic[IS]):
                 self._prompt_helper,
                 self._embed_model,
                 self._docstore,
-                self._index_registry,
                 query_configs=query_configs,
                 query_transform=query_transform,
                 recursive=True,
@@ -372,7 +362,6 @@ class BaseGPTIndex(Generic[IS]):
                 self._prompt_helper,
                 self._embed_model,
                 self._docstore,
-                self._index_registry,
                 query_configs=[query_config],
                 query_transform=query_transform,
                 recursive=False,
@@ -415,7 +404,6 @@ class BaseGPTIndex(Generic[IS]):
                 self._prompt_helper,
                 self._embed_model,
                 self._docstore,
-                self._index_registry,
                 query_configs=query_configs,
                 query_transform=query_transform,
                 recursive=True,
@@ -435,7 +423,6 @@ class BaseGPTIndex(Generic[IS]):
                 self._prompt_helper,
                 self._embed_model,
                 self._docstore,
-                self._index_registry,
                 query_configs=[query_config],
                 query_transform=query_transform,
                 recursive=False,
@@ -445,7 +432,7 @@ class BaseGPTIndex(Generic[IS]):
 
     @classmethod
     @abstractmethod
-    def get_query_map(cls) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(cls) -> QueryMap:
         """Get query map."""
 
     @classmethod

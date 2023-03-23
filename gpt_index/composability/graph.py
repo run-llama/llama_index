@@ -36,35 +36,6 @@ from gpt_index.response.schema import Response
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
 
 
-# this is a map from type to outer index class
-# we extract the type_to_struct and type_to_query
-# fields from the index class
-DEFAULT_INDEX_REGISTRY_MAP: Dict[IndexStructType, Type[BaseGPTIndex]] = {
-    IndexStructType.TREE: GPTTreeIndex,
-    IndexStructType.LIST: GPTListIndex,
-    IndexStructType.KEYWORD_TABLE: GPTKeywordTableIndex,
-    IndexStructType.SIMPLE_DICT: GPTSimpleVectorIndex,
-    IndexStructType.DICT: GPTFaissIndex,
-    IndexStructType.WEAVIATE: GPTWeaviateIndex,
-    IndexStructType.PINECONE: GPTPineconeIndex,
-    IndexStructType.QDRANT: GPTQdrantIndex,
-    IndexStructType.CHROMA: GPTChromaIndex,
-    IndexStructType.VECTOR_STORE: GPTVectorStoreIndex,
-    IndexStructType.SQL: GPTSQLStructStoreIndex,
-    IndexStructType.KG: GPTKnowledgeGraphIndex,
-    IndexStructType.EMPTY: GPTEmptyIndex,
-}
-
-
-def _get_default_index_registry() -> IndexRegistry:
-    """Get default index registry."""
-    index_registry = IndexRegistry()
-    for index_type, index_class in DEFAULT_INDEX_REGISTRY_MAP.items():
-        index_registry.type_to_struct[index_type] = index_class.index_struct_cls
-        index_registry.type_to_query[index_type] = index_class.get_query_map()
-    return index_registry
-
-
 def _safe_get_index_struct(
     docstore: DocumentStore, index_struct_id: str
 ) -> IndexStruct:

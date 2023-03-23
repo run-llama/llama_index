@@ -74,7 +74,7 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
         query_kwargs["df"] = self.df
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTNLPandasIndexQuery,
