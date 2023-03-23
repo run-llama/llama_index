@@ -301,6 +301,7 @@ def test_build_simple(
     index_kwargs, query_kwargs = struct_kwargs
 
     index = GPTSimpleVectorIndex.from_documents(documents=documents, **index_kwargs)
+    assert isinstance(index, GPTSimpleVectorIndex)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
     actual_node_tups = [
@@ -340,6 +341,7 @@ def test_simple_insert(
     index_kwargs, query_kwargs = struct_kwargs
 
     index = GPTSimpleVectorIndex.from_documents(documents=documents, **index_kwargs)
+    assert isinstance(index, GPTSimpleVectorIndex)
     # insert into index
     index.insert(Document(text="This is a test v3."))
 
@@ -388,6 +390,7 @@ def test_simple_delete(
         Document("This is a test v2.", doc_id="test_id_3"),
     ]
     index = GPTSimpleVectorIndex.from_documents(documents=new_documents, **index_kwargs)
+    assert isinstance(index, GPTSimpleVectorIndex)
 
     # test delete
     index.delete("test_id_0")
@@ -614,6 +617,7 @@ def test_simple_async(
     index = GPTSimpleVectorIndex.from_documents(
         documents=documents, use_async=True, **index_kwargs
     )
+    assert isinstance(index, GPTSimpleVectorIndex)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
     actual_node_tups = [

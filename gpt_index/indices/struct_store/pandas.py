@@ -11,7 +11,6 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.pandas import GPTNLPandasIndexQuery
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.schema import BaseDocument
 
 
 class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):

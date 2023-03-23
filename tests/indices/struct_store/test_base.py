@@ -96,6 +96,7 @@ def test_sql_index(
     index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
+    assert isinstance(index, GPTSQLStructStoreIndex)
 
     # test that the document is inserted
     stmt = select([column("user_id"), column("foo")]).select_from(test_table)
@@ -112,6 +113,7 @@ def test_sql_index(
     index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
+    assert isinstance(index, GPTSQLStructStoreIndex)
     # test that the document is inserted
     stmt = select([column("user_id"), column("foo")]).select_from(test_table)
     engine = index.sql_database.engine
@@ -166,6 +168,7 @@ def test_sql_index_with_context(
         sql_context_container=sql_context_container,
         **index_kwargs
     )
+    assert isinstance(index, GPTSQLStructStoreIndex)
     assert index.sql_context_container.context_dict == table_context_dict
     _delete_table_items(engine, test_table)
 
@@ -182,6 +185,7 @@ def test_sql_index_with_context(
         sql_context_container=sql_context_container,
         **index_kwargs
     )
+    assert isinstance(index, GPTSQLStructStoreIndex)
     for k, v in table_context_dict.items():
         context_dict = index.sql_context_container.context_dict
         assert context_dict is not None
@@ -211,6 +215,7 @@ def test_sql_index_with_context(
         sql_context_container=sql_context_container,
         **index_kwargs
     )
+    assert isinstance(index, GPTSQLStructStoreIndex)
     assert index.sql_context_container.context_dict == {
         "test_table": "extract_test:test_table_context"
     }
