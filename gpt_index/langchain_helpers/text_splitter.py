@@ -246,6 +246,7 @@ class SentenceSplitter(TokenTextSplitter):
         chunk_overlap: int = 200,
         tokenizer: Optional[Callable] = None,
         backup_separators: Optional[List[str]] = ["\n"],
+        paragraph_separator: Optional[str] = "\n\n\n",
         chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
         secondary_chunking_regex: Optional[str] = "[^,.;]+[,.;]?",
     ):
@@ -275,6 +276,7 @@ class SentenceSplitter(TokenTextSplitter):
             custom_tknzr = pkt.PunktSentenceTokenizer(lang_vars=CustomLanguageVars())
 
             chunking_tokenizer_fn = custom_tknzr.tokenize
+        self.paragraph_separator = paragraph_separator
         self.chunking_tokenizer_fn = chunking_tokenizer_fn
         self.second_chunking_regex = secondary_chunking_regex
         """
@@ -311,9 +313,22 @@ class SentenceSplitter(TokenTextSplitter):
         else:
             effective_chunk_size = self._chunk_size
 
-        # First we split the text using the chunk tokenizer fn,
+        splits = text.split(self.paragraph_separator)
+
+        # Merge paragraphs that are too small.
+
+        idx = 0
+        while idx < len(splits):
+            if idx < len(splits) - 1 and len(splits[idx]) < effective_chunk_size:
+                splits[idx] = splits[idx] + splits[idx + 1]
+                splits.pop(idx + 1)
+            else:
+                idx += 1
+
+        # Next we split the text using the chunk tokenizer fn,
         # which defaults to the sentence tokenizer from nltk.
-        splits = self.chunking_tokenizer_fn(text)
+        chunked_splits = [self.chunking_tokenizer_fn(text) for text in splits]
+        splits = [chunk for split in chunked_splits for chunk in split]
 
         # Check if any sentences exceed the chunk size. If they do, split again
         # using the second chunk separator. If it any still exceed,
