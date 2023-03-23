@@ -103,14 +103,23 @@ class GPTPineconeIndexQuery(GPTVectorStoreIndexQuery):
         self,
         index_struct: IndexDict,
         pinecone_index: Optional[Any] = None,
+        metadata_filters: Optional[Dict[str, Any]] = None,
         pinecone_kwargs: Optional[Dict] = None,
+        insert_kwargs: Optional[Dict] = None,
+        query_kwargs: Optional[Dict] = None,
+        delete_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         if pinecone_index is None and pinecone_kwargs is None:
             raise ValueError("pinecone_index or pinecone_kwargs is required.")
         vector_store = PineconeVectorStore(
-            pinecone_index=pinecone_index, pinecone_kwargs=pinecone_kwargs
+            pinecone_index=pinecone_index,
+            metadata_filters=metadata_filters,
+            pinecone_kwargs=pinecone_kwargs,
+            insert_kwargs=insert_kwargs,
+            query_kwargs=query_kwargs,
+            delete_kwargs=delete_kwargs,
         )
         super().__init__(index_struct=index_struct, vector_store=vector_store, **kwargs)
 

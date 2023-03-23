@@ -192,10 +192,15 @@ class QueryRunner(BaseQueryRunner):
         # NOTE: Currently, query transform is only run once
         # TODO: Consider refactor to support index-specific query transform
         query_transform = self._get_query_transform(index_struct)
-        transform_extra_info = {"index_struct": index_struct}
-        query_bundle = query_transform(
-            query_str_or_bundle, extra_info=transform_extra_info
-        )
-        query_obj = self._get_query_obj(index_struct)
+        query_combiner = self._get_query_combiner(index_struct, query_transform)
 
-        return await query_obj.aquery(query_bundle)
+        query_obj = self._get_query_obj(index_struct)
+        if isinstance(query_str_or_bundle, str):
+            query_bundle = QueryBundle(
+                query_str=query_str_or_bundle,
+                custom_embedding_strs=[query_str_or_bundle],
+            )
+        else:
+            query_bundle = query_str_or_bundle
+
+        return await query_combiner.arun(query_obj, query_bundle)
