@@ -35,6 +35,12 @@ class BaseQueryCombiner:
     def run(self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle) -> Response:
         """Run query combiner."""
 
+    async def arun(
+        self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle
+    ) -> Response:
+        """Async run query combiner."""
+        return self.run(query_obj, query_bundle)
+
 
 class SingleQueryCombiner(BaseQueryCombiner):
     """Single query combiner.
@@ -43,15 +49,27 @@ class SingleQueryCombiner(BaseQueryCombiner):
 
     """
 
-    def run(self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle) -> Response:
-        """Run query combiner."""
+    def _prepare_update(self, query_bundle: QueryBundle) -> QueryBundle:
+        """Prepare update."""
         transform_extra_info = {
             "index_struct": self._index_struct,
         }
         updated_query_bundle = self._query_transform(
             query_bundle, extra_info=transform_extra_info
         )
+        return updated_query_bundle
+
+    def run(self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle) -> Response:
+        """Run query combiner."""
+        updated_query_bundle = self._prepare_update(query_bundle)
         return query_obj.query(updated_query_bundle)
+
+    async def arun(
+        self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle
+    ) -> Response:
+        """Run query combiner."""
+        updated_query_bundle = self._prepare_update(query_bundle)
+        return await query_obj.aquery(updated_query_bundle)
 
 
 def default_stop_fn(stop_dict: Dict) -> bool:
