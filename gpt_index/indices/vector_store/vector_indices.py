@@ -263,6 +263,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             embedding similarity.
         chunk_size_limit (int): Maximum number of tokens per chunk. NOTE:
             in Pinecone the default is 2048 due to metadata size restrictions.
+
     """
 
     index_struct_cls: Type[IndexDict] = PineconeIndexDict
@@ -271,7 +272,11 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         self,
         documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
         pinecone_index: Optional[Any] = None,
+        metadata_filters: Optional[Dict[str, Any]] = None,
         pinecone_kwargs: Optional[Dict] = None,
+        insert_kwargs: Optional[Dict] = None,
+        query_kwargs: Optional[Dict] = None,
+        delete_kwargs: Optional[Dict] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -284,10 +289,16 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             raise ValueError("pinecone_index is required.")
         if pinecone_kwargs is None:
             pinecone_kwargs = {}
+
         vector_store = kwargs.pop(
             "vector_store",
             PineconeVectorStore(
-                pinecone_index=pinecone_index, pinecone_kwargs=pinecone_kwargs
+                pinecone_index=pinecone_index,
+                metadata_filters=metadata_filters,
+                pinecone_kwargs=pinecone_kwargs,
+                insert_kwargs=insert_kwargs,
+                query_kwargs=query_kwargs,
+                delete_kwargs=delete_kwargs,
             ),
         )
 
@@ -316,7 +327,11 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         del query_kwargs["vector_store"]
         vector_store = cast(PineconeVectorStore, self._vector_store)
         query_kwargs["pinecone_index"] = vector_store._pinecone_index
+        query_kwargs["metadata_filters"] = vector_store._metadata_filters
         query_kwargs["pinecone_kwargs"] = vector_store._pinecone_kwargs
+        query_kwargs["insert_kwargs"] = vector_store._insert_kwargs
+        query_kwargs["query_kwargs"] = vector_store._query_kwargs
+        query_kwargs["delete_kwargs"] = vector_store._delete_kwargs
 
 
 class GPTWeaviateIndex(GPTVectorStoreIndex):

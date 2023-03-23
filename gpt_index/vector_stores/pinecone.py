@@ -25,7 +25,12 @@ class PineconeVectorStore(VectorStore):
 
     Args:
         pinecone_index (Optional[pinecone.Index]): Pinecone index instance
-        pinecone_kwargs (Optional[Dict]): kwargs to pass to Pinecone index
+        pinecone_kwargs (Optional[Dict]): kwargs to pass to Pinecone index.
+            NOTE: deprecated. If specified, then insert_kwargs, query_kwargs,
+            and delete_kwargs cannot be specified.
+        insert_kwargs (Optional[Dict]): insert kwargs during `upsert` call.
+        query_kwargs (Optional[Dict]): query kwargs during `query` call.
+        delete_kwargs (Optional[Dict]): delete kwargs during `delete` call.
 
     """
 
@@ -34,7 +39,11 @@ class PineconeVectorStore(VectorStore):
     def __init__(
         self,
         pinecone_index: Optional[Any] = None,
+        metadata_filters: Optional[Dict[str, Any]] = None,
         pinecone_kwargs: Optional[Dict] = None,
+        insert_kwargs: Optional[Dict] = None,
+        query_kwargs: Optional[Dict] = None,
+        delete_kwargs: Optional[Dict] = None,
     ) -> None:
         """Initialize params."""
         import_err_msg = (
@@ -45,13 +54,32 @@ class PineconeVectorStore(VectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
         self._pinecone_index = cast(pinecone.Index, pinecone_index)
-
+        self._metadata_filters = metadata_filters or {}
         self._pinecone_kwargs = pinecone_kwargs or {}
+        if pinecone_kwargs and (insert_kwargs or query_kwargs or delete_kwargs):
+            raise ValueError(
+                "pinecone_kwargs cannot be specified if insert_kwargs, "
+                "query_kwargs, or delete_kwargs are specified."
+            )
+        elif pinecone_kwargs:
+            self._insert_kwargs = pinecone_kwargs
+            self._query_kwargs = pinecone_kwargs
+            self._delete_kwargs = pinecone_kwargs
+        else:
+            self._insert_kwargs = insert_kwargs or {}
+            self._query_kwargs = query_kwargs or {}
+            self._delete_kwargs = delete_kwargs or {}
 
     @property
     def config_dict(self) -> dict:
         """Return config dict."""
-        return self._pinecone_kwargs
+        return {
+            "metadata_filters": self._metadata_filters,
+            "pinecone_kwargs": self._pinecone_kwargs,
+            "insert_kwargs": self._insert_kwargs,
+            "query_kwargs": self._query_kwargs,
+            "delete_kwargs": self._delete_kwargs,
+        }
 
     def add(
         self,
@@ -72,7 +100,20 @@ class PineconeVectorStore(VectorStore):
             metadata = {
                 "text": node.get_text(),
                 "doc_id": result.doc_id,
+                "extra_info": node.extra_info,
+                "node_info": node.node_info,
             }
+            # if additional metadata keys overlap with the default keys,
+            # then throw an error
+            intersecting_keys = set(metadata.keys()).intersection(
+                self._metadata_filters.keys()
+            )
+            if intersecting_keys:
+                raise ValueError(
+                    "metadata_filters keys overlap with default "
+                    f"metadata keys: {intersecting_keys}"
+                )
+            metadata.update(self._metadata_filters)
             self._pinecone_index.upsert(
                 [(new_id, text_embedding, metadata)], **self._pinecone_kwargs
             )
@@ -114,6 +155,7 @@ class PineconeVectorStore(VectorStore):
             top_k=similarity_top_k,
             include_values=True,
             include_metadata=True,
+            filter=self._metadata_filters,
             **self._pinecone_kwargs,
         )
 
@@ -122,7 +164,13 @@ class PineconeVectorStore(VectorStore):
         top_k_scores = []
         for match in response.matches:
             text = match.metadata["text"]
-            node = Node(text=text, extra_info=match.metadata)
+            extra_info = match.metadata["extra_info"]
+            node_info = match.metadata["node_info"]
+            doc_id = match.metadata["doc_id"]
+
+            node = Node(
+                text=text, extra_info=extra_info, node_info=node_info, doc_id=doc_id
+            )
             top_k_ids.append(match.id)
             top_k_nodes.append(node)
             top_k_scores.append(match.score)
