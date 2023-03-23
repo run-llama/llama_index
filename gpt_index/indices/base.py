@@ -21,7 +21,6 @@ from gpt_index.node_parser.interface import NodeParser
 from gpt_index.node_parser.simple import SimpleNodeParser
 from gpt_index.readers.schema.base import Document
 from gpt_index.response.schema import Response
-from gpt_index.schema import BaseDocument
 from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=V2IndexStruct)
@@ -90,7 +89,8 @@ class BaseGPTIndex(Generic[IS]):
             index_struct = self.build_index_from_nodes(nodes)
             if not isinstance(index_struct, self.index_struct_cls):
                 raise ValueError(
-                    f"index_struct must be of type {self.index_struct_cls} but got {type(index_struct)}"
+                    f"index_struct must be of type {self.index_struct_cls} "
+                    "but got {type(index_struct)}"
                 )
 
         self._index_struct = index_struct
@@ -105,6 +105,7 @@ class BaseGPTIndex(Generic[IS]):
         node_parser: Optional[NodeParser] = None,
         **kwargs: Any,
     ) -> "BaseGPTIndex":
+        """Create index from documents."""
         node_parser = node_parser or SimpleNodeParser()
         docstore = docstore or DocumentStore()
 
@@ -126,6 +127,7 @@ class BaseGPTIndex(Generic[IS]):
         indices: Sequence["BaseGPTIndex"],
         **kwargs: Any,
     ) -> "BaseGPTIndex":
+        """Create index from other indices."""
         raise NotImplementedError()
 
     @property

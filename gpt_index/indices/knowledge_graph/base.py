@@ -23,7 +23,6 @@ from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from gpt_index.prompts.prompts import KnowledgeGraphPrompt
-from gpt_index.utils import get_new_id
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 

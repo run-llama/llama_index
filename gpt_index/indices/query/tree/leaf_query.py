@@ -75,7 +75,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         """
         query_str = query_bundle.query_str
 
-        if len(self.index_struct.get_children_indices(selected_node)) == 0:
+        if len(self.index_struct.get_children(selected_node)) == 0:
             response_builder = ResponseBuilder(
                 self._prompt_helper,
                 self._llm_predictor,
@@ -98,10 +98,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             logger.debug(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query_level(
-                {
-                    i: self.index_struct.all_nodes[i]
-                    for i in self.index_struct.get_children_indices(selected_node)
-                },
+                self.index_struct.get_children(selected_node),
                 query_bundle,
                 level=level + 1,
             )

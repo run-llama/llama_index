@@ -65,13 +65,10 @@ def _get_left_or_right_node(
     left: bool = True,
 ) -> Node:
     """Get 'left' or 'right' node."""
-    indices = index_graph.get_children_indices(node)
-
+    children_dict = index_graph.get_children(node)
+    indices = list(children_dict.keys())
     index = min(indices) if left else max(indices)
-
-    if index not in index_graph.all_nodes:
-        raise ValueError(f"Node {index} not in index_graph.all_nodes")
-    node_id = index_graph.all_nodes[index]
+    node_id = children_dict[index]
     return docstore.get_node(node_id)
 
 

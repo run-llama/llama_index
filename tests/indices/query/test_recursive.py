@@ -1,5 +1,5 @@
+"""Test recursive queries."""
 # TODO: re-enable after fixing composability
-# """Test recursive queries."""
 
 # import asyncio
 # from pathlib import Path

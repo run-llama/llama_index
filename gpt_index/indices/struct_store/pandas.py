@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Sequence, Type
 import pandas as pd
 
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.data_structs.table import PandasStructTable
+from gpt_index.data_structs.table_v2 import PandasStructTable
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.pandas import GPTNLPandasIndexQuery

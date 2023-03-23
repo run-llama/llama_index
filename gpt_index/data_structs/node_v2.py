@@ -1,3 +1,13 @@
+"""`Node` data structure.
+
+`Node` is a generic data container that contains
+a piece of data (e.g. chunk of text, an image, a table, etc).
+
+In comparison to a raw `Document`, it contains additional metadata
+about its relationship to other `Node`s (and `Document`s).
+
+It is often used as an atomic unit of data in various indices.
+"""
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Dict, List, Optional
@@ -6,6 +16,8 @@ from gpt_index.schema import BaseDocument
 
 
 class DocumentRelationship(str, Enum):
+    """Document relationships used in `Node` class."""
+
     SOURCE = auto()
     PREVIOUS = auto()
     NEXT = auto()
@@ -13,11 +25,7 @@ class DocumentRelationship(str, Enum):
 
 @dataclass
 class Node(BaseDocument):
-    """A generic node of data.
-
-    Base struct used in most indices.
-
-    """
+    """A generic node of data."""
 
     def __post_init__(self) -> None:
         """Post init."""
@@ -41,17 +49,19 @@ class Node(BaseDocument):
 
     @property
     def ref_doc_id(self) -> Optional[str]:
-        """reference document id."""
+        """Source document id."""
         return self.relationships.get(DocumentRelationship.SOURCE, None)
 
     @property
     def prev_node_id(self) -> str:
+        """Prev node id."""
         if DocumentRelationship.PREVIOUS not in self.relationships:
             raise ValueError("Node does not have previous node")
         return self.relationships[DocumentRelationship.PREVIOUS]
 
     @property
     def next_node_id(self) -> str:
+        """Next node id."""
         if DocumentRelationship.NEXT not in self.relationships:
             raise ValueError("Node does not have next node")
         return self.relationships[DocumentRelationship.NEXT]

@@ -3,7 +3,6 @@
 from dataclasses import dataclass, field
 from typing import Dict, Type
 
-from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.schema import BaseDocument
 

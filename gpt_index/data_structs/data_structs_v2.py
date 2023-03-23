@@ -24,11 +24,11 @@ class IndexGraph(V2IndexStruct):
     # mapping from index in tree to Node doc id.
     all_nodes: Dict[int, str] = field(default_factory=dict)
     root_nodes: Dict[int, str] = field(default_factory=dict)
-
     node_id_to_child_indices: Dict[str, Set[int]] = field(default_factory=dict)
 
     @property
     def node_id_to_index(self) -> Dict[str, int]:
+        """Map from node id to index."""
         return {node_id: index for index, node_id in self.all_nodes.items()}
 
     @property
@@ -37,6 +37,7 @@ class IndexGraph(V2IndexStruct):
         return len(self.all_nodes)
 
     def get_index(self, node: Node) -> int:
+        """Get index of node."""
         return self.node_id_to_index[node.get_doc_id()]
 
     def insert(
@@ -45,6 +46,7 @@ class IndexGraph(V2IndexStruct):
         index: Optional[int] = None,
         children_nodes: Optional[Sequence[Node]] = None,
     ) -> None:
+        """Insert node."""
         index = index or self.size
         node_id = node.get_doc_id()
 
@@ -56,7 +58,7 @@ class IndexGraph(V2IndexStruct):
         self.node_id_to_child_indices[node_id] = children_indices
 
     def get_children(self, parent_node: Optional[Node]) -> Dict[int, str]:
-        """Get nodes given indices."""
+        """Get children nodes."""
         if parent_node is None:
             return self.root_nodes
         else:
@@ -78,11 +80,6 @@ class IndexGraph(V2IndexStruct):
             self.node_id_to_child_indices[parent_node.get_doc_id()].add(new_index)
 
         self.all_nodes[new_index] = node.get_doc_id()
-
-    def get_children_indices(self, parent_node: Optional[Node]) -> Set[int]:
-        if parent_node is None:
-            return set(self.root_nodes.keys())
-        return self.node_id_to_child_indices[parent_node.get_doc_id()]
 
     @classmethod
     def get_type(cls) -> str:

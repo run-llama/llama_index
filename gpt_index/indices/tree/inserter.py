@@ -117,7 +117,7 @@ class GPTIndexInserter:
         if len(cur_graph_nodes) == 0:
             self._insert_under_parent_and_consolidate(node, parent_node)
         # check if leaf nodes, then just insert under parent
-        elif len(self.index_graph.get_children_indices(cur_graph_node_list[0])) == 0:
+        elif len(self.index_graph.get_children(cur_graph_node_list[0])) == 0:
             self._insert_under_parent_and_consolidate(node, parent_node)
         # else try to find the right summary node to insert under
         else:
