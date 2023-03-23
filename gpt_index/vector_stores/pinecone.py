@@ -14,6 +14,27 @@ from gpt_index.vector_stores.types import (
 )
 
 
+def get_metadata_from_node_info(
+    node_info: Dict[str, Any], field_prefix: str
+) -> Dict[str, Any]:
+    """Get metadata from node extra info."""
+    metadata = {}
+    for key, value in node_info.items():
+        metadata[field_prefix + "_" + key] = value
+    return metadata
+
+
+def get_node_info_from_metadata(
+    metadata: Dict[str, Any], field_prefix: str
+) -> Dict[str, Any]:
+    """Get node extra info from metadata."""
+    node_extra_info = {}
+    for key, value in metadata.items():
+        if key.startswith(field_prefix + "_"):
+            node_extra_info[key.replace(field_prefix + "_", "")] = value
+    return node_extra_info
+
+
 class PineconeVectorStore(VectorStore):
     """Pinecone Vector Store.
 
@@ -100,9 +121,17 @@ class PineconeVectorStore(VectorStore):
             metadata = {
                 "text": node.get_text(),
                 "doc_id": result.doc_id,
-                "extra_info": node.extra_info,
-                "node_info": node.node_info,
             }
+            if node.extra_info:
+                # TODO: check if overlap with default metadata keys
+                metadata.update(
+                    get_metadata_from_node_info(node.extra_info, "extra_info")
+                )
+            if node.node_info:
+                # TODO: check if overlap with default metadata keys
+                metadata.update(
+                    get_metadata_from_node_info(node.node_info, "node_info")
+                )
             # if additional metadata keys overlap with the default keys,
             # then throw an error
             intersecting_keys = set(metadata.keys()).intersection(
@@ -164,8 +193,8 @@ class PineconeVectorStore(VectorStore):
         top_k_scores = []
         for match in response.matches:
             text = match.metadata["text"]
-            extra_info = match.metadata["extra_info"]
-            node_info = match.metadata["node_info"]
+            extra_info = get_node_info_from_metadata(match.metadata, "extra_info")
+            node_info = get_node_info_from_metadata(match.metadata, "node_info")
             doc_id = match.metadata["doc_id"]
 
             node = Node(
