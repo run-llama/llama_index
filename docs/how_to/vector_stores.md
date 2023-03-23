@@ -146,9 +146,16 @@ pinecone.create_index(
 )
 index = pinecone.Index("quickstart")
 
+# can define filters specific to this vector index (so you can
+# reuse pinecone indexes)
+metadata_filters = {"title": "paul_graham_essay"}
+
+
 # Load documents, build the GPTPineconeIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTPineconeIndex(documents, pinecone_index=index)
+index = GPTPineconeIndex(
+    documents, pinecone_index=index, metadata_filters=metadata_filters
+)
 
 # Query index
 response = index.query("What did the author do growing up?")
