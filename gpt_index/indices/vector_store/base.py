@@ -7,17 +7,17 @@ An index that that is built on top of an existing vector store.
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type
 
 from gpt_index.async_utils import run_async_tasks
-from gpt_index.data_structs.data_structs import IndexDict, Node
+from gpt_index.data_structs.data_structs_v2 import IndexDict
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.schema import BaseDocument
 from gpt_index.utils import get_new_id
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
@@ -45,13 +45,13 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         vector_store: Optional[VectorStore] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        node_parser: Optional[NodeParser] = None,
         use_async: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -61,11 +61,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
         super().__init__(
-            documents=documents,
+            nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             embed_model=embed_model,
-            text_splitter=text_splitter,
+            node_parser=node_parser,
             **kwargs,
         )
 
@@ -78,7 +78,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         }
 
     def _get_node_embedding_results(
-        self, nodes: List[Node], existing_node_ids: Set, doc_id: str
+        self, nodes: Sequence[Node], existing_node_ids: Set
     ) -> List[NodeEmbeddingResult]:
         """Get tuples of id, node, and embedding.
 
@@ -105,13 +105,18 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         result_tups = []
         for id, embed in id_to_embed_map.items():
+            doc_id = id_to_node_map[id].ref_doc_id
+            if doc_id is None:
+                raise ValueError("Reference doc id is None.")
             result_tups.append(
                 NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
             )
         return result_tups
 
     async def _aget_node_embedding_results(
-        self, nodes: List[Node], existing_node_ids: Set, doc_id: str
+        self,
+        nodes: Sequence[Node],
+        existing_node_ids: Set,
     ) -> List[NodeEmbeddingResult]:
         """Asynchronously get tuples of id, node, and embedding.
 
@@ -142,26 +147,21 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         result_tups = []
         for id, embed in id_to_embed_map.items():
+            doc_id = id_to_node_map[id].ref_doc_id
+            if doc_id is None:
+                raise ValueError("Reference doc id is None.")
             result_tups.append(
                 NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
             )
         return result_tups
 
-    def _build_fallback_text_splitter(self) -> TextSplitter:
-        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
-        return self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
-        )
-
-    async def _async_add_document_to_index(
-        self,
-        index_struct: IndexDict,
-        document: BaseDocument,
+    async def _async_add_nodes_to_index(
+        self, index_struct: IndexDict, nodes: Sequence[Node]
     ) -> None:
-        """Asynchronously add document to index."""
-        nodes = self._get_nodes_from_document(document)
+        """Asynchronously add nodes to index."""
         embedding_results = await self._aget_node_embedding_results(
-            nodes, set(), document.get_doc_id()
+            nodes,
+            set(),
         )
 
         new_ids = self._vector_store.add(embedding_results)
@@ -172,15 +172,15 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
 
-    def _add_document_to_index(
+    def _add_nodes_to_index(
         self,
         index_struct: IndexDict,
-        document: BaseDocument,
+        nodes: Sequence[Node],
     ) -> None:
         """Add document to index."""
-        nodes = self._get_nodes_from_document(document)
         embedding_results = self._get_node_embedding_results(
-            nodes, set(), document.get_doc_id()
+            nodes,
+            set(),
         )
 
         new_ids = self._vector_store.add(embedding_results)
@@ -191,24 +191,19 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
-    ) -> IndexDict:
-        """Build index from documents."""
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
+        """Build index from nodes."""
         index_struct = self.index_struct_cls()
         if self._use_async:
-            tasks = [
-                self._async_add_document_to_index(index_struct, d) for d in documents
-            ]
+            tasks = [self._async_add_nodes_to_index(index_struct, nodes)]
             run_async_tasks(tasks)
         else:
-            for d in documents:
-                self._add_document_to_index(index_struct, d)
+            self._add_nodes_to_index(index_struct, nodes)
         return index_struct
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
-        self._add_document_to_index(self._index_struct, document)
+        self._add_nodes_to_index(self._index_struct, nodes)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

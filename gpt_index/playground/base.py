@@ -55,7 +55,9 @@ class Playground:
                 "Playground must be initialized with a nonempty list of Documents."
             )
 
-        indices = [index_class(documents) for index_class in index_classes]
+        indices = [
+            index_class.from_documents(documents) for index_class in index_classes
+        ]
         return cls(indices, **kwargs)
 
     def _validate_indices(self, indices: List[BaseGPTIndex]) -> None:

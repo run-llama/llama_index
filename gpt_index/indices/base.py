@@ -2,24 +2,13 @@
 import json
 import logging
 from abc import abstractmethod
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union
 
-from gpt_index.data_structs.data_structs import IndexStruct, Node
-from gpt_index.docstore import DOC_TYPE, DocumentStore
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
+from gpt_index.data_structs.node_v2 import Node
+from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.node_utils import get_nodes_from_document
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
@@ -27,16 +16,14 @@ from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
 from gpt_index.logger import LlamaLogger
+from gpt_index.node_parser.interface import NodeParser
+from gpt_index.node_parser.simple import SimpleNodeParser
 from gpt_index.readers.schema.base import Document
 from gpt_index.response.schema import Response
-from gpt_index.schema import BaseDocument
 from gpt_index.token_counter.token_counter import llm_token_counter
 
-IS = TypeVar("IS", bound=IndexStruct)
-
-DOCUMENTS_INPUT = Union[BaseDocument, "BaseGPTIndex"]
+IS = TypeVar("IS", bound=V2IndexStruct)
 
 logger = logging.getLogger(__name__)
 
@@ -63,22 +50,22 @@ class BaseGPTIndex(Generic[IS]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IS] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         docstore: Optional[DocumentStore] = None,
         index_registry: Optional[IndexRegistry] = None,
         prompt_helper: Optional[PromptHelper] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        node_parser: Optional[NodeParser] = None,
         chunk_size_limit: Optional[int] = None,
         include_extra_info: bool = True,
         llama_logger: Optional[LlamaLogger] = None,
     ) -> None:
         """Initialize with parameters."""
-        if index_struct is None and documents is None:
+        if index_struct is None and nodes is None:
             raise ValueError("One of documents or index_struct must be provided.")
-        if index_struct is not None and documents is not None:
+        if index_struct is not None and nodes is not None:
             raise ValueError("Only one of documents or index_struct can be provided.")
 
         self._llm_predictor = llm_predictor or LLMPredictor()
@@ -90,30 +77,58 @@ class BaseGPTIndex(Generic[IS]):
         self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
             self._llm_predictor, chunk_size_limit=chunk_size_limit
         )
-        self._text_splitter = text_splitter or self._build_fallback_text_splitter()
 
-        # build index struct in the init function
         self._docstore = docstore or DocumentStore()
         self._index_registry = index_registry or IndexRegistry()
-
         self._llama_logger = llama_logger or LlamaLogger()
+        self._node_parser = node_parser or SimpleNodeParser()
 
-        if index_struct is not None:
+        if index_struct is None:
+            assert nodes is not None
+            self._docstore.add_documents(nodes)
+            index_struct = self.build_index_from_nodes(nodes)
             if not isinstance(index_struct, self.index_struct_cls):
                 raise ValueError(
-                    f"index_struct must be of type {self.index_struct_cls}"
+                    f"index_struct must be of type {self.index_struct_cls} "
+                    "but got {type(index_struct)}"
                 )
-            self._index_struct = index_struct
-        else:
-            documents = cast(Sequence[DOCUMENTS_INPUT], documents)
-            documents = self._process_documents(
-                documents, self._docstore, self._index_registry
-            )
-            self._validate_documents(documents)
-            # TODO: introduce document store outside __init__ function
-            self._index_struct = self.build_index_from_documents(documents)
+
+        self._index_struct = index_struct
         # update index registry and docstore with index_struct
         self._update_index_registry_and_docstore()
+
+    @classmethod
+    def from_documents(
+        cls,
+        documents: Sequence[Document],
+        docstore: Optional[DocumentStore] = None,
+        node_parser: Optional[NodeParser] = None,
+        **kwargs: Any,
+    ) -> "BaseGPTIndex":
+        """Create index from documents."""
+        node_parser = node_parser or SimpleNodeParser()
+        docstore = docstore or DocumentStore()
+
+        for doc in documents:
+            docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
+
+        nodes = node_parser.get_nodes_from_documents(documents)
+
+        return cls(
+            nodes=nodes,
+            docstore=docstore,
+            node_parser=node_parser,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_indices(
+        cls,
+        indices: Sequence["BaseGPTIndex"],
+        **kwargs: Any,
+    ) -> "BaseGPTIndex":
+        """Create index from other indices."""
+        raise NotImplementedError()
 
     @property
     def prompt_helper(self) -> PromptHelper:
@@ -154,46 +169,6 @@ class BaseGPTIndex(Generic[IS]):
         # if we want to break BW compatibility, we can just remove this line
         # and only insert into docstore during index construction.
         self._docstore.add_documents([self.index_struct], allow_update=True)
-
-    def _process_documents(
-        self,
-        documents: Sequence[DOCUMENTS_INPUT],
-        docstore: DocumentStore,
-        index_registry: IndexRegistry,
-    ) -> List[BaseDocument]:
-        """Process documents."""
-        results: List[DOC_TYPE] = []
-        for doc in documents:
-            if isinstance(doc, BaseGPTIndex):
-                # if user passed in another index, we need to do the following:
-                # - update docstore with the docstore in the index
-                # - validate that the index is in the docstore
-                # - update the index registry
-
-                index_registry.update(doc.index_registry)
-                docstore.update_docstore(doc.docstore)
-                # assert that the doc exists within the docstore
-                sub_index_struct = doc.index_struct_with_text
-                if not docstore.document_exists(sub_index_struct.get_doc_id()):
-                    raise ValueError(
-                        "The index struct of the sub-index must exist in the docstore. "
-                        f"Invalid doc ID: {sub_index_struct.get_doc_id()}"
-                    )
-                results.append(sub_index_struct)
-            elif isinstance(doc, Document):
-                docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
-                results.append(doc)
-            else:
-                raise ValueError(f"Invalid document type: {type(doc)}.")
-        return cast(List[BaseDocument], results)
-
-    def _validate_documents(self, documents: Sequence[BaseDocument]) -> None:
-        """Validate documents."""
-        for doc in documents:
-            if not isinstance(doc, BaseDocument):
-                raise ValueError(
-                    f"Documents must be of type BaseDocument, got {type(doc)} instead."
-                )
 
     @property
     def index_struct(self) -> IS:
@@ -260,48 +235,30 @@ class BaseGPTIndex(Generic[IS]):
             raise ValueError("Index must have doc_id property set.")
         return self._index_struct.doc_id
 
-    def _get_nodes_from_document(
-        self,
-        document: BaseDocument,
-        start_idx: int = 0,
-    ) -> List[Node]:
-        return get_nodes_from_document(
-            document=document,
-            text_splitter=self._text_splitter,
-            start_idx=start_idx,
-            include_extra_info=self._include_extra_info,
-        )
+    @abstractmethod
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
+        """Build the index from nodes."""
 
-    def _build_fallback_text_splitter(self) -> TextSplitter:
-        """Build the text splitter if not specified in args."""
-        return TokenTextSplitter()
+    @llm_token_counter("build_index_from_nodes")
+    def build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
+        """Build the index from nodes."""
+        return self._build_index_from_nodes(nodes)
 
     @abstractmethod
-    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
-        """Build the index from documents."""
-
-    @llm_token_counter("build_index_from_documents")
-    def build_index_from_documents(self, documents: Sequence[BaseDocument]) -> IS:
-        """Build the index from documents."""
-        return self._build_index_from_documents(documents)
-
-    @abstractmethod
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
-        """Insert a document."""
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+        """Insert nodes."""
 
     @llm_token_counter("insert")
-    def insert(self, document: DOCUMENTS_INPUT, **insert_kwargs: Any) -> None:
+    def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document.
 
         Args:
             document (Union[BaseDocument, BaseGPTIndex]): document to insert
 
         """
-        processed_doc = self._process_documents(
-            [document], self._docstore, self._index_registry
-        )[0]
-        self._validate_documents([processed_doc])
-        self._insert(processed_doc, **insert_kwargs)
+        nodes = self._node_parser.get_nodes_from_documents([document])
+        self.docstore.add_documents(nodes)
+        self._insert(nodes, **insert_kwargs)
 
     @abstractmethod
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
@@ -319,7 +276,7 @@ class BaseGPTIndex(Generic[IS]):
         logger.debug(f"> Deleting document: {doc_id}")
         self._delete(doc_id, **delete_kwargs)
 
-    def update(self, document: DOCUMENTS_INPUT, **update_kwargs: Any) -> None:
+    def update(self, document: Document, **update_kwargs: Any) -> None:
         """Update a document.
 
         This is equivalent to deleting the document and then inserting it again.
@@ -334,7 +291,7 @@ class BaseGPTIndex(Generic[IS]):
         self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
 
     def refresh(
-        self, documents: List[BaseDocument], **update_kwargs: Any
+        self, documents: Sequence[Document], **update_kwargs: Any
     ) -> List[bool]:
         """Refresh an index with documents that have changed.
 
@@ -504,14 +461,13 @@ class BaseGPTIndex(Generic[IS]):
         else:
             raise ValueError("index_struct or index_struct_id must be provided.")
 
-        type_to_struct = {cls.index_struct_cls.get_type(): cls.index_struct_cls}
-
         # NOTE: index_struct can have multiple types for backwards compatibility,
         # map to same class
         type_to_struct = {
             index_type: cls.index_struct_cls
             for index_type in cls.index_struct_cls.get_types()
         }
+        type_to_struct[Node.get_type()] = Node
 
         docstore = DocumentStore.load_from_dict(
             result_dict["docstore"],
@@ -571,7 +527,7 @@ class BaseGPTIndex(Generic[IS]):
     def save_to_dict(self, **save_kwargs: Any) -> dict:
         """Save to dict."""
         if self.docstore.contains_index_struct(
-            exclude_ids=[self.index_struct.get_doc_id()]
+            exclude_ids=[self.index_struct.get_doc_id()], exclude_types=[Node]
         ):
             raise ValueError(
                 "Cannot call save index if index is composed on top of "

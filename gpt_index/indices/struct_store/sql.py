@@ -4,8 +4,9 @@ from typing import Any, Dict, Optional, Sequence, Type
 
 from sqlalchemy import Table
 
-from gpt_index.data_structs.table import SQLStructTable
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.table_v2 import SQLStructTable
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -18,7 +19,6 @@ from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.schema import BaseDocument
 
 
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
@@ -55,7 +55,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[SQLStructTable] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         sql_database: Optional[SQLDatabase] = None,
@@ -74,11 +74,12 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         self._table_name = table_name
         self._table = table
 
+        # if documents aren't specified, pass in a blank []
         if index_struct is None:
-            documents = documents or []
+            nodes = nodes or []
 
         super().__init__(
-            documents=documents,
+            nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
             **kwargs,
@@ -91,17 +92,14 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             sql_context_container = container_builder.build_context_container()
         self.sql_context_container = sql_context_container
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
-    ) -> SQLStructTable:
-        """Build index from documents."""
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> SQLStructTable:
+        """Build index from nodes."""
         index_struct = self.index_struct_cls()
-        if len(documents) == 0:
+        if len(nodes) == 0:
             return index_struct
         else:
             data_extractor = SQLStructDatapointExtractor(
                 self._llm_predictor,
-                self._text_splitter,
                 self.schema_extract_prompt,
                 self.output_parser,
                 self.sql_database,
@@ -109,15 +107,14 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
                 table=self._table,
                 ref_doc_id_column=self._ref_doc_id_column,
             )
-            for d in documents:
-                data_extractor.insert_datapoint_from_document(d)
+            for node in nodes:
+                data_extractor.insert_datapoint_from_nodes([node])
         return index_struct
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         data_extractor = SQLStructDatapointExtractor(
             self._llm_predictor,
-            self._text_splitter,
             self.schema_extract_prompt,
             self.output_parser,
             self.sql_database,
@@ -125,7 +122,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             table=self._table,
             ref_doc_id_column=self._ref_doc_id_column,
         )
-        data_extractor.insert_datapoint_from_document(document)
+        data_extractor.insert_datapoint_from_nodes(nodes)
 
     @classmethod
     def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:

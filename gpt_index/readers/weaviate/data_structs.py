@@ -8,7 +8,9 @@ import json
 from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar, cast
 
-from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.data_structs.data_structs_v2 import Node
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
+from gpt_index.data_structs.node_v2 import DocumentRelationship
 from gpt_index.readers.weaviate.utils import (
     get_by_id,
     parse_get_response,
@@ -16,10 +18,10 @@ from gpt_index.readers.weaviate.utils import (
 )
 from gpt_index.utils import get_new_id
 
-IS = TypeVar("IS", bound=IndexStruct)
+IS = TypeVar("IS", bound=Node)
 
 
-class BaseWeaviateIndexStruct(Generic[IS]):
+class BaseWeaviateIndexStruct(IndexStruct, Generic[IS]):
     """Base Weaviate index struct."""
 
     @classmethod
@@ -159,16 +161,6 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         """Create schema."""
         return [
             {
-                "dataType": ["int"],
-                "description": "The index of the Node",
-                "name": "index",
-            },
-            {
-                "dataType": ["int[]"],
-                "description": "The child_indices of the Node",
-                "name": "child_indices",
-            },
-            {
                 "dataType": ["string"],
                 "description": "The ref_doc_id of the Node",
                 "name": "ref_doc_id",
@@ -197,12 +189,10 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         return Node(
             text=entry["text"],
             doc_id=entry["doc_id"],
-            index=int(entry["index"]),
-            child_indices=entry["child_indices"],
-            ref_doc_id=entry["ref_doc_id"],
             embedding=entry["_additional"]["vector"],
             extra_info=extra_info,
             node_info=node_info,
+            relationships={DocumentRelationship.SOURCE: entry["ref_doc_id"]},
         )
 
     @classmethod

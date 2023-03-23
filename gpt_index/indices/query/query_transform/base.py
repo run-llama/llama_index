@@ -6,7 +6,7 @@ from typing import Dict, Optional, Union, cast
 
 from langchain.input import print_text
 
-from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,

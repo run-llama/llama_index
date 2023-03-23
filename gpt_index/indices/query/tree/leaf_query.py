@@ -5,7 +5,8 @@ from typing import Any, Dict, Optional, cast
 
 from langchain.input import print_text
 
-from gpt_index.data_structs.data_structs import IndexGraph, Node
+from gpt_index.data_structs.data_structs_v2 import IndexGraph
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseBuilder
@@ -74,7 +75,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         """
         query_str = query_bundle.query_str
 
-        if len(selected_node.child_indices) == 0:
+        if len(self.index_struct.get_children(selected_node)) == 0:
             response_builder = ResponseBuilder(
                 self._prompt_helper,
                 self._llm_predictor,
@@ -97,10 +98,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             logger.debug(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query_level(
-                {
-                    i: self.index_struct.all_nodes[i]
-                    for i in selected_node.child_indices
-                },
+                self.index_struct.get_children(selected_node),
                 query_bundle,
                 level=level + 1,
             )
@@ -122,12 +120,16 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
     def _query_level(
         self,
-        cur_nodes: Dict[int, Node],
+        cur_node_ids: Dict[int, str],
         query_bundle: QueryBundle,
         level: int = 0,
     ) -> str:
         """Answer a query recursively."""
         query_str = query_bundle.query_str
+        cur_nodes = {
+            index: self._docstore.get_node(node_id)
+            for index, node_id in cur_node_ids.items()
+        }
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         if len(cur_node_list) == 1:

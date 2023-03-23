@@ -38,7 +38,7 @@ def test_passing_args_to_query(
     llm_predictor = LLMPredictor()
     prompt_helper = PromptHelper.from_llm_predictor(llm_predictor)
     # index construction should not use llm_predictor at all
-    index = GPTListIndex(
+    index = GPTListIndex.from_documents(
         [doc], llm_predictor=llm_predictor, prompt_helper=prompt_helper
     )
     # should use llm_predictor during query time

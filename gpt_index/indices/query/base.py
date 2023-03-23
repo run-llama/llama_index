@@ -7,7 +7,8 @@ from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar
 
 from langchain.input import print_text
 
-from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
@@ -35,7 +36,9 @@ from gpt_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.utils import truncate_text
 
-IS = TypeVar("IS", bound=IndexStruct)
+# to prevent us from having to remove all instances of v2 later
+IndexStruct = V2IndexStruct
+IS = TypeVar("IS", bound=V2IndexStruct)
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +149,8 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._llm_predictor = llm_predictor or LLMPredictor()
         # NOTE: the embed_model isn't used in all indices
         self._embed_model = embed_model or OpenAIEmbedding()
+        if docstore is None:
+            raise ValueError("docstore must be provided.")
         self._docstore = docstore
         self._query_runner = query_runner
         # TODO: make this a required param

@@ -107,7 +107,7 @@ class SQLContextContainerBuilder:
         for table_name, context_str in full_context_dict.items():
             doc = Document(context_str, extra_info={"table_name": table_name})
             context_docs.append(doc)
-        index = index_cls(
+        index = index_cls.from_documents(
             documents=context_docs,
             **index_kwargs,
         )

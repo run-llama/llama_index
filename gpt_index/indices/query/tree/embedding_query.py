@@ -3,7 +3,8 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from gpt_index.data_structs.data_structs import IndexGraph, Node
+from gpt_index.data_structs.data_structs_v2 import IndexGraph
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
@@ -65,10 +66,15 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
 
     def _query_level(
         self,
-        cur_nodes: Dict[int, Node],
+        cur_node_ids: Dict[int, str],
         query_bundle: QueryBundle,
         level: int = 0,
     ) -> str:
+        """Answer a query recursively."""
+        cur_nodes = {
+            index: self._docstore.get_node(node_id)
+            for index, node_id in cur_node_ids.items()
+        }
         cur_node_list = get_sorted_node_list(cur_nodes)
 
         # Get the node with the highest similarity to the query

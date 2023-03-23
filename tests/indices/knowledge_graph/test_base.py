@@ -90,9 +90,10 @@ def test_build_kg(
     documents: List[Document],
 ) -> None:
     """Test build knowledge graph."""
-    index = GPTKnowledgeGraphIndex(documents)
+    index = GPTKnowledgeGraphIndex.from_documents(documents)
     # NOTE: in these unit tests, document text == triplets
-    table_chunks = {n.text for n in index.index_struct.text_chunks.values()}
+    nodes = index.docstore.get_nodes(list(index.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 3
     assert "(foo, is, bar)" in table_chunks
     assert "(hello, is not, world)" in table_chunks
@@ -132,7 +133,7 @@ def test_build_kg_similarity(
     documents: List[Document],
 ) -> None:
     """Test build knowledge graph."""
-    index = GPTKnowledgeGraphIndex(documents, include_embeddings=True)
+    index = GPTKnowledgeGraphIndex.from_documents(documents, include_embeddings=True)
     # get embedding dict from KG index struct
     rel_text_embeddings = index.index_struct.embedding_dict
 
@@ -156,7 +157,7 @@ def test_query(
     documents: List[Document],
 ) -> None:
     """Test query."""
-    index = GPTKnowledgeGraphIndex(documents)
+    index = GPTKnowledgeGraphIndex.from_documents(documents)
     response = index.query("foo")
     # when include_text is True, the first node is the raw text
     assert str(response) == "foo:(foo, is, bar)"
@@ -224,7 +225,7 @@ def test_query_similarity(
     documents: List[Document],
 ) -> None:
     """Test query."""
-    index = GPTKnowledgeGraphIndex(documents, include_embeddings=True)
+    index = GPTKnowledgeGraphIndex.from_documents(documents, include_embeddings=True)
 
     # returns only two rel texts to use for generating response
     # uses hyrbid query by default

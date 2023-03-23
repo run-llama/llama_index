@@ -93,9 +93,10 @@ def test_sql_index(
     index_kwargs, _ = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     sql_database = SQLDatabase(engine)
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
+    assert isinstance(index, GPTSQLStructStoreIndex)
 
     # test that the document is inserted
     stmt = select([column("user_id"), column("foo")]).select_from(test_table)
@@ -108,10 +109,11 @@ def test_sql_index(
     delete_stmt = delete(test_table)
     with engine.connect() as connection:
         connection.execute(delete_stmt)
-    docs = [Document(text="user_id:2\nfoo:bar"), Document(text="user_id:8\nfoo:hello")]
-    index = GPTSQLStructStoreIndex(
+    docs = [Document(text="user_id:2,foo:bar\nuser_id:8,foo:hello")]
+    index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
+    assert isinstance(index, GPTSQLStructStoreIndex)
     # test that the document is inserted
     stmt = select([column("user_id"), column("foo")]).select_from(test_table)
     engine = index.sql_database.engine
@@ -159,13 +161,14 @@ def test_sql_index_with_context(
         sql_database, context_dict=table_context_dict
     ).build_context_container(ignore_db_schema=True)
 
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
         **index_kwargs
     )
+    assert isinstance(index, GPTSQLStructStoreIndex)
     assert index.sql_context_container.context_dict == table_context_dict
     _delete_table_items(engine, test_table)
 
@@ -175,13 +178,14 @@ def test_sql_index_with_context(
         sql_database, context_dict=table_context_dict
     ).build_context_container()
 
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
         **index_kwargs
     )
+    assert isinstance(index, GPTSQLStructStoreIndex)
     for k, v in table_context_dict.items():
         context_dict = index.sql_context_container.context_dict
         assert context_dict is not None
@@ -204,13 +208,14 @@ def test_sql_index_with_context(
     sql_context_container = sql_context_builder.build_context_container(
         ignore_db_schema=True
     )
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
         **index_kwargs
     )
+    assert isinstance(index, GPTSQLStructStoreIndex)
     assert index.sql_context_container.context_dict == {
         "test_table": "extract_test:test_table_context"
     }
@@ -304,7 +309,7 @@ def test_sql_index_with_index_context(
     assert context_response == "Context query?:table_name: test_table"
     assert sql_context_container.context_str == context_response
 
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
@@ -340,7 +345,7 @@ def test_sql_index_query(
     metadata_obj.create_all()
     sql_database = SQLDatabase(engine)
     # NOTE: we can use the default output parser for this
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
 

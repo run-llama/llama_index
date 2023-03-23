@@ -2,9 +2,10 @@
 
 from typing import Dict, Type
 
-from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.readers.schema.base import Document
+from gpt_index.schema import BaseDocument
 
 
 def test_docstore() -> None:
@@ -12,7 +13,7 @@ def test_docstore() -> None:
     doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
     node = Node("my node", doc_id="d2", node_info={"node": "info"})
 
-    type_to_struct: Dict[str, Type[IndexStruct]] = {"node": Node}
+    type_to_struct: Dict[str, Type[BaseDocument]] = {"node": Node}
 
     # test get document
     docstore = DocumentStore.from_documents([doc, node])
@@ -36,9 +37,7 @@ def test_docstore() -> None:
         "embedding": None,
         "extra_info": None,
         "node_info": {"node": "info"},
-        "index": 0,
-        "child_indices": [],
-        "ref_doc_id": None,
+        "relationships": {},
         "image": None,
         "__type__": "node",
     }

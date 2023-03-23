@@ -43,8 +43,9 @@ def test_build_table(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex(documents)
-    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    table = GPTSimpleKeywordTableIndex.from_documents(documents)
+    nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 4
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
@@ -85,8 +86,9 @@ def test_build_table_async(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex(documents, use_async=True)
-    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    table = GPTSimpleKeywordTableIndex.from_documents(documents, use_async=True)
+    nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 4
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
@@ -125,7 +127,8 @@ def test_insert(
     table = GPTSimpleKeywordTableIndex([])
     assert len(table.index_struct.table.keys()) == 0
     table.insert(documents[0])
-    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
     assert "Hello world." in table_chunks
     assert "This is a test." in table_chunks
     assert "This is another test." in table_chunks
@@ -154,10 +157,13 @@ def test_insert(
     chunk_index1_2 = list(table.index_struct.table["is"])[0]
     chunk_index2_1 = list(table.index_struct.table["test"])[0]
     chunk_index2_2 = list(table.index_struct.table["v3"])[0]
-    assert table.index_struct.text_chunks[chunk_index1_1].ref_doc_id == "test_id1"
-    assert table.index_struct.text_chunks[chunk_index1_2].ref_doc_id == "test_id1"
-    assert table.index_struct.text_chunks[chunk_index2_1].ref_doc_id == "test_id2"
-    assert table.index_struct.text_chunks[chunk_index2_2].ref_doc_id == "test_id2"
+    nodes = table.docstore.get_nodes(
+        [chunk_index1_1, chunk_index1_2, chunk_index2_1, chunk_index2_2]
+    )
+    assert nodes[0].ref_doc_id == "test_id1"
+    assert nodes[1].ref_doc_id == "test_id1"
+    assert nodes[2].ref_doc_id == "test_id2"
+    assert nodes[3].ref_doc_id == "test_id2"
 
 
 @patch_common
@@ -181,19 +187,21 @@ def test_delete(
     ]
 
     # test delete
-    table = GPTSimpleKeywordTableIndex(new_documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(new_documents)
     table.delete("test_id_1")
     assert len(table.index_struct.table.keys()) == 6
     print(table.index_struct.table.keys())
     assert len(table.index_struct.table["this"]) == 2
-    node_texts = {n.text for n in table.index_struct.text_chunks.values()}
+    nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
+    node_texts = {n.get_text() for n in nodes}
     assert node_texts == {"This is another test.", "This is a test v2."}
 
-    table = GPTSimpleKeywordTableIndex(new_documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(new_documents)
     table.delete("test_id_2")
     assert len(table.index_struct.table.keys()) == 7
     assert len(table.index_struct.table["this"]) == 2
-    node_texts = {n.text for n in table.index_struct.text_chunks.values()}
+    nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
+    node_texts = {n.get_text() for n in nodes}
     assert node_texts == {"Hello world.", "This is a test.", "This is a test v2."}
 
 
@@ -218,7 +226,7 @@ def test_query(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex(documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(documents)
 
     response = table.query("Hello", mode="simple")
     assert str(response) == "Hello:Hello world."
@@ -228,7 +236,7 @@ def test_query(
         "Hello world\n" "Hello foo\n" "This is another test\n" "This is a test v2"
     )
     documents2 = [Document(doc_text)]
-    table2 = GPTSimpleKeywordTableIndex(documents2)
+    table2 = GPTSimpleKeywordTableIndex.from_documents(documents2)
     # NOTE: required keywords are somewhat redundant
     response = table2.query("This", mode="simple", required_keywords=["v2"])
     assert str(response) == "This:This is a test v2"

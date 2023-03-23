@@ -2,8 +2,10 @@
 
 from typing import Any, Dict, Optional, Sequence, Type
 
-from gpt_index.data_structs.data_structs import IndexGraph
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
+# from gpt_index.data_structs.data_structs import IndexGraph
+from gpt_index.data_structs.data_structs_v2 import IndexGraph
+from gpt_index.data_structs.node_v2 import Node
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
@@ -13,13 +15,12 @@ from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
 from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.tree.inserter import GPTIndexInserter
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
 from gpt_index.prompts.prompts import SummaryPrompt, TreeInsertPrompt
-from gpt_index.schema import BaseDocument
 
 REQUIRE_TREE_MODES = {
     QueryMode.DEFAULT,
@@ -53,13 +54,13 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexGraph] = None,
         summary_template: Optional[SummaryPrompt] = None,
         insert_prompt: Optional[TreeInsertPrompt] = None,
         num_children: int = 10,
         llm_predictor: Optional[LLMPredictor] = None,
-        text_splitter: Optional[TextSplitter] = None,
+        node_parser: Optional[NodeParser] = None,
         build_tree: bool = True,
         use_async: bool = False,
         **kwargs: Any,
@@ -72,10 +73,10 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         self.build_tree = build_tree
         self._use_async = use_async
         super().__init__(
-            documents=documents,
+            nodes=nodes,
             index_struct=index_struct,
             llm_predictor=llm_predictor,
-            text_splitter=text_splitter,
+            node_parser=node_parser,
             **kwargs,
         )
 
@@ -88,12 +89,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             QueryMode.RETRIEVE: GPTTreeIndexRetQuery,
             QueryMode.SUMMARIZE: GPTTreeIndexSummarizeQuery,
         }
-
-    def _build_fallback_text_splitter(self) -> TextSplitter:
-        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
-        return self._prompt_helper.get_text_splitter_given_prompt(
-            self.summary_template, self.num_children
-        )
 
     def _validate_build_tree_required(self, mode: QueryMode) -> None:
         """Check if index supports modes that require trees."""
@@ -108,26 +103,21 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         super()._preprocess_query(mode, query_kwargs)
         self._validate_build_tree_required(mode)
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
-    ) -> IndexGraph:
-        """Build the index from documents."""
-        # do simple concatenation
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexGraph:
+        """Build the index from nodes."""
         index_builder = GPTTreeIndexBuilder(
             self.num_children,
             self.summary_template,
             self._llm_predictor,
             self._prompt_helper,
-            self._text_splitter,
             use_async=self._use_async,
             llama_logger=self._llama_logger,
+            docstore=self._docstore,
         )
-        index_graph = index_builder.build_from_text(
-            documents, build_tree=self.build_tree
-        )
+        index_graph = index_builder.build_from_nodes(nodes, build_tree=self.build_tree)
         return index_graph
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         # TODO: allow to customize insert prompt
         inserter = GPTIndexInserter(
@@ -137,9 +127,10 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             summary_prompt=self.summary_template,
             llm_predictor=self._llm_predictor,
             prompt_helper=self._prompt_helper,
-            text_splitter=self._text_splitter,
+            node_parser=self._node_parser,
+            docstore=self._docstore,
         )
-        inserter.insert(document)
+        inserter.insert(nodes)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

@@ -6,7 +6,7 @@ from typing import Any, Callable, Optional
 import pandas as pd
 from langchain.input import print_text
 
-from gpt_index.data_structs.table import PandasStructTable
+from gpt_index.data_structs.table_v2 import PandasStructTable
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT

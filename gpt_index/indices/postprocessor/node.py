@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, cast
 
 from pydantic import BaseModel, Field
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.postprocessor import BasePostprocessor
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 

@@ -61,9 +61,9 @@ def test_get_set_compare(
     documents = [Document("They're taking the Hobbits to Isengard!")]
 
     indices = [
-        GPTSimpleVectorIndex(documents=documents),
-        GPTListIndex(documents=documents),
-        GPTTreeIndex(documents=documents),
+        GPTSimpleVectorIndex.from_documents(documents=documents),
+        GPTListIndex.from_documents(documents),
+        GPTTreeIndex.from_documents(documents=documents),
     ]
 
     playground = Playground(indices=indices)  # type: ignore
@@ -75,7 +75,7 @@ def test_get_set_compare(
     assert len(results) > 0
     assert len(results) <= 3 * len(DEFAULT_MODES)
 
-    playground.indices = [GPTSimpleVectorIndex(documents=documents)]
+    playground.indices = [GPTSimpleVectorIndex.from_documents(documents=documents)]
     playground.modes = ["default", "summarize"]
 
     assert len(playground.indices) == 1

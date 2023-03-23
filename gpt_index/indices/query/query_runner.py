@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Union, cast
 
-from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.docstore import DocumentStore
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
