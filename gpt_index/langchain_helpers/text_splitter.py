@@ -313,6 +313,7 @@ class SentenceSplitter(TokenTextSplitter):
         else:
             effective_chunk_size = self._chunk_size
 
+        # First we split paragraphs using separator
         splits = text.split(self.paragraph_separator)
 
         # Merge paragraphs that are too small.
@@ -320,7 +321,7 @@ class SentenceSplitter(TokenTextSplitter):
         idx = 0
         while idx < len(splits):
             if idx < len(splits) - 1 and len(splits[idx]) < effective_chunk_size:
-                splits[idx] = splits[idx] + splits[idx + 1]
+                splits[idx] = "\n\n".join([splits[idx], splits[idx + 1]])
                 splits.pop(idx + 1)
             else:
                 idx += 1
