@@ -12,6 +12,7 @@ from gpt_index.langchain_helpers.chain_wrapper import (
     LLMMetadata,
     LLMPredictor,
 )
+from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_predict import (
@@ -28,7 +29,6 @@ from tests.mock_utils.mock_prompts import (
 from tests.mock_utils.mock_text_splitter import (
     mock_token_splitter_newline_with_overlaps,
 )
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 
 
 @pytest.fixture

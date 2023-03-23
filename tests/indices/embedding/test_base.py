@@ -6,7 +6,6 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.embeddings.base import mean_agg
 from gpt_index.embeddings.openai import OpenAIEmbedding
@@ -17,6 +16,7 @@ from gpt_index.langchain_helpers.chain_wrapper import (
     LLMMetadata,
     LLMPredictor,
 )
+from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_predict import mock_llmchain_predict
