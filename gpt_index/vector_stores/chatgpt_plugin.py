@@ -131,7 +131,7 @@ class ChatGPTRetrievalPluginClient(VectorStore):
         # TODO: add metadata filter
         queries = [{"query": query_str, "top_k": similarity_top_k}]
         res = requests.post(
-            "http://0.0.0.0:8000/query", headers=headers, json={"queries": queries}
+            f"{self._endpoint_url}/query", headers=headers, json={"queries": queries}
         )
 
         nodes = []
