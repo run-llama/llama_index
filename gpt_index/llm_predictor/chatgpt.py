@@ -48,7 +48,6 @@ class ChatGPTLLMPredictor(LLMPredictor):
         **kwargs: Any
     ) -> None:
         """Initialize params."""
-
         super().__init__(
             llm=llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"), **kwargs
         )
@@ -58,7 +57,6 @@ class ChatGPTLLMPredictor(LLMPredictor):
         self, prompt: Prompt
     ) -> Union[ChatPromptTemplate, BasePromptTemplate]:
         """Add prepend_messages to prompt."""
-
         lc_prompt = prompt.get_langchain_prompt(llm=self._llm)
         if self.prepend_messages:
             if isinstance(lc_prompt, PromptTemplate):
