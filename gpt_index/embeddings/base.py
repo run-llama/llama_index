@@ -152,6 +152,8 @@ class BaseEmbedding:
                 result_ids.extend(cur_batch_ids)
                 result_embeddings.extend(embeddings)
 
+                cur_batch = []
+
         # reset queue
         self._text_queue = []
         return result_ids, result_embeddings
