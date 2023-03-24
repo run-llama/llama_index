@@ -1,5 +1,6 @@
 """Vector stores."""
 
+from gpt_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from gpt_index.vector_stores.chroma import ChromaVectorStore
 from gpt_index.vector_stores.faiss import FaissVectorStore
 from gpt_index.vector_stores.opensearch import (
@@ -20,4 +21,5 @@ __all__ = [
     "ChromaVectorStore",
     "OpensearchVectorStore",
     "OpensearchVectorClient",
+    "ChatGPTRetrievalPluginClient",
 ]

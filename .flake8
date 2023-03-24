@@ -4,6 +4,7 @@ exclude =
     __pycache__
     notebooks
     .ipynb_checkpoints
+    examples
 # Recommend matching the black line length (default 88),
 # rather than using the flake8 default of 79:
 max-line-length = 88

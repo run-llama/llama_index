@@ -94,6 +94,7 @@ class SimpleVectorStore(VectorStore):
         query_embedding: List[float],
         similarity_top_k: int,
         doc_ids: Optional[List[str]] = None,
+        query_str: Optional[str] = None,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
         # TODO: consolidate with get_query_text_embedding_similarities

@@ -37,6 +37,7 @@ class VectorStore(Protocol):
     """Abstract vector store protocol."""
 
     stores_text: bool
+    is_embedding_query: bool = True
 
     @property
     def client(self) -> Any:
@@ -64,6 +65,7 @@ class VectorStore(Protocol):
         query_embedding: List[float],
         similarity_top_k: int,
         doc_ids: Optional[List[str]] = None,
+        query_str: Optional[str] = None,
     ) -> VectorStoreQueryResult:
         """Query vector store."""
         ...
