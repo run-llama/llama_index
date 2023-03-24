@@ -48,8 +48,10 @@ class ChatGPTLLMPredictor(LLMPredictor):
         **kwargs: Any
     ) -> None:
         """Initialize params."""
-        
-        super().__init__(llm=llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"), **kwargs)
+
+        super().__init__(
+            llm=llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"), **kwargs
+        )
         self.prepend_messages = prepend_messages
 
     def _get_langchain_prompt(
