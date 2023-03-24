@@ -128,7 +128,8 @@ class ChatGPTRetrievalPluginClient(VectorStore):
         if query_str is None:
             raise ValueError("query_str must be provided")
         headers = {"Authorization": f"Bearer {self._bearer_token}"}
-        queries = [{"query": query_str}]
+        # TODO: add metadata filter
+        queries = [{"query": query_str, "top_k": similarity_top_k}]
         res = requests.post(
             "http://0.0.0.0:8000/query", headers=headers, json={"queries": queries}
         )

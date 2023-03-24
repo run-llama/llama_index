@@ -15,6 +15,8 @@ from gpt_index.readers.discord_reader import DiscordReader
 from gpt_index.readers.elasticsearch import ElasticsearchReader
 from gpt_index.readers.faiss import FaissReader
 
+from gpt_index.readers.chatgpt_plugin import ChatGPTRetrievalPluginReader
+
 # readers
 from gpt_index.readers.file.base import SimpleDirectoryReader
 from gpt_index.readers.github_readers.github_repository_reader import (
@@ -72,4 +74,5 @@ __all__ = [
     "MboxReader",
     "ElasticsearchReader",
     "SteamshipFileReader",
+    "ChatGPTRetrievalPluginReader",
 ]
