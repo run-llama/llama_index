@@ -386,6 +386,15 @@ class OpensearchIndexDict(IndexDict):
         return IndexStructType.OPENSEARCH
 
 
+class ChatGPTRetrievalPluginIndexDict(IndexDict):
+    """Index dict for ChatGPT Retrieval Plugin."""
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.CHATGPT_RETRIEVAL_PLUGIN
+
+
 class EmptyIndex(IndexStruct):
     """Empty index."""
 
