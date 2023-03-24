@@ -97,7 +97,7 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "------------\n"
     "Given the new context, refine the original answer to better "
     "answer the question. "
-    "If the context isn't useful, return the original answer."
+    "If the context isn't useful or the original answer is good enough, return the original answer and do not add any text to it."
 )
 DEFAULT_REFINE_PROMPT = RefinePrompt(DEFAULT_REFINE_PROMPT_TMPL)
 
