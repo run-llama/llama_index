@@ -2,7 +2,10 @@
 
 from typing import Any, Dict, Optional, Sequence, Type, cast
 
+from requests.adapters import Retry
+
 from gpt_index.data_structs.data_structs import (
+    ChatGPTRetrievalPluginIndexDict,
     ChromaIndexDict,
     FaissIndexDict,
     IndexDict,
@@ -17,6 +20,7 @@ from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.queries import (
+    ChatGPTRetrievalPluginQuery,
     GPTChromaIndexQuery,
     GPTFaissIndexQuery,
     GPTOpensearchIndexQuery,
@@ -29,6 +33,7 @@ from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.vector_stores import (
+    ChatGPTRetrievalPluginClient,
     ChromaVectorStore,
     FaissVectorStore,
     PineconeVectorStore,
@@ -606,3 +611,77 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
         del query_kwargs["vector_store"]
         vector_store = cast(OpensearchVectorStore, self._vector_store)
         query_kwargs["client"] = vector_store._client
+
+
+class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
+    """ChatGPTRetrievalPlugin index.
+
+    This index directly interfaces with any server that hosts
+    the ChatGPT Retrieval Plugin interface:
+    https://github.com/openai/chatgpt-retrieval-plugin.
+
+    Args:
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
+        client (Optional[OpensearchVectorClient]): The client which encapsulates
+            logic for using Opensearch as a vector store (that is, it holds stuff
+            like endpoint, index_name and performs operations like initializing the
+            index and adding new doc/embeddings to said index).
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
+            embedding similarity.
+    """
+
+    index_struct_cls: Type[IndexDict] = ChatGPTRetrievalPluginIndexDict
+
+    def __init__(
+        self,
+        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        index_struct: Optional[ChatGPTRetrievalPluginIndexDict] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        llm_predictor: Optional[LLMPredictor] = None,
+        embed_model: Optional[BaseEmbedding] = None,
+        endpoint_url: Optional[str] = None,
+        bearer_token: Optional[str] = None,
+        retries: Optional[Retry] = None,
+        batch_size: int = 100,
+        **kwargs: Any,
+    ) -> None:
+        """Init params."""
+        if endpoint_url is None:
+            raise ValueError("endpoint_url is required.")
+        if bearer_token is None:
+            raise ValueError("bearer_token is required.")
+        vector_store = ChatGPTRetrievalPluginClient(
+            endpoint_url,
+            bearer_token,
+            retries=retries,
+            batch_size=batch_size,
+        )
+        super().__init__(
+            documents=documents,
+            index_struct=index_struct,
+            text_qa_template=text_qa_template,
+            llm_predictor=llm_predictor,
+            embed_model=embed_model,
+            vector_store=vector_store,
+            **kwargs,
+        )
+
+    @classmethod
+    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: ChatGPTRetrievalPluginQuery,
+            QueryMode.EMBEDDING: ChatGPTRetrievalPluginQuery,
+        }
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        del query_kwargs["vector_store"]
+        vector_store = cast(ChatGPTRetrievalPluginClient, self._vector_store)
+        query_kwargs["endpoint_url"] = vector_store._endpoint_url
+        query_kwargs["bearer_token"] = vector_store._bearer_token
+        query_kwargs["retries"] = vector_store._retries
+        query_kwargs["batch_size"] = vector_store._batch_size

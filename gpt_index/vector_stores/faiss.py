@@ -124,6 +124,7 @@ class FaissVectorStore(VectorStore):
         query_embedding: List[float],
         similarity_top_k: int,
         doc_ids: Optional[List[str]] = None,
+        query_str: Optional[str] = None,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
