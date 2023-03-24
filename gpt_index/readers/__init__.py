@@ -10,12 +10,11 @@ definition of a Document - the bare minimum is a `text` property.
 
 """
 
+from gpt_index.readers.chatgpt_plugin import ChatGPTRetrievalPluginReader
 from gpt_index.readers.chroma import ChromaReader
 from gpt_index.readers.discord_reader import DiscordReader
 from gpt_index.readers.elasticsearch import ElasticsearchReader
 from gpt_index.readers.faiss import FaissReader
-
-from gpt_index.readers.chatgpt_plugin import ChatGPTRetrievalPluginReader
 
 # readers
 from gpt_index.readers.file.base import SimpleDirectoryReader

@@ -1,13 +1,13 @@
 """ChatGPT Plugin."""
 
-from typing import Any
+import os
+from typing import Any, List, Optional
+
+import requests
+from requests.adapters import HTTPAdapter, Retry
+
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
-from typing import Optional, List
-from requests.adapters import Retry
-import requests
-from requests.adapters import HTTPAdapter
-import os
 
 
 class ChatGPTRetrievalPluginReader(BaseReader):
@@ -20,7 +20,7 @@ class ChatGPTRetrievalPluginReader(BaseReader):
         retries: Optional[Retry] = None,
         batch_size: int = 100,
     ) -> None:
-        """ChatGPT Retrieval plugin."""
+        """Chatgpt Retrieval Plugin."""
         self._endpoint_url = endpoint_url
         self._bearer_token = bearer_token or os.getenv("BEARER_TOKEN")
         self._retries = retries
