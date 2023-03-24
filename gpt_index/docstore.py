@@ -65,6 +65,8 @@ class DocumentStore(DataClassJsonMixin):
             doc_type = doc_dict.pop(TYPE_KEY, None)
             if doc_type == "Document" or doc_type is None:
                 doc: BaseDocument = Document.from_dict(doc_dict)
+            elif doc_type == Node.get_type():
+                doc: Node = Node.from_dict(doc_dict)
             else:
                 if type_to_struct is None:
                     raise ValueError(

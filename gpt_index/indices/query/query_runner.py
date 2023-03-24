@@ -16,7 +16,6 @@ from gpt_index.indices.query.query_transform.base import (
     IdentityQueryTransform,
 )
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
-from gpt_index.indices.registry import INDEX_STRUT_TYPE_TO_QUERY_MAP
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
 
@@ -141,6 +140,7 @@ class QueryRunner(BaseQueryRunner):
         config = self._get_query_config(index_struct)
         mode = config.query_mode
 
+        from gpt_index.indices.registry import INDEX_STRUT_TYPE_TO_QUERY_MAP
         query_cls = INDEX_STRUT_TYPE_TO_QUERY_MAP[index_struct_type][mode]
         # if recursive, pass self as query_runner to each individual query
         query_runner = self
