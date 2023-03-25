@@ -1,6 +1,7 @@
 """Query runner."""
 
-from typing import Any, Dict, List, Optional, Union, cast
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.docstore import DocumentStore
@@ -21,6 +22,51 @@ from gpt_index.response.schema import Response
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
 
 
+@dataclass
+class QueryConfigMap:
+    type_to_config_dict: Dict[str, QueryConfig]
+    id_to_config_dict: Dict[str, QueryConfig]
+
+    def get(self, index_struct: IndexStruct) -> QueryConfig:
+        """Get query config."""
+        index_struct_id = index_struct.get_doc_id()
+        index_struct_type = index_struct.get_type()
+        if index_struct_id in self.id_to_config_dict:
+            config = self.id_to_config_dict[index_struct_id]
+        elif index_struct_type in self._type_to_config_dict:
+            config = self.type_to_config_dict[index_struct_type]
+        else:
+            config = QueryConfig(
+                index_struct_type=index_struct_type, query_mode=QueryMode.DEFAULT
+            )
+        return config
+
+
+def _get_query_config_map(query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None) -> QueryConfigMap:
+    """Parse query config dicts."""
+    type_to_config_dict: Dict[str, QueryConfig] = {}
+    id_to_config_dict: Dict[str, QueryConfig] = {}
+    if query_configs is None or len(query_configs) == 0:
+        query_config_objs: List[QueryConfig] = []
+    elif isinstance(query_configs[0], Dict):
+        query_config_objs = [
+            QueryConfig.from_dict(cast(Dict, qc)) for qc in query_configs
+        ]
+    else:
+        query_config_objs = [cast(QueryConfig, q) for q in query_configs]
+
+    for qc in query_config_objs:
+        type_to_config_dict[qc.index_struct_type] = qc
+        if qc.index_struct_id is not None:
+            id_to_config_dict[qc.index_struct_id] = qc
+            
+    return QueryConfigMap(
+        type_to_config_dict, 
+        id_to_config_dict
+    )
+
+    
+
 class QueryRunner(BaseQueryRunner):
     """Tool to take in a query request and perform a query with the right classes.
 
@@ -30,6 +76,7 @@ class QueryRunner(BaseQueryRunner):
 
     def __init__(
         self,
+        index_struct: IndexStruct,
         service_context: ServiceContext,
         docstore: DocumentStore,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
@@ -39,28 +86,17 @@ class QueryRunner(BaseQueryRunner):
         use_async: bool = False,
     ) -> None:
         """Init params."""
-        type_to_config_dict: Dict[str, QueryConfig] = {}
-        id_to_config_dict: Dict[str, QueryConfig] = {}
-        if query_configs is None or len(query_configs) == 0:
-            query_config_objs: List[QueryConfig] = []
-        elif isinstance(query_configs[0], Dict):
-            query_config_objs = [
-                QueryConfig.from_dict(cast(Dict, qc)) for qc in query_configs
-            ]
-        else:
-            query_config_objs = [cast(QueryConfig, q) for q in query_configs]
-
-        for qc in query_config_objs:
-            type_to_config_dict[qc.index_struct_type] = qc
-            if qc.index_struct_id is not None:
-                id_to_config_dict[qc.index_struct_id] = qc
-
-        self._type_to_config_dict = type_to_config_dict
-        self._id_to_config_dict = id_to_config_dict
+        # data and services
+        self._index_struct = index_struct
         self._service_context = service_context
         self._docstore = docstore
+
+        # query configurations and transformation
+        self._query_config_map = _get_query_config_map(query_configs)
         self._query_transform = query_transform or IdentityQueryTransform()
         self._query_combiner = query_combiner
+
+        # additional configs
         self._recursive = recursive
         self._use_async = use_async
 
@@ -79,23 +115,10 @@ class QueryRunner(BaseQueryRunner):
             query_kwargs["embed_model"] = self._embed_model
         return query_kwargs
 
-    def _get_query_config(self, index_struct: IndexStruct) -> QueryConfig:
-        """Get query config."""
-        index_struct_id = index_struct.get_doc_id()
-        index_struct_type = index_struct.get_type()
-        if index_struct_id in self._id_to_config_dict:
-            config = self._id_to_config_dict[index_struct_id]
-        elif index_struct_type in self._type_to_config_dict:
-            config = self._type_to_config_dict[index_struct_type]
-        else:
-            config = QueryConfig(
-                index_struct_type=index_struct_type, query_mode=QueryMode.DEFAULT
-            )
-        return config
 
     def _get_query_transform(self, index_struct: IndexStruct) -> BaseQueryTransform:
         """Get query transform."""
-        config = self._get_query_config(index_struct)
+        config = self._query_config_map.get(index_struct)
         if config.query_transform is not None:
             query_transform = cast(BaseQueryTransform, config.query_transform)
         else:
@@ -106,7 +129,7 @@ class QueryRunner(BaseQueryRunner):
         self, index_struct: IndexStruct, query_transform: BaseQueryTransform
     ) -> BaseQueryCombiner:
         """Get query transform."""
-        config = self._get_query_config(index_struct)
+        config = self._query_config_map.get(index_struct)
         if config.query_combiner is not None:
             query_combiner: Optional[BaseQueryCombiner] = cast(
                 BaseQueryCombiner, config.query_combiner
@@ -131,7 +154,7 @@ class QueryRunner(BaseQueryRunner):
     ) -> BaseGPTIndexQuery:
         """Get query object."""
         index_struct_type = index_struct.get_type()
-        config = self._get_query_config(index_struct)
+        config = self._query_config_map.get(index_struct)
         mode = config.query_mode
 
         from gpt_index.indices.registry import INDEX_STRUT_TYPE_TO_QUERY_MAP
