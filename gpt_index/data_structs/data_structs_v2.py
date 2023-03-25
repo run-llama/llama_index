@@ -4,22 +4,28 @@ Nodes are decoupled from the indices.
 
 """
 
+from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple
+from dataclasses_json import DataClassJsonMixin
 
 from pydantic import Json
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.schema import BaseDocument
 
 
 TYPE_KEY = '__type__'
 DATA_KEY = 'struct'
 
 @dataclass
-class V2IndexStruct(BaseDocument):
+class V2IndexStruct(DataClassJsonMixin):
     """A base data struct for a LlamaIndex."""
+
+    @classmethod
+    @abstractmethod
+    def get_type(cls) -> str:
+        """Get Document type."""
 
     def to_dict(self, encode_json=False) -> Dict[str, Json]:
         out_dit = {
