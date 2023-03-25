@@ -26,6 +26,7 @@ from gpt_index.indices.response.builder import (
     ResponseMode,
     TextChunk,
 )
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.logger.base import LlamaLogger
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
@@ -115,16 +116,9 @@ class BaseGPTIndexQuery(Generic[IS]):
     def __init__(
         self,
         index_struct: IS,
-        # TODO: pass from superclass
-        llm_predictor: Optional[LLMPredictor] = None,
-        prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[BaseEmbedding] = None,
+        service_context: Optional[ServiceContext] = None,
         docstore: Optional[DocumentStore] = None,
         query_runner: Optional[BaseQueryRunner] = None,
-        # TODO: deprecated
-        required_keywords: Optional[List[str]] = None,
-        # TODO: deprecated
-        exclude_keywords: Optional[List[str]] = None,
         response_mode: ResponseMode = ResponseMode.DEFAULT,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
@@ -138,7 +132,6 @@ class BaseGPTIndexQuery(Generic[IS]):
         doc_ids: Optional[List[str]] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        llama_logger: Optional[LlamaLogger] = None,
         verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
@@ -146,22 +139,12 @@ class BaseGPTIndexQuery(Generic[IS]):
             raise ValueError("index_struct must be provided.")
         self._validate_index_struct(index_struct)
         self._index_struct = index_struct
-        self._llm_predictor = llm_predictor or LLMPredictor()
-        # NOTE: the embed_model isn't used in all indices
-        self._embed_model = embed_model or OpenAIEmbedding()
         if docstore is None:
             raise ValueError("docstore must be provided.")
         self._docstore = docstore
-        self._query_runner = query_runner
-        # TODO: make this a required param
-        if prompt_helper is None:
-            raise ValueError("prompt_helper must be provided.")
-        self._prompt_helper = cast(PromptHelper, prompt_helper)
+        self._service_context = service_context
 
-        # TODO: deprecated
-        self._required_keywords = required_keywords
-        # TODO: deprecated
-        self._exclude_keywords = exclude_keywords
+        self._query_runner = query_runner
         self._response_mode = ResponseMode(response_mode)
 
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
@@ -171,23 +154,21 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._response_kwargs = response_kwargs or {}
         self._use_async = use_async
 
-        self._llama_logger = llama_logger or LlamaLogger()
         # initialize logger with metadata
-        self._llama_logger.set_metadata(
-            {
-                "index_type": self._index_struct.get_type(),
-                "doc_id": self._index_struct.get_doc_id(),
-            }
-        )
+        if self._service_context.llama_logger is not None:
+            self._service_context.llama_logger.set_metadata(
+                {
+                    "index_type": self._index_struct.get_type(),
+                    "doc_id": self._index_struct.get_doc_id(),
+                }
+            )
 
         self.response_builder = ResponseBuilder(
-            self._prompt_helper,
-            self._llm_predictor,
+            self._service_context,
             self.text_qa_template,
             self.refine_template,
             use_async=use_async,
             streaming=streaming,
-            llama_logger=self._llama_logger,
         )
 
         # TODO: deprecated
@@ -208,8 +189,6 @@ class BaseGPTIndexQuery(Generic[IS]):
         self.node_preprocessors: List[BaseNodePostprocessor] = (
             init_node_preprocessors + node_postprocessors
         )
-        self._verbose = verbose
-
         self._verbose = verbose
 
     def _get_text_from_node(

@@ -3,6 +3,7 @@
 import json
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
+from gpt_index.data_structs.data_structs_v2 import CompositeIndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
@@ -36,10 +37,6 @@ from gpt_index.response.schema import Response
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
 
 
-
-class CompositeIndexStruct(IndexStruct):
-    all_index_structs: Dict[str, IndexStruct]
-    root_id: str
 
 class ComposableGraph:
     """Composable graph."""

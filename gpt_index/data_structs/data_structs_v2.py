@@ -388,3 +388,7 @@ class EmptyIndex(IndexDict):
     def get_type(cls) -> str:
         """Get type."""
         return IndexStructType.EMPTY
+
+class CompositeIndexStruct(V2IndexStruct):
+    all_index_structs: Dict[str, V2IndexStruct]
+    root_id: str
