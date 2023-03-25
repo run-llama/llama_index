@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from gpt_index.data_structs.data_structs_v2 import CompositeIndexStruct
+from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node
 from gpt_index.data_structs.struct_type import IndexStructType
@@ -183,7 +183,7 @@ class QueryRunner(BaseQueryRunner):
         index_id: Optional[str] = None,
     ) -> Response:
         """Run query."""
-        if isinstance(self._index_struct, CompositeIndexStruct):
+        if isinstance(self._index_struct, CompositeIndex):
             if index_id is None:
                 index_id = self._index_struct.root_id
             index_struct = self._index_struct.all_index_structs[index_id]

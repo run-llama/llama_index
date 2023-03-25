@@ -406,7 +406,7 @@ class EmptyIndex(IndexDict):
         """Get type."""
         return IndexStructType.EMPTY
 
-class CompositeIndexStruct(V2IndexStruct):
+class CompositeIndex(V2IndexStruct):
     all_index_structs: Dict[str, V2IndexStruct]
     root_id: str
 

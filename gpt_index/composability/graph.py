@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from gpt_index.data_structs.data_structs_v2 import CompositeIndexStruct
+from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.query.query_runner import QueryRunner
@@ -22,7 +22,7 @@ class ComposableGraph:
 
     def __init__(
         self,
-        index_struct: CompositeIndexStruct,
+        index_struct: CompositeIndex,
         docstore: DocumentStore,
         service_context: Optional[ServiceContext] = None,
     ) -> None:
@@ -33,7 +33,7 @@ class ComposableGraph:
 
     @classmethod
     def from_indices(cls, all_indices: Dict[str, IndexStruct], root_id: str, docstores: Sequence[DocumentStore]):
-        composite_index_struct = CompositeIndexStruct(
+        composite_index_struct = CompositeIndex(
             all_indices=all_indices,
             root_id=root_id,
         )

@@ -8,7 +8,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     KG,
     TYPE_KEY,
     ChromaIndexDict,
-    CompositeIndexStruct,
+    CompositeIndex,
     EmptyIndex,
     FaissIndexDict,
     IndexDict,
@@ -38,7 +38,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, V2IndexStruct] = 
     IndexStructType.SQL: SQLStructTable,
     IndexStructType.KG: KG,
     IndexStructType.EMPTY: EmptyIndex,
-    IndexStructType.COMPOSITE: CompositeIndexStruct
+    IndexStructType.COMPOSITE: CompositeIndex
 }
 
 # TODO: figure out how to avoid importing all indices while not centralizing all query map
@@ -63,7 +63,7 @@ def load_index_struct_from_dict(struct_dict: Dict[str, Any]) -> "V2IndexStruct":
             id_: load_index_struct_from_dict(struct_dict)
             for id_, struct_dict in struct_dicts.items()
         }
-        return CompositeIndexStruct(all_index_structs=all_index_structs, root_id=root_id)
+        return CompositeIndex(all_index_structs=all_index_structs, root_id=root_id)
     else:
         return cls.from_dict(data_dict)
     
