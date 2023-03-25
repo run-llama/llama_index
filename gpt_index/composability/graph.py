@@ -1,7 +1,7 @@
 """Composability graphs."""
 
 import json
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.struct_type import IndexStructType
@@ -80,9 +80,9 @@ class ComposableGraph:
 
     def __init__(
         self,
+        all_index_structs: IndexStruct,
+        root_id: str,
         docstore: DocumentStore,
-        index_registry: IndexRegistry,
-        index_struct: IndexStruct,
         llm_predictor: Optional[LLMPredictor] = None,
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[BaseEmbedding] = None,
@@ -90,9 +90,8 @@ class ComposableGraph:
     ) -> None:
         """Init params."""
         self._docstore = docstore
-        self._index_registry = index_registry
-        # this represents the "root" index struct
-        self._index_struct = index_struct
+        self._all_index_structs = all_index_structs
+        self._root_id = root_id
 
         self._llm_predictor = llm_predictor or LLMPredictor()
         self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
@@ -112,6 +111,11 @@ class ComposableGraph:
             prompt_helper=index.prompt_helper,
             embed_model=index.embed_model,
         )
+    
+    @classmethod
+    def from_indices(cls, all_indices: Dict[str, IndexStruct], root_id: str, docstores: Sequence[DocumentStore]):
+        merged_docstore = DocumentStore.merge(docstores)
+        return cls(all_indices=all_indices, root_id=root_id, docstore=merged_docstore)
 
     def query(
         self,

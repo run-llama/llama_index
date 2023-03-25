@@ -4,8 +4,6 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.docstore import DocumentStore
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.base import BaseGPTIndexQuery, BaseQueryRunner
 from gpt_index.indices.query.query_combiner.base import (
     BaseQueryCombiner,
@@ -17,7 +15,7 @@ from gpt_index.indices.query.query_transform.base import (
 )
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import IndexRegistry
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.response.schema import Response
 
 # TMP: refactor query config type
@@ -33,9 +31,7 @@ class QueryRunner(BaseQueryRunner):
 
     def __init__(
         self,
-        llm_predictor: LLMPredictor,
-        prompt_helper: PromptHelper,
-        embed_model: BaseEmbedding,
+        service_context: ServiceContext,
         docstore: DocumentStore,
         index_registry: IndexRegistry,
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
@@ -63,9 +59,7 @@ class QueryRunner(BaseQueryRunner):
 
         self._type_to_config_dict = type_to_config_dict
         self._id_to_config_dict = id_to_config_dict
-        self._llm_predictor = llm_predictor
-        self._prompt_helper = prompt_helper
-        self._embed_model = embed_model
+        self._service_context = service_context
         self._docstore = docstore
         self._index_registry = index_registry
         self._query_transform = query_transform or IdentityQueryTransform()

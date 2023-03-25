@@ -37,10 +37,6 @@ class Node(BaseDocument):
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
 
-    # TODO: store reference instead of actual image
-    # base64 encoded image str
-    image: Optional[str] = None
-
     # document relationships
     relationships: Dict[DocumentRelationship, str] = field(default_factory=dict)
 
@@ -76,3 +72,21 @@ class Node(BaseDocument):
         """Get type."""
         # TODO: consolidate with IndexStructType
         return "node"
+
+
+
+@dataclass
+class ImageNode(Node):
+    """Node with image."""
+    # TODO: store reference instead of actual image
+    # base64 encoded image str
+    image: Optional[str] = None
+
+
+@dataclass
+class IndexNode(Node):
+    """Node with reference to an index."""
+    index_id: Optional[str] = None
+
+
+    

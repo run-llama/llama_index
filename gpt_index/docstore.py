@@ -87,6 +87,13 @@ class DocumentStore(DataClassJsonMixin):
         obj = cls()
         obj.add_documents(docs)
         return obj
+    
+    @classmethod
+    def merge(cls, docstores: Sequence["DocumentStore"]) -> "DocumentStore":
+        merged_docstore = cls()
+        for docstore in docstores:
+            merged_docstore.update_docstore(docstore)
+        return merged_docstore
 
     def update_docstore(self, other: "DocumentStore") -> None:
         """Update docstore."""
