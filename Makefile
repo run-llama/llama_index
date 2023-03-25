@@ -7,6 +7,7 @@ format:
 lint:
 	mypy .
 	black . --check
+	ruff check .
 	isort . --check
 	flake8 .
 

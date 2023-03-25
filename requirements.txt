@@ -19,3 +19,4 @@ mypy==0.991
 flake8==6.0.0
 flake8-docstrings==1.6.0
 pylint==2.15.10
+ruff==0.0.259
