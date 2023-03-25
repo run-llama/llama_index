@@ -47,7 +47,6 @@ class ComposableGraph:
         query_transform: Optional[BaseQueryTransform] = None,
     ) -> Response:
         """Query the index."""
-        # go over all the indices and create a registry
         query_runner = QueryRunner(
             self._service_context,
             self._docstore,
@@ -64,7 +63,6 @@ class ComposableGraph:
         query_transform: Optional[BaseQueryTransform] = None,
     ) -> Response:
         """Query the index."""
-        # go over all the indices and create a registry
         query_runner = QueryRunner(
             self._service_context,
             self._docstore,
