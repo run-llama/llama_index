@@ -330,12 +330,6 @@ class BaseGPTIndexQuery(Generic[IS]):
         else:
             raise ValueError("Response must be a string or a generator.")
 
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Answer a query."""
-        # TODO: remove _query and just use query
-        nodes = self.retrieve(query_bundle)
-        return self._query_with_nodes(query_bundle, nodes)
-
     def synthesize(self, query_bundle: QueryBundle, nodes: List[NodeWithScore], additional_source_nodes: Optional[List[Node]]=None) -> RESPONSE_TYPE:
         # prepare response builder
         self._prepare_response_builder(self.response_builder, query_bundle, nodes, additional_source_nodes=additional_source_nodes)
@@ -347,13 +341,9 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         return self._prepare_response_output(response_str, nodes)
 
-    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Answer a query asynchronously."""
-        # TODO: remove _query and just use query
-        nodes = self.retrieve(query_bundle)
-
+    async def asynthesize(self, query_bundle: QueryBundle, nodes: List[NodeWithScore], additional_source_nodes: Optional[List[Node]]=None) -> RESPONSE_TYPE:
         # prepare response builder
-        self._prepare_response_builder(self.response_builder, query_bundle, nodes)
+        self._prepare_response_builder(self.response_builder, query_bundle, nodes, additional_source_nodes=additional_source_nodes)
 
         if self._response_mode != ResponseMode.NO_TEXT:
             response_str = await self._agive_response_for_nodes(query_bundle.query_str)
@@ -361,6 +351,19 @@ class BaseGPTIndexQuery(Generic[IS]):
             response_str = None
 
         return self._prepare_response_output(response_str, nodes)
+
+
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Answer a query."""
+        # TODO: remove _query and just use query
+        nodes = self.retrieve(query_bundle)
+        return self.synthesize(query_bundle, nodes)
+
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Answer a query asynchronously."""
+        # TODO: remove _query and just use query
+        nodes = self.retrieve(query_bundle)
+        return await self.synthesize(query_bundle, nodes)
 
     @llm_token_counter("query")
     def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
@@ -373,35 +376,7 @@ class BaseGPTIndexQuery(Generic[IS]):
     @llm_token_counter("query")
     async def aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        response = await self._aquery(query_bundle)
-        # if include_summary is True, then include summary text in answer
-        # summary text is set through `set_text` on the underlying index.
-        # TODO: refactor response builder to be in the __init__
-        if self._response_mode != ResponseMode.NO_TEXT and self._include_summary:
-            response_builder = ResponseBuilder(
-                self._prompt_helper,
-                self._llm_predictor,
-                self.text_qa_template,
-                self.refine_template,
-                texts=[TextChunk(self._index_struct.get_text())],
-                streaming=self._streaming,
-            )
-            if isinstance(response, Response):
-                # NOTE: use create and refine for now (default response mode)
-                response_str = await response_builder.aget_response(
-                    query_bundle.query_str,
-                    mode=self._response_mode,
-                    prev_response=response.response,
-                )
-                response.response = cast(str, response_str)
-            elif isinstance(response, StreamingResponse):
-                response_gen = await response_builder.aget_response(
-                    query_bundle.query_str,
-                    mode=self._response_mode,
-                    prev_response=str(response.response_gen),
-                )
-                response.response_gen = cast(Generator, response_gen)
-            else:
-                raise ValueError("Response must be a string or a generator.")
-
+        nodes = self.retrieve(query_bundle)
+        response = self.asynthesize(query_bundle, nodes)
+        # TODO: support include summary
         return response
