@@ -1,4 +1,5 @@
 
+from dataclasses import dataclass
 from typing import Optional
 
 from gpt_index.embeddings.base import BaseEmbedding

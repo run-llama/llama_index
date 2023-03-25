@@ -2,8 +2,6 @@
 
 from typing import Any, Dict
 
-from pydantic import Json
-
 from gpt_index.data_structs.data_structs import PineconeIndexDict, SimpleIndexDict
 from gpt_index.data_structs.data_structs_v2 import (
     DATA_KEY,
