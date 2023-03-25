@@ -1,7 +1,7 @@
 """Langchain Embedding Wrapper Module."""
 
 
-from typing import List, Any
+from typing import Any, List
 
 from langchain.embeddings.base import Embeddings as LCEmbeddings
 

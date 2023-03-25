@@ -1,7 +1,7 @@
 """OpenAI embeddings file."""
 
 from enum import Enum
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
