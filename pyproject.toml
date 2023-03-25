@@ -4,9 +4,6 @@ disallow_untyped_defs = "True"
 exclude = ["notebooks", "build", "examples"]
 
 [tool.ruff]
-# Never enforce `E203`.
-ignore = ["E203"]
-
 exclude = [
     ".venv",
     "__pycache__",
