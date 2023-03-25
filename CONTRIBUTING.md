@@ -59,7 +59,7 @@ You can also make use of our pre-commit hooks by setting up git hook scripts:
 pre-commit install
 ```
 
-We run an assortment of linters: `black`, `ruff`, `isort`, `mypy`, `flake8`.
+We run an assortment of linters: `black`, `ruff`, `mypy`.
 
 ### Testing
 
