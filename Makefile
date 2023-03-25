@@ -2,13 +2,11 @@
 
 format:
 	black .
-	isort .
 
 lint:
 	mypy .
 	black . --check
-	isort . --check
-	flake8 .
+	ruff check .
 
 test:
 	pytest tests
