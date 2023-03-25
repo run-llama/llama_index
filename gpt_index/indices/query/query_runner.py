@@ -32,11 +32,11 @@ class QueryConfigMap:
 
     def get(self, index_struct: IndexStruct) -> QueryConfig:
         """Get query config."""
-        index_struct_id = index_struct.get_doc_id()
+        index_struct_id = index_struct.index_id
         index_struct_type = index_struct.get_type()
         if index_struct_id in self.id_to_config_dict:
             config = self.id_to_config_dict[index_struct_id]
-        elif index_struct_type in self._type_to_config_dict:
+        elif index_struct_type in self.type_to_config_dict:
             config = self.type_to_config_dict[index_struct_type]
         else:
             config = QueryConfig(

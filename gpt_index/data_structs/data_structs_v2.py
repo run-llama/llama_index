@@ -7,12 +7,14 @@ Nodes are decoupled from the indices.
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
+import uuid
 from dataclasses_json import DataClassJsonMixin
 
 from pydantic import Json
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
+from gpt_index.utils import get_new_id
 
 
 TYPE_KEY = '__type__'
@@ -21,6 +23,14 @@ DATA_KEY = 'struct'
 @dataclass
 class V2IndexStruct(DataClassJsonMixin):
     """A base data struct for a LlamaIndex."""
+
+    index_id: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        """Post init."""
+        # assign index_id if not set
+        if self.index_id is None:
+            self.doc_id = get_new_id(set())
 
     @classmethod
     @abstractmethod
