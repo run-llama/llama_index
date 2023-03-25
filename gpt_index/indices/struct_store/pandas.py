@@ -1,12 +1,12 @@
 """Pandas csv structured store."""
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Optional, Sequence
 
 import pandas as pd
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import PandasStructTable
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.base import QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.pandas import GPTNLPandasIndexQuery
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
@@ -74,7 +74,7 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
         query_kwargs["df"] = self.df
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTNLPandasIndexQuery,

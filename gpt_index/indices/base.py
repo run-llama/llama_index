@@ -12,7 +12,6 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
-from gpt_index.indices.registry import IndexRegistry
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.node_parser.interface import NodeParser
 from gpt_index.node_parser.simple import SimpleNodeParser
@@ -25,7 +24,12 @@ IS = TypeVar("IS", bound=V2IndexStruct)
 logger = logging.getLogger(__name__)
 
 
+# map from mode to query class
+QueryMap = Dict[str, Type[BaseGPTIndexQuery]]
+
+
 class BaseGPTIndex(Generic[IS]):
+
     """Base LlamaIndex.
 
     Args:
@@ -270,7 +274,6 @@ class BaseGPTIndex(Generic[IS]):
         query_runner = QueryRunner(
             self._service_context,
             self._docstore,
-            self._index_registry,
             query_configs=[query_config],
             query_transform=query_transform,
             recursive=False,
@@ -313,7 +316,6 @@ class BaseGPTIndex(Generic[IS]):
         query_runner = QueryRunner(
             self._service_context,
             self._docstore,
-            self._index_registry,
             query_configs=[query_config],
             query_transform=query_transform,
             recursive=False,
@@ -323,7 +325,7 @@ class BaseGPTIndex(Generic[IS]):
 
     @classmethod
     @abstractmethod
-    def get_query_map(cls) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(cls) -> QueryMap:
         """Get query map."""
 
     @classmethod

@@ -14,8 +14,7 @@ from gpt_index.data_structs.data_structs_v2 import (
 )
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.queries import (
     GPTChromaIndexQuery,
@@ -99,7 +98,7 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         self._docstore.add_documents([self.index_struct], allow_update=True)
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTSimpleVectorIndexQuery,
@@ -165,7 +164,7 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTFaissIndexQuery,
@@ -304,7 +303,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTPineconeIndexQuery,
@@ -372,7 +371,7 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTWeaviateIndexQuery,
@@ -442,7 +441,7 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTQdrantIndexQuery,
@@ -509,7 +508,7 @@ class GPTChromaIndex(GPTVectorStoreIndex):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTChromaIndexQuery,
@@ -579,7 +578,7 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTOpensearchIndexQuery,

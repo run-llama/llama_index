@@ -17,7 +17,6 @@ from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
-from gpt_index.indices.registry import IndexRegistry
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
@@ -35,26 +34,6 @@ from gpt_index.response.schema import Response
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
-
-
-# this is a map from type to outer index class
-# we extract the type_to_struct and type_to_query
-# fields from the index class
-DEFAULT_INDEX_REGISTRY_MAP: Dict[IndexStructType, Type[BaseGPTIndex]] = {
-    IndexStructType.TREE: GPTTreeIndex,
-    IndexStructType.LIST: GPTListIndex,
-    IndexStructType.KEYWORD_TABLE: GPTKeywordTableIndex,
-    IndexStructType.SIMPLE_DICT: GPTSimpleVectorIndex,
-    IndexStructType.DICT: GPTFaissIndex,
-    IndexStructType.WEAVIATE: GPTWeaviateIndex,
-    IndexStructType.PINECONE: GPTPineconeIndex,
-    IndexStructType.QDRANT: GPTQdrantIndex,
-    IndexStructType.CHROMA: GPTChromaIndex,
-    IndexStructType.VECTOR_STORE: GPTVectorStoreIndex,
-    IndexStructType.SQL: GPTSQLStructStoreIndex,
-    IndexStructType.KG: GPTKnowledgeGraphIndex,
-    IndexStructType.EMPTY: GPTEmptyIndex,
-}
 
 
 
@@ -136,13 +115,9 @@ class ComposableGraph:
 
         """
         result_dict = json.loads(index_string)
-        # TODO: this is hardcoded for now, allow it to be specified by the user
-        index_registry = _get_default_index_registry()
-        docstore = DocumentStore.load_from_dict(
-            result_dict["docstore"], index_registry.type_to_struct
-        )
+        docstore = DocumentStore.load_from_dict(result_dict["docstore"])
         index_struct = _safe_get_index_struct(docstore, result_dict["index_struct_id"])
-        return cls(docstore, index_registry, index_struct, **kwargs)
+        return cls(docstore, index_struct, **kwargs)
 
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "ComposableGraph":

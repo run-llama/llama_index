@@ -1,31 +1,44 @@
 """Index registry."""
 
-from dataclasses import dataclass, field
-from typing import Dict, Type
+from typing import Dict
 
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.schema import BaseDocument
+from gpt_index.data_structs.data_structs import PineconeIndexDict, SimpleIndexDict
+from gpt_index.data_structs.data_structs_v2 import (
+    KG,
+    ChromaIndexDict,
+    EmptyIndex,
+    FaissIndexDict,
+    IndexDict,
+    IndexGraph,
+    IndexList,
+    KeywordTable,
+    QdrantIndexDict,
+    V2IndexStruct,
+    WeaviateIndexDict,
+)
+from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.struct_type import IndexStructType
+from gpt_index.data_structs.table_v2 import SQLStructTable
+from gpt_index.indices.base import QueryMap
 
-# map from mode to query class
-QUERY_MAP_TYPE = Dict[str, Type[BaseGPTIndexQuery]]
+INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, V2IndexStruct] = {
+    IndexStructType.TREE: IndexGraph,
+    IndexStructType.LIST: IndexList,
+    IndexStructType.KEYWORD_TABLE: KeywordTable,
+    IndexStructType.SIMPLE_DICT: SimpleIndexDict,
+    IndexStructType.DICT: FaissIndexDict,
+    IndexStructType.WEAVIATE: WeaviateIndexDict,
+    IndexStructType.PINECONE: PineconeIndexDict,
+    IndexStructType.QDRANT: QdrantIndexDict,
+    IndexStructType.CHROMA: ChromaIndexDict,
+    IndexStructType.VECTOR_STORE: IndexDict,
+    IndexStructType.SQL: SQLStructTable,
+    IndexStructType.KG: KG,
+    IndexStructType.EMPTY: EmptyIndex,
+}
 
-
-@dataclass
-class IndexRegistry:
-    """Index registry.
-
-    Stores mapping from index type to index_struct + queries.
-    NOTE: this cannot be easily serialized, so must be re-initialized
-    each time.
-    If the user defines custom IndexStruct or query classes,
-    they must be added to the registry manually.
-
-    """
-
-    type_to_struct: Dict[str, Type[BaseDocument]] = field(default_factory=dict)
-    type_to_query: Dict[str, QUERY_MAP_TYPE] = field(default_factory=dict)
-
-    def update(self, other: "IndexRegistry") -> None:
-        """Update the registry with another registry."""
-        self.type_to_struct.update(other.type_to_struct)
-        self.type_to_query.update(other.type_to_query)
+# TODO: figure out how to avoid importing all indices while not centralizing all query map
+INDEX_STRUT_TYPE_TO_QUERY_MAP: Dict[IndexStructType, QueryMap] = {
+    index_type: index_cls.get_query_map()
+    for index_type, index_cls in INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS.items()
+}

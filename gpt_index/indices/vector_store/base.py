@@ -4,14 +4,13 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -70,7 +69,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTVectorStoreIndexQuery,
