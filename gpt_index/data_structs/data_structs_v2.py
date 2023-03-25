@@ -7,7 +7,6 @@ Nodes are decoupled from the indices.
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
-import uuid
 from dataclasses_json import DataClassJsonMixin
 
 from pydantic import Json
@@ -17,8 +16,6 @@ from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.utils import get_new_id
 
 
-TYPE_KEY = '__type__'
-DATA_KEY = 'struct'
 
 @dataclass
 class V2IndexStruct(DataClassJsonMixin):

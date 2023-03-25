@@ -4,9 +4,7 @@ from typing import Any, Dict
 
 from gpt_index.data_structs.data_structs import PineconeIndexDict, SimpleIndexDict
 from gpt_index.data_structs.data_structs_v2 import (
-    DATA_KEY,
     KG,
-    TYPE_KEY,
     ChromaIndexDict,
     CompositeIndex,
     EmptyIndex,
@@ -23,6 +21,7 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.indices.base import QueryMap
+from gpt_index.io import DATA_KEY, TYPE_KEY
 
 INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, V2IndexStruct] = {
     IndexStructType.TREE: IndexGraph,
