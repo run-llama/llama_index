@@ -7,11 +7,9 @@ from typing import Any, Dict, List, Optional, Sequence, Type
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.node_v2 import Node
+from gpt_index.io import TYPE_KEY
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
-
-# type key: used to store type of document
-TYPE_KEY = "__type__"
 
 
 @dataclass

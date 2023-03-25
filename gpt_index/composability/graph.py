@@ -11,13 +11,11 @@ from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
 from gpt_index.indices.registry import load_index_struct_from_dict
 from gpt_index.indices.service_context import ServiceContext
+from gpt_index.io import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.response.schema import Response
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
-
-INDEX_STRUCT_KEY = 'index_strut'
-DOCSTORE_KEY = 'docstore'
 
 class ComposableGraph:
     """Composable graph."""
@@ -127,7 +125,7 @@ class ComposableGraph:
 
         """
         out_dict: Dict[str, Any] = {
-            INDEX_STRUCT_KEY: self._index_struct.serialize_to_dict(),
+            INDEX_STRUCT_KEY: self._index_struct.to_dict(),
             DOCSTORE_KEY: self._docstore.serialize_to_dict(),
         }
         return json.dumps(out_dict)

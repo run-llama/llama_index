@@ -12,7 +12,9 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
+from gpt_index.indices.registry import load_index_struct_from_dict
 from gpt_index.indices.service_context import ServiceContext
+from gpt_index.io import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.node_parser.interface import NodeParser
 from gpt_index.node_parser.simple import SimpleNodeParser
 from gpt_index.readers.schema.base import Document
@@ -333,28 +335,10 @@ class BaseGPTIndex(Generic[IS]):
         cls, result_dict: Dict[str, Any], **kwargs: Any
     ) -> "BaseGPTIndex":
         """Load index from dict."""
-        if "index_struct" in result_dict:
-            index_struct = cls.index_struct_cls.from_dict(result_dict["index_struct"])
-            index_struct_id = index_struct.get_doc_id()
-        elif "index_struct_id" in result_dict:
-            index_struct_id = result_dict["index_struct_id"]
-        else:
-            raise ValueError("index_struct or index_struct_id must be provided.")
+        index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
+        assert isinstance(index_struct, cls.index_struct_cls)
 
-        # NOTE: index_struct can have multiple types for backwards compatibility,
-        # map to same class
-        type_to_struct = {
-            index_type: cls.index_struct_cls
-            for index_type in cls.index_struct_cls.get_types()
-        }
-        type_to_struct[Node.get_type()] = Node
-
-        docstore = DocumentStore.load_from_dict(
-            result_dict["docstore"],
-            type_to_struct=type_to_struct,
-        )
-        if "index_struct_id" in result_dict:
-            index_struct = docstore.get_document(index_struct_id)
+        docstore = DocumentStore.load_from_dict(result_dict[DOCSTORE_KEY])
         return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 
     @classmethod
