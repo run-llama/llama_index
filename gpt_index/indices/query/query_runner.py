@@ -3,7 +3,9 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+from gpt_index.data_structs.data_structs_v2 import CompositeIndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
+from gpt_index.data_structs.node_v2 import IndexNode, Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery, BaseQueryRunner
 from gpt_index.indices.query.query_combiner.base import (
@@ -17,6 +19,7 @@ from gpt_index.indices.query.query_transform.base import (
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.response.schema import Response
+from gpt_index.utils import truncate_text
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
@@ -176,15 +179,26 @@ class QueryRunner(BaseQueryRunner):
     def query(
         self,
         query_str_or_bundle: Union[str, QueryBundle],
-        index_struct: IndexStruct,
+        index_id: Optional[str] = None,
     ) -> Response:
         """Run query."""
+        is_composite_index_struct = isinstance(self._index_struct, CompositeIndexStruct)
+        if is_composite_index_struct:
+            if index_id is None:
+                index_id = self._index_struct.root_id
+            index_struct = self._index_struct.all_index_structs[index_id]
+        else:
+            if index_id is not None:
+                raise ValueError('index_id should be used with composite graph')
+            index_struct = self._index_struct
+
         # NOTE: Currently, query transform is only run once
         # TODO: Consider refactor to support index-specific query transform
         # TODO: abstract query transformation loop into a separate class
 
         query_transform = self._get_query_transform(index_struct)
-        query_combiner = self._get_query_combiner(index_struct, query_transform)
+        # TODO: support query combiner
+        # query_combiner = self._get_query_combiner(index_struct, query_transform)
 
         query_obj = self._get_query_obj(index_struct)
         if isinstance(query_str_or_bundle, str):
@@ -195,8 +209,36 @@ class QueryRunner(BaseQueryRunner):
         else:
             query_bundle = query_str_or_bundle
 
-        return query_combiner.run(query_obj, query_bundle)
-        # return query_obj.query(query_bundle)
+        transform_extra_info = {"index_struct": index_struct}
+        query_bundle = query_transform(
+            query_str_or_bundle, extra_info=transform_extra_info
+        )
+
+        # TODO: support query combiner
+
+        if self._recursive:
+            # call recursively
+            nodes = query_obj.retrieve(query_bundle)
+
+            # do recursion here
+            nodes_for_synthesis = []
+            additional_source_nodes = []
+            for node_with_score in nodes:
+                if isinstance(node_with_score.node, IndexNode):
+                    index_node = node_with_score.node
+                    # recursive call
+                    response = self.query(query_bundle, index_node.index_id)
+
+                    new_node = Node(
+                        text=str(response)
+                    )
+                    nodes_for_synthesis.append(new_node)
+                    additional_source_nodes.extend(response.source_nodes)
+            
+            return query_obj.synthesize(query_bundle, nodes_for_synthesis, additional_source_nodes)
+        else:
+            return query_obj.query(query_bundle)
+
 
     async def aquery(
         self,

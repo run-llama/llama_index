@@ -3,7 +3,18 @@
 import logging
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar, cast
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    cast,
+)
 
 from langchain.input import print_text
 
@@ -18,7 +29,7 @@ from gpt_index.indices.postprocessor.node import (
     SimilarityPostprocessor,
 )
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.query.embedding_utils import SimilarityTracker
+from gpt_index.indices.query.embedding_utils import NodeWithScore, SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import (
     RESPONSE_TEXT_TYPE,
@@ -118,7 +129,6 @@ class BaseGPTIndexQuery(Generic[IS]):
         index_struct: IS,
         service_context: Optional[ServiceContext] = None,
         docstore: Optional[DocumentStore] = None,
-        query_runner: Optional[BaseQueryRunner] = None,
         response_mode: ResponseMode = ResponseMode.DEFAULT,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
@@ -127,7 +137,6 @@ class BaseGPTIndexQuery(Generic[IS]):
         # TODO: deprecated
         similarity_cutoff: Optional[float] = None,
         use_async: bool = True,
-        recursive: bool = False,
         streaming: bool = False,
         doc_ids: Optional[List[str]] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
@@ -144,7 +153,6 @@ class BaseGPTIndexQuery(Generic[IS]):
         self._docstore = docstore
         self._service_context = service_context
 
-        self._query_runner = query_runner
         self._response_mode = ResponseMode(response_mode)
 
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
@@ -174,7 +182,6 @@ class BaseGPTIndexQuery(Generic[IS]):
         # TODO: deprecated
         self.similarity_cutoff = similarity_cutoff
 
-        self._recursive = recursive
         self._streaming = streaming
         self._doc_ids = doc_ids
         self._optimizer = optimizer
@@ -193,10 +200,9 @@ class BaseGPTIndexQuery(Generic[IS]):
 
     def _get_text_from_node(
         self,
-        query_bundle: QueryBundle,
         node: Node,
         level: Optional[int] = None,
-    ) -> Tuple[TextChunk, Optional[Response]]:
+    ) -> TextChunk:
         """Query a given node.
 
         If node references a given document, then return the document.
@@ -207,38 +213,13 @@ class BaseGPTIndexQuery(Generic[IS]):
         fmt_text_chunk = truncate_text(node.get_text(), 50)
         logger.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
-        is_index_struct = False
-        # if recursive and self._query_runner is not None,
-        # assume we want to do a recursive
-        # query. In order to not perform a recursive query, make sure
-        # _query_runner is None.
-        if (
-            self._recursive
-            and self._query_runner is not None
-            and node.ref_doc_id is not None
-            and self._docstore is not None
-        ):
-            doc = self._docstore.get_document(node.ref_doc_id, raise_error=False)
-            # NOTE: old version of the docstore contain both documents and index_struct,
-            # whereas new versions of the docstore only contain the index struct
-            if doc is not None and isinstance(doc, IndexStruct):
-                is_index_struct = True
-
-        if is_index_struct:
-            query_runner = cast(BaseQueryRunner, self._query_runner)
-            response = query_runner.query(query_bundle, cast(IndexStruct, doc))
-            fmt_response = truncate_text(str(response), 200)
-            if self._verbose:
-                print_text(f">{level_str} Got response: {fmt_response}\n", color="blue")
-            return TextChunk(str(response), is_answer=True), response
-        else:
-            response_txt = node.get_text()
-            fmt_response = truncate_text(response_txt, 200)
-            if self._verbose:
-                print_text(
-                    f">{level_str} Got node text: {fmt_response}\n", color="blue"
-                )
-            return TextChunk(response_txt), None
+        response_txt = node.get_text()
+        fmt_response = truncate_text(response_txt, 200)
+        if self._verbose:
+            print_text(
+                f">{level_str} Got node text: {fmt_response}\n", color="blue"
+            )
+        return TextChunk(response_txt)
 
     @property
     def index_struct(self) -> IS:
@@ -267,9 +248,9 @@ class BaseGPTIndexQuery(Generic[IS]):
         )
         return response
 
-    def get_nodes_and_similarities_for_response(
+    def retrieve(
         self, query_bundle: QueryBundle
-    ) -> List[Tuple[Node, Optional[float]]]:
+    ) -> List[NodeWithScore]:
         """Get list of tuples of node and similarity for response.
 
         First part of the tuple is the node.
@@ -307,28 +288,27 @@ class BaseGPTIndexQuery(Generic[IS]):
         self,
         response_builder: ResponseBuilder,
         query_bundle: QueryBundle,
-        tuples: List[Tuple[Node, Optional[float]]],
+        tuples: List[NodeWithScore],
+        additional_source_nodes: Optional[Sequence[Node]],
     ) -> None:
         """Prepare response builder and return values for query time."""
         response_builder.reset()
         for node, similarity in tuples:
-            text, response = self._get_text_from_node(query_bundle, node)
+            text = self._get_text_from_node(node)
             response_builder.add_node_as_source(node, similarity=similarity)
-            if response is not None:
-                # these are source nodes from within this node (when it's an index)
-                for source_node in response.source_nodes:
-                    response_builder.add_source_node(source_node)
             if self._optimizer is not None:
-                response_builder.add_text_chunks(
-                    [TextChunk(text=self._optimizer.optimize(query_bundle, text.text))]
-                )
-            else:
-                response_builder.add_text_chunks([text])
+                text = TextChunk(text=self._optimizer.optimize(query_bundle, text.text))
+            response_builder.add_text_chunks([text])
+
+        # from recursive
+        if additional_source_nodes is not None:
+            for node in additional_source_nodes:
+                response_builder.add_node_as_source(node)
 
     def _prepare_response_output(
         self,
         response_str: Optional[RESPONSE_TEXT_TYPE],
-        tuples: List[Tuple[Node, Optional[float]]],
+        tuples: List[NodeWithScore],
     ) -> RESPONSE_TYPE:
         """Prepare response object from response string."""
         response_extra_info = self._get_extra_info_for_response(
@@ -353,67 +333,41 @@ class BaseGPTIndexQuery(Generic[IS]):
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         # TODO: remove _query and just use query
-        tuples = self.get_nodes_and_similarities_for_response(query_bundle)
+        nodes = self.retrieve(query_bundle)
+        return self._query_with_nodes(query_bundle, nodes)
 
+    def synthesize(self, query_bundle: QueryBundle, nodes: List[NodeWithScore], additional_source_nodes: Optional[List[Node]]=None) -> RESPONSE_TYPE:
         # prepare response builder
-        self._prepare_response_builder(self.response_builder, query_bundle, tuples)
+        self._prepare_response_builder(self.response_builder, query_bundle, nodes, additional_source_nodes=additional_source_nodes)
 
         if self._response_mode != ResponseMode.NO_TEXT:
             response_str = self._give_response_for_nodes(query_bundle.query_str)
         else:
             response_str = None
 
-        return self._prepare_response_output(response_str, tuples)
+        return self._prepare_response_output(response_str, nodes)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query asynchronously."""
         # TODO: remove _query and just use query
-        tuples = self.get_nodes_and_similarities_for_response(query_bundle)
+        nodes = self.retrieve(query_bundle)
 
         # prepare response builder
-        self._prepare_response_builder(self.response_builder, query_bundle, tuples)
+        self._prepare_response_builder(self.response_builder, query_bundle, nodes)
 
         if self._response_mode != ResponseMode.NO_TEXT:
             response_str = await self._agive_response_for_nodes(query_bundle.query_str)
         else:
             response_str = None
 
-        return self._prepare_response_output(response_str, tuples)
+        return self._prepare_response_output(response_str, nodes)
 
     @llm_token_counter("query")
     def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        response = self._query(query_bundle)
-        # if include_summary is True, then include summary text in answer
-        # summary text is set through `set_text` on the underlying index.
-        # TODO: refactor response builder to be in the __init__
-        if self._response_mode != ResponseMode.NO_TEXT and self._include_summary:
-            response_builder = ResponseBuilder(
-                self._prompt_helper,
-                self._llm_predictor,
-                self.text_qa_template,
-                self.refine_template,
-                texts=[TextChunk(self._index_struct.get_text())],
-                streaming=self._streaming,
-            )
-            if isinstance(response, Response):
-                # NOTE: use create and refine for now (default response mode)
-                response_str = response_builder.get_response(
-                    query_bundle.query_str,
-                    mode=self._response_mode,
-                    prev_response=response.response,
-                )
-                response.response = cast(str, response_str)
-            elif isinstance(response, StreamingResponse):
-                response_gen = response_builder.get_response(
-                    query_bundle.query_str,
-                    mode=self._response_mode,
-                    prev_response=str(response.response_gen),
-                )
-                response.response_gen = cast(Generator, response_gen)
-            else:
-                raise ValueError("Response must be a string or a generator.")
-
+        nodes = self.retrieve(query_bundle)
+        response = self.synthesize(query_bundle, nodes)
+        # TODO: support include summary
         return response
 
     @llm_token_counter("query")
