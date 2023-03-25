@@ -1,7 +1,7 @@
 """OpenAI embeddings file."""
 
 from enum import Enum
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
@@ -203,9 +203,10 @@ class OpenAIEmbedding(BaseEmbedding):
         mode: str = OpenAIEmbeddingMode.TEXT_SEARCH_MODE,
         model: str = OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002,
         deployment_name: Optional[str] = None,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
-        super().__init__()
+        super().__init__(**kwargs)
         self.mode = OpenAIEmbeddingMode(mode)
         self.model = OpenAIEmbeddingModelType(model)
         self.deployment_name = deployment_name
