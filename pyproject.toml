@@ -2,3 +2,17 @@
 ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
 exclude = ["notebooks", "build", "examples"]
+
+[tool.ruff]
+# Never enforce `E203`.
+ignore = ["E203"]
+
+exclude = [
+    ".venv",
+    "__pycache__",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".ruff_cache",
+    "examples",
+    "notebooks",
+]
