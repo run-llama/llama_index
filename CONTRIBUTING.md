@@ -53,7 +53,13 @@ You can format and lint your changes with the following commands in the root dir
 make format; make lint
 ```
 
-We run an assortment of linters: `black`, `isort`, `mypy`, `flake8`.
+You can also make use of our pre-commit hooks by setting up git hook scripts:
+
+```bash
+pre-commit install
+```
+
+We run an assortment of linters: `black`, `ruff`, `mypy`.
 
 ### Testing
 
