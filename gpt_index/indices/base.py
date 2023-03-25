@@ -274,6 +274,7 @@ class BaseGPTIndex(Generic[IS]):
             query_kwargs=query_kwargs,
         )
         query_runner = QueryRunner(
+            self._index_struct,
             self._service_context,
             self._docstore,
             query_configs=[query_config],
@@ -316,6 +317,7 @@ class BaseGPTIndex(Generic[IS]):
             query_kwargs=query_kwargs,
         )
         query_runner = QueryRunner(
+            self._index_struct,
             self._service_context,
             self._docstore,
             query_configs=[query_config],
