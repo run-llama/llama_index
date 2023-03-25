@@ -3,26 +3,13 @@
 import logging
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Dict,
-    Generator,
-    Generic,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    cast,
-)
+from typing import Any, Dict, Generator, Generic, List, Optional, Sequence, TypeVar
 
 from langchain.input import print_text
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.postprocessor.node import (
     BaseNodePostprocessor,
     KeywordNodePostprocessor,
@@ -38,8 +25,6 @@ from gpt_index.indices.response.builder import (
     TextChunk,
 )
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.logger.base import LlamaLogger
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT

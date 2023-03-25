@@ -20,7 +20,6 @@ from gpt_index.indices.query.query_transform.base import (
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.response.schema import Response
-from gpt_index.utils import truncate_text
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
