@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from gpt_index.data_structs.data_structs_v2 import CompositeIndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node
+from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery, BaseQueryRunner
 from gpt_index.indices.query.query_combiner.base import (
@@ -157,6 +158,7 @@ class QueryRunner(BaseQueryRunner):
     ) -> BaseGPTIndexQuery:
         """Get query object."""
         index_struct_type = index_struct.get_type()
+        assert index_struct_type != IndexStructType.COMPOSITE
         config = self._query_config_map.get(index_struct)
         mode = config.query_mode
 
@@ -182,8 +184,7 @@ class QueryRunner(BaseQueryRunner):
         index_id: Optional[str] = None,
     ) -> Response:
         """Run query."""
-        is_composite_index_struct = isinstance(self._index_struct, CompositeIndexStruct)
-        if is_composite_index_struct:
+        if isinstance(self._index_struct, CompositeIndexStruct):
             if index_id is None:
                 index_id = self._index_struct.root_id
             index_struct = self._index_struct.all_index_structs[index_id]

@@ -103,7 +103,7 @@ class IndexGraph(V2IndexStruct):
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
-        return "tree"
+        return IndexStructType.TREE
 
 
 @dataclass
@@ -154,7 +154,7 @@ class IndexList(V2IndexStruct):
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
-        return "list"
+        return IndexStructType.LIST
 
 
 @dataclass
@@ -329,7 +329,7 @@ class KG(V2IndexStruct):
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
-        return "kg"
+        return IndexStructType.KG
 
 
 # TODO: remove once we centralize UX around vector index
@@ -409,6 +409,11 @@ class EmptyIndex(IndexDict):
 class CompositeIndexStruct(V2IndexStruct):
     all_index_structs: Dict[str, V2IndexStruct]
     root_id: str
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get type."""
+        return IndexStructType.COMPOSITE
 
     def to_dict(self, encode_json=False) -> Dict[str, Json]:
         out_dict = {
