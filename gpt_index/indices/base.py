@@ -51,7 +51,6 @@ class BaseGPTIndex(Generic[IS]):
         index_struct: Optional[IS] = None,
         docstore: Optional[DocumentStore] = None,
         service_context: Optional[ServiceContext] = None,
-        index_registry: Optional[IndexRegistry] = None,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and nodes is None:
@@ -61,7 +60,6 @@ class BaseGPTIndex(Generic[IS]):
 
         self._service_context = service_context or ServiceContext()
         self._docstore = docstore or DocumentStore()
-        self._index_registry = index_registry or IndexRegistry()
 
         if index_struct is None:
             assert nodes is not None
@@ -72,7 +70,6 @@ class BaseGPTIndex(Generic[IS]):
                     f"index_struct must be of type {self.index_struct_cls} "
                     "but got {type(index_struct)}"
                 )
-
         self._index_struct = index_struct
 
     @classmethod

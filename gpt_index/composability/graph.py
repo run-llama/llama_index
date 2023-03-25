@@ -18,6 +18,7 @@ from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
 from gpt_index.indices.registry import IndexRegistry
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
@@ -56,83 +57,45 @@ DEFAULT_INDEX_REGISTRY_MAP: Dict[IndexStructType, Type[BaseGPTIndex]] = {
 }
 
 
-def _get_default_index_registry() -> IndexRegistry:
-    """Get default index registry."""
-    index_registry = IndexRegistry()
-    for index_type, index_class in DEFAULT_INDEX_REGISTRY_MAP.items():
-        index_registry.type_to_struct[index_type] = index_class.index_struct_cls
-        index_registry.type_to_query[index_type] = index_class.get_query_map()
-    return index_registry
 
-
-def _safe_get_index_struct(
-    docstore: DocumentStore, index_struct_id: str
-) -> IndexStruct:
-    """Try get index struct."""
-    index_struct = docstore.get_document(index_struct_id)
-    if not isinstance(index_struct, IndexStruct):
-        raise ValueError("Invalid `index_struct_id` - must be an IndexStruct")
-    return index_struct
-
+class CompositeIndexStruct(IndexStruct):
+    all_index_structs: Dict[str, IndexStruct]
+    root_id: str
 
 class ComposableGraph:
     """Composable graph."""
 
     def __init__(
         self,
-        all_index_structs: IndexStruct,
-        root_id: str,
+        index_struct: CompositeIndexStruct,
         docstore: DocumentStore,
-        llm_predictor: Optional[LLMPredictor] = None,
-        prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[BaseEmbedding] = None,
-        chunk_size_limit: Optional[int] = None,
+        service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Init params."""
         self._docstore = docstore
-        self._all_index_structs = all_index_structs
-        self._root_id = root_id
+        self._index_struct = index_struct
+        self._service_context = service_context or ServiceContext()
 
-        self._llm_predictor = llm_predictor or LLMPredictor()
-        self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
-            self._llm_predictor, chunk_size_limit=chunk_size_limit
-        )
-        self._embed_model = embed_model or OpenAIEmbedding()
-
-    @classmethod
-    def build_from_index(self, index: BaseGPTIndex) -> "ComposableGraph":
-        """Build from index."""
-        return ComposableGraph(
-            index.docstore,
-            index.index_registry,
-            # this represents the "root" index struct
-            index.index_struct,
-            llm_predictor=index.llm_predictor,
-            prompt_helper=index.prompt_helper,
-            embed_model=index.embed_model,
-        )
-    
     @classmethod
     def from_indices(cls, all_indices: Dict[str, IndexStruct], root_id: str, docstores: Sequence[DocumentStore]):
+        composite_index_struct = CompositeIndexStruct(
+            all_indices=all_indices,
+            root_id=root_id,
+        )
         merged_docstore = DocumentStore.merge(docstores)
-        return cls(all_indices=all_indices, root_id=root_id, docstore=merged_docstore)
+        return cls(index_struct=composite_index_struct, docstore=merged_docstore)
 
     def query(
         self,
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
         query_transform: Optional[BaseQueryTransform] = None,
     ) -> Response:
         """Query the index."""
         # go over all the indices and create a registry
-        llm_predictor = llm_predictor or self._llm_predictor
         query_runner = QueryRunner(
-            llm_predictor,
-            self._prompt_helper,
-            self._embed_model,
+            self._service_context,
             self._docstore,
-            self._index_registry,
             query_configs=query_configs,
             query_transform=query_transform,
             recursive=True,
@@ -143,35 +106,18 @@ class ComposableGraph:
         self,
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
         query_transform: Optional[BaseQueryTransform] = None,
     ) -> Response:
         """Query the index."""
         # go over all the indices and create a registry
-        llm_predictor = llm_predictor or self._llm_predictor
         query_runner = QueryRunner(
-            llm_predictor,
-            self._prompt_helper,
-            self._embed_model,
+            self._service_context,
             self._docstore,
-            self._index_registry,
             query_configs=query_configs,
             query_transform=query_transform,
             recursive=True,
         )
         return await query_runner.aquery(query_str, self._index_struct)
-
-    def get_index(
-        self, index_struct_id: str, index_cls: Type[BaseGPTIndex], **kwargs: Any
-    ) -> BaseGPTIndex:
-        """Get index."""
-        index_struct = _safe_get_index_struct(self._docstore, index_struct_id)
-        return index_cls(
-            index_struct=index_struct,
-            docstore=self._docstore,
-            index_registry=self._index_registry,
-            **kwargs
-        )
 
     @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "ComposableGraph":
