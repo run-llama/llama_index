@@ -34,9 +34,6 @@ class Node(BaseDocument):
         if self.text is None:
             raise ValueError("text field not set.")
 
-    # embeddings
-    embedding: Optional[List[float]] = None
-
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
 
