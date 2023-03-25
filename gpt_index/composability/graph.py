@@ -1,42 +1,23 @@
 """Composability graphs."""
 
 import json
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from gpt_index.data_structs.data_structs_v2 import CompositeIndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.empty.base import GPTEmptyIndex
-from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
-from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
+from gpt_index.indices.registry import load_index_struct_from_dict
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
-from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.indices.vector_store.vector_indices import (
-    GPTChromaIndex,
-    GPTFaissIndex,
-    GPTPineconeIndex,
-    GPTQdrantIndex,
-    GPTSimpleVectorIndex,
-    GPTWeaviateIndex,
-)
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.response.schema import Response
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
 
-
+INDEX_STRUCT_KEY = 'index_strut'
+DOCSTORE_KEY = 'docstore'
 
 class ComposableGraph:
     """Composable graph."""
@@ -112,9 +93,9 @@ class ComposableGraph:
 
         """
         result_dict = json.loads(index_string)
+        index_struct = load_index_struct_from_dict(result_dict['index_struct'])
         docstore = DocumentStore.load_from_dict(result_dict["docstore"])
-        index_struct = _safe_get_index_struct(docstore, result_dict["index_struct_id"])
-        return cls(docstore, index_struct, **kwargs)
+        return cls(index_struct, docstore, **kwargs)
 
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "ComposableGraph":
@@ -146,8 +127,8 @@ class ComposableGraph:
 
         """
         out_dict: Dict[str, Any] = {
-            "index_struct_id": self._index_struct.get_doc_id(),
-            "docstore": self._docstore.serialize_to_dict(),
+            INDEX_STRUCT_KEY: self._index_struct.serialize_to_dict(),
+            DOCSTORE_KEY: self._docstore.serialize_to_dict(),
         }
         return json.dumps(out_dict)
 

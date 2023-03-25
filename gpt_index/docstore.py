@@ -6,9 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Type
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
 
@@ -34,32 +32,12 @@ class DocumentStore(DataClassJsonMixin):
             docs_dict[doc_id] = doc_dict
         return {"docs": docs_dict, "ref_doc_info": self.ref_doc_info}
 
-    def contains_index_struct(
-        self,
-        exclude_ids: Optional[Sequence[str]] = None,
-        exclude_types: Optional[Sequence[Type]] = None,
-    ) -> bool:
-        """Check if contains index struct."""
-        exclude_ids = exclude_ids or []
-        exclude_types = exclude_types or []
-        for doc in self.docs.values():
-            if doc.get_doc_id() in exclude_ids:
-                continue
-            if isinstance(doc, tuple(exclude_types)):
-                continue
-            if isinstance(doc, IndexStruct):
-                return True
-        return False
-
     @classmethod
     def load_from_dict(
         cls,
         docs_dict: Dict[str, Any],
-        type_to_struct: Optional[Dict[str, Type[BaseDocument]]] = None,
     ) -> "DocumentStore":
         """Load from dict."""
-        type_to_struct = type_to_struct or INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS
-
         docs_obj_dict = {}
         for doc_id, doc_dict in docs_dict["docs"].items():
             doc_type = doc_dict.pop(TYPE_KEY, None)
@@ -68,18 +46,8 @@ class DocumentStore(DataClassJsonMixin):
             elif doc_type == Node.get_type():
                 doc: Node = Node.from_dict(doc_dict)
             else:
-                if type_to_struct is None:
-                    raise ValueError(
-                        "type_to_struct must be provided if type is index struct."
-                    )
-                # try using IndexStructType to retrieve documents
-                if doc_type not in type_to_struct:
-                    raise ValueError(
-                        f"doc_type {doc_type} not found in type_to_struct. "
-                        "Make sure that it was registered in the index registry."
-                    )
-                doc = type_to_struct[doc_type].from_dict(doc_dict)
-                # doc = index_struct_cls.from_dict(doc_dict)
+                raise NotImplementedError()
+
             docs_obj_dict[doc_id] = doc
         return cls(
             docs=docs_obj_dict,

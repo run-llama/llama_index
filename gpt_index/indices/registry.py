@@ -1,11 +1,16 @@
 """Index registry."""
 
-from typing import Dict
+from typing import Any, Dict
+
+from pydantic import Json
 
 from gpt_index.data_structs.data_structs import PineconeIndexDict, SimpleIndexDict
 from gpt_index.data_structs.data_structs_v2 import (
+    DATA_KEY,
     KG,
+    TYPE_KEY,
     ChromaIndexDict,
+    CompositeIndexStruct,
     EmptyIndex,
     FaissIndexDict,
     IndexDict,
@@ -35,6 +40,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, V2IndexStruct] = 
     IndexStructType.SQL: SQLStructTable,
     IndexStructType.KG: KG,
     IndexStructType.EMPTY: EmptyIndex,
+    IndexStructType.COMPOSITE: CompositeIndexStruct
 }
 
 # TODO: figure out how to avoid importing all indices while not centralizing all query map
@@ -42,3 +48,24 @@ INDEX_STRUT_TYPE_TO_QUERY_MAP: Dict[IndexStructType, QueryMap] = {
     index_type: index_cls.get_query_map()
     for index_type, index_cls in INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS.items()
 }
+
+
+
+@classmethod
+def load_index_struct_from_dict(struct_dict: Dict[str, Any]) -> "V2IndexStruct":
+    type = struct_dict[TYPE_KEY]
+    data_dict = struct_dict[DATA_KEY]
+    
+    cls = INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS[type]
+    
+    if type == IndexStructType.COMPOSITE:
+        struct_dicts: Dict[str, Any] = data_dict['all_index_structs']
+        root_id = data_dict['root_id']
+        all_index_structs = {
+            id_: load_index_struct_from_dict(struct_dict)
+            for id_, struct_dict in struct_dicts.items()
+        }
+        return CompositeIndexStruct(all_index_structs=all_index_structs, root_id=root_id)
+    else:
+        return cls.from_dict(data_dict)
+    

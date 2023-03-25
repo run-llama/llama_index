@@ -5,17 +5,28 @@ Nodes are decoupled from the indices.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+
+from pydantic import Json
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.schema import BaseDocument
 
 
+TYPE_KEY = '__type__'
+DATA_KEY = 'struct'
+
 @dataclass
 class V2IndexStruct(BaseDocument):
     """A base data struct for a LlamaIndex."""
 
+    def to_dict(self, encode_json=False) -> Dict[str, Json]:
+        out_dit = {
+            'type': self.get_type(),
+            'data': super().to_dict(encode_json),
+        }
+        return out_dit
 
 @dataclass
 class IndexGraph(V2IndexStruct):
@@ -392,3 +403,13 @@ class EmptyIndex(IndexDict):
 class CompositeIndexStruct(V2IndexStruct):
     all_index_structs: Dict[str, V2IndexStruct]
     root_id: str
+
+    def to_dict(self, encode_json=False) -> Dict[str, Json]:
+        out_dict = {
+            "all_index_structs": {
+                id_: struct.to_dict(encode_json=encode_json)
+                for id_, struct in self.all_index_structs.items()
+            }
+            "root_id", self.root_id,
+        }
+        return out_dict
