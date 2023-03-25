@@ -163,16 +163,11 @@ class QueryRunner(BaseQueryRunner):
 
         from gpt_index.indices.registry import INDEX_STRUT_TYPE_TO_QUERY_MAP
         query_cls = INDEX_STRUT_TYPE_TO_QUERY_MAP[index_struct_type][mode]
-        # if recursive, pass self as query_runner to each individual query
-        query_runner = self
         query_kwargs = self._get_query_kwargs(config)
         query_obj = query_cls(
-            index_struct,
-            **query_kwargs,
-            query_runner=query_runner,
+            index_struct=index_struct,
             docstore=self._docstore,
-            recursive=self._recursive,
-            use_async=self._use_async,
+            **query_kwargs,
         )
 
         return query_obj
