@@ -110,12 +110,8 @@ class QueryRunner(BaseQueryRunner):
 
         """
         query_kwargs = {k: v for k, v in config.query_kwargs.items()}
-        if "prompt_helper" not in query_kwargs:
-            query_kwargs["prompt_helper"] = self._prompt_helper
-        if "llm_predictor" not in query_kwargs:
-            query_kwargs["llm_predictor"] = self._llm_predictor
-        if "embed_model" not in query_kwargs:
-            query_kwargs["embed_model"] = self._embed_model
+        if "service_context" not in query_kwargs:
+            query_kwargs["service_context"] = self._service_context
         return query_kwargs
 
 
@@ -143,7 +139,7 @@ class QueryRunner(BaseQueryRunner):
         # if query_combiner is still None, use default
         if query_combiner is None:
             extra_kwargs = {
-                "llm_predictor": self._llm_predictor,
+                "service_context": self._service_context,
             }
             query_combiner = get_default_query_combiner(
                 index_struct, query_transform, extra_kwargs=extra_kwargs
@@ -189,13 +185,13 @@ class QueryRunner(BaseQueryRunner):
 
         # NOTE: Currently, query transform is only run once
         # TODO: Consider refactor to support index-specific query transform
-        # TODO: abstract query transformation loop into a separate class
 
-        query_transform = self._get_query_transform(index_struct)
+        # TODO: abstract query transformation loop into a separate class
         # TODO: support query combiner
         # query_combiner = self._get_query_combiner(index_struct, query_transform)
 
-        query_obj = self._get_query_obj(index_struct)
+        # query transform
+        query_transform = self._get_query_transform(index_struct)
         if isinstance(query_str_or_bundle, str):
             query_bundle = QueryBundle(
                 query_str=query_str_or_bundle,
@@ -203,14 +199,13 @@ class QueryRunner(BaseQueryRunner):
             )
         else:
             query_bundle = query_str_or_bundle
-
         transform_extra_info = {"index_struct": index_struct}
         query_bundle = query_transform(
             query_str_or_bundle, extra_info=transform_extra_info
         )
 
-        # TODO: support query combiner
-
+        # query
+        query_obj = self._get_query_obj(index_struct)
         if self._recursive:
             # call recursively
             nodes = query_obj.retrieve(query_bundle)
@@ -238,11 +233,24 @@ class QueryRunner(BaseQueryRunner):
     async def aquery(
         self,
         query_str_or_bundle: Union[str, QueryBundle],
-        index_struct: IndexStruct,
+        index_id: Optional[str] = None,
     ) -> Response:
         """Run query."""
+        if isinstance(self._index_struct, CompositeIndex):
+            if index_id is None:
+                index_id = self._index_struct.root_id
+            index_struct = self._index_struct.all_index_structs[index_id]
+        else:
+            if index_id is not None:
+                raise ValueError('index_id should be used with composite graph')
+            index_struct = self._index_struct
+
         # NOTE: Currently, query transform is only run once
         # TODO: Consider refactor to support index-specific query transform
+        # TODO: support query combiner
+        # query_combiner = self._get_query_combiner(index_struct, query_transform)
+
+        # query transform
         query_transform = self._get_query_transform(index_struct)
         transform_extra_info = {"index_struct": index_struct}
         query_bundle = query_transform(
@@ -250,4 +258,25 @@ class QueryRunner(BaseQueryRunner):
         )
         query_obj = self._get_query_obj(index_struct)
 
-        return await query_obj.aquery(query_bundle)
+        if self._recursive:
+            # call recursively
+            nodes = query_obj.retrieve(query_bundle)
+
+            # do recursion here
+            nodes_for_synthesis = []
+            additional_source_nodes = []
+            for node_with_score in nodes:
+                if isinstance(node_with_score.node, IndexNode):
+                    index_node = node_with_score.node
+                    # recursive call
+                    response = await self.aquery(query_bundle, index_node.index_id)
+
+                    new_node = Node(
+                        text=str(response)
+                    )
+                    nodes_for_synthesis.append(new_node)
+                    additional_source_nodes.extend(response.source_nodes)
+            
+            return await query_obj.asynthesize(query_bundle, nodes_for_synthesis, additional_source_nodes)
+        else:
+            return await query_obj.aquery(query_bundle)
