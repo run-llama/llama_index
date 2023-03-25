@@ -127,7 +127,7 @@ class BaseGPTIndex(Generic[IS]):
             assert isinstance(index.index_struct, V2IndexStruct)
             index_node = IndexNode(
                 text=summary,
-                index_id=index.index_struct.get_doc_id(),
+                index_id=index.index_struct.index_id,
             )
             docstore.add_documents([index_node])
             index_nodes.append(index_node)
@@ -139,8 +139,8 @@ class BaseGPTIndex(Generic[IS]):
         )
         all_indices: Sequence["BaseGPTIndex"] = children_indices + [root_index]
         return ComposableGraph.from_indices(
-            all_index_structs={index.index_struct.get_doc_id(): index.index_struct for index in all_indices},
-            root_id=root_index.index_struct.get_doc_id(),
+            all_index_structs={index.index_struct.index_id: index.index_struct for index in all_indices},
+            root_id=root_index.index_struct.index_id,
             docstores=[index.docstore for index in all_indices],
         )
 
@@ -390,17 +390,9 @@ class BaseGPTIndex(Generic[IS]):
 
     def save_to_dict(self, **save_kwargs: Any) -> dict:
         """Save to dict."""
-        if self.docstore.contains_index_struct(
-            exclude_ids=[self.index_struct.get_doc_id()], exclude_types=[Node]
-        ):
-            raise ValueError(
-                "Cannot call save index if index is composed on top of "
-                "other indices. Please define a `ComposableGraph` and use "
-                "`save_to_string` and `load_from_string` on that instead."
-            )
         out_dict: Dict[str, Any] = {
-            "index_struct_id": self.index_struct.get_doc_id(),
-            "docstore": self.docstore.serialize_to_dict(),
+            INDEX_STRUCT_KEY: self.index_struct.to_dict(),
+            DOCSTORE_KEY: self.docstore.serialize_to_dict(),
         }
         return out_dict
 
