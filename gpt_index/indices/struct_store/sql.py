@@ -192,16 +192,8 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             str: The JSON string of the index.
 
         """
-        if self.docstore.contains_index_struct(
-            exclude_ids=[self.index_struct.get_doc_id()]
-        ):
-            raise ValueError(
-                "Cannot call `save_to_string` on index if index is composed on top of "
-                "other indices. Please define a `ComposableGraph` and use "
-                "`save_to_string` and `load_from_string` on that instead."
-            )
         out_dict: Dict[str, Any] = {
-            "index_struct_id": self.index_struct.get_doc_id(),
+            "index_id": self.index_struct.index_id,
             "docstore": self.docstore.serialize_to_dict(),
             "sql_context_container": self.sql_context_container.to_dict(),
         }

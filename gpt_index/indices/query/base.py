@@ -151,7 +151,7 @@ class BaseGPTIndexQuery(Generic[IS]):
             self._service_context.llama_logger.set_metadata(
                 {
                     "index_type": self._index_struct.get_type(),
-                    "doc_id": self._index_struct.get_doc_id(),
+                    "index_id": self._index_struct.index_id,
                 }
             )
 

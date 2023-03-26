@@ -28,6 +28,7 @@ class NodeType(str, Enum):
     IMAGE = auto()
     INDEX = auto()
 
+
 @dataclass
 class Node(BaseDocument):
     """A generic node of data."""
