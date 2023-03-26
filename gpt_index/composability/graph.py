@@ -29,7 +29,7 @@ class ComposableGraph:
         """Init params."""
         self._docstore = docstore
         self._index_struct = index_struct
-        self._service_context = service_context or ServiceContext()
+        self._service_context = service_context or ServiceContext.from_defaults()
 
     @classmethod
     def from_indices(cls, all_indices: Dict[str, IndexStruct], root_id: str, docstores: Sequence[DocumentStore]):

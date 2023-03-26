@@ -16,10 +16,8 @@ from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
-from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
 from gpt_index.response.schema import SourceNode
 from gpt_index.response.utils import get_response_text
@@ -51,22 +49,18 @@ class ResponseBuilder:
 
     def __init__(
         self,
-        prompt_helper: PromptHelper,
-        llm_predictor: LLMPredictor,
+        service_context: ServiceContext,
         text_qa_template: QuestionAnswerPrompt,
         refine_template: RefinePrompt,
-        llama_logger: Optional[LlamaLogger] = None,
         texts: Optional[List[TextChunk]] = None,
         nodes: Optional[List[Node]] = None,
         use_async: bool = False,
         streaming: bool = False,
     ) -> None:
         """Init params."""
-        self.prompt_helper = prompt_helper
-        self.llm_predictor = llm_predictor
+        self._service_context = service_context
         self.text_qa_template = text_qa_template
         self.refine_template = refine_template
-        self._llama_logger = llama_logger or LlamaLogger()
         self._texts = texts or []
         nodes = nodes or []
         self.source_nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
@@ -113,18 +107,18 @@ class ResponseBuilder:
         refine_template = self.refine_template.partial_format(
             query_str=query_str, existing_answer=response
         )
-        refine_text_splitter = self.prompt_helper.get_text_splitter_given_prompt(
+        refine_text_splitter = self._service_context.prompt_helper.get_text_splitter_given_prompt(
             refine_template, 1
         )
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for cur_text_chunk in text_chunks:
             if not self._streaming:
-                response, _ = self.llm_predictor.predict(
+                response, _ = self._service_context.llm_predictor.predict(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
             else:
-                response, _ = self.llm_predictor.stream(
+                response, _ = self._service_context.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
@@ -138,7 +132,7 @@ class ResponseBuilder:
     ) -> RESPONSE_TEXT_TYPE:
         """Give response given a query and a corresponding text chunk."""
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
-        qa_text_splitter = self.prompt_helper.get_text_splitter_given_prompt(
+        qa_text_splitter = self._service_context.prompt_helper.get_text_splitter_given_prompt(
             text_qa_template, 1
         )
         text_chunks = qa_text_splitter.split_text(text_chunk)
@@ -146,13 +140,13 @@ class ResponseBuilder:
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                response, _ = self.llm_predictor.predict(
+                response, _ = self._service_context.llm_predictor.predict(
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
                 logging.debug(f"> Initial response: {response}")
             elif response is None and self._streaming:
-                response, _ = self.llm_predictor.stream(
+                response, _ = self._service_context.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
@@ -212,11 +206,11 @@ class ResponseBuilder:
     ) -> RESPONSE_TEXT_TYPE:
         """Get compact response."""
         # use prompt helper to fix compact text_chunks under the prompt limitation
-        max_prompt = self.prompt_helper.get_biggest_prompt(
+        max_prompt = self._service_context.prompt_helper.get_biggest_prompt(
             [self.text_qa_template, self.refine_template]
         )
-        with temp_set_attrs(self.prompt_helper, use_chunk_size_limit=False):
-            new_texts = self.prompt_helper.compact_text_chunks(
+        with temp_set_attrs(self._service_context.prompt_helper, use_chunk_size_limit=False):
+            new_texts = self._service_context.prompt_helper.compact_text_chunks(
                 max_prompt, [t.text for t in self._texts]
             )
             new_text_chunks = [TextChunk(text=t) for t in new_texts]
@@ -235,7 +229,7 @@ class ResponseBuilder:
         # first join all the text chunks into a single text
         all_text = "\n\n".join([t.text for t in self._texts])
         # then get text splitter
-        text_splitter = self.prompt_helper.get_text_splitter_given_prompt(
+        text_splitter = self._service_context.prompt_helper.get_text_splitter_given_prompt(
             summary_template, num_children
         )
         text_chunks = text_splitter.split_text(all_text)
@@ -246,8 +240,8 @@ class ResponseBuilder:
         index_builder = GPTTreeIndexBuilder(
             num_children,
             summary_template,
-            self.llm_predictor,
-            self.prompt_helper,
+            self._service_context.llm_predictor.
+            self._service_context.prompt_helper,
             docstore=docstore,
             use_async=self._use_async,
             llama_logger=self._llama_logger,
@@ -263,7 +257,7 @@ class ResponseBuilder:
     ) -> RESPONSE_TEXT_TYPE:
         """Get response from tree builder over root nodes."""
         node_list = get_sorted_node_list(root_nodes)
-        node_text = self.prompt_helper.get_text_from_nodes(
+        node_text = self._service_context.prompt_helper.get_text_from_nodes(
             node_list, prompt=text_qa_template
         )
         # NOTE: the final response could be a string or a stream

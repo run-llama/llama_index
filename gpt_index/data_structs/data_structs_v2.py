@@ -7,14 +7,13 @@ Nodes are decoupled from the indices.
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
-from dataclasses_json import DataClassJsonMixin
 
+from dataclasses_json import DataClassJsonMixin
 from pydantic import Json
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.utils import get_new_id
-
 
 
 @dataclass
@@ -427,7 +426,7 @@ class CompositeIndex(V2IndexStruct):
             "all_index_structs": {
                 id_: struct.to_dict(encode_json=encode_json)
                 for id_, struct in self.all_index_structs.items()
-            }
-            "root_id", self.root_id,
+            },
+            "root_id": self.root_id,
         }
         return out_dict

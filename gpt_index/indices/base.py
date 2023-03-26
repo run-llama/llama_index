@@ -64,7 +64,7 @@ class BaseGPTIndex(Generic[IS]):
         if index_struct is not None and nodes is not None:
             raise ValueError("Only one of documents or index_struct can be provided.")
 
-        self._service_context = service_context or ServiceContext()
+        self._service_context = service_context or ServiceContext.from_defaults()
         self._docstore = docstore or DocumentStore()
 
         if index_struct is None:

@@ -1,7 +1,7 @@
 """Query runner."""
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct

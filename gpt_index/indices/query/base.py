@@ -15,7 +15,6 @@ from gpt_index.indices.postprocessor.node import (
     KeywordNodePostprocessor,
     SimilarityPostprocessor,
 )
-from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.query.embedding_utils import NodeWithScore, SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import (
@@ -112,7 +111,7 @@ class BaseGPTIndexQuery(Generic[IS]):
     def __init__(
         self,
         index_struct: IS,
-        service_context: Optional[ServiceContext] = None,
+        service_context: ServiceContext,
         docstore: Optional[DocumentStore] = None,
         response_mode: ResponseMode = ResponseMode.DEFAULT,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
