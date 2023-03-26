@@ -105,7 +105,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
                 keywords.append(keyword.strip("(\"'"))
         return keywords
 
-    def _get_nodes_for_response(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,

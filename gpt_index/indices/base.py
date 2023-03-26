@@ -1,7 +1,7 @@
 """Base index classes."""
 import json
 import logging
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
@@ -13,8 +13,6 @@ from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.node_parser.interface import NodeParser
-from gpt_index.node_parser.simple import SimpleNodeParser
 from gpt_index.readers.schema.base import Document
 from gpt_index.response.schema import Response
 from gpt_index.token_counter.token_counter import llm_token_counter
@@ -28,7 +26,7 @@ logger = logging.getLogger(__name__)
 QueryMap = Dict[str, Type[BaseGPTIndexQuery]]
 
 
-class BaseGPTIndex(Generic[IS]):
+class BaseGPTIndex(Generic[IS], ABC):
 
     """Base LlamaIndex.
 

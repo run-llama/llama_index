@@ -9,6 +9,7 @@ from gpt_index.data_structs.node_v2 import IndexNode, Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery, BaseQueryRunner
+from gpt_index.indices.query.embedding_utils import NodeWithScore
 from gpt_index.indices.query.query_combiner.base import (
     BaseQueryCombiner,
     get_default_query_combiner,
@@ -173,6 +174,7 @@ class QueryRunner(BaseQueryRunner):
         self,
         query_str_or_bundle: Union[str, QueryBundle],
         index_id: Optional[str] = None,
+        level: int = 0,
     ) -> Response:
         """Run query."""
         if isinstance(self._index_struct, CompositeIndex):
@@ -208,8 +210,10 @@ class QueryRunner(BaseQueryRunner):
         # query
         query_obj = self._get_query_obj(index_struct)
         if self._recursive:
+            print(f"Query level : {level} on {type(index_struct)}")
             # call recursively
             nodes = query_obj.retrieve(query_bundle)
+            print(len(nodes))
 
             # do recursion here
             nodes_for_synthesis = []
@@ -218,13 +222,19 @@ class QueryRunner(BaseQueryRunner):
                 if isinstance(node_with_score.node, IndexNode):
                     index_node = node_with_score.node
                     # recursive call
-                    response = self.query(query_bundle, index_node.index_id)
+                    response = self.query(query_bundle, index_node.index_id, level + 1)
 
                     new_node = Node(
                         text=str(response)
                     )
-                    nodes_for_synthesis.append(new_node)
+                    new_node_with_score = NodeWithScore(
+                        node=new_node,
+                        score=node_with_score.score
+                    )
+                    nodes_for_synthesis.append(new_node_with_score)
                     additional_source_nodes.extend(response.source_nodes)
+                else:
+                    nodes_for_synthesis.append(node_with_score)
             
             return query_obj.synthesize(query_bundle, nodes_for_synthesis, additional_source_nodes)
         else:

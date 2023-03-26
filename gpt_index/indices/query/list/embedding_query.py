@@ -46,7 +46,7 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         )
         self.similarity_top_k = similarity_top_k
 
-    def _get_nodes_for_response(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,

@@ -31,7 +31,7 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
 
     """
 
-    def _get_nodes_for_response(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,

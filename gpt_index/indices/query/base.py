@@ -1,7 +1,7 @@
 """Base query classes."""
 
 import logging
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Generator, Generic, List, Optional, Sequence, TypeVar
 
@@ -28,7 +28,12 @@ from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
+from gpt_index.response.schema import (
+    RESPONSE_TYPE,
+    Response,
+    SourceNode,
+    StreamingResponse,
+)
 from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.utils import truncate_text
 
@@ -76,7 +81,7 @@ class BaseQueryRunner:
         raise NotImplementedError("Not implemented yet.")
 
 
-class BaseGPTIndexQuery(Generic[IS]):
+class BaseGPTIndexQuery(Generic[IS], ABC):
     """Base LlamaIndex Query.
 
     Helper class that is used to query an index. Can be called within `query`
@@ -246,7 +251,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         If not applicable, it's None.
         """
         similarity_tracker = SimilarityTracker()
-        nodes = self._get_nodes_for_response(
+        nodes = self._retrieve(
             query_bundle, similarity_tracker=similarity_tracker
         )
 
@@ -257,13 +262,13 @@ class BaseGPTIndexQuery(Generic[IS]):
         # TODO: create a `display` method to allow subclasses to print the Node
         return similarity_tracker.get_zipped_nodes(nodes)
 
-    @abstractmethod
-    def _get_nodes_for_response(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
+        return []
 
     def _get_extra_info_for_response(
         self,
@@ -277,7 +282,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         response_builder: ResponseBuilder,
         query_bundle: QueryBundle,
         nodes: List[NodeWithScore],
-        additional_source_nodes: Optional[Sequence[Node]],
+        additional_source_nodes: Optional[Sequence[SourceNode]],
     ) -> None:
         """Prepare response builder and return values for query time."""
         response_builder.reset()
@@ -291,7 +296,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         # from recursive
         if additional_source_nodes is not None:
             for node in additional_source_nodes:
-                response_builder.add_node_as_source(node)
+                response_builder.add_source_node(node)
 
     def _prepare_response_output(
         self,
@@ -318,7 +323,7 @@ class BaseGPTIndexQuery(Generic[IS]):
         else:
             raise ValueError("Response must be a string or a generator.")
 
-    def synthesize(self, query_bundle: QueryBundle, nodes: List[NodeWithScore], additional_source_nodes: Optional[List[Node]]=None) -> RESPONSE_TYPE:
+    def synthesize(self, query_bundle: QueryBundle, nodes: List[NodeWithScore], additional_source_nodes: Optional[List[SourceNode]]=None) -> RESPONSE_TYPE:
         # prepare response builder
         self._prepare_response_builder(self.response_builder, query_bundle, nodes, additional_source_nodes=additional_source_nodes)
 
@@ -329,7 +334,7 @@ class BaseGPTIndexQuery(Generic[IS]):
 
         return self._prepare_response_output(response_str, nodes)
 
-    async def asynthesize(self, query_bundle: QueryBundle, nodes: List[NodeWithScore], additional_source_nodes: Optional[List[Node]]=None) -> RESPONSE_TYPE:
+    async def asynthesize(self, query_bundle: QueryBundle, nodes: List[NodeWithScore], additional_source_nodes: Optional[List[SourceNode]]=None) -> RESPONSE_TYPE:
         # prepare response builder
         self._prepare_response_builder(self.response_builder, query_bundle, nodes, additional_source_nodes=additional_source_nodes)
 
