@@ -65,7 +65,7 @@ Here's a corresponding example code snippet over a composed graph.
 
 # Setting: a list index composed over multiple vector indices
 # llm_predictor_chatgpt corresponds to the ChatGPT LLM interface
-from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
     llm_predictor_chatgpt, verbose=True
 )
@@ -128,7 +128,7 @@ An example image is shown below.
 Here's a corresponding example code snippet.
 
 ```python
-from gpt_index.indices.query.query_transform.base import StepDecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import StepDecomposeQueryTransform
 # gpt-4
 step_decompose_transform = StepDecomposeQueryTransform(
     llm_predictor, verbose=True
