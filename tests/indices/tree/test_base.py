@@ -215,7 +215,9 @@ def test_query(
 
 
 @patch_common
+@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_predict)
 def test_summarize_query(
+    _mock_apredict: Any,
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
