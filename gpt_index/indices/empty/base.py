@@ -13,8 +13,6 @@ from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.empty.base import GPTEmptyIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.node_parser.interface import NodeParser
 
 
 class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):

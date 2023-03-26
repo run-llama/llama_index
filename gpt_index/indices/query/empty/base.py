@@ -26,24 +26,23 @@ class GPTEmptyIndexQuery(BaseGPTIndexQuery[EmptyIndex]):
 
     def __init__(
         self,
-        index_struct: EmptyIndex,
         input_prompt: Optional[SimpleInputPrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._input_prompt = input_prompt or DEFAULT_SIMPLE_INPUT_PROMPT
-        super().__init__(index_struct=index_struct, **kwargs)
+        super().__init__(**kwargs)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         if not self._streaming:
-            response, _ = self._llm_predictor.predict(
+            response, _ = self._service_context.llm_predictor.predict(
                 self._input_prompt,
                 query_str=query_bundle.query_str,
             )
             return Response(response)
         else:
-            stream_response, _ = self._llm_predictor.stream(
+            stream_response, _ = self._service_context.llm_predictor.stream(
                 self._input_prompt,
                 query_str=query_bundle.query_str,
             )
