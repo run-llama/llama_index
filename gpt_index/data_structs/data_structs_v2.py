@@ -4,6 +4,7 @@ Nodes are decoupled from the indices.
 
 """
 
+import uuid
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
@@ -21,13 +22,7 @@ from gpt_index.utils import get_new_id
 class V2IndexStruct(DataClassJsonMixin):
     """A base data struct for a LlamaIndex."""
 
-    index_id: Optional[str] = None
-
-    def __post_init__(self) -> None:
-        """Post init."""
-        # assign index_id if not set
-        if self.index_id is None:
-            self.doc_id = get_new_id(set())
+    index_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     @classmethod
     @abstractmethod
@@ -342,6 +337,7 @@ class KG(V2IndexStruct):
 # TODO: remove once we centralize UX around vector index
 
 
+@dataclass
 class SimpleIndexDict(IndexDict):
     """Index dict for simple vector index."""
 
@@ -351,6 +347,7 @@ class SimpleIndexDict(IndexDict):
         return IndexStructType.SIMPLE_DICT
 
 
+@dataclass
 class FaissIndexDict(IndexDict):
     """Index dict for Faiss vector index."""
 
@@ -360,6 +357,7 @@ class FaissIndexDict(IndexDict):
         return IndexStructType.DICT
 
 
+@dataclass
 class WeaviateIndexDict(IndexDict):
     """Index dict for Weaviate vector index."""
 
@@ -369,6 +367,7 @@ class WeaviateIndexDict(IndexDict):
         return IndexStructType.WEAVIATE
 
 
+@dataclass
 class PineconeIndexDict(IndexDict):
     """Index dict for Pinecone vector index."""
 
@@ -378,6 +377,7 @@ class PineconeIndexDict(IndexDict):
         return IndexStructType.PINECONE
 
 
+@dataclass
 class QdrantIndexDict(IndexDict):
     """Index dict for Qdrant vector index."""
 
@@ -387,6 +387,7 @@ class QdrantIndexDict(IndexDict):
         return IndexStructType.QDRANT
 
 
+@dataclass
 class ChromaIndexDict(IndexDict):
     """Index dict for Chroma vector index."""
 
@@ -396,6 +397,7 @@ class ChromaIndexDict(IndexDict):
         return IndexStructType.CHROMA
 
 
+@dataclass
 class OpensearchIndexDict(IndexDict):
     """Index dict for Opensearch vector index."""
 
@@ -405,6 +407,7 @@ class OpensearchIndexDict(IndexDict):
         return IndexStructType.OPENSEARCH
 
 
+@dataclass
 class EmptyIndex(IndexDict):
     """Empty index."""
 
@@ -413,9 +416,10 @@ class EmptyIndex(IndexDict):
         """Get type."""
         return IndexStructType.EMPTY
 
+@dataclass
 class CompositeIndex(V2IndexStruct):
-    all_index_structs: Dict[str, V2IndexStruct]
-    root_id: str
+    all_index_structs: Dict[str, V2IndexStruct] = field(default_factory=dict)
+    root_id: Optional[str] = None
 
     @classmethod
     def get_type(cls) -> str:
