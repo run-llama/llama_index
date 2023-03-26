@@ -113,6 +113,10 @@ class BaseGPTIndexQuery(Generic[IS]):
         index_struct: IS,
         service_context: ServiceContext,
         docstore: Optional[DocumentStore] = None,
+        # TODO: deprecated
+        required_keywords: Optional[List[str]] = None,
+        # TODO: deprecated
+        exclude_keywords: Optional[List[str]] = None,
         response_mode: ResponseMode = ResponseMode.DEFAULT,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,

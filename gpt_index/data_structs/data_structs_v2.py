@@ -15,7 +15,6 @@ from pydantic import Json
 from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.utils import get_new_id
 
 
 @dataclass
@@ -30,11 +29,11 @@ class V2IndexStruct(DataClassJsonMixin):
         """Get Document type."""
 
     def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
-        out_dit = {
+        out_dict = {
             TYPE_KEY: self.get_type(),
             DATA_KEY: super().to_dict(encode_json),
         }
-        return out_dit
+        return out_dict
 
 @dataclass
 class IndexGraph(V2IndexStruct):
@@ -427,11 +426,16 @@ class CompositeIndex(V2IndexStruct):
         return IndexStructType.COMPOSITE
 
     def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
-        out_dict = {
+        data_dict = {
             "all_index_structs": {
                 id_: struct.to_dict(encode_json=encode_json)
                 for id_, struct in self.all_index_structs.items()
             },
             "root_id": self.root_id,
+        }
+
+        out_dict = {
+            TYPE_KEY: self.get_type(),
+            DATA_KEY: data_dict,
         }
         return out_dict

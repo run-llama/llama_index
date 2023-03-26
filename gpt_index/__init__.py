@@ -32,6 +32,7 @@ from gpt_index.indices.prompt_helper import PromptHelper
 
 # for composability
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
@@ -100,6 +101,7 @@ logging.getLogger(__name__).addHandler(NullHandler())
 
 
 __all__ = [
+    "ServiceContext",
     "ComposableGraph",
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",

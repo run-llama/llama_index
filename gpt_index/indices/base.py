@@ -122,7 +122,6 @@ class BaseGPTIndex(Generic[IS]):
         if  len(children_indices) != len(index_summaries):
             raise ValueError('indices and index_summaries must have same length!')
 
-        docstore = DocumentStore()
         index_nodes = []
         for index, summary in zip(children_indices, index_summaries):
             assert isinstance(index.index_struct, V2IndexStruct)
@@ -130,12 +129,10 @@ class BaseGPTIndex(Generic[IS]):
                 text=summary,
                 index_id=index.index_struct.index_id,
             )
-            docstore.add_documents([index_node])
             index_nodes.append(index_node)
 
         root_index = cls(
             nodes=index_nodes,
-            docstore=docstore,
             **kwargs,
         )
         all_indices: Sequence["BaseGPTIndex"] = children_indices + [root_index]
@@ -283,7 +280,7 @@ class BaseGPTIndex(Generic[IS]):
             recursive=False,
             use_async=use_async,
         )
-        return query_runner.query(query_str, self._index_struct)
+        return query_runner.query(query_str)
 
     async def aquery(
         self,
@@ -326,7 +323,7 @@ class BaseGPTIndex(Generic[IS]):
             recursive=False,
             use_async=use_async,
         )
-        return await query_runner.aquery(query_str, self._index_struct)
+        return await query_runner.aquery(query_str)
 
     @classmethod
     @abstractmethod

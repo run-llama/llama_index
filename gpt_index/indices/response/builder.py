@@ -240,11 +240,9 @@ class ResponseBuilder:
         index_builder = GPTTreeIndexBuilder(
             num_children,
             summary_template,
-            self._service_context.llm_predictor.
-            self._service_context.prompt_helper,
+            service_context=self._service_context,
             docstore=docstore,
             use_async=self._use_async,
-            llama_logger=self._llama_logger,
         )
         return index_builder, nodes
 

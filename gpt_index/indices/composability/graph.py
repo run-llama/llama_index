@@ -31,9 +31,9 @@ class ComposableGraph:
         self._service_context = service_context or ServiceContext.from_defaults()
 
     @classmethod
-    def from_indices(cls, all_indices: Dict[str, IndexStruct], root_id: str, docstores: Sequence[DocumentStore]):
+    def from_indices(cls, all_index_structs: Dict[str, IndexStruct], root_id: str, docstores: Sequence[DocumentStore]):
         composite_index_struct = CompositeIndex(
-            all_indices=all_indices,
+            all_index_structs=all_index_structs,
             root_id=root_id,
         )
         merged_docstore = DocumentStore.merge(docstores)
@@ -54,7 +54,7 @@ class ComposableGraph:
             query_transform=query_transform,
             recursive=True,
         )
-        return query_runner.query(query_str, self._index_struct)
+        return query_runner.query(query_str)
 
     async def aquery(
         self,
@@ -71,7 +71,7 @@ class ComposableGraph:
             query_transform=query_transform,
             recursive=True,
         )
-        return await query_runner.aquery(query_str, self._index_struct)
+        return await query_runner.aquery(query_str)
 
     @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "ComposableGraph":
