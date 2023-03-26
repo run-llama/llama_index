@@ -5,7 +5,7 @@ MAX_CHUNK_OVERLAP = 200
 NUM_OUTPUTS = 256
 
 
-INDEX_STRUCT_KEY = 'index_strut'
+INDEX_STRUCT_KEY = 'index_struct'
 DOCSTORE_KEY = 'docstore'
 
 TYPE_KEY = '__type__'

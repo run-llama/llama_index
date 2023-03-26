@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 from dataclasses_json import DataClassJsonMixin
 from pydantic import Json
 
+from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.utils import get_new_id
@@ -35,8 +36,8 @@ class V2IndexStruct(DataClassJsonMixin):
 
     def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
         out_dit = {
-            'type': self.get_type(),
-            'data': super().to_dict(encode_json),
+            TYPE_KEY: self.get_type(),
+            DATA_KEY: super().to_dict(encode_json),
         }
         return out_dit
 
