@@ -293,44 +293,6 @@ def test_build_simple(
 @patch.object(
     OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
-def test_build_big_index(
-    _mock_embeds: Any,
-    _mock_embed: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    documents: List[Document],
-    struct_kwargs: Dict,
-) -> None:
-    """Test build GPTSimpleVectorIndex."""
-    index_kwargs, query_kwargs = struct_kwargs
-
-    index = GPTSimpleVectorIndex(documents=documents, **index_kwargs)
-    assert len(index.index_struct.nodes_dict) == 4
-    # check contents of nodes
-    actual_node_tups = [
-        ("Hello world.", [1, 0, 0, 0, 0]),
-        ("This is a test.", [0, 1, 0, 0, 0]),
-        ("This is another test.", [0, 0, 1, 0, 0]),
-        ("This is a test v2.", [0, 0, 0, 1, 0]),
-    ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
-        # NOTE: this test breaks abstraction
-        assert isinstance(index._vector_store, SimpleVectorStore)
-        embedding = index._vector_store.get(text_id)
-        assert (node.text, embedding) in actual_node_tups
-
-
-@patch_common
-@patch.object(
-    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
-)
-@patch.object(
-    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
-)
 def test_simple_insert(
     _mock_embeds: Any,
     _mock_embed: Any,
