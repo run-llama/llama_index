@@ -40,12 +40,12 @@ print(response)
 
 ```
 
-Example notebook: https://github.com/jerryjliu/llama_index/blob/main/examples/query_transformations/HyDEQueryTransformDemo.ipynb.
+Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
 
 
 ### Single-Step Query Decomposition
 
-Some recent approaches (e.g. [self-ask](), [ReAct]()) have suggested that LLM's 
+Some recent approaches (e.g. [self-ask](https://ofir.io/self-ask.pdf), [ReAct](https://arxiv.org/abs/2210.03629)) have suggested that LLM's 
 perform better at answering complex questions when they break the question into smaller steps. We have found that this is true for queries that require knowledge augmentation as well.
 
 If your query is complex, different parts of your knowledge base may answer different "subqueries" around the overall query.
@@ -106,7 +106,7 @@ response_chatgpt = graph.query(
 
 ```
 
-Example notebook: https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb.
+Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) for a full walkthrough.
 
 
 
@@ -142,4 +142,4 @@ print(str(response))
 
 ```
 
-Example notebook: https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb.
+Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/vector_indices/SimpleIndexDemo-multistep.ipynb) for a full walkthrough.
