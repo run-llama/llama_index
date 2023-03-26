@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.constants import TYPE_KEY
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import ImageNode, IndexNode, Node
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
 
@@ -39,12 +39,17 @@ class DocumentStore(DataClassJsonMixin):
         docs_obj_dict = {}
         for doc_id, doc_dict in docs_dict["docs"].items():
             doc_type = doc_dict.pop(TYPE_KEY, None)
+            doc: BaseDocument
             if doc_type == "Document" or doc_type is None:
-                doc: BaseDocument = Document.from_dict(doc_dict)
+                doc = Document.from_dict(doc_dict)
             elif doc_type == Node.get_type():
-                doc: Node = Node.from_dict(doc_dict)
+                doc = Node.from_dict(doc_dict)
+            elif doc_type == ImageNode.get_type():
+                doc = ImageNode.from_dict(doc_dict)
+            elif doc_type == IndexNode.get_type():
+                doc = IndexNode.from_dict(doc_dict) 
             else:
-                raise NotImplementedError()
+                raise ValueError(f'Unknown doc type: {doc_type}')
 
             docs_obj_dict[doc_id] = doc
         return cls(

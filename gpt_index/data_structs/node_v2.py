@@ -10,7 +10,7 @@ It is often used as an atomic unit of data in various indices.
 """
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from gpt_index.schema import BaseDocument
 
@@ -22,6 +22,11 @@ class DocumentRelationship(str, Enum):
     PREVIOUS = auto()
     NEXT = auto()
 
+
+class NodeType(str, Enum):
+    TEXT = auto()
+    IMAGE = auto()
+    INDEX = auto()
 
 @dataclass
 class Node(BaseDocument):
@@ -70,8 +75,7 @@ class Node(BaseDocument):
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
-        # TODO: consolidate with IndexStructType
-        return "node"
+        return NodeType.TEXT
 
 
 
@@ -82,11 +86,19 @@ class ImageNode(Node):
     # base64 encoded image str
     image: Optional[str] = None
 
+    @classmethod
+    def get_type(cls) -> str:
+        return NodeType.IMAGE
+
+
 
 @dataclass
 class IndexNode(Node):
     """Node with reference to an index."""
     index_id: Optional[str] = None
 
+    @classmethod
+    def get_type(cls) -> str: 
+        return NodeType.INDEX
 
     
