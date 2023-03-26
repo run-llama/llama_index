@@ -86,6 +86,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    how_to/custom_llms.md
    how_to/query_transformations.md
    how_to/output_parsing.md
+   how_to/optimizers.md
    how_to/integrations.rst
 
 
