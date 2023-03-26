@@ -135,7 +135,7 @@ class FaissVectorStore(VectorStore):
         """
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
         dists, indices = self._faiss_index.search(query_embedding_np, similarity_top_k)
-        dists = [d[0] for d in dists]
+        dists = [d for d in dists[0]]
         # if empty, then return an empty response
         if len(indices) == 0:
             return VectorStoreQueryResult(similarities=[], ids=[])
