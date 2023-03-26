@@ -104,6 +104,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    reference/embeddings.rst
    reference/struct_store.rst
    reference/response.rst
+   reference/optimizers.rst
    reference/playground.rst
    reference/example_notebooks.rst
    reference/langchain_integrations/base.rst
