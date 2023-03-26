@@ -12,8 +12,8 @@ from gpt_index.indices.vector_store import GPTSimpleVectorIndex
 from gpt_index.llm_predictor.base import LLMPredictor
 from gpt_index.playground import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
 from gpt_index.readers.schema.base import Document
-from tests.llm_predictor.test_base import mock_llmpredictor_predict
 from tests.mock_utils.mock_decorator import patch_common
+from tests.mock_utils.mock_predict import mock_llmpredictor_predict
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
