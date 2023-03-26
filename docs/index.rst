@@ -82,10 +82,12 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    how_to/update.md
    how_to/cost_analysis.md
    how_to/embeddings.md
-   how_to/vector_stores.md
    how_to/custom_prompts.md
    how_to/custom_llms.md
-   how_to/using_with_langchain.md
+   how_to/query_transformations.md
+   how_to/output_parsing.md
+   how_to/optimizers.md
+   how_to/integrations.rst
 
 
 .. toctree::
@@ -102,6 +104,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    reference/embeddings.rst
    reference/struct_store.rst
    reference/response.rst
+   reference/optimizers.rst
    reference/playground.rst
    reference/example_notebooks.rst
    reference/langchain_integrations/base.rst
