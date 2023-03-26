@@ -4,7 +4,7 @@
 import logging
 from typing import List, Optional
 
-from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
+from gpt_index.data_structs.node_v2 import DocumentRelationship, ImageNode, Node
 from gpt_index.langchain_helpers.text_splitter import (
     TextSplit,
     TextSplitter,
@@ -66,18 +66,22 @@ def get_nodes_from_document(
             }
         index_counter += len(text_chunk) + 1
 
-        image: Optional[str] = None
         if isinstance(document, ImageDocument):
-            image = document.image
-
-        # if embedding specified in document, pass it to the Node
-        node = Node(
-            text=text_chunk,
-            embedding=document.embedding,
-            extra_info=document.extra_info if include_extra_info else None,
-            node_info=index_pos_info,
-            image=image,
-            relationships={DocumentRelationship.SOURCE: document.get_doc_id()},
-        )
+            node = ImageNode(
+                text=text_chunk,
+                embedding=document.embedding,
+                extra_info=document.extra_info if include_extra_info else None,
+                node_info=index_pos_info,
+                image=document.image,
+                relationships={DocumentRelationship.SOURCE: document.get_doc_id()},
+            )
+        else:
+            node = Node(
+                text=text_chunk,
+                embedding=document.embedding,
+                extra_info=document.extra_info if include_extra_info else None,
+                node_info=index_pos_info,
+                relationships={DocumentRelationship.SOURCE: document.get_doc_id()},
+            )
         nodes.append(node)
     return nodes

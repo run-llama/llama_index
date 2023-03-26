@@ -5,10 +5,8 @@ from typing import Optional, Sequence
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
-from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
@@ -16,15 +14,13 @@ from gpt_index.prompts.default_prompts import (
 )
 
 
-class GPTIndexInserter:
+class GPTTreeIndexInserter:
     """LlamaIndex inserter."""
 
     def __init__(
         self,
         index_graph: IndexGraph,
-        llm_predictor: LLMPredictor,
-        prompt_helper: PromptHelper,
-        node_parser: NodeParser,
+        service_context: ServiceContext,
         num_children: int = 10,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
@@ -37,9 +33,7 @@ class GPTIndexInserter:
         self.summary_prompt = summary_prompt
         self.insert_prompt = insert_prompt
         self.index_graph = index_graph
-        self._llm_predictor = llm_predictor
-        self._prompt_helper = prompt_helper
-        self._node_parser = node_parser
+        self._service_context = service_context
         self._docstore = docstore or DocumentStore()
 
     def _insert_under_parent_and_consolidate(
@@ -68,10 +62,10 @@ class GPTIndexInserter:
             half1 = cur_graph_node_list[: len(cur_graph_nodes) // 2]
             half2 = cur_graph_node_list[len(cur_graph_nodes) // 2 :]
 
-            text_chunk1 = self._prompt_helper.get_text_from_nodes(
+            text_chunk1 = self._service_context.prompt_helper.get_text_from_nodes(
                 half1, prompt=self.summary_prompt
             )
-            summary1, _ = self._llm_predictor.predict(
+            summary1, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk1
             )
             node1 = Node(
@@ -79,10 +73,10 @@ class GPTIndexInserter:
             )
             self.index_graph.insert(node1, children_nodes=half1)
 
-            text_chunk2 = self._prompt_helper.get_text_from_nodes(
+            text_chunk2 = self._service_context.prompt_helper.get_text_from_nodes(
                 half2, prompt=self.summary_prompt
             )
-            summary2, _ = self._llm_predictor.predict(
+            summary2, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk2
             )
             node2 = Node(
@@ -121,10 +115,10 @@ class GPTIndexInserter:
             self._insert_under_parent_and_consolidate(node, parent_node)
         # else try to find the right summary node to insert under
         else:
-            numbered_text = self._prompt_helper.get_numbered_text_from_nodes(
+            numbered_text = self._service_context.prompt_helper.get_numbered_text_from_nodes(
                 cur_graph_node_list, prompt=self.insert_prompt
             )
-            response, _ = self._llm_predictor.predict(
+            response, _ = self._service_context.llm_predictor.predict(
                 self.insert_prompt,
                 new_chunk_text=node.get_text(),
                 num_chunks=len(cur_graph_node_list),
@@ -148,10 +142,10 @@ class GPTIndexInserter:
             cur_graph_node_ids = self.index_graph.get_children(parent_node)
             cur_graph_nodes = self._docstore.get_node_dict(cur_graph_node_ids)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
-            text_chunk = self._prompt_helper.get_text_from_nodes(
+            text_chunk = self._service_context.prompt_helper.get_text_from_nodes(
                 cur_graph_node_list, prompt=self.summary_prompt
             )
-            new_summary, _ = self._llm_predictor.predict(
+            new_summary, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk
             )
 

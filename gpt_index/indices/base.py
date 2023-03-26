@@ -81,22 +81,22 @@ class BaseGPTIndex(Generic[IS]):
         cls,
         documents: Sequence[Document],
         docstore: Optional[DocumentStore] = None,
-        node_parser: Optional[NodeParser] = None,
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "BaseGPTIndex":
         """Create index from documents."""
-        node_parser = node_parser or SimpleNodeParser()
+        service_context = service_context or ServiceContext.from_defaults()
         docstore = docstore or DocumentStore()
 
         for doc in documents:
             docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
 
-        nodes = node_parser.get_nodes_from_documents(documents)
+        nodes = service_context.node_parser.get_nodes_from_documents(documents)
 
         return cls(
             nodes=nodes,
             docstore=docstore,
-            node_parser=node_parser,
+            service_context=service_context,
             **kwargs,
         )
 
@@ -112,6 +112,9 @@ class BaseGPTIndex(Generic[IS]):
         NOTE: this is mostly syntactic sugar, 
         roughly equivalent to directly calling `ComposableGraph.from_indices`.
         """
+        # NOTE: lazy import
+        from gpt_index.indices.composability.graph import ComposableGraph
+
         if index_summaries is None:
             # TODO: automatically set summaries
             index_summaries = ['stub' for _ in children_indices]
