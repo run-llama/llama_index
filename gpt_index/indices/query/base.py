@@ -276,14 +276,14 @@ class BaseGPTIndexQuery(Generic[IS]):
         self,
         response_builder: ResponseBuilder,
         query_bundle: QueryBundle,
-        tuples: List[NodeWithScore],
+        nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[Node]],
     ) -> None:
         """Prepare response builder and return values for query time."""
         response_builder.reset()
-        for node, similarity in tuples:
-            text = self._get_text_from_node(node)
-            response_builder.add_node_as_source(node, similarity=similarity)
+        for node_with_score in nodes:
+            text = self._get_text_from_node(node_with_score.node)
+            response_builder.add_node_as_source(node_with_score.node, similarity=node_with_score.score)
             if self._optimizer is not None:
                 text = TextChunk(text=self._optimizer.optimize(query_bundle, text.text))
             response_builder.add_text_chunks([text])
