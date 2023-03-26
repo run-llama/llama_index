@@ -3,7 +3,6 @@
 from typing import Any, Dict, Type
 
 from gpt_index.constants import DATA_KEY, TYPE_KEY
-from gpt_index.data_structs.data_structs import PineconeIndexDict, SimpleIndexDict
 from gpt_index.data_structs.data_structs_v2 import (
     KG,
     ChromaIndexDict,
@@ -14,7 +13,9 @@ from gpt_index.data_structs.data_structs_v2 import (
     IndexGraph,
     IndexList,
     KeywordTable,
+    PineconeIndexDict,
     QdrantIndexDict,
+    SimpleIndexDict,
     V2IndexStruct,
     WeaviateIndexDict,
 )
@@ -93,5 +94,6 @@ def load_index_struct_from_dict(struct_dict: Dict[str, Any]) -> "V2IndexStruct":
         }
         return CompositeIndex(all_index_structs=all_index_structs, root_id=root_id)
     else:
+        print(cls)
         return cls.from_dict(data_dict)
     

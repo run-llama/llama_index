@@ -339,8 +339,6 @@ class BaseGPTIndex(Generic[IS]):
         from gpt_index.indices.registry import load_index_struct_from_dict
 
         index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
-        assert isinstance(index_struct, cls.index_struct_cls)
-
         docstore = DocumentStore.load_from_dict(result_dict[DOCSTORE_KEY])
         return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 

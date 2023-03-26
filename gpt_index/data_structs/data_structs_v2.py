@@ -162,10 +162,6 @@ class IndexList(V2IndexStruct):
 class IndexDict(V2IndexStruct):
     """A simple dictionary of documents."""
 
-    # nodes_dict: Dict[int, Node] = field(default_factory=dict)
-    # id_map: Dict[str, int] = field(default_factory=dict)
-    # nodes_set: Set[str] = field(default_factory=set)
-
     # mapping from vector store id to node id
     nodes_dict: Dict[str, str] = field(default_factory=dict)
     # mapping from doc_id to vector store id
