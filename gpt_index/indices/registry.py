@@ -97,5 +97,4 @@ def load_index_struct_from_dict(struct_dict: Dict[str, Any]) -> "V2IndexStruct":
         }
         return CompositeIndex(all_index_structs=all_index_structs, root_id=root_id)
     else:
-        print(cls)
         return cls.from_dict(data_dict)
