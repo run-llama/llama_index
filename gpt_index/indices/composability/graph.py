@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.query.query_runner import QueryRunner
@@ -30,6 +31,15 @@ class ComposableGraph:
         self._docstore = docstore
         self._index_struct = index_struct
         self._service_context = service_context or ServiceContext.from_defaults()
+    
+
+    @property
+    def index_struct(self) -> CompositeIndex:
+        return self._index_struct
+
+    @property
+    def service_context(self) -> ServiceContext:
+        return self._service_context
 
     @classmethod
     def from_indices(

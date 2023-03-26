@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union, cast
 
-from gpt_index.data_structs.data_structs_v2 import CompositeIndex
+from gpt_index.data_structs.data_structs_v2 import CompositeIndex, IndexGraph
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node
 from gpt_index.data_structs.struct_type import IndexStructType
@@ -208,7 +208,8 @@ class QueryRunner:
 
         # query
         query_obj = self._get_query_obj(index_struct)
-        if self._recursive:
+        # TODO: support tree
+        if self._recursive and not isinstance(index_struct, IndexGraph):
             print(f"Query level : {level} on {index_struct.get_type()}")
             # call recursively
             nodes = query_obj.retrieve(query_bundle)
