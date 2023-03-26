@@ -300,7 +300,7 @@ class BaseGPTIndexQuery(Generic[IS]):
     ) -> RESPONSE_TYPE:
         """Prepare response object from response string."""
         response_extra_info = self._get_extra_info_for_response(
-            [node for node, _ in tuples]
+            [node_with_score.node for node_with_score in tuples]
         )
 
         if response_str is None or isinstance(response_str, str):
