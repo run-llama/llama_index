@@ -356,15 +356,11 @@ class BaseGPTIndexQuery(Generic[IS]):
     @llm_token_counter("query")
     def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        nodes = self.retrieve(query_bundle)
-        response = self.synthesize(query_bundle, nodes)
         # TODO: support include summary
-        return response
+        return self._query(query_bundle)
 
     @llm_token_counter("query")
     async def aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        nodes = self.retrieve(query_bundle)
-        response = self.asynthesize(query_bundle, nodes)
         # TODO: support include summary
-        return response
+        return await self._aquery(query_bundle)

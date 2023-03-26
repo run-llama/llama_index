@@ -77,20 +77,15 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
         if len(self.index_struct.get_children(selected_node)) == 0:
             response_builder = ResponseBuilder(
-                self._prompt_helper,
-                self._llm_predictor,
+                self._service_context,
                 self.text_qa_template,
                 self.refine_template,
             )
             self.response_builder.add_node_as_source(selected_node)
             # use response builder to get answer from node
-            node_text, sub_response = self._get_text_from_node(
-                query_bundle, selected_node, level=level
+            node_text = self._get_text_from_node(
+                selected_node, level=level
             )
-            if sub_response is not None:
-                # these are source nodes from within this node (when it's an index)
-                for source_node in sub_response.source_nodes:
-                    self.response_builder.add_source_node(source_node)
             cur_response = response_builder.get_response_over_chunks(
                 query_str, [node_text], prev_response=prev_response
             )
@@ -107,7 +102,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             return cur_response
         else:
             context_msg = selected_node.get_text()
-            cur_response, formatted_refine_prompt = self._llm_predictor.predict(
+            cur_response, formatted_refine_prompt = self._service_context.llm_predictor.predict(
                 self.refine_template,
                 query_str=query_str,
                 existing_answer=prev_response,
@@ -141,10 +136,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             query_template = self.query_template.partial_format(
                 num_chunks=len(cur_node_list), query_str=query_str
             )
-            numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
+            numbered_node_text = self._service_context.prompt_helper.get_numbered_text_from_nodes(
                 cur_node_list, prompt=query_template
             )
-            response, formatted_query_prompt = self._llm_predictor.predict(
+            response, formatted_query_prompt = self._service_context.llm_predictor.predict(
                 query_template,
                 context_list=numbered_node_text,
             )
@@ -154,10 +149,10 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                 query_str=query_str,
                 branching_factor=self.child_branch_factor,
             )
-            numbered_node_text = self._prompt_helper.get_numbered_text_from_nodes(
+            numbered_node_text = self._service_context.prompt_helper.get_numbered_text_from_nodes(
                 cur_node_list, prompt=query_template_multiple
             )
-            response, formatted_query_prompt = self._llm_predictor.predict(
+            response, formatted_query_prompt = self._service_context.llm_predictor.predict(
                 query_template_multiple,
                 context_list=numbered_node_text,
             )
@@ -165,7 +160,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         logger.debug(
             f">[Level {level}] current prompt template: {formatted_query_prompt}"
         )
-        self._llama_logger.add_log(
+        self._service_context.llama_logger.add_log(
             {"formatted_prompt_template": formatted_query_prompt, "level": level}
         )
         debug_str = f">[Level {level}] Current response: {response}"
