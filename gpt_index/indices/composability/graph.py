@@ -11,7 +11,7 @@ from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.response.schema import Response
+from gpt_index.response.schema import RESPONSE_TYPE, Response
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
@@ -37,7 +37,7 @@ class ComposableGraph:
         all_index_structs: Dict[str, IndexStruct],
         root_id: str,
         docstores: Sequence[DocumentStore],
-    ):
+    ) -> "ComposableGraph":
         composite_index_struct = CompositeIndex(
             all_index_structs=all_index_structs,
             root_id=root_id,
@@ -50,7 +50,7 @@ class ComposableGraph:
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
-    ) -> Response:
+    ) -> RESPONSE_TYPE:
         """Query the index."""
         query_runner = QueryRunner(
             index_struct=self._index_struct,
@@ -67,7 +67,7 @@ class ComposableGraph:
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
-    ) -> Response:
+    ) -> RESPONSE_TYPE:
         """Query the index."""
         query_runner = QueryRunner(
             index_struct=self._index_struct,

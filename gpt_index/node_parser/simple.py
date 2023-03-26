@@ -25,7 +25,7 @@ class SimpleNodeParser:
         include_extra_info: bool = True,
     ) -> List[Node]:
         """Parse document into nodes."""
-        all_nodes = []
+        all_nodes: List[Node] = []
         for document in documents:
             nodes = get_nodes_from_document(
                 document, self._text_splitter, include_extra_info

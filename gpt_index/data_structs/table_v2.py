@@ -29,7 +29,7 @@ class SQLStructTable(BaseStructTable):
     context_dict: Dict[str, str] = field(default_factory=dict)
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         # TODO: consolidate with IndexStructType
         return IndexStructType.SQL
@@ -40,6 +40,6 @@ class PandasStructTable(BaseStructTable):
     """Pandas struct outputs."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.PANDAS

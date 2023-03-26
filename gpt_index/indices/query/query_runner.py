@@ -20,7 +20,7 @@ from gpt_index.indices.query.query_transform.base import (
 )
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.response.schema import Response
+from gpt_index.response.schema import RESPONSE_TYPE, Response
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
@@ -173,11 +173,12 @@ class QueryRunner:
         query_str_or_bundle: Union[str, QueryBundle],
         index_id: Optional[str] = None,
         level: int = 0,
-    ) -> Response:
+    ) -> RESPONSE_TYPE:
         """Run query."""
         if isinstance(self._index_struct, CompositeIndex):
             if index_id is None:
                 index_id = self._index_struct.root_id
+            assert index_id is not None
             index_struct = self._index_struct.all_index_structs[index_id]
         else:
             if index_id is not None:
@@ -208,10 +209,9 @@ class QueryRunner:
         # query
         query_obj = self._get_query_obj(index_struct)
         if self._recursive:
-            print(f"Query level : {level} on {type(index_struct)}")
+            print(f"Query level : {level} on {index_struct.get_type()}")
             # call recursively
             nodes = query_obj.retrieve(query_bundle)
-            print(len(nodes))
 
             # do recursion here
             nodes_for_synthesis = []
@@ -241,11 +241,12 @@ class QueryRunner:
         self,
         query_str_or_bundle: Union[str, QueryBundle],
         index_id: Optional[str] = None,
-    ) -> Response:
+    ) -> RESPONSE_TYPE:
         """Run query."""
         if isinstance(self._index_struct, CompositeIndex):
             if index_id is None:
                 index_id = self._index_struct.root_id
+            assert index_id is not None
             index_struct = self._index_struct.all_index_structs[index_id]
         else:
             if index_id is not None:
@@ -279,8 +280,13 @@ class QueryRunner:
                     response = await self.aquery(query_bundle, index_node.index_id)
 
                     new_node = Node(text=str(response))
-                    nodes_for_synthesis.append(new_node)
+                    new_node_with_score = NodeWithScore(
+                        node=new_node, score=node_with_score.score
+                    )
+                    nodes_for_synthesis.append(new_node_with_score)
                     additional_source_nodes.extend(response.source_nodes)
+                else:
+                    nodes_for_synthesis.append(node_with_score)
 
             return await query_obj.asynthesize(
                 query_bundle, nodes_for_synthesis, additional_source_nodes

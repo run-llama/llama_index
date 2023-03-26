@@ -140,7 +140,7 @@ class KeywordTable(V2IndexStruct):
     @classmethod
     def get_type(cls) -> IndexStructType:
         """Get type."""
-        return "keyword_table"
+        return IndexStructType.KEYWORD_TABLE
 
 
 @dataclass

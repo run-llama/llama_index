@@ -14,7 +14,7 @@ from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
-from gpt_index.response.schema import Response
+from gpt_index.response.schema import RESPONSE_TYPE, Response
 from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=V2IndexStruct)
@@ -104,7 +104,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         children_indices: Sequence["BaseGPTIndex"],
         index_summaries: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> "ComposableGraph":
+    ) -> "ComposableGraph":  # type: ignore
         """Create composable graph using this index class as the root.
 
         NOTE: this is mostly syntactic sugar,
@@ -133,7 +133,7 @@ class BaseGPTIndex(Generic[IS], ABC):
             nodes=index_nodes,
             **kwargs,
         )
-        all_indices: Sequence["BaseGPTIndex"] = children_indices + [root_index]
+        all_indices: List["BaseGPTIndex"] = children_indices + [root_index]  # type: ignore
         return ComposableGraph.from_indices(
             all_index_structs={
                 index.index_struct.index_id: index.index_struct for index in all_indices
@@ -250,7 +250,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         query_transform: Optional[BaseQueryTransform] = None,
         use_async: bool = False,
         **query_kwargs: Any,
-    ) -> Response:
+    ) -> RESPONSE_TYPE:
         """Answer a query.
 
         When `query` is called, we query the index with the given `mode` and
@@ -287,7 +287,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         mode: str = QueryMode.DEFAULT,
         query_transform: Optional[BaseQueryTransform] = None,
         **query_kwargs: Any,
-    ) -> Response:
+    ) -> RESPONSE_TYPE:
         """Asynchronously answer a query.
 
         When `query` is called, we query the index with the given `mode` and
@@ -338,7 +338,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         from gpt_index.indices.registry import load_index_struct_from_dict
 
         index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
-        assert isinstance(index_struct, V2IndexStruct)
+        assert isinstance(index_struct, cls.index_struct_cls)
         docstore = DocumentStore.load_from_dict(result_dict[DOCSTORE_KEY])
         return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 

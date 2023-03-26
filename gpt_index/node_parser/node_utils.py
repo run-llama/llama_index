@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, ImageNode, Node
 from gpt_index.langchain_helpers.text_splitter import (
@@ -52,7 +52,7 @@ def get_nodes_from_document(
         include_extra_info=include_extra_info,
     )
 
-    nodes = []
+    nodes: List[Node] = []
     index_counter = 0
     for i, text_split in enumerate(text_splits):
         text_chunk = text_split.text_chunk
@@ -67,7 +67,7 @@ def get_nodes_from_document(
         index_counter += len(text_chunk) + 1
 
         if isinstance(document, ImageDocument):
-            node = ImageNode(
+            image_node = ImageNode(
                 text=text_chunk,
                 embedding=document.embedding,
                 extra_info=document.extra_info if include_extra_info else None,
@@ -75,6 +75,7 @@ def get_nodes_from_document(
                 image=document.image,
                 relationships={DocumentRelationship.SOURCE: document.get_doc_id()},
             )
+            nodes.append(image_node)  # type: ignore
         else:
             node = Node(
                 text=text_chunk,
@@ -83,5 +84,5 @@ def get_nodes_from_document(
                 node_info=index_pos_info,
                 relationships={DocumentRelationship.SOURCE: document.get_doc_id()},
             )
-        nodes.append(node)
+            nodes.append(node)
     return nodes
