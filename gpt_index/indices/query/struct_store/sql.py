@@ -51,6 +51,10 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         response = Response(response=response_str, extra_info=extra_info)
         return response
 
+    @llm_token_counter("query")
+    async def aquery(self, query_bundle: QueryBundle) -> Response:
+        return self.query(query_bundle)
+
 
 class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     """GPT natural language query over a structured database.
@@ -138,6 +142,7 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         extra_info["sql_query"] = sql_query_str
         response = Response(response=response_str, extra_info=extra_info)
         return response
+
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
