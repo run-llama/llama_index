@@ -71,7 +71,7 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
-        service_context: Optional[ServiceContext] = None, 
+        service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         simple_vector_store_data_dict: Optional[dict] = None,
         **kwargs: Any,

@@ -104,15 +104,19 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
 
         """
         if query_bundle.embedding is None:
-            query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
-                query_bundle.embedding_strs
+            query_bundle.embedding = (
+                self._service_context.embed_model.get_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
+                )
             )
         similarities = []
         for node in nodes:
             if node.embedding is None:
-                node.embedding = self._embed_model.get_text_embedding(node.get_text())
+                node.embedding = self._service_context.embed_model.get_text_embedding(
+                    node.get_text()
+                )
 
-            similarity = self._embed_model.similarity(
+            similarity = self._service_context.embed_model.similarity(
                 query_bundle.embedding, node.embedding
             )
             similarities.append(similarity)

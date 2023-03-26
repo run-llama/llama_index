@@ -115,8 +115,10 @@ class GPTTreeIndexInserter:
             self._insert_under_parent_and_consolidate(node, parent_node)
         # else try to find the right summary node to insert under
         else:
-            numbered_text = self._service_context.prompt_helper.get_numbered_text_from_nodes(
-                cur_graph_node_list, prompt=self.insert_prompt
+            numbered_text = (
+                self._service_context.prompt_helper.get_numbered_text_from_nodes(
+                    cur_graph_node_list, prompt=self.insert_prompt
+                )
             )
             response, _ = self._service_context.llm_predictor.predict(
                 self.insert_prompt,

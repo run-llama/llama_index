@@ -57,7 +57,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[SQLStructTable] = None,
-        service_context: Optional[ServiceContext] = None, 
+        service_context: Optional[ServiceContext] = None,
         sql_database: Optional[SQLDatabase] = None,
         table_name: Optional[str] = None,
         table: Optional[Table] = None,

@@ -47,9 +47,9 @@ class DocumentStore(DataClassJsonMixin):
             elif doc_type == ImageNode.get_type():
                 doc = ImageNode.from_dict(doc_dict)
             elif doc_type == IndexNode.get_type():
-                doc = IndexNode.from_dict(doc_dict) 
+                doc = IndexNode.from_dict(doc_dict)
             else:
-                raise ValueError(f'Unknown doc type: {doc_type}')
+                raise ValueError(f"Unknown doc type: {doc_type}")
 
             docs_obj_dict[doc_id] = doc
         return cls(
@@ -63,7 +63,7 @@ class DocumentStore(DataClassJsonMixin):
         obj = cls()
         obj.add_documents(docs)
         return obj
-    
+
     @classmethod
     def merge(cls, docstores: Sequence["DocumentStore"]) -> "DocumentStore":
         merged_docstore = cls()

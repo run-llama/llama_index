@@ -43,7 +43,7 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
         text_qa_template = self.text_qa_template.partial_format(
             query_str=query_bundle.query_str
         )
-        node_text = self._prompt_helper.get_text_from_nodes(
+        node_text = self._service_context.prompt_helper.get_text_from_nodes(
             node_list, prompt=text_qa_template
         )
         return [Node(text=node_text)]

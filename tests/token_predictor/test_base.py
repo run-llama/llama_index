@@ -42,5 +42,7 @@ def test_token_predictor(mock_split: Any) -> None:
     index_keyword.query("What is?", service_context=service_context)
 
     # test list index
-    index_list = GPTListIndex.from_documents([document], service_context=service_context)
+    index_list = GPTListIndex.from_documents(
+        [document], service_context=service_context
+    )
     index_list.query("What is?", service_context=service_context)

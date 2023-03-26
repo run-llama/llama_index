@@ -10,7 +10,11 @@ from gpt_index.readers.schema.base import Document
 class SimpleNodeParser:
     """Simple node parser."""
 
-    def __init__(self, text_splitter: Optional[TextSplitter] = None, include_extra_info: bool = True) -> None:
+    def __init__(
+        self,
+        text_splitter: Optional[TextSplitter] = None,
+        include_extra_info: bool = True,
+    ) -> None:
         """Init params."""
         self._text_splitter = text_splitter or TokenTextSplitter()
         self._include_extra_info = include_extra_info

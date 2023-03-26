@@ -35,7 +35,9 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, service_context=service_context, **kwargs)
+        super().__init__(
+            index_struct=index_struct, service_context=service_context, **kwargs
+        )
         self._similarity_top_k = similarity_top_k
         if vector_store is None:
             raise ValueError("Vector store is required for vector store query.")
@@ -47,8 +49,10 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         if query_bundle.embedding is None:
-            query_bundle.embedding = self._service_context.embed_model.get_agg_embedding_from_queries(
-                query_bundle.embedding_strs
+            query_bundle.embedding = (
+                self._service_context.embed_model.get_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
+                )
             )
 
         query_result = self._vector_store.query(

@@ -78,4 +78,3 @@ class SimilarityTracker:
         for node, score in zip(nodes, similarities):
             output.append(NodeWithScore(node=node, score=score))
         return output
-            

@@ -79,10 +79,10 @@ class Node(BaseDocument):
         return NodeType.TEXT
 
 
-
 @dataclass
 class ImageNode(Node):
     """Node with image."""
+
     # TODO: store reference instead of actual image
     # base64 encoded image str
     image: Optional[str] = None
@@ -92,14 +92,12 @@ class ImageNode(Node):
         return NodeType.IMAGE
 
 
-
 @dataclass
 class IndexNode(Node):
     """Node with reference to an index."""
+
     index_id: Optional[str] = None
 
     @classmethod
-    def get_type(cls) -> str: 
+    def get_type(cls) -> str:
         return NodeType.INDEX
-
-    

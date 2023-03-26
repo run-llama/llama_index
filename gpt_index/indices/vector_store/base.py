@@ -84,14 +84,19 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         for n in nodes:
             new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
             if n.embedding is None:
-                self._service_context.embed_model.queue_text_for_embeddding(new_id, n.get_text())
+                self._service_context.embed_model.queue_text_for_embeddding(
+                    new_id, n.get_text()
+                )
             else:
                 id_to_embed_map[new_id] = n.embedding
 
             id_to_node_map[new_id] = n
 
         # call embedding model to get embeddings
-        result_ids, result_embeddings = self._service_context.embed_model.get_queued_text_embeddings()
+        (
+            result_ids,
+            result_embeddings,
+        ) = self._service_context.embed_model.get_queued_text_embeddings()
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
@@ -133,7 +138,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         (
             result_ids,
             result_embeddings,
-        ) = await self._service_context.embed_model.aget_queued_text_embeddings(text_queue)
+        ) = await self._service_context.embed_model.aget_queued_text_embeddings(
+            text_queue
+        )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 

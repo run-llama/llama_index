@@ -39,7 +39,7 @@ def llm_token_counter(method_name_str: str) -> Callable:
     def wrap(f: Callable) -> Callable:
         @contextmanager
         def wrapper_logic(_self: Any) -> Any:
-            service_context = getattr(_self, '_service_context', None)
+            service_context = getattr(_self, "_service_context", None)
             if not isinstance(service_context, ServiceContext):
                 raise ValueError(
                     "Cannot use llm_token_counter on an instance "

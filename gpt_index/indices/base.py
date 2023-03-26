@@ -106,8 +106,8 @@ class BaseGPTIndex(Generic[IS], ABC):
         **kwargs: Any,
     ) -> "ComposableGraph":
         """Create composable graph using this index class as the root.
-        
-        NOTE: this is mostly syntactic sugar, 
+
+        NOTE: this is mostly syntactic sugar,
         roughly equivalent to directly calling `ComposableGraph.from_indices`.
         """
         # NOTE: lazy import
@@ -115,10 +115,10 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         if index_summaries is None:
             # TODO: automatically set summaries
-            index_summaries = ['stub' for _ in children_indices]
+            index_summaries = ["stub" for _ in children_indices]
 
-        if  len(children_indices) != len(index_summaries):
-            raise ValueError('indices and index_summaries must have same length!')
+        if len(children_indices) != len(index_summaries):
+            raise ValueError("indices and index_summaries must have same length!")
 
         index_nodes = []
         for index, summary in zip(children_indices, index_summaries):
@@ -135,11 +135,12 @@ class BaseGPTIndex(Generic[IS], ABC):
         )
         all_indices: Sequence["BaseGPTIndex"] = children_indices + [root_index]
         return ComposableGraph.from_indices(
-            all_index_structs={index.index_struct.index_id: index.index_struct for index in all_indices},
+            all_index_structs={
+                index.index_struct.index_id: index.index_struct for index in all_indices
+            },
             root_id=root_index.index_struct.index_id,
             docstores=[index.docstore for index in all_indices],
         )
-
 
     @property
     def index_struct(self) -> IS:
@@ -337,6 +338,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         from gpt_index.indices.registry import load_index_struct_from_dict
 
         index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
+        assert isinstance(index_struct, V2IndexStruct)
         docstore = DocumentStore.load_from_dict(result_dict[DOCSTORE_KEY])
         return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 

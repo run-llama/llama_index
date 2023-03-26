@@ -38,11 +38,11 @@ def test_passing_args_to_query(
     doc = Document(doc_text)
     llm_predictor = LLMPredictor()
     prompt_helper = PromptHelper.from_llm_predictor(llm_predictor)
-    service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
-    # index construction should not use llm_predictor at all
-    index = GPTListIndex.from_documents(
-        [doc], service_context=service_context
+    service_context = ServiceContext.from_defaults(
+        llm_predictor=llm_predictor, prompt_helper=prompt_helper
     )
+    # index construction should not use llm_predictor at all
+    index = GPTListIndex.from_documents([doc], service_context=service_context)
     # should use llm_predictor during query time
     response = index.query("What is?")
     assert str(response) == "foo bar 2"

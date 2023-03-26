@@ -8,7 +8,7 @@ from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
-from gpt_index.indices.query.base import BaseGPTIndexQuery, BaseQueryRunner
+from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import NodeWithScore
 from gpt_index.indices.query.query_combiner.base import (
     BaseQueryCombiner,
@@ -46,7 +46,9 @@ class QueryConfigMap:
         return config
 
 
-def _get_query_config_map(query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None) -> QueryConfigMap:
+def _get_query_config_map(
+    query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
+) -> QueryConfigMap:
     """Parse query config dicts."""
     type_to_config_dict: Dict[str, QueryConfig] = {}
     id_to_config_dict: Dict[str, QueryConfig] = {}
@@ -63,15 +65,11 @@ def _get_query_config_map(query_configs: Optional[List[QUERY_CONFIG_TYPE]] = Non
         type_to_config_dict[qc.index_struct_type] = qc
         if qc.index_struct_id is not None:
             id_to_config_dict[qc.index_struct_id] = qc
-            
-    return QueryConfigMap(
-        type_to_config_dict, 
-        id_to_config_dict
-    )
 
-    
+    return QueryConfigMap(type_to_config_dict, id_to_config_dict)
 
-class QueryRunner(BaseQueryRunner):
+
+class QueryRunner:
     """Tool to take in a query request and perform a query with the right classes.
 
     Higher-level wrapper over a given query.
@@ -115,7 +113,6 @@ class QueryRunner(BaseQueryRunner):
             query_kwargs["service_context"] = self._service_context
         return query_kwargs
 
-
     def _get_query_transform(self, index_struct: IndexStruct) -> BaseQueryTransform:
         """Get query transform."""
         config = self._query_config_map.get(index_struct)
@@ -155,11 +152,12 @@ class QueryRunner(BaseQueryRunner):
         """Get query object."""
         index_struct_type = index_struct.get_type()
         if index_struct_type == IndexStructType.COMPOSITE:
-            raise ValueError('Cannot get query object for composite index struct.')
+            raise ValueError("Cannot get query object for composite index struct.")
         config = self._query_config_map.get(index_struct)
         mode = config.query_mode
 
         from gpt_index.indices.registry import INDEX_STRUT_TYPE_TO_QUERY_MAP
+
         query_cls = INDEX_STRUT_TYPE_TO_QUERY_MAP[index_struct_type][mode]
         query_kwargs = self._get_query_kwargs(config)
         query_obj = query_cls(
@@ -183,7 +181,7 @@ class QueryRunner(BaseQueryRunner):
             index_struct = self._index_struct.all_index_structs[index_id]
         else:
             if index_id is not None:
-                raise ValueError('index_id should be used with composite graph')
+                raise ValueError("index_id should be used with composite graph")
             index_struct = self._index_struct
 
         # NOTE: Currently, query transform is only run once
@@ -224,22 +222,20 @@ class QueryRunner(BaseQueryRunner):
                     # recursive call
                     response = self.query(query_bundle, index_node.index_id, level + 1)
 
-                    new_node = Node(
-                        text=str(response)
-                    )
+                    new_node = Node(text=str(response))
                     new_node_with_score = NodeWithScore(
-                        node=new_node,
-                        score=node_with_score.score
+                        node=new_node, score=node_with_score.score
                     )
                     nodes_for_synthesis.append(new_node_with_score)
                     additional_source_nodes.extend(response.source_nodes)
                 else:
                     nodes_for_synthesis.append(node_with_score)
-            
-            return query_obj.synthesize(query_bundle, nodes_for_synthesis, additional_source_nodes)
+
+            return query_obj.synthesize(
+                query_bundle, nodes_for_synthesis, additional_source_nodes
+            )
         else:
             return query_obj.query(query_bundle)
-
 
     async def aquery(
         self,
@@ -253,7 +249,7 @@ class QueryRunner(BaseQueryRunner):
             index_struct = self._index_struct.all_index_structs[index_id]
         else:
             if index_id is not None:
-                raise ValueError('index_id should be used with composite graph')
+                raise ValueError("index_id should be used with composite graph")
             index_struct = self._index_struct
 
         # NOTE: Currently, query transform is only run once
@@ -282,12 +278,12 @@ class QueryRunner(BaseQueryRunner):
                     # recursive call
                     response = await self.aquery(query_bundle, index_node.index_id)
 
-                    new_node = Node(
-                        text=str(response)
-                    )
+                    new_node = Node(text=str(response))
                     nodes_for_synthesis.append(new_node)
                     additional_source_nodes.extend(response.source_nodes)
-            
-            return await query_obj.asynthesize(query_bundle, nodes_for_synthesis, additional_source_nodes)
+
+            return await query_obj.asynthesize(
+                query_bundle, nodes_for_synthesis, additional_source_nodes
+            )
         else:
             return await query_obj.aquery(query_bundle)

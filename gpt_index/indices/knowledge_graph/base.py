@@ -79,7 +79,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
-        response, _ = self._llm_predictor.predict(
+        response, _ = self._service_context.llm_predictor.predict(
             self.kg_triple_extract_template,
             text=text,
         )
@@ -113,7 +113,9 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                         str(triplet), str(triplet)
                     )
 
-                embed_outputs = self._service_context.embed_model.get_queued_text_embeddings()
+                embed_outputs = (
+                    self._service_context.embed_model.get_queued_text_embeddings()
+                )
                 for rel_text, rel_embed in zip(*embed_outputs):
                     index_struct.add_to_embedding_dict(rel_text, rel_embed)
 
@@ -131,7 +133,11 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                     self.include_embeddings
                     and triplet_str not in self._index_struct.embedding_dict
                 ):
-                    rel_embedding = self._service_context.embed_model.get_text_embedding(triplet_str)
+                    rel_embedding = (
+                        self._service_context.embed_model.get_text_embedding(
+                            triplet_str
+                        )
+                    )
                     self.index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:

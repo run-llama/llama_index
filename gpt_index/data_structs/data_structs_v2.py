@@ -25,8 +25,8 @@ class V2IndexStruct(DataClassJsonMixin):
 
     @classmethod
     @abstractmethod
-    def get_type(cls) -> str:
-        """Get Document type."""
+    def get_type(cls) -> IndexStructType:
+        """Get index struct type."""
 
     def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
         out_dict = {
@@ -34,6 +34,7 @@ class V2IndexStruct(DataClassJsonMixin):
             DATA_KEY: super().to_dict(encode_json),
         }
         return out_dict
+
 
 @dataclass
 class IndexGraph(V2IndexStruct):
@@ -83,8 +84,7 @@ class IndexGraph(V2IndexStruct):
             parent_id = parent_node.get_doc_id()
             children_ids = self.node_id_to_children_ids[parent_id]
             return {
-                self.node_id_to_index[child_id]: child_id
-                for child_id in children_ids
+                self.node_id_to_index[child_id]: child_id for child_id in children_ids
             }
 
     def insert_under_parent(
@@ -97,12 +97,14 @@ class IndexGraph(V2IndexStruct):
         else:
             if parent_node.doc_id not in self.node_id_to_children_ids:
                 self.node_id_to_children_ids[parent_node.get_doc_id()] = []
-            self.node_id_to_children_ids[parent_node.get_doc_id()].append(node.get_doc_id())
+            self.node_id_to_children_ids[parent_node.get_doc_id()].append(
+                node.get_doc_id()
+            )
 
         self.all_nodes[new_index] = node.get_doc_id()
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.TREE
 
@@ -136,7 +138,7 @@ class KeywordTable(V2IndexStruct):
         return len(self.table)
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return "keyword_table"
 
@@ -153,7 +155,7 @@ class IndexList(V2IndexStruct):
         self.nodes.append(node.get_doc_id())
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.LIST
 
@@ -246,7 +248,7 @@ class IndexDict(V2IndexStruct):
         #     del self.id_map[text_id]
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.VECTOR_STORE
 
@@ -324,7 +326,7 @@ class KG(V2IndexStruct):
         return node_ids
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.KG
 
@@ -337,7 +339,7 @@ class SimpleIndexDict(IndexDict):
     """Index dict for simple vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.SIMPLE_DICT
 
@@ -347,7 +349,7 @@ class FaissIndexDict(IndexDict):
     """Index dict for Faiss vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.DICT
 
@@ -357,7 +359,7 @@ class WeaviateIndexDict(IndexDict):
     """Index dict for Weaviate vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.WEAVIATE
 
@@ -367,7 +369,7 @@ class PineconeIndexDict(IndexDict):
     """Index dict for Pinecone vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.PINECONE
 
@@ -377,7 +379,7 @@ class QdrantIndexDict(IndexDict):
     """Index dict for Qdrant vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.QDRANT
 
@@ -387,7 +389,7 @@ class ChromaIndexDict(IndexDict):
     """Index dict for Chroma vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.CHROMA
 
@@ -397,7 +399,7 @@ class OpensearchIndexDict(IndexDict):
     """Index dict for Opensearch vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.OPENSEARCH
 
@@ -407,9 +409,10 @@ class EmptyIndex(IndexDict):
     """Empty index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.EMPTY
+
 
 @dataclass
 class CompositeIndex(V2IndexStruct):
@@ -417,7 +420,7 @@ class CompositeIndex(V2IndexStruct):
     root_id: Optional[str] = None
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.COMPOSITE
 

@@ -107,8 +107,10 @@ class ResponseBuilder:
         refine_template = self.refine_template.partial_format(
             query_str=query_str, existing_answer=response
         )
-        refine_text_splitter = self._service_context.prompt_helper.get_text_splitter_given_prompt(
-            refine_template, 1
+        refine_text_splitter = (
+            self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                refine_template, 1
+            )
         )
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for cur_text_chunk in text_chunks:
@@ -132,8 +134,10 @@ class ResponseBuilder:
     ) -> RESPONSE_TEXT_TYPE:
         """Give response given a query and a corresponding text chunk."""
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
-        qa_text_splitter = self._service_context.prompt_helper.get_text_splitter_given_prompt(
-            text_qa_template, 1
+        qa_text_splitter = (
+            self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                text_qa_template, 1
+            )
         )
         text_chunks = qa_text_splitter.split_text(text_chunk)
         response: Optional[RESPONSE_TEXT_TYPE] = None
@@ -209,7 +213,9 @@ class ResponseBuilder:
         max_prompt = self._service_context.prompt_helper.get_biggest_prompt(
             [self.text_qa_template, self.refine_template]
         )
-        with temp_set_attrs(self._service_context.prompt_helper, use_chunk_size_limit=False):
+        with temp_set_attrs(
+            self._service_context.prompt_helper, use_chunk_size_limit=False
+        ):
             new_texts = self._service_context.prompt_helper.compact_text_chunks(
                 max_prompt, [t.text for t in self._texts]
             )
@@ -229,8 +235,10 @@ class ResponseBuilder:
         # first join all the text chunks into a single text
         all_text = "\n\n".join([t.text for t in self._texts])
         # then get text splitter
-        text_splitter = self._service_context.prompt_helper.get_text_splitter_given_prompt(
-            summary_template, num_children
+        text_splitter = (
+            self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                summary_template, num_children
+            )
         )
         text_chunks = text_splitter.split_text(all_text)
         nodes = [Node(text=t) for t in text_chunks]

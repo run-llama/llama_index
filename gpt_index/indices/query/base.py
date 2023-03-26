@@ -71,16 +71,6 @@ def _get_initial_node_postprocessors(
     return postprocessors
 
 
-@dataclass
-class BaseQueryRunner:
-    """Base query runner."""
-
-    @abstractmethod
-    def query(self, query_bundle: QueryBundle, index_struct: IndexStruct) -> Response:
-        """Schedule a query."""
-        raise NotImplementedError("Not implemented yet.")
-
-
 class BaseGPTIndexQuery(Generic[IS], ABC):
     """Base LlamaIndex Query.
 
@@ -209,9 +199,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         response_txt = node.get_text()
         fmt_response = truncate_text(response_txt, 200)
         if self._verbose:
-            print_text(
-                f">{level_str} Got node text: {fmt_response}\n", color="blue"
-            )
+            print_text(f">{level_str} Got node text: {fmt_response}\n", color="blue")
         return TextChunk(response_txt)
 
     @property
@@ -241,9 +229,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         )
         return response
 
-    def retrieve(
-        self, query_bundle: QueryBundle
-    ) -> List[NodeWithScore]:
+    def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Get list of tuples of node and similarity for response.
 
         First part of the tuple is the node.
@@ -251,9 +237,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         If not applicable, it's None.
         """
         similarity_tracker = SimilarityTracker()
-        nodes = self._retrieve(
-            query_bundle, similarity_tracker=similarity_tracker
-        )
+        nodes = self._retrieve(query_bundle, similarity_tracker=similarity_tracker)
 
         postprocess_info = {"similarity_tracker": similarity_tracker}
         for node_processor in self.node_preprocessors:
@@ -288,7 +272,9 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         response_builder.reset()
         for node_with_score in nodes:
             text = self._get_text_from_node(node_with_score.node)
-            response_builder.add_node_as_source(node_with_score.node, similarity=node_with_score.score)
+            response_builder.add_node_as_source(
+                node_with_score.node, similarity=node_with_score.score
+            )
             if self._optimizer is not None:
                 text = TextChunk(text=self._optimizer.optimize(query_bundle, text.text))
             response_builder.add_text_chunks([text])
@@ -323,9 +309,19 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         else:
             raise ValueError("Response must be a string or a generator.")
 
-    def synthesize(self, query_bundle: QueryBundle, nodes: List[NodeWithScore], additional_source_nodes: Optional[List[SourceNode]]=None) -> RESPONSE_TYPE:
+    def synthesize(
+        self,
+        query_bundle: QueryBundle,
+        nodes: List[NodeWithScore],
+        additional_source_nodes: Optional[List[SourceNode]] = None,
+    ) -> RESPONSE_TYPE:
         # prepare response builder
-        self._prepare_response_builder(self.response_builder, query_bundle, nodes, additional_source_nodes=additional_source_nodes)
+        self._prepare_response_builder(
+            self.response_builder,
+            query_bundle,
+            nodes,
+            additional_source_nodes=additional_source_nodes,
+        )
 
         if self._response_mode != ResponseMode.NO_TEXT:
             response_str = self._give_response_for_nodes(query_bundle.query_str)
@@ -334,9 +330,19 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
 
         return self._prepare_response_output(response_str, nodes)
 
-    async def asynthesize(self, query_bundle: QueryBundle, nodes: List[NodeWithScore], additional_source_nodes: Optional[List[SourceNode]]=None) -> RESPONSE_TYPE:
+    async def asynthesize(
+        self,
+        query_bundle: QueryBundle,
+        nodes: List[NodeWithScore],
+        additional_source_nodes: Optional[List[SourceNode]] = None,
+    ) -> RESPONSE_TYPE:
         # prepare response builder
-        self._prepare_response_builder(self.response_builder, query_bundle, nodes, additional_source_nodes=additional_source_nodes)
+        self._prepare_response_builder(
+            self.response_builder,
+            query_bundle,
+            nodes,
+            additional_source_nodes=additional_source_nodes,
+        )
 
         if self._response_mode != ResponseMode.NO_TEXT:
             response_str = await self._agive_response_for_nodes(query_bundle.query_str)
@@ -344,7 +350,6 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
             response_str = None
 
         return self._prepare_response_output(response_str, nodes)
-
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""

@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from typing import Optional
 
@@ -22,14 +21,14 @@ class ServiceContext:
 
     @classmethod
     def from_defaults(
-            cls,
-            llm_predictor: Optional[LLMPredictor] = None,
-            prompt_helper: Optional[PromptHelper] = None,
-            embed_model: Optional[BaseEmbedding] = None,
-            node_parser: Optional[NodeParser] = None,
-            llama_logger: Optional[LlamaLogger] = None,
-            chunk_size_limit: Optional[int] = None,
-        ) -> "ServiceContext":
+        cls,
+        llm_predictor: Optional[LLMPredictor] = None,
+        prompt_helper: Optional[PromptHelper] = None,
+        embed_model: Optional[BaseEmbedding] = None,
+        node_parser: Optional[NodeParser] = None,
+        llama_logger: Optional[LlamaLogger] = None,
+        chunk_size_limit: Optional[int] = None,
+    ) -> "ServiceContext":
         llm_predictor = llm_predictor or LLMPredictor()
         # NOTE: the embed_model isn't used in all indices
         embed_model = embed_model or OpenAIEmbedding()
@@ -40,12 +39,10 @@ class ServiceContext:
         llama_logger = llama_logger or LlamaLogger()
 
         return cls(
-            llm_predictor=llm_predictor, 
-            embed_model=embed_model, 
-            prompt_helper=prompt_helper, 
-            node_parser=node_parser, 
-            llama_logger=llama_logger, 
-            chunk_size_limit=chunk_size_limit
+            llm_predictor=llm_predictor,
+            embed_model=embed_model,
+            prompt_helper=prompt_helper,
+            node_parser=node_parser,
+            llama_logger=llama_logger,
+            chunk_size_limit=chunk_size_limit,
         )
-
-

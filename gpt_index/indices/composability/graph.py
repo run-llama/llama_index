@@ -16,6 +16,7 @@ from gpt_index.response.schema import Response
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
 
+
 class ComposableGraph:
     """Composable graph."""
 
@@ -31,7 +32,12 @@ class ComposableGraph:
         self._service_context = service_context or ServiceContext.from_defaults()
 
     @classmethod
-    def from_indices(cls, all_index_structs: Dict[str, IndexStruct], root_id: str, docstores: Sequence[DocumentStore]):
+    def from_indices(
+        cls,
+        all_index_structs: Dict[str, IndexStruct],
+        root_id: str,
+        docstores: Sequence[DocumentStore],
+    ):
         composite_index_struct = CompositeIndex(
             all_index_structs=all_index_structs,
             root_id=root_id,
@@ -93,8 +99,9 @@ class ComposableGraph:
         from gpt_index.indices.registry import load_index_struct_from_dict
 
         result_dict = json.loads(index_string)
-        index_struct = load_index_struct_from_dict(result_dict['index_struct'])
+        index_struct = load_index_struct_from_dict(result_dict["index_struct"])
         docstore = DocumentStore.load_from_dict(result_dict["docstore"])
+        assert isinstance(index_struct, CompositeIndex)
         return cls(index_struct, docstore, **kwargs)
 
     @classmethod

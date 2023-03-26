@@ -20,8 +20,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     WeaviateIndexDict,
 )
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.data_structs.table import PandasStructTable
-from gpt_index.data_structs.table_v2 import SQLStructTable
+from gpt_index.data_structs.table_v2 import PandasStructTable, SQLStructTable
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.empty.base import GPTEmptyIndex
 from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
@@ -86,12 +85,12 @@ INDEX_STRUT_TYPE_TO_QUERY_MAP: Dict[IndexStructType, QueryMap] = {
 def load_index_struct_from_dict(struct_dict: Dict[str, Any]) -> "V2IndexStruct":
     type = struct_dict[TYPE_KEY]
     data_dict = struct_dict[DATA_KEY]
-    
+
     cls = INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS[type]
-    
+
     if type == IndexStructType.COMPOSITE:
-        struct_dicts: Dict[str, Any] = data_dict['all_index_structs']
-        root_id = data_dict['root_id']
+        struct_dicts: Dict[str, Any] = data_dict["all_index_structs"]
+        root_id = data_dict["root_id"]
         all_index_structs = {
             id_: load_index_struct_from_dict(struct_dict)
             for id_, struct_dict in struct_dicts.items()
@@ -100,4 +99,3 @@ def load_index_struct_from_dict(struct_dict: Dict[str, Any]) -> "V2IndexStruct":
     else:
         print(cls)
         return cls.from_dict(data_dict)
-    
