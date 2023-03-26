@@ -5,6 +5,7 @@ from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union
 
 from gpt_index.composability.graph import ComposableGraph
+from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node
 from gpt_index.docstore import DocumentStore
@@ -14,7 +15,6 @@ from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.registry import load_index_struct_from_dict
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.io import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.node_parser.interface import NodeParser
 from gpt_index.node_parser.simple import SimpleNodeParser
 from gpt_index.readers.schema.base import Document

@@ -3,6 +3,7 @@
 import json
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.docstore import DocumentStore
@@ -11,7 +12,6 @@ from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
 from gpt_index.indices.registry import load_index_struct_from_dict
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.io import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.response.schema import Response
 
 # TMP: refactor query config type

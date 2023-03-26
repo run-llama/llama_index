@@ -2,12 +2,12 @@
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Type
+from typing import Any, Dict, List, Optional, Sequence
 
 from dataclasses_json import DataClassJsonMixin
 
+from gpt_index.constants import TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.io import TYPE_KEY
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
 
