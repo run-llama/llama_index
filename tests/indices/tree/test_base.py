@@ -326,6 +326,6 @@ def test_build_and_count_tokens(
     llmchain_mock_resp_token_count = 10
     tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
     assert (
-        tree._llm_predictor.total_tokens_used
+        tree.service_context.llm_predictor.total_tokens_used
         == document_token_count + llmchain_mock_resp_token_count
     )

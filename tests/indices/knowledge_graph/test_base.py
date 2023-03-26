@@ -174,8 +174,7 @@ def test_query(
     # test specific query class
     query = GPTKGTableQuery(
         index.index_struct,
-        llm_predictor=index.llm_predictor,
-        prompt_helper=index.prompt_helper,
+        service_context=index.service_context,
         docstore=index.docstore,
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
     )
@@ -189,8 +188,7 @@ def test_query(
 
     query = GPTKGTableQuery(
         index.index_struct,
-        llm_predictor=index.llm_predictor,
-        prompt_helper=index.prompt_helper,
+        service_context=index.service_context,
         docstore=index.docstore,
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
         include_text=False,
