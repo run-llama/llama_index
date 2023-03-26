@@ -10,7 +10,6 @@ from gpt_index.docstore import DocumentStore
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
-from gpt_index.indices.registry import load_index_struct_from_dict
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.response.schema import Response
 
@@ -90,6 +89,9 @@ class ComposableGraph:
             BaseGPTIndex: The loaded index.
 
         """
+        # lazy load registry
+        from gpt_index.indices.registry import load_index_struct_from_dict
+
         result_dict = json.loads(index_string)
         index_struct = load_index_struct_from_dict(result_dict['index_struct'])
         docstore = DocumentStore.load_from_dict(result_dict["docstore"])

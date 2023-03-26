@@ -16,6 +16,7 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 
 # structured
 from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
+from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.empty import GPTEmptyIndex
 
 # indices
@@ -99,6 +100,7 @@ logging.getLogger(__name__).addHandler(NullHandler())
 
 
 __all__ = [
+    "ComposableGraph",
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",

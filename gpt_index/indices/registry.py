@@ -1,6 +1,6 @@
 """Index registry."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.data_structs import PineconeIndexDict, SimpleIndexDict
@@ -20,9 +20,24 @@ from gpt_index.data_structs.data_structs_v2 import (
 )
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.data_structs.table_v2 import SQLStructTable
-from gpt_index.indices.base import QueryMap
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
+from gpt_index.indices.empty.base import GPTEmptyIndex
+from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
+from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
+from gpt_index.indices.list.base import GPTListIndex
+from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
+from gpt_index.indices.tree.base import GPTTreeIndex
+from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
+from gpt_index.indices.vector_store.vector_indices import (
+    GPTChromaIndex,
+    GPTFaissIndex,
+    GPTPineconeIndex,
+    GPTQdrantIndex,
+    GPTSimpleVectorIndex,
+    GPTWeaviateIndex,
+)
 
-INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, V2IndexStruct] = {
+INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruct]] = {
     IndexStructType.TREE: IndexGraph,
     IndexStructType.LIST: IndexList,
     IndexStructType.KEYWORD_TABLE: KeywordTable,
@@ -39,15 +54,30 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, V2IndexStruct] = 
     IndexStructType.COMPOSITE: CompositeIndex
 }
 
-# TODO: figure out how to avoid importing all indices while not centralizing all query map
-INDEX_STRUT_TYPE_TO_QUERY_MAP: Dict[IndexStructType, QueryMap] = {
-    index_type: index_cls.get_query_map()
-    for index_type, index_cls in INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS.items()
+
+INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
+    IndexStructType.TREE: GPTTreeIndex,
+    IndexStructType.LIST: GPTListIndex,
+    IndexStructType.KEYWORD_TABLE: GPTKeywordTableIndex,
+    IndexStructType.SIMPLE_DICT: GPTSimpleVectorIndex,
+    IndexStructType.DICT: GPTFaissIndex,
+    IndexStructType.WEAVIATE: GPTWeaviateIndex,
+    IndexStructType.PINECONE: GPTPineconeIndex,
+    IndexStructType.QDRANT: GPTQdrantIndex,
+    IndexStructType.CHROMA: GPTChromaIndex,
+    IndexStructType.VECTOR_STORE: GPTVectorStoreIndex,
+    IndexStructType.SQL: GPTSQLStructStoreIndex,
+    IndexStructType.KG: GPTKnowledgeGraphIndex,
+    IndexStructType.EMPTY: GPTEmptyIndex,
 }
 
 
+INDEX_STRUT_TYPE_TO_QUERY_MAP: Dict[IndexStructType, QueryMap] = {
+    index_type: index_cls.get_query_map()
+    for index_type, index_cls in INDEX_STRUCT_TYPE_TO_INDEX_CLASS.items()
+}
 
-@classmethod
+
 def load_index_struct_from_dict(struct_dict: Dict[str, Any]) -> "V2IndexStruct":
     type = struct_dict[TYPE_KEY]
     data_dict = struct_dict[DATA_KEY]

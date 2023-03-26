@@ -4,7 +4,6 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union
 
-from gpt_index.composability.graph import ComposableGraph
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node
@@ -13,7 +12,6 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
-from gpt_index.indices.registry import load_index_struct_from_dict
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.node_parser.interface import NodeParser
 from gpt_index.node_parser.simple import SimpleNodeParser
@@ -108,7 +106,7 @@ class BaseGPTIndex(Generic[IS]):
         children_indices: Sequence["BaseGPTIndex"],
         index_summaries: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> ComposableGraph:
+    ) -> "ComposableGraph":
         """Create composable graph using this index class as the root.
         
         NOTE: this is mostly syntactic sugar, 
@@ -337,6 +335,9 @@ class BaseGPTIndex(Generic[IS]):
         cls, result_dict: Dict[str, Any], **kwargs: Any
     ) -> "BaseGPTIndex":
         """Load index from dict."""
+        # NOTE: lazy load registry
+        from gpt_index.indices.registry import load_index_struct_from_dict
+
         index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
         assert isinstance(index_struct, cls.index_struct_cls)
 
