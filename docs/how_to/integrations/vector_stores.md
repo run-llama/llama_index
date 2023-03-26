@@ -7,7 +7,7 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 
 ## Loading Data from Vector Stores using Data Connector
 
-LlamaIndex supports loading data from the following sources. See [Data Connectors](data_connectors.md) for more details and API documentation.
+LlamaIndex supports loading data from the following sources. See [Data Connectors](/how_to/data_connectors.md) for more details and API documentation.
 
 - Chroma (`ChromaReader`) [Installation](https://docs.trychroma.com/getting-started)
 - Qdrant (`QdrantReader`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
