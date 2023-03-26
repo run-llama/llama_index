@@ -7,21 +7,18 @@ An index that that is built on top of an existing vector store.
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from gpt_index.async_utils import run_async_tasks
+from gpt_index.constants import VECTOR_STORE_CONFIG_DICT_KEY
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.node_parser.interface import NodeParser
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.utils import get_new_id
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
-
-VECTOR_STORE_CONFIG_DICT_KEY = "vector_store"
 
 
 class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
@@ -46,11 +43,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
+        service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         vector_store: Optional[VectorStore] = None,
-        node_parser: Optional[NodeParser] = None,
         use_async: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -62,9 +57,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
-            node_parser=node_parser,
+            service_context=service_context,
             **kwargs,
         )
 
@@ -91,14 +84,14 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         for n in nodes:
             new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
             if n.embedding is None:
-                self._embed_model.queue_text_for_embeddding(new_id, n.get_text())
+                self._service_context.embed_model.queue_text_for_embeddding(new_id, n.get_text())
             else:
                 id_to_embed_map[new_id] = n.embedding
 
             id_to_node_map[new_id] = n
 
         # call embedding model to get embeddings
-        result_ids, result_embeddings = self._embed_model.get_queued_text_embeddings()
+        result_ids, result_embeddings = self._service_context.embed_model.get_queued_text_embeddings()
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
@@ -140,7 +133,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         (
             result_ids,
             result_embeddings,
-        ) = await self._embed_model.aget_queued_text_embeddings(text_queue)
+        ) = await self._service_context.embed_model.aget_queued_text_embeddings(text_queue)
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
@@ -232,7 +225,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         """
         config_dict = {}
-        if "vector_store" in result_dict:
+        if VECTOR_STORE_CONFIG_DICT_KEY in result_dict:
             config_dict = result_dict[VECTOR_STORE_CONFIG_DICT_KEY]
         return super().load_from_dict(result_dict, **config_dict, **kwargs)
 

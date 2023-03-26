@@ -69,11 +69,11 @@ class BaseGPTIndex(Generic[IS]):
             assert nodes is not None
             self._docstore.add_documents(nodes)
             index_struct = self.build_index_from_nodes(nodes)
-            if not isinstance(index_struct, self.index_struct_cls):
-                raise ValueError(
-                    f"index_struct must be of type {self.index_struct_cls} "
-                    f"but got {type(index_struct)}"
-                )
+            # if not isinstance(index_struct, self.index_struct_cls):
+            #     raise ValueError(
+            #         f"index_struct must be of type {self.index_struct_cls} "
+            #         f"but got {type(index_struct)}"
+            #     )
         self._index_struct = index_struct
 
     @classmethod
