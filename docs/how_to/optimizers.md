@@ -30,7 +30,7 @@ print("Answer: {}".format(res))
 ```
 
 Output:
-```
+```text
 Without optimization
 INFO:root:> [query] Total LLM token usage: 3545 tokens
 INFO:root:> [query] Total embedding token usage: 7 tokens
@@ -47,6 +47,8 @@ Answer:
 The population of Berlin is around 4.5 million.
 ```
 
+Full [example notebook here](https://github.com/jerryjliu/llama_index/blob/main/examples/optimizer/OptimizerDemo.ipynb).
+
 #### API Reference
 
-An API reference can be found [here]().
+An API reference can be found [here](/reference/optimizers.rst).

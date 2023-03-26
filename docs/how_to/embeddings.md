@@ -17,7 +17,7 @@ Simply specify the `embedding` field when creating a Document:
 ## Using a Vector Store as an Underlying Index
 
 <!-- Please see the corresponding section in our [Vector Stores](/how_to/vector_stores.md#loading-data-from-vector-stores-using-data-connector) -->
-Please see the corresponding section in our [Vector Stores](/how_to/vector_stores.md)
+Please see the corresponding section in our [Vector Stores](/how_to/integrations/vector_stores.md)
 guide for more details.
 
 ## Using an Embedding Query Mode in List/Tree Index
@@ -33,7 +33,7 @@ Since we offer embedding support during *query-time* for our list and tree indic
 embeddings are lazily generated and then cached (if `mode="embedding"` is specified during `index.query(...)`), and not during index construction.
 This design choice prevents the need to generate embeddings for all text chunks during index construction.
 
-NOTE: Our [vector-store based indices](/how_to/vector_stores.md) generate embeddings during index construction.
+NOTE: Our [vector-store based indices](/how_to/integrations/vector_stores.md) generate embeddings during index construction.
 
 #### Embedding Lookups
 For the list index (`GPTListIndex`):
