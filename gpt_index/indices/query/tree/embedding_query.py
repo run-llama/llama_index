@@ -50,7 +50,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         query_template: Optional[TreeSelectPrompt] = None,
         query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
         child_branch_factor: int = 1,
-        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -59,7 +58,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             query_template=query_template,
             query_template_multiple=query_template_multiple,
             child_branch_factor=child_branch_factor,
-            embed_model=embed_model,
             **kwargs,
         )
         self.child_branch_factor = child_branch_factor

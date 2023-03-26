@@ -6,6 +6,7 @@ from typing import Any, Dict
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
+from gpt_index.data_structs.struct_type import IndexStructType
 
 
 @dataclass
@@ -31,7 +32,7 @@ class SQLStructTable(BaseStructTable):
     def get_type(cls) -> str:
         """Get type."""
         # TODO: consolidate with IndexStructType
-        return "sql"
+        return IndexStructType.SQL
 
 
 @dataclass
@@ -41,4 +42,4 @@ class PandasStructTable(BaseStructTable):
     @classmethod
     def get_type(cls) -> str:
         """Get type."""
-        return "pandas"
+        return IndexStructType.PANDAS

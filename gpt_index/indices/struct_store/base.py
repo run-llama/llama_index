@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import BaseStructTable
 from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
@@ -43,10 +44,9 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[BST] = None,
+        service_context: Optional[ServiceContext] = None,
         schema_extract_prompt: Optional[SchemaExtractPrompt] = None,
         output_parser: Optional[OUTPUT_PARSER_TYPE] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        node_parser: Optional[NodeParser] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -57,8 +57,7 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
-            node_parser=node_parser,
+            service_context=service_context,
             **kwargs,
         )
 

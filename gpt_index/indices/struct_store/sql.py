@@ -14,6 +14,7 @@ from gpt_index.indices.query.struct_store.sql import (
     GPTNLStructStoreIndexQuery,
     GPTSQLStructStoreIndexQuery,
 )
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -56,7 +57,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[SQLStructTable] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
+        service_context: Optional[ServiceContext] = None, 
         sql_database: Optional[SQLDatabase] = None,
         table_name: Optional[str] = None,
         table: Optional[Table] = None,
@@ -80,7 +81,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
+            service_context=service_context,
             **kwargs,
         )
 
@@ -98,7 +99,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             return index_struct
         else:
             data_extractor = SQLStructDatapointExtractor(
-                self._llm_predictor,
+                self._service_context.llm_predictor,
                 self.schema_extract_prompt,
                 self.output_parser,
                 self.sql_database,
@@ -113,7 +114,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         data_extractor = SQLStructDatapointExtractor(
-            self._llm_predictor,
+            self._service_context.llm_predictor,
             self.schema_extract_prompt,
             self.output_parser,
             self.sql_database,

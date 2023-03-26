@@ -180,7 +180,7 @@ def test_query(
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
     )
     query_bundle = QueryBundle(query_str="foo", custom_embedding_strs=["foo"])
-    nodes = query._get_nodes_for_response(query_bundle)
+    nodes = query._retrieve(query_bundle)
     assert nodes[0].get_text() == "(foo, is, bar)"
     assert (
         nodes[1].get_text() == "The following are knowledge triplets in the "
@@ -196,7 +196,7 @@ def test_query(
         include_text=False,
     )
     query_bundle = QueryBundle(query_str="foo", custom_embedding_strs=["foo"])
-    nodes = query._get_nodes_for_response(query_bundle)
+    nodes = query._retrieve(query_bundle)
     assert (
         nodes[0].get_text() == "The following are knowledge triplets in the form of "
         "(subset, predicate, object):\n('foo', 'is', 'bar')"
