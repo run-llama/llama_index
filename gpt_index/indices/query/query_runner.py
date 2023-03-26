@@ -153,7 +153,8 @@ class QueryRunner(BaseQueryRunner):
     ) -> BaseGPTIndexQuery:
         """Get query object."""
         index_struct_type = index_struct.get_type()
-        assert index_struct_type != IndexStructType.COMPOSITE
+        if index_struct_type == IndexStructType.COMPOSITE:
+            raise ValueError('Cannot get query object for composite index struct.')
         config = self._query_config_map.get(index_struct)
         mode = config.query_mode
 
