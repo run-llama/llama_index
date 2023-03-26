@@ -82,7 +82,6 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    how_to/update.md
    how_to/cost_analysis.md
    how_to/embeddings.md
-   how_to/vector_stores.md
    how_to/custom_prompts.md
    how_to/custom_llms.md
    how_to/query_transformations.md

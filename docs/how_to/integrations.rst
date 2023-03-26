@@ -9,6 +9,6 @@ Some of these integrations are provided in more detailed guides below.
    :maxdepth: 1
    :caption: Integrations
 
-   how_to/integrations/vector_stores.md
-   how_to/integrations/chatgpt_plugins.md
-   how_to/integrations/using_with_langchain.md
+   integrations/vector_stores.md
+   integrations/chatgpt_plugins.md
+   integrations/using_with_langchain.md
