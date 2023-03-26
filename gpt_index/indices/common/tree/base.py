@@ -9,10 +9,8 @@ from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
-from gpt_index.indices.prompt_helper import PromptHelper
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import SummaryPrompt
 
 logger = logging.getLogger(__name__)
@@ -30,30 +28,18 @@ class GPTTreeIndexBuilder:
         self,
         num_children: int,
         summary_prompt: SummaryPrompt,
-        llm_predictor: LLMPredictor,
-        prompt_helper: PromptHelper,
+        service_context: ServiceContext,
         docstore: Optional[DocumentStore] = None,
         use_async: bool = False,
-        llama_logger: Optional[LlamaLogger] = None,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:
             raise ValueError("Invalid number of children.")
         self.num_children = num_children
         self.summary_prompt = summary_prompt
-        self._llm_predictor = llm_predictor
-        self._prompt_helper = prompt_helper
+        self._service_context = service_context
         self._use_async = use_async
         self._docstore = docstore or DocumentStore()
-        # print("prepre init docstore: ", docstore)
-        # if docstore is None:
-        #     print("wtf")
-        # self._docstore = docstore or DocumentStore()
-        # if docstore != self._docstore:
-        #     print("wtf2")
-
-        # print("pre init docstore: ", self._docstore)
-        self._llama_logger = llama_logger or LlamaLogger()
 
     @property
     def docstore(self) -> DocumentStore:
@@ -97,7 +83,7 @@ class GPTTreeIndexBuilder:
         indices, cur_nodes_chunks, text_chunks = [], [], []
         for i in range(0, len(cur_node_list), self.num_children):
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
-            text_chunk = self._prompt_helper.get_text_from_nodes(
+            text_chunk = self._service_context.prompt_helper.get_text_from_nodes(
                 cur_nodes_chunk, prompt=self.summary_prompt
             )
             indices.append(i)
@@ -148,7 +134,7 @@ class GPTTreeIndexBuilder:
 
         if self._use_async:
             tasks = [
-                self._llm_predictor.apredict(
+                self._service_context.llm_predictor.apredict(
                     self.summary_prompt, context_str=text_chunk
                 )
                 for text_chunk in text_chunks
@@ -157,12 +143,12 @@ class GPTTreeIndexBuilder:
             summaries = [output[0] for output in outputs]
         else:
             summaries = [
-                self._llm_predictor.predict(
+                self._service_context.llm_predictor.predict(
                     self.summary_prompt, context_str=text_chunk
                 )[0]
                 for text_chunk in text_chunks
             ]
-        self._llama_logger.add_log({"summaries": summaries, "level": level})
+        self._service_context.llama_logger.add_log({"summaries": summaries, "level": level})
 
         new_node_dict = self._construct_parent_nodes(
             index_graph, indices, cur_nodes_chunks, summaries
@@ -191,7 +177,7 @@ class GPTTreeIndexBuilder:
         )
 
         tasks = [
-            self._llm_predictor.apredict(self.summary_prompt, context_str=text_chunk)
+            self._service_context.llm_predictor.apredict(self.summary_prompt, context_str=text_chunk)
             for text_chunk in text_chunks
         ]
         outputs: List[Tuple[str, str]] = await asyncio.gather(*tasks)

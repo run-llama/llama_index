@@ -33,7 +33,7 @@ class V2IndexStruct(DataClassJsonMixin):
     def get_type(cls) -> str:
         """Get Document type."""
 
-    def to_dict(self, encode_json=False) -> Dict[str, Json]:
+    def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
         out_dit = {
             'type': self.get_type(),
             'data': super().to_dict(encode_json),
@@ -421,7 +421,7 @@ class CompositeIndex(V2IndexStruct):
         """Get type."""
         return IndexStructType.COMPOSITE
 
-    def to_dict(self, encode_json=False) -> Dict[str, Json]:
+    def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
         out_dict = {
             "all_index_structs": {
                 id_: struct.to_dict(encode_json=encode_json)

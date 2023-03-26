@@ -104,10 +104,8 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         index_builder = GPTTreeIndexBuilder(
             self.num_children,
             self.summary_template,
-            self._llm_predictor,
-            self._prompt_helper,
+            service_context=self._service_context,
             use_async=self._use_async,
-            llama_logger=self._llama_logger,
             docstore=self._docstore,
         )
         index_graph = index_builder.build_from_nodes(nodes, build_tree=self.build_tree)
