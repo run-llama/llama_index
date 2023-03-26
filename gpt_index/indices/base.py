@@ -72,7 +72,7 @@ class BaseGPTIndex(Generic[IS]):
             if not isinstance(index_struct, self.index_struct_cls):
                 raise ValueError(
                     f"index_struct must be of type {self.index_struct_cls} "
-                    "but got {type(index_struct)}"
+                    f"but got {type(index_struct)}"
                 )
         self._index_struct = index_struct
 
