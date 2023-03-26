@@ -140,6 +140,7 @@ class BaseGPTIndex(Generic[IS], ABC):
             },
             root_id=root_index.index_struct.index_id,
             docstores=[index.docstore for index in all_indices],
+            service_context=root_index.service_context,
         )
 
     @property

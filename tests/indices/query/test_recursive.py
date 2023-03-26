@@ -160,7 +160,7 @@ def test_recursive_query_list_tree(
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
     response = tree.query(query_str, query_configs=query_configs)
-    assert str(response) == ("What is?:This is a test v2.")
+    assert str(response) == ("What is?:What is?:This is a test v2.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)

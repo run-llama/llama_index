@@ -140,3 +140,14 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
                 break
 
         return selected_nodes, selected_indices
+
+    def _select_nodes(
+        self,
+        cur_node_list: List[Node],
+        query_bundle: QueryBundle,
+        level: int = 0,
+    ) -> List[Node]:
+        selected_nodes, _ = self._get_most_similar_nodes(
+            cur_node_list, query_bundle
+        )
+        return selected_nodes

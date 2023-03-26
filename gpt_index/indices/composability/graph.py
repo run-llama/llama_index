@@ -47,13 +47,14 @@ class ComposableGraph:
         all_index_structs: Dict[str, IndexStruct],
         root_id: str,
         docstores: Sequence[DocumentStore],
+        **kwargs: Any,
     ) -> "ComposableGraph":
         composite_index_struct = CompositeIndex(
             all_index_structs=all_index_structs,
             root_id=root_id,
         )
         merged_docstore = DocumentStore.merge(docstores)
-        return cls(index_struct=composite_index_struct, docstore=merged_docstore)
+        return cls(index_struct=composite_index_struct, docstore=merged_docstore, **kwargs)
 
     def query(
         self,

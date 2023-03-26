@@ -209,7 +209,7 @@ class QueryRunner:
         # query
         query_obj = self._get_query_obj(index_struct)
         # TODO: support tree
-        if self._recursive and not isinstance(index_struct, IndexGraph):
+        if self._recursive:
             print(f"Query level : {level} on {index_struct.get_type()}")
             # call recursively
             nodes = query_obj.retrieve(query_bundle)
