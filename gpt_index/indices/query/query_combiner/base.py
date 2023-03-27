@@ -4,8 +4,6 @@ from abc import abstractmethod
 from typing import Any, Callable, Dict, Generator, Optional, cast
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import (
     BaseQueryTransform,
     StepDecomposeQueryTransform,
@@ -26,11 +24,13 @@ class BaseQueryCombiner:
         self,
         index_struct: IndexStruct,
         query_transform: BaseQueryTransform,
-        query_runner: QueryRunner,
+        query_runner: Any, # NOTE: type as Any to avoid circular dependency
     ) -> None:
         """Init params."""
         self._index_struct = index_struct
         self._query_transform = query_transform
+        from gpt_index.indices.query.query_runner import QueryRunner
+        assert isinstance(query_runner, QueryRunner)
         self._query_runner = query_runner
 
     @abstractmethod
@@ -53,6 +53,7 @@ class SingleQueryCombiner(BaseQueryCombiner):
         updated_query_bundle = self._query_transform(
             query_bundle, extra_info=transform_extra_info
         )
+
         return self._query_runner.query_transformed(updated_query_bundle, self._index_struct, level=level)
 
 
@@ -79,7 +80,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         self,
         index_struct: IndexStruct,
         query_transform: BaseQueryTransform,
-        query_runner: QueryRunner,
+        query_runner: Any,
         service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
@@ -94,6 +95,8 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         super().__init__(index_struct, query_transform=query_transform)
         self._index_struct = index_struct
         self._query_transform = query_transform
+        from gpt_index.indices.query.query_runner import QueryRunner
+        assert isinstance(query_runner, QueryRunner)
         self._query_runner = query_runner
         self._service_context = service_context or ServiceContext.from_defaults()
         self._num_steps = num_steps
@@ -192,6 +195,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
 def get_default_query_combiner(
     index_struct: IndexStruct,
     query_transform: BaseQueryTransform,
+    query_runner: Any,  # NOTE: type as Any to avoid circular dependency
     extra_kwargs: Optional[Dict] = None,
 ) -> BaseQueryCombiner:
     """Get default query combiner."""
@@ -200,7 +204,8 @@ def get_default_query_combiner(
         return MultiStepQueryCombiner(
             index_struct,
             query_transform=query_transform,
+            query_runner=query_runner,
             service_context=extra_kwargs.get("service_context", None),
         )
     else:
-        return SingleQueryCombiner(index_struct, query_transform=query_transform)
+        return SingleQueryCombiner(index_struct, query_transform=query_transform, query_runner=query_runner)

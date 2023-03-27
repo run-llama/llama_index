@@ -141,7 +141,7 @@ class QueryRunner:
                 "service_context": self._service_context,
             }
             query_combiner = get_default_query_combiner(
-                index_struct, query_transform, extra_kwargs=extra_kwargs
+                index_struct, query_transform, self, extra_kwargs=extra_kwargs
             )
 
         return cast(BaseQueryCombiner, query_combiner)
