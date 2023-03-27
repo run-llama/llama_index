@@ -26,7 +26,7 @@ class TokenTextSplitter(TextSplitter):
     def __init__(
         self,
         separator: str = " ",
-        chunk_size: int = 4000,
+        chunk_size: int = 3900,
         chunk_overlap: int = 200,
         tokenizer: Optional[Callable] = None,
         backup_separators: Optional[List[str]] = ["\n"],
