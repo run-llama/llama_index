@@ -5,9 +5,20 @@ from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.logger import LlamaLogger
 from gpt_index.node_parser.interface import NodeParser
 from gpt_index.node_parser.simple import SimpleNodeParser
+
+
+def _get_default_node_parser(chunk_size_limit: Optional[int] = None) -> NodeParser:
+    """Get default node parser."""
+    if chunk_size_limit is None:
+        # use default chunk size (3900)
+        token_text_splitter = TokenTextSplitter()
+    else:
+        token_text_splitter = TokenTextSplitter(chunk_size=chunk_size_limit)
+    return SimpleNodeParser(text_splitter=token_text_splitter)
 
 
 @dataclass
@@ -35,7 +46,9 @@ class ServiceContext:
         prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
             llm_predictor, chunk_size_limit=chunk_size_limit
         )
-        node_parser = node_parser or SimpleNodeParser()
+        node_parser = node_parser or _get_default_node_parser(
+            chunk_size_limit=chunk_size_limit
+        )
         llama_logger = llama_logger or LlamaLogger()
 
         return cls(
