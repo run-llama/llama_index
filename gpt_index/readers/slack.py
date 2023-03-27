@@ -58,10 +58,12 @@ class SlackReader(BaseReader):
             )
         if earliest_date is not None:
             self.earliest_date_timestamp = earliest_date.timestamp()
-            if latest_date is not None:
-                self.latest_date_timestamp = latest_date.timestamp()
-            else:
-                self.latest_date_timestamp = datetime.now().timestamp()
+        else:
+            self.earliest_date_timestamp = None
+        if latest_date is not None:
+            self.latest_date_timestamp = latest_date.timestamp()
+        else:
+            self.latest_date_timestamp = datetime.now().timestamp()
         res = self.client.api_test()
         if not res["ok"]:
             raise ValueError(f"Error initializing Slack API: {res['error']}")
@@ -82,12 +84,18 @@ class SlackReader(BaseReader):
                         channel=channel_id, ts=message_ts, cursor=next_cursor
                     )
                 else:
+                    conversations_replies_kwargs = {
+                        "channel": channel_id,
+                        "ts": message_ts,
+                        "cursor": next_cursor,
+                        "latest": str(self.latest_date_timestamp),
+                    }
+                    if self.earliest_date_timestamp is not None:
+                        conversations_replies_kwargs["oldest"] = str(
+                            self.earliest_date_timestamp
+                        )
                     result = self.client.conversations_replies(
-                        channel=channel_id,
-                        ts=message_ts,
-                        cursor=next_cursor,
-                        oldest=str(self.earliest_date_timestamp),
-                        latest=str(self.latest_date_timestamp),
+                        **conversations_replies_kwargs
                     )
                 messages = result["messages"]
                 messages_text.extend(message["text"] for message in messages)
@@ -121,11 +129,17 @@ class SlackReader(BaseReader):
                 # conversations.history returns the first 100 messages by default
                 # These results are paginated,
                 # see: https://api.slack.com/methods/conversations.history$pagination
+                conversations_history_kwargs = {
+                    "channel": channel_id,
+                    "cursor": next_cursor,
+                    "latest": str(self.latest_date_timestamp),
+                }
+                if self.earliest_date_timestamp is not None:
+                    conversations_history_kwargs["oldest"] = str(
+                        self.earliest_date_timestamp
+                    )
                 result = self.client.conversations_history(
-                    channel=channel_id,
-                    cursor=next_cursor,
-                    oldest=str(self.earliest_date_timestamp),
-                    latest=str(self.latest_date_timestamp),
+                    **conversations_history_kwargs
                 )
                 conversation_history = result["messages"]
                 # Print results
