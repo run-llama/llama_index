@@ -227,7 +227,7 @@ class ComposableGraph:
             "index_struct_id": self._index_struct.get_doc_id(),
             "docstore": self._docstore.serialize_to_dict(),
         }
-        return json.dumps(out_dict)
+        return json.dumps(out_dict, **save_kwargs)
 
     def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
         """Save to file.
