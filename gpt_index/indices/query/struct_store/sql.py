@@ -51,6 +51,10 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         response = Response(response=response_str, extra_info=extra_info)
         return response
 
+    @llm_token_counter("query")
+    async def aquery(self, query_bundle: QueryBundle) -> Response:
+        return self.query(query_bundle)
+
 
 class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     """GPT natural language query over a structured database.
@@ -124,6 +128,26 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
         response_str, _ = self._llm_predictor.predict(
+            self._text_to_sql_prompt,
+            query_str=query_bundle.query_str,
+            schema=table_desc_str,
+            dialect=self._sql_database.dialect,
+        )
+
+        sql_query_str = self._parse_response_to_sql(response_str)
+        # assume that it's a valid SQL query
+        logger.debug(f"> Predicted SQL query: {sql_query_str}")
+
+        response_str, extra_info = self._sql_database.run_sql(sql_query_str)
+        extra_info["sql_query"] = sql_query_str
+        response = Response(response=response_str, extra_info=extra_info)
+        return response
+
+    async def _aquery(self, query_bundle: QueryBundle) -> Response:
+        """Answer a query."""
+        table_desc_str = self._get_table_context(query_bundle)
+        logger.info(f"> Table desc str: {table_desc_str}")
+        response_str, _ = await self._llm_predictor.apredict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
