@@ -28,16 +28,6 @@ text_list = [text1, text2, ...]
 documents = [Document(t) for t in text_list]
 ```
 
-## 2. Parse the Documents into Nodes
-
-The next step is to parse these Document objects into Node objects. Nodes represent "chunks" of source Documents,
-whether that is a text chunk, an image, or more. They also contain metadata and relationship information
-with other nodes and index structures.
-
-Nodes are a first-class citizen in LlamaIndex. You can choose to define Nodes directly or "parse" source Documents into
-Nodes through our `NodeParser` classes.
- 
-
 ## 2. Index Construction
 
 We can now build an index over these Document objects. The simplest is to load in the Document objects during index initialization.
@@ -45,7 +35,7 @@ We can now build an index over these Document objects. The simplest is to load i
 ```python
 from llama_index import GPTSimpleVectorIndex
 
-index = GPTSimpleVectorIndex.from_documents(documents)
+index = GPTSimpleVectorIndex(documents)
 
 ```
 
@@ -89,7 +79,7 @@ num_output = 256
 max_chunk_overlap = 20
 prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
-index = GPTSimpleVectorIndex.from_documents(
+index = GPTSimpleVectorIndex(
     documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper
 )
 ```
@@ -136,8 +126,8 @@ You can build indices on top of other indices!
 ```python
 from llama_index import GPTSimpleVectorIndex, GPTListIndex
 
-index1 = GPTSimpleVectorIndex.from_documents(documents1)
-index2 = GPTSimpleVectorIndex.from_documents(documents2)
+index1 = GPTSimpleVectorIndex(documents1)
+index2 = GPTSimpleVectorIndex(documents2)
 
 # Set summary text
 # you can set the summary manually, or you can
@@ -180,7 +170,7 @@ create and refine an answer sequentially through the nodes of the list.
 nodes by embedding similarity.
 
 ```python
-index = GPTListIndex.from_documents(documents)
+index = GPTListIndex(documents)
 # mode="default"
 response = index.query("What did the author do growing up?", mode="default")
 # mode="embedding"
@@ -206,7 +196,7 @@ An index can also have the following response modes through `response_mode`:
     and return the root node as the response. Good for summarization purposes.
 
 ```python
-index = GPTListIndex.from_documents(documents)
+index = GPTListIndex(documents)
 # mode="default"
 response = index.query("What did the author do growing up?", response_mode="default")
 # mode="compact"
