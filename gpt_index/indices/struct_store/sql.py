@@ -1,20 +1,20 @@
 """SQL Structured Store."""
 import json
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Dict, Optional, Sequence
 
 from sqlalchemy import Table
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
-from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.sql import (
     GPTNLStructStoreIndexQuery,
     GPTSQLStructStoreIndexQuery,
 )
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -57,7 +57,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[SQLStructTable] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
+        service_context: Optional[ServiceContext] = None,
         sql_database: Optional[SQLDatabase] = None,
         table_name: Optional[str] = None,
         table: Optional[Table] = None,
@@ -81,7 +81,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
+            service_context=service_context,
             **kwargs,
         )
 
@@ -99,7 +99,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             return index_struct
         else:
             data_extractor = SQLStructDatapointExtractor(
-                self._llm_predictor,
+                self._service_context.llm_predictor,
                 self.schema_extract_prompt,
                 self.output_parser,
                 self.sql_database,
@@ -114,7 +114,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         data_extractor = SQLStructDatapointExtractor(
-            self._llm_predictor,
+            self._service_context.llm_predictor,
             self.schema_extract_prompt,
             self.output_parser,
             self.sql_database,
@@ -125,7 +125,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         data_extractor.insert_datapoint_from_nodes(nodes)
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTNLStructStoreIndexQuery,
@@ -193,16 +193,8 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             str: The JSON string of the index.
 
         """
-        if self.docstore.contains_index_struct(
-            exclude_ids=[self.index_struct.get_doc_id()]
-        ):
-            raise ValueError(
-                "Cannot call `save_to_string` on index if index is composed on top of "
-                "other indices. Please define a `ComposableGraph` and use "
-                "`save_to_string` and `load_from_string` on that instead."
-            )
         out_dict: Dict[str, Any] = {
-            "index_struct_id": self.index_struct.get_doc_id(),
+            "index_id": self.index_struct.index_id,
             "docstore": self.docstore.serialize_to_dict(),
             "sql_context_container": self.sql_context_container.to_dict(),
         }

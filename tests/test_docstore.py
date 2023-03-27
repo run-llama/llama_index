@@ -2,7 +2,8 @@
 
 from typing import Dict, Type
 
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.constants import TYPE_KEY
+from gpt_index.data_structs.node_v2 import Node, NodeType
 from gpt_index.docstore import DocumentStore
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
@@ -29,7 +30,7 @@ def test_docstore() -> None:
         "doc_id": "d1",
         "embedding": None,
         "extra_info": {"foo": "bar"},
-        "__type__": "Document",
+        TYPE_KEY: "Document",
     }
     d2_expected: dict = {
         "text": "my node",
@@ -38,13 +39,12 @@ def test_docstore() -> None:
         "extra_info": None,
         "node_info": {"node": "info"},
         "relationships": {},
-        "image": None,
-        "__type__": "node",
+        TYPE_KEY: NodeType.TEXT,
     }
     doc_dict["docs"]["d1"].pop("doc_hash")
     doc_dict["docs"]["d2"].pop("doc_hash")
     assert doc_dict["docs"]["d1"] == d1_expected
     assert doc_dict["docs"]["d2"] == d2_expected
 
-    docstore_loaded = DocumentStore.load_from_dict(doc_dict, type_to_struct)
+    docstore_loaded = DocumentStore.load_from_dict(doc_dict)
     assert docstore_loaded == docstore

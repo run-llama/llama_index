@@ -136,8 +136,8 @@ class Playground:
                         "Mode": mode,
                         "Output": str(output),
                         "Duration": duration,
-                        "LLM Tokens": index.llm_predictor.last_token_usage,
-                        "Embedding Tokens": index.embed_model.last_token_usage,
+                        "LLM Tokens": index.service_context.llm_predictor.last_token_usage,
+                        "Embedding Tokens": index.service_context.embed_model.last_token_usage,
                     }
                 )
         print(f"\nRan {len(result)} combinations in total.")

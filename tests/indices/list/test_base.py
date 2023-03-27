@@ -12,6 +12,7 @@ import pytest
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.node_parser.simple import SimpleNodeParser
@@ -275,9 +276,10 @@ def test_index_overlap(
         tokenizer=globals_helper.tokenizer,
     )
     _node_parser = SimpleNodeParser(text_splitter=_text_splitter)
+    service_context = ServiceContext.from_defaults(node_parser=_node_parser)
 
     index = GPTListIndex.from_documents(
-        documents, node_parser=_node_parser, **index_kwargs
+        documents, service_context=service_context, **index_kwargs
     )
 
     query_str = "What is?"

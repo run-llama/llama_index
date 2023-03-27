@@ -5,16 +5,14 @@ pure LLM calls.
 
 """
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Optional, Sequence
 
 from gpt_index.data_structs.data_structs_v2 import EmptyIndex
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.empty.base import GPTEmptyIndexQuery
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.node_parser.interface import NodeParser
+from gpt_index.indices.service_context import ServiceContext
 
 
 class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
@@ -33,21 +31,19 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
     def __init__(
         self,
         index_struct: Optional[EmptyIndex] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        node_parser: Optional[NodeParser] = None,
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             nodes=[],
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
-            node_parser=node_parser,
+            service_context=service_context,
             **kwargs,
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTEmptyIndexQuery,

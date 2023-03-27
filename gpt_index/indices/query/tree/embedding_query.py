@@ -50,7 +50,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         query_template: Optional[TreeSelectPrompt] = None,
         query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
         child_branch_factor: int = 1,
-        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -59,7 +58,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             query_template=query_template,
             query_template_multiple=query_template_multiple,
             child_branch_factor=child_branch_factor,
-            embed_model=embed_model,
             **kwargs,
         )
         self.child_branch_factor = child_branch_factor
@@ -106,15 +104,19 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
 
         """
         if query_bundle.embedding is None:
-            query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
-                query_bundle.embedding_strs
+            query_bundle.embedding = (
+                self._service_context.embed_model.get_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
+                )
             )
         similarities = []
         for node in nodes:
             if node.embedding is None:
-                node.embedding = self._embed_model.get_text_embedding(node.get_text())
+                node.embedding = self._service_context.embed_model.get_text_embedding(
+                    node.get_text()
+                )
 
-            similarity = self._embed_model.similarity(
+            similarity = self._service_context.embed_model.similarity(
                 query_bundle.embedding, node.embedding
             )
             similarities.append(similarity)
@@ -138,3 +140,14 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
                 break
 
         return selected_nodes, selected_indices
+
+    def _select_nodes(
+        self,
+        cur_node_list: List[Node],
+        query_bundle: QueryBundle,
+        level: int = 0,
+    ) -> List[Node]:
+        selected_nodes, _ = self._get_most_similar_nodes(
+            cur_node_list, query_bundle
+        )
+        return selected_nodes
