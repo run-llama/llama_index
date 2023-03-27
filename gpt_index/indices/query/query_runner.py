@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union, cast
 
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex, IndexGraph
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node
 from gpt_index.data_structs.struct_type import IndexStructType
@@ -168,45 +169,13 @@ class QueryRunner:
 
         return query_obj
 
-    def query(
+    def query_transformed(
         self,
-        query_str_or_bundle: Union[str, QueryBundle],
-        index_id: Optional[str] = None,
+        query_bundle: QueryBundle,
+        index_struct: V2IndexStruct,
         level: int = 0,
     ) -> RESPONSE_TYPE:
-        """Run query."""
-        if isinstance(self._index_struct, CompositeIndex):
-            if index_id is None:
-                index_id = self._index_struct.root_id
-            assert index_id is not None
-            index_struct = self._index_struct.all_index_structs[index_id]
-        else:
-            if index_id is not None:
-                raise ValueError("index_id should be used with composite graph")
-            index_struct = self._index_struct
-
-        # NOTE: Currently, query transform is only run once
-        # TODO: Consider refactor to support index-specific query transform
-
-        # TODO: abstract query transformation loop into a separate class
-        # TODO: support query combiner
-        # query_combiner = self._get_query_combiner(index_struct, query_transform)
-
-        # query transform
-        query_transform = self._get_query_transform(index_struct)
-        if isinstance(query_str_or_bundle, str):
-            query_bundle = QueryBundle(
-                query_str=query_str_or_bundle,
-                custom_embedding_strs=[query_str_or_bundle],
-            )
-        else:
-            query_bundle = query_str_or_bundle
-        transform_extra_info = {"index_struct": index_struct}
-        query_bundle = query_transform(
-            query_str_or_bundle, extra_info=transform_extra_info
-        )
-
-        # query
+        """This is called via BaseQueryCombiner.run."""
         query_obj = self._get_query_obj(index_struct)
         if self._recursive:
             print(f"Query level : {level} on {index_struct.get_type()}")
@@ -237,6 +206,38 @@ class QueryRunner:
         else:
             return query_obj.query(query_bundle)
 
+    def query(
+        self,
+        query_str_or_bundle: Union[str, QueryBundle],
+        index_id: Optional[str] = None,
+        level: int = 0,
+    ) -> RESPONSE_TYPE:
+        """Run query."""
+        # Resolve index struct from index_id if necessary
+        if isinstance(self._index_struct, CompositeIndex):
+            if index_id is None:
+                index_id = self._index_struct.root_id
+            assert index_id is not None
+            index_struct = self._index_struct.all_index_structs[index_id]
+        else:
+            if index_id is not None:
+                raise ValueError("index_id should be used with composite graph")
+            index_struct = self._index_struct
+        
+        # Wrap query string as QueryBundle if necessary
+        if isinstance(query_str_or_bundle, str):
+            query_bundle = QueryBundle(
+                query_str=query_str_or_bundle,
+                custom_embedding_strs=[query_str_or_bundle],
+            )
+        else:
+            query_bundle = query_str_or_bundle
+
+        query_transform = self._get_query_transform(index_struct)
+        query_combiner = self._get_query_combiner(index_struct, query_transform)
+        return query_combiner.run(query_bundle, level)
+
+
     async def aquery(
         self,
         query_str_or_bundle: Union[str, QueryBundle],
@@ -253,8 +254,6 @@ class QueryRunner:
                 raise ValueError("index_id should be used with composite graph")
             index_struct = self._index_struct
 
-        # NOTE: Currently, query transform is only run once
-        # TODO: Consider refactor to support index-specific query transform
         # TODO: support query combiner
         # query_combiner = self._get_query_combiner(index_struct, query_transform)
 
