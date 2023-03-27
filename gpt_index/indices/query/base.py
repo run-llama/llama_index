@@ -221,18 +221,22 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         """Validate the index struct."""
         pass
 
-    def _give_response_for_nodes(self, query_str: str) -> RESPONSE_TEXT_TYPE:
+    def _give_response_for_nodes(
+        self, response_builder: ResponseBuilder, query_str: str
+    ) -> RESPONSE_TEXT_TYPE:
         """Give response for nodes."""
-        response = self.response_builder.get_response(
+        response = response_builder.get_response(
             query_str,
             mode=self._response_mode,
             **self._response_kwargs,
         )
         return response
 
-    async def _agive_response_for_nodes(self, query_str: str) -> RESPONSE_TEXT_TYPE:
+    async def _agive_response_for_nodes(
+        self, response_builder: ResponseBuilder, query_str: str
+    ) -> RESPONSE_TEXT_TYPE:
         """Give response for nodes."""
-        response = await self.response_builder.aget_response(
+        response = await response_builder.aget_response(
             query_str,
             mode=self._response_mode,
             **self._response_kwargs,
@@ -308,13 +312,13 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         if response_str is None or isinstance(response_str, str):
             return Response(
                 response_str,
-                source_nodes=self.response_builder.get_sources(),
+                source_nodes=response_builder.get_sources(),
                 extra_info=response_extra_info,
             )
         elif response_str is None or isinstance(response_str, Generator):
             return StreamingResponse(
                 response_str,
-                source_nodes=self.response_builder.get_sources(),
+                source_nodes=response_builder.get_sources(),
                 extra_info=response_extra_info,
             )
         else:
@@ -335,7 +339,9 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         )
 
         if self._response_mode != ResponseMode.NO_TEXT:
-            response_str = self._give_response_for_nodes(query_bundle.query_str)
+            response_str = self._give_response_for_nodes(
+                self.response_builder, query_bundle.query_str
+            )
         else:
             response_str = None
 
@@ -364,7 +370,9 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         )
 
         if self._response_mode != ResponseMode.NO_TEXT:
-            response_str = await self._agive_response_for_nodes(query_bundle.query_str)
+            response_str = await self._agive_response_for_nodes(
+                response_builder, query_bundle.query_str
+            )
         else:
             response_str = None
 
@@ -380,7 +388,10 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         """Answer a query asynchronously."""
         # TODO: remove _query and just use query
         nodes = self.retrieve(query_bundle)
-        return await self.asynthesize(query_bundle, nodes)
+        print(nodes)
+        response = await self.asynthesize(query_bundle, nodes)
+        print(response)
+        return response
 
     @llm_token_counter("query")
     def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:

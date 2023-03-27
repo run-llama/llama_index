@@ -283,7 +283,7 @@ class QueryRunner:
                 query_bundle, nodes_for_synthesis, additional_source_nodes
             )
         else:
-            return query_obj.query(query_bundle)
+            return await query_obj.aquery(query_bundle)
 
     def _prepare_query_objects(
         self,
