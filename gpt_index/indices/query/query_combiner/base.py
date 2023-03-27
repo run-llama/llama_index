@@ -12,6 +12,7 @@ from gpt_index.indices.query.query_transform.base import (
 )
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -77,8 +78,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         self,
         index_struct: IndexStruct,
         query_transform: BaseQueryTransform,
-        llm_predictor: Optional[LLMPredictor] = None,
-        prompt_helper: Optional[PromptHelper] = None,
+        service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         response_mode: ResponseMode = ResponseMode.DEFAULT,
@@ -92,10 +92,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         super().__init__(index_struct, query_transform=query_transform)
         self._index_struct = index_struct
         self._query_transform = query_transform
-        self._llm_predictor = llm_predictor or LLMPredictor()
-        self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
-            self._llm_predictor, chunk_size_limit=None
-        )
+        self._service_context = service_context or ServiceContext.from_defaults()
         self._num_steps = num_steps
         self._early_stopping = early_stopping
         # TODO: make interface to stop function better
@@ -108,8 +105,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self.refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self.response_builder = ResponseBuilder(
-            self._prompt_helper,
-            self._llm_predictor,
+            self._service_context,
             self.text_qa_template,
             self.refine_template,
             use_async=use_async,
@@ -201,7 +197,7 @@ def get_default_query_combiner(
         return MultiStepQueryCombiner(
             index_struct,
             query_transform=query_transform,
-            llm_predictor=extra_kwargs.get("llm_predictor", None),
+            service_context=extra_kwargs.get("service_context", None),
         )
     else:
         return SingleQueryCombiner(index_struct, query_transform=query_transform)

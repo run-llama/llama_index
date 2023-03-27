@@ -215,7 +215,9 @@ def test_query(
 
 
 @patch_common
+@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_predict)
 def test_summarize_query(
+    _mock_apredict: Any,
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
@@ -326,6 +328,6 @@ def test_build_and_count_tokens(
     llmchain_mock_resp_token_count = 10
     tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
     assert (
-        tree._llm_predictor.total_tokens_used
+        tree.service_context.llm_predictor.total_tokens_used
         == document_token_count + llmchain_mock_resp_token_count
     )

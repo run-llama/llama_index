@@ -22,6 +22,7 @@ from gpt_index.indices.query.keyword_table.query import (
     GPTKeywordTableSimpleQuery,
 )
 from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import (
@@ -59,10 +60,9 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[KeywordTable] = None,
+        service_context: Optional[ServiceContext] = None,
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         max_keywords_per_chunk: int = 10,
-        llm_predictor: Optional[LLMPredictor] = None,
-        node_parser: Optional[NodeParser] = None,
         use_async: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -80,8 +80,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
-            node_parser=node_parser,
+            service_context=service_context,
             **kwargs,
         )
 
@@ -173,7 +172,7 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        response, _ = self._llm_predictor.predict(
+        response, _ = self._service_context.llm_predictor.predict(
             self.keyword_extract_template,
             text=text,
         )
@@ -182,7 +181,7 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
 
     async def _async_extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        response, _ = await self._llm_predictor.apredict(
+        response, _ = await self._service_context.llm_predictor.apredict(
             self.keyword_extract_template,
             text=text,
         )

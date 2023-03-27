@@ -25,6 +25,7 @@ from gpt_index.indices.query.vector_store.queries import (
     GPTSimpleVectorIndexQuery,
     GPTWeaviateIndexQuery,
 )
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
@@ -70,9 +71,8 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
+        service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         simple_vector_store_data_dict: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
@@ -84,9 +84,8 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
+            service_context=service_context,
             text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
             vector_store=vector_store,
             **kwargs,
         )
@@ -94,8 +93,6 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         # TODO: Temporary hack to also store embeddings in index_struct
         embedding_dict = vector_store._data.embedding_dict
         self._index_struct.embeddings_dict = embedding_dict
-        # update docstore with current struct
-        self._docstore.add_documents([self.index_struct], allow_update=True)
 
     @classmethod
     def get_query_map(self) -> QueryMap:
@@ -141,11 +138,10 @@ class GPTFaissIndex(GPTVectorStoreIndex):
     def __init__(
         self,
         nodes: Optional[Sequence[Node]] = None,
+        service_context: Optional[ServiceContext] = None,
         faiss_index: Optional[Any] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -156,9 +152,8 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
+            service_context=service_context,
             text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
             vector_store=vector_store,
             **kwargs,
         )
@@ -345,12 +340,11 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
     def __init__(
         self,
         nodes: Optional[Sequence[Node]] = None,
+        service_context: Optional[ServiceContext] = None,
         weaviate_client: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -363,9 +357,8 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
+            service_context=service_context,
             text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
             vector_store=vector_store,
             **kwargs,
         )
@@ -415,12 +408,11 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
     def __init__(
         self,
         nodes: Optional[Sequence[Node]] = None,
+        service_context: Optional[ServiceContext] = None,
         client: Optional[Any] = None,
         collection_name: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -433,9 +425,8 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
+            service_context=service_context,
             text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
             vector_store=vector_store,
             **kwargs,
         )
@@ -485,8 +476,9 @@ class GPTChromaIndex(GPTVectorStoreIndex):
     def __init__(
         self,
         nodes: Optional[Sequence[Node]] = None,
-        chroma_collection: Optional[Any] = None,
         index_struct: Optional[IndexDict] = None,
+        service_context: Optional[ServiceContext] = None,
+        chroma_collection: Optional[Any] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
@@ -500,9 +492,8 @@ class GPTChromaIndex(GPTVectorStoreIndex):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
+            service_context=service_context,
             text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
             vector_store=vector_store,
             **kwargs,
         )
@@ -556,11 +547,10 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
     def __init__(
         self,
         nodes: Optional[Sequence[Node]] = None,
+        service_context: Optional[ServiceContext] = None,
         client: Optional[OpensearchVectorClient] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -570,9 +560,8 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
+            service_context=service_context,
             text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
             vector_store=vector_store,
             **kwargs,
         )

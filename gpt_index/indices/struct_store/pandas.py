@@ -10,7 +10,6 @@ from gpt_index.indices.base import QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.pandas import GPTNLPandasIndexQuery
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
 
 class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
@@ -36,7 +35,6 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
         nodes: Optional[Sequence[Node]] = None,
         df: Optional[pd.DataFrame] = None,
         index_struct: Optional[PandasStructTable] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -47,7 +45,6 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
         super().__init__(
             nodes=[],
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
             **kwargs,
         )
 

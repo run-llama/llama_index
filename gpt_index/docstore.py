@@ -2,17 +2,14 @@
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Type
+from typing import Any, Dict, List, Optional, Sequence
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.constants import TYPE_KEY
+from gpt_index.data_structs.node_v2 import ImageNode, IndexNode, Node
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
-
-# type key: used to store type of document
-TYPE_KEY = "__type__"
 
 
 @dataclass
@@ -33,48 +30,27 @@ class DocumentStore(DataClassJsonMixin):
             docs_dict[doc_id] = doc_dict
         return {"docs": docs_dict, "ref_doc_info": self.ref_doc_info}
 
-    def contains_index_struct(
-        self,
-        exclude_ids: Optional[Sequence[str]] = None,
-        exclude_types: Optional[Sequence[Type]] = None,
-    ) -> bool:
-        """Check if contains index struct."""
-        exclude_ids = exclude_ids or []
-        exclude_types = exclude_types or []
-        for doc in self.docs.values():
-            if doc.get_doc_id() in exclude_ids:
-                continue
-            if isinstance(doc, tuple(exclude_types)):
-                continue
-            if isinstance(doc, IndexStruct):
-                return True
-        return False
-
     @classmethod
     def load_from_dict(
         cls,
         docs_dict: Dict[str, Any],
-        type_to_struct: Optional[Dict[str, Type[BaseDocument]]] = None,
     ) -> "DocumentStore":
         """Load from dict."""
         docs_obj_dict = {}
         for doc_id, doc_dict in docs_dict["docs"].items():
             doc_type = doc_dict.pop(TYPE_KEY, None)
+            doc: BaseDocument
             if doc_type == "Document" or doc_type is None:
-                doc: BaseDocument = Document.from_dict(doc_dict)
+                doc = Document.from_dict(doc_dict)
+            elif doc_type == Node.get_type():
+                doc = Node.from_dict(doc_dict)
+            elif doc_type == ImageNode.get_type():
+                doc = ImageNode.from_dict(doc_dict)
+            elif doc_type == IndexNode.get_type():
+                doc = IndexNode.from_dict(doc_dict)
             else:
-                if type_to_struct is None:
-                    raise ValueError(
-                        "type_to_struct must be provided if type is index struct."
-                    )
-                # try using IndexStructType to retrieve documents
-                if doc_type not in type_to_struct:
-                    raise ValueError(
-                        f"doc_type {doc_type} not found in type_to_struct. "
-                        "Make sure that it was registered in the index registry."
-                    )
-                doc = type_to_struct[doc_type].from_dict(doc_dict)
-                # doc = index_struct_cls.from_dict(doc_dict)
+                raise ValueError(f"Unknown doc type: {doc_type}")
+
             docs_obj_dict[doc_id] = doc
         return cls(
             docs=docs_obj_dict,
@@ -87,6 +63,13 @@ class DocumentStore(DataClassJsonMixin):
         obj = cls()
         obj.add_documents(docs)
         return obj
+
+    @classmethod
+    def merge(cls, docstores: Sequence["DocumentStore"]) -> "DocumentStore":
+        merged_docstore = cls()
+        for docstore in docstores:
+            merged_docstore.update_docstore(docstore)
+        return merged_docstore
 
     def update_docstore(self, other: "DocumentStore") -> None:
         """Update docstore."""

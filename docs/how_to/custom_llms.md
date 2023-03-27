@@ -47,7 +47,7 @@ documents = SimpleDirectoryReader('data').load_data()
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002"))
 
 # build index
-index = GPTKeywordTableIndex(documents, llm_predictor=llm_predictor)
+index = GPTKeywordTableIndex.from_documents(documents, llm_predictor=llm_predictor)
 
 # get response from query
 response = index.query("What did the author do after his time at Y Combinator?")
@@ -77,7 +77,7 @@ documents = SimpleDirectoryReader('data').load_data()
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=512))
 
 # build index
-index = GPTKeywordTableIndex(documents, llm_predictor=llm_predictor)
+index = GPTKeywordTableIndex.from_documents(documents, llm_predictor=llm_predictor)
 
 # get response from query
 response = index.query("What did the author do after his time at Y Combinator?")
@@ -117,7 +117,7 @@ prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=num_output))
 
 # build index
-index = GPTKeywordTableIndex(documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+index = GPTKeywordTableIndex.from_documents(documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper)
 
 # get response from query
 response = index.query("What did the author do after his time at Y Combinator?")
@@ -173,7 +173,7 @@ llm_predictor = LLMPredictor(llm=CustomLLM())
 
 # Load the your data
 documents = SimpleDirectoryReader('./data').load_data()
-index = GPTListIndex(documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+index = GPTListIndex.from_documents(documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper)
 
 # Query and print response
 response = new_index.query("<query_text>")

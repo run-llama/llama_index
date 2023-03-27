@@ -9,9 +9,11 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store import GPTSimpleVectorIndex
+from gpt_index.llm_predictor.base import LLMPredictor
 from gpt_index.playground import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
+from tests.mock_utils.mock_predict import mock_llmpredictor_predict
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -47,7 +49,9 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 @patch.object(
     OpenAIEmbedding, "_get_query_embedding", side_effect=mock_get_query_embedding
 )
+@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_predict)
 def test_get_set_compare(
+    _mock_apredict: Any,
     _mock_query_embed: Any,
     _mock_texts_embed: Any,
     _mock_text_embed: Any,
