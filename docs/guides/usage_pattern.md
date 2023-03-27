@@ -28,9 +28,47 @@ text_list = [text1, text2, ...]
 documents = [Document(t) for t in text_list]
 ```
 
-## 2. Index Construction
+A Document represents a lightweight container around the data source. You can now to choose to proceed with one of the 
+following steps:
+1. Feed the Document object directly into the index (see section 3).
+2. First convert the Document into Node objects (see section 2).
 
-We can now build an index over these Document objects. The simplest is to load in the Document objects during index initialization.
+## 2. Parse the Documents into Nodes
+
+The next step is to parse these Document objects into Node objects. Nodes represent "chunks" of source Documents,
+whether that is a text chunk, an image, or more. They also contain metadata and relationship information
+with other nodes and index structures.
+
+Nodes are a first-class citizen in LlamaIndex. You can choose to define Nodes and all its attributes directly. You may also choose to "parse" source Documents into Nodes through our `NodeParser` classes.
+
+For instance, you can do
+
+```python
+from gpt_index.node_parser import SimpleNodeParser
+
+parser = SimpleNodeParser()
+
+nodes = parser.get_nodes_from_documents()
+
+```
+
+You can also choose to construct Node objects manually and skip the first section. For instance,
+
+```python
+from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
+
+node1 = Node(text="<text_chunk>", doc_id="<node_id>")
+node2 = Node(text="<text_chunk>", doc_id="<node_id>")
+# set relationships
+node1.relationships[DocumentRelationship.NEXT] = node2.get_doc_id()
+node2.relationships[DocumentRelationship.PREVIOUS] = node1.get_doc_id()
+
+```
+
+
+## 3. Index Construction
+
+We can now build an index over these Document objects. The simplest high-level abstraction is to load-in the Document objects during index initialization (this is relevant if you came directly from step 1 and skipped step 2).
 
 ```python
 from llama_index import GPTSimpleVectorIndex
@@ -38,6 +76,16 @@ from llama_index import GPTSimpleVectorIndex
 index = GPTSimpleVectorIndex.from_documents(documents)
 
 ```
+
+You can also choose to build an index over a set of Node objects directly (this is a continuation of step 2).
+
+```python
+from llama_index import GPTSimpleVectorIndex
+
+index = GPTSimpleVectorIndex(nodes)
+
+```
+
 
 Depending on which index you use, LlamaIndex may make LLM calls in order to build the index.
 
@@ -56,6 +104,8 @@ for doc in documents:
 ```
 
 See the [Update Index How-To](/how_to/update.md) for details and an example notebook.
+
+**NOTE**: An `insert_node` function is coming!
 
 ### Customizing LLM's
 
@@ -119,7 +169,7 @@ index.save_to_disk('index.json')
 index = GPTSimpleVectorIndex.load_from_disk('index.json')
 ```
 
-## 3. [Optional, Advanced] Building indices on top of other indices
+## 4. [Optional, Advanced] Building indices on top of other indices
 
 You can build indices on top of other indices! 
 
@@ -142,7 +192,7 @@ index3 = GPTListIndex([index1, index2])
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
 see our [Use Cases Guide](/guides/use_cases.md). For technical details and examples, see our [Composability How-To](/how_to/composability.md).
 
-## 4. Query the index.
+## 5. Query the index.
 
 After building the index, you can now query it. Note that a "query" is simply an input to an LLM - 
 this means that you can use the index for question-answering, but you can also do more than that! 
