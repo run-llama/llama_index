@@ -9,6 +9,7 @@ from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
@@ -276,8 +277,6 @@ class BaseGPTIndex(Generic[IS], ABC):
 
 
         """
-        from gpt_index.indices.query.query_runner import QueryRunner
-
         mode_enum = QueryMode(mode)
         self._preprocess_query(mode_enum, query_kwargs)
         # TODO: pass in query config directly

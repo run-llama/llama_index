@@ -57,6 +57,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruc
     IndexStructType.COMPOSITE: CompositeIndex,
 }
 
+
 INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.TREE: GPTTreeIndex,
     IndexStructType.LIST: GPTListIndex,
