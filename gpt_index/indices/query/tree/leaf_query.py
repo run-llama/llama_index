@@ -21,6 +21,7 @@ from gpt_index.response.schema import Response
 
 logger = logging.getLogger(__name__)
 
+
 class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
     """GPT Tree Index leaf query.
 
@@ -240,7 +241,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             level=0,
         ).strip()
         return Response(response_str, source_nodes=self.response_builder.get_sources())
-    
+
     def _select_nodes(
         self,
         cur_node_list: List[Node],
@@ -360,12 +361,12 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             )
         else:
             selected_nodes = cur_node_list
-        
+
         children_nodes = {}
         for node in selected_nodes:
             node_dict = self.index_struct.get_children(node)
             children_nodes.update(node_dict)
-        
+
         if len(children_nodes) == 0:
             # NOTE: leaf level
             return selected_nodes
@@ -382,5 +383,4 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             self.index_struct.root_nodes,
             query_bundle,
             level=0,
-
         )

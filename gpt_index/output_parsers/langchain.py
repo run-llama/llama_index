@@ -3,7 +3,7 @@
 from string import Formatter
 from typing import Any, Optional
 
-from langchain.output_parsers import BaseOutputParser as LCOutputParser
+from langchain.schema import BaseOutputParser as LCOutputParser
 
 from gpt_index.output_parsers.base import BaseOutputParser
 

@@ -3,7 +3,17 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Generator, Generic, List, Optional, Sequence, TypeVar
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+)
 
 from langchain.input import print_text
 
@@ -286,6 +296,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
 
     def _prepare_response_output(
         self,
+        response_builder: ResponseBuilder,
         response_str: Optional[RESPONSE_TEXT_TYPE],
         tuples: List[NodeWithScore],
     ) -> RESPONSE_TYPE:
@@ -328,7 +339,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         else:
             response_str = None
 
-        return self._prepare_response_output(response_str, nodes)
+        return self._prepare_response_output(self.response_builder, response_str, nodes)
 
     async def asynthesize(
         self,
@@ -336,9 +347,17 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[List[SourceNode]] = None,
     ) -> RESPONSE_TYPE:
+        # define a response builder for async queries
+        response_builder = ResponseBuilder(
+            self._service_context,
+            self.text_qa_template,
+            self.refine_template,
+            use_async=self._use_async,
+            streaming=self._streaming,
+        )
         # prepare response builder
         self._prepare_response_builder(
-            self.response_builder,
+            response_builder,
             query_bundle,
             nodes,
             additional_source_nodes=additional_source_nodes,
@@ -349,7 +368,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         else:
             response_str = None
 
-        return self._prepare_response_output(response_str, nodes)
+        return self._prepare_response_output(response_builder, response_str, nodes)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
