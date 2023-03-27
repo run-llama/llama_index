@@ -12,6 +12,19 @@ from gpt_index.node_parser.simple import SimpleNodeParser
 
 @dataclass
 class ServiceContext:
+    """Service Context container.
+
+    The service context container is a utility container for LlamaIndex
+    index and query classes. It contains the following:
+    - llm_predictor: LLMPredictor
+    - prompt_helper: PromptHelper
+    - embed_model: BaseEmbedding
+    - node_parser: NodeParser
+    - llama_logger: LlamaLogger
+    - chunk_size_limit: chunk size limit
+
+    """
+
     llm_predictor: LLMPredictor
     prompt_helper: PromptHelper
     embed_model: BaseEmbedding
@@ -29,6 +42,19 @@ class ServiceContext:
         llama_logger: Optional[LlamaLogger] = None,
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
+        """Create a ServiceContext from defaults.
+        If an argument is specified, then use the argument value provided for that
+        parameter. If an argument is not specified, then use the default value.
+
+        Args:
+            llm_predictor (Optional[LLMPredictor]): LLMPredictor
+            prompt_helper (Optional[PromptHelper]): PromptHelper
+            embed_model (Optional[BaseEmbedding]): BaseEmbedding
+            node_parser (Optional[NodeParser]): NodeParser
+            llama_logger (Optional[LlamaLogger]): LlamaLogger
+            chunk_size_limit (Optional[int]): chunk_size_limit
+
+        """
         llm_predictor = llm_predictor or LLMPredictor()
         # NOTE: the embed_model isn't used in all indices
         embed_model = embed_model or OpenAIEmbedding()

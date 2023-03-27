@@ -27,19 +27,12 @@ QueryMap = Dict[str, Type[BaseGPTIndexQuery]]
 
 
 class BaseGPTIndex(Generic[IS], ABC):
-
     """Base LlamaIndex.
 
     Args:
-        llm_predictor (LLMPredictor): Optional LLMPredictor object. If not provided,
-            will use the default LLMPredictor (text-davinci-003)
-        prompt_helper (PromptHelper): Optional PromptHelper object. If not provided,
-            will use the default PromptHelper.
-        chunk_size_limit (Optional[int]): Optional chunk size limit. If not provided,
-            will use the default chunk size limit (4096 max input size).
-        include_extra_info (bool): Optional bool. If True, extra info (i.e. metadata)
-            of each Document will be prepended to its text to help with queries.
-            Default is True.
+        nodes (List[Node]): List of nodes to index
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
 
     """
 
@@ -123,6 +116,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         NOTE: this is mostly syntactic sugar,
         roughly equivalent to directly calling `ComposableGraph.from_indices`.
+
         """
         # NOTE: lazy import
         from gpt_index.indices.composability.graph import ComposableGraph
