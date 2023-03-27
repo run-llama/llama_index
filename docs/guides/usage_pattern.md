@@ -170,7 +170,7 @@ create and refine an answer sequentially through the nodes of the list.
 nodes by embedding similarity.
 
 ```python
-index = GPTListIndex(documents)
+index = GPTListIndex.from_documents(documents)
 # mode="default"
 response = index.query("What did the author do growing up?", mode="default")
 # mode="embedding"
@@ -196,7 +196,7 @@ An index can also have the following response modes through `response_mode`:
     and return the root node as the response. Good for summarization purposes.
 
 ```python
-index = GPTListIndex(documents)
+index = GPTListIndex.from_documents(documents)
 # mode="default"
 response = index.query("What did the author do growing up?", response_mode="default")
 # mode="compact"

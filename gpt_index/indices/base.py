@@ -66,7 +66,7 @@ class BaseGPTIndex(Generic[IS]):
         if index_struct is not None and nodes is not None:
             raise ValueError("Only one of documents or index_struct can be provided.")
         # This is to explicitly make sure that the old UX is not used
-        if nodes is not None and not isinstance(nodes[0], Node):
+        if nodes is not None and len(nodes) >= 1 and not isinstance(nodes[0], Node):
             if isinstance(nodes[0], Document):
                 raise ValueError(
                     "The constructor now takes in a list of Node objects. "

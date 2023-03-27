@@ -93,7 +93,7 @@ llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, max_tokens=512))
 
 # define a list index over the vector indices
 # allows us to synthesize information across each index
-list_index = GPTListIndex([index_set[y] for y in years], llm_predictor=llm_predictor)
+list_index = GPTListIndex.from_documents([index_set[y] for y in years], llm_predictor=llm_predictor)
 
 graph = ComposableGraph.build_from_index(list_index)
 

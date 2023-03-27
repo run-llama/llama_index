@@ -65,8 +65,7 @@ class IndexGraph(V2IndexStruct):
             parent_id = parent_node.get_doc_id()
             children_ids = self.node_id_to_children_ids[parent_id]
             return {
-                self.node_id_to_index[child_id]: child_id
-                for child_id in children_ids
+                self.node_id_to_index[child_id]: child_id for child_id in children_ids
             }
 
     def insert_under_parent(
@@ -79,7 +78,9 @@ class IndexGraph(V2IndexStruct):
         else:
             if parent_node.doc_id not in self.node_id_to_children_ids:
                 self.node_id_to_children_ids[parent_node.get_doc_id()] = []
-            self.node_id_to_children_ids[parent_node.get_doc_id()].append(node.get_doc_id())
+            self.node_id_to_children_ids[parent_node.get_doc_id()].append(
+                node.get_doc_id()
+            )
 
         self.all_nodes[new_index] = node.get_doc_id()
 

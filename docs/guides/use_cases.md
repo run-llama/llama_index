@@ -38,7 +38,7 @@ You can use most indices e.g. a [Vector Store Index](vector-store-index), a list
 to construct a summary with `response_mode="tree_summarize"`. See [here](/guides/usage_pattern.md) for more details on response modes.
 
 ```python
-index = GPTListIndex(documents)
+index = GPTListIndex.from_documents(documents)
 
 response = index.query("<summarization_query>", response_mode="tree_summarize")
 ```
@@ -46,7 +46,7 @@ response = index.query("<summarization_query>", response_mode="tree_summarize")
 You can also construct a summary using the tree index (`GPTTreeIndex`), but using the `mode` parameter instead:
 
 ```python
-index = GPTTreeIndex(documents)
+index = GPTTreeIndex.from_documents(documents)
 
 response = index.query("<summarization_query>", mode="summarize")
 ```
@@ -110,7 +110,7 @@ index1.set_text("summary1")
 index2.set_text("summary2")
 
 # tree index for routing
-tree_index = GPTTreeIndex([index1, index2])
+tree_index = GPTTreeIndex.from_documents([index1, index2])
 
 response = tree_index.query(
     "In Notion, give me a summary of the product roadmap.",
@@ -150,7 +150,7 @@ index1.set_text("summary1")
 index2.set_text("summary2")
 
 # build tree index
-index3 = GPTTreeIndex([index1, index2])
+index3 = GPTTreeIndex.from_documents([index1, index2])
 
 response = index3.query("<query_str>", mode="recursive", query_configs=...)
 
