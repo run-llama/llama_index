@@ -73,7 +73,9 @@ class ResponseBuilder:
         self._streaming = streaming
         self._llama_logger = llama_logger or LlamaLogger()
 
-    def _log_prompt_and_response(self, formatted_prompt, response, prefix=""):
+    def _log_prompt_and_response(
+        self, formatted_prompt: str, response: RESPONSE_TEXT_TYPE, prefix: str = ""
+    ) -> None:
         """Log prompt and response from LLM."""
         logger.debug(f"> {prefix} prompt template: {formatted_prompt}")
         self._llama_logger.add_log({"formatted_prompt_template": formatted_prompt})
