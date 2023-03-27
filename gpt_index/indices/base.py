@@ -31,8 +31,6 @@ class BaseGPTIndex(Generic[IS], ABC):
     """Base LlamaIndex.
 
     Args:
-        documents (Optional[Sequence[BaseDocument]]): List of documents to
-            build the index from.
         llm_predictor (LLMPredictor): Optional LLMPredictor object. If not provided,
             will use the default LLMPredictor (text-davinci-003)
         prompt_helper (PromptHelper): Optional PromptHelper object. If not provided,
@@ -59,6 +57,16 @@ class BaseGPTIndex(Generic[IS], ABC):
             raise ValueError("One of documents or index_struct must be provided.")
         if index_struct is not None and nodes is not None:
             raise ValueError("Only one of documents or index_struct can be provided.")
+        # This is to explicitly make sure that the old UX is not used
+        if nodes is not None and len(nodes) >= 1 and not isinstance(nodes[0], Node):
+            if isinstance(nodes[0], Document):
+                raise ValueError(
+                    "The constructor now takes in a list of Node objects. "
+                    "Since you are passing in a list of Document objects, "
+                    "please use `from_documents` instead."
+                )
+            else:
+                raise ValueError("nodes must be a list of Node objects.")
 
         self._service_context = service_context or ServiceContext.from_defaults()
         self._docstore = docstore or DocumentStore()
@@ -82,7 +90,13 @@ class BaseGPTIndex(Generic[IS], ABC):
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "BaseGPTIndex":
-        """Create index from documents."""
+        """Create index from documents.
+
+        Args:
+            documents (Optional[Sequence[BaseDocument]]): List of documents to
+                build the index from.
+
+        """
         service_context = service_context or ServiceContext.from_defaults()
         docstore = docstore or DocumentStore()
 

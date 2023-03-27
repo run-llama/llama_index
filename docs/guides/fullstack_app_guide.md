@@ -60,7 +60,7 @@ def initialize_index():
       index = GPTSimpleVectorIndex.load_from_disk(index_name)
   else:
       documents = SimpleDirectoryReader("./documents").load_data()
-      index = GPTSimpleVectorIndex(documents)
+      index = GPTSimpleVectorIndex.from_documents(documents)
       index.save_to_disk(index_name)
 ```
 

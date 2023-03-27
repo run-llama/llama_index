@@ -17,7 +17,7 @@ class StringIterableReader(BaseReader):
 
             documents = StringIterableReader().load_data(
                 texts=["I went to the store", "I bought an apple"])
-            index = GPTTreeIndex(documents)
+            index = GPTTreeIndex.from_documents(documents)
             index.query("what did I buy?")
 
             # response should be something like "You bought an apple."

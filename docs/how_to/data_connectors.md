@@ -27,7 +27,7 @@ GoogleDocsReader = download_loader('GoogleDocsReader')
 gdoc_ids = ['1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec']
 loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=gdoc_ids)
-index = GPTSimpleVectorIndex(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 index.query('Where did the author go to school?')
 ```
 

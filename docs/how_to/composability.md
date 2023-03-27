@@ -19,9 +19,9 @@ doc3 = SimpleDirectoryReader('data3').load_data()
 Now let's define a tree index for each document. In Python, we have:
 
 ```python
-index1 = GPTTreeIndex(doc1)
-index2 = GPTTreeIndex(doc2)
-index3 = GPTTreeIndex(doc3)
+index1 = GPTTreeIndex.from_documents(doc1)
+index2 = GPTTreeIndex.from_documents(doc2)
+index3 = GPTTreeIndex.from_documents(doc3)
 ```
 
 ![](/_static/composability/diagram_b1.png)

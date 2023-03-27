@@ -147,7 +147,5 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
         query_bundle: QueryBundle,
         level: int = 0,
     ) -> List[Node]:
-        selected_nodes, _ = self._get_most_similar_nodes(
-            cur_node_list, query_bundle
-        )
+        selected_nodes, _ = self._get_most_similar_nodes(cur_node_list, query_bundle)
         return selected_nodes

@@ -57,7 +57,7 @@ We build each index and save it to disk.
 # initialize simple vector indices + global vector index
 index_set = {}
 for year in years:
-    cur_index = GPTSimpleVectorIndex(doc_set[year], chunk_size_limit=512)
+    cur_index = GPTSimpleVectorIndex.from_documents(doc_set[year], chunk_size_limit=512)
     index_set[year] = cur_index
     cur_index.save_to_disk(f'index_{year}.json')
 
@@ -93,7 +93,7 @@ llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, max_tokens=512))
 
 # define a list index over the vector indices
 # allows us to synthesize information across each index
-list_index = GPTListIndex([index_set[y] for y in years], llm_predictor=llm_predictor)
+list_index = GPTListIndex.from_documents([index_set[y] for y in years], llm_predictor=llm_predictor)
 
 graph = ComposableGraph.build_from_index(list_index)
 
