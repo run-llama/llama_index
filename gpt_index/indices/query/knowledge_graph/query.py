@@ -54,10 +54,10 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             (see :ref:`Prompt-Templates`).
         max_keywords_per_query (int): Maximum number of keywords to extract from query.
         num_chunks_per_query (int): Maximum number of text chunks to query.
-        include_text (bool): Use the document text source from each relevent triplet
+        include_text (bool): Use the document text source from each relevant triplet
             during queries.
         embedding_mode (KGQueryMode): Specifies whether to use keyowrds,
-            embeddings, or both to find relevent triplets. Should be one of "keyword",
+            embeddings, or both to find relevant triplets. Should be one of "keyword",
             "embedding", or "hybrid".
         similarity_top_k (int): The number of top embeddings to use
             (if embeddings are used).
