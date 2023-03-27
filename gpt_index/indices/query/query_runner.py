@@ -212,7 +212,19 @@ class QueryRunner:
         index_id: Optional[str] = None,
         level: int = 0,
     ) -> RESPONSE_TYPE:
-        """Run query."""
+        """Run query.
+        
+        NOTE: Relies on mutual recursion between 
+            - QueryRunner.query
+            - QueryRunner.query_transformed
+            - BaseQueryCombiner.run
+        
+        QueryRunner.query resolves the current index struct, 
+            then pass control to BaseQueryCombiner.run.
+        BaseQueryCombiner.run applies query transforms and makes multiple queries on the same index.
+        Each query is passed to QueryRunner.query_transformed for execution.
+            During execution, we recursively calls QueryRunner.query if index is a composable graph.
+        """
         # Resolve index struct from index_id if necessary
         if isinstance(self._index_struct, CompositeIndex):
             if index_id is None:
