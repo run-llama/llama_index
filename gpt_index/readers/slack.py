@@ -124,11 +124,15 @@ class SlackReader(BaseReader):
                 result = self.client.conversations_history(
                     channel=channel_id,
                     cursor=next_cursor,
+                    oldest=str(self.earliest_date_timestamp),
+                    latest=str(self.latest_date_timestamp),
                 )
                 conversation_history = result["messages"]
                 # Print results
                 logger.info(
-                    "{} messages found in {}".format(len(conversation_history), id)
+                    "{} messages found in {}".format(
+                        len(conversation_history), channel_id
+                    )
                 )
                 result_messages.extend(
                     self._read_message(channel_id, message["ts"])
