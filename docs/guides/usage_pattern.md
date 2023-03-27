@@ -28,16 +28,6 @@ text_list = [text1, text2, ...]
 documents = [Document(t) for t in text_list]
 ```
 
-## 2. Parse the Documents into Nodes
-
-The next step is to parse these Document objects into Node objects. Nodes represent "chunks" of source Documents,
-whether that is a text chunk, an image, or more. They also contain metadata and relationship information
-with other nodes and index structures.
-
-Nodes are a first-class citizen in LlamaIndex. You can choose to define Nodes directly or "parse" source Documents into
-Nodes through our `NodeParser` classes.
- 
-
 ## 2. Index Construction
 
 We can now build an index over these Document objects. The simplest is to load in the Document objects during index initialization.
