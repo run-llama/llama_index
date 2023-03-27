@@ -141,7 +141,7 @@ def kg_to_v2(struct: KG) -> Tuple[V2KG, List[V2Node]]:
     nodes_v2 = [node_to_v2(node) for node in struct.text_chunks.values()]
     return struct_v2, nodes_v2
 
-def convert_index_struct_and_docstore(index_struct: IndexStruct, docstore: DocumentStore) -> Tuple[V2IndexStruct, DocumentStore]:
+def convert_to_v2_index_struct_and_docstore(index_struct: IndexStruct, docstore: DocumentStore) -> Tuple[V2IndexStruct, DocumentStore]:
     if isinstance(index_struct, IndexGraph):
         struct_v2, nodes_v2 = index_graph_to_v2(index_struct)
     elif isinstance(index_struct, IndexList):
@@ -195,25 +195,25 @@ def save_v2(index_struct: V2IndexStruct, docstore: V2DocumentStore) -> dict:
         DOCSTORE_KEY: docstore.serialize_to_dict(),
     }
 
-def convert_dict(v1_dict: dict, index_struct_type: Optional[IndexStructType]=None):
+def convert_to_v2_dict(v1_dict: dict, index_struct_type: Optional[IndexStructType]=None):
     index_struct, docstore = load_v1(v1_dict, index_struct_type)
-    index_struct_v2, docstore_v2 = convert_index_struct_and_docstore(index_struct, docstore)
+    index_struct_v2, docstore_v2 = convert_to_v2_index_struct_and_docstore(index_struct, docstore)
     v2_dict = save_v2(index_struct_v2, docstore_v2)
     return v2_dict
 
-def convert_file(v1_path: str, index_struct_type: Optional[IndexStructType]=None, v2_path: Optional[str] = None, encoding: str = 'ascii'):
+def convert_to_v2_file(v1_path: str, index_struct_type: Optional[IndexStructType]=None, v2_path: Optional[str] = None, encoding: str = 'ascii'):
     with open(v1_path, 'r') as f:
         file_str = f.read()
     v1_dict = json.loads(file_str)
     print(f'Successfully loaded V1 JSON file from: {v1_path}')
 
-    v2_dict = convert_dict(v1_dict, index_struct_type)
+    v2_dict = convert_to_v2_dict(v1_dict, index_struct_type)
     
     v2_str = json.dumps(v2_dict)
     v2_path = v2_path or add_prefix_suffix_to_file_path(v1_path, suffix='_v2')
     with open(v2_path, "wt", encoding=encoding) as f:
-        f.write(v2_path)
+        f.write(v2_str)
     print(f'Successfully created V2 JSON file at: {v2_path}')
 
 if __name__ == '__main__':
-    fire.Fire(convert_file)
+    fire.Fire(convert_to_v2_file)
