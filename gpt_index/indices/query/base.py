@@ -78,10 +78,8 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
     method of a BaseGPTIndex object, or instantiated independently.
 
     Args:
-        llm_predictor (LLMPredictor): Optional LLMPredictor object. If not provided,
-            will use the default LLMPredictor (text-davinci-003)
-        prompt_helper (PromptHelper): Optional PromptHelper object. If not provided,
-            will use the default PromptHelper.
+        service_context (ServiceContext): service context container (contains components
+            like LLMPredictor, PromptHelper).
         required_keywords (List[str]): Optional list of keywords that must be present
             in nodes. Can be used to query most indices (tree index is an exception).
         exclude_keywords (List[str]): Optional list of keywords that must not be

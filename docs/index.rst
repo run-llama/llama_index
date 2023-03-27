@@ -97,6 +97,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    reference/composability.rst
    reference/readers.rst
    reference/prompts.rst
+   reference/service_context.rst
    reference/llm_predictor.rst
    reference/prompt_helper.rst
    reference/embeddings.rst

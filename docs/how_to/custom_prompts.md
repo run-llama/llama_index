@@ -48,7 +48,7 @@ QA_PROMPT_TMPL = (
 )
 QA_PROMPT = QuestionAnswerPrompt(QA_PROMPT_TMPL)
 # Build GPTSimpleVectorIndex
-index = GPTSimpleVectorIndex(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 
 response = index.query(query_str, text_qa_template=QA_PROMPT)
 print(response)

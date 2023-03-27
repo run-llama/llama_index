@@ -31,7 +31,6 @@ class ComposableGraph:
         self._docstore = docstore
         self._index_struct = index_struct
         self._service_context = service_context or ServiceContext.from_defaults()
-    
 
     @property
     def index_struct(self) -> CompositeIndex:
@@ -54,7 +53,9 @@ class ComposableGraph:
             root_id=root_id,
         )
         merged_docstore = DocumentStore.merge(docstores)
-        return cls(index_struct=composite_index_struct, docstore=merged_docstore, **kwargs)
+        return cls(
+            index_struct=composite_index_struct, docstore=merged_docstore, **kwargs
+        )
 
     def query(
         self,
