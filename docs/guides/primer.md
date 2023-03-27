@@ -23,10 +23,11 @@ This primer is intended to help you get the most out of LlamaIndex. It gives a h
 ## 1. General Usage Pattern of LlamaIndex
 
 The general usage pattern of LlamaIndex is as follows:
-1. Load in documents (either manually, or through a data loader).
-2. Index Construction.
+1. Load in documents (either manually, or through a data loader)
+2. Parse the Documents into Nodes
+3. Construct index from Nodes
 3. [Optional, Advanced] Building indices on top of other indices
-4. Query the index.
+4. Query the index
 
 See our [Usage Pattern Guide](/guides/usage_pattern.md) for a guide
 on the overall steps involved with using LlamaIndex.
