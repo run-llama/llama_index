@@ -67,10 +67,11 @@ An example snippet is shown below (to use Hugging Face embeddings) on the GPTLis
 ```python
 from llama_index import GPTListIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-from llama_index import LangchainEmbedding
+from llama_index import LangchainEmbedding, ServiceContext
 
 # load in HF embedding model from langchain
 embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
+service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # load index
 new_index = GPTListIndex.load_from_disk('index_list_emb.json')
@@ -80,7 +81,7 @@ response = new_index.query(
     "<query_text>", 
     mode="embedding", 
     verbose=True, 
-    embed_model=embed_model
+    service_context=service_context
 )
 print(response)
 ```
@@ -90,15 +91,16 @@ Another example snippet is shown for GPTSimpleVectorIndex.
 ```python
 from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-from llama_index import LangchainEmbedding
+from llama_index import LangchainEmbedding, ServiceContext
 
 # load in HF embedding model from langchain
 embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
+service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # load index
 new_index = GPTSimpleVectorIndex.load_from_disk(
     'index_simple_vector.json', 
-    embed_model=embed_model
+    service_context=service_context
 )
 
 # query will use the same embed_model
