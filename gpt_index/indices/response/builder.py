@@ -73,6 +73,20 @@ class ResponseBuilder:
         self._streaming = streaming
         self._llama_logger = llama_logger or LlamaLogger()
 
+    def _log_prompt_and_response(
+        self,
+        formatted_prompt: str,
+        response: RESPONSE_TEXT_TYPE,
+        log_prefix: str = "",
+    ) -> None:
+        """Log prompt and response from LLM."""
+        logger.debug(f"> {log_prefix} prompt template: {formatted_prompt}")
+        self._llama_logger.add_log({"formatted_prompt_template": formatted_prompt})
+        logger.debug(f"> {log_prefix} response: {response}")
+        self._llama_logger.add_log(
+            {f"{log_prefix.lower()}_response": response or "Empty Response"}
+        )
+
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
         self._texts.extend(text_chunks)
@@ -123,18 +137,17 @@ class ResponseBuilder:
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for cur_text_chunk in text_chunks:
             if not self._streaming:
-                response, _ = self.llm_predictor.predict(
+                response, formatted_prompt = self.llm_predictor.predict(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
             else:
-                response, _ = self.llm_predictor.stream(
+                response, formatted_prompt = self.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
-            logger.debug(f"> Refined response: {response}")
-            self._llama_logger.add_log(
-                {"refined_response": response or "Empty Response"}
+            self._log_prompt_and_response(
+                formatted_prompt, response, log_prefix="Refined"
             )
         return response
 
@@ -153,18 +166,20 @@ class ResponseBuilder:
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                response, _ = self.llm_predictor.predict(
+                response, formatted_prompt = self.llm_predictor.predict(
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
-                logger.debug(f"> Initial response: {response}")
-                self._llama_logger.add_log(
-                    {"initial_response": response or "Empty Response"}
+                self._log_prompt_and_response(
+                    formatted_prompt, response, log_prefix="Initial"
                 )
             elif response is None and self._streaming:
-                response, _ = self.llm_predictor.stream(
+                response, formatted_prompt = self.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
+                )
+                self._log_prompt_and_response(
+                    formatted_prompt, response, log_prefix="Initial"
                 )
             else:
                 response = self.refine_response_single(
