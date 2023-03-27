@@ -4,17 +4,36 @@ Nodes are decoupled from the indices.
 
 """
 
+import uuid
+from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
+from dataclasses_json import DataClassJsonMixin
+from pydantic import Json
+
+from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.schema import BaseDocument
 
 
 @dataclass
-class V2IndexStruct(BaseDocument):
+class V2IndexStruct(DataClassJsonMixin):
     """A base data struct for a LlamaIndex."""
+
+    index_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+
+    @classmethod
+    @abstractmethod
+    def get_type(cls) -> IndexStructType:
+        """Get index struct type."""
+
+    def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
+        out_dict = {
+            TYPE_KEY: self.get_type(),
+            DATA_KEY: super().to_dict(encode_json),
+        }
+        return out_dict
 
 
 @dataclass
@@ -85,9 +104,9 @@ class IndexGraph(V2IndexStruct):
         self.all_nodes[new_index] = node.get_doc_id()
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
-        return "tree"
+        return IndexStructType.TREE
 
 
 @dataclass
@@ -119,9 +138,9 @@ class KeywordTable(V2IndexStruct):
         return len(self.table)
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
-        return "keyword_table"
+        return IndexStructType.KEYWORD_TABLE
 
 
 @dataclass
@@ -136,18 +155,14 @@ class IndexList(V2IndexStruct):
         self.nodes.append(node.get_doc_id())
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
-        return "list"
+        return IndexStructType.LIST
 
 
 @dataclass
 class IndexDict(V2IndexStruct):
     """A simple dictionary of documents."""
-
-    # nodes_dict: Dict[int, Node] = field(default_factory=dict)
-    # id_map: Dict[str, int] = field(default_factory=dict)
-    # nodes_set: Set[str] = field(default_factory=set)
 
     # mapping from vector store id to node id
     nodes_dict: Dict[str, str] = field(default_factory=dict)
@@ -233,7 +248,7 @@ class IndexDict(V2IndexStruct):
         #     del self.id_map[text_id]
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.VECTOR_STORE
 
@@ -311,81 +326,115 @@ class KG(V2IndexStruct):
         return node_ids
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
-        return "kg"
+        return IndexStructType.KG
 
 
 # TODO: remove once we centralize UX around vector index
 
 
+@dataclass
 class SimpleIndexDict(IndexDict):
     """Index dict for simple vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.SIMPLE_DICT
 
 
+@dataclass
 class FaissIndexDict(IndexDict):
     """Index dict for Faiss vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.DICT
 
 
+@dataclass
 class WeaviateIndexDict(IndexDict):
     """Index dict for Weaviate vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.WEAVIATE
 
 
+@dataclass
 class PineconeIndexDict(IndexDict):
     """Index dict for Pinecone vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.PINECONE
 
 
+@dataclass
 class QdrantIndexDict(IndexDict):
     """Index dict for Qdrant vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.QDRANT
 
 
+@dataclass
 class ChromaIndexDict(IndexDict):
     """Index dict for Chroma vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.CHROMA
 
 
+@dataclass
 class OpensearchIndexDict(IndexDict):
     """Index dict for Opensearch vector index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.OPENSEARCH
 
 
+@dataclass
 class EmptyIndex(IndexDict):
     """Empty index."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.EMPTY
+
+
+@dataclass
+class CompositeIndex(V2IndexStruct):
+    all_index_structs: Dict[str, V2IndexStruct] = field(default_factory=dict)
+    root_id: Optional[str] = None
+
+    @classmethod
+    def get_type(cls) -> IndexStructType:
+        """Get type."""
+        return IndexStructType.COMPOSITE
+
+    def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
+        data_dict = {
+            "all_index_structs": {
+                id_: struct.to_dict(encode_json=encode_json)
+                for id_, struct in self.all_index_structs.items()
+            },
+            "root_id": self.root_id,
+        }
+
+        out_dict = {
+            TYPE_KEY: self.get_type(),
+            DATA_KEY: data_dict,
+        }
+        return out_dict

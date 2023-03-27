@@ -68,7 +68,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
 
-    def _get_nodes_for_response(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
@@ -122,7 +122,7 @@ class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        response, _ = self._llm_predictor.predict(
+        response, _ = self._service_context.llm_predictor.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,

@@ -143,17 +143,17 @@ def test_query_and_count_tokens(
     # build the tree
     tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
     assert (
-        tree._llm_predictor.total_tokens_used
+        tree._service_context.llm_predictor.total_tokens_used
         == document_token_count + llmchain_mock_resp_token_count
     )
 
     # test embedding query
-    start_token_ct = tree._llm_predictor.total_tokens_used
+    start_token_ct = tree._service_context.llm_predictor.total_tokens_used
     query_str = "What is?"
     # From MOCK_TEXT_QA_PROMPT, the prompt is 28 total
     query_prompt_token_count = 28
     tree.query(query_str, mode="embedding", **query_kwargs)
     assert (
-        tree._llm_predictor.total_tokens_used - start_token_ct
+        tree._service_context.llm_predictor.total_tokens_used - start_token_ct
         == query_prompt_token_count + llmchain_mock_resp_token_count
     )

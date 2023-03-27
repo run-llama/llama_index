@@ -8,6 +8,7 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table import StructDatapoint
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.langchain_helpers.text_splitter import TextSplitter
@@ -51,8 +52,7 @@ class SQLDocumentContextBuilder:
     def __init__(
         self,
         sql_database: SQLDatabase,
-        llm_predictor: Optional[LLMPredictor] = None,
-        prompt_helper: Optional[PromptHelper] = None,
+        service_context: Optional[ServiceContext] = None,
         text_splitter: Optional[TextSplitter] = None,
         table_context_prompt: Optional[TableContextPrompt] = None,
         refine_table_context_prompt: Optional[RefineTableContextPrompt] = None,
@@ -63,11 +63,8 @@ class SQLDocumentContextBuilder:
         if sql_database is None:
             raise ValueError("sql_database must be provided.")
         self._sql_database = sql_database
-        self._llm_predictor = llm_predictor or LLMPredictor()
-        self._prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
-            self._llm_predictor
-        )
         self._text_splitter = text_splitter
+        self._service_context = service_context or ServiceContext.from_defaults()
         self._table_context_prompt = (
             table_context_prompt or DEFAULT_TABLE_CONTEXT_PROMPT
         )
@@ -103,12 +100,13 @@ class SQLDocumentContextBuilder:
         )
         text_splitter = (
             self._text_splitter
-            or self._prompt_helper.get_text_splitter_given_prompt(prompt_with_schema, 1)
+            or self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                prompt_with_schema, 1
+            )
         )
         # we use the ResponseBuilder to iteratively go through all texts
         response_builder = ResponseBuilder(
-            self._prompt_helper,
-            self._llm_predictor,
+            self._service_context,
             prompt_with_schema,
             refine_prompt_with_schema,
         )

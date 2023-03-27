@@ -11,7 +11,6 @@ class NodeParser(Protocol):
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
-        include_extra_info: bool = True,
     ) -> List[Node]:
         """Parse documents into nodes."""
         ...

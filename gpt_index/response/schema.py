@@ -38,7 +38,6 @@ class SourceNode(DataClassJsonMixin):
             extra_info=node.extra_info,
             node_info=node.node_info,
             similarity=similarity,
-            image=node.image,
         )
 
     @classmethod

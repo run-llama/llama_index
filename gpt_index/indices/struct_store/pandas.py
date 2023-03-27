@@ -1,16 +1,15 @@
 """Pandas csv structured store."""
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Optional, Sequence
 
 import pandas as pd
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import PandasStructTable
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.base import QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.pandas import GPTNLPandasIndexQuery
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
 
 class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
@@ -36,7 +35,6 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
         nodes: Optional[Sequence[Node]] = None,
         df: Optional[pd.DataFrame] = None,
         index_struct: Optional[PandasStructTable] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -47,7 +45,6 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
         super().__init__(
             nodes=[],
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
             **kwargs,
         )
 
@@ -74,7 +71,7 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
         query_kwargs["df"] = self.df
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTNLPandasIndexQuery,

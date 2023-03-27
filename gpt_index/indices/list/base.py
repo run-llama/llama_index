@@ -5,15 +5,15 @@ in sequence in order to answer a given query.
 
 """
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Optional, Sequence
 
 from gpt_index.data_structs.data_structs_v2 import IndexList
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.query.list.query import GPTListIndexQuery
 from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -47,9 +47,8 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexList] = None,
+        service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        node_parser: Optional[NodeParser] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -57,13 +56,12 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
-            node_parser=node_parser,
+            service_context=service_context,
             **kwargs,
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTListIndexQuery,

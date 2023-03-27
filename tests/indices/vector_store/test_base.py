@@ -503,12 +503,12 @@ def test_query_and_count_tokens(
     document = Document(doc_text)
     index_kwargs, query_kwargs = struct_kwargs
     index = GPTSimpleVectorIndex.from_documents([document], **index_kwargs)
-    assert index.embed_model.total_tokens_used == 20
+    assert index.service_context.embed_model.total_tokens_used == 20
 
     # test embedding query
     query_str = "What is?"
     index.query(query_str, **query_kwargs)
-    assert index.embed_model.last_token_usage == 3
+    assert index.service_context.embed_model.last_token_usage == 3
 
 
 @patch_common

@@ -11,6 +11,7 @@ from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import log_vector_store_query_result
 from gpt_index.vector_stores.types import VectorStore
 
@@ -28,26 +29,30 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
     def __init__(
         self,
         index_struct: IndexDict,
+        service_context: ServiceContext,
         vector_store: Optional[VectorStore] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: int = 1,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, embed_model=embed_model, **kwargs)
+        super().__init__(
+            index_struct=index_struct, service_context=service_context, **kwargs
+        )
         self._similarity_top_k = similarity_top_k
         if vector_store is None:
             raise ValueError("Vector store is required for vector store query.")
         self._vector_store = vector_store
 
-    def _get_nodes_for_response(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         if query_bundle.embedding is None:
-            query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
-                query_bundle.embedding_strs
+            query_bundle.embedding = (
+                self._service_context.embed_model.get_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
+                )
             )
 
         query_result = self._vector_store.query(
