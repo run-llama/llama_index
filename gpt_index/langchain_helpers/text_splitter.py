@@ -236,8 +236,13 @@ class TokenTextSplitter(TextSplitter):
         return self._separator.join(splits[start_idx:cur_idx])
 
 
-class SentenceSplitter(TokenTextSplitter):
-    """Split text with a preference for complete sentences."""
+class SentenceSplitter(TextSplitter):
+    """Split text with a preference for complete sentences.
+
+    In general, this class tries to keep sentences and paragraphs together. Therefore
+    compared to the original TokenTextSplitter, there are less likely to be
+    hanging sentences or parts of sentences at the end of the node chunk.
+    """
 
     def __init__(
         self,
@@ -251,13 +256,16 @@ class SentenceSplitter(TokenTextSplitter):
         secondary_chunking_regex: Optional[str] = "[^,.;]+[,.;]?",
     ):
         """Initialize with parameters."""
-        super().__init__(
-            separator=separator,
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            tokenizer=tokenizer,
-            backup_separators=backup_separators,
-        )
+        if chunk_overlap > chunk_size:
+            raise ValueError(
+                f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
+                f"({chunk_size}), should be smaller."
+            )
+        self._separator = separator
+        self._chunk_size = chunk_size
+        self._chunk_overlap = chunk_overlap
+        self.tokenizer = tokenizer or globals_helper.tokenizer
+        self._backup_separators = backup_separators
         if chunking_tokenizer_fn is None:
             import nltk.tokenize.punkt as pkt
 
@@ -287,6 +295,16 @@ class SentenceSplitter(TokenTextSplitter):
         period, or semicolon. The regular expression will also capture the
         delimiters themselves as separate items in the list of phrases.
         """
+
+    def _postprocess_splits(self, docs: List[TextSplit]) -> List[TextSplit]:
+        """Post-process splits."""
+        # TODO: prune text splits, remove empty spaces
+        new_docs = []
+        for doc in docs:
+            if doc.text_chunk.replace(" ", "") == "":
+                continue
+            new_docs.append(doc)
+        return new_docs
 
     def split_text_with_overlaps(
         self, text: str, extra_info_str: Optional[str] = None
@@ -391,6 +409,11 @@ class SentenceSplitter(TokenTextSplitter):
         # run postprocessing to remove blank spaces
         docs = self._postprocess_splits(docs)
         return docs
+
+    def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
+        """Split incoming text and return chunks."""
+        text_splits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
+        return [text_split.text_chunk for text_split in text_splits]
 
 
 __all__ = ["TextSplitter", "TokenTextSplitter", "SentenceSplitter"]
