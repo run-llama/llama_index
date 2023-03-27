@@ -74,14 +74,17 @@ class ResponseBuilder:
         self._llama_logger = llama_logger or LlamaLogger()
 
     def _log_prompt_and_response(
-        self, formatted_prompt: str, response: RESPONSE_TEXT_TYPE, prefix: str = ""
+        self,
+        formatted_prompt: str,
+        response: RESPONSE_TEXT_TYPE,
+        log_prefix: str = "",
     ) -> None:
         """Log prompt and response from LLM."""
-        logger.debug(f"> {prefix} prompt template: {formatted_prompt}")
+        logger.debug(f"> {log_prefix} prompt template: {formatted_prompt}")
         self._llama_logger.add_log({"formatted_prompt_template": formatted_prompt})
-        logger.debug(f"> {prefix} response: {response}")
+        logger.debug(f"> {log_prefix} response: {response}")
         self._llama_logger.add_log(
-            {f"{prefix.lower()}_response": response or "Empty Response"}
+            {f"{log_prefix.lower()}_response": response or "Empty Response"}
         )
 
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
@@ -143,7 +146,9 @@ class ResponseBuilder:
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
-            self._log_prompt_and_response(formatted_prompt, response, prefix="Refined")
+            self._log_prompt_and_response(
+                formatted_prompt, response, log_prefix="Refined"
+            )
         return response
 
     def give_response_single(
@@ -166,7 +171,7 @@ class ResponseBuilder:
                     context_str=cur_text_chunk,
                 )
                 self._log_prompt_and_response(
-                    formatted_prompt, response, prefix="Initial"
+                    formatted_prompt, response, log_prefix="Initial"
                 )
             elif response is None and self._streaming:
                 response, formatted_prompt = self.llm_predictor.stream(
@@ -174,7 +179,7 @@ class ResponseBuilder:
                     context_str=cur_text_chunk,
                 )
                 self._log_prompt_and_response(
-                    formatted_prompt, response, prefix="Initial"
+                    formatted_prompt, response, log_prefix="Initial"
                 )
             else:
                 response = self.refine_response_single(
