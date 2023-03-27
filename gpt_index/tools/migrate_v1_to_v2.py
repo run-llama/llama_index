@@ -1,6 +1,8 @@
 """Tool for migrating Index built with V1 data structs to V2."""
 import json
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, List, Optional, Tuple
+
+from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 
 try:
     import fire
@@ -34,10 +36,10 @@ from gpt_index.data_structs.node_v2 import Node as V2Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.docstore import DocumentStore
-from gpt_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS
+from gpt_index.docstore_v2 import DocumentStore as V2DocumentStore
 from gpt_index.tools.file_utils import add_prefix_suffix_to_file_path
 
-INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, IndexStruct]= {
+INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS: Dict[IndexStructType, IndexStruct]= {
     IndexStructType.TREE: IndexGraph,
     IndexStructType.LIST: IndexList,
     IndexStructType.KEYWORD_TABLE: KeywordTable,
@@ -54,9 +56,9 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, IndexStruct]= {
     IndexStructType.NODE: Node
 }
 
-INDEX_STRUCT_KEY = "index_struct"
-INDEX_STRUCT_ID_KEY = "index_struct_id"
-DOC_STORE_KEY = "docstore"
+V1_INDEX_STRUCT_KEY = "index_struct"
+V1_INDEX_STRUCT_ID_KEY = "index_struct_id"
+V1_DOC_STORE_KEY = "docstore"
 
 def node_to_v2(node: Node) -> V2Node:
     return V2Node(
@@ -139,7 +141,7 @@ def kg_to_v2(struct: KG) -> Tuple[V2KG, List[V2Node]]:
     nodes_v2 = [node_to_v2(node) for node in struct.text_chunks.values()]
     return struct_v2, nodes_v2
 
-def convert_to_v2(index_struct: IndexStruct, docstore: DocumentStore) -> Tuple[V2IndexStruct, DocumentStore]:
+def convert_index_struct_and_docstore(index_struct: IndexStruct, docstore: DocumentStore) -> Tuple[V2IndexStruct, DocumentStore]:
     if isinstance(index_struct, IndexGraph):
         struct_v2, nodes_v2 = index_graph_to_v2(index_struct)
     elif isinstance(index_struct, IndexList):
@@ -151,63 +153,67 @@ def convert_to_v2(index_struct: IndexStruct, docstore: DocumentStore) -> Tuple[V
     else:
         raise NotImplementedError(f"Cannot migrate {type(index_struct)} yet.")
     
-    docstore.add_documents(nodes_v2)
-    return struct_v2, docstore
+    docstore_v2 = V2DocumentStore()
+    docstore_v2.add_documents(nodes_v2)
+    return struct_v2, docstore_v2
     
 
 def load_v1_index_struct_in_docstore(file_dict):
-    index_struct_id = file_dict[INDEX_STRUCT_ID_KEY]
+    index_struct_id = file_dict[V1_INDEX_STRUCT_ID_KEY]
     docstore = DocumentStore.load_from_dict(
-        file_dict[DOC_STORE_KEY],
-        type_to_struct=INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS
+        file_dict[V1_DOC_STORE_KEY],
+        type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS
     )
     index_struct = docstore.get_document(index_struct_id)
     return index_struct, docstore
 
 
 def load_v1_index_struct_separate(file_dict, index_struct_type: IndexStructType):
-    index_struct_cls = INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS[index_struct_type]
-    index_struct = index_struct_cls.from_dict(file_dict[INDEX_STRUCT_KEY])
+    index_struct_cls = INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS[index_struct_type]
+    index_struct = index_struct_cls.from_dict(file_dict[V1_INDEX_STRUCT_KEY])
     docstore = DocumentStore.load_from_dict(
-        file_dict[DOC_STORE_KEY],
-        type_to_struct=INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS
+        file_dict[V1_DOC_STORE_KEY],
+        type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS
     )
     return index_struct, docstore
 
 
 def load_v1(file_dict: dict, index_struct_type: Optional[IndexStructType] = None) -> Tuple[IndexStruct, DocumentStore]:
-    if INDEX_STRUCT_KEY in file_dict:
+    if V1_INDEX_STRUCT_KEY in file_dict:
         assert index_struct_type is not None, 'Must specify index_struct_type to load.'
         index_struct, docstore = load_v1_index_struct_separate(file_dict, index_struct_type)
-    elif INDEX_STRUCT_ID_KEY in file_dict:
+    elif V1_INDEX_STRUCT_ID_KEY in file_dict:
         index_struct, docstore = load_v1_index_struct_in_docstore(file_dict)
     else:
         raise ValueError("index_struct or index_struct_id must be provided.")
     return index_struct, docstore
 
 
-def save_v2(index_struct: V2IndexStruct, docstore: DocumentStore) -> dict:
+def save_v2(index_struct: V2IndexStruct, docstore: V2DocumentStore) -> dict:
     return {
         INDEX_STRUCT_KEY: index_struct.to_dict(),
-        DOC_STORE_KEY: docstore.serialize_to_dict(),
+        DOCSTORE_KEY: docstore.serialize_to_dict(),
     }
 
+def convert_dict(v1_dict: dict, index_struct_type: Optional[IndexStructType]=None):
+    index_struct, docstore = load_v1(v1_dict, index_struct_type)
+    index_struct_v2, docstore_v2 = convert_index_struct_and_docstore(index_struct, docstore)
+    v2_dict = save_v2(index_struct_v2, docstore_v2)
+    return v2_dict
 
-def main(in_path: str, index_struct_type: Optional[IndexStructType]=None, out_path: Optional[str] = None, encoding: str = 'ascii'):
-    with open(in_path, 'r') as f:
+def convert_file(v1_path: str, index_struct_type: Optional[IndexStructType]=None, v2_path: Optional[str] = None, encoding: str = 'ascii'):
+    with open(v1_path, 'r') as f:
         file_str = f.read()
-    file_dict = json.loads(file_str)
-    print(f'Successfully loaded V1 JSON file from: {in_path}')
+    v1_dict = json.loads(file_str)
+    print(f'Successfully loaded V1 JSON file from: {v1_path}')
 
-    index_struct, docstore = load_v1(file_dict, index_struct_type)
-    index_struct_v2, docstore_v2 = convert_to_v2(index_struct, docstore)
-    out_dict = save_v2(index_struct_v2, docstore_v2)
+    v2_dict = convert_dict(v1_dict, index_struct_type)
     
-    out_str = json.dumps(out_dict)
-    out_path = out_path or add_prefix_suffix_to_file_path(in_path, suffix='_v2')
-    with open(out_path, "wt", encoding=encoding) as f:
-        f.write(out_str)
-    print(f'Successfully created V2 JSON file at: {out_path}')
+    v2_str = json.dumps(v2_dict)
+    v2_path = v2_path or add_prefix_suffix_to_file_path(v1_path, suffix='_v2')
+    with open(v2_path, "wt", encoding=encoding) as f:
+        f.write(v2_path)
+    print(f'Successfully created V2 JSON file at: {v2_path}')
 
 if __name__ == '__main__':
-    fire.Fire(main)
+    fire.Fire(convert_file)
