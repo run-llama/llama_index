@@ -62,11 +62,13 @@ class ComposableGraph:
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
+        service_context: Optional[ServiceContext] = None,
     ) -> RESPONSE_TYPE:
         """Query the index."""
+        service_context = service_context or self._service_context
         query_runner = QueryRunner(
             index_struct=self._index_struct,
-            service_context=self._service_context,
+            service_context=service_context,
             docstore=self._docstore,
             query_configs=query_configs,
             query_transform=query_transform,
@@ -79,11 +81,13 @@ class ComposableGraph:
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
+        service_context: Optional[ServiceContext] = None,
     ) -> RESPONSE_TYPE:
         """Query the index."""
+        service_context = service_context or self._service_context
         query_runner = QueryRunner(
             index_struct=self._index_struct,
-            service_context=self._service_context,
+            service_context=service_context,
             docstore=self._docstore,
             query_configs=query_configs,
             query_transform=query_transform,

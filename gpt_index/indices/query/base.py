@@ -117,7 +117,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         response_kwargs: Optional[Dict] = None,
         # TODO: deprecated
         similarity_cutoff: Optional[float] = None,
-        use_async: bool = True,
+        use_async: bool = False,
         streaming: bool = False,
         doc_ids: Optional[List[str]] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
