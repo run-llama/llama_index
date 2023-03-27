@@ -82,7 +82,7 @@ from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 
 # Load documents, build the GPTSimpleVectorIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTSimpleVectorIndex(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 
 # Query index
 response = index.query("What did the author do growing up?")

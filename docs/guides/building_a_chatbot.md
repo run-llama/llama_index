@@ -57,7 +57,7 @@ We build each index and save it to disk.
 # initialize simple vector indices + global vector index
 index_set = {}
 for year in years:
-    cur_index = GPTSimpleVectorIndex(doc_set[year], chunk_size_limit=512)
+    cur_index = GPTSimpleVectorIndex.from_documents(doc_set[year], chunk_size_limit=512)
     index_set[year] = cur_index
     cur_index.save_to_disk(f'index_{year}.json')
 

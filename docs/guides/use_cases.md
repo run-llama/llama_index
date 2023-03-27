@@ -67,8 +67,8 @@ Assuming you've already defined "subindices" over each data source, you can defi
 ```python
 from llama_index import GPTSimpleVectorIndex, GPTListIndex
 
-index1 = GPTSimpleVectorIndex(notion_docs)
-index2 = GPTSimpleVectorIndex(slack_docs)
+index1 = GPTSimpleVectorIndex.from_documents(notion_docs)
+index2 = GPTSimpleVectorIndex.from_documents(slack_docs)
 
 # Set summary text
 # you can set the summary manually, or you can
@@ -100,8 +100,8 @@ from llama_index import GPTTreeIndex, GPTSimpleVectorIndex
 ...
 
 # subindices
-index1 = GPTSimpleVectorIndex(notion_docs)
-index2 = GPTSimpleVectorIndex(slack_docs)
+index1 = GPTSimpleVectorIndex.from_documents(notion_docs)
+index2 = GPTSimpleVectorIndex.from_documents(slack_docs)
 
 # Set summary text
 # you can set the summary manually, or you can
@@ -140,8 +140,8 @@ You can do this by defining a subindex for each subsection, defining a *summary 
 from llama_index import GPTTreeIndex, GPTSimpleVectorIndex
 
 
-index1 = GPTSimpleVectorIndex(chapter1)
-index2 = GPTSimpleVectorIndex(chapter2)
+index1 = GPTSimpleVectorIndex.from_documents(chapter1)
+index2 = GPTSimpleVectorIndex.from_documents(chapter2)
 
 # Set summary text
 # you can set the summary manually, or you can

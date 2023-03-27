@@ -35,7 +35,7 @@ We can now build an index over these Document objects. The simplest is to load i
 ```python
 from llama_index import GPTSimpleVectorIndex
 
-index = GPTSimpleVectorIndex(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 
 ```
 
@@ -79,7 +79,7 @@ num_output = 256
 max_chunk_overlap = 20
 prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
-index = GPTSimpleVectorIndex(
+index = GPTSimpleVectorIndex.from_documents(
     documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper
 )
 ```
@@ -126,8 +126,8 @@ You can build indices on top of other indices!
 ```python
 from llama_index import GPTSimpleVectorIndex, GPTListIndex
 
-index1 = GPTSimpleVectorIndex(documents1)
-index2 = GPTSimpleVectorIndex(documents2)
+index1 = GPTSimpleVectorIndex.from_documents(documents1)
+index2 = GPTSimpleVectorIndex.from_documents(documents2)
 
 # Set summary text
 # you can set the summary manually, or you can
