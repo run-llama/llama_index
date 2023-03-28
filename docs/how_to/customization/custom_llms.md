@@ -9,9 +9,9 @@ LLMs may also be used during index construction, insertion, and query traversal.
 LlamaIndex uses Langchain's [LLM](https://langchain.readthedocs.io/en/latest/modules/llms.html)
 and [LLMChain](https://langchain.readthedocs.io/en/latest/modules/chains.html) module to define
 the underlying abstraction. We introduce a wrapper class,
-[`LLMPredictor`](/reference/llm_predictor.rst), for integration into LlamaIndex.
+[`LLMPredictor`](/reference/service_context/llm_predictor.rst), for integration into LlamaIndex.
 
-We also introduce a [`PromptHelper` class](/reference/prompt_helper.rst), to
+We also introduce a [`PromptHelper` class](/reference/service_context/prompt_helper.rst), to
 allow the user to explicitly set certain constraint parameters, such as
 maximum input size (default is 4096 for davinci models), number of generated output
 tokens, maximum chunk overlap, and more.
@@ -38,6 +38,7 @@ from llama_index import (
     GPTKeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
+    ServiceContext
 )
 from langchain import OpenAI
 
@@ -45,9 +46,10 @@ documents = SimpleDirectoryReader('data').load_data()
 
 # define LLM
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002"))
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # build index
-index = GPTKeywordTableIndex(documents, llm_predictor=llm_predictor)
+index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 response = index.query("What did the author do after his time at Y Combinator?")
@@ -68,6 +70,7 @@ from llama_index import (
     GPTKeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
+    ServiceContext
 )
 from langchain import OpenAI
 
@@ -75,9 +78,10 @@ documents = SimpleDirectoryReader('data').load_data()
 
 # define LLM
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=512))
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # build index
-index = GPTKeywordTableIndex(documents, llm_predictor=llm_predictor)
+index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 response = index.query("What did the author do after his time at Y Combinator?")
@@ -97,7 +101,8 @@ from llama_index import (
     GPTKeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
-    PromptHelper
+    PromptHelper,
+    ServiceContext
 )
 from langchain import OpenAI
 
@@ -116,8 +121,10 @@ prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 # define LLM
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=num_output))
 
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+
 # build index
-index = GPTKeywordTableIndex(documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 response = index.query("What did the author do after his time at Y Combinator?")
@@ -134,7 +141,7 @@ Here is a small example using locally running FLAN-T5 model and Huggingface's pi
 import torch
 from langchain.llms.base import LLM
 from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex, PromptHelper
-from llama_index import LLMPredictor
+from llama_index import LLMPredictor, ServiceContext
 from transformers import pipeline
 from typing import Optional, List, Mapping, Any
 
@@ -171,9 +178,11 @@ class CustomLLM(LLM):
 # define our LLM
 llm_predictor = LLMPredictor(llm=CustomLLM())
 
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+
 # Load the your data
 documents = SimpleDirectoryReader('./data').load_data()
-index = GPTListIndex(documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+index = GPTListIndex.from_documents(documents, service_context=service_context)
 
 # Query and print response
 response = new_index.query("<query_text>")

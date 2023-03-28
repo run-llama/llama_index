@@ -9,13 +9,14 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
+from gpt_index.node_parser.simple import SimpleNodeParser
 from gpt_index.readers.schema.base import Document
-from gpt_index.schema import BaseDocument
 from gpt_index.utils import globals_helper
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_predict import (
@@ -61,13 +62,15 @@ def test_build_list(
     documents: List[Document],
 ) -> None:
     """Test build list."""
-    list_index = GPTListIndex(documents=documents)
+    list_index = GPTListIndex.from_documents(documents)
     assert len(list_index.index_struct.nodes) == 4
     # check contents of nodes
-    assert list_index.index_struct.nodes[0].text == "Hello world."
-    assert list_index.index_struct.nodes[1].text == "This is a test."
-    assert list_index.index_struct.nodes[2].text == "This is another test."
-    assert list_index.index_struct.nodes[3].text == "This is a test v2."
+    node_ids = list_index.index_struct.nodes
+    nodes = list_index.docstore.get_nodes(node_ids)
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
 
 
 @patch_common
@@ -77,7 +80,7 @@ def test_refresh_list(
     _mock_total_tokens_used: Any,
     _mock_split_text_overlap: Any,
     _mock_split_text: Any,
-    documents: List[BaseDocument],
+    documents: List[Document],
 ) -> None:
     """Test build list."""
     # add extra document
@@ -88,7 +91,7 @@ def test_refresh_list(
         more_documents[i].doc_id = str(i)
 
     # create index
-    list_index = GPTListIndex(documents=more_documents)
+    list_index = GPTListIndex.from_documents(more_documents)
 
     # check that no documents are refreshed
     refreshed_docs = list_index.refresh(more_documents)
@@ -104,9 +107,9 @@ def test_refresh_list(
     refreshed_docs = list_index.refresh(more_documents)
     assert refreshed_docs[0] is False
     assert refreshed_docs[1] is True
-    assert (
-        list_index.index_struct.nodes[-1].text == "Test document 2, now with changes!"
-    )
+
+    test_node = list_index.docstore.get_node(list_index.index_struct.nodes[-1])
+    assert test_node.text == "Test document 2, now with changes!"
 
 
 @patch_common
@@ -122,13 +125,14 @@ def test_build_list_multiple(
         Document("Hello world.\nThis is a test."),
         Document("This is another test.\nThis is a test v2."),
     ]
-    list_index = GPTListIndex(documents=documents)
+    list_index = GPTListIndex.from_documents(documents)
     assert len(list_index.index_struct.nodes) == 4
+    nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     # check contents of nodes
-    assert list_index.index_struct.nodes[0].text == "Hello world."
-    assert list_index.index_struct.nodes[1].text == "This is a test."
-    assert list_index.index_struct.nodes[2].text == "This is another test."
-    assert list_index.index_struct.nodes[3].text == "This is a test v2."
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
 
 
 @patch_common
@@ -144,11 +148,12 @@ def test_list_insert(
     list_index = GPTListIndex([])
     assert len(list_index.index_struct.nodes) == 0
     list_index.insert(documents[0])
+    nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     # check contents of nodes
-    assert list_index.index_struct.nodes[0].text == "Hello world."
-    assert list_index.index_struct.nodes[1].text == "This is a test."
-    assert list_index.index_struct.nodes[2].text == "This is another test."
-    assert list_index.index_struct.nodes[3].text == "This is a test v2."
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
 
     # test insert with ID
     document = documents[0]
@@ -156,7 +161,9 @@ def test_list_insert(
     list_index = GPTListIndex([])
     list_index.insert(document)
     # check contents of nodes
-    for node in list_index.index_struct.nodes:
+    nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
+    # check contents of nodes
+    for node in nodes:
         assert node.ref_doc_id == "test_id"
 
 
@@ -177,26 +184,28 @@ def test_list_delete(
     ]
 
     # delete from documents
-    list_index = GPTListIndex(new_documents)
+    list_index = GPTListIndex.from_documents(new_documents)
     list_index.delete("test_id_1")
     assert len(list_index.index_struct.nodes) == 2
-    assert list_index.index_struct.nodes[0].ref_doc_id == "test_id_2"
-    assert list_index.index_struct.nodes[0].text == "This is another test."
-    assert list_index.index_struct.nodes[1].ref_doc_id == "test_id_3"
-    assert list_index.index_struct.nodes[1].text == "This is a test v2."
+    nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
+    assert nodes[0].ref_doc_id == "test_id_2"
+    assert nodes[0].text == "This is another test."
+    assert nodes[1].ref_doc_id == "test_id_3"
+    assert nodes[1].text == "This is a test v2."
     # check that not in docstore anymore
     source_doc = list_index.docstore.get_document("test_id_1", raise_error=False)
     assert source_doc is None
 
-    list_index = GPTListIndex(new_documents)
+    list_index = GPTListIndex.from_documents(new_documents)
     list_index.delete("test_id_2")
     assert len(list_index.index_struct.nodes) == 3
-    assert list_index.index_struct.nodes[0].ref_doc_id == "test_id_1"
-    assert list_index.index_struct.nodes[0].text == "Hello world."
-    assert list_index.index_struct.nodes[1].ref_doc_id == "test_id_1"
-    assert list_index.index_struct.nodes[1].text == "This is a test."
-    assert list_index.index_struct.nodes[2].ref_doc_id == "test_id_3"
-    assert list_index.index_struct.nodes[2].text == "This is a test v2."
+    nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
+    assert nodes[0].ref_doc_id == "test_id_1"
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].ref_doc_id == "test_id_1"
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].ref_doc_id == "test_id_3"
+    assert nodes[2].text == "This is a test v2."
 
 
 def _get_embeddings(
@@ -228,7 +237,7 @@ def test_query(
 ) -> None:
     """Test list query."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents, **index_kwargs)
+    index = GPTListIndex.from_documents(documents, **index_kwargs)
 
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
@@ -266,8 +275,12 @@ def test_index_overlap(
         chunk_overlap=10,
         tokenizer=globals_helper.tokenizer,
     )
+    _node_parser = SimpleNodeParser(text_splitter=_text_splitter)
+    service_context = ServiceContext.from_defaults(node_parser=_node_parser)
 
-    index = GPTListIndex(documents, text_splitter=_text_splitter, **index_kwargs)
+    index = GPTListIndex.from_documents(
+        documents, service_context=service_context, **index_kwargs
+    )
 
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
@@ -299,7 +312,7 @@ def test_query_with_keywords(
 ) -> None:
     """Test list query with keywords."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents, **index_kwargs)
+    index = GPTListIndex.from_documents(documents, **index_kwargs)
 
     # test query with keywords
     query_str = "What is?"
@@ -330,7 +343,7 @@ def test_embedding_query(
 ) -> None:
     """Test embedding query."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents, **index_kwargs)
+    index = GPTListIndex.from_documents(documents, **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
@@ -358,11 +371,12 @@ def test_extra_info(
     )
     extra_info = {"extra_info": "extra_info", "foo": "bar"}
     new_document = Document(doc_text, extra_info=extra_info)
-    list_index = GPTListIndex(documents=[new_document])
-    assert list_index.index_struct.nodes[0].get_text() == (
+    list_index = GPTListIndex.from_documents([new_document])
+    nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
+    assert nodes[0].get_text() == (
         "extra_info: extra_info\n" "foo: bar\n\n" "Hello world."
     )
-    assert list_index.index_struct.nodes[3].get_text() == (
+    assert nodes[3].get_text() == (
         "extra_info: extra_info\n" "foo: bar\n\n" "This is a test v2."
     )
 
@@ -377,18 +391,19 @@ def test_to_from_disk(
     documents: List[Document],
 ) -> None:
     """Test saving to disk and from disk."""
-    list_index = GPTListIndex(documents=documents)
+    list_index = GPTListIndex.from_documents(documents)
     with TemporaryDirectory() as tmp_dir:
         list_index.save_to_disk(str(Path(tmp_dir) / "tmp.json"))
         new_list_index = cast(
             GPTListIndex, GPTListIndex.load_from_disk(str(Path(tmp_dir) / "tmp.json"))
         )
         assert len(new_list_index.index_struct.nodes) == 4
+        nodes = new_list_index.docstore.get_nodes(new_list_index.index_struct.nodes)
         # check contents of nodes
-        assert new_list_index.index_struct.nodes[0].text == "Hello world."
-        assert new_list_index.index_struct.nodes[1].text == "This is a test."
-        assert new_list_index.index_struct.nodes[2].text == "This is another test."
-        assert new_list_index.index_struct.nodes[3].text == "This is a test v2."
+        assert nodes[0].text == "Hello world."
+        assert nodes[1].text == "This is a test."
+        assert nodes[2].text == "This is another test."
+        assert nodes[3].text == "This is a test v2."
 
 
 @patch_common
@@ -401,16 +416,18 @@ def test_to_from_string(
     documents: List[Document],
 ) -> None:
     """Test saving to disk and from disk."""
-    list_index = GPTListIndex(documents=documents)
+    list_index = GPTListIndex.from_documents(documents)
     new_list_index = cast(
         GPTListIndex, GPTListIndex.load_from_string(list_index.save_to_string())
     )
     assert len(new_list_index.index_struct.nodes) == 4
+    nodes = new_list_index.docstore.get_nodes(new_list_index.index_struct.nodes)
+
     # check contents of nodes
-    assert new_list_index.index_struct.nodes[0].text == "Hello world."
-    assert new_list_index.index_struct.nodes[1].text == "This is a test."
-    assert new_list_index.index_struct.nodes[2].text == "This is another test."
-    assert new_list_index.index_struct.nodes[3].text == "This is a test v2."
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
 
 
 @patch_common
@@ -427,7 +444,7 @@ def test_async_query(
 ) -> None:
     """Test list async query."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents, **index_kwargs)
+    index = GPTListIndex.from_documents(documents, **index_kwargs)
 
     # test default query mode.
     query_str = "What is?"

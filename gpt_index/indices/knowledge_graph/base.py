@@ -9,22 +9,18 @@ existing keywords in the table.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from gpt_index.data_structs.data_structs import KG
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.data_structs.data_structs_v2 import KG
+from gpt_index.data_structs.node_v2 import Node
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, KGQueryMode
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from gpt_index.prompts.prompts import KnowledgeGraphPrompt
-from gpt_index.schema import BaseDocument
-from gpt_index.utils import get_new_id
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -47,12 +43,10 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[KG] = None,
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
-        llm_predictor: Optional[LLMPredictor] = None,
-        text_splitter: Optional[TextSplitter] = None,
         include_embeddings: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -70,15 +64,13 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             )
         )
         super().__init__(
-            documents=documents,
+            nodes=nodes,
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
-            text_splitter=text_splitter,
             **kwargs,
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTKGTableQuery,
@@ -86,7 +78,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
-        response, _ = self._llm_predictor.predict(
+        response, _ = self._service_context.llm_predictor.predict(
             self.kg_triple_extract_template,
             text=text,
         )
@@ -104,48 +96,33 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             results.append((subj.strip(), pred.strip(), obj.strip()))
         return results
 
-    def _build_fallback_text_splitter(self) -> TextSplitter:
-        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
-        return self._prompt_helper.get_text_splitter_given_prompt(
-            self.kg_triple_extract_template, 1
-        )
-
-    def _build_index_from_documents(self, documents: Sequence[BaseDocument]) -> KG:
-        """Build the index from documents."""
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> KG:
+        """Build the index from nodes."""
         # do simple concatenation
         index_struct = KG(table={})
-        for d in documents:
-            nodes = self._get_nodes_from_document(d)
-            for n in nodes:
-                # set doc id
-                node_id = get_new_id(set())
-                n.doc_id = node_id
+        for n in nodes:
+            triplets = self._extract_triplets(n.get_text())
+            logger.debug(f"> Extracted triplets: {triplets}")
+            for triplet in triplets:
+                index_struct.upsert_triplet(triplet, n)
 
-                triplets = self._extract_triplets(n.get_text())
-                logger.debug(f"> Extracted triplets: {triplets}")
-                for triplet in triplets:
-                    index_struct.upsert_triplet(triplet, n)
+            if self.include_embeddings:
+                for i, triplet in enumerate(triplets):
+                    self._service_context.embed_model.queue_text_for_embeddding(
+                        str(triplet), str(triplet)
+                    )
 
-                if self.include_embeddings:
-                    for i, triplet in enumerate(triplets):
-                        self._embed_model.queue_text_for_embeddding(
-                            str(triplet), str(triplet)
-                        )
-
-                    embed_outputs = self._embed_model.get_queued_text_embeddings()
-                    for rel_text, rel_embed in zip(*embed_outputs):
-                        index_struct.add_to_embedding_dict(rel_text, rel_embed)
+                embed_outputs = (
+                    self._service_context.embed_model.get_queued_text_embeddings()
+                )
+                for rel_text, rel_embed in zip(*embed_outputs):
+                    index_struct.add_to_embedding_dict(rel_text, rel_embed)
 
         return index_struct
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
-        nodes = self._get_nodes_from_document(document)
         for n in nodes:
-            # set doc id
-            node_id = get_new_id(set())
-            n.doc_id = node_id
-
             triplets = self._extract_triplets(n.get_text())
             logger.debug(f"Extracted triplets: {triplets}")
             for triplet in triplets:
@@ -155,7 +132,11 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                     self.include_embeddings
                     and triplet_str not in self._index_struct.embedding_dict
                 ):
-                    rel_embedding = self._embed_model.get_text_embedding(triplet_str)
+                    rel_embedding = (
+                        self._service_context.embed_model.get_text_embedding(
+                            triplet_str
+                        )
+                    )
                     self.index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:

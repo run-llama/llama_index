@@ -8,6 +8,7 @@ from typing import Dict, List, Optional
 
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
+from gpt_index.response.schema import Response
 from spider_utils import create_indexes, load_examples
 from tqdm import tqdm
 
@@ -97,6 +98,7 @@ def _get_answers(
             result["answer"] = "ERROR"
         try:
             resp = indexes[db_name].query(sql_query, mode="sql")
+            assert isinstance(resp, Response)
             result["sql_result"] = resp.response
             if resp.response is None:
                 result["answer"] = ""

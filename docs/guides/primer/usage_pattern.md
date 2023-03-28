@@ -1,10 +1,11 @@
 # LlamaIndex Usage Pattern
 
 The general usage pattern of LlamaIndex is as follows:
-1. Load in documents (either manually, or through a data loader).
-2. Index Construction.
-3. [Optional, Advanced] Building indices on top of other indices
-4. Query the index.
+1. Load in documents (either manually, or through a data loader)
+2. Parse the Documents into Nodes
+3. Construct Index (from Nodes or Documents)
+4. [Optional, Advanced] Building indices on top of other indices
+5. Query the index
 
 ## 1. Load in Documents
 
@@ -28,16 +29,64 @@ text_list = [text1, text2, ...]
 documents = [Document(t) for t in text_list]
 ```
 
-## 2. Index Construction
+A Document represents a lightweight container around the data source. You can now to choose to proceed with one of the 
+following steps:
+1. Feed the Document object directly into the index (see section 3).
+2. First convert the Document into Node objects (see section 2).
 
-We can now build an index over these Document objects. The simplest is to load in the Document objects during index initialization.
+## 2. Parse the Documents into Nodes
+
+The next step is to parse these Document objects into Node objects. Nodes represent "chunks" of source Documents,
+whether that is a text chunk, an image, or more. They also contain metadata and relationship information
+with other nodes and index structures.
+
+Nodes are a first-class citizen in LlamaIndex. You can choose to define Nodes and all its attributes directly. You may also choose to "parse" source Documents into Nodes through our `NodeParser` classes.
+
+For instance, you can do
+
+```python
+from llama_index.node_parser import SimpleNodeParser
+
+parser = SimpleNodeParser()
+
+nodes = parser.get_nodes_from_documents(documents)
+
+```
+
+You can also choose to construct Node objects manually and skip the first section. For instance,
+
+```python
+from llama_index.data_structs.node_v2 import Node, DocumentRelationship
+
+node1 = Node(text="<text_chunk>", doc_id="<node_id>")
+node2 = Node(text="<text_chunk>", doc_id="<node_id>")
+# set relationships
+node1.relationships[DocumentRelationship.NEXT] = node2.get_doc_id()
+node2.relationships[DocumentRelationship.PREVIOUS] = node1.get_doc_id()
+
+```
+
+
+## 3. Index Construction
+
+We can now build an index over these Document objects. The simplest high-level abstraction is to load-in the Document objects during index initialization (this is relevant if you came directly from step 1 and skipped step 2).
 
 ```python
 from llama_index import GPTSimpleVectorIndex
 
-index = GPTSimpleVectorIndex(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 
 ```
+
+You can also choose to build an index over a set of Node objects directly (this is a continuation of step 2).
+
+```python
+from llama_index import GPTSimpleVectorIndex
+
+index = GPTSimpleVectorIndex(nodes)
+
+```
+
 
 Depending on which index you use, LlamaIndex may make LLM calls in order to build the index.
 
@@ -55,7 +104,9 @@ for doc in documents:
 
 ```
 
-See the [Update Index How-To](/how_to/update.md) for details and an example notebook.
+See the [Update Index How-To](/how_to/index_structs/update.md) for details and an example notebook.
+
+**NOTE**: An `insert_node` function is coming!
 
 ### Customizing LLM's
 
@@ -63,7 +114,7 @@ By default, we use OpenAI's `text-davinci-003` model. You may choose to use anot
 an index.
 
 ```python
-from llama_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper
+from llama_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper, ServiceContext
 
 ...
 
@@ -79,18 +130,20 @@ num_output = 256
 max_chunk_overlap = 20
 prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
-index = GPTSimpleVectorIndex(
-    documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+
+index = GPTSimpleVectorIndex.from_documents(
+    documents, service_context=service_context
 )
 ```
 
-See the [Custom LLM's How-To](/how_to/custom_llms.md) for more details.
+See the [Custom LLM's How-To](/how_to/customization/custom_llms.md) for more details.
 
 
 #### Customizing Prompts
 
 Depending on the index used, we used default prompt templates for constructing the index (and also insertion/querying).
-See [Custom Prompts How-To](/how_to/custom_prompts.md) for more details on how to customize your prompt.
+See [Custom Prompts How-To](/how_to/customization/custom_prompts.md) for more details on how to customize your prompt.
 
 
 ### Customizing embeddings
@@ -105,7 +158,7 @@ Creating an index, inserting to an index, and querying an index may use tokens. 
 token usage through the outputs of these operations. When running operations, 
 the token usage will be printed.
 You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
-See [Cost Predictor How-To](/how_to/cost_analysis.md) for more details.
+See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
 
 
 ### [Optional] Save the index for future use
@@ -119,15 +172,15 @@ index.save_to_disk('index.json')
 index = GPTSimpleVectorIndex.load_from_disk('index.json')
 ```
 
-## 3. [Optional, Advanced] Building indices on top of other indices
+## 4. [Optional, Advanced] Building indices on top of other indices
 
 You can build indices on top of other indices! 
 
 ```python
 from llama_index import GPTSimpleVectorIndex, GPTListIndex
 
-index1 = GPTSimpleVectorIndex(documents1)
-index2 = GPTSimpleVectorIndex(documents2)
+index1 = GPTSimpleVectorIndex.from_documents(documents1)
+index2 = GPTSimpleVectorIndex.from_documents(documents2)
 
 # Set summary text
 # you can set the summary manually, or you can
@@ -140,9 +193,9 @@ index3 = GPTListIndex([index1, index2])
 ```
 
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
-see our [Use Cases Guide](/guides/use_cases.md). For technical details and examples, see our [Composability How-To](/how_to/composability.md).
+see our [Query Use Cases](/use_cases/queries.md). For technical details and examples, see our [Composability How-To](/how_to/index_structs/composability.md).
 
-## 4. Query the index.
+## 5. Query the index.
 
 After building the index, you can now query it. Note that a "query" is simply an input to an LLM - 
 this means that you can use the index for question-answering, but you can also do more than that! 
@@ -170,7 +223,7 @@ create and refine an answer sequentially through the nodes of the list.
 nodes by embedding similarity.
 
 ```python
-index = GPTListIndex(documents)
+index = GPTListIndex.from_documents(documents)
 # mode="default"
 response = index.query("What did the author do growing up?", mode="default")
 # mode="embedding"
@@ -196,7 +249,7 @@ An index can also have the following response modes through `response_mode`:
     and return the root node as the response. Good for summarization purposes.
 
 ```python
-index = GPTListIndex(documents)
+index = GPTListIndex.from_documents(documents)
 # mode="default"
 response = index.query("What did the author do growing up?", response_mode="default")
 # mode="compact"

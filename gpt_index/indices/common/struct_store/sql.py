@@ -11,7 +11,6 @@ from gpt_index.indices.common.struct_store.base import (
 )
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.prompts import SchemaExtractPrompt
 
 
@@ -21,7 +20,6 @@ class SQLStructDatapointExtractor(BaseStructDatapointExtractor):
     def __init__(
         self,
         llm_predictor: LLMPredictor,
-        text_splitter: TextSplitter,
         schema_extract_prompt: SchemaExtractPrompt,
         output_parser: OUTPUT_PARSER_TYPE,
         sql_database: SQLDatabase,
@@ -30,9 +28,7 @@ class SQLStructDatapointExtractor(BaseStructDatapointExtractor):
         ref_doc_id_column: Optional[str] = None,
     ) -> None:
         """Initialize params."""
-        super().__init__(
-            llm_predictor, text_splitter, schema_extract_prompt, output_parser
-        )
+        super().__init__(llm_predictor, schema_extract_prompt, output_parser)
         self._sql_database = sql_database
         # currently the user must specify a table info
         if table_name is None and table is None:

@@ -2,8 +2,8 @@
 import logging
 from typing import Any, List, Optional, Tuple
 
-from gpt_index.data_structs.data_structs import IndexList, Node
-from gpt_index.embeddings.base import BaseEmbedding
+from gpt_index.data_structs.data_structs_v2 import IndexList
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.query.embedding_utils import (
     SimilarityTracker,
     get_top_k_embeddings,
@@ -34,25 +34,24 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
         self,
         index_struct: IndexList,
         similarity_top_k: Optional[int] = 1,
-        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             index_struct=index_struct,
-            embed_model=embed_model,
             **kwargs,
         )
         self.similarity_top_k = similarity_top_k
 
-    def _get_nodes_for_response(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
-        nodes = self.index_struct.nodes
+        node_ids = self.index_struct.nodes
         # top k nodes
+        nodes = self._docstore.get_nodes(node_ids)
         query_embedding, node_embeddings = self._get_embeddings(query_bundle, nodes)
 
         top_similarities, top_idxs = get_top_k_embeddings(
@@ -78,13 +77,17 @@ class GPTListIndexEmbeddingQuery(BaseGPTListIndexQuery):
     ) -> Tuple[List[float], List[List[float]]]:
         """Get top nodes by similarity to the query."""
         if query_bundle.embedding is None:
-            query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
-                query_bundle.embedding_strs
+            query_bundle.embedding = (
+                self._service_context.embed_model.get_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
+                )
             )
         node_embeddings: List[List[float]] = []
-        for node in self.index_struct.nodes:
+        for node in nodes:
             if node.embedding is None:
-                node.embedding = self._embed_model.get_text_embedding(node.get_text())
+                node.embedding = self._service_context.embed_model.get_text_embedding(
+                    node.get_text()
+                )
 
             node_embeddings.append(node.embedding)
         return query_bundle.embedding, node_embeddings

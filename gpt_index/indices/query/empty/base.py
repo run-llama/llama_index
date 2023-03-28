@@ -1,12 +1,18 @@
 """Default query for GPTEmptyIndex."""
-from typing import Any, Optional
+from typing import Any, List, Optional
 
-from gpt_index.data_structs.data_structs import EmptyIndex
+from gpt_index.data_structs.data_structs_v2 import EmptyIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.embedding_utils import NodeWithScore
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from gpt_index.prompts.prompts import SimpleInputPrompt
-from gpt_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
+from gpt_index.response.schema import (
+    RESPONSE_TYPE,
+    Response,
+    SourceNode,
+    StreamingResponse,
+)
 
 
 class GPTEmptyIndexQuery(BaseGPTIndexQuery[EmptyIndex]):
@@ -26,24 +32,35 @@ class GPTEmptyIndexQuery(BaseGPTIndexQuery[EmptyIndex]):
 
     def __init__(
         self,
-        index_struct: EmptyIndex,
         input_prompt: Optional[SimpleInputPrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._input_prompt = input_prompt or DEFAULT_SIMPLE_INPUT_PROMPT
-        super().__init__(index_struct=index_struct, **kwargs)
+        super().__init__(**kwargs)
 
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Answer a query."""
+    def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Retrieve relevant nodes."""
+        del query_bundle  # Unused
+        return []
+
+    def synthesize(
+        self,
+        query_bundle: QueryBundle,
+        nodes: List[NodeWithScore],
+        additional_source_nodes: Optional[List[SourceNode]] = None,
+    ) -> RESPONSE_TYPE:
+        """Synthesize answer with relevant nodes."""
+        del nodes  # Unused
+        del additional_source_nodes  # Unused
         if not self._streaming:
-            response, _ = self._llm_predictor.predict(
+            response, _ = self._service_context.llm_predictor.predict(
                 self._input_prompt,
                 query_str=query_bundle.query_str,
             )
             return Response(response)
         else:
-            stream_response, _ = self._llm_predictor.stream(
+            stream_response, _ = self._service_context.llm_predictor.stream(
                 self._input_prompt,
                 query_str=query_bundle.query_str,
             )

@@ -3,10 +3,10 @@
 import re
 from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar
 
-from gpt_index.data_structs.table import BaseStructTable
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.table_v2 import BaseStructTable
+from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from gpt_index.prompts.prompts import SchemaExtractPrompt
 
@@ -40,12 +40,11 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[BST] = None,
+        service_context: Optional[ServiceContext] = None,
         schema_extract_prompt: Optional[SchemaExtractPrompt] = None,
         output_parser: Optional[OUTPUT_PARSER_TYPE] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        text_splitter: Optional[TextSplitter] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -54,17 +53,10 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
         )
         self.output_parser = output_parser or default_output_parser
         super().__init__(
-            documents=documents,
+            nodes=nodes,
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
-            text_splitter=text_splitter,
+            service_context=service_context,
             **kwargs,
-        )
-
-    def _build_fallback_text_splitter(self) -> TextSplitter:
-        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
-        return self._prompt_helper.get_text_splitter_given_prompt(
-            self.schema_extract_prompt, 1
         )
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:

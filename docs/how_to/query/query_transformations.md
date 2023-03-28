@@ -26,7 +26,7 @@ To use HyDE, an example code snippet is shown below.
 
 ```python
 from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
-from llama_index.indices.query.query_transform import HyDEQueryTransform
+from llama_index.indices.query.query_transform.base import HyDEQueryTransform
 
 # load documents, build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
@@ -52,7 +52,7 @@ If your query is complex, different parts of your knowledge base may answer diff
 
 Our single-step query decomposition feature transforms a **complicated** question into a simpler one over the data collection to help provide a sub-answer to the original question.
 
-This is especially helpful over a [composed graph](/how_to/composability.md). Within a composed graph, a query can be routed to multiple subindexes, each representing a subset of the overall knowledge corpus. Query decomposition allows us to transform the query into a more suitable question over any given index.
+This is especially helpful over a [composed graph](/how_to/index_structs/composability.md). Within a composed graph, a query can be routed to multiple subindexes, each representing a subset of the overall knowledge corpus. Query decomposition allows us to transform the query into a more suitable question over any given index.
 
 An example image is shown below.
 
@@ -112,7 +112,6 @@ Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/m
 
 ### Multi-Step Query Transformations
 
-
 Multi-step query transformations are a generalization on top of existing single-step query transformation approaches.
 
 Given an initial, complex query, the query is transformed and executed against an index. The response is retrieved from the query. 
@@ -122,7 +121,7 @@ We have an additional `QueryCombiner` class that runs queries against a given in
 
 An example image is shown below.
 
-![](/_static/query_transformations/single_step_diagram.png)
+![](/_static/query_transformations/multi_step_diagram.png)
 
 
 Here's a corresponding example code snippet.

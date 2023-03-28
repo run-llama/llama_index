@@ -3,10 +3,9 @@
 import asyncio
 import logging
 from contextlib import contextmanager
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.indices.service_context import ServiceContext
 
 logger = logging.getLogger(__name__)
 
@@ -38,21 +37,14 @@ def llm_token_counter(method_name_str: str) -> Callable:
     def wrap(f: Callable) -> Callable:
         @contextmanager
         def wrapper_logic(_self: Any) -> Any:
-            llm_predictor = getattr(_self, "_llm_predictor", None)
-            if llm_predictor is None:
+            service_context = getattr(_self, "_service_context", None)
+            if not isinstance(service_context, ServiceContext):
                 raise ValueError(
                     "Cannot use llm_token_counter on an instance "
-                    "without a _llm_predictor attribute."
+                    "without a service context."
                 )
-            llm_predictor = cast(LLMPredictor, llm_predictor)
-
-            embed_model = getattr(_self, "_embed_model", None)
-            if embed_model is None:
-                raise ValueError(
-                    "Cannot use llm_token_counter on an instance "
-                    "without a _embed_model attribute."
-                )
-            embed_model = cast(BaseEmbedding, embed_model)
+            llm_predictor = service_context.llm_predictor
+            embed_model = service_context.embed_model
 
             start_token_ct = llm_predictor.total_tokens_used
             start_embed_token_ct = embed_model.total_tokens_used

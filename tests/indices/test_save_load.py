@@ -38,8 +38,9 @@ def test_write_ascii(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex(documents)
-    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    table = GPTSimpleKeywordTableIndex.from_documents(documents)
+    node_ids = list(table.index_struct.node_ids)
+    table_chunks = [n.text for n in table.docstore.get_nodes(node_ids)]
     assert len(table_chunks) == 1
     assert "á" in table_chunks
 
@@ -60,12 +61,9 @@ def test_write_ascii(
             data = json.loads(escaped)
 
             docs = data["docstore"]["docs"]
-            doc_key = list(docs.keys())[0]
-            text_chunk_id = list(docs[doc_key]["text_chunks"].keys())[0]
-
-            # "\u00e1" is the escaped unicode character for "á"
-            assert docs[doc_key]["text_chunks"][text_chunk_id]["text"] == "\\u00e1"
-            assert docs[doc_key]["text_chunks"][text_chunk_id]["text"] != "á"
+            doc_key = list(node_ids)[0]
+            node_dict = docs[doc_key]
+            assert node_dict["text"] == "\\u00e1"
 
 
 @patch_common
@@ -85,8 +83,9 @@ def test_write_utf8(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex(documents)
-    table_chunks = {n.text for n in table.index_struct.text_chunks.values()}
+    table = GPTSimpleKeywordTableIndex.from_documents(documents)
+    node_ids = list(table.index_struct.node_ids)
+    table_chunks = [n.text for n in table.docstore.get_nodes(node_ids)]
     assert len(table_chunks) == 1
     assert "á" in table_chunks
 
@@ -107,9 +106,6 @@ def test_write_utf8(
             data = json.loads(escaped)
 
             docs = data["docstore"]["docs"]
-            doc_key = list(docs.keys())[0]
-            text_chunk_id = list(docs[doc_key]["text_chunks"].keys())[0]
-
-            # "\u00e1" is the escaped unicode character for "á"
-            assert docs[doc_key]["text_chunks"][text_chunk_id]["text"] != "\\u00e1"
-            assert docs[doc_key]["text_chunks"][text_chunk_id]["text"] == "á"
+            doc_key = list(node_ids)[0]
+            node_dict = docs[doc_key]
+            assert node_dict["text"] == "á"

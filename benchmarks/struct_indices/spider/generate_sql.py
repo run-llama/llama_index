@@ -117,7 +117,7 @@ if __name__ == "__main__":
         table_name = engine.execute(
             "select name from sqlite_master where type = 'table'"
         ).fetchone()[0]
-        llm_indexes[db_name] = GPTSQLStructStoreIndex(
+        llm_indexes[db_name] = GPTSQLStructStoreIndex.from_documents(
             documents=[],
             llm_predictor=llm_predictor,
             sql_database=db,

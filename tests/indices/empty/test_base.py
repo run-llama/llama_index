@@ -4,8 +4,9 @@ from typing import Any, Dict, Tuple
 
 import pytest
 
-from gpt_index.data_structs.data_structs import EmptyIndex
+from gpt_index.data_structs.data_structs_v2 import EmptyIndex
 from gpt_index.indices.empty.base import GPTEmptyIndex
+from gpt_index.response.schema import Response
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_INPUT_PROMPT
 
@@ -35,5 +36,6 @@ def test_empty(
     assert isinstance(empty_index.index_struct, EmptyIndex)
 
     response = empty_index.query("What is?", **query_kwargs)
+    assert isinstance(response, Response)
     assert response.response == "What is?"
     assert response.source_nodes == []

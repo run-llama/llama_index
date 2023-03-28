@@ -19,9 +19,9 @@ doc3 = SimpleDirectoryReader('data3').load_data()
 Now let's define a tree index for each document. In Python, we have:
 
 ```python
-index1 = GPTTreeIndex(doc1)
-index2 = GPTTreeIndex(doc2)
-index3 = GPTTreeIndex(doc3)
+index1 = GPTTreeIndex.from_documents(doc1)
+index2 = GPTTreeIndex.from_documents(doc2)
+index3 = GPTTreeIndex.from_documents(doc3)
 ```
 
 ![](/_static/composability/diagram_b1.png)
@@ -32,12 +32,9 @@ You then need to explicitly define *summary text* for each subindex. This allows
 the subindices to be used as Documents for higher-level indices.
 
 ```python
-index1.set_text("<summary1>")
-index1.set_doc_id("<index_id_1>")
-index2.set_text("<summary2>")
-index2.set_doc_id("<index_id_2>")
-index3.set_text("<summary3>")
-index3.set_doc_id("<index_id_3>")
+index1_summary = "<summary1>"
+index2_summary = "<summary2>"
+index3_summary = "<summary3>"
 ```
 
 You may choose to manually specify the summary text, or use LlamaIndex itself to generate
@@ -47,34 +44,24 @@ a summary, for instance with the following:
 summary = index1.query(
     "What is a summary of this document?", mode="summarize"
 )
-index1.set_text(str(summary))
+index1_summary = str(summary)
 ```
 
 **If specified**, this summary text for each subindex can be used to refine the answer during query-time. 
 
-### Defining a Top-Level Index
+### Creating a Graph with a Top-Level Index
 
-We can then create a list index on these 3 tree indices:
-
-```python
-list_index = GPTListIndex([index1, index2, index3])
-```
-
-![](/_static/composability/diagram.png)
-
-
-### Defining a Graph Structure
-
-
-Finally, we define a `ComposableGraph` to "wrap" the composed index graph.
-We can do this by simply feeding in the top-level index.
-This wrapper allows us to query, save, and load the graph to/from disk.
+We can then create a graph with a list index on top of these 3 tree indices:
+We can query, save, and load the graph to/from disk as any other index.
 
 ```python
+from llama_index.indices.composability import ComposableGraph
 
-from llama_index.composability import ComposableGraph
-
-graph = ComposableGraph.build_from_index(list_index)
+graph = ComposableGraph.build_from_indices(
+    GPTListIndex,
+    [index1, index2, index3],
+    index_summaries=[index1_summary, index2_summary, index3_summary],
+)
 
 # [Optional] save to disk
 graph.save_to_disk("save_path.json")
@@ -84,8 +71,10 @@ graph = ComposableGraph.load_from_disk("save_path.json")
 
 ```
 
+![](/_static/composability/diagram.png)
 
-### Querying the Top-Level Index
+
+### Querying the Graph
 
 During a query, we would start with the top-level list index. Each node in the list corresponds to an underlying tree index. 
 We want to make sure that we define a **recursive** query, as well as a **query config** list. If the query config list is not
@@ -114,6 +103,15 @@ query_configs = [
     ...
 ]
 response = graph.query("Where did the author grow up?", query_configs=query_configs)
+```
+
+> Note that specifying query config for index struct by id
+> might require you to inspect e.g., `index1.index_struct.index_id`.
+> Alternatively, you can explicitly set it as follows:
+```python
+index1.index_struct.index_id = "<index_id_1>"
+index2.index_struct.index_id = "<index_id_2>"
+index3.index_struct.index_id = "<index_id_3>"
 ```
 
 ![](/_static/composability/diagram_q1.png)

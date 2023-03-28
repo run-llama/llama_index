@@ -5,19 +5,17 @@ in sequence in order to answer a given query.
 
 """
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Optional, Sequence
 
-from gpt_index.data_structs.data_structs import IndexList
-from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.data_structs.data_structs_v2 import IndexList
+from gpt_index.data_structs.node_v2 import Node
+from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.query.list.query import GPTListIndexQuery
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.schema import BaseDocument
 
 # This query is used to summarize the contents of the index.
 GENERATE_TEXT_QUERY = "What is a concise summary of this document?"
@@ -45,40 +43,30 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexList] = None,
+        service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        text_splitter: Optional[TextSplitter] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         super().__init__(
-            documents=documents,
+            nodes=nodes,
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
-            text_splitter=text_splitter,
+            service_context=service_context,
             **kwargs,
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTListIndexQuery,
             QueryMode.EMBEDDING: GPTListIndexEmbeddingQuery,
         }
 
-    def _build_fallback_text_splitter(self) -> TextSplitter:
-        # if not specified, use "smart" text splitter to ensure chunks fit in prompt
-        return self._prompt_helper.get_text_splitter_given_prompt(
-            self.text_qa_template, 1
-        )
-
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
-    ) -> IndexList:
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexList:
         """Build the index from documents.
 
         Args:
@@ -88,23 +76,22 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             IndexList: The created list index.
         """
         index_struct = IndexList()
-        for d in documents:
-            nodes = self._get_nodes_from_document(d)
-            for n in nodes:
-                index_struct.add_node(n)
+        for n in nodes:
+            index_struct.add_node(n)
         return index_struct
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
-        nodes = self._get_nodes_from_document(document)
         for n in nodes:
+            print("inserting node to index struct: ", n.get_doc_id())
             self._index_struct.add_node(n)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
-        cur_nodes = self._index_struct.nodes
+        cur_node_ids = self._index_struct.nodes
+        cur_nodes = self._docstore.get_nodes(cur_node_ids)
         nodes_to_keep = [n for n in cur_nodes if n.ref_doc_id != doc_id]
-        self._index_struct.nodes = nodes_to_keep
+        self._index_struct.nodes = [n.get_doc_id() for n in nodes_to_keep]
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Preprocess query."""

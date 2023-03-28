@@ -44,8 +44,8 @@ def test_pandas_index(
     import sys
 
     if sys.version_info < (3, 9):
-        assert response.response == 'df["population"].iloc[0]'
+        assert str(response) == 'df["population"].iloc[0]'
     else:
-        assert response.response == "2930000"
+        assert str(response) == "2930000"
     extra_info = cast(Dict[str, Any], response.extra_info)
     assert extra_info["pandas_instruction_str"] == ('df["population"].iloc[0]')

@@ -107,7 +107,7 @@ class SQLContextContainerBuilder:
         for table_name, context_str in full_context_dict.items():
             doc = Document(context_str, extra_info={"table_name": table_name})
             context_docs.append(doc)
-        index = index_cls(
+        index = index_cls.from_documents(
             documents=context_docs,
             **index_kwargs,
         )
@@ -139,7 +139,7 @@ class SQLContextContainerBuilder:
         else:
             context_query_str = query_tmpl.format(orig_query_str=query_str)
         response = index.query(context_query_str, **index_kwargs)
-        context_str = str(response.response)
+        context_str = str(response)
         if store_context_str:
             self.context_str = context_str
         return context_str
