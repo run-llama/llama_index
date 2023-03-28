@@ -187,15 +187,6 @@ class IndexDict(V2IndexStruct):
         text_id: Optional[str] = None,
     ) -> str:
         """Add text to table, return current position in list."""
-        # int_id = get_new_int_id(set(self.nodes_dict.keys()))
-        # if text_id in self.id_map:
-        #     raise ValueError("text_id cannot already exist in index.")
-        # elif text_id is not None and not isinstance(text_id, str):
-        #     raise ValueError("text_id must be a string.")
-        # elif text_id is None:
-        #     text_id = str(int_id)
-        # self.id_map[text_id] = int_id
-
         # # don't worry about child indices for now, nodes are all in order
         # self.nodes_dict[int_id] = node
         vector_id = text_id if text_id is not None else node.get_doc_id()
@@ -207,52 +198,12 @@ class IndexDict(V2IndexStruct):
 
         return vector_id
 
-    # def get_nodes(self, text_ids: List[str]) -> List[Node]:
-    #     """Get nodes."""
-    #     nodes = []
-    #     for text_id in text_ids:
-    #         if text_id not in self.id_map:
-    #             raise ValueError("text_id not found in id_map")
-    #         elif not isinstance(text_id, str):
-    #             raise ValueError("text_id must be a string.")
-    #         int_id = self.id_map[text_id]
-    #         if int_id not in self.nodes_dict:
-    #             raise ValueError("int_id not found in nodes_dict")
-    #         nodes.append(self.nodes_dict[int_id])
-    #     return nodes
-
-    # def get_node(self, text_id: str) -> Node:
-    #     """Get node."""
-    #     return self.get_nodes([text_id])[0]
-
     def delete(self, doc_id: str) -> None:
         """Delete a Node."""
         if doc_id not in self.doc_id_dict:
             raise ValueError("doc_id not found in doc_id_dict")
         for vector_id in self.doc_id_dict[doc_id]:
             del self.nodes_dict[vector_id]
-
-        # for vector_id, node_id in self.nodes_dict.items():
-        #     if node_id == doc_id:
-        #         del self.nodes_dict[vector_id]
-        #         break
-
-        # self.nodes_set.remove(doc_id)
-        # if doc_id in self.embeddings_dict:
-        #     del self.embeddings_dict[doc_id]
-
-        # text_ids_to_delete = set()
-        # int_ids_to_delete = set()
-        # for text_id, int_id in self.id_map.items():
-        #     node = self.nodes_dict[int_id]
-        #     if node.ref_doc_id != doc_id:
-        #         continue
-        #     text_ids_to_delete.add(text_id)
-        #     int_ids_to_delete.add(int_id)
-
-        # for int_id, text_id in zip(int_ids_to_delete, text_ids_to_delete):
-        #     del self.nodes_dict[int_id]
-        #     del self.id_map[text_id]
 
     @classmethod
     def get_type(cls) -> IndexStructType:
