@@ -29,6 +29,5 @@ The guides below are intended to help you get the most out of LlamaIndex. It giv
    :caption: General Guides
 
    primer/usage_pattern.md
-   primer/use_cases.md
    primer/index_guide.md
 

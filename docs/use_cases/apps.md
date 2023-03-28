@@ -4,10 +4,11 @@ LlamaIndex modules provide plug and play data loaders, data structures, and quer
 
 ### Chatbots
 
-Chatbots are an incredibly popular use case for LLM's. LlamaIndex gives you the tools to build Knowledge-augmented chatbots.
+Chatbots are an incredibly popular use case for LLM's. LlamaIndex gives you the tools to build Knowledge-augmented chatbots and agents.
 
 Relevant Resources:
 - [Building a Chatbot](/guides/tutorials/building_a_chatbot.md)
+- [Using with a LangChain Agent](/how_to/integrations/using_with_langchain.md)
 
 ### Full-Stack Web Application
 
