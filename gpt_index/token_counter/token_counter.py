@@ -3,11 +3,9 @@
 import asyncio
 import logging
 from contextlib import contextmanager
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
-from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 
 logger = logging.getLogger(__name__)
 

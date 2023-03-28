@@ -7,8 +7,6 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import BaseStructTable
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from gpt_index.prompts.prompts import SchemaExtractPrompt
 

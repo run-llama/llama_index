@@ -4,7 +4,6 @@ from abc import abstractmethod
 from typing import Any, Callable, Dict, Generator, Optional, cast
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_transform.base import (
     BaseQueryTransform,
     StepDecomposeQueryTransform,
@@ -15,7 +14,7 @@ from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.response.schema import Response
+from gpt_index.response.schema import RESPONSE_TYPE, Response
 
 
 class BaseQueryCombiner:
@@ -36,21 +35,11 @@ class BaseQueryCombiner:
         self._query_runner = query_runner
 
     @abstractmethod
-    def run(self, query_bundle: QueryBundle, level: int = 0) -> Response:
+    def run(self, query_bundle: QueryBundle, level: int = 0) -> RESPONSE_TYPE:
         """Run query combiner."""
 
-    async def arun(self, query_bundle: QueryBundle, level: int = 0) -> Response:
-        """Run query combiner."""
-        return self.run(query_bundle, level=level)
-
-    async def arun(
-        self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle
-    ) -> Response:
+    async def arun(self, query_bundle: QueryBundle, level: int = 0) -> RESPONSE_TYPE:
         """Async run query combiner."""
-        return self.run(query_obj, query_bundle)
-
-    async def arun(self, query_bundle: QueryBundle, level: int = 0) -> Response:
-        """Run query combiner."""
         return self.run(query_bundle, level=level)
 
 
@@ -71,14 +60,14 @@ class SingleQueryCombiner(BaseQueryCombiner):
         )
         return updated_query_bundle
 
-    def run(self, query_bundle: QueryBundle, level: int = 0) -> Response:
+    def run(self, query_bundle: QueryBundle, level: int = 0) -> RESPONSE_TYPE:
         """Run query combiner."""
         updated_query_bundle = self._prepare_update(query_bundle)
         return self._query_runner.query_transformed(
             updated_query_bundle, self._index_struct, level=level
         )
 
-    async def arun(self, query_bundle: QueryBundle, level: int = 0) -> Response:
+    async def arun(self, query_bundle: QueryBundle, level: int = 0) -> RESPONSE_TYPE:
         """Run query combiner."""
         updated_query_bundle = self._prepare_update(query_bundle)
         return await self._query_runner.aquery_transformed(
@@ -121,7 +110,9 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         use_async: bool = True,
     ) -> None:
         """Init params."""
-        super().__init__(index_struct, query_transform=query_transform)
+        super().__init__(
+            index_struct, query_transform=query_transform, query_runner=query_runner
+        )
         self._index_struct = index_struct
         self._query_transform = query_transform
         from gpt_index.indices.query.query_runner import QueryRunner
@@ -161,7 +152,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         )
         return query_bundle
 
-    def run(self, query_bundle: QueryBundle, level: int = 0) -> Response:
+    def run(self, query_bundle: QueryBundle, level: int = 0) -> RESPONSE_TYPE:
         """Run query combiner."""
         prev_reasoning = ""
         cur_response = None
@@ -194,7 +185,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
             # append to response builder
             cur_qa_text = (
                 f"\nQuestion: {updated_query_bundle.query_str}\n"
-                f"Answer: {cur_response.response}"
+                f"Answer: {str(cur_response)}"
             )
             self.response_builder.add_text_chunks([TextChunk(cur_qa_text)])
             for source_node in cur_response.source_nodes:
@@ -205,7 +196,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
             )
 
             prev_reasoning += (
-                f"- {updated_query_bundle.query_str}\n" f"- {cur_response.response}\n"
+                f"- {updated_query_bundle.query_str}\n" f"- {str(cur_response)}\n"
             )
             cur_steps += 1
 

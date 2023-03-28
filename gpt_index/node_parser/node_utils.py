@@ -2,7 +2,7 @@
 
 
 import logging
-from typing import List, Optional, Sequence
+from typing import List
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, ImageNode, Node
 from gpt_index.langchain_helpers.text_splitter import (

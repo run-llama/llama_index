@@ -358,11 +358,11 @@ def test_sql_index_query(
     response = index.query(
         "SELECT user_id, foo FROM test_table", mode="sql", **query_kwargs
     )
-    assert response.response == "[(2, 'bar'), (8, 'hello')]"
+    assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     # query the index with natural language
     response = index.query("test_table:user_id,foo", mode="default", **query_kwargs)
-    assert response.response == "[(2, 'bar'), (8, 'hello')]"
+    assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
 
 @patch_common
@@ -401,12 +401,12 @@ def test_sql_index_async_query(
         "SELECT user_id, foo FROM test_table", mode="sql", **query_kwargs
     )
     response = asyncio.run(task)
-    assert response.response == "[(2, 'bar'), (8, 'hello')]"
+    assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     # query the index with natural language
     task = index.aquery("test_table:user_id,foo", mode="default", **query_kwargs)
     response = asyncio.run(task)
-    assert response.response == "[(2, 'bar'), (8, 'hello')]"
+    assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
 
 def test_default_output_parser() -> None:

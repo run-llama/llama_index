@@ -1,20 +1,16 @@
 """Test docstore."""
 
-from typing import Dict, Type
 
 from gpt_index.constants import TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node, NodeType
 from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.readers.schema.base import Document
-from gpt_index.schema import BaseDocument
 
 
 def test_docstore() -> None:
     """Test docstore."""
     doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
     node = Node("my node", doc_id="d2", node_info={"node": "info"})
-
-    type_to_struct: Dict[str, Type[BaseDocument]] = {"node": Node}
 
     # test get document
     docstore = DocumentStore.from_documents([doc, node])

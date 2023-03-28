@@ -17,7 +17,6 @@ from gpt_index.indices.query.struct_store.sql import (
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 
 

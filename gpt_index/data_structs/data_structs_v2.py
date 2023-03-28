@@ -408,9 +408,10 @@ class ChatGPTRetrievalPluginIndexDict(IndexDict):
     """Index dict for ChatGPT Retrieval Plugin."""
 
     @classmethod
-    def get_type(cls) -> str:
+    def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.CHATGPT_RETRIEVAL_PLUGIN
+
 
 @dataclass
 class EmptyIndex(IndexDict):
@@ -446,4 +447,3 @@ class CompositeIndex(V2IndexStruct):
             DATA_KEY: data_dict,
         }
         return out_dict
-

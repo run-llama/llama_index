@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from gpt_index.data_structs.data_structs_v2 import CompositeIndex, IndexGraph
+from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node
@@ -23,7 +23,7 @@ from gpt_index.indices.query.query_transform.base import (
 )
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.response.schema import RESPONSE_TYPE, Response, SourceNode
+from gpt_index.response.schema import RESPONSE_TYPE, SourceNode
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
