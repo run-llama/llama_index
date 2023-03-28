@@ -388,9 +388,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         """Answer a query asynchronously."""
         # TODO: remove _query and just use query
         nodes = self.retrieve(query_bundle)
-        print(nodes)
         response = await self.asynthesize(query_bundle, nodes)
-        print(response)
         return response
 
     @llm_token_counter("query")
