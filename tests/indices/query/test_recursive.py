@@ -44,7 +44,7 @@ from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 def struct_kwargs() -> Tuple[Dict, List]:
     """Index kwargs."""
     index_kwargs = {
-        "graph": {
+        "tree": {
             "summary_template": MOCK_SUMMARY_PROMPT,
             "insert_prompt": MOCK_INSERT_PROMPT,
             "num_children": 2,
@@ -130,8 +130,8 @@ def test_recursive_query_list_tree(
     """Test query."""
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
-    tree_kwargs = index_kwargs["graph"]
-    # try building a list for every two, then a graph
+    tree_kwargs = index_kwargs["tree"]
+    # try building a list for every two, then a tree
     list1 = GPTListIndex.from_documents(documents[0:2], **list_kwargs)
     list2 = GPTListIndex.from_documents(documents[2:4], **list_kwargs)
     list3 = GPTListIndex.from_documents(documents[4:6], **list_kwargs)
@@ -143,7 +143,7 @@ def test_recursive_query_list_tree(
     summary4 = "summary4"
     summaries = [summary1, summary2, summary3, summary4]
 
-    # there are two root nodes in this graph: one containing [list1, list2]
+    # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
     graph = ComposableGraph.from_indices(
         GPTTreeIndex,
@@ -179,8 +179,8 @@ def test_recursive_query_tree_list(
     """Test query."""
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
-    tree_kwargs = index_kwargs["graph"]
-    # try building a graph for a group of 4, then a list
+    tree_kwargs = index_kwargs["tree"]
+    # try building a tree for a group of 4, then a list
     # use a diff set of documents
     tree1 = GPTTreeIndex.from_documents(documents[2:6], **tree_kwargs)
     tree2 = GPTTreeIndex.from_documents(documents[:2] + documents[6:], **tree_kwargs)
@@ -189,7 +189,7 @@ def test_recursive_query_tree_list(
         "tree_summary2",
     ]
 
-    # there are two root nodes in this graph: one containing [list1, list2]
+    # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
     graph = ComposableGraph.from_indices(
         GPTListIndex,
@@ -219,7 +219,7 @@ def test_recursive_query_table_list(
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
     table_kwargs = index_kwargs["table"]
-    # try building a graph for a group of 4, then a list
+    # try building a tree for a group of 4, then a list
     # use a diff set of documents
     table1 = GPTSimpleKeywordTableIndex.from_documents(documents[4:6], **table_kwargs)
     table2 = GPTSimpleKeywordTableIndex.from_documents(documents[2:3], **table_kwargs)
@@ -265,9 +265,9 @@ def test_recursive_query_list_table(
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
     table_kwargs = index_kwargs["table"]
-    # try building a graph for a group of 4, then a list
+    # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    # try building a list for every two, then a graph
+    # try building a list for every two, then a tree
     list1 = GPTListIndex.from_documents(documents[0:2], **list_kwargs)
     list2 = GPTListIndex.from_documents(documents[2:4], **list_kwargs)
     list3 = GPTListIndex.from_documents(documents[4:6], **list_kwargs)
@@ -318,8 +318,8 @@ def test_recursive_query_list_tree_token_count(
     """Test query."""
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
-    tree_kwargs = index_kwargs["graph"]
-    # try building a list for every two, then a graph
+    tree_kwargs = index_kwargs["tree"]
+    # try building a list for every two, then a tree
     list1 = GPTListIndex.from_documents(documents[0:2], **list_kwargs)
     list2 = GPTListIndex.from_documents(documents[2:4], **list_kwargs)
     list3 = GPTListIndex.from_documents(documents[4:6], **list_kwargs)
@@ -331,7 +331,7 @@ def test_recursive_query_list_tree_token_count(
     summary4 = "summary4"
     summaries = [summary1, summary2, summary3, summary4]
 
-    # there are two root nodes in this graph: one containing [list1, list2]
+    # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
     # import pdb; pdb.set_trace()
     graph = ComposableGraph.from_indices(
@@ -420,9 +420,9 @@ def test_recursive_query_vector_table(
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
     table_kwargs = index_kwargs["table"]
-    # try building a graph for a group of 4, then a list
+    # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    # try building a list for every two, then a graph
+    # try building a list for every two, then a tree
     list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
     list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
     list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **list_kwargs)
@@ -453,7 +453,6 @@ def test_recursive_query_vector_table(
     # test serialize and then back
     # use composable graph struct
     with TemporaryDirectory() as tmpdir:
-        graph = graph
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         response = graph.query(query_str, query_configs=query_configs)
@@ -527,9 +526,9 @@ def test_recursive_query_vector_table_query_configs(
 
     list_kwargs = index_kwargs["list"]
     table_kwargs = index_kwargs["table"]
-    # try building a graph for a group of 4, then a list
+    # try building a tre for a group of 4, then a list
     # use a diff set of documents
-    # try building a list for every two, then a graph
+    # try building a list for every two, then a tree
     list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
     list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
     assert isinstance(list1.index_struct, V2IndexStruct)
@@ -556,7 +555,6 @@ def test_recursive_query_vector_table_query_configs(
     # test serialize and then back
     # use composable graph struct
     with TemporaryDirectory() as tmpdir:
-        graph = graph
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         # cast to Any to avoid mypy error
@@ -592,9 +590,9 @@ def test_recursive_query_vector_table_async(
     index_kwargs, query_configs = struct_kwargs
     list_kwargs = index_kwargs["list"]
     table_kwargs = index_kwargs["table"]
-    # try building a graph for a group of 4, then a list
+    # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    # try building a list for every two, then a graph
+    # try building a list for every two, then a tree
     list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
     list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
     list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **list_kwargs)
