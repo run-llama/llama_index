@@ -122,7 +122,7 @@ We have an additional `QueryCombiner` class that runs queries against a given in
 
 An example image is shown below.
 
-![](/_static/query_transformations/single_step_diagram.png)
+![](/_static/query_transformations/multi_step_diagram.png)
 
 
 Here's a corresponding example code snippet.
