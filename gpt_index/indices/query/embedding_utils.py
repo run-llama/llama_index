@@ -1,9 +1,16 @@
 """Embedding utils for queries."""
 
+from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.base import similarity as default_similarity_fn
+
+
+@dataclass
+class NodeWithScore:
+    node: Node
+    score: Optional[float]
 
 
 def get_top_k_embeddings(
@@ -64,7 +71,10 @@ class SimilarityTracker:
             return None
         return self.lookup[node_hash]
 
-    def get_zipped_nodes(self, nodes: List[Node]) -> List[Tuple[Node, Optional[float]]]:
+    def get_zipped_nodes(self, nodes: List[Node]) -> List[NodeWithScore]:
         """Get a zipped list of nodes and their corresponding scores."""
         similarities = [self.find(node) for node in nodes]
-        return list(zip(nodes, similarities))
+        output = []
+        for node, score in zip(nodes, similarities):
+            output.append(NodeWithScore(node=node, score=score))
+        return output

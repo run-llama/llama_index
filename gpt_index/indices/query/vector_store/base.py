@@ -3,11 +3,14 @@
 
 from typing import Any, List, Optional
 
-from gpt_index.data_structs.data_structs import IndexDict, Node
-from gpt_index.embeddings.base import BaseEmbedding
+from gpt_index.data_structs.data_structs_v2 import IndexDict
+
+# from gpt_index.data_structs.data_structs import IndexDict, Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import log_vector_store_query_result
 from gpt_index.vector_stores.types import VectorStore
 
@@ -25,19 +28,21 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
     def __init__(
         self,
         index_struct: IndexDict,
+        service_context: ServiceContext,
         vector_store: Optional[VectorStore] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: int = 1,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, embed_model=embed_model, **kwargs)
+        super().__init__(
+            index_struct=index_struct, service_context=service_context, **kwargs
+        )
         self._similarity_top_k = similarity_top_k
         if vector_store is None:
             raise ValueError("Vector store is required for vector store query.")
         self._vector_store = vector_store
 
-    def _get_nodes_for_response(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
@@ -46,7 +51,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         if self._vector_store.is_embedding_query:
             if query_bundle.embedding is None:
                 query_bundle.embedding = (
-                    self._embed_model.get_agg_embedding_from_queries(
+                    self._service_context.embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
                     )
                 )
@@ -71,7 +76,8 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
                     "least one of nodes or ids."
                 )
             assert isinstance(self._index_struct, IndexDict)
-            nodes = self._index_struct.get_nodes(query_result.ids)
+            node_ids = [self._index_struct.nodes_dict[idx] for idx in query_result.ids]
+            nodes = self._docstore.get_nodes(node_ids)
             query_result.nodes = nodes
 
         log_vector_store_query_result(query_result)

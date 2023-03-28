@@ -15,7 +15,7 @@ from gpt_index import GPTListIndex, SimpleDirectoryReader
 
 # build index
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTListIndex(documents)
+index = GPTListIndex.from_documents(documents)
 # save index
 index.save_to_disk('index_list.json')
 # load index from disk

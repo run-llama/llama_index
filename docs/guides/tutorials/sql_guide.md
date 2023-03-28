@@ -107,7 +107,7 @@ from llama_index import GPTSQLStructStoreIndex, SQLDatabase
 sql_database = SQLDatabase(engine, include_tables=["city_stats"])
 # NOTE: the table_name specified here is the table that you
 # want to extract into from unstructured documents.
-index = GPTSQLStructStoreIndex(
+index = GPTSQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -176,7 +176,7 @@ context_builder = SQLContextContainerBuilder(sql_database, context_dict=table_co
 context_container = context_builder.build_context_container()
 
 # building the index
-index = GPTSQLStructStoreIndex(
+index = GPTSQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -203,7 +203,7 @@ context_builder = SQLContextContainerBuilder.from_documents(
 context_container = context_builder.build_context_container()
 
 # building the index
-index = GPTSQLStructStoreIndex(
+index = GPTSQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",

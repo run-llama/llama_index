@@ -29,7 +29,7 @@ from gpt_index import GPTKeywordTableIndex, SimpleDirectoryReader
 
 # build index
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTKeywordTableIndex(documents)
+index = GPTKeywordTableIndex.from_documents(documents)
 # save index
 index.save_to_disk('index_table.json')
 # load index from disk

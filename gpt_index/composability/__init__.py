@@ -1,4 +1,4 @@
-"""This module contains all classes used for composing graphs over indices."""
+"""Init composability."""
 
 
 from gpt_index.composability.graph import ComposableGraph

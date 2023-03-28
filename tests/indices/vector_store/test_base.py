@@ -167,13 +167,37 @@ def test_build_faiss(
 
     index_kwargs, query_kwargs = struct_kwargs
 
-    index = GPTFaissIndex(documents=documents, faiss_index=faiss_index, **index_kwargs)
+    index = GPTFaissIndex.from_documents(
+        documents=documents, faiss_index=faiss_index, **index_kwargs
+    )
     assert len(index.index_struct.nodes_dict) == 4
-    # check contents of nodes
-    assert index.index_struct.get_node("0").text == "Hello world."
-    assert index.index_struct.get_node("1").text == "This is a test."
-    assert index.index_struct.get_node("2").text == "This is another test."
-    assert index.index_struct.get_node("3").text == "This is a test v2."
+
+    node_ids = list(index.index_struct.nodes_dict.values())
+    nodes = index.docstore.get_nodes(node_ids)
+    node_texts = [node.text for node in nodes]
+    assert "Hello world." in node_texts
+    assert "This is a test." in node_texts
+    assert "This is another test." in node_texts
+    assert "This is a test v2." in node_texts
+
+    # # check contents of nodes
+    # assert get_node_from_docstore(index.docstore, "0") == "Hello world."
+    # assert (
+    #     get_node_from_docstore(index.docstore, index.index_struct.nodes_set("1"))
+    #     == "This is a test."
+    # )
+    # assert (
+    #     get_node_from_docstore(index.docstore, index.index_struct.nodes_set("2"))
+    #     == "This is another test."
+    # )
+    # assert (
+    #     get_node_from_docstore(index.docstore, index.index_struct.nodes_set("3"))
+    #     == "This is a test v2."
+    # )
+    # assert index.index_struct.get_node("0").text == "Hello world."
+    # assert index.index_struct.get_node("1").text == "This is a test."
+    # assert index.index_struct.get_node("2").text == "This is another test."
+    # assert index.index_struct.get_node("3").text == "This is a test v2."
 
 
 @patch_common
@@ -202,13 +226,18 @@ def test_faiss_insert(
 
     index_kwargs, query_kwargs = struct_kwargs
 
-    index = GPTFaissIndex(documents=documents, faiss_index=faiss_index, **index_kwargs)
+    index = GPTFaissIndex.from_documents(
+        documents=documents, faiss_index=faiss_index, **index_kwargs
+    )
     # insert into index
     index.insert(Document(text="This is a test v3."))
 
-    # check contenst of nodes
-    assert index.index_struct.get_node("3").text == "This is a test v2."
-    assert index.index_struct.get_node("4").text == "This is a test v3."
+    # check contents of nodes
+    node_ids = list(index.index_struct.nodes_dict.values())
+    nodes = index.docstore.get_nodes(node_ids)
+    node_texts = [node.text for node in nodes]
+    assert "This is a test v2." in node_texts
+    assert "This is a test v3." in node_texts
 
 
 @patch_common
@@ -240,7 +269,9 @@ def test_faiss_query(
     faiss_index = MockFaissIndex()
 
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTFaissIndex(documents=documents, faiss_index=faiss_index, **index_kwargs)
+    index = GPTFaissIndex.from_documents(
+        documents=documents, faiss_index=faiss_index, **index_kwargs
+    )
 
     # test embedding query
     query_str = "What is?"
@@ -269,7 +300,8 @@ def test_build_simple(
     """Test build GPTSimpleVectorIndex."""
     index_kwargs, query_kwargs = struct_kwargs
 
-    index = GPTSimpleVectorIndex(documents=documents, **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents(documents=documents, **index_kwargs)
+    assert isinstance(index, GPTSimpleVectorIndex)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
     actual_node_tups = [
@@ -278,8 +310,9 @@ def test_build_simple(
         ("This is another test.", [0, 0, 1, 0, 0]),
         ("This is a test v2.", [0, 0, 0, 1, 0]),
     ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
+    for text_id in index.index_struct.nodes_dict.keys():
+        node_id = index.index_struct.nodes_dict[text_id]
+        node = index.docstore.get_node(node_id)
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
@@ -307,7 +340,8 @@ def test_simple_insert(
     """Test insert GPTSimpleVectorIndex."""
     index_kwargs, query_kwargs = struct_kwargs
 
-    index = GPTSimpleVectorIndex(documents=documents, **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents(documents=documents, **index_kwargs)
+    assert isinstance(index, GPTSimpleVectorIndex)
     # insert into index
     index.insert(Document(text="This is a test v3."))
 
@@ -319,8 +353,9 @@ def test_simple_insert(
         ("This is a test v2.", [0, 0, 0, 1, 0]),
         ("This is a test v3.", [0, 0, 0, 0, 1]),
     ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
+    for text_id in index.index_struct.nodes_dict.keys():
+        node_id = index.index_struct.nodes_dict[text_id]
+        node = index.docstore.get_node(node_id)
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
@@ -354,19 +389,20 @@ def test_simple_delete(
         Document("This is another test.", doc_id="test_id_2"),
         Document("This is a test v2.", doc_id="test_id_3"),
     ]
-    index = GPTSimpleVectorIndex(documents=new_documents, **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents(documents=new_documents, **index_kwargs)
+    assert isinstance(index, GPTSimpleVectorIndex)
 
     # test delete
     index.delete("test_id_0")
     assert len(index.index_struct.nodes_dict) == 3
-    assert len(index.index_struct.id_map) == 3
     actual_node_tups = [
         ("This is a test.", [0, 1, 0, 0, 0], "test_id_1"),
         ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),
         ("This is a test v2.", [0, 0, 0, 1, 0], "test_id_3"),
     ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
+    for text_id in index.index_struct.nodes_dict.keys():
+        node_id = index.index_struct.nodes_dict[text_id]
+        node = index.docstore.get_node(node_id)
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
@@ -375,15 +411,15 @@ def test_simple_delete(
     # test insert
     index.insert(Document("Hello world backup.", doc_id="test_id_0"))
     assert len(index.index_struct.nodes_dict) == 4
-    assert len(index.index_struct.id_map) == 4
     actual_node_tups = [
         ("Hello world backup.", [1, 0, 0, 0, 0], "test_id_0"),
         ("This is a test.", [0, 1, 0, 0, 0], "test_id_1"),
         ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),
         ("This is a test v2.", [0, 0, 0, 1, 0], "test_id_3"),
     ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
+    for text_id in index.index_struct.nodes_dict.keys():
+        node_id = index.index_struct.nodes_dict[text_id]
+        node = index.docstore.get_node(node_id)
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
@@ -414,7 +450,7 @@ def test_simple_query(
 ) -> None:
     """Test embedding query."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTSimpleVectorIndex(documents, **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents(documents, **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
@@ -466,13 +502,13 @@ def test_query_and_count_tokens(
     )
     document = Document(doc_text)
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTSimpleVectorIndex([document], **index_kwargs)
-    assert index.embed_model.total_tokens_used == 20
+    index = GPTSimpleVectorIndex.from_documents([document], **index_kwargs)
+    assert index.service_context.embed_model.total_tokens_used == 20
 
     # test embedding query
     query_str = "What is?"
     index.query(query_str, **query_kwargs)
-    assert index.embed_model.last_token_usage == 3
+    assert index.service_context.embed_model.last_token_usage == 3
 
 
 @patch_common
@@ -505,7 +541,7 @@ def test_query_and_similarity_scores(
     )
     document = Document(doc_text)
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTSimpleVectorIndex([document], **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents([document], **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
@@ -544,7 +580,7 @@ def test_query_and_similarity_scores_with_cutoff(
     )
     document = Document(doc_text)
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTSimpleVectorIndex([document], **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents([document], **index_kwargs)
 
     # test embedding query - no nodes
     query_str = "What is?"
@@ -578,7 +614,10 @@ def test_simple_async(
     """Test simple vector index with use_async."""
     index_kwargs, query_kwargs = struct_kwargs
 
-    index = GPTSimpleVectorIndex(documents=documents, use_async=True, **index_kwargs)
+    index = GPTSimpleVectorIndex.from_documents(
+        documents=documents, use_async=True, **index_kwargs
+    )
+    assert isinstance(index, GPTSimpleVectorIndex)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
     actual_node_tups = [
@@ -587,8 +626,9 @@ def test_simple_async(
         ("This is another test.", [0, 0, 1, 0, 0]),
         ("This is a test v2.", [0, 0, 0, 1, 0]),
     ]
-    for text_id in index.index_struct.id_map.keys():
-        node = index.index_struct.get_node(text_id)
+    for text_id in index.index_struct.nodes_dict.keys():
+        node_id = index.index_struct.nodes_dict[text_id]
+        node = index.docstore.get_node(node_id)
         vector_store = cast(SimpleVectorStore, index._vector_store)
         embedding = vector_store.get(text_id)
         assert (node.text, embedding) in actual_node_tups

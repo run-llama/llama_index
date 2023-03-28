@@ -3,7 +3,7 @@ import logging
 import math
 from typing import Any, List, Optional, cast
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.utils import truncate_text
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
@@ -124,7 +124,9 @@ class ChromaVectorStore(VectorStore):
                 doc_id=node_id,
                 text=result[1],
                 extra_info=result[2],
-                ref_doc_id=result[2]["document_id"],
+                relationships={
+                    DocumentRelationship.SOURCE: result[2]["document_id"],
+                },
             )
             nodes.append(node)
 
