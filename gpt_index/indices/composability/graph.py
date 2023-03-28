@@ -160,6 +160,17 @@ class ComposableGraph:
         )
         return await query_runner.aquery(query_str)
 
+    def get_index(
+        self, index_struct_id: str, index_cls: Type[BaseGPTIndex], **kwargs: Any
+    ) -> BaseGPTIndex:
+        """Get index from index struct id."""
+        index_struct = self._index_struct.all_index_structs[index_struct_id]
+        return index_cls(
+            index_struct=index_struct,
+            docstore=self._docstore,
+            **kwargs,
+        )
+
     @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "ComposableGraph":
         """Load index from string (in JSON-format).
