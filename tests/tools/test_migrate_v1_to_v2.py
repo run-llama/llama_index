@@ -14,7 +14,7 @@ from gpt_index.data_structs.data_structs_v2 import SimpleIndexDict as V2SimpleIn
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.docstore_v2 import DocumentStore
+from gpt_index.docstore import DocumentStore
 from gpt_index.docstore_v2 import DocumentStore as V2DocumentStore
 from gpt_index.tools.migrate_v1_to_v2 import (
     convert_to_v2_dict,
@@ -28,7 +28,7 @@ from gpt_index.tools.migrate_v1_to_v2 import (
 )
 
 
-def test_node_to_v2():
+def test_node_to_v2() -> None:
     """Test node conversion."""
     node_v1 = Node(
         text="test_text",
@@ -47,7 +47,7 @@ def test_node_to_v2():
     assert isinstance(image_node_v2, V2ImageNode)
 
 
-def test_index_graph_to_v2():
+def test_index_graph_to_v2() -> None:
     """Test index graph conversion."""
     struct_v1 = IndexGraph()
 
@@ -78,14 +78,14 @@ def test_index_graph_to_v2():
     struct_v1.all_nodes = {node.index: node for node in all_nodes_list}
     struct_v1.root_nodes = {root_node.index: root_node}
 
-    struct_v2, _ = index_graph_to_v2(struct_v1)
+    struct_v2, nodes_v2 = index_graph_to_v2(struct_v1)
 
-    for node in all_nodes_list:
-        children_dict = struct_v2.get_children(node)
+    for node, node_v2 in zip(all_nodes_list, nodes_v2):
+        children_dict = struct_v2.get_children(node_v2)
         assert set(children_dict.keys()) == node.child_indices
 
 
-def test_index_list_to_v2():
+def test_index_list_to_v2() -> None:
     node_1 = Node(
         text="test_text_1",
     )
@@ -99,7 +99,7 @@ def test_index_list_to_v2():
     assert len(struct_v2.nodes) == len(struct_v1.nodes)
 
 
-def test_keyword_table_to_v2():
+def test_keyword_table_to_v2() -> None:
     node_1 = Node(
         text="test_text_1",
     )
@@ -115,7 +115,7 @@ def test_keyword_table_to_v2():
     assert struct_v2.table["bar"] == set([node_1.get_doc_id()])
 
 
-def test_index_dict_to_v2():
+def test_index_dict_to_v2() -> None:
     node_1 = Node(
         text="test_text_1",
     )
@@ -157,7 +157,7 @@ def test_index_dict_to_v2():
     assert isinstance(simple_v2, V2SimpleIndexDict)
 
 
-def test_kg_to_v2():
+def test_kg_to_v2() -> None:
     node_1 = Node(
         text="test_text_1",
     )
@@ -182,7 +182,7 @@ def test_kg_to_v2():
     assert len(nodes) == len(struct_v1.text_chunks)
 
 
-def test_convert_to_v2_index_struct_and_docstore():
+def test_convert_to_v2_index_struct_and_docstore() -> None:
     node_1 = Node(
         text="test_text_1",
     )
@@ -203,7 +203,7 @@ def test_convert_to_v2_index_struct_and_docstore():
     assert len(docstore_v2.docs) == 2
 
 
-def test_convert_to_v2_dict():
+def test_convert_to_v2_dict() -> None:
     node_1 = Node(
         text="test_text_1",
     )

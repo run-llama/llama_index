@@ -200,7 +200,7 @@ def kg_to_v2(struct: KG) -> Tuple[V2KG, List[V2Node]]:
 
 def convert_to_v2_index_struct_and_docstore(
     index_struct: IndexStruct, docstore: DocumentStore
-) -> Tuple[V2IndexStruct, DocumentStore]:
+) -> Tuple[V2IndexStruct, V2DocumentStore]:
     if isinstance(index_struct, IndexGraph):
         struct_v2, nodes_v2 = index_graph_to_v2(index_struct)
     elif isinstance(index_struct, IndexList):
@@ -217,7 +217,7 @@ def convert_to_v2_index_struct_and_docstore(
     return struct_v2, docstore_v2
 
 
-def load_v1_index_struct_in_docstore(file_dict):
+def load_v1_index_struct_in_docstore(file_dict) -> Tuple[IndexStruct, DocumentStore]:
     index_struct_id = file_dict[V1_INDEX_STRUCT_ID_KEY]
     docstore = DocumentStore.load_from_dict(
         file_dict[V1_DOC_STORE_KEY],
@@ -227,7 +227,9 @@ def load_v1_index_struct_in_docstore(file_dict):
     return index_struct, docstore
 
 
-def load_v1_index_struct_separate(file_dict, index_struct_type: IndexStructType):
+def load_v1_index_struct_separate(
+    file_dict, index_struct_type: IndexStructType
+) -> Tuple[IndexStruct, DocumentStore]:
     index_struct_cls = INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS[index_struct_type]
     index_struct = index_struct_cls.from_dict(file_dict[V1_INDEX_STRUCT_KEY])
     docstore = DocumentStore.load_from_dict(
@@ -261,7 +263,7 @@ def save_v2(index_struct: V2IndexStruct, docstore: V2DocumentStore) -> dict:
 
 def convert_to_v2_dict(
     v1_dict: dict, index_struct_type: Optional[IndexStructType] = None
-):
+) -> dict:
     index_struct, docstore = load_v1(v1_dict, index_struct_type)
     index_struct_v2, docstore_v2 = convert_to_v2_index_struct_and_docstore(
         index_struct, docstore
@@ -275,7 +277,7 @@ def convert_to_v2_file(
     index_struct_type: Optional[IndexStructType] = None,
     v2_path: Optional[str] = None,
     encoding: str = "ascii",
-):
+) -> None:
     with open(v1_path, "r") as f:
         file_str = f.read()
     v1_dict = json.loads(file_str)
