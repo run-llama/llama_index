@@ -4,7 +4,6 @@ from abc import abstractmethod
 from typing import Any, Callable, Dict, Generator, Optional, cast
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_transform.base import (
     BaseQueryTransform,
     StepDecomposeQueryTransform,

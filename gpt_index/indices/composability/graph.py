@@ -1,7 +1,6 @@
 """Composability graphs."""
 
 import json
-from multiprocessing.sharedctypes import Value
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
@@ -15,7 +14,7 @@ from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.response.schema import RESPONSE_TYPE, Response
+from gpt_index.response.schema import RESPONSE_TYPE
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]

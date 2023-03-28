@@ -1,8 +1,7 @@
 """Base query classes."""
 
 import logging
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from abc import ABC
 from typing import (
     Any,
     Dict,
@@ -11,7 +10,6 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Tuple,
     TypeVar,
 )
 

@@ -149,7 +149,7 @@ class DecomposeQueryTransform(BaseQueryTransform):
 
     def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         """Run query transform."""
-        index_struct = cast(IndexStruct, extra_info.get("index_struct", None))
+        cast(IndexStruct, extra_info.get("index_struct", None))
         # TODO: support getting text from the index
         # currently, just get text from the index
         index_text = "None"
@@ -236,7 +236,7 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
 
     def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         """Run query transform."""
-        index_struct = cast(IndexStruct, extra_info.get("index_struct"))
+        cast(IndexStruct, extra_info.get("index_struct"))
         prev_reasoning = cast(Response, extra_info.get("prev_reasoning"))
         fmt_prev_reasoning = f"\n{prev_reasoning}" if prev_reasoning else "None"
         # currently, just get text from the index

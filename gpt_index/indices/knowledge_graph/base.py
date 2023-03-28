@@ -16,7 +16,6 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, KGQueryMode
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,

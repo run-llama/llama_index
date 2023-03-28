@@ -1,7 +1,7 @@
 """Tool for migrating Index built with V1 data structs to V2."""
 import dataclasses
 import json
-from typing import Dict, List, Optional, Tuple, Type, cast
+from typing import Dict, List, Optional, Tuple, Type
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.table import SQLStructTable

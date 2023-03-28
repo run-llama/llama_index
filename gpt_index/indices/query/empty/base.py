@@ -2,7 +2,6 @@
 from typing import Any, List, Optional
 
 from gpt_index.data_structs.data_structs_v2 import EmptyIndex
-from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import NodeWithScore
 from gpt_index.indices.query.schema import QueryBundle

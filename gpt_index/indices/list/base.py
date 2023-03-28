@@ -14,8 +14,6 @@ from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQu
 from gpt_index.indices.query.list.query import GPTListIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 

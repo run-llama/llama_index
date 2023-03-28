@@ -23,8 +23,6 @@ from gpt_index.indices.query.keyword_table.query import (
 )
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.node_parser.interface import NodeParser
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
