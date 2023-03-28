@@ -33,6 +33,7 @@ from gpt_index.data_structs.data_structs_v2 import KeywordTable as V2KeywordTabl
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import DocumentRelationship
 from gpt_index.data_structs.node_v2 import Node as V2Node
+from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.docstore import DocumentStore
@@ -61,18 +62,31 @@ V1_INDEX_STRUCT_ID_KEY = "index_struct_id"
 V1_DOC_STORE_KEY = "docstore"
 
 def node_to_v2(node: Node) -> V2Node:
-    return V2Node(
-        text=node.text,
-        doc_id=node.doc_id,
-        embedding=node.embedding,
-        doc_hash=node.doc_hash,
-        extra_info=node.extra_info,
-        node_info=node.node_info,
-        image=node.image,
-        relationships={
-            DocumentRelationship.SOURCE: node.ref_doc_id,
-        }
-    )
+    if node.image is None: 
+        return V2Node(
+            text=node.text,
+            doc_id=node.doc_id,
+            embedding=node.embedding,
+            doc_hash=node.doc_hash,
+            extra_info=node.extra_info,
+            node_info=node.node_info,
+            relationships={
+                DocumentRelationship.SOURCE: node.ref_doc_id,
+            }
+        )
+    else:
+        return V2ImageNode(
+            text=node.text,
+            doc_id=node.doc_id,
+            embedding=node.embedding,
+            doc_hash=node.doc_hash,
+            extra_info=node.extra_info,
+            node_info=node.node_info,
+            image=node.image,
+            relationships={
+                DocumentRelationship.SOURCE: node.ref_doc_id,
+            }
+        )    
 
 def index_graph_to_v2(struct: IndexGraph) -> Tuple[V2IndexGraph, List[V2Node]]:
     all_nodes_v2 = {
