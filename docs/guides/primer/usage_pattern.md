@@ -104,7 +104,7 @@ for doc in documents:
 
 ```
 
-See the [Update Index How-To](/how_to/update.md) for details and an example notebook.
+See the [Update Index How-To](/how_to/index_structs/update.md) for details and an example notebook.
 
 **NOTE**: An `insert_node` function is coming!
 
@@ -137,13 +137,13 @@ index = GPTSimpleVectorIndex.from_documents(
 )
 ```
 
-See the [Custom LLM's How-To](/how_to/custom_llms.md) for more details.
+See the [Custom LLM's How-To](/how_to/customization/custom_llms.md) for more details.
 
 
 #### Customizing Prompts
 
 Depending on the index used, we used default prompt templates for constructing the index (and also insertion/querying).
-See [Custom Prompts How-To](/how_to/custom_prompts.md) for more details on how to customize your prompt.
+See [Custom Prompts How-To](/how_to/customization/custom_prompts.md) for more details on how to customize your prompt.
 
 
 ### Customizing embeddings
@@ -158,7 +158,7 @@ Creating an index, inserting to an index, and querying an index may use tokens. 
 token usage through the outputs of these operations. When running operations, 
 the token usage will be printed.
 You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
-See [Cost Predictor How-To](/how_to/cost_analysis.md) for more details.
+See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
 
 
 ### [Optional] Save the index for future use
@@ -193,7 +193,7 @@ index3 = GPTListIndex([index1, index2])
 ```
 
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
-see our [Use Cases Guide](/guides/use_cases.md). For technical details and examples, see our [Composability How-To](/how_to/composability.md).
+see our [Use Cases Guide](/guides/primer/use_cases.md). For technical details and examples, see our [Composability How-To](/how_to/index_structs/composability.md).
 
 ## 5. Query the index.
 
