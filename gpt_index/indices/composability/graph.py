@@ -76,8 +76,10 @@ class ComposableGraph:
         """
         if index_summaries is None:
             # TODO: automatically set summaries
-            raise ValueError('Must specify summaries for children indices. \
-                Will support automatically setting summary in the future.')
+            raise ValueError(
+                "Must specify summaries for children indices. \
+                Will support automatically setting summary in the future."
+            )
 
         if len(children_indices) != len(index_summaries):
             raise ValueError("indices and index_summaries must have same length!")

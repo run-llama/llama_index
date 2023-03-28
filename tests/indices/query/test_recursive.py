@@ -192,8 +192,7 @@ def test_recursive_query_tree_list(
     # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
     graph = ComposableGraph.from_indices(
-        GPTListIndex,
-        [tree1, tree2], index_summaries=summaries, **list_kwargs
+        GPTListIndex, [tree1, tree2], index_summaries=summaries, **list_kwargs
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "What is?"
@@ -229,8 +228,7 @@ def test_recursive_query_table_list(
     ]
 
     graph = ComposableGraph.from_indices(
-        GPTListIndex,
-        [table1, table2], index_summaries=summaries, **list_kwargs
+        GPTListIndex, [table1, table2], index_summaries=summaries, **list_kwargs
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "World?"
@@ -281,7 +279,9 @@ def test_recursive_query_list_table(
 
     graph = ComposableGraph.from_indices(
         GPTSimpleKeywordTableIndex,
-        [list1, list2, list3, list4], index_summaries=summaries, **table_kwargs
+        [list1, list2, list3, list4],
+        index_summaries=summaries,
+        **table_kwargs
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
@@ -335,7 +335,7 @@ def test_recursive_query_list_tree_token_count(
     # and the other containing [list3, list4]
     # import pdb; pdb.set_trace()
     graph = ComposableGraph.from_indices(
-        GPTTreeIndex, 
+        GPTTreeIndex,
         [
             list1,
             list2,
@@ -437,7 +437,9 @@ def test_recursive_query_vector_table(
 
     graph = ComposableGraph.from_indices(
         GPTSimpleKeywordTableIndex,
-        [list1, list2, list3, list4], index_summaries=summaries, **table_kwargs
+        [list1, list2, list3, list4],
+        index_summaries=summaries,
+        **table_kwargs
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
@@ -542,7 +544,9 @@ def test_recursive_query_vector_table_query_configs(
 
     graph = ComposableGraph.from_indices(
         GPTSimpleKeywordTableIndex,
-        [list1, list2], index_summaries=summaries, **table_kwargs
+        [list1, list2],
+        index_summaries=summaries,
+        **table_kwargs
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
@@ -607,7 +611,9 @@ def test_recursive_query_vector_table_async(
 
     graph = ComposableGraph.from_indices(
         GPTSimpleKeywordTableIndex,
-        [list1, list2, list3, list4], index_summaries=summaries, **table_kwargs
+        [list1, list2, list3, list4],
+        index_summaries=summaries,
+        **table_kwargs
     )
     assert isinstance(graph, ComposableGraph)
 
