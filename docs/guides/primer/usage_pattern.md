@@ -45,7 +45,7 @@ Nodes are a first-class citizen in LlamaIndex. You can choose to define Nodes an
 For instance, you can do
 
 ```python
-from gpt_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SimpleNodeParser
 
 parser = SimpleNodeParser()
 
@@ -56,7 +56,7 @@ nodes = parser.get_nodes_from_documents()
 You can also choose to construct Node objects manually and skip the first section. For instance,
 
 ```python
-from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
+from llama_index.data_structs.node_v2 import Node, DocumentRelationship
 
 node1 = Node(text="<text_chunk>", doc_id="<node_id>")
 node2 = Node(text="<text_chunk>", doc_id="<node_id>")
