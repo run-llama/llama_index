@@ -74,9 +74,6 @@ class ComposableGraph:
         roughly equivalent to directly calling `ComposableGraph.from_indices`.
 
         """
-        # NOTE: lazy import
-        from gpt_index.indices.composability.graph import ComposableGraph
-
         if index_summaries is None:
             # TODO: automatically set summaries
             raise ValueError('Must specify summaries for children indices. \
