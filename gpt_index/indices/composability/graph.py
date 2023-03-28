@@ -74,11 +74,20 @@ class ComposableGraph:
 
         """
         if index_summaries is None:
-            # TODO: automatically set summaries
-            raise ValueError(
-                "Must specify summaries for children indices. \
-                Will support automatically setting summary in the future."
-            )
+            for index in children_indices:
+                if index.index_struct.summary is None:
+                    raise ValueError(
+                        "Summary must be set for children indices. If the index does "
+                        "a summary (through index.index_struct.summary), then it must "
+                        "be specified with then `index_summaries` "
+                        "argument in this function."
+                        "We will support automatically setting the summary in the future."
+                    )
+            index_summaries = [index.index_struct.summary for index in children_indices]
+        else:
+            # set summaries for each index
+            for index, summary in zip(children_indices, index_summaries):
+                index.index_struct.summary = summary
 
         if len(children_indices) != len(index_summaries):
             raise ValueError("indices and index_summaries must have same length!")

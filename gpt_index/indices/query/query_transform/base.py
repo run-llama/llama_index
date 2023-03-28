@@ -149,10 +149,11 @@ class DecomposeQueryTransform(BaseQueryTransform):
 
     def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         """Run query transform."""
-        cast(IndexStruct, extra_info.get("index_struct", None))
-        # TODO: support getting text from the index
-        # currently, just get text from the index
-        index_text = "None"
+        index_struct = cast(IndexStruct, extra_info.get("index_struct", None))
+        # currently, just get text from the index structure
+        index_text = (
+            index_struct.get_summary() if index_struct.summary is not None else "None"
+        )
 
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
