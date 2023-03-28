@@ -193,7 +193,7 @@ index3 = GPTListIndex([index1, index2])
 ```
 
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
-see our [Use Cases Guide](/guides/primer/use_cases.md). For technical details and examples, see our [Composability How-To](/how_to/index_structs/composability.md).
+see our [Query Use Cases](/use_cases/queries.md). For technical details and examples, see our [Composability How-To](/how_to/index_structs/composability.md).
 
 ## 5. Query the index.
 

@@ -60,7 +60,7 @@ LlamaIndex allows you to define custom embedding modules. By default, we use `te
 You can also choose to plug in embeddings from
 Langchain's [embeddings](https://langchain.readthedocs.io/en/latest/reference/modules/embeddings.html) module.
 We introduce a wrapper class, 
-[`LangchainEmbedding`](/reference/embeddings.rst), for integration into LlamaIndex.
+[`LangchainEmbedding`](/reference/service_context/embeddings.rst), for integration into LlamaIndex.
 
 An example snippet is shown below (to use Hugging Face embeddings) on the GPTListIndex:
 
