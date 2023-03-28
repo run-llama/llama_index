@@ -550,10 +550,10 @@ def test_recursive_query_vector_table_query_configs(
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
-    response = graph.query(query_str, query_configs=query_configs)
+    response = graph.query(query_str, query_configs=query_configs)  # type: ignore
     assert str(response) == ("Foo?:Foo?:This is a test v2.")
     query_str = "Orange?"
-    response = graph.query(query_str, query_configs=query_configs)
+    response = graph.query(query_str, query_configs=query_configs)  # type: ignore
     assert str(response) == ("Orange?:Orange?:Hello world.")
 
     # test serialize and then back

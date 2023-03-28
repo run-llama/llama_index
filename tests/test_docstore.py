@@ -12,7 +12,6 @@ def test_docstore() -> None:
     doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
     node = Node("my node", doc_id="d2", node_info={"node": "info"})
 
-
     # test get document
     docstore = DocumentStore.from_documents([doc, node])
     gd1 = docstore.get_document("d1")
