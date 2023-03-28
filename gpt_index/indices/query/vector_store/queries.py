@@ -3,9 +3,12 @@
 
 from typing import Any, Dict, Optional
 
+from requests.adapters import Retry
+
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
 from gpt_index.vector_stores import (
+    ChatGPTRetrievalPluginClient,
     ChromaVectorStore,
     FaissVectorStore,
     OpensearchVectorStore,
@@ -103,14 +106,23 @@ class GPTPineconeIndexQuery(GPTVectorStoreIndexQuery):
         self,
         index_struct: IndexDict,
         pinecone_index: Optional[Any] = None,
+        metadata_filters: Optional[Dict[str, Any]] = None,
         pinecone_kwargs: Optional[Dict] = None,
+        insert_kwargs: Optional[Dict] = None,
+        query_kwargs: Optional[Dict] = None,
+        delete_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         if pinecone_index is None and pinecone_kwargs is None:
             raise ValueError("pinecone_index or pinecone_kwargs is required.")
         vector_store = PineconeVectorStore(
-            pinecone_index=pinecone_index, pinecone_kwargs=pinecone_kwargs
+            pinecone_index=pinecone_index,
+            metadata_filters=metadata_filters,
+            pinecone_kwargs=pinecone_kwargs,
+            insert_kwargs=insert_kwargs,
+            query_kwargs=query_kwargs,
+            delete_kwargs=delete_kwargs,
         )
         super().__init__(index_struct=index_struct, vector_store=vector_store, **kwargs)
 
@@ -216,4 +228,34 @@ class GPTOpensearchIndexQuery(GPTVectorStoreIndexQuery):
         if client is None:
             raise ValueError("OpensearchVectorClient client is required.")
         vector_store = OpensearchVectorStore(client=client)
+        super().__init__(index_struct=index_struct, vector_store=vector_store, **kwargs)
+
+
+class ChatGPTRetrievalPluginQuery(GPTVectorStoreIndexQuery):
+    """GPT retrieval plugin query.
+
+    Args:
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
+            embedding similarity.
+
+    """
+
+    def __init__(
+        self,
+        index_struct: IndexDict,
+        endpoint_url: str,
+        bearer_token: Optional[str] = None,
+        retries: Optional[Retry] = None,
+        batch_size: int = 100,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize params."""
+        vector_store = ChatGPTRetrievalPluginClient(
+            endpoint_url=endpoint_url,
+            bearer_token=bearer_token,
+            retries=retries,
+            batch_size=batch_size,
+        )
         super().__init__(index_struct=index_struct, vector_store=vector_store, **kwargs)

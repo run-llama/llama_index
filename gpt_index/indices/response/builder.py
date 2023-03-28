@@ -66,6 +66,7 @@ class ResponseBuilder:
         self.source_nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
         self._use_async = use_async
         self._streaming = streaming
+        self._llama_logger = llama_logger or LlamaLogger()
 
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
@@ -115,16 +116,18 @@ class ResponseBuilder:
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for cur_text_chunk in text_chunks:
             if not self._streaming:
-                response, _ = self._service_context.llm_predictor.predict(
+                response, formatted_prompt = self._service_context.llm_predictor.predict(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
             else:
-                response, _ = self._service_context.llm_predictor.stream(
+                response, formatted_prompt = self._service_context.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
-            logging.debug(f"> Refined response: {response}")
+            self._log_prompt_and_response(
+                formatted_prompt, response, log_prefix="Refined"
+            )
         return response
 
     def give_response_single(
@@ -144,15 +147,21 @@ class ResponseBuilder:
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                response, _ = self._service_context.llm_predictor.predict(
+                response, _ = self.llm_predictor.predict(
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
-                logging.debug(f"> Initial response: {response}")
+                logger.debug(f"> Initial response: {response}")
+                self._llama_logger.add_log(
+                    {"initial_response": response or "Empty Response"}
+                )
             elif response is None and self._streaming:
-                response, _ = self._service_context.llm_predictor.stream(
+                response, _ = self.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
+                )
+                self._log_prompt_and_response(
+                    formatted_prompt, response, log_prefix="Initial"
                 )
             else:
                 response = self.refine_response_single(

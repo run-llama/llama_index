@@ -1,5 +1,6 @@
 """Base query classes."""
 
+import asyncio
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -191,24 +192,53 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
 
     def _get_text_from_node(
         self,
+        query_bundle: QueryBundle,
         node: Node,
         level: Optional[int] = None,
-    ) -> TextChunk:
+    ) -> Tuple[TextChunk, Optional[Response]]:
         """Query a given node.
 
         If node references a given document, then return the document.
         If node references a given index, then query the index.
 
         """
+        # TODO: refactor this to share code with _get_text_from_node
         level_str = "" if level is None else f"[Level {level}]"
         fmt_text_chunk = truncate_text(node.get_text(), 50)
         logger.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
-        response_txt = node.get_text()
-        fmt_response = truncate_text(response_txt, 200)
-        if self._verbose:
-            print_text(f">{level_str} Got node text: {fmt_response}\n", color="blue")
-        return TextChunk(response_txt)
+        is_index_struct = False
+        # if recursive and self._query_runner is not None,
+        # assume we want to do a recursive
+        # query. In order to not perform a recursive query, make sure
+        # _query_runner is None.
+        if (
+            self._recursive
+            and self._query_runner is not None
+            and node.ref_doc_id is not None
+            and self._docstore is not None
+        ):
+            doc = self._docstore.get_document(node.ref_doc_id, raise_error=False)
+            # NOTE: old version of the docstore contain both documents and index_struct,
+            # whereas new versions of the docstore only contain the index struct
+            if doc is not None and isinstance(doc, IndexStruct):
+                is_index_struct = True
+
+        if is_index_struct:
+            query_runner = cast(BaseQueryRunner, self._query_runner)
+            response = query_runner.query(query_bundle, cast(IndexStruct, doc))
+            fmt_response = truncate_text(str(response), 200)
+            if self._verbose:
+                print_text(f">{level_str} Got response: {fmt_response}\n", color="blue")
+            return TextChunk(str(response), is_answer=True), response
+        else:
+            response_txt = node.get_text()
+            fmt_response = truncate_text(response_txt, 200)
+            if self._verbose:
+                print_text(
+                    f">{level_str} Got node text: {fmt_response}\n", color="blue"
+                )
+            return TextChunk(response_txt), None
 
     @property
     def index_struct(self) -> IS:
@@ -220,7 +250,9 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         pass
 
     def _give_response_for_nodes(
-        self, response_builder: ResponseBuilder, query_str: str
+        
+        self, response_builder: ResponseBuilder, response_builder: ResponseBuilder, query_str: str
+    
     ) -> RESPONSE_TEXT_TYPE:
         """Give response for nodes."""
         response = response_builder.get_response(
@@ -231,7 +263,9 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         return response
 
     async def _agive_response_for_nodes(
-        self, response_builder: ResponseBuilder, query_str: str
+        
+        self, response_builder: ResponseBuilder, response_builder: ResponseBuilder, query_str: str
+    
     ) -> RESPONSE_TEXT_TYPE:
         """Give response for nodes."""
         response = await response_builder.aget_response(
@@ -272,6 +306,29 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
     ) -> Optional[Dict[str, Any]]:
         """Get extra info for response."""
         return None
+
+    def _get_text_tuples_from_nodes(
+        self,
+        query_bundle: QueryBundle,
+        nodes: List[Node],
+        level: Optional[int] = None,
+    ) -> List[Tuple[TextChunk, Optional[Response]]]:
+        """Get text tuples from nodes."""
+        return [
+            self._get_text_from_node(query_bundle, node, level=level) for node in nodes
+        ]
+
+    async def _aget_text_tuples_from_nodes(
+        self,
+        query_bundle: QueryBundle,
+        nodes: List[Node],
+        level: Optional[int] = None,
+    ) -> List[Tuple[TextChunk, Optional[Response]]]:
+        """Async get text tuples from nodes."""
+        tasks = [
+            self._aget_text_from_node(query_bundle, node, level=level) for node in nodes
+        ]
+        return await asyncio.gather(*tasks)
 
     def _prepare_response_builder(
         self,
@@ -322,71 +379,106 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         else:
             raise ValueError("Response must be a string or a generator.")
 
-    def synthesize(
-        self,
-        query_bundle: QueryBundle,
-        nodes: List[NodeWithScore],
-        additional_source_nodes: Optional[List[SourceNode]] = None,
-    ) -> RESPONSE_TYPE:
-        # prepare response builder
-        self._prepare_response_builder(
-            self.response_builder,
-            query_bundle,
-            nodes,
-            additional_source_nodes=additional_source_nodes,
-        )
-
-        if self._response_mode != ResponseMode.NO_TEXT:
-            response_str = self._give_response_for_nodes(
-                self.response_builder, query_bundle.query_str
-            )
-        else:
-            response_str = None
-
-        return self._prepare_response_output(self.response_builder, response_str, nodes)
-
-    async def asynthesize(
-        self,
-        query_bundle: QueryBundle,
-        nodes: List[NodeWithScore],
-        additional_source_nodes: Optional[List[SourceNode]] = None,
-    ) -> RESPONSE_TYPE:
-        # define a response builder for async queries
-        response_builder = ResponseBuilder(
-            self._service_context,
-            self.text_qa_template,
-            self.refine_template,
-            use_async=self._use_async,
-            streaming=self._streaming,
-        )
-        # prepare response builder
-        self._prepare_response_builder(
-            response_builder,
-            query_bundle,
-            nodes,
-            additional_source_nodes=additional_source_nodes,
-        )
-
-        if self._response_mode != ResponseMode.NO_TEXT:
-            response_str = await self._agive_response_for_nodes(
-                response_builder, query_bundle.query_str
-            )
-        else:
-            response_str = None
-
-        return self._prepare_response_output(response_builder, response_str, nodes)
-
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         # TODO: remove _query and just use query
-        nodes = self.retrieve(query_bundle)
-        return self.synthesize(query_bundle, nodes)
+        tuples = self.get_nodes_and_similarities_for_response(query_bundle)
+
+        # prepare response builder
+        self._prepare_response_builder(self.response_builder, query_bundle, tuples)
+
+        if self._response_mode != ResponseMode.NO_TEXT:
+            response_str = self._give_response_for_nodes(query_bundle.query_str)
+        else:
+            response_str = None
+
+        return self._prepare_response_output(response_str, tuples)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query asynchronously."""
         # TODO: remove _query and just use query
-        nodes = self.retrieve(query_bundle)
-        response = await self.asynthesize(query_bundle, nodes)
+        tuples = self.get_nodes_and_similarities_for_response(query_bundle)
+
+        # prepare response builder
+        self._prepare_response_builder(self.response_builder, query_bundle, tuples)
+
+        if self._response_mode != ResponseMode.NO_TEXT:
+            response_str = await self._agive_response_for_nodes(query_bundle.query_str)
+        else:
+            response_str = None
+
+        return self._prepare_response_output(response_str, tuples)
+
+    @llm_token_counter("query")
+    def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Answer a query."""
+        response = self._query(query_bundle)
+        # if include_summary is True, then include summary text in answer
+        # summary text is set through `set_text` on the underlying index.
+        # TODO: refactor response builder to be in the __init__
+        if self._response_mode != ResponseMode.NO_TEXT and self._include_summary:
+            response_builder = ResponseBuilder(
+                self._prompt_helper,
+                self._llm_predictor,
+                self.text_qa_template,
+                self.refine_template,
+                texts=[TextChunk(self._index_struct.get_text())],
+                streaming=self._streaming,
+            )
+            if isinstance(response, Response):
+                # NOTE: use create and refine for now (default response mode)
+                response_str = response_builder.get_response(
+                    query_bundle.query_str,
+                    mode=self._response_mode,
+                    prev_response=response.response,
+                )
+                response.response = cast(str, response_str)
+            elif isinstance(response, StreamingResponse):
+                response_gen = response_builder.get_response(
+                    query_bundle.query_str,
+                    mode=self._response_mode,
+                    prev_response=str(response.response_gen),
+                )
+                response.response_gen = cast(Generator, response_gen)
+            else:
+                raise ValueError("Response must be a string or a generator.")
+
+        return response
+
+    @llm_token_counter("query")
+    async def aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Answer a query."""
+        response = await self._aquery(query_bundle)
+        # if include_summary is True, then include summary text in answer
+        # summary text is set through `set_text` on the underlying index.
+        # TODO: refactor response builder to be in the __init__
+        if self._response_mode != ResponseMode.NO_TEXT and self._include_summary:
+            response_builder = ResponseBuilder(
+                self._prompt_helper,
+                self._llm_predictor,
+                self.text_qa_template,
+                self.refine_template,
+                texts=[TextChunk(self._index_struct.get_text())],
+                streaming=self._streaming,
+            )
+            if isinstance(response, Response):
+                # NOTE: use create and refine for now (default response mode)
+                response_str = await response_builder.aget_response(
+                    query_bundle.query_str,
+                    mode=self._response_mode,
+                    prev_response=response.response,
+                )
+                response.response = cast(str, response_str)
+            elif isinstance(response, StreamingResponse):
+                response_gen = await response_builder.aget_response(
+                    query_bundle.query_str,
+                    mode=self._response_mode,
+                    prev_response=str(response.response_gen),
+                )
+                response.response_gen = cast(Generator, response_gen)
+            else:
+                raise ValueError("Response must be a string or a generator.")
+
         return response
 
     @llm_token_counter("query")

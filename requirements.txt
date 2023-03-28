@@ -14,8 +14,7 @@ types-setuptools==67.1.0.0
 
 # linting
 black==22.12.0
-isort==5.11.4
 mypy==0.991
-flake8==6.0.0
-flake8-docstrings==1.6.0
+pre-commit==3.2.0
 pylint==2.15.10
+ruff==0.0.259

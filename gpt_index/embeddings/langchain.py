@@ -1,7 +1,7 @@
 """Langchain Embedding Wrapper Module."""
 
 
-from typing import List
+from typing import Any, List
 
 from langchain.embeddings.base import Embeddings as LCEmbeddings
 
@@ -16,9 +16,9 @@ class LangchainEmbedding(BaseEmbedding):
             embeddings class.
     """
 
-    def __init__(self, langchain_embedding: LCEmbeddings) -> None:
+    def __init__(self, langchain_embedding: LCEmbeddings, **kwargs: Any) -> None:
         """Init params."""
-        super().__init__()
+        super().__init__(**kwargs)
         self._langchain_embedding = langchain_embedding
 
     def _get_query_embedding(self, query: str) -> List[float]:

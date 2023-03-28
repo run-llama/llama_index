@@ -18,7 +18,13 @@ class SimpleMongoReader(BaseReader):
 
     """
 
-    def __init__(self, host: str, port: int, max_docs: int = 1000) -> None:
+    def __init__(
+        self,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        uri: Optional[str] = None,
+        max_docs: int = 1000,
+    ) -> None:
         """Initialize with parameters."""
         try:
             import pymongo  # noqa: F401
@@ -27,7 +33,14 @@ class SimpleMongoReader(BaseReader):
             raise ImportError(
                 "`pymongo` package not found, please run `pip install pymongo`"
             )
-        self.client: MongoClient = MongoClient(host, port)
+        if uri:
+            if uri is None:
+                raise ValueError("Either `host` and `port` or `uri` must be provided.")
+            self.client: MongoClient = MongoClient(uri)
+        else:
+            if host is None or port is None:
+                raise ValueError("Either `host` and `port` or `uri` must be provided.")
+            self.client = MongoClient(host, port)
         self.max_docs = max_docs
 
     def load_data(

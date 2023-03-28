@@ -65,7 +65,7 @@ class ChromaVectorStore(VectorStore):
         for result in embedding_results:
             embeddings.append(result.embedding)
             extra_info = result.node.extra_info or {}
-            metadatas.append(extra_info | {"document_id": result.doc_id})
+            metadatas.append({**extra_info, **{"document_id": result.doc_id}})
             ids.append(result.id)
             documents.append(result.node.get_text())
 
@@ -96,6 +96,7 @@ class ChromaVectorStore(VectorStore):
         query_embedding: List[float],
         similarity_top_k: int,
         doc_ids: Optional[List[str]] = None,
+        query_str: Optional[str] = None,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 

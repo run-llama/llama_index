@@ -71,5 +71,13 @@ Ask questions about the Real Housewives of Beverly Hills.
 A journaling app that uses AI to uncover insights and patterns over time.
 [[Website]](https://mynd.so)
 
+###### Al-X by OpenExO
 
+Your Digital Transformation Co-Pilot
+[[Website]](https://chat.openexo.com)
 
+###### Blackmaria
+
+Python package for webscraping in Natural language.
+[[Tweet thread]](https://twitter.com/obonigwe1/status/1640080422661943298?t=aftqisb4vaudwrgwah_1oa&s=19)
+[[Github]](https://github.com/Smyja/blackmaria)
