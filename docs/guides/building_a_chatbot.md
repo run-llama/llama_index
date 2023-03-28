@@ -83,27 +83,31 @@ To address this, we compose a "graph" which consists of a list index defined ove
 ```python
 from llama_index import GPTListIndex, LLMPredictor, ServiceContext
 from langchain import OpenAI
-from llama_index.composability import ComposableGraph
+from llama_index.indices.composability import ComposableGraph
 
-# set summary text for each doc
-for year in years:
-    index_set[year].set_text(f"UBER 10-k Filing for {year} fiscal year")
+# describe each index to help traversal of composed graph
+index_summaries = [f"UBER 10-k Filing for {year} fiscal year" for year in years]
 
 # define an LLMPredictor set number of output tokens
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, max_tokens=512))
-
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # define a list index over the vector indices
 # allows us to synthesize information across each index
-list_index = GPTListIndex.from_documents([index_set[y] for y in years], service_context=service_context)
-
-graph = ComposableGraph.build_from_index(list_index)
+graph = ComposableGraph.from_indices(
+    GPTListIndex,
+    [index_set[y] for y in years], 
+    index_summaries=index_summaries,
+    service_context=service_context,
+)
 
 # [optional] save to disk
 graph.save_to_disk('10k_graph.json')
 # [optional] load from disk, so you don't need to build graph from scratch
-graph = ComposableGraph.load_from_disk('10k_graph.json', service_context=service_context)
+graph = ComposableGraph.load_from_disk(
+    '10k_graph.json', 
+    service_context=service_context,
+)
 
 ```
 
