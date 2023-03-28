@@ -113,7 +113,7 @@ By default, we use OpenAI's `text-davinci-003` model. You may choose to use anot
 an index.
 
 ```python
-from llama_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper
+from llama_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper, ServiceContext
 
 ...
 
@@ -129,8 +129,10 @@ num_output = 256
 max_chunk_overlap = 20
 prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+
 index = GPTSimpleVectorIndex.from_documents(
-    documents, llm_predictor=llm_predictor, prompt_helper=prompt_helper
+    documents, service_context=service_context
 )
 ```
 
