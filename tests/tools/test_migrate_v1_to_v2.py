@@ -6,7 +6,7 @@ from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import SimpleIndexDict as V2SimpleIndexDict
 from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.docstore_v2 import DocumentStore as V2DocumentStore
 from gpt_index.tools.migrate_v1_to_v2 import convert_to_v2_dict, convert_to_v2_index_struct_and_docstore, index_dict_to_v2, index_graph_to_v2, index_list_to_v2, keyword_table_to_v2, kg_to_v2, node_to_v2
 

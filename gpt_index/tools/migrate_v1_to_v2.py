@@ -21,6 +21,7 @@ from gpt_index.data_structs.data_structs import (
     IndexStruct,
     KeywordTable,
     Node,
+    OpensearchIndexDict,
     PineconeIndexDict,
     QdrantIndexDict,
     SimpleIndexDict,
@@ -29,6 +30,12 @@ from gpt_index.data_structs.data_structs import (
 from gpt_index.data_structs.data_structs_v2 import KG as V2KG
 from gpt_index.data_structs.data_structs_v2 import IndexDict as V2IndexDict
 from gpt_index.data_structs.data_structs_v2 import SimpleIndexDict as V2SimpleIndexDict
+from gpt_index.data_structs.data_structs_v2 import FaissIndexDict as V2FaissIndexDict
+from gpt_index.data_structs.data_structs_v2 import WeaviateIndexDict as V2WeaviateIndexDict
+from gpt_index.data_structs.data_structs_v2 import PineconeIndexDict as V2PineconeIndexDict
+from gpt_index.data_structs.data_structs_v2 import QdrantIndexDict as V2QdrantIndexDict
+from gpt_index.data_structs.data_structs_v2 import ChromaIndexDict as V2ChromaIndexDict
+from gpt_index.data_structs.data_structs_v2 import OpensearchIndexDict as V2OpensearchIndexDict
 from gpt_index.data_structs.data_structs_v2 import IndexGraph as V2IndexGraph
 from gpt_index.data_structs.data_structs_v2 import IndexList as V2IndexList
 from gpt_index.data_structs.data_structs_v2 import KeywordTable as V2KeywordTable
@@ -149,6 +156,18 @@ def index_dict_to_v2(struct: IndexDict) -> Tuple[V2IndexDict, List[V2Node]]:
 
     if isinstance(struct, SimpleIndexDict):
         struct_v2 = V2SimpleIndexDict(**dataclasses.asdict(struct_v2))
+    if isinstance(struct, FaissIndexDict):
+        struct_v2 = V2FaissIndexDict(**dataclasses.asdict(struct_v2))
+    if isinstance(struct, PineconeIndexDict):
+        struct_v2 = V2PineconeIndexDict(**dataclasses.asdict(struct_v2))
+    if isinstance(struct, WeaviateIndexDict):
+        struct_v2 = V2WeaviateIndexDict(**dataclasses.asdict(struct_v2))
+    if isinstance(struct, QdrantIndexDict):
+        struct_v2 = V2QdrantIndexDict(**dataclasses.asdict(struct_v2))
+    if isinstance(struct, ChromaIndexDict):
+        struct_v2 = V2ChromaIndexDict(**dataclasses.asdict(struct_v2))
+    if isinstance(struct, OpensearchIndexDict):
+        struct_v2 = V2OpensearchIndexDict(**dataclasses.asdict(struct_v2))
     return struct_v2, nodes_v2
 
 def kg_to_v2(struct: KG) -> Tuple[V2KG, List[V2Node]]:

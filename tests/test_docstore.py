@@ -4,7 +4,7 @@ from typing import Dict, Type
 
 from gpt_index.constants import TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node, NodeType
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
 
