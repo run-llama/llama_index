@@ -127,7 +127,7 @@ def keyword_table_to_v2(struct: KeywordTable) -> Tuple[V2KeywordTable, List[V2No
 def index_dict_to_v2(struct: IndexDict) -> Tuple[V2IndexDict]:
     nodes_dict_v2 = {
         vector_id: struct.nodes_dict[int_id].get_doc_id() for 
-        vector_id, int_id in struct.id_map
+        vector_id, int_id in struct.id_map.items()
     }
 
     node_id_to_vector_id = {
