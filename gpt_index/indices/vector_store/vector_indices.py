@@ -15,6 +15,7 @@ from gpt_index.data_structs.data_structs import (
     SimpleIndexDict,
     WeaviateIndexDict,
 )
+from gpt_index.schema import BaseDocument
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import DOCUMENTS_INPUT, BaseGPTIndex
 from gpt_index.indices.query.base import BaseGPTIndexQuery
@@ -102,11 +103,12 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         # update docstore with current struct
         self._docstore.add_documents([self.index_struct], allow_update=True)
 
-    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        super()._insert(nodes, **insert_kwargs)
+        super()._insert(document, **insert_kwargs)
         # TODO: Temporary hack to also store embeddings in index_struct
-        embedding_dict = self._vector_store._data.embedding_dict
+        vector_store = cast(SimpleVectorStore, self._vector_store)
+        embedding_dict = vector_store._data.embedding_dict
         self._index_struct.embeddings_dict = embedding_dict
 
     @classmethod
