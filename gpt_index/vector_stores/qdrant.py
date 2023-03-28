@@ -210,7 +210,7 @@ class QdrantVectorStore(VectorStore):
                 text=payload.get("text"),
                 extra_info=payload.get("extra_info"),
                 relationships={
-                    DocumentRelationship.SOURCE: payload.get("doc_id"),
+                    DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
                 },
             )
             nodes.append(node)

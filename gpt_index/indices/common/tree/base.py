@@ -128,6 +128,10 @@ class GPTTreeIndexBuilder:
         level: int = 0,
     ) -> IndexGraph:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
+        if len(cur_node_ids) <= self.num_children:
+            index_graph.root_nodes = cur_node_ids
+            return index_graph
+
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_node_ids
         )
@@ -174,6 +178,10 @@ class GPTTreeIndexBuilder:
         level: int = 0,
     ) -> IndexGraph:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
+        if len(cur_node_ids) <= self.num_children:
+            index_graph.root_nodes = cur_node_ids
+            return index_graph
+
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_node_ids
         )

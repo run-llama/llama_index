@@ -134,14 +134,17 @@ class Playground:
 
                 duration = time.time() - start_time
 
+                llm_token_usage = index.service_context.llm_predictor.last_token_usage
+                embed_token_usage = index.service_context.embed_model.last_token_usage
+
                 result.append(
                     {
                         "Index": index_name,
                         "Mode": mode,
                         "Output": str(output),
                         "Duration": duration,
-                        "LLM Tokens": index.service_context.llm_predictor.last_token_usage,
-                        "Embedding Tokens": index.service_context.embed_model.last_token_usage,
+                        "LLM Tokens": llm_token_usage,
+                        "Embedding Tokens": embed_token_usage,
                     }
                 )
         print(f"\nRan {len(result)} combinations in total.")

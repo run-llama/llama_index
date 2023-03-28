@@ -330,9 +330,11 @@ class QueryRunner:
 
         QueryRunner.query resolves the current index struct,
             then pass control to BaseQueryCombiner.run.
-        BaseQueryCombiner.run applies query transforms and makes multiple queries on the same index.
+        BaseQueryCombiner.run applies query transforms and makes multiple queries
+            on the same index.
         Each query is passed to QueryRunner.query_transformed for execution.
-            During execution, we recursively calls QueryRunner.query if index is a composable graph.
+            During execution, we recursively calls QueryRunner.query if index is a
+            composable graph.
         """
         query_combiner, query_bundle = self._prepare_query_objects(
             query_str_or_bundle, index_id=index_id

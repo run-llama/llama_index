@@ -18,6 +18,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     SimpleIndexDict,
     V2IndexStruct,
     WeaviateIndexDict,
+    ChatGPTRetrievalPluginIndexDict,
 )
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.data_structs.table_v2 import PandasStructTable, SQLStructTable
@@ -37,6 +38,7 @@ from gpt_index.indices.vector_store.vector_indices import (
     GPTQdrantIndex,
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
+    ChatGPTRetrievalPluginIndex,
 )
 
 INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruct]] = {
@@ -55,6 +57,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruc
     IndexStructType.KG: KG,
     IndexStructType.EMPTY: EmptyIndex,
     IndexStructType.COMPOSITE: CompositeIndex,
+    IndexStructType.CHATGPT_RETRIEVAL_PLUGIN: ChatGPTRetrievalPluginIndexDict,
 }
 
 
@@ -73,6 +76,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.PANDAS: GPTPandasIndex,
     IndexStructType.KG: GPTKnowledgeGraphIndex,
     IndexStructType.EMPTY: GPTEmptyIndex,
+    IndexStructType.CHATGPT_RETRIEVAL_PLUGIN: ChatGPTRetrievalPluginIndex,
 }
 
 

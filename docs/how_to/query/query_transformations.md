@@ -26,7 +26,7 @@ To use HyDE, an example code snippet is shown below.
 
 ```python
 from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
-from llama_index.indices.query.query_transform import HyDEQueryTransform
+from llama_index.indices.query.query_transform.base import HyDEQueryTransform
 
 # load documents, build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
@@ -111,7 +111,6 @@ Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/m
 
 
 ### Multi-Step Query Transformations
-
 
 Multi-step query transformations are a generalization on top of existing single-step query transformation approaches.
 
