@@ -130,9 +130,39 @@ LlamaIndex can support compare/contrast queries as well. It can do this in the f
 
 You can perform compare/contrast queries by just composing a graph over your data.
 
-Here's an [example notebook](https://colab.research.google.com/drive/1uL1TdMbR4kqa0Ksrd_Of_jWSxWt1ia7o?usp=sharing).
+Here are some relevant resources:
+- [Composability](/how_to/index_structs/composability.md)
+- [SEC 10-k Analysis Example notebook](https://colab.research.google.com/drive/1uL1TdMbR4kqa0Ksrd_Of_jWSxWt1ia7o?usp=sharing).
 
 
 You can also perform compare/contrast queries with a **query transformation** module.
+
+```python
+from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
+decompose_transform = DecomposeQueryTransform(
+    llm_predictor_chatgpt, verbose=True
+)
+```
+
+This module will help break down a complex query into a simpler one over your existing index structure.
+
+Here are some relevant resources:
+- [Query Transformations](/how_to/query/query_transformations.md)
+- [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb)
+
+
+### Multi-Step Queries
+
+LlamaIndex can also support multi-step queries. Given a complex query, break it down into subquestions.
+
+For instance, given a question "Who was in the first batch of the accelerator program the author started?",
+the module will first decompose the query into a simpler initial question "What was the accelerator program the author started?",
+query the index, and then ask followup questions.
+
+Here are some relevant resources:
+- [Query Transformations](/how_to/query/query_transformations.md)
+- [Multi-Step Query Decomposition Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/vector_indices/SimpleIndexDemo-multistep.ipynb)
+
+
 
 
