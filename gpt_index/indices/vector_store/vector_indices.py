@@ -2,7 +2,10 @@
 
 from typing import Any, Dict, Optional, Sequence, Type, cast
 
+from requests.adapters import Retry
+
 from gpt_index.data_structs.data_structs_v2 import (
+    ChatGPTRetrievalPluginIndexDict,
     ChromaIndexDict,
     FaissIndexDict,
     IndexDict,
@@ -17,6 +20,7 @@ from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.queries import (
+    ChatGPTRetrievalPluginQuery,
     GPTChromaIndexQuery,
     GPTFaissIndexQuery,
     GPTOpensearchIndexQuery,
@@ -30,6 +34,7 @@ from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.vector_stores import (
+    ChatGPTRetrievalPluginClient,
     ChromaVectorStore,
     FaissVectorStore,
     PineconeVectorStore,
@@ -266,7 +271,11 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         self,
         nodes: Optional[Sequence[Node]] = None,
         pinecone_index: Optional[Any] = None,
+        metadata_filters: Optional[Dict[str, Any]] = None,
         pinecone_kwargs: Optional[Dict] = None,
+        insert_kwargs: Optional[Dict] = None,
+        query_kwargs: Optional[Dict] = None,
+        delete_kwargs: Optional[Dict] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         llm_predictor: Optional[LLMPredictor] = None,
@@ -279,10 +288,16 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             raise ValueError("pinecone_index is required.")
         if pinecone_kwargs is None:
             pinecone_kwargs = {}
+
         vector_store = kwargs.pop(
             "vector_store",
             PineconeVectorStore(
-                pinecone_index=pinecone_index, pinecone_kwargs=pinecone_kwargs
+                pinecone_index=pinecone_index,
+                metadata_filters=metadata_filters,
+                pinecone_kwargs=pinecone_kwargs,
+                insert_kwargs=insert_kwargs,
+                query_kwargs=query_kwargs,
+                delete_kwargs=delete_kwargs,
             ),
         )
 
@@ -311,7 +326,11 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         del query_kwargs["vector_store"]
         vector_store = cast(PineconeVectorStore, self._vector_store)
         query_kwargs["pinecone_index"] = vector_store._pinecone_index
+        query_kwargs["metadata_filters"] = vector_store._metadata_filters
         query_kwargs["pinecone_kwargs"] = vector_store._pinecone_kwargs
+        query_kwargs["insert_kwargs"] = vector_store._insert_kwargs
+        query_kwargs["query_kwargs"] = vector_store._query_kwargs
+        query_kwargs["delete_kwargs"] = vector_store._delete_kwargs
 
 
 class GPTWeaviateIndex(GPTVectorStoreIndex):
@@ -580,3 +599,75 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
         del query_kwargs["vector_store"]
         vector_store = cast(OpensearchVectorStore, self._vector_store)
         query_kwargs["client"] = vector_store._client
+
+
+class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
+    """ChatGPTRetrievalPlugin index.
+
+    This index directly interfaces with any server that hosts
+    the ChatGPT Retrieval Plugin interface:
+    https://github.com/openai/chatgpt-retrieval-plugin.
+
+    Args:
+        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
+            (see :ref:`Prompt-Templates`).
+            NOTE: this is a deprecated field.
+        client (Optional[OpensearchVectorClient]): The client which encapsulates
+            logic for using Opensearch as a vector store (that is, it holds stuff
+            like endpoint, index_name and performs operations like initializing the
+            index and adding new doc/embeddings to said index).
+        embed_model (Optional[BaseEmbedding]): Embedding model to use for
+            embedding similarity.
+    """
+
+    index_struct_cls: Type[IndexDict] = ChatGPTRetrievalPluginIndexDict
+
+    def __init__(
+        self,
+        nodes: Optional[Sequence[Node]] = None,
+        index_struct: Optional[ChatGPTRetrievalPluginIndexDict] = None,
+        service_context: Optional[ServiceContext] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        endpoint_url: Optional[str] = None,
+        bearer_token: Optional[str] = None,
+        retries: Optional[Retry] = None,
+        batch_size: int = 100,
+        **kwargs: Any,
+    ) -> None:
+        """Init params."""
+        if endpoint_url is None:
+            raise ValueError("endpoint_url is required.")
+        if bearer_token is None:
+            raise ValueError("bearer_token is required.")
+        vector_store = ChatGPTRetrievalPluginClient(
+            endpoint_url,
+            bearer_token,
+            retries=retries,
+            batch_size=batch_size,
+        )
+        super().__init__(
+            nodes=nodes,
+            index_struct=index_struct,
+            service_context=service_context,
+            text_qa_template=text_qa_template,
+            vector_store=vector_store,
+            **kwargs,
+        )
+
+    @classmethod
+    def get_query_map(self) -> QueryMap:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: ChatGPTRetrievalPluginQuery,
+            QueryMode.EMBEDDING: ChatGPTRetrievalPluginQuery,
+        }
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        del query_kwargs["vector_store"]
+        vector_store = cast(ChatGPTRetrievalPluginClient, self._vector_store)
+        query_kwargs["endpoint_url"] = vector_store._endpoint_url
+        query_kwargs["bearer_token"] = vector_store._bearer_token
+        query_kwargs["retries"] = vector_store._retries
+        query_kwargs["batch_size"] = vector_store._batch_size

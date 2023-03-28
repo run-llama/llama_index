@@ -1,7 +1,15 @@
-[tool.isort]
-profile = "black"
-
 [tool.mypy]
 ignore_missing_imports = "True"
 disallow_untyped_defs = "True"
-exclude = ["notebooks", "build"]
+exclude = ["notebooks", "build", "examples"]
+
+[tool.ruff]
+exclude = [
+    ".venv",
+    "__pycache__",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".ruff_cache",
+    "examples",
+    "notebooks",
+]

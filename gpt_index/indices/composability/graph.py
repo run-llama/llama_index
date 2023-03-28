@@ -1,13 +1,16 @@
 """Composability graphs."""
 
 import json
-from typing import Any, Dict, List, Optional, Sequence, Union
+from multiprocessing.sharedctypes import Value
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.docstore import DocumentStore
+from gpt_index.data_structs.node_v2 import IndexNode
+from gpt_index.docstore_v2 import DocumentStore
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig
@@ -41,7 +44,7 @@ class ComposableGraph:
         return self._service_context
 
     @classmethod
-    def from_indices(
+    def from_index_structs_and_docstores(
         cls,
         all_index_structs: Dict[str, IndexStruct],
         root_id: str,
@@ -57,16 +60,68 @@ class ComposableGraph:
             index_struct=composite_index_struct, docstore=merged_docstore, **kwargs
         )
 
+    @classmethod
+    def from_indices(
+        cls,
+        root_index_cls: Type[BaseGPTIndex],
+        children_indices: Sequence[BaseGPTIndex],
+        index_summaries: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> "ComposableGraph":  # type: ignore
+        """Create composable graph using this index class as the root.
+
+        NOTE: this is mostly syntactic sugar,
+        roughly equivalent to directly calling `ComposableGraph.from_indices`.
+
+        """
+        if index_summaries is None:
+            # TODO: automatically set summaries
+            raise ValueError(
+                "Must specify summaries for children indices. \
+                Will support automatically setting summary in the future."
+            )
+
+        if len(children_indices) != len(index_summaries):
+            raise ValueError("indices and index_summaries must have same length!")
+
+        # construct index nodes
+        index_nodes = []
+        for index, summary in zip(children_indices, index_summaries):
+            assert isinstance(index.index_struct, V2IndexStruct)
+            index_node = IndexNode(
+                text=summary,
+                index_id=index.index_struct.index_id,
+            )
+            index_nodes.append(index_node)
+
+        # construct root index
+        root_index = root_index_cls(
+            nodes=index_nodes,
+            **kwargs,
+        )
+        all_indices: List[BaseGPTIndex] = children_indices + [root_index]  # type: ignore
+
+        return cls.from_index_structs_and_docstores(
+            all_index_structs={
+                index.index_struct.index_id: index.index_struct for index in all_indices
+            },
+            root_id=root_index.index_struct.index_id,
+            docstores=[index.docstore for index in all_indices],
+            service_context=root_index.service_context,
+        )
+
     def query(
         self,
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
+        service_context: Optional[ServiceContext] = None,
     ) -> RESPONSE_TYPE:
         """Query the index."""
+        service_context = service_context or self._service_context
         query_runner = QueryRunner(
             index_struct=self._index_struct,
-            service_context=self._service_context,
+            service_context=service_context,
             docstore=self._docstore,
             query_configs=query_configs,
             query_transform=query_transform,
@@ -79,11 +134,13 @@ class ComposableGraph:
         query_str: Union[str, QueryBundle],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
+        service_context: Optional[ServiceContext] = None,
     ) -> RESPONSE_TYPE:
         """Query the index."""
+        service_context = service_context or self._service_context
         query_runner = QueryRunner(
             index_struct=self._index_struct,
-            service_context=self._service_context,
+            service_context=service_context,
             docstore=self._docstore,
             query_configs=query_configs,
             query_transform=query_transform,

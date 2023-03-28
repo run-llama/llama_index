@@ -14,16 +14,19 @@ from typing import Any, Dict, Generator, List, Optional, Tuple, Union, cast
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
+from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
 from gpt_index.response.schema import SourceNode
 from gpt_index.response.utils import get_response_text
 from gpt_index.utils import temp_set_attrs
 
 RESPONSE_TEXT_TYPE = Union[str, Generator]
+
+logger = logging.getLogger(__name__)
 
 
 class ResponseMode(str, Enum):
@@ -67,6 +70,20 @@ class ResponseBuilder:
         self._use_async = use_async
         self._streaming = streaming
 
+    def _log_prompt_and_response(
+        self,
+        formatted_prompt: str,
+        response: RESPONSE_TEXT_TYPE,
+        log_prefix: str = "",
+    ) -> None:
+        """Log prompt and response from LLM."""
+        logger.debug(f"> {log_prefix} prompt template: {formatted_prompt}")
+        self._service_context.llama_logger.add_log({"formatted_prompt_template": formatted_prompt})
+        logger.debug(f"> {log_prefix} response: {response}")
+        self._service_context.llama_logger.add_log(
+            {f"{log_prefix.lower()}_response": response or "Empty Response"}
+        )
+
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
         self._texts.extend(text_chunks)
@@ -90,6 +107,10 @@ class ResponseBuilder:
         """Get sources."""
         return self.source_nodes
 
+    def get_logger(self) -> LlamaLogger:
+        """Get logger."""
+        return self._service_context.llama_logger
+
     def refine_response_single(
         self,
         response: RESPONSE_TEXT_TYPE,
@@ -102,7 +123,7 @@ class ResponseBuilder:
             response = get_response_text(response)
 
         fmt_text_chunk = truncate_text(text_chunk, 50)
-        logging.debug(f"> Refine context: {fmt_text_chunk}")
+        logger.debug(f"> Refine context: {fmt_text_chunk}")
         # NOTE: partial format refine template with query_str and existing_answer here
         refine_template = self.refine_template.partial_format(
             query_str=query_str, existing_answer=response
@@ -115,16 +136,18 @@ class ResponseBuilder:
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for cur_text_chunk in text_chunks:
             if not self._streaming:
-                response, _ = self._service_context.llm_predictor.predict(
+                response, formatted_prompt = self._service_context.llm_predictor.predict(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
             else:
-                response, _ = self._service_context.llm_predictor.stream(
+                response, formatted_prompt = self._service_context.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
-            logging.debug(f"> Refined response: {response}")
+            self._log_prompt_and_response(
+                formatted_prompt, response, log_prefix="Refined"
+            )
         return response
 
     def give_response_single(
@@ -144,15 +167,20 @@ class ResponseBuilder:
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                response, _ = self._service_context.llm_predictor.predict(
+                response, formatted_prompt = self._service_context.llm_predictor.predict(
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
-                logging.debug(f"> Initial response: {response}")
+                self._log_prompt_and_response(
+                    formatted_prompt, response, log_prefix="Initial"
+                )
             elif response is None and self._streaming:
-                response, _ = self._service_context.llm_predictor.stream(
+                response, formatted_prompt = self._service_context.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
+                )
+                self._log_prompt_and_response(
+                    formatted_prompt, response, log_prefix="Initial"
                 )
             else:
                 response = self.refine_response_single(

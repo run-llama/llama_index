@@ -7,7 +7,7 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 
 ## Loading Data from Vector Stores using Data Connector
 
-LlamaIndex supports loading data from the following sources. See [Data Connectors](data_connectors.md) for more details and API documentation.
+LlamaIndex supports loading data from the following sources. See [Data Connectors](/how_to/data_connectors.md) for more details and API documentation.
 
 - Chroma (`ChromaReader`) [Installation](https://docs.trychroma.com/getting-started)
 - Qdrant (`QdrantReader`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
@@ -146,9 +146,16 @@ pinecone.create_index(
 )
 index = pinecone.Index("quickstart")
 
+# can define filters specific to this vector index (so you can
+# reuse pinecone indexes)
+metadata_filters = {"title": "paul_graham_essay"}
+
+
 # Load documents, build the GPTPineconeIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTPineconeIndex.from_documents(documents, pinecone_index=index)
+index = GPTPineconeIndex.from_documents(
+    documents, pinecone_index=index, metadata_filters=metadata_filters
+)
 
 # Query index
 response = index.query("What did the author do growing up?")

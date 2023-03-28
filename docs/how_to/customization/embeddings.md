@@ -17,7 +17,7 @@ Simply specify the `embedding` field when creating a Document:
 ## Using a Vector Store as an Underlying Index
 
 <!-- Please see the corresponding section in our [Vector Stores](/how_to/vector_stores.md#loading-data-from-vector-stores-using-data-connector) -->
-Please see the corresponding section in our [Vector Stores](/how_to/vector_stores.md)
+Please see the corresponding section in our [Vector Stores](/how_to/integrations/vector_stores.md)
 guide for more details.
 
 ## Using an Embedding Query Mode in List/Tree Index
@@ -33,7 +33,7 @@ Since we offer embedding support during *query-time* for our list and tree indic
 embeddings are lazily generated and then cached (if `mode="embedding"` is specified during `index.query(...)`), and not during index construction.
 This design choice prevents the need to generate embeddings for all text chunks during index construction.
 
-NOTE: Our [vector-store based indices](/how_to/vector_stores.md) generate embeddings during index construction.
+NOTE: Our [vector-store based indices](/how_to/integrations/vector_stores.md) generate embeddings during index construction.
 
 #### Embedding Lookups
 For the list index (`GPTListIndex`):
@@ -67,10 +67,11 @@ An example snippet is shown below (to use Hugging Face embeddings) on the GPTLis
 ```python
 from llama_index import GPTListIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-from llama_index import LangchainEmbedding
+from llama_index import LangchainEmbedding, ServiceContext
 
 # load in HF embedding model from langchain
 embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
+service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # load index
 new_index = GPTListIndex.load_from_disk('index_list_emb.json')
@@ -80,7 +81,7 @@ response = new_index.query(
     "<query_text>", 
     mode="embedding", 
     verbose=True, 
-    embed_model=embed_model
+    service_context=service_context
 )
 print(response)
 ```
@@ -90,15 +91,16 @@ Another example snippet is shown for GPTSimpleVectorIndex.
 ```python
 from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-from llama_index import LangchainEmbedding
+from llama_index import LangchainEmbedding, ServiceContext
 
 # load in HF embedding model from langchain
 embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
+service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # load index
 new_index = GPTSimpleVectorIndex.load_from_disk(
     'index_simple_vector.json', 
-    embed_model=embed_model
+    service_context=service_context
 )
 
 # query will use the same embed_model
