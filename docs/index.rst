@@ -8,14 +8,6 @@ Welcome to LlamaIndex 🦙 (GPT Index)!
 
 LlamaIndex (GPT Index) is a project that provides a central interface to connect your LLM's with external data.
 
-   ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! We will carry out this transition gradually.
-
-   **3/20/2023**: Most instances of `gpt_index` should be renamed to `llama_index`. We will preserve the name "GPT Index" as a backup name for now.
-
-   **2/19/2023**: By default, our docs/notebooks/instructions now use the `llama-index` package. However the `gpt-index` package still exists as a duplicate!
-
-   **2/16/2023**: We have a duplicate `llama-index` pip package. Simply replace all imports of `gpt_index` with `llama_index` if you choose to `pip install llama-index`.
-
 - Github: https://github.com/jerryjliu/llama_index
 - PyPi:
    - LlamaIndex: https://pypi.org/project/llama-index/.
@@ -66,6 +58,15 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
 
    guides/primer.rst
    guides/tutorials.rst
+   guides/notebooks.rst
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Use Cases
+
+   use_cases/queries.md
+   use_cases/apps.md
 
 
 .. toctree::
@@ -73,17 +74,19 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    :caption: Key Components
 
    how_to/data_connectors.md
+   how_to/indices.rst
+   how_to/query_interface.rst
+   how_to/customization.rst
+   how_to/analysis.rst
 
-   how_to/customization.md
+   .. evaluation
+   .. integrations
 
-   how_to/composability.md
-   how_to/update.md
-   how_to/cost_analysis.md
-   how_to/embeddings.md
-   how_to/vector_stores.md
-   how_to/custom_prompts.md
-   how_to/custom_llms.md
-   how_to/using_with_langchain.md
+   .. how_to/composability.md
+   .. how_to/update.md
+   .. how_to/cost_analysis.md
+   .. how_to/vector_stores.md
+   .. how_to/using_with_langchain.md
 
 
 .. toctree::
