@@ -4,8 +4,6 @@ from abc import abstractmethod
 from typing import Any, Callable, Dict, Generator, Optional, cast
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_transform.base import (
     BaseQueryTransform,
     StepDecomposeQueryTransform,
@@ -13,7 +11,6 @@ from gpt_index.indices.query.query_transform.base import (
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
@@ -27,14 +24,23 @@ class BaseQueryCombiner:
         self,
         index_struct: IndexStruct,
         query_transform: BaseQueryTransform,
+        query_runner: Any,  # NOTE: type as Any to avoid circular dependency
     ) -> None:
         """Init params."""
         self._index_struct = index_struct
         self._query_transform = query_transform
+        from gpt_index.indices.query.query_runner import QueryRunner
+
+        assert isinstance(query_runner, QueryRunner)
+        self._query_runner = query_runner
 
     @abstractmethod
-    def run(self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle) -> Response:
+    def run(self, query_bundle: QueryBundle, level: int = 0) -> Response:
         """Run query combiner."""
+
+    async def arun(self, query_bundle: QueryBundle, level: int = 0) -> Response:
+        """Run query combiner."""
+        return self.run(query_bundle, level=level)
 
 
 class SingleQueryCombiner(BaseQueryCombiner):
@@ -44,15 +50,29 @@ class SingleQueryCombiner(BaseQueryCombiner):
 
     """
 
-    def run(self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle) -> Response:
-        """Run query combiner."""
+    def _prepare_update(self, query_bundle: QueryBundle) -> QueryBundle:
+        """Prepare update."""
         transform_extra_info = {
             "index_struct": self._index_struct,
         }
         updated_query_bundle = self._query_transform(
             query_bundle, extra_info=transform_extra_info
         )
-        return query_obj.query(updated_query_bundle)
+        return updated_query_bundle
+
+    def run(self, query_bundle: QueryBundle, level: int = 0) -> Response:
+        """Run query combiner."""
+        updated_query_bundle = self._prepare_update(query_bundle)
+        return self._query_runner.query_transformed(
+            updated_query_bundle, self._index_struct, level=level
+        )
+
+    async def arun(self, query_bundle: QueryBundle, level: int = 0) -> Response:
+        """Run query combiner."""
+        updated_query_bundle = self._prepare_update(query_bundle)
+        return await self._query_runner.aquery_transformed(
+            updated_query_bundle, self._index_struct, level=level
+        )
 
 
 def default_stop_fn(stop_dict: Dict) -> bool:
@@ -78,6 +98,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         self,
         index_struct: IndexStruct,
         query_transform: BaseQueryTransform,
+        query_runner: Any,
         service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
@@ -92,6 +113,10 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         super().__init__(index_struct, query_transform=query_transform)
         self._index_struct = index_struct
         self._query_transform = query_transform
+        from gpt_index.indices.query.query_runner import QueryRunner
+
+        assert isinstance(query_runner, QueryRunner)
+        self._query_runner = query_runner
         self._service_context = service_context or ServiceContext.from_defaults()
         self._num_steps = num_steps
         self._early_stopping = early_stopping
@@ -125,7 +150,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         )
         return query_bundle
 
-    def run(self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle) -> Response:
+    def run(self, query_bundle: QueryBundle, level: int = 0) -> Response:
         """Run query combiner."""
         prev_reasoning = ""
         cur_response = None
@@ -151,7 +176,9 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
                 should_stop = True
                 break
 
-            cur_response = query_obj.query(updated_query_bundle)
+            cur_response = self._query_runner.query_transformed(
+                updated_query_bundle, self._index_struct, level=level
+            )
 
             # append to response builder
             cur_qa_text = (
@@ -189,6 +216,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
 def get_default_query_combiner(
     index_struct: IndexStruct,
     query_transform: BaseQueryTransform,
+    query_runner: Any,  # NOTE: type as Any to avoid circular dependency
     extra_kwargs: Optional[Dict] = None,
 ) -> BaseQueryCombiner:
     """Get default query combiner."""
@@ -197,7 +225,10 @@ def get_default_query_combiner(
         return MultiStepQueryCombiner(
             index_struct,
             query_transform=query_transform,
+            query_runner=query_runner,
             service_context=extra_kwargs.get("service_context", None),
         )
     else:
-        return SingleQueryCombiner(index_struct, query_transform=query_transform)
+        return SingleQueryCombiner(
+            index_struct, query_transform=query_transform, query_runner=query_runner
+        )

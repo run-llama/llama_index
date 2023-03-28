@@ -225,7 +225,6 @@ class LLMPredictor(BaseLLMPredictor):
 
         # We assume that the value of formatted_prompt is exactly the thing
         # eventually sent to OpenAI, or whatever LLM downstream
-        print(formatted_prompt)
         prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
