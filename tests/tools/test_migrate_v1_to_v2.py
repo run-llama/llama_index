@@ -1,9 +1,12 @@
 from socket import INADDR_MAX_LOCAL_GROUP
+from sre_constants import IN
 from typing import List
+from gpt_index.constants import DATA_KEY, DOCSTORE_KEY, INDEX_STRUCT_KEY, TYPE_KEY
 
 from gpt_index.data_structs.data_structs import KG, IndexDict, IndexGraph, IndexList, KeywordTable, Node
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
+from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
 from gpt_index.docstore_v2 import DocumentStore as V2DocumentStore
 from gpt_index.tools.migrate_v1_to_v2 import convert_to_v2_dict, convert_to_v2_index_struct_and_docstore, index_dict_to_v2, index_graph_to_v2, index_list_to_v2, keyword_table_to_v2, kg_to_v2, node_to_v2
@@ -154,15 +157,36 @@ def test_convert_to_v2_index_struct_and_docstore():
     nodes = [node_1, node_2]
     struct_v1 = IndexList(nodes=nodes)
     docstore_v1 = DocumentStore()
+    docstore_v1.add_documents([struct_v1])
+
     struct_v2, docstore_v2 = convert_to_v2_index_struct_and_docstore(struct_v1, docstore_v1)
     assert isinstance(struct_v2, V2IndexStruct)
     assert isinstance(docstore_v2, V2DocumentStore)
 
     assert len(docstore_v2.docs) == 2
 
+def test_convert_to_v2_dict():
+    node_1 = Node(
+        text='test_text_1',
+    )
+    node_2 = Node(
+        text='test_text_2',
+    )
+    nodes = [node_1, node_2]
+    struct_v1 = IndexList(nodes=nodes)
+    docstore_v1 = DocumentStore()
+    docstore_v1.add_documents([struct_v1])
+    
+    v1_dict = {
+        'index_struct_id': struct_v1.get_doc_id(),
+        'docstore': docstore_v1.serialize_to_dict(),
+    }
 
+    v2_dict = convert_to_v2_dict(v1_dict)
 
-
+    assert v2_dict[INDEX_STRUCT_KEY][TYPE_KEY] == IndexStructType.LIST
+    assert DATA_KEY in v2_dict[INDEX_STRUCT_KEY]
+    assert DOCSTORE_KEY in v2_dict
 
 
 
