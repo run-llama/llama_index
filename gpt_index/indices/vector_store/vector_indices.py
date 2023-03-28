@@ -261,8 +261,6 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
-        chunk_size_limit (int): Maximum number of tokens per chunk. NOTE:
-            in Pinecone the default is 2048 due to metadata size restrictions.
     """
 
     index_struct_cls: Type[IndexDict] = PineconeIndexDict
@@ -279,7 +277,6 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         service_context: Optional[ServiceContext] = None,
-        chunk_size_limit: int = 2048,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -306,7 +303,6 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             text_qa_template=text_qa_template,
             service_context=service_context,
             vector_store=vector_store,
-            chunk_size_limit=chunk_size_limit,
             **kwargs,
         )
 
