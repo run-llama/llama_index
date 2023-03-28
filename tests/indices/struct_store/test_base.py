@@ -392,7 +392,7 @@ def test_sql_index_async_query(
     metadata_obj.create_all()
     sql_database = SQLDatabase(engine)
     # NOTE: we can use the default output parser for this
-    index = GPTSQLStructStoreIndex(
+    index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
 

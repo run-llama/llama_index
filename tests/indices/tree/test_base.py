@@ -307,8 +307,14 @@ def test_insert(
     new_doc = Document("This is a new doc.", doc_id="new_doc_test")
     tree.insert(new_doc)
     assert len(tree.index_struct.all_nodes) == 1
-    assert tree.index_struct.all_nodes[0].text == "This is a new doc."
-    assert tree.index_struct.all_nodes[0].ref_doc_id == "new_doc_test"
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
+    assert nodes[0].text == "This is a new doc."
+    assert nodes[0].ref_doc_id == "new_doc_test"
+
+
+def _mock_tokenizer(text: str) -> int:
+    """Mock tokenizer that splits by spaces."""
+    return len(text.split(" "))
 
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)

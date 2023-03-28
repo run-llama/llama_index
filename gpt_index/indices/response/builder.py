@@ -18,12 +18,15 @@ from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
+from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
 from gpt_index.response.schema import SourceNode
 from gpt_index.response.utils import get_response_text
 from gpt_index.utils import temp_set_attrs
 
 RESPONSE_TEXT_TYPE = Union[str, Generator]
+
+logger = logging.getLogger(__name__)
 
 
 class ResponseMode(str, Enum):
@@ -66,7 +69,20 @@ class ResponseBuilder:
         self.source_nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
         self._use_async = use_async
         self._streaming = streaming
-        self._llama_logger = llama_logger or LlamaLogger()
+
+    def _log_prompt_and_response(
+        self,
+        formatted_prompt: str,
+        response: RESPONSE_TEXT_TYPE,
+        log_prefix: str = "",
+    ) -> None:
+        """Log prompt and response from LLM."""
+        logger.debug(f"> {log_prefix} prompt template: {formatted_prompt}")
+        self._service_context.llama_logger.add_log({"formatted_prompt_template": formatted_prompt})
+        logger.debug(f"> {log_prefix} response: {response}")
+        self._service_context.llama_logger.add_log(
+            {f"{log_prefix.lower()}_response": response or "Empty Response"}
+        )
 
     def add_text_chunks(self, text_chunks: List[TextChunk]) -> None:
         """Add text chunk."""
@@ -91,6 +107,10 @@ class ResponseBuilder:
         """Get sources."""
         return self.source_nodes
 
+    def get_logger(self) -> LlamaLogger:
+        """Get logger."""
+        return self._service_context.llama_logger
+
     def refine_response_single(
         self,
         response: RESPONSE_TEXT_TYPE,
@@ -103,7 +123,7 @@ class ResponseBuilder:
             response = get_response_text(response)
 
         fmt_text_chunk = truncate_text(text_chunk, 50)
-        logging.debug(f"> Refine context: {fmt_text_chunk}")
+        logger.debug(f"> Refine context: {fmt_text_chunk}")
         # NOTE: partial format refine template with query_str and existing_answer here
         refine_template = self.refine_template.partial_format(
             query_str=query_str, existing_answer=response
@@ -147,16 +167,15 @@ class ResponseBuilder:
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                response, _ = self.llm_predictor.predict(
+                response, formatted_prompt = self._service_context.llm_predictor.predict(
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
-                logger.debug(f"> Initial response: {response}")
-                self._llama_logger.add_log(
-                    {"initial_response": response or "Empty Response"}
+                self._log_prompt_and_response(
+                    formatted_prompt, response, log_prefix="Initial"
                 )
             elif response is None and self._streaming:
-                response, _ = self.llm_predictor.stream(
+                response, formatted_prompt = self._service_context.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
