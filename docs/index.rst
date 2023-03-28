@@ -61,23 +61,21 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
 
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Guides
 
-   guides/primer.md 
-   guides/usage_pattern.md
-   guides/use_cases.md
-   guides/index_guide.md
-   guides/sql_guide.md
-   guides/fullstack_app_guide.md
-   guides/building_a_chatbot.md
+   guides/primer.rst
+   guides/tutorials.rst
 
 
 .. toctree::
    :maxdepth: 1
-   :caption: Technical How To
+   :caption: Key Components
 
    how_to/data_connectors.md
+
+   how_to/customization.md
+
    how_to/composability.md
    how_to/update.md
    how_to/cost_analysis.md

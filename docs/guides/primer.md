@@ -29,7 +29,7 @@ The general usage pattern of LlamaIndex is as follows:
 3. [Optional, Advanced] Building indices on top of other indices
 4. Query the index
 
-See our [Usage Pattern Guide](/guides/usage_pattern.md) for a guide
+See our [Usage Pattern Guide](/guides/primer/usage_pattern.md) for a guide
 on the overall steps involved with using LlamaIndex.
 
 If you are just starting out, take a look at the [Starter Example](/getting_started/starter_example.md) first.
@@ -41,7 +41,7 @@ LlamaIndex data structures offer distinct use cases and advantages. For instance
 The list index `GPTListIndex` is a good tool for combining answers across documents/nodes. 
 The tree index `GPTTreeIndex` and keyword indices can be used to "route" queries to the right subindices.
 
-[A complete guide on LlamaIndex use cases](/guides/use_cases.md). 
+[A complete guide on LlamaIndex use cases](/guides/primer/use_cases.md). 
 
 This guide should paint a picture of how you can use LlamaIndex to solve your own data needs. 
 
@@ -50,5 +50,5 @@ This guide should paint a picture of how you can use LlamaIndex to solve your ow
 
 We explain how each index works with diagrams.
 
-[How Each Index Works](/guides/index_guide.md)
+[How Each Index Works](/guides/primer/index_guide.md)
 
