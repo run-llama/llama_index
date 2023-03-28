@@ -80,6 +80,13 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        # TODO: temporary hack to "infer" vector store from
+        # index struct if index_struct exists
+        if index_struct is not None and len(index_struct.embeddings_dict) > 0:
+            simple_vector_store_data_dict = {
+                "embedding_dict": index_struct.embeddings_dict,
+            }
+
         vector_store = SimpleVectorStore(
             simple_vector_store_data_dict=simple_vector_store_data_dict
         )
