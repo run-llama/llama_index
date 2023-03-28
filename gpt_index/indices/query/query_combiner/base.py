@@ -40,17 +40,7 @@ class BaseQueryCombiner:
         """Run query combiner."""
 
     async def arun(self, query_bundle: QueryBundle, level: int = 0) -> Response:
-        """Run query combiner."""
-        return self.run(query_bundle, level=level)
-
-    async def arun(
-        self, query_obj: BaseGPTIndexQuery, query_bundle: QueryBundle
-    ) -> Response:
         """Async run query combiner."""
-        return self.run(query_obj, query_bundle)
-
-    async def arun(self, query_bundle: QueryBundle, level: int = 0) -> Response:
-        """Run query combiner."""
         return self.run(query_bundle, level=level)
 
 
@@ -121,7 +111,9 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         use_async: bool = True,
     ) -> None:
         """Init params."""
-        super().__init__(index_struct, query_transform=query_transform)
+        super().__init__(
+            index_struct, query_transform=query_transform, query_runner=query_runner
+        )
         self._index_struct = index_struct
         self._query_transform = query_transform
         from gpt_index.indices.query.query_runner import QueryRunner

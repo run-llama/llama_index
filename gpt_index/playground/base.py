@@ -13,7 +13,11 @@ from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store import GPTSimpleVectorIndex
 from gpt_index.readers.schema.base import Document
 
-DEFAULT_INDEX_CLASSES = [GPTSimpleVectorIndex, GPTTreeIndex, GPTListIndex]
+DEFAULT_INDEX_CLASSES: List[Type[BaseGPTIndex]] = [
+    GPTSimpleVectorIndex,
+    GPTTreeIndex,
+    GPTListIndex,
+]
 DEFAULT_MODES = ["default", "summarize", "embedding", "retrieve", "recursive"]
 
 

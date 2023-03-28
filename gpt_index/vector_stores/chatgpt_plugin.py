@@ -7,7 +7,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from tqdm.auto import tqdm
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.data_structs_v2 import Node
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,

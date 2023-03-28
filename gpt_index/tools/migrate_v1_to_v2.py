@@ -1,9 +1,10 @@
 """Tool for migrating Index built with V1 data structs to V2."""
 import dataclasses
 import json
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional, Tuple, Type, cast
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
+from gpt_index.data_structs.table import SQLStructTable
 
 try:
     import fire
@@ -50,12 +51,11 @@ from gpt_index.data_structs.node_v2 import DocumentRelationship
 from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.node_v2 import Node as V2Node
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.docstore import DocumentStore
 from gpt_index.docstore_v2 import DocumentStore as V2DocumentStore
 from gpt_index.tools.file_utils import add_prefix_suffix_to_file_path
 
-INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS: Dict[IndexStructType, IndexStruct] = {
+INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[IndexStruct]] = {
     IndexStructType.TREE: IndexGraph,
     IndexStructType.LIST: IndexList,
     IndexStructType.KEYWORD_TABLE: KeywordTable,
@@ -78,6 +78,13 @@ V1_DOC_STORE_KEY = "docstore"
 
 
 def node_to_v2(node: Node) -> V2Node:
+    if node.ref_doc_id is not None:
+        relationships = {
+            DocumentRelationship.SOURCE: node.ref_doc_id,
+        }
+    else:
+        relationships = {}
+
     if node.image is None:
         return V2Node(
             text=node.text,
@@ -86,9 +93,7 @@ def node_to_v2(node: Node) -> V2Node:
             doc_hash=node.doc_hash,
             extra_info=node.extra_info,
             node_info=node.node_info,
-            relationships={
-                DocumentRelationship.SOURCE: node.ref_doc_id,
-            },
+            relationships=relationships,
         )
     else:
         return V2ImageNode(
@@ -99,9 +104,7 @@ def node_to_v2(node: Node) -> V2Node:
             extra_info=node.extra_info,
             node_info=node.node_info,
             image=node.image,
-            relationships={
-                DocumentRelationship.SOURCE: node.ref_doc_id,
-            },
+            relationships=relationships,
         )
 
 
@@ -155,7 +158,7 @@ def index_dict_to_v2(struct: IndexDict) -> Tuple[V2IndexDict, List[V2Node]]:
     node_id_to_vector_id = {
         node_id: vector_id for vector_id, node_id in nodes_dict_v2.items()
     }
-    doc_id_dict_v2 = {}
+    doc_id_dict_v2: Dict[str, List[str]] = {}
     for node in struct.nodes_dict.values():
         node_id = node.get_doc_id()
         vector_id = node_id_to_vector_id[node_id]
@@ -201,6 +204,7 @@ def kg_to_v2(struct: KG) -> Tuple[V2KG, List[V2Node]]:
 def convert_to_v2_index_struct_and_docstore(
     index_struct: IndexStruct, docstore: DocumentStore
 ) -> Tuple[V2IndexStruct, V2DocumentStore]:
+    struct_v2: V2IndexStruct
     if isinstance(index_struct, IndexGraph):
         struct_v2, nodes_v2 = index_graph_to_v2(index_struct)
     elif isinstance(index_struct, IndexList):
@@ -217,24 +221,27 @@ def convert_to_v2_index_struct_and_docstore(
     return struct_v2, docstore_v2
 
 
-def load_v1_index_struct_in_docstore(file_dict) -> Tuple[IndexStruct, DocumentStore]:
+def load_v1_index_struct_in_docstore(
+    file_dict: dict,
+) -> Tuple[IndexStruct, DocumentStore]:
     index_struct_id = file_dict[V1_INDEX_STRUCT_ID_KEY]
     docstore = DocumentStore.load_from_dict(
         file_dict[V1_DOC_STORE_KEY],
-        type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS,
+        type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS,  # type: ignore
     )
     index_struct = docstore.get_document(index_struct_id)
+    assert index_struct is not None
     return index_struct, docstore
 
 
 def load_v1_index_struct_separate(
-    file_dict, index_struct_type: IndexStructType
+    file_dict: dict, index_struct_type: IndexStructType
 ) -> Tuple[IndexStruct, DocumentStore]:
     index_struct_cls = INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS[index_struct_type]
     index_struct = index_struct_cls.from_dict(file_dict[V1_INDEX_STRUCT_KEY])
     docstore = DocumentStore.load_from_dict(
         file_dict[V1_DOC_STORE_KEY],
-        type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS,
+        type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS,  # type: ignore
     )
     return index_struct, docstore
 

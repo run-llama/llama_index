@@ -78,7 +78,9 @@ class ResponseBuilder:
     ) -> None:
         """Log prompt and response from LLM."""
         logger.debug(f"> {log_prefix} prompt template: {formatted_prompt}")
-        self._service_context.llama_logger.add_log({"formatted_prompt_template": formatted_prompt})
+        self._service_context.llama_logger.add_log(
+            {"formatted_prompt_template": formatted_prompt}
+        )
         logger.debug(f"> {log_prefix} response: {response}")
         self._service_context.llama_logger.add_log(
             {f"{log_prefix.lower()}_response": response or "Empty Response"}
@@ -136,7 +138,10 @@ class ResponseBuilder:
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for cur_text_chunk in text_chunks:
             if not self._streaming:
-                response, formatted_prompt = self._service_context.llm_predictor.predict(
+                (
+                    response,
+                    formatted_prompt,
+                ) = self._service_context.llm_predictor.predict(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
@@ -167,7 +172,10 @@ class ResponseBuilder:
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
-                response, formatted_prompt = self._service_context.llm_predictor.predict(
+                (
+                    response,
+                    formatted_prompt,
+                ) = self._service_context.llm_predictor.predict(
                     text_qa_template,
                     context_str=cur_text_chunk,
                 )
