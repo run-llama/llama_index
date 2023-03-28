@@ -1,7 +1,7 @@
 """Composability graphs."""
 
 import json
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union, cast
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex
@@ -81,7 +81,8 @@ class ComposableGraph:
                         "a summary (through index.index_struct.summary), then it must "
                         "be specified with then `index_summaries` "
                         "argument in this function."
-                        "We will support automatically setting the summary in the future."
+                        "We will support automatically setting the summary in the "
+                        "future."
                     )
             index_summaries = [index.index_struct.summary for index in children_indices]
         else:
@@ -107,7 +108,10 @@ class ComposableGraph:
             nodes=index_nodes,
             **kwargs,
         )
-        all_indices: List[BaseGPTIndex] = children_indices + [root_index]  # type: ignore
+        # type: ignore
+        all_indices: List[BaseGPTIndex] = cast(List[BaseGPTIndex], children_indices) + [
+            root_index
+        ]
 
         return cls.from_index_structs_and_docstores(
             all_index_structs={

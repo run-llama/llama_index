@@ -16,7 +16,6 @@ from gpt_index.data_structs.data_structs_v2 import (
     WeaviateIndexDict,
 )
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.vector_store.queries import (
@@ -31,7 +30,6 @@ from gpt_index.indices.query.vector_store.queries import (
 )
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.vector_stores import (
     ChatGPTRetrievalPluginClient,
