@@ -6,7 +6,7 @@ from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, 
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
-from gpt_index.data_structs.node_v2 import IndexNode, Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
@@ -14,7 +14,7 @@ from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
-from gpt_index.response.schema import RESPONSE_TYPE, Response
+from gpt_index.response.schema import RESPONSE_TYPE
 from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=V2IndexStruct)
@@ -103,52 +103,6 @@ class BaseGPTIndex(Generic[IS], ABC):
             docstore=docstore,
             service_context=service_context,
             **kwargs,
-        )
-
-    @classmethod
-    def from_indices(
-        cls,
-        children_indices: Sequence["BaseGPTIndex"],
-        index_summaries: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> "ComposableGraph":  # type: ignore
-        """Create composable graph using this index class as the root.
-
-        NOTE: this is mostly syntactic sugar,
-        roughly equivalent to directly calling `ComposableGraph.from_indices`.
-
-        """
-        # NOTE: lazy import
-        from gpt_index.indices.composability.graph import ComposableGraph
-
-        if index_summaries is None:
-            # TODO: automatically set summaries
-            index_summaries = ["stub" for _ in children_indices]
-
-        if len(children_indices) != len(index_summaries):
-            raise ValueError("indices and index_summaries must have same length!")
-
-        index_nodes = []
-        for index, summary in zip(children_indices, index_summaries):
-            assert isinstance(index.index_struct, V2IndexStruct)
-            index_node = IndexNode(
-                text=summary,
-                index_id=index.index_struct.index_id,
-            )
-            index_nodes.append(index_node)
-
-        root_index = cls(
-            nodes=index_nodes,
-            **kwargs,
-        )
-        all_indices: List["BaseGPTIndex"] = children_indices + [root_index]  # type: ignore
-        return ComposableGraph.from_indices(
-            all_index_structs={
-                index.index_struct.index_id: index.index_struct for index in all_indices
-            },
-            root_id=root_index.index_struct.index_id,
-            docstores=[index.docstore for index in all_indices],
-            service_context=root_index.service_context,
         )
 
     @property
