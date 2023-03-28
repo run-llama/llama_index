@@ -15,3 +15,4 @@ the token usage of various index structures + performance.
 
    analysis/cost_analysis.md
    analysis/playground.md
+   analysis/optimizers.md

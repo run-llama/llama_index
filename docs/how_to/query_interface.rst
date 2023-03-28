@@ -17,4 +17,5 @@ allows you to both retrieve the set of relevant documents, as well as synthesize
 
    /guides/primer/usage_pattern.md
    /how_to/customization.rst
+   /how_to/query/query_transformations.md
    .. provide query transformations guide
