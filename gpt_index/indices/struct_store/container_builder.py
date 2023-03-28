@@ -139,7 +139,7 @@ class SQLContextContainerBuilder:
         else:
             context_query_str = query_tmpl.format(orig_query_str=query_str)
         response = index.query(context_query_str, **index_kwargs)
-        context_str = str(response.response)
+        context_str = str(response)
         if store_context_str:
             self.context_str = context_str
         return context_str

@@ -230,7 +230,7 @@ def load_v1_index_struct_in_docstore(
         type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS,  # type: ignore
     )
     index_struct = docstore.get_document(index_struct_id)
-    assert index_struct is not None
+    assert isinstance(index_struct, IndexStruct)
     return index_struct, docstore
 
 
