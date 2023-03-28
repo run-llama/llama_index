@@ -9,9 +9,9 @@ LLMs may also be used during index construction, insertion, and query traversal.
 LlamaIndex uses Langchain's [LLM](https://langchain.readthedocs.io/en/latest/modules/llms.html)
 and [LLMChain](https://langchain.readthedocs.io/en/latest/modules/chains.html) module to define
 the underlying abstraction. We introduce a wrapper class,
-[`LLMPredictor`](/reference/llm_predictor.rst), for integration into LlamaIndex.
+[`LLMPredictor`](/reference/service_context/llm_predictor.rst), for integration into LlamaIndex.
 
-We also introduce a [`PromptHelper` class](/reference/prompt_helper.rst), to
+We also introduce a [`PromptHelper` class](/reference/service_context/prompt_helper.rst), to
 allow the user to explicitly set certain constraint parameters, such as
 maximum input size (default is 4096 for davinci models), number of generated output
 tokens, maximum chunk overlap, and more.

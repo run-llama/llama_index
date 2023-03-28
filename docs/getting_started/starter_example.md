@@ -78,6 +78,6 @@ index = GPTSimpleVectorIndex.load_from_disk('index.json')
 ### Next Steps
 
 That's it! For more information on LlamaIndex features, please check out the numerous "Guides" to the left.
-If you are interested in further exploring how LlamaIndex works, check out our [Primer Guide](/guides/primer.md).
+If you are interested in further exploring how LlamaIndex works, check out our [Primer Guide](/guides/primer.rst).
 
 Additionally, if you would like to play around with Example Notebooks, check out [this link](/reference/example_notebooks.rst).
