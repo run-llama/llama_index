@@ -65,8 +65,8 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
             NOTE: this is a deprecated field.
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
 
     """
 
@@ -134,8 +134,8 @@ class GPTFaissIndex(GPTVectorStoreIndex):
             NOTE: this is a deprecated field.
         faiss_index (faiss.Index): A Faiss Index object (required). Note: the index
             will be reset during index construction.
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
     """
 
     index_struct_cls: Type[IndexDict] = FaissIndexDict
@@ -259,8 +259,8 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
             NOTE: this is a deprecated field.
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
         chunk_size_limit (int): Maximum number of tokens per chunk. NOTE:
             in Pinecone the default is 2048 due to metadata size restrictions.
     """
@@ -278,8 +278,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         delete_kwargs: Optional[Dict] = None,
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
+        service_context: Optional[ServiceContext] = None,
         chunk_size_limit: int = 2048,
         **kwargs: Any,
     ) -> None:
@@ -305,8 +304,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             text_qa_template=text_qa_template,
-            llm_predictor=llm_predictor,
-            embed_model=embed_model,
+            service_context=service_context,
             vector_store=vector_store,
             chunk_size_limit=chunk_size_limit,
             **kwargs,
@@ -350,8 +348,8 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
             NOTE: this is a deprecated field.
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
     """
 
     index_struct_cls: Type[IndexDict] = WeaviateIndexDict
@@ -416,8 +414,8 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
             NOTE: this is a deprecated field.
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
         client (Optional[Any]): QdrantClient instance from `qdrant-client` package
         collection_name: (Optional[str]): name of the Qdrant collection
     """
@@ -484,8 +482,8 @@ class GPTChromaIndex(GPTVectorStoreIndex):
         text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
             (see :ref:`Prompt-Templates`).
             NOTE: this is a deprecated field.
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
         chroma_collection (Optional[Any]): Collection instance from `chromadb` package.
 
     """
@@ -499,8 +497,6 @@ class GPTChromaIndex(GPTVectorStoreIndex):
         service_context: Optional[ServiceContext] = None,
         chroma_collection: Optional[Any] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
-        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -557,8 +553,8 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
             logic for using Opensearch as a vector store (that is, it holds stuff
             like endpoint, index_name and performs operations like initializing the
             index and adding new doc/embeddings to said index).
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
     """
 
     index_struct_cls: Type[IndexDict] = OpensearchIndexDict
@@ -616,8 +612,8 @@ class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
             logic for using Opensearch as a vector store (that is, it holds stuff
             like endpoint, index_name and performs operations like initializing the
             index and adding new doc/embeddings to said index).
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
     """
 
     index_struct_cls: Type[IndexDict] = ChatGPTRetrievalPluginIndexDict
