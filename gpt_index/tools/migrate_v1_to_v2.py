@@ -1,6 +1,7 @@
 """Tool for migrating Index built with V1 data structs to V2."""
+import dataclasses
 import json
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, cast
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 
@@ -27,6 +28,7 @@ from gpt_index.data_structs.data_structs import (
 )
 from gpt_index.data_structs.data_structs_v2 import KG as V2KG
 from gpt_index.data_structs.data_structs_v2 import IndexDict as V2IndexDict
+from gpt_index.data_structs.data_structs_v2 import SimpleIndexDict as V2SimpleIndexDict
 from gpt_index.data_structs.data_structs_v2 import IndexGraph as V2IndexGraph
 from gpt_index.data_structs.data_structs_v2 import IndexList as V2IndexList
 from gpt_index.data_structs.data_structs_v2 import KeywordTable as V2KeywordTable
@@ -124,7 +126,7 @@ def keyword_table_to_v2(struct: KeywordTable) -> Tuple[V2KeywordTable, List[V2No
     nodes_v2 =  [node_to_v2(node) for node in struct.text_chunks.values()]
     return struct_v2, nodes_v2
 
-def index_dict_to_v2(struct: IndexDict) -> Tuple[V2IndexDict]:
+def index_dict_to_v2(struct: IndexDict) -> Tuple[V2IndexDict, List[V2Node]]:
     nodes_dict_v2 = {
         vector_id: struct.nodes_dict[int_id].get_doc_id() for 
         vector_id, int_id in struct.id_map.items()
@@ -144,6 +146,9 @@ def index_dict_to_v2(struct: IndexDict) -> Tuple[V2IndexDict]:
 
     struct_v2 = V2IndexDict(nodes_dict=nodes_dict_v2, doc_id_dict=doc_id_dict_v2, embeddings_dict=struct.embeddings_dict)
     nodes_v2 = [node_to_v2(node) for node in struct.nodes_dict.values()]
+
+    if isinstance(struct, SimpleIndexDict):
+        struct_v2 = V2SimpleIndexDict(**dataclasses.asdict(struct_v2))
     return struct_v2, nodes_v2
 
 def kg_to_v2(struct: KG) -> Tuple[V2KG, List[V2Node]]:

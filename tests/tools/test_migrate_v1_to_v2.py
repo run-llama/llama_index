@@ -1,10 +1,9 @@
-from socket import INADDR_MAX_LOCAL_GROUP
-from sre_constants import IN
 from typing import List
 from gpt_index.constants import DATA_KEY, DOCSTORE_KEY, INDEX_STRUCT_KEY, TYPE_KEY
 
-from gpt_index.data_structs.data_structs import KG, IndexDict, IndexGraph, IndexList, KeywordTable, Node
+from gpt_index.data_structs.data_structs import KG, IndexDict, IndexGraph, IndexList, KeywordTable, Node, SimpleIndexDict
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
+from gpt_index.data_structs.data_structs_v2 import SimpleIndexDict as V2SimpleIndexDict
 from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import DocumentStore
@@ -122,6 +121,21 @@ def test_index_dict_to_v2():
     int_to_text_id = {int_id: text_id for text_id, int_id in struct_v1.id_map.items()}
     expected_nodes_dict =  {int_to_text_id[id_]: node.get_doc_id() for id_, node in struct_v1.nodes_dict.items()}
     assert struct_v2.nodes_dict == expected_nodes_dict
+
+    simple_v1 = SimpleIndexDict(
+        nodes_dict={1: node_1, 2: node_2},
+        id_map ={
+            'text_1': 1, 
+            'text_2': 2,
+        },
+        embeddings_dict={
+            'node_id_1': [0.0],
+            'node_id_2': [0.0],
+        }
+    )
+    simple_v2, _ = index_dict_to_v2(simple_v1)
+    assert isinstance(simple_v2, V2SimpleIndexDict)
+
 
 def test_kg_to_v2():
     node_1 = Node(
