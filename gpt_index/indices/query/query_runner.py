@@ -1,7 +1,9 @@
 """Query runner."""
 
+import asyncio
+import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex, IndexGraph
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
@@ -21,10 +23,12 @@ from gpt_index.indices.query.query_transform.base import (
 )
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.response.schema import RESPONSE_TYPE, Response
+from gpt_index.response.schema import RESPONSE_TYPE, Response, SourceNode
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -178,7 +182,7 @@ class QueryRunner:
         """This is called via BaseQueryCombiner.run."""
         query_obj = self._get_query_obj(index_struct)
         if self._recursive:
-            print(f"Query level : {level} on {index_struct.get_type()}")
+            logger.debug(f"> Query level : {level} on {index_struct.get_type()}")
             # call recursively
             nodes = query_obj.retrieve(query_bundle)
 
@@ -186,45 +190,107 @@ class QueryRunner:
             nodes_for_synthesis = []
             additional_source_nodes = []
             for node_with_score in nodes:
-                if isinstance(node_with_score.node, IndexNode):
-                    index_node = node_with_score.node
-                    # recursive call
-                    response = self.query(query_bundle, index_node.index_id, level + 1)
-
-                    new_node = Node(text=str(response))
-                    new_node_with_score = NodeWithScore(
-                        node=new_node, score=node_with_score.score
-                    )
-                    nodes_for_synthesis.append(new_node_with_score)
-                    additional_source_nodes.extend(response.source_nodes)
-                else:
-                    nodes_for_synthesis.append(node_with_score)
-
+                node_with_score, source_nodes = self._fetch_recursive_nodes(
+                    node_with_score, query_bundle, level
+                )
+                nodes_for_synthesis.append(node_with_score)
+                additional_source_nodes.extend(source_nodes)
             return query_obj.synthesize(
                 query_bundle, nodes_for_synthesis, additional_source_nodes
             )
         else:
             return query_obj.query(query_bundle)
 
-    def query(
+    def _fetch_recursive_nodes(
+        self,
+        node_with_score: NodeWithScore,
+        query_bundle: QueryBundle,
+        level: int,
+    ) -> Tuple[NodeWithScore, List[SourceNode]]:
+        """Fetch nodes.
+
+        Usees existing node if it's not an index node.
+        Otherwise fetch response from corresponding index.
+
+        """
+        if isinstance(node_with_score.node, IndexNode):
+            index_node = node_with_score.node
+            # recursive call
+            response = self.query(query_bundle, index_node.index_id, level + 1)
+
+            new_node = Node(text=str(response))
+            new_node_with_score = NodeWithScore(
+                node=new_node, score=node_with_score.score
+            )
+            return new_node_with_score, response.source_nodes
+        else:
+            return node_with_score, []
+
+    async def _afetch_recursive_nodes(
+        self,
+        node_with_score: NodeWithScore,
+        query_bundle: QueryBundle,
+        level: int,
+    ) -> Tuple[NodeWithScore, List[SourceNode]]:
+        """Fetch nodes.
+
+        Usees existing node if it's not an index node.
+        Otherwise fetch response from corresponding index.
+
+        """
+        if isinstance(node_with_score.node, IndexNode):
+            index_node = node_with_score.node
+            # recursive call
+            response = await self.aquery(query_bundle, index_node.index_id, level + 1)
+
+            new_node = Node(text=str(response))
+            new_node_with_score = NodeWithScore(
+                node=new_node, score=node_with_score.score
+            )
+            return new_node_with_score, response.source_nodes
+        else:
+            return node_with_score, []
+
+    async def aquery_transformed(
+        self,
+        query_bundle: QueryBundle,
+        index_struct: V2IndexStruct,
+        level: int = 0,
+    ) -> RESPONSE_TYPE:
+        """This is called via BaseQueryCombiner.run."""
+        query_obj = self._get_query_obj(index_struct)
+        if self._recursive:
+            logger.debug(f"> Query level : {level} on {index_struct.get_type()}")
+            # call recursively
+            nodes = query_obj.retrieve(query_bundle)
+
+            # do recursion here
+            tasks = []
+            nodes_for_synthesis = []
+            additional_source_nodes = []
+
+            for node_with_score in nodes:
+                tasks.append(
+                    self._afetch_recursive_nodes(node_with_score, query_bundle, level)
+                )
+
+            tuples = await asyncio.gather(*tasks)
+            for node_with_score, source_nodes in tuples:
+                nodes_for_synthesis.append(node_with_score)
+                additional_source_nodes.extend(source_nodes)
+
+            return await query_obj.asynthesize(
+                query_bundle, nodes_for_synthesis, additional_source_nodes
+            )
+        else:
+            return await query_obj.aquery(query_bundle)
+
+    def _prepare_query_objects(
         self,
         query_str_or_bundle: Union[str, QueryBundle],
         index_id: Optional[str] = None,
-        level: int = 0,
-    ) -> RESPONSE_TYPE:
-        """Run query.
-        
-        NOTE: Relies on mutual recursion between 
-            - QueryRunner.query
-            - QueryRunner.query_transformed
-            - BaseQueryCombiner.run
-        
-        QueryRunner.query resolves the current index struct, 
-            then pass control to BaseQueryCombiner.run.
-        BaseQueryCombiner.run applies query transforms and makes multiple queries on the same index.
-        Each query is passed to QueryRunner.query_transformed for execution.
-            During execution, we recursively calls QueryRunner.query if index is a composable graph.
-        """
+    ) -> Tuple[BaseQueryCombiner, QueryBundle]:
+        """Prepare query combiner and query bundle for query call."""
         # Resolve index struct from index_id if necessary
         if isinstance(self._index_struct, CompositeIndex):
             if index_id is None:
@@ -235,7 +301,7 @@ class QueryRunner:
             if index_id is not None:
                 raise ValueError("index_id should be used with composite graph")
             index_struct = self._index_struct
-        
+
         # Wrap query string as QueryBundle if necessary
         if isinstance(query_str_or_bundle, str):
             query_bundle = QueryBundle(
@@ -247,60 +313,40 @@ class QueryRunner:
 
         query_transform = self._get_query_transform(index_struct)
         query_combiner = self._get_query_combiner(index_struct, query_transform)
-        return query_combiner.run(query_bundle, level)
+        return query_combiner, query_bundle
 
+    def query(
+        self,
+        query_str_or_bundle: Union[str, QueryBundle],
+        index_id: Optional[str] = None,
+        level: int = 0,
+    ) -> RESPONSE_TYPE:
+        """Run query.
+
+        NOTE: Relies on mutual recursion between
+            - QueryRunner.query
+            - QueryRunner.query_transformed
+            - BaseQueryCombiner.run
+
+        QueryRunner.query resolves the current index struct,
+            then pass control to BaseQueryCombiner.run.
+        BaseQueryCombiner.run applies query transforms and makes multiple queries on the same index.
+        Each query is passed to QueryRunner.query_transformed for execution.
+            During execution, we recursively calls QueryRunner.query if index is a composable graph.
+        """
+        query_combiner, query_bundle = self._prepare_query_objects(
+            query_str_or_bundle, index_id=index_id
+        )
+        return query_combiner.run(query_bundle, level)
 
     async def aquery(
         self,
         query_str_or_bundle: Union[str, QueryBundle],
         index_id: Optional[str] = None,
+        level: int = 0,
     ) -> RESPONSE_TYPE:
         """Run query."""
-        if isinstance(self._index_struct, CompositeIndex):
-            if index_id is None:
-                index_id = self._index_struct.root_id
-            assert index_id is not None
-            index_struct = self._index_struct.all_index_structs[index_id]
-        else:
-            if index_id is not None:
-                raise ValueError("index_id should be used with composite graph")
-            index_struct = self._index_struct
-
-        # TODO: support query combiner
-        # query_combiner = self._get_query_combiner(index_struct, query_transform)
-
-        # query transform
-        query_transform = self._get_query_transform(index_struct)
-        transform_extra_info = {"index_struct": index_struct}
-        query_bundle = query_transform(
-            query_str_or_bundle, extra_info=transform_extra_info
+        query_combiner, query_bundle = self._prepare_query_objects(
+            query_str_or_bundle, index_id=index_id
         )
-        query_obj = self._get_query_obj(index_struct)
-
-        if self._recursive:
-            # call recursively
-            nodes = query_obj.retrieve(query_bundle)
-
-            # do recursion here
-            nodes_for_synthesis = []
-            additional_source_nodes = []
-            for node_with_score in nodes:
-                if isinstance(node_with_score.node, IndexNode):
-                    index_node = node_with_score.node
-                    # recursive call
-                    response = await self.aquery(query_bundle, index_node.index_id)
-
-                    new_node = Node(text=str(response))
-                    new_node_with_score = NodeWithScore(
-                        node=new_node, score=node_with_score.score
-                    )
-                    nodes_for_synthesis.append(new_node_with_score)
-                    additional_source_nodes.extend(response.source_nodes)
-                else:
-                    nodes_for_synthesis.append(node_with_score)
-
-            return await query_obj.asynthesize(
-                query_bundle, nodes_for_synthesis, additional_source_nodes
-            )
-        else:
-            return await query_obj.aquery(query_bundle)
+        return await query_combiner.arun(query_bundle, level)
