@@ -49,7 +49,7 @@ from llama_index.node_parser import SimpleNodeParser
 
 parser = SimpleNodeParser()
 
-nodes = parser.get_nodes_from_documents()
+nodes = parser.get_nodes_from_documents(documents)
 
 ```
 
