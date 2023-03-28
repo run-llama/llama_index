@@ -15,7 +15,7 @@ from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
-from gpt_index.indices.graph.base import GPTTreeIndex
+from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store.vector_indices import GPTSimpleVectorIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMChain,
@@ -146,7 +146,7 @@ def test_recursive_query_list_tree(
     # there are two root nodes in this graph: one containing [list1, list2]
     # and the other containing [list3, list4]
     graph = ComposableGraph.from_indices(
-        GPTTreeIndex
+        GPTTreeIndex,
         [
             list1,
             list2,
