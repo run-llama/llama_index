@@ -130,19 +130,18 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     @abstractmethod
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
-        """Insert nodes."""
+        """Index-specific logic for inserting nodes to the index struct."""
 
     @llm_token_counter("insert")
-    def insert(self, document: Document, **insert_kwargs: Any) -> None:
-        """Insert a document.
-
-        Args:
-            document (Union[BaseDocument, BaseGPTIndex]): document to insert
-
-        """
-        nodes = self.service_context.node_parser.get_nodes_from_documents([document])
+    def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+        """Insert nodes."""
         self.docstore.add_documents(nodes)
         self._insert(nodes, **insert_kwargs)
+        
+    def insert(self, document: Document, **insert_kwargs: Any) -> None:
+        """Insert a document."""
+        nodes = self.service_context.node_parser.get_nodes_from_documents([document])
+        self.insert_nodes(nodes, **insert_kwargs)
 
     @abstractmethod
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
