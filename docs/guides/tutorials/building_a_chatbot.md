@@ -28,7 +28,7 @@ We have a direct integration with Unstructured through [LlamaHub](https://llamah
 
 ```python
 
-from llama_index import download_loader, GPTSimpleVectorIndex
+from llama_index import download_loader, GPTSimpleVectorIndex, ServiceContext
 from pathlib import Path
 
 years = [2022, 2021, 2020, 2019]
@@ -55,9 +55,10 @@ We build each index and save it to disk.
 
 ```python
 # initialize simple vector indices + global vector index
+service_context = ServiceContext.from_defaults(chunk_size_limit=512)
 index_set = {}
 for year in years:
-    cur_index = GPTSimpleVectorIndex(doc_set[year], chunk_size_limit=512)
+    cur_index = GPTSimpleVectorIndex.from_documents(doc_set[year], service_context=service_context)
     index_set[year] = cur_index
     cur_index.save_to_disk(f'index_{year}.json')
 
@@ -80,27 +81,33 @@ Since we have access to documents of 4 questions, we may not only want to ask qu
 To address this, we compose a "graph" which consists of a list index defined over the 4 vector indices. Querying this graph would first retrieve information from each vector index, and combine information together via the list index.
 
 ```python
-from llama_index import GPTListIndex, LLMPredictor
+from llama_index import GPTListIndex, LLMPredictor, ServiceContext
 from langchain import OpenAI
-from llama_index.composability import ComposableGraph
+from llama_index.indices.composability import ComposableGraph
 
-# set summary text for each doc
-for year in years:
-    index_set[year].set_text(f"UBER 10-k Filing for {year} fiscal year")
+# describe each index to help traversal of composed graph
+index_summaries = [f"UBER 10-k Filing for {year} fiscal year" for year in years]
 
 # define an LLMPredictor set number of output tokens
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, max_tokens=512))
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # define a list index over the vector indices
 # allows us to synthesize information across each index
-list_index = GPTListIndex([index_set[y] for y in years], llm_predictor=llm_predictor)
-
-graph = ComposableGraph.build_from_index(list_index)
+graph = ComposableGraph.from_indices(
+    GPTListIndex,
+    [index_set[y] for y in years], 
+    index_summaries=index_summaries,
+    service_context=service_context,
+)
 
 # [optional] save to disk
 graph.save_to_disk('10k_graph.json')
 # [optional] load from disk, so you don't need to build graph from scratch
-graph = ComposableGraph.load_from_disk('10k_graph.json', llm_predictor=llm_predictor)
+graph = ComposableGraph.load_from_disk(
+    '10k_graph.json', 
+    service_context=service_context,
+)
 
 ```
 

@@ -5,7 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.data_structs.data_structs import IndexGraph, Node
+from gpt_index.data_structs.data_structs_v2 import IndexGraph
+from gpt_index.data_structs.node_v2 import Node
+from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMChain,
@@ -61,19 +63,17 @@ def documents() -> List[Document]:
 
 
 def _get_left_or_right_node(
-    index_graph: IndexGraph, node: Optional[Node], left: bool = True
+    docstore: DocumentStore,
+    index_graph: IndexGraph,
+    node: Optional[Node],
+    left: bool = True,
 ) -> Node:
     """Get 'left' or 'right' node."""
-    if node is None:
-        indices = set(index_graph.root_nodes.keys())
-    else:
-        indices = node.child_indices
-
+    children_dict = index_graph.get_children(node)
+    indices = list(children_dict.keys())
     index = min(indices) if left else max(indices)
-
-    if index not in index_graph.all_nodes:
-        raise ValueError(f"Node {index} not in index_graph.all_nodes")
-    return index_graph.all_nodes[index]
+    node_id = children_dict[index]
+    return docstore.get_node(node_id)
 
 
 @patch_common
@@ -88,17 +88,20 @@ def test_build_tree(
 ) -> None:
     """Test build tree."""
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex(documents, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
-    assert tree.index_struct.all_nodes[0].text == "Hello world."
-    assert tree.index_struct.all_nodes[1].text == "This is a test."
-    assert tree.index_struct.all_nodes[2].text == "This is another test."
-    assert tree.index_struct.all_nodes[3].text == "This is a test v2."
-    assert tree.index_struct.all_nodes[4].text == ("Hello world.\nThis is a test.")
-    assert tree.index_struct.all_nodes[5].text == (
-        "This is another test.\nThis is a test v2."
-    )
+
+    print(tree.docstore.docs)
+    print(len(tree.docstore.docs))
+    print(tree.index_struct.all_nodes)
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
+    assert nodes[4].text == ("Hello world.\nThis is a test.")
+    assert nodes[5].text == ("This is another test.\nThis is a test v2.")
 
 
 @patch_common
@@ -120,20 +123,19 @@ def test_build_tree_with_embed(
         "This is a test v2."
     )
     document = Document(doc_text, embedding=[0.1, 0.2, 0.3])
-    tree = GPTTreeIndex([document], **index_kwargs)
+    tree = GPTTreeIndex.from_documents([document], **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
-    assert tree.index_struct.all_nodes[0].text == "Hello world."
-    assert tree.index_struct.all_nodes[1].text == "This is a test."
-    assert tree.index_struct.all_nodes[2].text == "This is another test."
-    assert tree.index_struct.all_nodes[3].text == "This is a test v2."
+    all_nodes = tree.docstore.get_node_dict(tree.index_struct.all_nodes)
+    assert all_nodes[0].text == "Hello world."
+    assert all_nodes[1].text == "This is a test."
+    assert all_nodes[2].text == "This is another test."
+    assert all_nodes[3].text == "This is a test v2."
     # make sure all leaf nodes have embeddings
     for i in range(4):
-        assert tree.index_struct.all_nodes[i].embedding == [0.1, 0.2, 0.3]
-    assert tree.index_struct.all_nodes[4].text == ("Hello world.\nThis is a test.")
-    assert tree.index_struct.all_nodes[5].text == (
-        "This is another test.\nThis is a test v2."
-    )
+        assert all_nodes[i].embedding == [0.1, 0.2, 0.3]
+    assert all_nodes[4].text == ("Hello world.\nThis is a test.")
+    assert all_nodes[5].text == ("This is another test.\nThis is a test v2.")
 
 
 OUTPUTS = [
@@ -158,17 +160,16 @@ def test_build_tree_async(
 ) -> None:
     """Test build tree with use_async."""
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex(documents, use_async=True, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(documents, use_async=True, **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
-    assert tree.index_struct.all_nodes[0].text == "Hello world."
-    assert tree.index_struct.all_nodes[1].text == "This is a test."
-    assert tree.index_struct.all_nodes[2].text == "This is another test."
-    assert tree.index_struct.all_nodes[3].text == "This is a test v2."
-    assert tree.index_struct.all_nodes[4].text == ("Hello world.\nThis is a test.")
-    assert tree.index_struct.all_nodes[5].text == (
-        "This is another test.\nThis is a test v2."
-    )
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
+    assert nodes[4].text == ("Hello world.\nThis is a test.")
+    assert nodes[5].text == ("This is another test.\nThis is a test v2.")
 
 
 @patch_common
@@ -187,13 +188,14 @@ def test_build_tree_multiple(
         Document("This is another test.\nThis is a test v2."),
     ]
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex(new_docs, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(new_docs, **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
-    assert tree.index_struct.all_nodes[0].text == "Hello world."
-    assert tree.index_struct.all_nodes[1].text == "This is a test."
-    assert tree.index_struct.all_nodes[2].text == "This is another test."
-    assert tree.index_struct.all_nodes[3].text == "This is a test v2."
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
 
 
 @patch_common
@@ -208,7 +210,7 @@ def test_query(
 ) -> None:
     """Test query."""
     index_kwargs, query_kwargs = struct_kwargs
-    tree = GPTTreeIndex(documents, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
 
     # test default query
     query_str = "What is?"
@@ -217,7 +219,9 @@ def test_query(
 
 
 @patch_common
+@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_predict)
 def test_summarize_query(
+    _mock_apredict: Any,
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
@@ -231,7 +235,7 @@ def test_summarize_query(
     index_kwargs, orig_query_kwargs = struct_kwargs
     index_kwargs = index_kwargs.copy()
     index_kwargs.update({"build_tree": False})
-    tree = GPTTreeIndex(documents, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
 
     # test summarize query
     query_str = "What is?"
@@ -260,7 +264,7 @@ def test_insert(
 ) -> None:
     """Test insert."""
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex(documents, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
 
     # test insert
     new_doc = Document("This is a new doc.", doc_id="new_doc")
@@ -274,32 +278,38 @@ def test_insert(
     # of the left root node.
     # "This is a test", "This is a new doc." are the children of
     # "This is a test\n.This is a new doc."
-    left_root = _get_left_or_right_node(tree.index_struct, None)
+    left_root = _get_left_or_right_node(tree.docstore, tree.index_struct, None)
     assert left_root.text == "Hello world.\nThis is a test.\nThis is a new doc."
-    left_root2 = _get_left_or_right_node(tree.index_struct, left_root)
-    right_root2 = _get_left_or_right_node(tree.index_struct, left_root, left=False)
+    left_root2 = _get_left_or_right_node(tree.docstore, tree.index_struct, left_root)
+    right_root2 = _get_left_or_right_node(
+        tree.docstore, tree.index_struct, left_root, left=False
+    )
     assert left_root2.text == "Hello world."
     assert right_root2.text == "This is a test.\nThis is a new doc."
-    left_root3 = _get_left_or_right_node(tree.index_struct, right_root2)
-    right_root3 = _get_left_or_right_node(tree.index_struct, right_root2, left=False)
+    left_root3 = _get_left_or_right_node(tree.docstore, tree.index_struct, right_root2)
+    right_root3 = _get_left_or_right_node(
+        tree.docstore, tree.index_struct, right_root2, left=False
+    )
     assert left_root3.text == "This is a test."
     assert right_root3.text == "This is a new doc."
     assert right_root3.ref_doc_id == "new_doc"
 
     # test insert from empty (no_id)
-    tree = GPTTreeIndex([], **index_kwargs)
+    tree = GPTTreeIndex.from_documents([], **index_kwargs)
     new_doc = Document("This is a new doc.")
     tree.insert(new_doc)
-    assert len(tree.index_struct.all_nodes) == 1
-    assert tree.index_struct.all_nodes[0].text == "This is a new doc."
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
+    assert len(nodes) == 1
+    assert nodes[0].text == "This is a new doc."
 
     # test insert from empty (with_id)
-    tree = GPTTreeIndex([], **index_kwargs)
+    tree = GPTTreeIndex.from_documents([], **index_kwargs)
     new_doc = Document("This is a new doc.", doc_id="new_doc_test")
     tree.insert(new_doc)
     assert len(tree.index_struct.all_nodes) == 1
-    assert tree.index_struct.all_nodes[0].text == "This is a new doc."
-    assert tree.index_struct.all_nodes[0].ref_doc_id == "new_doc_test"
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
+    assert nodes[0].text == "This is a new doc."
+    assert nodes[0].ref_doc_id == "new_doc_test"
 
 
 def _mock_tokenizer(text: str) -> int:
@@ -337,8 +347,8 @@ def test_build_and_count_tokens(
     first_block_count = 5
     second_block_count = 8
     llmchain_mock_resp_token_count = 4
-    tree = GPTTreeIndex(documents, **index_kwargs)
-    assert tree._llm_predictor.total_tokens_used == (
+    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
+    assert tree.service_context.llm_predictor.total_tokens_used == (
         (first_block_count + llmchain_mock_resp_token_count)
         + (second_block_count + llmchain_mock_resp_token_count)
     )

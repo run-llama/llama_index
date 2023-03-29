@@ -6,7 +6,7 @@ An index that is built on top of an existing Qdrant collection.
 import logging
 from typing import Any, List, Optional, cast
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.utils import get_new_id
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
@@ -96,7 +96,6 @@ class QdrantVectorStore(VectorStore):
             payload = {
                 "doc_id": result.doc_id,
                 "text": node.get_text(),
-                "index": node.index,
                 "extra_info": node.extra_info,
             }
 
@@ -208,9 +207,11 @@ class QdrantVectorStore(VectorStore):
         for point in response:
             payload = cast(Payload, point.payload)
             node = Node(
-                ref_doc_id=payload.get("doc_id"),
                 text=payload.get("text"),
                 extra_info=payload.get("extra_info"),
+                relationships={
+                    DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
+                },
             )
             nodes.append(node)
             similarities.append(point.score)

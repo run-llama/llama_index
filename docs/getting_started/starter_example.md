@@ -38,7 +38,7 @@ Create a new `.py` file with the following:
 from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTSimpleVectorIndex(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 ```
 
 This builds an index over the documents in the `data` folder (which in this case just consists of the essay text). We then run the following
@@ -78,6 +78,6 @@ index = GPTSimpleVectorIndex.load_from_disk('index.json')
 ### Next Steps
 
 That's it! For more information on LlamaIndex features, please check out the numerous "Guides" to the left.
-If you are interested in further exploring how LlamaIndex works, check out our [Primer Guide](/guides/primer.md).
+If you are interested in further exploring how LlamaIndex works, check out our [Primer Guide](/guides/primer.rst).
 
 Additionally, if you would like to play around with Example Notebooks, check out [this link](/reference/example_notebooks.rst).

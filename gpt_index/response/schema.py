@@ -5,7 +5,7 @@ from typing import Any, Dict, Generator, List, Optional, Union
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.utils import truncate_text
 
 
@@ -38,7 +38,6 @@ class SourceNode(DataClassJsonMixin):
             extra_info=node.extra_info,
             node_info=node.node_info,
             similarity=similarity,
-            image=node.image,
         )
 
     @classmethod

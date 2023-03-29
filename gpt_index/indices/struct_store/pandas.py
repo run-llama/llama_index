@@ -1,17 +1,15 @@
 """Pandas csv structured store."""
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Optional, Sequence
 
 import pandas as pd
 
-from gpt_index.data_structs.table import PandasStructTable
-from gpt_index.indices.base import DOCUMENTS_INPUT
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.table_v2 import PandasStructTable
+from gpt_index.indices.base import QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.struct_store.pandas import GPTNLPandasIndexQuery
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
-from gpt_index.schema import BaseDocument
 
 
 class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
@@ -34,32 +32,28 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
 
     def __init__(
         self,
-        documents: Optional[Sequence[DOCUMENTS_INPUT]] = None,
+        nodes: Optional[Sequence[Node]] = None,
         df: Optional[pd.DataFrame] = None,
         index_struct: Optional[PandasStructTable] = None,
-        llm_predictor: Optional[LLMPredictor] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        if documents is not None:
-            raise ValueError("We currently do not support indexing documents.")
+        if nodes is not None:
+            raise ValueError("We currently do not support indexing documents or nodes.")
         self.df = df
 
         super().__init__(
-            documents=[],
+            nodes=[],
             index_struct=index_struct,
-            llm_predictor=llm_predictor,
             **kwargs,
         )
 
-    def _build_index_from_documents(
-        self, documents: Sequence[BaseDocument]
-    ) -> PandasStructTable:
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> PandasStructTable:
         """Build index from documents."""
         index_struct = self.index_struct_cls()
         return index_struct
 
-    def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         raise NotImplementedError("We currently do not support inserting documents.")
 
@@ -77,7 +71,7 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
         query_kwargs["df"] = self.df
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(self) -> QueryMap:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTNLPandasIndexQuery,

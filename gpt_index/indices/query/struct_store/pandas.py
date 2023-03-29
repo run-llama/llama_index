@@ -6,7 +6,7 @@ from typing import Any, Callable, Optional
 import pandas as pd
 from langchain.input import print_text
 
-from gpt_index.data_structs.table import PandasStructTable
+from gpt_index.data_structs.table_v2 import PandasStructTable
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
@@ -114,7 +114,7 @@ class GPTNLPandasIndexQuery(BaseGPTIndexQuery[PandasStructTable]):
         """Answer a query."""
         context = self._get_table_context()
 
-        pandas_response_str, _ = self._llm_predictor.predict(
+        pandas_response_str, _ = self._service_context.llm_predictor.predict(
             self._pandas_prompt,
             df_str=context,
             query_str=query_bundle.query_str,

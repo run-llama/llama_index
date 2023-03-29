@@ -4,7 +4,8 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from gpt_index.data_structs.data_structs import KG, Node
+from gpt_index.data_structs.data_structs_v2 import KG
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import (
@@ -54,10 +55,10 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             (see :ref:`Prompt-Templates`).
         max_keywords_per_query (int): Maximum number of keywords to extract from query.
         num_chunks_per_query (int): Maximum number of text chunks to query.
-        include_text (bool): Use the document text source from each relevent triplet
+        include_text (bool): Use the document text source from each relevant triplet
             during queries.
         embedding_mode (KGQueryMode): Specifies whether to use keyowrds,
-            embeddings, or both to find relevent triplets. Should be one of "keyword",
+            embeddings, or both to find relevant triplets. Should be one of "keyword",
             "embedding", or "hybrid".
         similarity_top_k (int): The number of top embeddings to use
             (if embeddings are used).
@@ -85,7 +86,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        response, _ = self._llm_predictor.predict(
+        response, _ = self._service_context.llm_predictor.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,
@@ -104,7 +105,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
                 keywords.append(keyword.strip("(\"'"))
         return keywords
 
-    def _get_nodes_for_response(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
@@ -130,7 +131,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             self._embedding_mode != KGQueryMode.KEYWORD
             and len(self.index_struct.embedding_dict) > 0
         ):
-            query_embedding = self._embed_model.get_text_embedding(
+            query_embedding = self._service_context.embed_model.get_text_embedding(
                 query_bundle.query_str
             )
             all_rel_texts = list(self.index_struct.embedding_dict.keys())
@@ -174,9 +175,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             reverse=True,
         )
         sorted_chunk_indices = sorted_chunk_indices[: self.num_chunks_per_query]
-        sorted_nodes = [
-            self.index_struct.text_chunks[idx] for idx in sorted_chunk_indices
-        ]
+        sorted_nodes = self._docstore.get_nodes(sorted_chunk_indices)
         # filter sorted nodes
         postprocess_info = {"similarity_tracker": similarity_tracker}
         for node_processor in self.node_preprocessors:

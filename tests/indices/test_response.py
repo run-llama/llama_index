@@ -8,6 +8,7 @@ import pytest
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.prompt_helper import PromptHelper
 from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.readers.schema.base import Document
@@ -48,13 +49,12 @@ def test_give_response(
 ) -> None:
     """Test give response."""
     prompt_helper = PromptHelper(MAX_CHUNK_SIZE, NUM_OUTPUTS, MAX_CHUNK_OVERLAP)
-    llm_predictor = LLMPredictor()
+    service_context = ServiceContext.from_defaults(prompt_helper=prompt_helper)
     query_str = "What is?"
 
     # test single line
     builder = ResponseBuilder(
-        prompt_helper,
-        llm_predictor,
+        service_context,
         MOCK_TEXT_QA_PROMPT,
         MOCK_REFINE_PROMPT,
         texts=[TextChunk("This is a single line.")],
@@ -64,8 +64,7 @@ def test_give_response(
 
     # test multiple lines
     builder = ResponseBuilder(
-        prompt_helper,
-        llm_predictor,
+        service_context,
         MOCK_TEXT_QA_PROMPT,
         MOCK_REFINE_PROMPT,
         texts=[TextChunk(documents[0].get_text())],
@@ -97,12 +96,12 @@ def test_compact_response(
     prompt_helper = PromptHelper(
         11, 0, 0, tokenizer=mock_tokenizer, separator="\n\n", chunk_size_limit=4
     )
+    service_context = ServiceContext.from_defaults(prompt_helper=prompt_helper)
     cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
     # within compact, make sure that chunk size is 8
-    llm_predictor = LLMPredictor()
     query_str = "What is?"
     texts = [
         TextChunk("This\n\nis\n\na\n\nbar"),
@@ -112,8 +111,7 @@ def test_compact_response(
     ]
 
     builder = ResponseBuilder(
-        prompt_helper,
-        llm_predictor,
+        service_context,
         mock_qa_prompt,
         mock_refine_prompt,
         texts=texts,
@@ -146,9 +144,9 @@ def test_tree_summarize_response(
     # --> 10 tokens for 2 chunks -->
     # 5 tokens per chunk, 1 is padding --> 4 tokens per chunk
     prompt_helper = PromptHelper(12, 0, 0, tokenizer=mock_tokenizer, separator="\n\n")
+    service_context = ServiceContext.from_defaults(prompt_helper=prompt_helper)
 
     # within tree_summarize, make sure that chunk size is 8
-    llm_predictor = LLMPredictor()
     query_str = "What is?"
     texts = [
         TextChunk("This\n\nis\n\na\n\nbar"),
@@ -158,8 +156,7 @@ def test_tree_summarize_response(
     ]
 
     builder = ResponseBuilder(
-        prompt_helper,
-        llm_predictor,
+        service_context,
         mock_qa_prompt,
         mock_refine_prompt,
         texts=texts,

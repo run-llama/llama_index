@@ -52,7 +52,7 @@ any respective LLM calls are made.
 
 To predict token usage of LLM calls, import and instantiate the MockLLMPredictor with the following:
 ```python
-from llama_index import MockLLMPredictor
+from llama_index import MockLLMPredictor, ServiceContext
 
 llm_predictor = MockLLMPredictor(max_tokens=256)
 ```
@@ -66,8 +66,9 @@ from llama_index import GPTTreeIndex, MockLLMPredictor, SimpleDirectoryReader
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 # the "mock" llm predictor is our token counter
 llm_predictor = MockLLMPredictor(max_tokens=256)
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 # pass the "mock" llm_predictor into GPTTreeIndex during index construction
-index = GPTTreeIndex(documents, llm_predictor=llm_predictor)
+index = GPTTreeIndex.from_documents(documents, service_context=service_context)
 
 # get number of tokens used
 print(llm_predictor.last_token_usage)
@@ -76,7 +77,7 @@ print(llm_predictor.last_token_usage)
 **Index Querying**
 
 ```python
-response = index.query("What did the author do growing up?", llm_predictor=llm_predictor)
+response = index.query("What did the author do growing up?", service_context=service_context)
 
 # get number of tokens used
 print(llm_predictor.last_token_usage)
@@ -92,7 +93,8 @@ from llama_index import (
     GPTSimpleVectorIndex, 
     MockLLMPredictor, 
     MockEmbedding, 
-    SimpleDirectoryReader
+    SimpleDirectoryReader,
+    ServiceContext
 )
 
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
@@ -101,10 +103,11 @@ index = GPTSimpleVectorIndex.load_from_disk('../paul_graham_essay/index_simple_v
 # specify both a MockLLMPredictor as wel as MockEmbedding
 llm_predictor = MockLLMPredictor(max_tokens=256)
 embed_model = MockEmbedding(embed_dim=1536)
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, embed_model=embed_model)
+
 response = index.query(
     "What did the author do after his time at Y Combinator?",
-    llm_predictor=llm_predictor,
-    embed_model=embed_model
+    service_context=service_context
 )
 ```
 

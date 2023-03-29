@@ -8,9 +8,10 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.composability.graph import ComposableGraph
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
@@ -131,36 +132,36 @@ def test_recursive_query_list_tree(
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
     # try building a list for every two, then a tree
-    list1 = GPTListIndex(documents[0:2], **list_kwargs)
-    list1.set_text("summary1")
-    list2 = GPTListIndex(documents[2:4], **list_kwargs)
-    list2.set_text("summary2")
-    list3 = GPTListIndex(documents[4:6], **list_kwargs)
-    list3.set_text("summary3")
-    list4 = GPTListIndex(documents[6:8], **list_kwargs)
-    list4.set_text("summary4")
+    list1 = GPTListIndex.from_documents(documents[0:2], **list_kwargs)
+    list2 = GPTListIndex.from_documents(documents[2:4], **list_kwargs)
+    list3 = GPTListIndex.from_documents(documents[4:6], **list_kwargs)
+    list4 = GPTListIndex.from_documents(documents[6:8], **list_kwargs)
+
+    summary1 = "summary1"
+    summary2 = "summary2"
+    summary3 = "summary3"
+    summary4 = "summary4"
+    summaries = [summary1, summary2, summary3, summary4]
 
     # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
-    tree = GPTTreeIndex(
+    graph = ComposableGraph.from_indices(
+        GPTTreeIndex,
         [
             list1,
             list2,
             list3,
             list4,
         ],
+        index_summaries=summaries,
         **tree_kwargs
     )
+    assert isinstance(graph, ComposableGraph)
     query_str = "What is?"
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
-    response = tree.query(query_str, mode="recursive", query_configs=query_configs)
-    assert str(response) == ("What is?:This is a test v2.")
-
-    # Also test a non-recursive query. This should not go down into the list
-    tree_query_kwargs = query_configs[0].query_kwargs
-    response = tree.query(query_str, mode="default", **tree_query_kwargs)
-    assert str(response) == ("What is?:summary1")
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("What is?:What is?:This is a test v2.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -181,26 +182,24 @@ def test_recursive_query_tree_list(
     tree_kwargs = index_kwargs["tree"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    tree1 = GPTTreeIndex(documents[2:6], **tree_kwargs)
-    tree2 = GPTTreeIndex(documents[:2] + documents[6:], **tree_kwargs)
-    tree1.set_text("tree_summary1")
-    tree2.set_text("tree_summary2")
+    tree1 = GPTTreeIndex.from_documents(documents[2:6], **tree_kwargs)
+    tree2 = GPTTreeIndex.from_documents(documents[:2] + documents[6:], **tree_kwargs)
+    summaries = [
+        "tree_summary1",
+        "tree_summary2",
+    ]
 
     # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
-    list_index = GPTListIndex([tree1, tree2], **list_kwargs)
+    graph = ComposableGraph.from_indices(
+        GPTListIndex, [tree1, tree2], index_summaries=summaries, **list_kwargs
+    )
+    assert isinstance(graph, ComposableGraph)
     query_str = "What is?"
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
-    response = list_index.query(
-        query_str, mode="recursive", query_configs=query_configs
-    )
-    assert str(response) == ("What is?:This is a test.")
-
-    # Also test a non-recursive query. This should not go down into the list
-    list_query_kwargs = query_configs[1].query_kwargs
-    response = list_index.query(query_str, mode="default", **list_query_kwargs)
-    assert str(response) == ("What is?:tree_summary1")
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("What is?:What is?:This is a test.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -221,38 +220,31 @@ def test_recursive_query_table_list(
     table_kwargs = index_kwargs["table"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    table1 = GPTSimpleKeywordTableIndex(documents[4:6], **table_kwargs)
-    table2 = GPTSimpleKeywordTableIndex(documents[2:3], **table_kwargs)
-    table1.set_text("table_summary1")
-    table2.set_text("table_summary2")
-    table1.set_doc_id("table1")
-    table2.set_doc_id("table2")
+    table1 = GPTSimpleKeywordTableIndex.from_documents(documents[4:6], **table_kwargs)
+    table2 = GPTSimpleKeywordTableIndex.from_documents(documents[2:3], **table_kwargs)
+    summaries = [
+        "table_summary1",
+        "table_summary2",
+    ]
 
-    list_index = GPTListIndex([table1, table2], **list_kwargs)
-    query_str = "World?"
-    response = list_index.query(
-        query_str, mode="recursive", query_configs=query_configs
+    graph = ComposableGraph.from_indices(
+        GPTListIndex, [table1, table2], index_summaries=summaries, **list_kwargs
     )
-    assert str(response) == ("World?:Hello world.")
+    assert isinstance(graph, ComposableGraph)
+    query_str = "World?"
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("World?:World?:Hello world.")
 
     query_str = "Test?"
-    response = list_index.query(
-        query_str, mode="recursive", query_configs=query_configs
-    )
-    assert str(response) == ("Test?:This is a test.")
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Test?:Test?:This is a test.")
 
     # test serialize and then back
     with TemporaryDirectory() as tmpdir:
-        graph = ComposableGraph.build_from_index(list_index)
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         response = graph.query(query_str, query_configs=query_configs)
-        assert str(response) == ("Test?:This is a test.")
-
-        # test graph.get_index
-        test_table1 = graph.get_index("table1", GPTSimpleKeywordTableIndex)
-        response = test_table1.query("Hello")
-        assert str(response) == ("Hello:Hello world.")
+        assert str(response) == ("Test?:Test?:This is a test.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -274,34 +266,41 @@ def test_recursive_query_list_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTListIndex(documents[0:2], **list_kwargs)
-    list1.set_text("foo bar")
-    list2 = GPTListIndex(documents[2:4], **list_kwargs)
-    list2.set_text("apple orange")
-    list3 = GPTListIndex(documents[4:6], **list_kwargs)
-    list3.set_text("toronto london")
-    list4 = GPTListIndex(documents[6:8], **list_kwargs)
-    list4.set_text("cat dog")
+    list1 = GPTListIndex.from_documents(documents[0:2], **list_kwargs)
+    list2 = GPTListIndex.from_documents(documents[2:4], **list_kwargs)
+    list3 = GPTListIndex.from_documents(documents[4:6], **list_kwargs)
+    list4 = GPTListIndex.from_documents(documents[6:8], **list_kwargs)
+    summaries = [
+        "foo bar",
+        "apple orange",
+        "toronto london",
+        "cat dog",
+    ]
 
-    table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
+    graph = ComposableGraph.from_indices(
+        GPTSimpleKeywordTableIndex,
+        [list1, list2, list3, list4],
+        index_summaries=summaries,
+        **table_kwargs
+    )
+    assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
-    response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert str(response) == ("Foo?:This is a test v2.")
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Foo?:Foo?:This is a test v2.")
     query_str = "Orange?"
-    response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert str(response) == ("Orange?:This is a test.")
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Orange?:Orange?:This is a test.")
     query_str = "Cat?"
-    response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert str(response) == ("Cat?:This is another test.")
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Cat?:Cat?:This is another test.")
 
     # test serialize and then back
     # use composable graph struct
     with TemporaryDirectory() as tmpdir:
-        graph = ComposableGraph.build_from_index(table)
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         response = graph.query(query_str, query_configs=query_configs)
-        assert str(response) == ("Cat?:This is another test.")
+        assert str(response) == ("Cat?:Cat?:This is another test.")
 
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
@@ -321,39 +320,44 @@ def test_recursive_query_list_tree_token_count(
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
     # try building a list for every two, then a tree
-    list1 = GPTListIndex(documents[0:2], **list_kwargs)
-    list1.set_text("summary1")
-    list2 = GPTListIndex(documents[2:4], **list_kwargs)
-    list2.set_text("summary2")
-    list3 = GPTListIndex(documents[4:6], **list_kwargs)
-    list3.set_text("summary3")
-    list4 = GPTListIndex(documents[6:8], **list_kwargs)
-    list4.set_text("summary4")
+    list1 = GPTListIndex.from_documents(documents[0:2], **list_kwargs)
+    list2 = GPTListIndex.from_documents(documents[2:4], **list_kwargs)
+    list3 = GPTListIndex.from_documents(documents[4:6], **list_kwargs)
+    list4 = GPTListIndex.from_documents(documents[6:8], **list_kwargs)
+
+    summary1 = "summary1"
+    summary2 = "summary2"
+    summary3 = "summary3"
+    summary4 = "summary4"
+    summaries = [summary1, summary2, summary3, summary4]
 
     # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
     # import pdb; pdb.set_trace()
-    tree = GPTTreeIndex(
+    graph = ComposableGraph.from_indices(
+        GPTTreeIndex,
         [
             list1,
             list2,
             list3,
             list4,
         ],
+        index_summaries=summaries,
         **tree_kwargs
     )
+    assert isinstance(graph, ComposableGraph)
     # first pass prompt is "summary1\nsummary2\n" (6 tokens),
     # response is the mock response (10 tokens)
     # total is 16 tokens, multiply by 2 to get the total
-    assert tree._llm_predictor.total_tokens_used == 32
+    assert graph.service_context.llm_predictor.total_tokens_used == 32
 
     query_str = "What is?"
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
-    start_token_ct = tree._llm_predictor.total_tokens_used
-    tree.query(query_str, mode="recursive", query_configs=query_configs)
+    start_token_ct = graph.service_context.llm_predictor.total_tokens_used
+    graph.query(query_str, query_configs=query_configs)
     # prompt is which is 35 tokens, plus 10 for the mock response
-    assert tree._llm_predictor.total_tokens_used - start_token_ct == 45
+    assert graph.service_context.llm_predictor.total_tokens_used - start_token_ct == 45
 
 
 def mock_get_query_embedding(query: str) -> List[float]:
@@ -419,34 +423,42 @@ def test_recursive_query_vector_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
-    list1.set_text("foo bar")
-    list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
-    list2.set_text("apple orange")
-    list3 = GPTSimpleVectorIndex(documents[4:6], **list_kwargs)
-    list3.set_text("toronto london")
-    list4 = GPTSimpleVectorIndex(documents[6:8], **list_kwargs)
-    list4.set_text("cat dog")
+    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
+    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
+    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **list_kwargs)
+    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **list_kwargs)
 
-    table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
+    summaries = [
+        "foo bar",
+        "apple orange",
+        "toronto london",
+        "cat dog",
+    ]
+
+    graph = ComposableGraph.from_indices(
+        GPTSimpleKeywordTableIndex,
+        [list1, list2, list3, list4],
+        index_summaries=summaries,
+        **table_kwargs
+    )
+    assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
-    response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert str(response) == ("Foo?:This is another test.")
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
-    response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert str(response) == ("Orange?:This is a test.")
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Orange?:Orange?:This is a test.")
     query_str = "Cat?"
-    response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert str(response) == ("Cat?:This is a test v2.")
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
     # test serialize and then back
     # use composable graph struct
     with TemporaryDirectory() as tmpdir:
-        graph = ComposableGraph.build_from_index(table)
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         response = graph.query(query_str, query_configs=query_configs)
-        assert str(response) == ("Cat?:This is a test v2.")
+        assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -516,33 +528,42 @@ def test_recursive_query_vector_table_query_configs(
 
     list_kwargs = index_kwargs["list"]
     table_kwargs = index_kwargs["table"]
-    # try building a tree for a group of 4, then a list
+    # try building a tre for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
-    list1.set_text("foo bar")
-    list1.set_doc_id("vector1")
-    list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
-    list2.set_text("apple orange")
-    list2.set_doc_id("vector2")
+    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
+    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
+    assert isinstance(list1.index_struct, V2IndexStruct)
+    assert isinstance(list2.index_struct, V2IndexStruct)
+    list1.index_struct.index_id = "vector1"
+    list2.index_struct.index_id = "vector2"
+    summaries = [
+        "foo bar",
+        "apple orange",
+    ]
 
-    table = GPTSimpleKeywordTableIndex([list1, list2], **table_kwargs)
+    graph = ComposableGraph.from_indices(
+        GPTSimpleKeywordTableIndex,
+        [list1, list2],
+        index_summaries=summaries,
+        **table_kwargs
+    )
+    assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
-    response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert str(response) == ("Foo?:This is a test v2.")
+    response = graph.query(query_str, query_configs=query_configs)  # type: ignore
+    assert str(response) == ("Foo?:Foo?:This is a test v2.")
     query_str = "Orange?"
-    response = table.query(query_str, mode="recursive", query_configs=query_configs)
-    assert str(response) == ("Orange?:Hello world.")
+    response = graph.query(query_str, query_configs=query_configs)  # type: ignore
+    assert str(response) == ("Orange?:Orange?:Hello world.")
 
     # test serialize and then back
     # use composable graph struct
     with TemporaryDirectory() as tmpdir:
-        graph = ComposableGraph.build_from_index(table)
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         # cast to Any to avoid mypy error
         response = graph.query(query_str, query_configs=cast(Any, query_configs))
-        assert str(response) == ("Orange?:Hello world.")
+        assert str(response) == ("Orange?:Orange?:Hello world.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -576,19 +597,27 @@ def test_recursive_query_vector_table_async(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
-    list1.set_text("foo bar")
-    list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
-    list2.set_text("apple orange")
-    list3 = GPTSimpleVectorIndex(documents[4:6], **list_kwargs)
-    list3.set_text("toronto london")
-    list4 = GPTSimpleVectorIndex(documents[6:8], **list_kwargs)
-    list4.set_text("cat dog")
+    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
+    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
+    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **list_kwargs)
+    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **list_kwargs)
 
-    table = GPTSimpleKeywordTableIndex([list1, list2, list3, list4], **table_kwargs)
-    graph = ComposableGraph.build_from_index(table)
+    summaries = [
+        "foo bar",
+        "apple orange",
+        "toronto london",
+        "cat dog",
+    ]
+
+    graph = ComposableGraph.from_indices(
+        GPTSimpleKeywordTableIndex,
+        [list1, list2, list3, list4],
+        index_summaries=summaries,
+        **table_kwargs
+    )
+    assert isinstance(graph, ComposableGraph)
 
     query_str = "Cat?"
     task = graph.aquery(query_str, query_configs=query_configs)
     response = asyncio.run(task)
-    assert str(response) == ("Cat?:This is a test v2.")
+    assert str(response) == ("Cat?:Cat?:This is a test v2.")

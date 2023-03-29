@@ -6,7 +6,7 @@ from typing import Dict, Optional, Union, cast
 
 from langchain.input import print_text
 
-from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,
@@ -150,9 +150,9 @@ class DecomposeQueryTransform(BaseQueryTransform):
     def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         """Run query transform."""
         index_struct = cast(IndexStruct, extra_info.get("index_struct", None))
-        # currently, just get text from the index
+        # currently, just get text from the index structure
         index_text = (
-            index_struct.get_text() if not index_struct.is_text_none else "None"
+            index_struct.get_summary() if index_struct.summary is not None else "None"
         )
 
         # given the text from the index, we can use the query bundle to generate
@@ -237,11 +237,10 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
 
     def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         """Run query transform."""
-        index_struct = cast(IndexStruct, extra_info.get("index_struct"))
+        index_struct = cast(IndexStruct, extra_info.get("index_struct", None))
+        index_text = index_struct.get_summary()
         prev_reasoning = cast(Response, extra_info.get("prev_reasoning"))
         fmt_prev_reasoning = f"\n{prev_reasoning}" if prev_reasoning else "None"
-        # currently, just get text from the index
-        index_text = index_struct.get_text()
 
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
