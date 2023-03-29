@@ -130,7 +130,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     @abstractmethod
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
-        """Index-specific logic for inserting nodes."""
+        """Index-specific logic for inserting nodes to the index struct."""
 
     @llm_token_counter("insert")
     def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
