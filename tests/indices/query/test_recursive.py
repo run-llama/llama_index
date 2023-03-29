@@ -680,13 +680,13 @@ def test_recursive_query_vector_vector(
     )
     query_str = "Foo?"
     response = graph.query(query_str, query_configs=query_configs)
-    assert str(response) == ("Foo?:This is another test.")
+    assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
     response = graph.query(query_str, query_configs=query_configs)
-    assert str(response) == ("Orange?:This is a test.")
+    assert str(response) == ("Orange?:Orange?:This is a test.")
     query_str = "Cat?"
     response = graph.query(query_str, query_configs=query_configs)
-    assert str(response) == ("Cat?:This is a test v2.")
+    assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
     # test serialize and then back
     # use composable graph struct
@@ -694,4 +694,4 @@ def test_recursive_query_vector_vector(
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         response = graph.query(query_str, query_configs=query_configs)
-        assert str(response) == ("Cat?:This is a test v2.")
+        assert str(response) == ("Cat?:Cat?:This is a test v2.")
