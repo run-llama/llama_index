@@ -383,6 +383,14 @@ def mock_get_text_embedding(text: str) -> List[float]:
         return [0, 0, 1, 0, 0]
     elif text == "This is a test v2.":
         return [0, 0, 0, 1, 0]
+    elif text == "foo bar":
+        return [0, 0, 1, 0, 0]
+    elif text == "apple orange":
+        return [0, 1, 0, 0, 0]
+    elif text == "toronto london":
+        return [1, 0, 0, 0, 0]
+    elif text == "cat dog":
+        return [0, 0, 0, 1, 0]
     else:
         raise ValueError("Invalid text for `mock_get_text_embedding`.")
 
@@ -621,3 +629,69 @@ def test_recursive_query_vector_table_async(
     task = graph.aquery(query_str, query_configs=query_configs)
     response = asyncio.run(task)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
+
+
+@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
+@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_recursive_query_vector_vector(
+    _mock_query_embed: Any,
+    _mock_get_text_embeds: Any,
+    _mock_get_text_embed: Any,
+    _mock_init: Any,
+    _mock_total_tokens_used: Any,
+    _mock_predict: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test query."""
+    index_kwargs, query_configs = struct_kwargs
+    vector_kwargs = index_kwargs["vector"]
+    # try building a tree for a group of 4, then a list
+    # use a diff set of documents
+    # try building a list for every two, then a tree
+    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
+    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
+    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **vector_kwargs)
+    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **vector_kwargs)
+
+    summary1 = "foo bar"
+    summary2 = "apple orange"
+    summary3 = "toronto london"
+    summary4 = "cat dog"
+    summaries = [summary1, summary2, summary3, summary4]
+
+    graph = ComposableGraph.from_indices(
+        GPTSimpleVectorIndex,
+        [list1, list2, list3, list4],
+        index_summaries=summaries,
+        **vector_kwargs
+    )
+    query_str = "Foo?"
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Foo?:Foo?:This is another test.")
+    query_str = "Orange?"
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Orange?:Orange?:This is a test.")
+    query_str = "Cat?"
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Cat?:Cat?:This is a test v2.")
+
+    # test serialize and then back
+    # use composable graph struct
+    with TemporaryDirectory() as tmpdir:
+        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
+        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
+        response = graph.query(query_str, query_configs=query_configs)
+        assert str(response) == ("Cat?:Cat?:This is a test v2.")
