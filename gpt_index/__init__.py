@@ -91,6 +91,9 @@ from gpt_index.readers import (
 )
 from gpt_index.readers.download import download_loader
 
+# response
+from gpt_index.response.schema import Response
+
 # token predictor
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from gpt_index.token_counter.mock_embed_model import MockEmbedding
@@ -128,6 +131,7 @@ __all__ = [
     "QuestionAnswerPrompt",
     "KeywordExtractPrompt",
     "QueryKeywordExtractPrompt",
+    "Response",
     "WikipediaReader",
     "ObsidianReader",
     "Document",
