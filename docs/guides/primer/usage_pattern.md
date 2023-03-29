@@ -115,6 +115,7 @@ an index.
 
 ```python
 from llama_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper, ServiceContext
+from langchain import OpenAI
 
 ...
 
