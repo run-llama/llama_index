@@ -77,7 +77,7 @@ class ResponseEvaluator:
     ) -> None:
         """Init params."""
         self.mode = mode
-        self.service_context = service_context or ServiceContext()
+        self.service_context = service_context or ServiceContext.from_defaults()
 
     def get_context(self, response: Response) -> List[Document]:
         """Get context information from given Response object using source nodes.
@@ -105,7 +105,7 @@ class ResponseEvaluator:
             Yes -> If answer, context information are matching
             No -> If answer, context information are not matching
         """
-        answer = response.response
+        answer = str(response)
 
         context = self.get_context(response)
         index = GPTListIndex.from_documents(
@@ -117,11 +117,12 @@ class ResponseEvaluator:
             EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
             REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
 
-            response_txt = index.query(
+            response_obj = index.query(
                 answer,
                 text_qa_template=EVAL_PROMPT_TMPL,
                 refine_template=REFINE_PROMPT_TMPL,
-            ).response
+            )
+            response_txt = str(response_obj)
         else:
             raise NotImplementedError(f"Mode {self.mode} not implemented.")
 
