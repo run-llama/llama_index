@@ -7,7 +7,7 @@ from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.data_structs.node_v2 import IndexNode
+from gpt_index.data_structs.node_v2 import IndexNode, DocumentRelationship
 from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.query_runner import QueryRunner
@@ -100,6 +100,9 @@ class ComposableGraph:
             index_node = IndexNode(
                 text=summary,
                 index_id=index.index_struct.index_id,
+                relationships={
+                    DocumentRelationship.SOURCE: index.index_struct.index_id
+                },
             )
             index_nodes.append(index_node)
 
