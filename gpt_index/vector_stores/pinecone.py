@@ -4,7 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Dict, List, Optional, cast, Generator, Tuple
+from typing import Any, Dict, List, Optional, cast
 
 from gpt_index.data_structs.data_structs import Node
 from gpt_index.vector_stores.types import (
@@ -12,6 +12,7 @@ from gpt_index.vector_stores.types import (
     VectorStore,
     VectorStoreQueryResult,
 )
+from gpt_index.vector_stores.utils import chunk_iterable
 
 
 def get_metadata_from_node_info(
@@ -33,19 +34,6 @@ def get_node_info_from_metadata(
         if key.startswith(field_prefix + "_"):
             node_extra_info[key.replace(field_prefix + "_", "")] = value
     return node_extra_info
-
-
-def batch_upserts(
-    upserts: List[Tuple[str, List[float], Dict[str, str]]]
-) -> Generator[List[Tuple[str, List[float], Dict[str, str]]], None, None]:
-    """Batch embedding upserts."""
-    batch_size = 100
-    start = 0
-    end = batch_size
-    while start < len(upserts):
-        yield upserts[start:end]
-        start = end
-        end += batch_size
 
 
 class PineconeVectorStore(VectorStore):
@@ -159,10 +147,8 @@ class PineconeVectorStore(VectorStore):
             metadata.update(self._metadata_filters)
             ids.append(new_id)
             upserts.append((new_id, text_embedding, metadata))
-        for batched_upserts in batch_upserts(upserts):
-            self._pinecone_index.upsert(
-                vectors=batched_upserts, **self._pinecone_kwargs
-            )
+        for upsert_batch in chunk_iterable(upserts, 100):
+            self._pinecone_index.upsert(vectors=upsert_batch, **self._pinecone_kwargs)
 
         return ids
 
