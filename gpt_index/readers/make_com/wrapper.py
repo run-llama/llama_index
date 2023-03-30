@@ -7,10 +7,11 @@ Currently cannot load documents.
 from typing import Any, List, Optional
 
 import requests
+from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
-from gpt_index.response.schema import Response, SourceNode
+from gpt_index.response.schema import Response
 
 
 class MakeWrapper(BaseReader):
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     wrapper = MakeWrapper()
     test_response = Response(
         response="test response",
-        source_nodes=[SourceNode(source_text="test source", doc_id="test id")],
+        source_nodes=[NodeWithScore(node=Node(text="test source", doc_id="test id"))],
     )
     wrapper.pass_response_to_webhook(
         "https://hook.us1.make.com/asdfadsfasdfasdfd",

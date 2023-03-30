@@ -243,7 +243,9 @@ def test_query(
     response = index.query(query_str, mode="default", **query_kwargs)
     assert str(response) == ("What is?:Hello world.")
     node_info = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+        response.source_nodes[0].node.node_info
+        if response.source_nodes[0].node.node_info
+        else {}
     )
     assert node_info["start"] == 0
     assert node_info["end"] == 12
@@ -285,7 +287,9 @@ def test_index_overlap(
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
     node_info_0 = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+        response.source_nodes[0].node.node_info
+        if response.source_nodes[0].node.node_info
+        else {}
     )
     # First chunk: 'Hello world. This is a test 1. This is a test 2.
     # This is a test 3. This is a test 4. This is a'
@@ -293,7 +297,9 @@ def test_index_overlap(
     assert node_info_0["end"] == 94  # Length of first chunk.
 
     node_info_1 = (
-        response.source_nodes[1].node_info if response.source_nodes[1].node_info else {}
+        response.source_nodes[1].node.node_info
+        if response.source_nodes[1].node.node_info
+        else {}
     )
     # Second chunk: 'This is a test 4. This is a test 5.\n'
     assert node_info_1["start"] == 67  # Position of second chunk relative to start
@@ -452,7 +458,9 @@ def test_async_query(
     response = asyncio.run(task)
     assert str(response) == ("What is?:Hello world.")
     node_info = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+        response.source_nodes[0].node.node_info
+        if response.source_nodes[0].node.node_info
+        else {}
     )
     assert node_info["start"] == 0
     assert node_info["end"] == 12
@@ -465,7 +473,9 @@ def test_async_query(
     response = asyncio.run(task)
     assert str(response) == ("What is?:Hello world.")
     node_info = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+        response.source_nodes[0].node.node_info
+        if response.source_nodes[0].node.node_info
+        else {}
     )
     assert node_info["start"] == 0
     assert node_info["end"] == 12

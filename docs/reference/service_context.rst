@@ -18,6 +18,7 @@ the BaseEmbedding (for configuring the embedding model), and more.
    service_context/embeddings.rst
    service_context/llm_predictor.rst
    service_context/prompt_helper.rst
+   service_context/llama_logger.rst
 
 
 .. automodule:: gpt_index.indices.service_context

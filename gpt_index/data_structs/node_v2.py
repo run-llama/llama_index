@@ -4,19 +4,33 @@
 a piece of data (e.g. chunk of text, an image, a table, etc).
 
 In comparison to a raw `Document`, it contains additional metadata
-about its relationship to other `Node`s (and `Document`s).
+about its relationship to other `Node` objects (and `Document` objects).
 
 It is often used as an atomic unit of data in various indices.
 """
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Dict, Optional
+import warnings
+
+from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.schema import BaseDocument
 
+import logging
+
+_logger = logging.getLogger(__name__)
+
 
 class DocumentRelationship(str, Enum):
-    """Document relationships used in `Node` class."""
+    """Document relationships used in `Node` class.
+
+    Attributes:
+        SOURCE: The node is the source document.
+        PREVIOUS: The node is the previous node in the document.
+        NEXT: The node is the next node in the document.
+
+    """
 
     SOURCE = auto()
     PREVIOUS = auto()
@@ -31,7 +45,15 @@ class NodeType(str, Enum):
 
 @dataclass
 class Node(BaseDocument):
-    """A generic node of data."""
+    """A generic node of data.
+
+    Arguments:
+        text (str): The text of the node.
+        doc_id (Optional[str]): The document id of the node.
+        embeddings (Optional[List[float]]): The embeddings of the node.
+        relationships (Dict[DocumentRelationship, str]): The relationships of the node.
+
+    """
 
     def __post_init__(self) -> None:
         """Post init."""
@@ -48,7 +70,11 @@ class Node(BaseDocument):
 
     @property
     def ref_doc_id(self) -> Optional[str]:
-        """Source document id."""
+        """Source document id.
+
+        Extracted from the relationships field.
+
+        """
         return self.relationships.get(DocumentRelationship.SOURCE, None)
 
     @property
@@ -101,3 +127,45 @@ class IndexNode(Node):
     @classmethod
     def get_type(cls) -> str:
         return NodeType.INDEX
+
+
+@dataclass
+class NodeWithScore(DataClassJsonMixin):
+    node: Node
+    score: Optional[float] = None
+
+    @property
+    def doc_id(self) -> Optional[str]:
+        warnings.warn(".doc_id is deprecated, use .node.ref_doc_id instead")
+        return self.node.ref_doc_id
+
+    @property
+    def source_text(self) -> str:
+        warnings.warn(".source_text is deprecated, use .node.get_text() instead")
+        return self.node.get_text()
+
+    @property
+    def extra_info(self) -> Optional[Dict[str, Any]]:
+        warnings.warn(".extra_info is deprecated, use .node.extra_info instead")
+        return self.node.extra_info
+
+    @property
+    def node_info(self) -> Optional[Dict[str, Any]]:
+        warnings.warn(".node_info is deprecated, use .node.node_info instead")
+        return self.node.node_info
+
+    @property
+    def similarity(self) -> Optional[float]:
+        warnings.warn(".similarity is deprecated, use .score instead instead")
+        return self.score
+
+    @property
+    def image(self) -> Optional[str]:
+        warnings.warn(
+            ".image is deprecated, check if Node is an ImageNode \
+            and use .node.image instead"
+        )
+        if isinstance(self.node, ImageNode):
+            return self.node.image
+        else:
+            return None

@@ -547,7 +547,7 @@ def test_query_and_similarity_scores(
     query_str = "What is?"
     response = index.query(query_str, **query_kwargs)
     assert len(response.source_nodes) > 0
-    assert response.source_nodes[0].similarity is not None
+    assert response.source_nodes[0].score is not None
 
 
 @patch_common
