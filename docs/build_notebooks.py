@@ -16,7 +16,7 @@ for example_dir in os.listdir(source_dir):
             continue
         if not nb_name.endswith(".ipynb"):
             continue
-        
+
         # make dest folder in docs
         os.makedirs(os.path.join(dest_dir, example_dir), exist_ok=True)
 
@@ -27,6 +27,5 @@ for example_dir in os.listdir(source_dir):
         # write nbsphinx-link document
         nbsphinx_name = nb_name.replace(".ipynb", ".nblink")
         nbsphinx_path = os.path.join(dest_dir, example_dir, nbsphinx_name)
-        with open(nbsphinx_path, 'w') as f:
+        with open(nbsphinx_path, "w") as f:
             f.write(nb_link_text)
-

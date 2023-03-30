@@ -46,7 +46,7 @@ myst_heading_anchors = 4
 suppress_warnings = ["myst.header"]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", '**.ipynb_checkpoints']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -56,5 +56,5 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 # nbsphinx options
-nbsphinx_execute = 'never'
+nbsphinx_execute = "never"
 nbsphinx_allow_errors = True
