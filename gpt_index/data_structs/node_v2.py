@@ -101,3 +101,11 @@ class IndexNode(Node):
     @classmethod
     def get_type(cls) -> str:
         return NodeType.INDEX
+
+
+
+@dataclass
+class NodeWithScore:
+    node: Node
+    score: Optional[float] = None
+
