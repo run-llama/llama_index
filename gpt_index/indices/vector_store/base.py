@@ -208,7 +208,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         """Build the index from nodes.
 
         NOTE: Overrides BaseGPTIndex.build_index_from_nodes.
-            GPTVectorStoreIndex only stores nodes in document store 
+            GPTVectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
         return self._build_index_from_nodes(nodes)
@@ -222,7 +222,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         """Insert nodes.
 
         NOTE: overrides BaseGPTIndex.insert_nodes.
-            GPTVectorStoreIndex only stores nodes in document store 
+            GPTVectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
         self._insert(nodes, **insert_kwargs)
