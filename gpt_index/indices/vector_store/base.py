@@ -16,6 +16,7 @@ from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
+from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.utils import get_new_id
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
@@ -166,10 +167,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         new_ids = self._vector_store.add(embedding_results)
 
         # if the vector store doesn't store text, we need to add the nodes to the
-        # index struct
+        # index struct and document store
         if not self._vector_store.stores_text:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
+                self._docstore.add_documents([result.node])
 
     def _add_nodes_to_index(
         self,
@@ -185,10 +187,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         new_ids = self._vector_store.add(embedding_results)
 
         # if the vector store doesn't store text, we need to add the nodes to the
-        # index struct
+        # index struct and document store
         if not self._vector_store.stores_text:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
+                self._docstore.add_documents([result.node])
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
         """Build index from nodes."""
@@ -200,9 +203,29 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             self._add_nodes_to_index(index_struct, nodes)
         return index_struct
 
+    @llm_token_counter("build_index_from_nodes")
+    def build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
+        """Build the index from nodes.
+
+        NOTE: Overrides BaseGPTIndex.build_index_from_nodes.
+            GPTVectorStoreIndex only stores nodes in document store
+            if vector store does not store text
+        """
+        return self._build_index_from_nodes(nodes)
+
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         self._add_nodes_to_index(self._index_struct, nodes)
+
+    @llm_token_counter("insert")
+    def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+        """Insert nodes.
+
+        NOTE: overrides BaseGPTIndex.insert_nodes.
+            GPTVectorStoreIndex only stores nodes in document store
+            if vector store does not store text
+        """
+        self._insert(nodes, **insert_kwargs)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

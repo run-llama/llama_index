@@ -66,7 +66,6 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         if index_struct is None:
             assert nodes is not None
-            self._docstore.add_documents(nodes)
             index_struct = self.build_index_from_nodes(nodes)
             # if not isinstance(index_struct, self.index_struct_cls):
             #     raise ValueError(
@@ -126,23 +125,23 @@ class BaseGPTIndex(Generic[IS], ABC):
     @llm_token_counter("build_index_from_nodes")
     def build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""
+        self._docstore.add_documents(nodes)
         return self._build_index_from_nodes(nodes)
 
     @abstractmethod
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
-        """Insert nodes."""
+        """Index-specific logic for inserting nodes to the index struct."""
 
     @llm_token_counter("insert")
-    def insert(self, document: Document, **insert_kwargs: Any) -> None:
-        """Insert a document.
-
-        Args:
-            document (Union[BaseDocument, BaseGPTIndex]): document to insert
-
-        """
-        nodes = self.service_context.node_parser.get_nodes_from_documents([document])
+    def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+        """Insert nodes."""
         self.docstore.add_documents(nodes)
         self._insert(nodes, **insert_kwargs)
+
+    def insert(self, document: Document, **insert_kwargs: Any) -> None:
+        """Insert a document."""
+        nodes = self.service_context.node_parser.get_nodes_from_documents([document])
+        self.insert_nodes(nodes, **insert_kwargs)
 
     @abstractmethod
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:

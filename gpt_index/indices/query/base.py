@@ -16,14 +16,14 @@ from typing import (
 from langchain.input import print_text
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.indices.postprocessor.node import (
     BaseNodePostprocessor,
     KeywordNodePostprocessor,
     SimilarityPostprocessor,
 )
-from gpt_index.indices.query.embedding_utils import NodeWithScore, SimilarityTracker
+from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import (
     RESPONSE_TEXT_TYPE,
@@ -39,7 +39,6 @@ from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.response.schema import (
     RESPONSE_TYPE,
     Response,
-    SourceNode,
     StreamingResponse,
 )
 from gpt_index.token_counter.token_counter import llm_token_counter
@@ -276,7 +275,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         response_builder: ResponseBuilder,
         query_bundle: QueryBundle,
         nodes: List[NodeWithScore],
-        additional_source_nodes: Optional[Sequence[SourceNode]],
+        additional_source_nodes: Optional[Sequence[NodeWithScore]],
     ) -> None:
         """Prepare response builder and return values for query time."""
         response_builder.reset()
@@ -292,7 +291,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         # from recursive
         if additional_source_nodes is not None:
             for node in additional_source_nodes:
-                response_builder.add_source_node(node)
+                response_builder.add_node_with_score(node)
 
     def _prepare_response_output(
         self,
@@ -324,7 +323,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         self,
         query_bundle: QueryBundle,
         nodes: List[NodeWithScore],
-        additional_source_nodes: Optional[List[SourceNode]] = None,
+        additional_source_nodes: Optional[List[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         # prepare response builder
         self._prepare_response_builder(
@@ -347,7 +346,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         self,
         query_bundle: QueryBundle,
         nodes: List[NodeWithScore],
-        additional_source_nodes: Optional[List[SourceNode]] = None,
+        additional_source_nodes: Optional[List[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         # define a response builder for async queries
         response_builder = ResponseBuilder(
