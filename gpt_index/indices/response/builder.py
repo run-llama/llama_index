@@ -20,7 +20,6 @@ from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
-from gpt_index.response.schema import NodeWithScore
 from gpt_index.response.utils import get_response_text
 from gpt_index.utils import temp_set_attrs
 

@@ -1,6 +1,5 @@
 """Embedding utils for queries."""
 
-from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple
 
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
