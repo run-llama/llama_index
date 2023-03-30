@@ -4,7 +4,7 @@
 a piece of data (e.g. chunk of text, an image, a table, etc).
 
 In comparison to a raw `Document`, it contains additional metadata
-about its relationship to other `Node`s (and `Document`s).
+about its relationship to other `Node` objects (and `Document` objects).
 
 It is often used as an atomic unit of data in various indices.
 """
@@ -40,7 +40,7 @@ class NodeType(str, Enum):
 class Node(BaseDocument):
     """A generic node of data.
 
-    Attributes:
+    Arguments:
         text (str): The text of the node.
         doc_id (Optional[str]): The document id of the node.
         embeddings (Optional[List[float]]): The embeddings of the node.
