@@ -66,7 +66,6 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         if index_struct is None:
             assert nodes is not None
-            self._docstore.add_documents(nodes)
             index_struct = self.build_index_from_nodes(nodes)
             # if not isinstance(index_struct, self.index_struct_cls):
             #     raise ValueError(
@@ -126,6 +125,7 @@ class BaseGPTIndex(Generic[IS], ABC):
     @llm_token_counter("build_index_from_nodes")
     def build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""
+        self._docstore.add_documents(nodes)
         return self._build_index_from_nodes(nodes)
 
     @abstractmethod
