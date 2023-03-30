@@ -3,4 +3,11 @@ Notebooks
 
 We offer a wide variety of example notebooks. They are referenced throughout the documentation.
 
-Example notebooks are found `here <https://github.com/jerryjliu/gpt_index/tree/main/examples>`_.
+All examples can be accessed using the menu links or can be found [directly in the repository](https://github.com/jerryjliu/llama_index/tree/main/examples).
+
+.. toctree::
+  :glob:
+  :maxdepth: 1
+  :caption: Notebooks
+
+  notebooks/*/*
