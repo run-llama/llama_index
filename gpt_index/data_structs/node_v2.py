@@ -11,8 +11,13 @@ It is often used as an atomic unit of data in various indices.
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Dict, Optional
+import warnings
 
 from gpt_index.schema import BaseDocument
+
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class DocumentRelationship(str, Enum):
@@ -108,4 +113,40 @@ class IndexNode(Node):
 class NodeWithScore:
     node: Node
     score: Optional[float] = None
+
+    @property
+    def doc_id(self) -> Optional[str]:
+        warnings.warn('.doc_id is deprecated, use .node.ref_doc_id instead')
+        return self.node.ref_doc_id
+
+    @property
+    def source_text(self) -> str:
+        warnings.warn('.source_text is deprecated, use .node.get_text() instead')
+        return self.node.get_text()
+    
+    @property
+    def extra_info(self) -> Optional[Dict[str, Any]]:
+        warnings.warn('.extra_info is deprecated, use .node.extra_info instead')
+        return self.node.extra_info
+
+    @property
+    def node_info(self) -> Optional[Dict[str, Any]]:
+        warnings.warn('.node_info is deprecated, use .node.node_info instead')
+        return self.node.node_info
+    
+    @property
+    def similarity(self) -> Optional[float]:
+        warnings.warn('.similarity is deprecated, use .score instead instead')
+        return self.score
+    
+    @property
+    def image(self) -> Optional[str]:
+        warnings.warn('.image is deprecated, check if Node is an ImageNode \
+            and use .node.image instead')
+        if isinstance(self.node, ImageNode):
+            return self.node.image
+        else:
+            return None
+    
+
 
