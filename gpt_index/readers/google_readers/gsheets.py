@@ -59,7 +59,9 @@ class GoogleSheetsReader(BaseReader):
         results = []
         for spreadsheet_id in spreadsheet_ids:
             sheet = self._load_sheet(spreadsheet_id)
-            results.append(Document(sheet, extra_info={"spreadsheet_id": spreadsheet_id}))
+            results.append(
+                Document(sheet, extra_info={"spreadsheet_id": spreadsheet_id})
+            )
         return results
 
     def _load_sheet(self, spreadsheet_id: str) -> str:
@@ -75,10 +77,12 @@ class GoogleSheetsReader(BaseReader):
 
         credentials = self._get_credentials()
         sheets_service = discovery.build("sheets", "v4", credentials=credentials)
-        spreadsheet_data = sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+        spreadsheet_data = (
+            sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+        )
         sheets = spreadsheet_data.get("sheets")
         sheet_text = ""
-    
+
         for sheet in sheets:
             properties = sheet.get("properties")
             title = properties.get("title")
@@ -87,8 +91,16 @@ class GoogleSheetsReader(BaseReader):
             rows = grid_props.get("rowCount")
             cols = grid_props.get("columnCount")
             range_pattern = f"R1C1:R{rows}C{cols}"
-            response = sheets_service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range=range_pattern).execute()
-            sheet_text += "\n".join(map(lambda row: "\t".join(row),  response.get("values", []))) + "\n"
+            response = (
+                sheets_service.spreadsheets()
+                .values()
+                .get(spreadsheetId=spreadsheet_id, range=range_pattern)
+                .execute()
+            )
+            sheet_text += (
+                "\n".join(map(lambda row: "\t".join(row), response.get("values", [])))
+                + "\n"
+            )
         return sheet_text
 
     def _get_credentials(self) -> Any:
@@ -114,18 +126,20 @@ class GoogleSheetsReader(BaseReader):
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials.json", SCOPES
+                    "credentials.json", SCOPES
                 )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
             with open("token.json", "w") as token:
                 token.write(creds.to_json())
-        
+
         return creds
+
 
 if __name__ == "__main__":
     reader = GoogleSheetsReader()
     logger.info(
-    reader.load_data(spreadsheet_ids=["1VkuitKIyNmkoCJJDmEUmkS_VupSkDcztpRhbUzAU5L8"])
-)
-
+        reader.load_data(
+            spreadsheet_ids=["1VkuitKIyNmkoCJJDmEUmkS_VupSkDcztpRhbUzAU5L8"]
+        )
+    )
