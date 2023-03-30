@@ -137,7 +137,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         """Insert nodes."""
         self.docstore.add_documents(nodes)
         self._insert(nodes, **insert_kwargs)
-        
+
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
         nodes = self.service_context.node_parser.get_nodes_from_documents([document])

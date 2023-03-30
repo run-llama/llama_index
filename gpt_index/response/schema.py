@@ -9,7 +9,6 @@ from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.utils import truncate_text
 
 
-
 @dataclass
 class Response:
     """Response object.

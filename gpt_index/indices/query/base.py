@@ -291,7 +291,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         # from recursive
         if additional_source_nodes is not None:
             for node in additional_source_nodes:
-                response_builder.add_node_as_source(node)
+                response_builder.add_node_with_score(node)
 
     def _prepare_response_output(
         self,

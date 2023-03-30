@@ -20,7 +20,7 @@ def display_image(img_str: str, size: Tuple[int, int] = DEFAULT_THUMBNAIL_SIZE) 
 
 def display_source_node(source_node: NodeWithScore, source_length: int = 100) -> None:
     """Display source node for jupyter notebook."""
-    source_text_fmt = truncate_text(source_node.node.text.strip(), source_length)
+    source_text_fmt = truncate_text(source_node.node.get_text().strip(), source_length)
     text_md = (
         f"**Document ID:** {source_node.node.doc_id}<br>"
         f"**Similarity:** {source_node.score}<br>"
@@ -30,7 +30,7 @@ def display_source_node(source_node: NodeWithScore, source_length: int = 100) ->
         text_md += "**Image:**"
 
     display(Markdown(text_md))
-    if source_node.node.image is not None:
+    if isinstance(source_node.node, ImageNode) and source_node.node.image is not None:
         display_image(source_node.node.image)
 
 
