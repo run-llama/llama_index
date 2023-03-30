@@ -189,7 +189,7 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
             )
             self.response_builder.add_text_chunks([TextChunk(cur_qa_text)])
             for source_node in cur_response.source_nodes:
-                self.response_builder.add_source_node(source_node)
+                self.response_builder.add_node_with_score(source_node)
             # update extra info
             final_response_extra_info["sub_qa"].append(
                 (updated_query_bundle.query_str, cur_response)
