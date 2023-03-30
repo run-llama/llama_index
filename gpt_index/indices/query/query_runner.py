@@ -8,11 +8,10 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.data_structs.node_v2 import IndexNode, Node
+from gpt_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.embedding_utils import NodeWithScore
 from gpt_index.indices.query.query_combiner.base import (
     BaseQueryCombiner,
     get_default_query_combiner,
@@ -23,7 +22,7 @@ from gpt_index.indices.query.query_transform.base import (
 )
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.response.schema import RESPONSE_TYPE, SourceNode
+from gpt_index.response.schema import RESPONSE_TYPE
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
@@ -206,7 +205,7 @@ class QueryRunner:
         node_with_score: NodeWithScore,
         query_bundle: QueryBundle,
         level: int,
-    ) -> Tuple[NodeWithScore, List[SourceNode]]:
+    ) -> Tuple[NodeWithScore, List[NodeWithScore]]:
         """Fetch nodes.
 
         Usees existing node if it's not an index node.
@@ -231,7 +230,7 @@ class QueryRunner:
         node_with_score: NodeWithScore,
         query_bundle: QueryBundle,
         level: int,
-    ) -> Tuple[NodeWithScore, List[SourceNode]]:
+    ) -> Tuple[NodeWithScore, List[NodeWithScore]]:
         """Fetch nodes.
 
         Usees existing node if it's not an index node.

@@ -13,14 +13,13 @@ from enum import Enum
 from typing import Any, Dict, Generator, List, Optional, Tuple, Union, cast
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.docstore_v2 import DocumentStore
 from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
-from gpt_index.response.schema import SourceNode
 from gpt_index.response.utils import get_response_text
 from gpt_index.utils import temp_set_attrs
 
@@ -66,7 +65,7 @@ class ResponseBuilder:
         self.refine_template = refine_template
         self._texts = texts or []
         nodes = nodes or []
-        self.source_nodes: List[SourceNode] = SourceNode.from_nodes(nodes)
+        self.source_nodes: List[NodeWithScore] = [NodeWithScore(node) for node in nodes]
         self._use_async = use_async
         self._streaming = streaming
 
@@ -99,13 +98,13 @@ class ResponseBuilder:
         self, node: Node, similarity: Optional[float] = None
     ) -> None:
         """Add node."""
-        self.source_nodes.append(SourceNode.from_node(node, similarity=similarity))
+        self.add_node_with_score(NodeWithScore(node=node, score=similarity))
 
-    def add_source_node(self, source_node: SourceNode) -> None:
+    def add_node_with_score(self, node_with_score: NodeWithScore) -> None:
         """Add source node directly."""
-        self.source_nodes.append(source_node)
+        self.source_nodes.append(node_with_score)
 
-    def get_sources(self) -> List[SourceNode]:
+    def get_sources(self) -> List[NodeWithScore]:
         """Get sources."""
         return self.source_nodes
 
