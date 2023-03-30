@@ -167,7 +167,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         new_ids = self._vector_store.add(embedding_results)
 
         # if the vector store doesn't store text, we need to add the nodes to the
-        # index struct
+        # index struct and document store
         if not self._vector_store.stores_text:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
