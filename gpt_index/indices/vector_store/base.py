@@ -202,13 +202,14 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         else:
             self._add_nodes_to_index(index_struct, nodes)
         return index_struct
-    
+
     @llm_token_counter("build_index_from_nodes")
     def build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
         """Build the index from nodes.
-        
-        NOTE: overrides BaseGPTIndex.build_index_from_nodes.
-        GPTVectorStoreIndex only stores nodes in document store if vector store does not store text
+
+        NOTE: Overrides BaseGPTIndex.build_index_from_nodes.
+            GPTVectorStoreIndex only stores nodes in document store 
+            if vector store does not store text
         """
         return self._build_index_from_nodes(nodes)
 
@@ -219,9 +220,10 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     @llm_token_counter("insert")
     def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert nodes.
-        
-        NOTE: overrides BaseGPTIndex.insert_nodes
-        GPTVectorStoreIndex only stores nodes in document store if vector store does not store text
+
+        NOTE: overrides BaseGPTIndex.insert_nodes.
+            GPTVectorStoreIndex only stores nodes in document store 
+            if vector store does not store text
         """
         self._insert(nodes, **insert_kwargs)
 
