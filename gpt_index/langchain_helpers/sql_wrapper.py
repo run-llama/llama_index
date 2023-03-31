@@ -35,7 +35,8 @@ class SQLDatabase(LangchainSQLDatabase):
         cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
     ) -> "SQLDatabase":
         """Construct a SQLAlchemy engine from URI."""
-        return cls(create_engine(database_uri), **kwargs)
+        _engine_args = engine_args or {}
+        return cls(create_engine(database_uri, **_engine_args), **kwargs)
 
     def get_table_columns(self, table_name: str) -> List[dict]:
         """Get table columns."""
