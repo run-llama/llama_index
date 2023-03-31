@@ -208,7 +208,7 @@ class QueryRunner:
     ) -> Tuple[NodeWithScore, List[NodeWithScore]]:
         """Fetch nodes.
 
-        Usees existing node if it's not an index node.
+        Uses existing node if it's not an index node.
         Otherwise fetch response from corresponding index.
 
         """

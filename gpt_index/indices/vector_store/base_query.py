@@ -70,6 +70,8 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
             )
 
         if query_result.nodes is None:
+            # NOTE: vector store does not keep text and returns node indices.
+            # Need to recover all nodes from docstore
             if query_result.ids is None:
                 raise ValueError(
                     "Vector store query result should return at "
@@ -79,6 +81,13 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
             node_ids = [self._index_struct.nodes_dict[idx] for idx in query_result.ids]
             nodes = self._docstore.get_nodes(node_ids)
             query_result.nodes = nodes
+        else:
+            # NOTE: vector store keeps text, returns nodes.
+            # Only need to recover image or index nodes from docstore
+            for i in range(len(query_result.nodes)):
+                node_id  = query_result.nodes[i].get_doc_id()
+                if node_id in self._docstore.docs:
+                    query_result.nodes[i] = self._docstore.get_document(node_id)
 
         log_vector_store_query_result(query_result)
 
