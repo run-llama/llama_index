@@ -130,6 +130,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
+        include_query_in_response: bool = False,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None:
@@ -149,6 +150,12 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
 
         self._response_kwargs = response_kwargs or {}
         self._use_async = use_async
+
+        if include_query_in_response and streaming:
+            raise ValueError(
+                "include_query_in_response is not supported for streaming."
+            )
+        self._include_query_in_response = include_query_in_response
 
         # initialize logger with metadata
         if self._service_context.llama_logger is not None:
@@ -298,6 +305,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         response_builder: ResponseBuilder,
         response_str: Optional[RESPONSE_TEXT_TYPE],
         tuples: List[NodeWithScore],
+        query_bundle: QueryBundle,
     ) -> RESPONSE_TYPE:
         """Prepare response object from response string."""
         response_extra_info = self._get_extra_info_for_response(
@@ -305,6 +313,9 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         )
 
         if response_str is None or isinstance(response_str, str):
+            if self._include_query_in_response:
+                response_str = f"Query: {query_bundle.query_str}\n{response_str}"
+
             return Response(
                 response_str,
                 source_nodes=response_builder.get_sources(),
@@ -340,7 +351,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         else:
             response_str = None
 
-        return self._prepare_response_output(self.response_builder, response_str, nodes)
+        return self._prepare_response_output(self.response_builder, response_str, nodes, query_bundle)
 
     async def asynthesize(
         self,
@@ -371,7 +382,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         else:
             response_str = None
 
-        return self._prepare_response_output(response_builder, response_str, nodes)
+        return self._prepare_response_output(response_builder, response_str, nodes, query_bundle)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""

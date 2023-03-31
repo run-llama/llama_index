@@ -217,6 +217,8 @@ class QueryRunner:
             # recursive call
             response = self.query(query_bundle, index_node.index_id, level + 1)
 
+            print("response: ", response)
+
             new_node = Node(text=str(response))
             new_node_with_score = NodeWithScore(
                 node=new_node, score=node_with_score.score

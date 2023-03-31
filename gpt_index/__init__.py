@@ -14,6 +14,9 @@ from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.embeddings.langchain import LangchainEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 
+# response
+from gpt_index.response.schema import Response
+
 # structured
 from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 from gpt_index.indices.composability.graph import ComposableGraph
@@ -90,9 +93,6 @@ from gpt_index.readers import (
     WikipediaReader,
 )
 from gpt_index.readers.download import download_loader
-
-# response
-from gpt_index.response.schema import Response
 
 # token predictor
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
