@@ -146,7 +146,7 @@ OUTPUTS = [
 
 @patch_common
 @patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_predict)
-@patch("gpt_index.indices.common.tree.base.run_async_tasks", side_effect=[OUTPUTS])
+@patch("gpt_index.indices.common_tree.base.run_async_tasks", side_effect=[OUTPUTS])
 def test_build_tree_async(
     _mock_run_async_tasks: Any,
     _mock_apredict: Any,
