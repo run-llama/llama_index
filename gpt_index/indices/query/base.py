@@ -26,7 +26,6 @@ from gpt_index.indices.postprocessor.node import (
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import (
-    RESPONSE_TEXT_TYPE,
     ResponseBuilder,
     ResponseMode,
     TextChunk,
@@ -42,6 +41,7 @@ from gpt_index.response.schema import (
     StreamingResponse,
 )
 from gpt_index.token_counter.token_counter import llm_token_counter
+from gpt_index.types import RESPONSE_TEXT_TYPE
 from gpt_index.utils import truncate_text
 
 # to prevent us from having to remove all instances of v2 later
