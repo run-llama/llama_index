@@ -6,7 +6,7 @@ from typing import Any, Optional, Sequence
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
-from gpt_index.indices.common.tree.base import GPTTreeIndexBuilder
+from gpt_index.indices.common_tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
 from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
