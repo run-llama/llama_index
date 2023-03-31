@@ -15,6 +15,7 @@ from tests.mock_utils.mock_prompts import (
     MOCK_KG_TRIPLET_EXTRACT_PROMPT,
     MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
 )
+from gpt_index.data_structs.node_v2 import Node
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -80,7 +81,7 @@ def mock_extract_triplets(text: str) -> List[Tuple[str, str, str]]:
 @patch.object(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
-def test_build_kg(
+def test_build_kg_manual(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
@@ -90,14 +91,26 @@ def test_build_kg(
     documents: List[Document],
 ) -> None:
     """Test build knowledge graph."""
-    index = GPTKnowledgeGraphIndex.from_documents(documents)
+    index = GPTKnowledgeGraphIndex([])
+    tuples = [
+        ("foo", "is", "bar"),
+        ("hello", "is not", "world"),
+        ("Jane", "is mother of", "Bob"),
+    ]
+    nodes = [Node(str(tup)) for tup in tuples]
+    for tup, node in zip(tuples, nodes):
+        # add node
+        index.add_node([tup[0], tup[2]], node)
+        # add triplet
+        index.upsert_triplet(tup)
+
     # NOTE: in these unit tests, document text == triplets
     nodes = index.docstore.get_nodes(list(index.index_struct.node_ids))
     table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 3
-    assert "(foo, is, bar)" in table_chunks
-    assert "(hello, is not, world)" in table_chunks
-    assert "(Jane, is mother of, Bob)" in table_chunks
+    assert "('foo', 'is', 'bar')" in table_chunks
+    assert "('hello', 'is not', 'world')" in table_chunks
+    assert "('Jane', 'is mother of', 'Bob')" in table_chunks
 
     # test that expected keys are present in table
     # NOTE: in mock keyword extractor, stopwords are not filtered
@@ -109,6 +122,42 @@ def test_build_kg(
         "Jane",
         "Bob",
     }
+
+    # test upsert_triplet_and_node
+    index = GPTKnowledgeGraphIndex([])
+    tuples = [
+        ("foo", "is", "bar"),
+        ("hello", "is not", "world"),
+        ("Jane", "is mother of", "Bob"),
+    ]
+    nodes = [Node(str(tup)) for tup in tuples]
+    for tup, node in zip(tuples, nodes):
+        index.upsert_triplet_and_node(tup, node)
+
+    # NOTE: in these unit tests, document text == triplets
+    nodes = index.docstore.get_nodes(list(index.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
+    assert len(table_chunks) == 3
+    assert "('foo', 'is', 'bar')" in table_chunks
+    assert "('hello', 'is not', 'world')" in table_chunks
+    assert "('Jane', 'is mother of', 'Bob')" in table_chunks
+
+    # test that expected keys are present in table
+    # NOTE: in mock keyword extractor, stopwords are not filtered
+    assert index.index_struct.table.keys() == {
+        "foo",
+        "bar",
+        "hello",
+        "world",
+        "Jane",
+        "Bob",
+    }
+
+    # try inserting same node twice
+    index = GPTKnowledgeGraphIndex([])
+    node = Node(str(("foo", "is", "bar")), doc_id="test_node")
+    index.upsert_triplet_and_node(tup, node)
+    index.upsert_triplet_and_node(tup, node)
 
 
 @patch_common
@@ -141,6 +190,41 @@ def test_build_kg_similarity(
     assert len(rel_text_embeddings) == 3
     for rel_text, embedding in rel_text_embeddings.items():
         assert embedding == mock_get_text_embedding(rel_text)
+
+
+@patch_common
+@patch.object(
+    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+)
+def test_build_kg(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    struct_kwargs: Any,
+    documents: List[Document],
+) -> None:
+    """Test build knowledge graph."""
+    index = GPTKnowledgeGraphIndex.from_documents(documents)
+    # NOTE: in these unit tests, document text == triplets
+    nodes = index.docstore.get_nodes(list(index.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
+    assert len(table_chunks) == 3
+    assert "(foo, is, bar)" in table_chunks
+    assert "(hello, is not, world)" in table_chunks
+    assert "(Jane, is mother of, Bob)" in table_chunks
+
+    # test that expected keys are present in table
+    # NOTE: in mock keyword extractor, stopwords are not filtered
+    assert index.index_struct.table.keys() == {
+        "foo",
+        "bar",
+        "hello",
+        "world",
+        "Jane",
+        "Bob",
+    }
 
 
 @patch_common
