@@ -12,8 +12,8 @@ from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
 from gpt_index.indices.service_context import ServiceContext
+from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.token_counter.token_counter import llm_token_counter

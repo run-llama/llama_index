@@ -211,7 +211,7 @@ def test_delete(
     mock_extract_keywords,
 )
 @patch(
-    "gpt_index.indices.query.keyword_table.query.simple_extract_keywords",
+    "gpt_index.indices.keyword_table.query.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_query(
