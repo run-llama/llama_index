@@ -8,10 +8,9 @@ from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import patch
 
 import pytest
-
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter

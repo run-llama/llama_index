@@ -3,21 +3,15 @@
 
 from typing import Any, Dict, Optional
 
-from requests.adapters import Retry
-
 from gpt_index.data_structs.data_structs_v2 import IndexDict
-from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
-from gpt_index.vector_stores import (
-    ChatGPTRetrievalPluginClient,
-    ChromaVectorStore,
-    FaissVectorStore,
-    OpensearchVectorStore,
-    PineconeVectorStore,
-    QdrantVectorStore,
-    SimpleVectorStore,
-    WeaviateVectorStore,
-)
+from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
+from gpt_index.vector_stores import (ChatGPTRetrievalPluginClient,
+                                     ChromaVectorStore, FaissVectorStore,
+                                     OpensearchVectorStore,
+                                     PineconeVectorStore, QdrantVectorStore,
+                                     SimpleVectorStore, WeaviateVectorStore)
 from gpt_index.vector_stores.opensearch import OpensearchVectorClient
+from requests.adapters import Retry
 
 
 class GPTSimpleVectorIndexQuery(GPTVectorStoreIndexQuery):
