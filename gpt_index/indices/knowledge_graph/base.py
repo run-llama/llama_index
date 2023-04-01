@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from gpt_index.data_structs.data_structs_v2 import KG
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
-from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, KGQueryMode
+from gpt_index.indices.knowledge_graph.query import GPTKGTableQuery, KGQueryMode
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
