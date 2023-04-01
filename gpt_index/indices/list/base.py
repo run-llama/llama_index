@@ -10,8 +10,8 @@ from typing import Any, Optional, Sequence
 from gpt_index.data_structs.data_structs_v2 import IndexList
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
-from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
-from gpt_index.indices.query.list.query import GPTListIndexQuery
+from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.list.query import GPTListIndexQuery
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT

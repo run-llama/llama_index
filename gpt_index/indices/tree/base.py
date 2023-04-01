@@ -8,10 +8,10 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.common_tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.query.tree.embedding_query import GPTTreeIndexEmbeddingQuery
-from gpt_index.indices.query.tree.leaf_query import GPTTreeIndexLeafQuery
-from gpt_index.indices.query.tree.retrieve_query import GPTTreeIndexRetQuery
-from gpt_index.indices.query.tree.summarize_query import GPTTreeIndexSummarizeQuery
+from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
+from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
+from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
+from gpt_index.indices.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.tree.inserter import GPTTreeIndexInserter
 from gpt_index.prompts.default_prompts import (
