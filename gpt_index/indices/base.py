@@ -194,6 +194,16 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         return refreshed_documents
 
+    @property
+    def additional_query_context(self) -> Dict[str, Any]:
+        """Additional context necessary for making a query.
+
+        This should capture any index-specific clients, services, etc,
+        that's not captured by index struct, docstore, and service context.
+        For example, a vector store index would pass vector store.
+        """
+        return {}
+
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
         """Preprocess query.
 
@@ -235,6 +245,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         query_runner = QueryRunner(
             index_struct=self._index_struct,
             service_context=self._service_context,
+            additional_query_context={self._index_struct.index_id: self.additional_query_context},
             docstore=self._docstore,
             query_configs=[query_config],
             query_transform=query_transform,

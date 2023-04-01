@@ -280,6 +280,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         super()._preprocess_query(mode, query_kwargs)
         if "text_qa_template" not in query_kwargs:
             query_kwargs["text_qa_template"] = self.text_qa_template
-        # NOTE: Pass along vector store instance to query objects
-        # TODO: refactor this to be more explicit
-        query_kwargs["vector_store"] = self._vector_store
+
+    def additional_query_context(self) -> Dict[str, Any]:
+        return {"vector_store": self._vector_store}

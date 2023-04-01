@@ -3,6 +3,8 @@
 
 from typing import Any, List, Optional
 
+from llama_index import GPTVectorStoreIndex
+
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 
 # from gpt_index.data_structs.data_structs import IndexDict, Node
@@ -27,6 +29,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
 
     def __init__(
         self,
+        index: GPTVectorStoreIndex,
         index_struct: IndexDict,
         service_context: ServiceContext,
         vector_store: Optional[VectorStore] = None,

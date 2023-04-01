@@ -28,11 +28,13 @@ class ComposableGraph:
         index_struct: CompositeIndex,
         docstore: DocumentStore,
         service_context: Optional[ServiceContext] = None,
+        additional_query_context: Optional[Dict[str, Dict[str, Any]]] = None,
     ) -> None:
         """Init params."""
         self._docstore = docstore
         self._index_struct = index_struct
         self._service_context = service_context or ServiceContext.from_defaults()
+        self._additional_query_context = additional_query_context or {}
 
     @property
     def index_struct(self) -> CompositeIndex:
@@ -67,12 +69,7 @@ class ComposableGraph:
         index_summaries: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> "ComposableGraph":  # type: ignore
-        """Create composable graph using this index class as the root.
-
-        NOTE: this is mostly syntactic sugar,
-        roughly equivalent to directly calling `ComposableGraph.from_indices`.
-
-        """
+        """Create composable graph using this index class as the root."""
         if index_summaries is None:
             for index in children_indices:
                 if index.index_struct.summary is None:
@@ -116,6 +113,16 @@ class ComposableGraph:
             root_index
         ]
 
+        # collect additional service context
+        additional_service_context: Dict[str, Dict[str, Any]] = {}
+        additional_service_context[
+            root_index.index_struct.index_id
+        ] = root_index.additional_query_context
+        for index in children_indices:
+            additional_service_context[
+                index.index_struct.index_id
+            ] = index.additional_query_context
+
         return cls.from_index_structs_and_docstores(
             all_index_structs={
                 index.index_struct.index_id: index.index_struct for index in all_indices
@@ -123,6 +130,7 @@ class ComposableGraph:
             root_id=root_index.index_struct.index_id,
             docstores=[index.docstore for index in all_indices],
             service_context=root_index.service_context,
+            additional_service_context=additional_service_context,
         )
 
     def query(
@@ -137,6 +145,7 @@ class ComposableGraph:
         query_runner = QueryRunner(
             index_struct=self._index_struct,
             service_context=service_context,
+            additional_query_context=self._additional_query_context,
             docstore=self._docstore,
             query_configs=query_configs,
             query_transform=query_transform,
