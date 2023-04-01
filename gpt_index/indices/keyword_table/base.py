@@ -16,7 +16,7 @@ from gpt_index.data_structs.data_structs_v2 import KeywordTable
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.query.keyword_table.query import (
+from gpt_index.indices.keyword_table.query import (
     GPTKeywordTableGPTQuery,
     GPTKeywordTableRAKEQuery,
     GPTKeywordTableSimpleQuery,
