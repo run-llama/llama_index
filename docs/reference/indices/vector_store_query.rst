@@ -7,7 +7,7 @@ query classes specific to each vector store.
 Base Vector Store Query Class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: gpt_index.indices.vector_store.base
+.. automodule:: gpt_index.indices.vector_store.base_query
    :members:
    :inherited-members:
    :exclude-members: index_struct, query, set_llm_predictor, set_prompt_helper
