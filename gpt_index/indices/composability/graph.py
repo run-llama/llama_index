@@ -207,8 +207,8 @@ class ComposableGraph:
         from gpt_index.indices.registry import load_index_struct_from_dict
 
         result_dict = json.loads(index_string)
-        index_struct = load_index_struct_from_dict(result_dict["index_struct"])
-        docstore = DocumentStore.load_from_dict(result_dict["docstore"])
+        index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
+        docstore = DocumentStore.load_from_dict(result_dict[DOCSTORE_KEY])
         assert isinstance(index_struct, CompositeIndex)
         return cls(index_struct, docstore, **kwargs)
 
