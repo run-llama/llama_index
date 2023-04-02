@@ -6,11 +6,16 @@ from gpt_index.readers.schema.base import Document
 
 
 class NodeParser(Protocol):
-    """Interface for node parser."""
+    """Base interface for node parser."""
 
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
     ) -> List[Node]:
-        """Parse documents into nodes."""
+        """Parse documents into nodes.
+
+        Args:
+            documents (Sequence[Document]): documents to parse
+
+        """
         ...
