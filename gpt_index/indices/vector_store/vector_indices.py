@@ -229,15 +229,15 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         index_struct: Optional[IndexDict] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         service_context: Optional[ServiceContext] = None,
+        vector_store: Optional[SimpleVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
         if pinecone_kwargs is None:
             pinecone_kwargs = {}
 
-        vector_store = kwargs.pop(
-            "vector_store",
-            PineconeVectorStore(
+        if vector_store is None:
+            vector_store = PineconeVectorStore(
                 pinecone_index=pinecone_index,
                 index_name=index_name,
                 environment=environment,
@@ -246,8 +246,8 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
                 insert_kwargs=insert_kwargs,
                 query_kwargs=query_kwargs,
                 delete_kwargs=delete_kwargs,
-            ),
-        )
+            )
+        assert vector_store is not None
 
         super().__init__(
             nodes=nodes,
