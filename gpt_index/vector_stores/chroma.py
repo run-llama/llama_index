@@ -1,7 +1,7 @@
 """Chroma vector store."""
 import logging
 import math
-from typing import Any, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.utils import truncate_text
@@ -42,6 +42,10 @@ class ChromaVectorStore(VectorStore):
         from chromadb.api.models.Collection import Collection
 
         self._collection = cast(Collection, chroma_collection)
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        raise NotImplementedError()
 
     @property
     def config_dict(self) -> dict:

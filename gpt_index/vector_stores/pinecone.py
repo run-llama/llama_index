@@ -91,6 +91,10 @@ class PineconeVectorStore(VectorStore):
             self._query_kwargs = query_kwargs or {}
             self._delete_kwargs = delete_kwargs or {}
 
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        raise NotImplementedError()
+
     @property
     def config_dict(self) -> dict:
         """Return config dict."""

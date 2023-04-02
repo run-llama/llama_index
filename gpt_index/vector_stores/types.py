@@ -2,7 +2,7 @@
 
 
 from dataclasses import dataclass
-from typing import Any, List, Optional, Protocol
+from typing import Any, Dict, List, Optional, Protocol
 
 from gpt_index.data_structs.node_v2 import Node
 
@@ -38,6 +38,10 @@ class VectorStore(Protocol):
 
     stores_text: bool
     is_embedding_query: bool = True
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        ...
 
     @property
     def client(self) -> Any:

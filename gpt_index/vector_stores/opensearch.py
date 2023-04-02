@@ -156,6 +156,10 @@ class OpensearchVectorStore(VectorStore):
             raise ImportError(import_err_msg)
         self._client = client
 
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        raise NotImplementedError()
+
     @property
     def client(self) -> Any:
         """Get client."""

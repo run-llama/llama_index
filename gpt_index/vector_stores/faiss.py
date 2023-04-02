@@ -4,7 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
 
@@ -46,6 +46,11 @@ class FaissVectorStore(VectorStore):
             raise ImportError(import_err_msg)
 
         self._faiss_index = cast(faiss.Index, faiss_index)
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "FaissVectorStore":
+        save_path = config_dict["save_path"]
+        return cls.load(save_path=save_path)
 
     @property
     def config_dict(self) -> dict:

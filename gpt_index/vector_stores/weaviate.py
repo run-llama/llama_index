@@ -4,7 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 from gpt_index.readers.weaviate.data_structs import WeaviateNode
 from gpt_index.readers.weaviate.utils import get_default_class_prefix
@@ -58,6 +58,10 @@ class WeaviateVectorStore(VectorStore):
         self._class_prefix = class_prefix or get_default_class_prefix()
         # try to create schema
         WeaviateNode.create_schema(self._client, self._class_prefix)
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        raise NotImplementedError()
 
     @property
     def client(self) -> Any:
