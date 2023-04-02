@@ -213,6 +213,7 @@ class ComposableGraph:
         query_runner = QueryRunner(
             index_struct=self._index_struct,
             service_context=service_context,
+            additional_query_context=self._additional_query_context,
             docstore=self._docstore,
             query_configs=query_configs,
             query_transform=query_transform,
