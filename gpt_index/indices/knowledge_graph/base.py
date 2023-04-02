@@ -167,7 +167,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
         """
         self._index_struct.add_node(keywords, node)
-        self._docstore.add_documents([node])
+        self._docstore.add_documents([node], allow_update=True)
 
     def upsert_triplet_and_node(
         self, triplet: Tuple[str, str, str], node: Node

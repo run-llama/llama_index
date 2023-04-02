@@ -7,7 +7,7 @@ import pytest
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore_v2 import DocumentStore
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMChain,

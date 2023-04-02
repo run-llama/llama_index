@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore_v2 import DocumentStore
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.prompts.base import Prompt
@@ -95,11 +95,11 @@ class GPTTreeIndexInserter:
             self.index_graph.insert_under_parent(
                 node1, parent_node, new_index=self.index_graph.get_index(node1)
             )
-            self._docstore.add_documents([node1])
+            self._docstore.add_documents([node1], allow_update=False)
             self.index_graph.insert_under_parent(
                 node2, parent_node, new_index=self.index_graph.get_index(node2)
             )
-            self._docstore.add_documents([node2])
+            self._docstore.add_documents([node2], allow_update=False)
 
     def _insert_node(self, node: Node, parent_node: Optional[Node] = None) -> None:
         """Insert node."""
