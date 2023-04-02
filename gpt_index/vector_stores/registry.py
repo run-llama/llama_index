@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import Dict, Type
+from typing import Any, Dict, Type
+from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from gpt_index.vector_stores.chroma import ChromaVectorStore
 from gpt_index.vector_stores.faiss import FaissVectorStore
@@ -33,3 +34,11 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.CHROMA: ChromaVectorStore,
     VectorStoreType.CHATGPT_PLUGIN: ChatGPTRetrievalPluginClient,
 }
+
+
+def load_vector_store_from_dict(vector_store_dict: Dict[str, Any]) -> VectorStore:
+    type = vector_store_dict[TYPE_KEY]
+    data_dict = vector_store_dict[DATA_KEY]
+
+    cls = VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS[type]
+    return cls.from_dict(data_dict)
