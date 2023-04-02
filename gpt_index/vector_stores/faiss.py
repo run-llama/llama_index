@@ -30,10 +30,7 @@ class FaissVectorStore(VectorStore):
 
     stores_text: bool = False
 
-    def __init__(
-        self,
-        faiss_index: Any,
-    ) -> None:
+    def __init__(self, faiss_index: Any, save_path: Optional[str] = None) -> None:
         """Initialize params."""
         import_err_msg = """
             `faiss` package not found. For instructions on
@@ -46,16 +43,20 @@ class FaissVectorStore(VectorStore):
             raise ImportError(import_err_msg)
 
         self._faiss_index = cast(faiss.Index, faiss_index)
+        self._save_path = save_path or "./faiss.json"
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "FaissVectorStore":
         save_path = config_dict["save_path"]
+        if save_path is None:
+            raise ValueError("Cannot load since save path is None")
         return cls.load(save_path=save_path)
 
     @property
     def config_dict(self) -> dict:
         """Return config dict."""
-        return {}
+        self.save(self._save_path)
+        return {"save_path": self._save_path}
 
     def add(
         self,
