@@ -6,6 +6,7 @@ from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.data_structs_v2 import (
     KG,
     ChromaIndexDict,
+    OpensearchIndexDict,
     CompositeIndex,
     EmptyIndex,
     FaissIndexDict,
@@ -39,6 +40,7 @@ from gpt_index.indices.vector_store.vector_indices import (
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
     ChatGPTRetrievalPluginIndex,
+    GPTOpensearchIndex,
 )
 
 INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruct]] = {
@@ -51,6 +53,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruc
     IndexStructType.PINECONE: PineconeIndexDict,
     IndexStructType.QDRANT: QdrantIndexDict,
     IndexStructType.CHROMA: ChromaIndexDict,
+    IndexStructType.OPENSEARCH: OpensearchIndexDict,
     IndexStructType.VECTOR_STORE: IndexDict,
     IndexStructType.SQL: SQLStructTable,
     IndexStructType.PANDAS: PandasStructTable,
@@ -77,6 +80,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.KG: GPTKnowledgeGraphIndex,
     IndexStructType.EMPTY: GPTEmptyIndex,
     IndexStructType.CHATGPT_RETRIEVAL_PLUGIN: ChatGPTRetrievalPluginIndex,
+    IndexStructType.OPENSEARCH: GPTOpensearchIndex,
 }
 
 

@@ -12,8 +12,8 @@ from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.query.vector_store.base import GPTVectorStoreIndexQuery
 from gpt_index.indices.service_context import ServiceContext
+from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.token_counter.token_counter import llm_token_counter
@@ -171,7 +171,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         if not self._vector_store.stores_text:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
-                self._docstore.add_documents([result.node])
+                self._docstore.add_documents([result.node], allow_update=True)
 
     def _add_nodes_to_index(
         self,
@@ -191,7 +191,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         if not self._vector_store.stores_text:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
-                self._docstore.add_documents([result.node])
+                self._docstore.add_documents([result.node], allow_update=True)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
         """Build index from nodes."""
