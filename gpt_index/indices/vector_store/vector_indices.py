@@ -232,8 +232,6 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if pinecone_index is None:
-            raise ValueError("pinecone_index is required.")
         if pinecone_kwargs is None:
             pinecone_kwargs = {}
 
