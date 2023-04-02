@@ -173,7 +173,6 @@ class QueryRunner:
         query_obj = query_cls(
             index_struct=index_struct,
             docstore=self._docstore,
-            service_context=self._service_context,
             **query_kwargs,
         )
 
