@@ -258,7 +258,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             BaseGPTIndex: The loaded index.
 
         """
-        vector_store = load_vector_store_from_dict(result_dict[VECTOR_STORE_KEY])
+        vector_store = load_vector_store_from_dict(
+            result_dict[VECTOR_STORE_KEY], **kwargs
+        )
         return super().load_from_dict(result_dict, vector_store=vector_store, **kwargs)
 
     def save_to_dict(self, **save_kwargs: Any) -> dict:

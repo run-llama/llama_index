@@ -71,6 +71,7 @@ class PineconeVectorStore(VectorStore):
         insert_kwargs: Optional[Dict] = None,
         query_kwargs: Optional[Dict] = None,
         delete_kwargs: Optional[Dict] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         import_err_msg = (

@@ -47,17 +47,23 @@ def save_additional_query_context_to_dict(
 
 
 def load_additional_query_context_from_dict(
-    save_dict: Dict[str, Dict[str, Any]]
+    save_dict: Dict[str, Dict[str, Any]],
+    query_context_kwargs: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """Load additional query context from dict.
 
     NOTE: Right now, only consider vector stores."""
+    if query_context_kwargs is None:
+        query_context_kwargs = {}
+
     context_dict = {}
     for index_id, index_save_dict in save_dict.items():
         index_context_dict = {}
+        index_kwargs = query_context_kwargs.get(index_id, {})
         for key, val in index_save_dict.items():
             if key == VECTOR_STORE_KEY:
-                index_context_dict[key] = load_vector_store_from_dict(val)
+                key_kwargs = index_kwargs.get(key, {})
+                index_context_dict[key] = load_vector_store_from_dict(val, **key_kwargs)
             else:
                 index_context_dict[key] = val
         context_dict[index_id] = index_context_dict
@@ -254,8 +260,11 @@ class ComposableGraph:
         result_dict = json.loads(index_string)
         index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
         docstore = DocumentStore.load_from_dict(result_dict[DOCSTORE_KEY])
+
+        query_context_kwargs = kwargs.get("query_context_kwargs", None)
         additional_query_context = load_additional_query_context_from_dict(
-            result_dict[ADDITIONAL_QUERY_CONTEXT_KEY]
+            result_dict[ADDITIONAL_QUERY_CONTEXT_KEY],
+            query_context_kwargs=query_context_kwargs,
         )
         assert isinstance(index_struct, CompositeIndex)
         return cls(

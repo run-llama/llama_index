@@ -233,8 +233,7 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if pinecone_kwargs is None:
-            pinecone_kwargs = {}
+        pinecone_kwargs = pinecone_kwargs or {}
 
         if vector_store is None:
             vector_store = PineconeVectorStore(
