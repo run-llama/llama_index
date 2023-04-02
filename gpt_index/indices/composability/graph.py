@@ -113,13 +113,13 @@ class ComposableGraph:
             root_index
         ]
 
-        # collect additional service context
-        additional_service_context: Dict[str, Dict[str, Any]] = {}
-        additional_service_context[
+        # collect additional query context
+        additional_query_contex: Dict[str, Dict[str, Any]] = {}
+        additional_query_contex[
             root_index.index_struct.index_id
         ] = root_index.additional_query_context
         for index in children_indices:
-            additional_service_context[
+            additional_query_contex[
                 index.index_struct.index_id
             ] = index.additional_query_context
 
@@ -130,7 +130,7 @@ class ComposableGraph:
             root_id=root_index.index_struct.index_id,
             docstores=[index.docstore for index in all_indices],
             service_context=root_index.service_context,
-            additional_service_context=additional_service_context,
+            additional_query_contex=additional_query_contex,
         )
 
     def query(

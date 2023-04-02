@@ -165,7 +165,7 @@ class QueryRunner:
         from gpt_index.indices.registry import INDEX_STRUT_TYPE_TO_QUERY_MAP
 
         query_cls = INDEX_STRUT_TYPE_TO_QUERY_MAP[index_struct_type][mode]
-        query_kwargs = self._get_query_kwargs(config, additional_query_context)
+        query_kwargs = self._get_query_kwargs(config)
 
         additional_query_context = self._additional_query_context[index_struct.index_id]
         query_kwargs.update(additional_query_context)
