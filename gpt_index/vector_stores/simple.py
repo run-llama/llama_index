@@ -53,7 +53,9 @@ class SimpleVectorStore(VectorStore):
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "SimpleVectorStore":
-        return cls(simple_vector_store_data_dict=config_dict)
+        return cls(
+            simple_vector_store_data_dict=config_dict["simple_vector_store_data_dict"]
+        )
 
     @property
     def client(self) -> None:
