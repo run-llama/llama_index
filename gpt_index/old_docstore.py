@@ -46,7 +46,7 @@ class V1DocumentStore(DataClassJsonMixin):
         cls,
         docs_dict: Dict[str, Any],
         type_to_struct: Optional[Dict[str, Type[IndexStruct]]] = None,
-    ) -> "DocumentStore":
+    ) -> "V1DocumentStore":
         """Load from dict."""
         docs_obj_dict = {}
         for doc_id, doc_dict in docs_dict["docs"].items():
@@ -73,13 +73,13 @@ class V1DocumentStore(DataClassJsonMixin):
         )
 
     @classmethod
-    def from_documents(cls, docs: List[DOC_TYPE]) -> "DocumentStore":
+    def from_documents(cls, docs: List[DOC_TYPE]) -> "V1DocumentStore":
         """Create from documents."""
         obj = cls()
         obj.add_documents(docs)
         return obj
 
-    def update_docstore(self, other: "DocumentStore") -> None:
+    def update_docstore(self, other: "V1DocumentStore") -> None:
         """Update docstore."""
         self.docs.update(other.docs)
 
