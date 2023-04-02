@@ -37,6 +37,7 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.mathjax",
     "myst_parser",
+    "nbsphinx",
     "nbsphinx_link",
 ]
 
