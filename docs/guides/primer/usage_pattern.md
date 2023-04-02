@@ -194,6 +194,24 @@ index.save_to_disk('index.json')
 index = GPTSimpleVectorIndex.load_from_disk('index.json')
 ```
 
+**NOTE**: If you had initialized the index with a custom 
+`ServiceContext` object, you will also need to pass in the same
+ServiceContext during `load_from_disk`.
+
+```python
+
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+
+# when first building the index
+index = GPTSimpleVectorIndex.from_documents(documents, service_context=service_context)
+
+...
+
+# when loading the index from disk
+index = GPTSimpleVectorIndex.load_from_disk("index.json", service_context=service_context)
+
+```
+
 ## 4. [Optional, Advanced] Building indices on top of other indices
 
 You can build indices on top of other indices! 
