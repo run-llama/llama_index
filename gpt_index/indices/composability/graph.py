@@ -79,6 +79,7 @@ class ComposableGraph:
         docstore: DocumentStore,
         service_context: Optional[ServiceContext] = None,
         additional_query_context: Optional[Dict[str, Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         self._docstore = docstore
@@ -101,7 +102,7 @@ class ComposableGraph:
         root_id: str,
         docstores: Sequence[DocumentStore],
         additional_query_context: Optional[Dict[str, Dict[str, Any]]] = None,
-        **kwargs: Any,
+        service_context: Optional[ServiceContext] = None,
     ) -> "ComposableGraph":
         composite_index_struct = CompositeIndex(
             all_index_structs=all_index_structs,
@@ -112,7 +113,7 @@ class ComposableGraph:
             index_struct=composite_index_struct,
             docstore=merged_docstore,
             additional_query_context=additional_query_context,
-            **kwargs,
+            service_context=service_context,
         )
 
     @classmethod
