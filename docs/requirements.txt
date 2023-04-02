@@ -6,3 +6,4 @@ myst-parser
 nbsphinx
 nbsphinx-link
 pandoc
+ipython
