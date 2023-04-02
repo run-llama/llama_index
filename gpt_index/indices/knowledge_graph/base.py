@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from gpt_index.data_structs.data_structs_v2 import KG
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
-from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery, KGQueryMode
+from gpt_index.indices.knowledge_graph.query import GPTKGTableQuery, KGQueryMode
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
@@ -63,6 +63,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 max_knowledge_triplets=self.max_triplets_per_chunk
             )
         )
+
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -104,7 +105,9 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             triplets = self._extract_triplets(n.get_text())
             logger.debug(f"> Extracted triplets: {triplets}")
             for triplet in triplets:
-                index_struct.upsert_triplet(triplet, n)
+                subj, _, obj = triplet
+                index_struct.upsert_triplet(triplet)
+                index_struct.add_node([subj, obj], n)
 
             if self.include_embeddings:
                 for i, triplet in enumerate(triplets):
@@ -126,8 +129,10 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             triplets = self._extract_triplets(n.get_text())
             logger.debug(f"Extracted triplets: {triplets}")
             for triplet in triplets:
+                subj, _, obj = triplet
                 triplet_str = str(triplet)
-                self._index_struct.upsert_triplet(triplet, n)
+                self._index_struct.upsert_triplet(triplet)
+                self._index_struct.add_node([subj, obj], n)
                 if (
                     self.include_embeddings
                     and triplet_str not in self._index_struct.embedding_dict
@@ -138,6 +143,50 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                         )
                     )
                     self.index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
+
+    def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:
+        """Insert triplets.
+
+        Used for manual insertion of KG triplets (in the form
+        of (subject, relationship, object)).
+
+        Args
+            triplet (str): Knowledge triplet
+
+        """
+        self._index_struct.upsert_triplet(triplet)
+
+    def add_node(self, keywords: List[str], node: Node) -> None:
+        """Add node.
+
+        Used for manual insertion of nodes (keyed by keywords).
+
+        Args:
+            keywords (List[str]): Keywords to index the node.
+            node (Node): Node to be indexed.
+
+        """
+        self._index_struct.add_node(keywords, node)
+        self._docstore.add_documents([node], allow_update=True)
+
+    def upsert_triplet_and_node(
+        self, triplet: Tuple[str, str, str], node: Node
+    ) -> None:
+        """Upsert KG triplet and node.
+
+        Calls both upsert_triplet and add_node.
+        Behavior is idempotent; if Node already exists,
+        only triplet will be added.
+
+        Args:
+            keywords (List[str]): Keywords to index the node.
+            node (Node): Node to be indexed.
+
+        """
+        subj, _, obj = triplet
+        self._index_struct.add_node([subj, obj], node)
+        self._index_struct.upsert_triplet(triplet)
+        self._docstore.add_documents([node], allow_update=True)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""

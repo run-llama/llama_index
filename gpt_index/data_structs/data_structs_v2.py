@@ -231,10 +231,9 @@ class KG(V2IndexStruct):
         """Add embedding to dict."""
         self.embedding_dict[triplet_str] = embedding
 
-    def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
+    def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:
         """Upsert a knowledge triplet to the graph."""
         subj, relationship, obj = triplet
-        self.add_node([subj, obj], node)
         if subj not in self.rel_map:
             self.rel_map[subj] = []
         self.rel_map[subj].append((obj, relationship))
