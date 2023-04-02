@@ -194,9 +194,10 @@ class QueryRunner:
                 )
                 nodes_for_synthesis.append(node_with_score)
                 additional_source_nodes.extend(source_nodes)
-            return query_obj.synthesize(
+            response = query_obj.synthesize(
                 query_bundle, nodes_for_synthesis, additional_source_nodes
             )
+            return response
         else:
             return query_obj.query(query_bundle)
 

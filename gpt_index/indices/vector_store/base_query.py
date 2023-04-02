@@ -47,7 +47,6 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         query_bundle: QueryBundle,
         similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
-
         if self._vector_store.is_embedding_query:
             if query_bundle.embedding is None:
                 query_bundle.embedding = (

@@ -8,7 +8,15 @@ from gpt_index.readers.schema.base import Document
 
 
 class SimpleNodeParser:
-    """Simple node parser."""
+    """Simple node parser.
+
+    Splits a document into Nodes using a TextSplitter.
+
+    Args:
+        text_splitter (Optional[TextSplitter]): text splitter
+        include_extra_info (bool): whether to include extra info in nodes
+
+    """
 
     def __init__(
         self,
@@ -24,7 +32,13 @@ class SimpleNodeParser:
         documents: Sequence[Document],
         include_extra_info: bool = True,
     ) -> List[Node]:
-        """Parse document into nodes."""
+        """Parse document into nodes.
+
+        Args:
+            documents (Sequence[Document]): documents to parse
+            include_extra_info (bool): whether to include extra info in nodes
+
+        """
         all_nodes: List[Node] = []
         for document in documents:
             nodes = get_nodes_from_document(
