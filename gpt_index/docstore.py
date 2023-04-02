@@ -2,24 +2,48 @@
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Sequence
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.data_structs.data_structs import IndexStruct
+from gpt_index.constants import TYPE_KEY
+from gpt_index.data_structs.node_v2 import ImageNode, IndexNode, Node
 from gpt_index.readers.schema.base import Document
-
-DOC_TYPE = Union[IndexStruct, Document]
-
-# type key: used to store type of document
-TYPE_KEY = "__type__"
+from gpt_index.schema import BaseDocument
 
 
 @dataclass
 class DocumentStore(DataClassJsonMixin):
-    """Document store."""
+    """Document (Node) store.
 
-    docs: Dict[str, DOC_TYPE] = field(default_factory=dict)
+    NOTE: at the moment, this store is primarily used to store Node objects.
+    Each node will be assigned an ID.
+
+    The same docstore can be reused across index structures. This
+    allows you to reuse the same storage for multiple index structures;
+    otherwise, each index would create a docstore under the hood.
+
+    .. code-block:: python
+
+        response = index.query("<query_str>", mode="default")
+
+        nodes = SimpleNodeParser.get_nodes_from_documents()
+        docstore = DocumentStore()
+        docstore.add_documents(nodes)
+
+        list_index = GPTListIndex(nodes, docstore=docstore)
+        vector_index = GPTSimpleVectorIndex(nodes, docstore=docstore)
+        keyword_table_index = GPTSimpleKeywordTableIndex(nodes, docstore=docstore)
+
+    This will use the same docstore for multiple index structures.
+
+    Args:
+        docs (Dict[str, BaseDocument]): documents
+        ref_doc_info (Dict[str, Dict[str, Any]]): reference document info
+
+    """
+
+    docs: Dict[str, BaseDocument] = field(default_factory=dict)
     ref_doc_info: Dict[str, Dict[str, Any]] = field(
         default_factory=lambda: defaultdict(dict)
     )
@@ -33,39 +57,32 @@ class DocumentStore(DataClassJsonMixin):
             docs_dict[doc_id] = doc_dict
         return {"docs": docs_dict, "ref_doc_info": self.ref_doc_info}
 
-    def contains_index_struct(self, exclude_ids: Optional[List[str]] = None) -> bool:
-        """Check if contains index struct."""
-        exclude_ids = exclude_ids or []
-        for doc in self.docs.values():
-            if isinstance(doc, IndexStruct) and doc.get_doc_id() not in exclude_ids:
-                return True
-        return False
-
     @classmethod
     def load_from_dict(
         cls,
         docs_dict: Dict[str, Any],
-        type_to_struct: Optional[Dict[str, Type[IndexStruct]]] = None,
     ) -> "DocumentStore":
-        """Load from dict."""
+        """Load from dict.
+
+        Args:
+            docs_dict (Dict[str, Any]): dict of documents
+
+        """
         docs_obj_dict = {}
         for doc_id, doc_dict in docs_dict["docs"].items():
             doc_type = doc_dict.pop(TYPE_KEY, None)
+            doc: BaseDocument
             if doc_type == "Document" or doc_type is None:
-                doc: DOC_TYPE = Document.from_dict(doc_dict)
+                doc = Document.from_dict(doc_dict)
+            elif doc_type == Node.get_type():
+                doc = Node.from_dict(doc_dict)
+            elif doc_type == ImageNode.get_type():
+                doc = ImageNode.from_dict(doc_dict)
+            elif doc_type == IndexNode.get_type():
+                doc = IndexNode.from_dict(doc_dict)
             else:
-                if type_to_struct is None:
-                    raise ValueError(
-                        "type_to_struct must be provided if type is index struct."
-                    )
-                # try using IndexStructType to retrieve documents
-                if doc_type not in type_to_struct:
-                    raise ValueError(
-                        f"doc_type {doc_type} not found in type_to_struct. "
-                        "Make sure that it was registered in the index registry."
-                    )
-                doc = type_to_struct[doc_type].from_dict(doc_dict)
-                # doc = index_struct_cls.from_dict(doc_dict)
+                raise ValueError(f"Unknown doc type: {doc_type}")
+
             docs_obj_dict[doc_id] = doc
         return cls(
             docs=docs_obj_dict,
@@ -73,18 +90,52 @@ class DocumentStore(DataClassJsonMixin):
         )
 
     @classmethod
-    def from_documents(cls, docs: List[DOC_TYPE]) -> "DocumentStore":
-        """Create from documents."""
+    def from_documents(
+        cls, docs: Sequence[BaseDocument], allow_update: bool = True
+    ) -> "DocumentStore":
+        """Create from documents.
+
+        Args:
+            docs (List[BaseDocument]): documents
+            allow_update (bool): allow update of docstore from document
+                with same doc_id.
+
+        """
         obj = cls()
-        obj.add_documents(docs)
+        obj.add_documents(docs, allow_update=allow_update)
         return obj
 
+    @classmethod
+    def merge(cls, docstores: Sequence["DocumentStore"]) -> "DocumentStore":
+        """Merge docstores.
+
+        Args:
+            docstores (List[DocumentStore]): docstores to merge
+        """
+        merged_docstore = cls()
+        for docstore in docstores:
+            merged_docstore.update_docstore(docstore)
+        return merged_docstore
+
     def update_docstore(self, other: "DocumentStore") -> None:
-        """Update docstore."""
+        """Update docstore.
+
+        Args:
+            other (DocumentStore): docstore to update from
+
+        """
         self.docs.update(other.docs)
 
-    def add_documents(self, docs: List[DOC_TYPE], allow_update: bool = False) -> None:
-        """Add a document to the store."""
+    def add_documents(
+        self, docs: Sequence[BaseDocument], allow_update: bool = True
+    ) -> None:
+        """Add a document to the store.
+
+        Args:
+            docs (List[BaseDocument]): documents
+            allow_update (bool): allow update of docstore from document
+
+        """
         for doc in docs:
             if doc.is_doc_id_none:
                 raise ValueError("doc_id not set")
@@ -98,8 +149,16 @@ class DocumentStore(DataClassJsonMixin):
             self.docs[doc.get_doc_id()] = doc
             self.ref_doc_info[doc.get_doc_id()]["doc_hash"] = doc.get_doc_hash()
 
-    def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[DOC_TYPE]:
-        """Get a document from the store."""
+    def get_document(
+        self, doc_id: str, raise_error: bool = True
+    ) -> Optional[BaseDocument]:
+        """Get a document from the store.
+
+        Args:
+            doc_id (str): document id
+            raise_error (bool): raise error if doc_id not found
+
+        """
         doc = self.docs.get(doc_id, None)
         if doc is None and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
@@ -119,7 +178,7 @@ class DocumentStore(DataClassJsonMixin):
 
     def delete_document(
         self, doc_id: str, raise_error: bool = True
-    ) -> Optional[DOC_TYPE]:
+    ) -> Optional[BaseDocument]:
         """Delete a document from the store."""
         doc = self.docs.pop(doc_id, None)
         self.ref_doc_info.pop(doc_id, None)
@@ -127,6 +186,36 @@ class DocumentStore(DataClassJsonMixin):
             raise ValueError(f"doc_id {doc_id} not found.")
         return doc
 
-    def __len__(self) -> int:
-        """Get length."""
-        return len(self.docs.keys())
+    def get_nodes(self, node_ids: List[str], raise_error: bool = True) -> List[Node]:
+        """Get nodes from docstore.
+
+        Args:
+            node_ids (List[str]): node ids
+            raise_error (bool): raise error if node_id not found
+
+        """
+        return [self.get_node(node_id, raise_error=raise_error) for node_id in node_ids]
+
+    def get_node(self, node_id: str, raise_error: bool = True) -> Node:
+        """Get node from docstore.
+
+        Args:
+            node_id (str): node id
+            raise_error (bool): raise error if node_id not found
+
+        """
+        doc = self.get_document(node_id, raise_error=raise_error)
+        if not isinstance(doc, Node):
+            raise ValueError(f"Document {node_id} is not a Node.")
+        return doc
+
+    def get_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, Node]:
+        """Get node dict from docstore given a mapping of index to node ids.
+
+        Args:
+            node_id_dict (Dict[int, str]): mapping of index to node ids
+
+        """
+        return {
+            index: self.get_node(node_id) for index, node_id in node_id_dict.items()
+        }

@@ -7,7 +7,7 @@ from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore_v2 import DocumentStore
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
@@ -125,7 +125,7 @@ class BaseGPTIndex(Generic[IS], ABC):
     @llm_token_counter("build_index_from_nodes")
     def build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""
-        self._docstore.add_documents(nodes)
+        self._docstore.add_documents(nodes, allow_update=True)
         return self._build_index_from_nodes(nodes)
 
     @abstractmethod
@@ -135,7 +135,7 @@ class BaseGPTIndex(Generic[IS], ABC):
     @llm_token_counter("insert")
     def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert nodes."""
-        self.docstore.add_documents(nodes)
+        self.docstore.add_documents(nodes, allow_update=True)
         self._insert(nodes, **insert_kwargs)
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:

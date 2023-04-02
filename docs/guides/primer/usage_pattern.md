@@ -87,8 +87,29 @@ index = GPTSimpleVectorIndex(nodes)
 
 ```
 
-
 Depending on which index you use, LlamaIndex may make LLM calls in order to build the index.
+
+### Reusing Nodes across Index Structures
+
+If you have multiple Node objects defined, and wish to share these Node
+objects across multiple index structures, you can do that. Simply 
+define a DocumentStore object, add the Node objects to the DocumentStore,
+and pass the DocumentStore around.
+
+```python
+from gpt_index.docstore import DocumentStore
+
+docstore = DocumentStore()
+docstore.add_documents(nodes)
+
+index1 = GPTSimpleVectorIndex(nodes, docstore=docstore)
+index2 = GPTListIndex(nodes, docstore=docstore)
+```
+
+**NOTE**: If the `docstore` argument isn't specified, then it is implicitly
+created for each index during index construction. You can access the docstore
+associated with a given index through `index.docstore`.
+
 
 ### Inserting Documents
 
@@ -141,7 +162,7 @@ index = GPTSimpleVectorIndex.from_documents(
 See the [Custom LLM's How-To](/how_to/customization/custom_llms.md) for more details.
 
 
-#### Customizing Prompts
+### Customizing Prompts
 
 Depending on the index used, we used default prompt templates for constructing the index (and also insertion/querying).
 See [Custom Prompts How-To](/how_to/customization/custom_prompts.md) for more details on how to customize your prompt.
