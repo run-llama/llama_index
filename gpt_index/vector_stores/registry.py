@@ -35,6 +35,10 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.CHATGPT_PLUGIN: ChatGPTRetrievalPluginClient,
 }
 
+VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE: Dict[Type[VectorStore], VectorStoreType] = {
+    cls_: type_ for type_, cls_ in VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS.items()
+}
+
 
 def load_vector_store_from_dict(vector_store_dict: Dict[str, Any]) -> VectorStore:
     type = vector_store_dict[TYPE_KEY]
@@ -42,3 +46,8 @@ def load_vector_store_from_dict(vector_store_dict: Dict[str, Any]) -> VectorStor
 
     cls = VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS[type]
     return cls.from_dict(data_dict)
+
+
+def save_vector_store_to_dict(vector_store: VectorStore) -> Dict[str, Any]:
+    type_ = VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE[type(vector_store)]
+    return {TYPE_KEY: type_, DATA_KEY: vector_store.config_dict}

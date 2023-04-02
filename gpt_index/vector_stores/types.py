@@ -2,7 +2,7 @@
 
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
 from gpt_index.data_structs.node_v2 import Node
 
@@ -33,6 +33,7 @@ class VectorStoreQueryResult:
     ids: Optional[List[str]] = None
 
 
+@runtime_checkable
 class VectorStore(Protocol):
     """Abstract vector store protocol."""
 

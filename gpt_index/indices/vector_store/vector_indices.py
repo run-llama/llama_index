@@ -66,21 +66,10 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        simple_vector_store_data_dict: Optional[dict] = None,
+        vector_store: Optional[SimpleVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        # TODO: temporary hack to "infer" vector store from
-        # index struct if index_struct exists
-        if index_struct is not None and len(index_struct.embeddings_dict) > 0:
-            simple_vector_store_data_dict = {
-                "embedding_dict": index_struct.embeddings_dict,
-            }
-
-        vector_store = SimpleVectorStore(
-            simple_vector_store_data_dict=simple_vector_store_data_dict
-        )
-
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -89,10 +78,6 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
-
-        # TODO: Temporary hack to also store embeddings in index_struct
-        embedding_dict = vector_store._data.embedding_dict
-        self._index_struct.embeddings_dict = embedding_dict
 
 
 class GPTFaissIndex(GPTVectorStoreIndex):
@@ -234,6 +219,8 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         self,
         nodes: Optional[Sequence[Node]] = None,
         pinecone_index: Optional[Any] = None,
+        index_name: Optional[str] = None,
+        environment: Optional[str] = None,
         metadata_filters: Optional[Dict[str, Any]] = None,
         pinecone_kwargs: Optional[Dict] = None,
         insert_kwargs: Optional[Dict] = None,
@@ -254,6 +241,8 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             "vector_store",
             PineconeVectorStore(
                 pinecone_index=pinecone_index,
+                index_name=index_name,
+                environment=environment,
                 metadata_filters=metadata_filters,
                 pinecone_kwargs=pinecone_kwargs,
                 insert_kwargs=insert_kwargs,
