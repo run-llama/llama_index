@@ -1,4 +1,4 @@
-"""Test Faiss index."""
+"""Test vector store indexes."""
 
 import sys
 from typing import Any, Dict, List, Tuple, cast
