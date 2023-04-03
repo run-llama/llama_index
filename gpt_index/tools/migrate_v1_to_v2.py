@@ -213,6 +213,8 @@ def convert_to_v2_index_struct_and_docstore(
         struct_v2, nodes_v2 = index_dict_to_v2(index_struct)
     elif isinstance(index_struct, KG):
         struct_v2, nodes_v2 = kg_to_v2(index_struct)
+    elif isinstance(index_struct, KeywordTable):
+        struct_v2, nodes_v2 = keyword_table_to_v2(index_struct)
     else:
         raise NotImplementedError(f"Cannot migrate {type(index_struct)} yet.")
 
