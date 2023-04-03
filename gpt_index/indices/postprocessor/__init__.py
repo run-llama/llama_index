@@ -5,14 +5,14 @@ from gpt_index.indices.postprocessor.base import BasePostprocessor
 from gpt_index.indices.postprocessor.node import (
     SimilarityPostprocessor,
     KeywordNodePostprocessor,
-    PrevNextNodePostProcessor,
-    AutoPrevNextNodePostProcessor,
+    PrevNextNodePostprocessor,
+    AutoPrevNextNodePostprocessor,
 )
 
 __all__ = [
     "BasePostprocessor",
     "SimilarityPostprocessor",
     "KeywordNodePostprocessor",
-    "PrevNextNodePostProcessor",
-    "AutoPrevNextNodePostProcessor",
+    "PrevNextNodePostprocessor",
+    "AutoPrevNextNodePostprocessor",
 ]

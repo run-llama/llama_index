@@ -3,7 +3,7 @@
 import pytest
 
 from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
-from gpt_index.indices.postprocessor.node import PrevNextNodePostProcessor
+from gpt_index.indices.postprocessor.node import PrevNextNodePostprocessor
 from gpt_index.docstore import DocumentStore
 
 
@@ -30,7 +30,7 @@ def test_forward_back_processor() -> None:
     docstore.add_documents(nodes)
 
     # check for a single node
-    node_postprocessor = PrevNextNodePostProcessor(
+    node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=2, mode="next"
     )
     processed_nodes = node_postprocessor.postprocess_nodes([nodes[0]])
@@ -40,7 +40,7 @@ def test_forward_back_processor() -> None:
     assert processed_nodes[2].get_doc_id() == "3"
 
     # check for multiple nodes (nodes should not be duped)
-    node_postprocessor = PrevNextNodePostProcessor(
+    node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=1, mode="next"
     )
     processed_nodes = node_postprocessor.postprocess_nodes([nodes[1], nodes[2]])
@@ -50,7 +50,7 @@ def test_forward_back_processor() -> None:
     assert processed_nodes[2].get_doc_id() == "4"
 
     # check for previous
-    node_postprocessor = PrevNextNodePostProcessor(
+    node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=1, mode="previous"
     )
     processed_nodes = node_postprocessor.postprocess_nodes([nodes[1], nodes[2]])
@@ -60,7 +60,7 @@ def test_forward_back_processor() -> None:
     assert processed_nodes[2].get_doc_id() == "3"
 
     # check that both works
-    node_postprocessor = PrevNextNodePostProcessor(
+    node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=1, mode="both"
     )
     processed_nodes = node_postprocessor.postprocess_nodes([nodes[2]])
@@ -71,7 +71,7 @@ def test_forward_back_processor() -> None:
     assert processed_nodes[2].get_doc_id() == "4"
 
     # check that num_nodes too high still works
-    node_postprocessor = PrevNextNodePostProcessor(
+    node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=4, mode="both"
     )
     processed_nodes = node_postprocessor.postprocess_nodes([nodes[2]])
@@ -84,4 +84,4 @@ def test_forward_back_processor() -> None:
 
     # check that raises value error for invalid mode
     with pytest.raises(ValueError):
-        PrevNextNodePostProcessor(docstore=docstore, num_nodes=4, mode="asdfasdf")
+        PrevNextNodePostprocessor(docstore=docstore, num_nodes=4, mode="asdfasdf")

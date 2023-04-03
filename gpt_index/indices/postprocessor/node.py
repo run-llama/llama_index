@@ -92,7 +92,47 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
         return new_nodes
 
 
-class BasePrevNextNodePostProcessor(BaseNodePostprocessor):
+def get_forward_nodes(
+    node: Node, num_nodes: int, docstore: DocumentStore
+) -> Dict[str, Node]:
+    """Get forward nodes."""
+    nodes: Dict[str, Node] = {node.get_doc_id(): node}
+    cur_count = 0
+    # get forward nodes in an iterative manner
+    while cur_count < num_nodes:
+        if DocumentRelationship.NEXT not in node.relationships:
+            break
+        next_node_id = node.relationships[DocumentRelationship.NEXT]
+        next_node = docstore.get_node(next_node_id)
+        if next_node is None:
+            break
+        nodes[next_node.get_doc_id()] = next_node
+        node = next_node
+        cur_count += 1
+    return nodes
+
+
+def get_backward_nodes(
+    node: Node, num_nodes: int, docstore: DocumentStore
+) -> Dict[str, Node]:
+    """Get backward nodes."""
+    # get backward nodes in an iterative manner
+    nodes: Dict[str, Node] = {node.get_doc_id(): node}
+    cur_count = 0
+    while cur_count < num_nodes:
+        if DocumentRelationship.PREVIOUS not in node.relationships:
+            break
+        prev_node_id = node.relationships[DocumentRelationship.PREVIOUS]
+        prev_node = docstore.get_node(prev_node_id)
+        if prev_node is None:
+            break
+        nodes[prev_node.get_doc_id()] = prev_node
+        node = prev_node
+        cur_count += 1
+    return nodes
+
+
+class PrevNextNodePostprocessor(BaseNodePostprocessor):
     """Previous/Next Node post-processor.
 
     Allows users to fetch additional nodes from the document store,
@@ -103,30 +143,14 @@ class BasePrevNextNodePostProcessor(BaseNodePostprocessor):
     Args:
         docstore (DocumentStore): The document store.
         num_nodes (int): The number of nodes to return (default: 1)
-        mode (str): The mode of the post-processor. Can be "forward" or "backward".
+        mode (str): The mode of the post-processor.
+            Can be "previous", "next", or "both.
 
     """
 
     docstore: DocumentStore
     num_nodes: int = Field(default=1)
-
-    def _get_forward_nodes(self, node: Node) -> Dict[str, Node]:
-        """Get forward nodes."""
-
-        nodes: Dict[str, Node] = {node.get_doc_id(): node}
-        cur_count = 0
-        # get forward nodes in an iterative manner
-        while cur_count < self.num_nodes:
-            if DocumentRelationship.NEXT not in node.relationships:
-                break
-            next_node_id = node.relationships[DocumentRelationship.NEXT]
-            next_node = self.docstore.get_node(next_node_id)
-            if next_node is None:
-                break
-            nodes[next_node.get_doc_id()] = next_node
-            node = next_node
-            cur_count += 1
-        return nodes
+    mode: str = Field(default="next")
 
     def _get_backward_nodes(self, node: Node) -> Dict[str, Node]:
         """Get backward nodes."""
@@ -145,25 +169,6 @@ class BasePrevNextNodePostProcessor(BaseNodePostprocessor):
             cur_count += 1
         return nodes
 
-
-class PrevNextNodePostProcessor(BasePrevNextNodePostProcessor):
-    """Previous/Next Node post-processor.
-
-    Allows users to fetch additional nodes from the document store,
-    based on the relationships of the nodes.
-
-    NOTE: this is a beta feature.
-
-    Args:
-        docstore (DocumentStore): The document store.
-        num_nodes (int): The number of nodes to return (default: 1)
-        mode (str): The mode of the post-processor.
-            Can be "previous", "next", or "both.
-
-    """
-
-    mode: str = Field(default="next")
-
     @validator("mode")
     def _validate_mode(cls, v: str) -> str:
         """Validate mode."""
@@ -179,12 +184,16 @@ class PrevNextNodePostProcessor(BasePrevNextNodePostProcessor):
         for node in nodes:
             all_nodes[node.get_doc_id()] = node
             if self.mode == "next":
-                all_nodes.update(self._get_forward_nodes(node))
+                all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
             elif self.mode == "previous":
-                all_nodes.update(self._get_backward_nodes(node))
+                all_nodes.update(
+                    get_backward_nodes(node, self.num_nodes, self.docstore)
+                )
             elif self.mode == "both":
-                all_nodes.update(self._get_forward_nodes(node))
-                all_nodes.update(self._get_backward_nodes(node))
+                all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
+                all_nodes.update(
+                    get_backward_nodes(node, self.num_nodes, self.docstore)
+                )
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
 
@@ -230,13 +239,13 @@ DEFAULT_REFINE_INFER_PREV_NEXT_TMPL = (
 )
 
 
-class AutoPrevNextNodePostProcessor(BasePrevNextNodePostProcessor):
+class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
     """Previous/Next Node post-processor.
 
     Allows users to fetch additional nodes from the document store,
     based on the prev/next relationships of the nodes.
 
-    NOTE: difference with PrevNextPostProcessor is that
+    NOTE: difference with PrevNextPostprocessor is that
     this infers forward/backwards direction.
 
     NOTE: this is a beta feature.
@@ -250,7 +259,9 @@ class AutoPrevNextNodePostProcessor(BasePrevNextNodePostProcessor):
 
     """
 
+    docstore: DocumentStore
     service_context: ServiceContext
+    num_nodes: int = Field(default=1)
     infer_prev_next_tmpl: str = Field(default=DEFAULT_INFER_PREV_NEXT_TMPL)
     refine_prev_next_tmpl: str = Field(default=DEFAULT_REFINE_INFER_PREV_NEXT_TMPL)
     verbose: bool = Field(default=False)
@@ -308,9 +319,13 @@ class AutoPrevNextNodePostProcessor(BasePrevNextNodePostProcessor):
                 print(f"> Postprocessor Predicted mode: {mode}")
 
             if mode == "next":
-                all_nodes.update(self._get_forward_nodes(node))
+                all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
             elif mode == "previous":
-                all_nodes.update(self._get_backward_nodes(node))
+                all_nodes.update(
+                    get_backward_nodes(node, self.num_nodes, self.docstore)
+                )
+            elif mode == "none":
+                pass
             else:
                 raise ValueError(f"Invalid mode: {mode}")
 
