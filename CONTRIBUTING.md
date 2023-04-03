@@ -26,6 +26,7 @@ on how to fork the repo and clone the forked repo.
 Then, create a new Python virtual environment. The command below creates an environment in `.venv`,
 and activates it:
 ```bash
+sudo apt-get install python3-venv
 python -m venv .venv
 source .venv/bin/activate
 ```
