@@ -44,8 +44,9 @@ def get_nodes_from_document(
     document: BaseDocument,
     text_splitter: TextSplitter,
     include_extra_info: bool = True,
+    include_prev_next_rel: bool = False,
 ) -> List[Node]:
-    """Add document to index."""
+    """Get nodes from document."""
     text_splits = get_text_splits_from_document(
         document=document,
         text_splitter=text_splitter,
@@ -85,4 +86,17 @@ def get_nodes_from_document(
                 relationships={DocumentRelationship.SOURCE: document.get_doc_id()},
             )
             nodes.append(node)
+
+    # if include_prev_next_rel, then add prev/next relationships
+    if include_prev_next_rel:
+        for i, node in enumerate(nodes):
+            if i > 0:
+                node.relationships[DocumentRelationship.PREVIOUS] = nodes[
+                    i - 1
+                ].get_doc_id()
+            if i < len(nodes) - 1:
+                node.relationships[DocumentRelationship.NEXT] = nodes[
+                    i + 1
+                ].get_doc_id()
+
     return nodes

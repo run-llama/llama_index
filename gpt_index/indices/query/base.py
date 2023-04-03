@@ -248,7 +248,10 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         similarity_tracker = SimilarityTracker()
         nodes = self._retrieve(query_bundle, similarity_tracker=similarity_tracker)
 
-        postprocess_info = {"similarity_tracker": similarity_tracker}
+        postprocess_info = {
+            "similarity_tracker": similarity_tracker,
+            "query_bundle": query_bundle,
+        }
         for node_processor in self.node_preprocessors:
             nodes = node_processor.postprocess_nodes(nodes, postprocess_info)
 
