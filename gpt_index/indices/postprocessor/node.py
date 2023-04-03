@@ -10,12 +10,10 @@ import logging
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.docstore import DocumentStore
 from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
 from gpt_index.indices.postprocessor.base import BasePostprocessor
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
-from gpt_index.logger.base import LlamaLogger
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
 
 logger = logging.getLogger(__name__)
@@ -302,6 +300,7 @@ class AutoPrevNextNodePostProcessor(BasePrevNextNodePostProcessor):
                 query_str=query_bundle.query_str,
                 response_mode="tree_summarize",
             )
+            raw_pred = cast(str, raw_pred)
             mode = self._parse_prediction(raw_pred)
 
             logger.debug(f"> Postprocessor Predicted mode: {mode}")

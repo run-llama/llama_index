@@ -1,23 +1,13 @@
 """Node postprocessor tests."""
 
-import sys
-from typing import Any, Dict, List, Tuple, cast
-from unittest.mock import MagicMock, patch
-
-import numpy as np
 import pytest
 
-from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
 from gpt_index.indices.postprocessor.node import PrevNextNodePostProcessor
-from gpt_index.readers.schema.base import Document
-from gpt_index.vector_stores.simple import SimpleVectorStore
-from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 from gpt_index.docstore import DocumentStore
 
 
-def test_forward_back_processor():
+def test_forward_back_processor() -> None:
     """Test forward-back processor."""
 
     nodes = [
@@ -29,10 +19,12 @@ def test_forward_back_processor():
     for i, node in enumerate(nodes):
         if i > 0:
             node.relationships.update(
-                {DocumentRelationship.PREVIOUS: nodes[i - 1].doc_id}
+                {DocumentRelationship.PREVIOUS: nodes[i - 1].get_doc_id()},
             )
         if i < len(nodes) - 1:
-            node.relationships.update({DocumentRelationship.NEXT: nodes[i + 1].doc_id})
+            node.relationships.update(
+                {DocumentRelationship.NEXT: nodes[i + 1].get_doc_id()},
+            )
 
     docstore = DocumentStore()
     docstore.add_documents(nodes)

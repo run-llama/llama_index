@@ -1,5 +1,5 @@
 """Node parser interface."""
-from typing import List, Protocol, Sequence
+from typing import List, Sequence
 
 from abc import ABC, abstractmethod
 
