@@ -7,7 +7,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from tqdm.auto import tqdm
 
-from gpt_index.data_structs.data_structs_v2 import Node
+from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
@@ -26,7 +26,8 @@ def convert_docs_to_json(embedding_results: List[NodeEmbeddingResult]) -> List[D
             "id": embedding_result.id,
             "text": embedding_result.node.get_text(),
             # "source": embedding_result.node.source,
-            # "source_id": ...,
+            # NOTE: this is the doc_id to reference document
+            "source_id": embedding_result.doc_id,
             # "url": "...",
             # "created_at": ...,
             # "author": "..."",
@@ -142,9 +143,11 @@ class ChatGPTRetrievalPluginClient(VectorStore):
                 result_id = result["id"]
                 result_txt = result["text"]
                 result_score = result["score"]
+                result_ref_doc_id = result["source_id"]
                 node = Node(
                     doc_id=result_id,
                     text=result_txt,
+                    relationships={DocumentRelationship.SOURCE: result_ref_doc_id},
                 )
                 nodes.append(node)
                 similarities.append(result_score)
