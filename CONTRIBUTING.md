@@ -24,21 +24,20 @@ The most impactful way to contribute to LlamaIndex is extending our core modules
 ![LlamaIndex modules](docs/_static/contribution/contrib.png)
 
 We welcome contributions in _all_ modules shown above.
-So far, we have focused on implementing a core set of functionalities for each.
-As a contributor, you can help unlock the full potential.
+So far, we have implemented a core set of functionalities for each.
+As a contributor, you can help each module unlock its full potential.
 
-We are making rapid improvement to the project, and as a result, 
-some interfaces are still volatile.
-> Specifically, we are actively working on making the components with dotted outline more modular (core indexes, document stores, index queries, query runner). So expect volatility.
+**NOTE**: We are making rapid improvements to the project, and as a result, 
+some interfaces are still volatile. Specifically, we are actively working on making the components with dotted outline more modular (core indexes, document stores, index queries, query runner). So expect volatility.
 
 #### Module Details
 Below, we will describe what each module does, give a high-level idea of the interface, show existing implementations, and give some ideas for contribution.
 
 --- 
 #### Data Loaders
-A data loader ingests data of any format from anywhere into `Documents`, which can then be parsed and indexed.
+A data loader ingests data of any format from anywhere into `Document` objects, which can then be parsed and indexed.
 
-**Interface**: `load_data` takes arbitrary arguments as input (e.g. path to data), and outputs a sequence of `Documents`.
+**Interface**: `load_data` takes arbitrary arguments as input (e.g. path to data), and outputs a sequence of `Document` objects.
 
 
 **Examples**:
@@ -54,10 +53,10 @@ The preferred way to contribute is making a PR at [LlamaHub Github](https://gith
 
 ---
 #### Node Parser
-A node parser parses `Documents` into `Nodes` (atomic unit of data that LlamaIndex operates over, e.g., chunk of text, image, or table).
+A node parser parses `Document` objects into `Node` objects (atomic unit of data that LlamaIndex operates over, e.g., chunk of text, image, or table).
 It is responsible for splitting text (via text splitters) and explicitly modelling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
 
-**Interface**: `get_nodes_from_documents` takes a sequence of `Documents` as input, and outputs a sequence of `Nodes`.
+**Interface**: `get_nodes_from_documents` takes a sequence of `Document` objects as input, and outputs a sequence of `Node` objects.
 
 **Examples**:
 * [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/node_parser/simple.py)
