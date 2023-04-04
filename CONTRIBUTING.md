@@ -143,21 +143,21 @@ See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/output_parsing.htm
 ---
 
 ### 2. 🐛 Fix Bugs
-Most bugs are reported and tracked in [Github Issues Page](https://github.com/jerryjliu/gpt_index/issues).
-We try our best in triaging and tagging the issues:
+Most bugs are reported and tracked in the [Github Issues Page](https://github.com/jerryjliu/gpt_index/issues).
+We try our best in triaging and tagging these issues:
 * Issues tagged as `bug` are confirmed bugs. 
-* New contributors may want to start with `good first issue`. 
+* New contributors may want to start with issues tagged with `good first issue`. 
 
 Please feel free to open an issue and/or assign an issue to yourself.
 
 ### 3. 🎉 Add Usage Examples
-If you have applied LlamaIndex to an unique use-case (e.g. interesting dataset, customized index structure, complex query), we would love your contribution in the form of:
+If you have applied LlamaIndex to a unique use-case (e.g. interesting dataset, customized index structure, complex query), we would love your contribution in the form of:
 1. a guide: e.g. [guide to LlamIndex + Structured Data](https://gpt-index.readthedocs.io/en/latest/guides/tutorials/sql_guide.html)
 Todo.
 2. an example notebook: e.g. [Composable Indices Demo](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/ComposableIndices-Prior.ipynb)
 
 ### 4. 🧪 Add Experimental Features
-If you have an crazy idea, make a PR for it! 
+If you have a crazy idea, make a PR for it! 
 Whether if it's the latest research, or what you thought of in the shower, we'd love to see creative ways to improve LlamaIndex.
 
 ### 5. 📄 Improve Code Quality & Documentation
