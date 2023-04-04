@@ -40,6 +40,7 @@ class OpensearchVectorClient:
         embedding_field: str = "embedding",
         text_field: str = "content",
         method: Optional[dict] = None,
+        auth: Optional[dict] = None
     ):
         """Init params."""
         if method is None:
@@ -57,7 +58,18 @@ class OpensearchVectorClient:
         except ImportError:
             raise ImportError(import_err_msg)
         self._embedding_field = embedding_field
-        self._client = httpx.Client(base_url=endpoint)
+        
+        if auth is None:
+            self._client = httpx.Client(base_url=endpoint)
+        else:
+            if not 'verify' in auth:
+                # "Open search" docker image for Dev/Test requires SSL verification when accessing with HTTPS, https://localhost:9200.
+                auth['verify'] = False
+            if not 'basic_auth' in auth:
+                # 'admin:admin' is the default username/password for the "Open search" docker image.
+                auth['basic_auth'] = ("admin", "admin")
+            self._client = httpx.Client(base_url=endpoint, verify= auth['verify'], auth=auth['basic_auth'])
+            
         self._endpoint = endpoint
         self._dim = dim
         self._index = index
