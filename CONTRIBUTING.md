@@ -76,7 +76,7 @@ Text splitter splits a long text `str` into smaller text `str` chunks with desir
 
 #### Vector Stores
 Vector store stores embeddings and supports lookup via similiarty.
-These serve as the main backend data store and retrieval engine for our vector index.
+These serve as the main data store and retrieval engine for our vector index.
 
 **Interface**:
 * `add` takes in a sequence of `NodeEmbeddingResults` and insert the embeddings (and possibly the node contents & metadata) into the vector store.
@@ -88,7 +88,7 @@ These serve as the main backend data store and retrieval engine for our vector i
 * [Faiss](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/vector_stores/faiss.py)
 * [Chroma](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/vector_stores/chroma.py)
 
-TODO: add reference
+See [reference](https://gpt-index.readthedocs.io/en/latest/reference/indices/vector_stores/stores.html) for full details.
 
 #### Query Transforms
 A query transform augments a raw query string with associated transformations to improve index querying.
