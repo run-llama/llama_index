@@ -24,7 +24,7 @@ So far, we have implemented a core set of functionalities for each.
 As a contributor, you can help each module unlock its full potential.
 
 **NOTE**: We are making rapid improvements to the project, and as a result, 
-some interfaces are still volatile. Specifically, we are actively working on making the components with dotted outline more modular (core indexes, document stores, index queries, query runner). So expect volatility.
+some interfaces are still volatile. Specifically, we are actively working on making the following components more modular and extensible (uncolored boxes above): core indexes, document stores, index queries, query runner
 
 #### Module Details
 Below, we will describe what each module does, give a high-level idea of the interface, show existing implementations, and give some ideas for contribution.
