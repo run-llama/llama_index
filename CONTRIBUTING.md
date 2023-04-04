@@ -23,12 +23,6 @@ Also, join our Discord for ideas and discussions: https://discord.gg/dGcwcsnxhU.
 The most impactful way to contribute to LlamaIndex is extending our core modules:
 ![LlamaIndex modules](docs/_static/contribution/contrib.png)
 
-
-We can roughly group the core modules into 3 categories:
-1) data ingestion & parsing, 
-2) indexing & storage, and 
-3) querying & output.
-
 We welcome contributions in _all_ modules shown above.
 So far, we have focused on implementing a core set of functionalities for each.
 As a contributor, you can help unlock the full potential.
