@@ -5,15 +5,11 @@ source_dir = "../examples/"
 dest_dir = "./guides/notebooks/"
 relative_path = "../../../../examples"
 
-# TODO why won't sphinx build these?
-ignore_files = ("Multimodal.ipynb", "GPT4Comparison.ipynb")
 
 for example_dir in os.listdir(source_dir):
     example_dir_path = os.path.join(source_dir, example_dir)
 
     for nb_name in os.listdir(example_dir_path):
-        if nb_name in ignore_files:
-            continue
         if not nb_name.endswith(".ipynb"):
             continue
 
