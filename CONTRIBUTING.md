@@ -153,8 +153,12 @@ We try our best in triaging and tagging the issues.
 Issues tagged as `bug` are confirmed bugs. 
 New contributors may want to start with `good first issue`.
 Please feel free to open an issue and/or assign an issue to yourself.
+
 ### 3. 🎉 Add Usage Examples
+If you have applied LlamaIndex to an unique use-case (e.g. interesting dataset, customized index structure, complex query), we would love your contribution in the form of:
+1. a guide: e.g. [guide to LlamIndex + Structured Data](https://gpt-index.readthedocs.io/en/latest/guides/tutorials/sql_guide.html)
 Todo.
+2. an example notebook: e.g. [Composable Indices Demo](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/ComposableIndices-Prior.ipynb)
 
 ### 4. 🧪 Add Experimental Features
 If you have an crazy idea, make a PR for it! 
