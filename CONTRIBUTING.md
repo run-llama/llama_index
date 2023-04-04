@@ -142,11 +142,14 @@ Issues tagged as `bug` are confirmed bugs.
 New contributors may want to start with `good first issue`.
 Please feel free to open an issue and/or assign an issue to yourself.
 ### Add Usage Examples
+Todo.
+
 ### Add Experimental Features
 If you have an crazy idea, make a PR for it! 
 We love to see creative ways to improve LlamaIndex.
 
 ### Improve Code Quality & Documentation
+Todo.
 
 ## Development Guideline
 ### Environment Setup
