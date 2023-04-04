@@ -1,13 +1,16 @@
 """Node parser interface."""
-from typing import List, Protocol, Sequence
+from typing import List, Sequence
+
+from abc import ABC, abstractmethod
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.readers.schema.base import Document
 
 
-class NodeParser(Protocol):
+class NodeParser(ABC):
     """Base interface for node parser."""
 
+    @abstractmethod
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
@@ -18,4 +21,3 @@ class NodeParser(Protocol):
             documents (Sequence[Document]): documents to parse
 
         """
-        ...
