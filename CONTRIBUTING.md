@@ -1,8 +1,4 @@
 # 💡 Contributing to LlamaIndex
-
-> ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! 
-> **2/19/2023**: We are still in the middle of the transition. If you are interested in contributing to LlamaIndex, make sure to follow the below steps. For testing, please do `import gpt_index` instead of `import llama_index`.
-
 Interested in contributing to LlamaIndex? Here's how to get started! 
 
 ## Contribution Guideline
