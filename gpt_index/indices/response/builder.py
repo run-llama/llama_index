@@ -171,7 +171,7 @@ class ResponseBuilder:
         text_chunks = qa_text_splitter.split_text(text_chunk)
         response: Optional[RESPONSE_TEXT_TYPE] = None
         # TODO: consolidate with loop in get_response_default
-        for cur_text_chunk in text_chunks:
+        for idx, cur_text_chunk in enumerate(text_chunks):
             if response is None and not self._streaming:
                 (
                     response,
@@ -184,8 +184,11 @@ class ResponseBuilder:
                     formatted_prompt, response, log_prefix="Initial"
                 )
             elif response is None and self._streaming:
-                response, formatted_prompt = self._service_context.llm_predictor.stream(
+                is_last = idx == len(text_chunks) - 1
+                llm_predictor = self._service_context.llm_predictor
+                response, formatted_prompt = llm_predictor.predict_with_stream(
                     text_qa_template,
+                    is_last=is_last,
                     context_str=cur_text_chunk,
                 )
                 self._log_prompt_and_response(

@@ -15,7 +15,7 @@ from langchain.prompts.chat import (
 )
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLanguageModel, BaseMessage
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain.callbacks.base import BaseCallbackManager
 
 from gpt_index.llm_predictor.base import LLMPredictor
 from gpt_index.prompts.base import Prompt
@@ -47,7 +47,7 @@ class ChatGPTLLMPredictor(LLMPredictor):
         prepend_messages: Optional[
             List[Union[BaseMessagePromptTemplate, BaseMessage]]
         ] = None,
-        callback_handler: Optional[BaseCallbackHandler] = None,
+        callback_manager: Optional[BaseCallbackManager] = None,
         **kwargs: Any
     ) -> None:
         """Initialize params."""
@@ -55,7 +55,7 @@ class ChatGPTLLMPredictor(LLMPredictor):
             llm=llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"), **kwargs
         )
         self.prepend_messages = prepend_messages
-        self._callback_manager = callback_handler
+        self._callback_manager = callback_manager
 
     def _get_langchain_prompt(
         self, prompt: Prompt
@@ -141,8 +141,8 @@ class ChatGPTLLMPredictor(LLMPredictor):
 
         # only set callback manager if it's the last response generated from the LLM
         if not is_last:
-            self._llm.callback_manager(None)
+            self._llm.callback_manager = None
         else:
-            self._llm.callback_manager(self._callback_manager)
+            self._llm.callback_manager = self._callback_manager
 
         return self.predict(prompt, **prompt_args)
