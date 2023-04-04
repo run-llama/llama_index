@@ -5,6 +5,7 @@ from typing import Any, Optional
 from langchain.agents import AgentExecutor, initialize_agent
 from langchain.callbacks import BaseCallbackManager
 from langchain.llms.base import BaseLLM
+from langchain.agents.agent_types import AgentType
 
 from gpt_index.langchain_helpers.agents.toolkits import LlamaToolkit
 
@@ -12,7 +13,7 @@ from gpt_index.langchain_helpers.agents.toolkits import LlamaToolkit
 def create_llama_agent(
     toolkit: LlamaToolkit,
     llm: BaseLLM,
-    agent: Optional[str] = None,
+    agent: Optional[AgentType] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     agent_path: Optional[str] = None,
     agent_kwargs: Optional[dict] = None,
@@ -77,7 +78,7 @@ def create_llama_chat_agent(
     """
     # chat agent
     # TODO: explore chat-conversational-react-description
-    agent_type = "conversational-react-description"
+    agent_type = AgentType.CONVERSATIONAL_REACT_DESCRIPTION
     return create_llama_agent(
         toolkit,
         llm,
