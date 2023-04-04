@@ -62,14 +62,14 @@ It is responsible for splitting text (via text splitters) and explicitly modelli
 **Examples**:
 * [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/node_parser/simple.py)
 
-See [reference](https://gpt-index.readthedocs.io/en/latest/reference/node_parser.html) for full details.
+See [the API reference](https://gpt-index.readthedocs.io/en/latest/reference/node_parser.html) for full details.
 
 **Ideas**:
-* Add new `Node` relationships to model to model hierarchical document (e.g. play-act-scene, chapter-section-heading).
+* Add new `Node` relationships to model to model hierarchical documents (e.g. play-act-scene, chapter-section-heading).
 
 ---
 #### Text Splitters
-Text splitter splits a long text `str` into smaller text `str` chunks with desired size and strategy. This is important since LLMs have limited context window size, and the quality of text chunk used as context impacts the quality of query results.
+Text splitter splits a long text `str` into smaller text `str` chunks with desired size and splitting "strategy" since LLMs have a limited context window size, and the quality of text chunk used as context impacts the quality of query results.
 
 **Interface**: `split_text` takes a `str` as input, and outputs a sequence of `str`
 
@@ -79,7 +79,7 @@ Text splitter splits a long text `str` into smaller text `str` chunks with desir
 
 ---
 #### Vector Stores
-Vector store stores embeddings and supports lookup via similiarty.
+Our vector store classes store embeddings and support lookup via similiarty search.
 These serve as the main data store and retrieval engine for our vector index.
 
 **Interface**:
@@ -106,7 +106,7 @@ This can interpreted as a pre-processing stage, before the core index query logi
 
 **Examples**:
 * [Hypothetical Document Embeddings](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/query/query_transform/base.py#L77)
-* [Decompose](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/query/query_transform/base.py#L124)
+* [Query Decompose](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/query/query_transform/base.py#L124)
 
 See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/query/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
 
