@@ -17,7 +17,6 @@ from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.token_counter.token_counter import llm_token_counter
-from gpt_index.utils import get_new_id
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
 
@@ -83,7 +82,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         id_to_embed_map: Dict[str, List[float]] = {}
 
         for n in nodes:
-            new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
+            new_id = n.get_doc_id()
             if n.embedding is None:
                 self._service_context.embed_model.queue_text_for_embeddding(
                     new_id, n.get_text()
@@ -127,7 +126,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         text_queue: List[Tuple[str, str]] = []
         for n in nodes:
-            new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
+            new_id = n.get_doc_id()
             if n.embedding is None:
                 text_queue.append((new_id, n.get_text()))
             else:

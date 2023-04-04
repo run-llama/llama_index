@@ -6,7 +6,7 @@ An index that that is built on top of an existing vector store.
 
 from typing import Any, Dict, List, Optional, cast
 
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
@@ -120,7 +120,9 @@ class PineconeVectorStore(VectorStore):
 
             metadata = {
                 "text": node.get_text(),
+                # NOTE: this is the reference to source doc
                 "doc_id": result.doc_id,
+                "id": new_id,
             }
             if node.extra_info:
                 # TODO: check if overlap with default metadata keys
@@ -197,9 +199,14 @@ class PineconeVectorStore(VectorStore):
             extra_info = get_node_info_from_metadata(match.metadata, "extra_info")
             node_info = get_node_info_from_metadata(match.metadata, "node_info")
             doc_id = match.metadata["doc_id"]
+            id = match.metadata["id"]
 
             node = Node(
-                text=text, extra_info=extra_info, node_info=node_info, doc_id=doc_id
+                text=text,
+                extra_info=extra_info,
+                node_info=node_info,
+                doc_id=id,
+                relationships={DocumentRelationship.SOURCE: doc_id},
             )
             top_k_ids.append(match.id)
             top_k_nodes.append(node)
