@@ -37,8 +37,6 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.mathjax",
     "myst_parser",
-    "nbsphinx",
-    "nbsphinx_link",
 ]
 
 myst_heading_anchors = 4
@@ -47,7 +45,7 @@ myst_heading_anchors = 4
 suppress_warnings = ["myst.header"]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -55,7 +53,3 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
-
-# nbsphinx options
-nbsphinx_execute = "never"
-nbsphinx_allow_errors = True
