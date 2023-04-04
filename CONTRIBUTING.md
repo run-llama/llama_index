@@ -7,8 +7,6 @@ Interested in contributing to LlamaIndex? Here's how to get started!
 
 ## Contribution Guideline
 The best part of LlamaIndex is our community of users and contributors.
-We are actively working on making our codebase more modular and extensible.
-
 
 
 ### What should I work on?
@@ -18,7 +16,7 @@ We are actively working on making our codebase more modular and extensible.
 - 🧪 Add experimental features 
 - 📄 Improve code quality & documentation
 
-Also, join our Discord for discussions: https://discord.gg/dGcwcsnxhU.
+Also, join our Discord for ideas and discussions: https://discord.gg/dGcwcsnxhU.
 
 
 ### 🆕 Extend Core Modules
@@ -40,7 +38,7 @@ some interfaces are still volatile.
 > Specifically, we are actively working on making the components with dotted outline more modular (core indexes, document stores, index queries, query runner). So expect volatility.
 
 #### Module Details
-Below, we will describe what each module does, give a high-level idea of the interface, showcase examples of existing implementations, and some potential ideas for contribution.
+Below, we will describe what each module does, give a high-level idea of the interface, show existing implementations, and give some ideas for contribution.
 
 #### Data Loaders
 A data loader ingests data of any format from anywhere into `Documents`, which can then be parsed and indexed.
@@ -78,6 +76,7 @@ Text splitter splits a long text `str` into smaller text `str` chunks with desir
 
 #### Vector Stores
 Vector store stores embeddings and supports lookup via similiarty.
+These serve as the main backend data store and retrieval engine for our vector index.
 
 **Interface**:
 * `add` takes in a sequence of `NodeEmbeddingResults` and insert the embeddings (and possibly the node contents & metadata) into the vector store.
