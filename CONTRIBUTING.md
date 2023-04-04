@@ -54,6 +54,9 @@ A data loader ingests data of any format from anywhere into `Documents`, which c
 Contributing a data loader is easy and super impactful for the community.
 The preferred way to contribute is making a PR at [LlamaHub Github](https://github.com/emptycrown/llama-hub).
 
+**Ideas**
+* Want to load something but there's no LlamaHub data loader for it yet? Make a PR!
+
 #### Node Parser
 A node parser parses `Documents` into `Nodes` (atomic unit of data that LlamaIndex operates over, e.g., chunk of text, image, or table).
 It is responsible for splitting text (via text splitters) and explicitly modelling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
@@ -64,6 +67,9 @@ It is responsible for splitting text (via text splitters) and explicitly modelli
 * [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/node_parser/simple.py)
 
 See [reference](https://gpt-index.readthedocs.io/en/latest/reference/node_parser.html) for full details.
+
+**Ideas**:
+* Add new `Node` relationships to model to model hierarchical document (e.g. play-act-scene, chapter-section-heading).
 
 #### Text Splitters
 Text splitter splits a long text `str` into smaller text `str` chunks with desired size and strategy. This is important since LLMs have limited context window size, and the quality of text chunk used as context impacts the quality of query results.
@@ -88,6 +94,9 @@ These serve as the main data store and retrieval engine for our vector index.
 * [Faiss](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/vector_stores/faiss.py)
 * [Chroma](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/vector_stores/chroma.py)
 
+**Ideas**:
+* See a vector database out there that we don't support yet? Make a PR!
+
 See [reference](https://gpt-index.readthedocs.io/en/latest/reference/indices/vector_stores/stores.html) for full details.
 
 #### Query Transforms
@@ -98,7 +107,6 @@ This can interpreted as a pre-processing stage, before the core index query logi
 
 **Examples**:
 * [Hypothetical Document Embeddings](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/query/query_transform/base.py#L77)
-
 * [Decompose](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/query/query_transform/base.py#L124)
 
 See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/query/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
