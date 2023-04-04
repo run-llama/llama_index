@@ -149,9 +149,10 @@ See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/output_parsing.htm
 
 ### 2. 🐛 Fix Bugs
 Most bugs are reported and tracked in [Github Issues Page](https://github.com/jerryjliu/gpt_index/issues).
-We try our best in triaging and tagging the issues.
-Issues tagged as `bug` are confirmed bugs. 
-New contributors may want to start with `good first issue`.
+We try our best in triaging and tagging the issues:
+* Issues tagged as `bug` are confirmed bugs. 
+* New contributors may want to start with `good first issue`. 
+
 Please feel free to open an issue and/or assign an issue to yourself.
 
 ### 3. 🎉 Add Usage Examples
