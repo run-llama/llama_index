@@ -166,7 +166,7 @@ If you have an crazy idea, make a PR for it!
 Whether if it's the latest research, or what you thought of in the shower, we'd love to see creative ways to improve LlamaIndex.
 
 ### 5. 📄 Improve Code Quality & Documentation
-Todo.
+We would love your help in making the project cleaner, more robust, and more understandable. If you find something confusing, it most likely is for other people as well. Help us be better! 
 
 ## Development Guideline
 ### Environment Setup
