@@ -153,7 +153,7 @@ Todo.
 
 ### Add Experimental Features
 If you have an crazy idea, make a PR for it! 
-We love to see creative ways to improve LlamaIndex.
+Whether if it's the latest research, or what you thought of in the shower, we'd love to see creative ways to improve LlamaIndex.
 
 ### Improve Code Quality & Documentation
 Todo.
