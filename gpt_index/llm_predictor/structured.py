@@ -18,6 +18,13 @@ class StructuredLLMPredictor(LLMPredictor):
 
     """
 
+    def predict_with_stream(
+        self, prompt: Prompt, is_last: bool = False, **prompt_args: Any
+    ) -> Tuple[str, str]:
+        raise NotImplementedError(
+            "Streaming is not supported for structured LLM predictor."
+        )
+
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Predict the answer to a query.
 

@@ -10,6 +10,7 @@ from langchain import Cohere, LLMChain, OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import AI21
 from langchain.schema import BaseLanguageModel
+from langchain.callbacks.base import BaseCallbackHandler
 
 from gpt_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.prompts.base import Prompt
@@ -98,7 +99,12 @@ class BaseLLMPredictor(Protocol):
         """
 
     @abstractmethod
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
+    def predict_with_stream(
+        self,
+        prompt: Prompt,
+        is_last: bool = False,
+        **prompt_args: Any,
+    ) -> Tuple[Generator, str]:
         """Stream the answer to a query.
 
         NOTE: this is a beta feature. Will try to build or use
@@ -158,7 +164,10 @@ class LLMPredictor(BaseLLMPredictor):
     """
 
     def __init__(
-        self, llm: Optional[BaseLanguageModel] = None, retry_on_throttling: bool = True
+        self,
+        llm: Optional[BaseLanguageModel] = None,
+        retry_on_throttling: bool = True,
+        callback_manager: Optional[BaseCallbackHandler] = None,
     ) -> None:
         """Initialize params."""
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
@@ -166,6 +175,7 @@ class LLMPredictor(BaseLLMPredictor):
         self._total_tokens_used = 0
         self.flag = True
         self._last_token_usage: Optional[int] = None
+        self._callback_manager = callback_manager
 
     @property
     def llm(self) -> BaseLanguageModel:
@@ -230,26 +240,37 @@ class LLMPredictor(BaseLLMPredictor):
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
         return llm_prediction, formatted_prompt
 
-    def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
-        """Stream the answer to a query.
+    def predict_with_stream(
+        self, prompt: Prompt, **prompt_args: Any
+    ) -> Tuple[str, str]:
+        """Predict the answer to a query.
 
-        NOTE: this is a beta feature. Will try to build or use
-        better abstractions about response handling.
-
-        Args:
-            prompt (Prompt): Prompt to use for prediction.
-
-        Returns:
-            str: The predicted answer.
+        This mode will also call the callback manager, only if it's the final response.
 
         """
-        if not isinstance(self._llm, OpenAI):
-            raise ValueError("stream is only supported for OpenAI LLMs")
-        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-        raw_response_gen = self._llm.stream(formatted_prompt)
-        response_gen = _get_response_gen(raw_response_gen)
-        # NOTE/TODO: token counting doesn't work with streaming
-        return response_gen, formatted_prompt
+        raise NotImplementedError("predict_with_stream is not supported for this LLM")
+
+    # def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
+    #     """Stream the answer to a query.
+
+    #     NOTE: this is a beta feature. Will try to build or use
+    #     better abstractions about response handling.
+
+    #     Args:
+    #         prompt (Prompt): Prompt to use for prediction.
+
+    #     Returns:
+    #         str: The predicted answer.
+
+    #     """
+    #     raise NotImplementedError("stream is not supported for this LLM")
+    #     # if not isinstance(self._llm, OpenAI):
+    #     #     raise ValueError("stream is only supported for OpenAI LLMs")
+    #     # formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+    #     # raw_response_gen = self._llm.stream(formatted_prompt)
+    #     # response_gen = _get_response_gen(raw_response_gen)
+    #     # # NOTE/TODO: token counting doesn't work with streaming
+    #     # return response_gen, formatted_prompt
 
     @property
     def total_tokens_used(self) -> int:

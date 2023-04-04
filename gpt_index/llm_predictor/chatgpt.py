@@ -1,10 +1,11 @@
 """Wrapper functions around an LLM chain."""
 
 import logging
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Tuple, cast
 
 import openai
 from langchain import LLMChain
+from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.base import BasePromptTemplate
 from langchain.prompts.chat import (
@@ -14,6 +15,7 @@ from langchain.prompts.chat import (
 )
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import BaseLanguageModel, BaseMessage
+from langchain.callbacks.base import BaseCallbackHandler
 
 from gpt_index.llm_predictor.base import LLMPredictor
 from gpt_index.prompts.base import Prompt
@@ -45,6 +47,7 @@ class ChatGPTLLMPredictor(LLMPredictor):
         prepend_messages: Optional[
             List[Union[BaseMessagePromptTemplate, BaseMessage]]
         ] = None,
+        callback_handler: Optional[BaseCallbackHandler] = None,
         **kwargs: Any
     ) -> None:
         """Initialize params."""
@@ -52,6 +55,7 @@ class ChatGPTLLMPredictor(LLMPredictor):
             llm=llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"), **kwargs
         )
         self.prepend_messages = prepend_messages
+        self._callback_manager = callback_handler
 
     def _get_langchain_prompt(
         self, prompt: Prompt
@@ -112,3 +116,33 @@ class ChatGPTLLMPredictor(LLMPredictor):
         # TODO: support retry on throttling
         llm_prediction = await llm_chain.apredict(**full_prompt_args)
         return llm_prediction
+
+    def predict_with_stream(
+        self, prompt: Prompt, is_last: bool = False, **prompt_args: Any
+    ) -> Tuple[str, str]:
+        """Predict the answer to a query.
+
+        This mode will also call the callback manager, only if it's the final response.
+        Specifically, it will call `on_llm_new_token`.
+
+        If it's an intermediate response, doesn't make sense to stream.
+
+        """
+        # try casting to validate
+        try:
+            cast(BaseChatModel, self._llm)
+        except Exception:
+            raise ValueError("LLM must be a BaseChatModel to use predict_with_stream")
+
+        if self._callback_manager is None:
+            raise ValueError(
+                "Callback manager must be set to use predict_with_stream mode"
+            )
+
+        # only set callback manager if it's the last response generated from the LLM
+        if not is_last:
+            self._llm.callback_manager(None)
+        else:
+            self._llm.callback_manager(self._callback_manager)
+
+        return self.predict(prompt, **prompt_args)
