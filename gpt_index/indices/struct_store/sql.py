@@ -2,6 +2,8 @@
 import json
 from typing import Any, Dict, Optional, Sequence
 
+from sqlalchemy import Table
+
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
@@ -16,7 +18,6 @@ from gpt_index.indices.struct_store.sql_query import (
     GPTSQLStructStoreIndexQuery,
 )
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from sqlalchemy import Table
 
 
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):

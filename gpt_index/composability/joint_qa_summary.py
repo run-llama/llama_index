@@ -1,15 +1,15 @@
 """Joint QA Summary graph."""
 
 
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
-from gpt_index.indices.service_context import ServiceContext
 from gpt_index.composability import ComposableGraph
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.list.base import GPTListIndex
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store.vector_indices import GPTSimpleVectorIndex
 from gpt_index.readers.schema.base import Document
-from gpt_index.docstore import DocumentStore
 
 DEFAULT_SUMMARY_TEXT = "Use this index for summarization queries"
 DEFAULT_QA_TEXT = (

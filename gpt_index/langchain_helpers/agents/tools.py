@@ -5,8 +5,8 @@ from typing import Dict, List, cast
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 
-from gpt_index.indices.composability.graph import QUERY_CONFIG_TYPE, ComposableGraph
 from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.composability.graph import QUERY_CONFIG_TYPE, ComposableGraph
 
 
 class IndexToolConfig(BaseModel):

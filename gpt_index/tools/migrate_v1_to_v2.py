@@ -43,7 +43,9 @@ from gpt_index.data_structs.data_structs_v2 import (
 )
 from gpt_index.data_structs.data_structs_v2 import QdrantIndexDict as V2QdrantIndexDict
 from gpt_index.data_structs.data_structs_v2 import SimpleIndexDict as V2SimpleIndexDict
-from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
+from gpt_index.data_structs.data_structs_v2 import (
+    V2IndexStruct,
+)
 from gpt_index.data_structs.data_structs_v2 import (
     WeaviateIndexDict as V2WeaviateIndexDict,
 )
@@ -51,8 +53,8 @@ from gpt_index.data_structs.node_v2 import DocumentRelationship
 from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.node_v2 import Node as V2Node
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.old_docstore import V1DocumentStore
 from gpt_index.docstore import DocumentStore as V2DocumentStore
+from gpt_index.old_docstore import V1DocumentStore
 from gpt_index.tools.file_utils import add_prefix_suffix_to_file_path
 
 INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[IndexStruct]] = {

@@ -1,7 +1,7 @@
 """Test pinecone indexes."""
 
 import sys
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -9,7 +9,6 @@ import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.vector_store.vector_indices import GPTPineconeIndex
-
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT

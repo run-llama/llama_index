@@ -8,16 +8,15 @@ about its relationship to other `Node` objects (and `Document` objects).
 
 It is often used as an atomic unit of data in various indices.
 """
+import logging
+import warnings
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Dict, Optional
-import warnings
 
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.schema import BaseDocument
-
-import logging
 
 _logger = logging.getLogger(__name__)
 

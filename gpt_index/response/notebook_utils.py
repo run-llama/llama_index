@@ -2,8 +2,8 @@
 from typing import Any, Dict, Tuple
 
 from IPython.display import Markdown, display
-from gpt_index.data_structs.node_v2 import ImageNode, NodeWithScore
 
+from gpt_index.data_structs.node_v2 import ImageNode, NodeWithScore
 from gpt_index.img_utils import b64_2_img
 from gpt_index.response.schema import Response
 from gpt_index.utils import truncate_text

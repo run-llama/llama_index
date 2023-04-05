@@ -4,6 +4,8 @@ disallow_untyped_defs = "True"
 exclude = ["notebooks", "build", "examples"]
 
 [tool.ruff]
+fix = true
+
 exclude = [
     ".venv",
     "__pycache__",
@@ -12,4 +14,9 @@ exclude = [
     ".ruff_cache",
     "examples",
     "notebooks",
+]
+
+select = [
+    # isort
+    "I",
 ]

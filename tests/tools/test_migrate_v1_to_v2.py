@@ -14,8 +14,8 @@ from gpt_index.data_structs.data_structs_v2 import SimpleIndexDict as V2SimpleIn
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.old_docstore import V1DocumentStore
 from gpt_index.docstore import DocumentStore as V2DocumentStore
+from gpt_index.old_docstore import V1DocumentStore
 from gpt_index.tools.migrate_v1_to_v2 import (
     convert_to_v2_dict,
     convert_to_v2_index_struct_and_docstore,

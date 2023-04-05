@@ -2,9 +2,9 @@
 
 import pytest
 
-from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
-from gpt_index.indices.postprocessor.node import PrevNextNodePostprocessor
+from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.docstore import DocumentStore
+from gpt_index.indices.postprocessor.node import PrevNextNodePostprocessor
 
 
 def test_forward_back_processor() -> None:

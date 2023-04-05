@@ -3,10 +3,10 @@
 
 from gpt_index.indices.postprocessor.base import BasePostprocessor
 from gpt_index.indices.postprocessor.node import (
-    SimilarityPostprocessor,
+    AutoPrevNextNodePostprocessor,
     KeywordNodePostprocessor,
     PrevNextNodePostprocessor,
-    AutoPrevNextNodePostprocessor,
+    SimilarityPostprocessor,
 )
 
 __all__ = [

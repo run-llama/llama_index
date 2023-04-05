@@ -4,10 +4,9 @@ import json
 from typing import Any, Dict, List, Optional, Sequence, Type, Union, cast
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
-from gpt_index.data_structs.data_structs_v2 import CompositeIndex
-from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
+from gpt_index.data_structs.data_structs_v2 import CompositeIndex, V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.data_structs.node_v2 import IndexNode, DocumentRelationship
+from gpt_index.data_structs.node_v2 import DocumentRelationship, IndexNode
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.query_runner import QueryRunner

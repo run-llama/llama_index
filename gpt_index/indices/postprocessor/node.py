@@ -1,20 +1,20 @@
 """Node postprocessor."""
 
+import logging
 import re
 from abc import abstractmethod
 from typing import Dict, List, Optional, cast
 
 from pydantic import BaseModel, Field, validator
 
-import logging
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.docstore import DocumentStore
-from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
 from gpt_index.indices.postprocessor.base import BasePostprocessor
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
+from gpt_index.indices.service_context import ServiceContext
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 logger = logging.getLogger(__name__)
 

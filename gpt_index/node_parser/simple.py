@@ -3,9 +3,9 @@ from typing import List, Optional, Sequence
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
+from gpt_index.node_parser.interface import NodeParser
 from gpt_index.node_parser.node_utils import get_nodes_from_document
 from gpt_index.readers.schema.base import Document
-from gpt_index.node_parser.interface import NodeParser
 
 
 class SimpleNodeParser(NodeParser):

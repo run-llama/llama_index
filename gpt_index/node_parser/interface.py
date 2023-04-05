@@ -1,7 +1,6 @@
 """Node parser interface."""
-from typing import List, Sequence
-
 from abc import ABC, abstractmethod
+from typing import List, Sequence
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.readers.schema.base import Document

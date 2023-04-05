@@ -5,8 +5,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from gpt_index.data_structs.data_structs_v2 import CompositeIndex
-from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
+from gpt_index.data_structs.data_structs_v2 import CompositeIndex, V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
 from gpt_index.data_structs.struct_type import IndexStructType

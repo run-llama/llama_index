@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
+
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex

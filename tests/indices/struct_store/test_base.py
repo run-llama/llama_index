@@ -1,12 +1,11 @@
 """Test struct store indices."""
 
-import re
 import asyncio
+import re
 from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import patch
 
 import pytest
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -25,8 +24,8 @@ from gpt_index.indices.struct_store.sql import (
     GPTSQLStructStoreIndex,
     SQLContextContainerBuilder,
 )
-from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
+from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
 from tests.mock_utils.mock_decorator import patch_common

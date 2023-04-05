@@ -3,9 +3,8 @@
 from typing import Any, Dict, List, Optional
 
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.schema import AIMessage
+from langchain.schema import AIMessage, BaseMessage, HumanMessage
 from langchain.schema import BaseMemory as Memory
-from langchain.schema import BaseMessage, HumanMessage
 from pydantic import Field
 
 from gpt_index.indices.base import BaseGPTIndex

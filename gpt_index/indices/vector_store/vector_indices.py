@@ -18,6 +18,8 @@ from gpt_index.data_structs.data_structs_v2 import (
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.service_context import ServiceContext
+from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.indices.vector_store.queries import (
     ChatGPTRetrievalPluginQuery,
     GPTChromaIndexQuery,
@@ -28,8 +30,6 @@ from gpt_index.indices.vector_store.queries import (
     GPTSimpleVectorIndexQuery,
     GPTWeaviateIndexQuery,
 )
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.vector_stores import (
     ChatGPTRetrievalPluginClient,
     ChromaVectorStore,
