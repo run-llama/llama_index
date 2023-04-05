@@ -25,9 +25,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     """Base GPT Vector Store Index.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
         vector_store (Optional[VectorStore]): Vector store to use for
@@ -44,7 +41,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         vector_store: Optional[VectorStore] = None,
         use_async: bool = False,
         **kwargs: Any,
@@ -52,7 +48,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         """Initialize params."""
         self._vector_store = vector_store or SimpleVectorStore()
 
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
         super().__init__(
             nodes=nodes,
@@ -277,8 +272,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         super()._preprocess_query(mode, query_kwargs)
-        if "text_qa_template" not in query_kwargs:
-            query_kwargs["text_qa_template"] = self.text_qa_template
         # NOTE: Pass along vector store instance to query objects
         # TODO: refactor this to be more explicit
         query_kwargs["vector_store"] = self._vector_store
