@@ -1,6 +1,6 @@
 """Deprecated vector store indices."""
 
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Dict, Optional, Sequence, Type
 
 from requests.adapters import Retry
 

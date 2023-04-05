@@ -1,13 +1,12 @@
 """Test recursive queries."""
 
+import pytest
 import asyncio
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import MagicMock, patch
-
-from tests.indices.query.test_compose import documents, struct_kwargs
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.struct_type import IndexStructType
@@ -29,11 +28,98 @@ from tests.mock_utils.mock_predict import (
     mock_llmpredictor_predict,
 )
 from tests.mock_utils.mock_prompts import (
+    MOCK_INSERT_PROMPT,
+    MOCK_KEYWORD_EXTRACT_PROMPT,
     MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
+    MOCK_QUERY_PROMPT,
     MOCK_REFINE_PROMPT,
+    MOCK_SUMMARY_PROMPT,
     MOCK_TEXT_QA_PROMPT,
 )
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
+
+
+@pytest.fixture
+def struct_kwargs() -> Tuple[Dict, List]:
+    """Index kwargs."""
+    index_kwargs = {
+        "tree": {
+            "summary_template": MOCK_SUMMARY_PROMPT,
+            "insert_prompt": MOCK_INSERT_PROMPT,
+            "num_children": 2,
+        },
+        "list": {
+            "text_qa_template": MOCK_TEXT_QA_PROMPT,
+        },
+        "table": {
+            "keyword_extract_template": MOCK_KEYWORD_EXTRACT_PROMPT,
+        },
+        "vector": {},
+        "pinecone": {},
+    }
+    query_configs = [
+        QueryConfig(
+            index_struct_type=IndexStructType.TREE,
+            query_mode=QueryMode.DEFAULT,
+            query_kwargs={
+                "query_template": MOCK_QUERY_PROMPT,
+                "text_qa_template": MOCK_TEXT_QA_PROMPT,
+                "refine_template": MOCK_REFINE_PROMPT,
+            },
+        ),
+        QueryConfig(
+            index_struct_type=IndexStructType.LIST,
+            query_mode=QueryMode.DEFAULT,
+            query_kwargs={
+                "text_qa_template": MOCK_TEXT_QA_PROMPT,
+                "refine_template": MOCK_REFINE_PROMPT,
+            },
+        ),
+        QueryConfig(
+            index_struct_type=IndexStructType.KEYWORD_TABLE,
+            query_mode=QueryMode.DEFAULT,
+            query_kwargs={
+                "query_keyword_extract_template": MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
+                "text_qa_template": MOCK_TEXT_QA_PROMPT,
+                "refine_template": MOCK_REFINE_PROMPT,
+            },
+        ),
+        QueryConfig(
+            index_struct_type=IndexStructType.DICT,
+            query_mode=QueryMode.DEFAULT,
+            query_kwargs={
+                "text_qa_template": MOCK_TEXT_QA_PROMPT,
+                "refine_template": MOCK_REFINE_PROMPT,
+                "similarity_top_k": 1,
+            },
+        ),
+        QueryConfig(
+            index_struct_type=IndexStructType.PINECONE,
+            query_mode=QueryMode.DEFAULT,
+            query_kwargs={
+                "text_qa_template": MOCK_TEXT_QA_PROMPT,
+                "refine_template": MOCK_REFINE_PROMPT,
+                "similarity_top_k": 1,
+            },
+        ),
+    ]
+    return index_kwargs, query_configs
+
+
+@pytest.fixture
+def documents() -> List[Document]:
+    """Get documents."""
+    docs = [
+        Document("This is a test v2."),
+        Document("This is another test."),
+        Document("This is a test."),
+        Document("Hello world."),
+        Document("Hello world."),
+        Document("This is a test."),
+        Document("This is another test."),
+        Document("This is a test v2."),
+    ]
+    return docs
 
 
 def mock_get_query_embedding(query: str) -> List[float]:
