@@ -57,7 +57,7 @@ class SlackReader(BaseReader):
                 "Must specify `earliest_date` if `latest_date` is specified."
             )
         if earliest_date is not None:
-            self.earliest_date_timestamp = earliest_date.timestamp()
+            self.earliest_date_timestamp: Optional[float] = earliest_date.timestamp()
         else:
             self.earliest_date_timestamp = None
         if latest_date is not None:
@@ -95,7 +95,7 @@ class SlackReader(BaseReader):
                             self.earliest_date_timestamp
                         )
                     result = self.client.conversations_replies(
-                        **conversations_replies_kwargs
+                        **conversations_replies_kwargs  # type: ignore
                     )
                 messages = result["messages"]
                 messages_text.extend(message["text"] for message in messages)
@@ -139,7 +139,7 @@ class SlackReader(BaseReader):
                         self.earliest_date_timestamp
                     )
                 result = self.client.conversations_history(
-                    **conversations_history_kwargs
+                    **conversations_history_kwargs  # type: ignore
                 )
                 conversation_history = result["messages"]
                 # Print results
