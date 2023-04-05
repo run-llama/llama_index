@@ -148,6 +148,10 @@ class ResponseBuilder:
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
+            refine_template = self.refine_template.partial_format(
+                query_str=query_str, existing_answer=response
+            )
+
             self._log_prompt_and_response(
                 formatted_prompt, response, log_prefix="Refined"
             )
