@@ -67,7 +67,7 @@ class ResponseEvaluator:
             1. context_response -> comparing context \
             information and response.
             2. others coming soon!
-    
+
     """
 
     def __init__(

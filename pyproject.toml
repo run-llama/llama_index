@@ -23,4 +23,5 @@ select = [
     "F",
     # Pycodestyle
     "E",
+    "W",
 ]
