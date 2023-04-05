@@ -84,9 +84,9 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
             # NOTE: vector store keeps text, returns nodes.
             # Only need to recover image or index nodes from docstore
             for i in range(len(query_result.nodes)):
-                node_id  = query_result.nodes[i].get_doc_id()
+                node_id = query_result.nodes[i].get_doc_id()
                 if node_id in self._docstore.docs:
-                    query_result.nodes[i] = self._docstore.get_document(node_id)
+                    query_result.nodes[i] = self._docstore.get_node(node_id)
 
         log_vector_store_query_result(query_result)
 
