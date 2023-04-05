@@ -55,9 +55,7 @@ def struct_kwargs() -> Tuple[Dict, List]:
         "table": {
             "keyword_extract_template": MOCK_KEYWORD_EXTRACT_PROMPT,
         },
-        "vector": {
-            "text_qa_template": MOCK_TEXT_QA_PROMPT,
-        },
+        "vector": {},
     }
     query_configs = [
         QueryConfig(
@@ -426,15 +424,15 @@ def test_recursive_query_vector_table(
 ) -> None:
     """Test query."""
     index_kwargs, query_configs = struct_kwargs
-    list_kwargs = index_kwargs["list"]
+    vector_kwargs = index_kwargs["vector"]
     table_kwargs = index_kwargs["table"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
-    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
-    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **list_kwargs)
-    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **list_kwargs)
+    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
+    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
+    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **vector_kwargs)
+    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **vector_kwargs)
 
     summaries = [
         "foo bar",
@@ -534,13 +532,13 @@ def test_recursive_query_vector_table_query_configs(
         ),
     ]
 
-    list_kwargs = index_kwargs["list"]
+    vector_kwargs = index_kwargs["vector"]
     table_kwargs = index_kwargs["table"]
     # try building a tre for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
-    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
+    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
+    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
     assert isinstance(list1.index_struct, V2IndexStruct)
     assert isinstance(list2.index_struct, V2IndexStruct)
     list1.index_struct.index_id = "vector1"
@@ -600,15 +598,15 @@ def test_recursive_query_vector_table_async(
 ) -> None:
     """Test async query of table index over vector indices."""
     index_kwargs, query_configs = struct_kwargs
-    list_kwargs = index_kwargs["list"]
+    vector_kwargs = index_kwargs["vector"]
     table_kwargs = index_kwargs["table"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **list_kwargs)
-    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **list_kwargs)
-    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **list_kwargs)
-    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **list_kwargs)
+    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
+    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
+    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **vector_kwargs)
+    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **vector_kwargs)
 
     summaries = [
         "foo bar",

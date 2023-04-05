@@ -6,6 +6,7 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 
 import json
 from abc import abstractmethod
+from dataclasses import field
 from typing import Any, Dict, Generic, List, Optional, TypeVar, cast
 
 from gpt_index.data_structs.data_structs_v2 import Node
@@ -170,6 +171,16 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
                 "description": "node_info (in JSON)",
                 "name": "node_info",
             },
+            {
+                "dataType": ["string"],
+                "description": "The hash of the Document",
+                "name": "doc_hash",
+            },
+            {
+                "dataType": ["string"],
+                "description": "The relationships of the node (in JSON)",
+                "name": "relationships",
+            },
         ]
 
     @classmethod
@@ -186,13 +197,24 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
             node_info = None
         else:
             node_info = json.loads(node_info_str)
+
+        relationships_str = entry["relationships"]
+        relationships: Dict[DocumentRelationship, str]
+        if relationships_str == "":
+            relationships = field(default_factory=dict)
+        else:
+            relationships = {
+                DocumentRelationship(k): v
+                for k, v in json.loads(relationships_str).items()
+            }
+
         return Node(
             text=entry["text"],
             doc_id=entry["doc_id"],
             embedding=entry["_additional"]["vector"],
             extra_info=extra_info,
             node_info=node_info,
-            relationships={DocumentRelationship.SOURCE: entry["ref_doc_id"]},
+            relationships=relationships,
         )
 
     @classmethod
@@ -202,8 +224,8 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         """Convert from LlamaIndex."""
         node_dict = node.to_dict()
         vector = node_dict.pop("embedding")
-        extra_info = node_dict.pop("extra_info")
         # json-serialize the extra_info
+        extra_info = node_dict.pop("extra_info")
         extra_info_str = ""
         if extra_info is not None:
             extra_info_str = json.dumps(extra_info)
@@ -214,6 +236,16 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         if node_info is not None:
             node_info_str = json.dumps(node_info)
         node_dict["node_info"] = node_info_str
+        # json-serialize the relationships
+        relationships = node_dict.pop("relationships")
+        relationships_str = ""
+        if relationships is not None:
+            relationships_str = json.dumps(relationships)
+        node_dict["relationships"] = relationships_str
+
+        ref_doc_id = node.ref_doc_id
+        if ref_doc_id is not None:
+            node_dict["ref_doc_id"] = ref_doc_id
 
         # TODO: account for existing nodes that are stored
         node_id = get_new_id(set())

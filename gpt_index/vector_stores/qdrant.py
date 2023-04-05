@@ -207,6 +207,7 @@ class QdrantVectorStore(VectorStore):
         for point in response:
             payload = cast(Payload, point.payload)
             node = Node(
+                doc_id=str(point.id),
                 text=payload.get("text"),
                 extra_info=payload.get("extra_info"),
                 relationships={

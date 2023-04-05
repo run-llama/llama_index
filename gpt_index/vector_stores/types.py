@@ -15,6 +15,7 @@ class NodeEmbeddingResult:
         id (str): Node id
         node (Node): Node
         embedding (List[float]): Embedding
+        doc_id (str): Document id
 
     """
 

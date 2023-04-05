@@ -17,7 +17,7 @@ from langchain.input import print_text
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
-from gpt_index.docstore_v2 import DocumentStore
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.postprocessor.node import (
     BaseNodePostprocessor,
     KeywordNodePostprocessor,
@@ -248,7 +248,10 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         similarity_tracker = SimilarityTracker()
         nodes = self._retrieve(query_bundle, similarity_tracker=similarity_tracker)
 
-        postprocess_info = {"similarity_tracker": similarity_tracker}
+        postprocess_info = {
+            "similarity_tracker": similarity_tracker,
+            "query_bundle": query_bundle,
+        }
         for node_processor in self.node_preprocessors:
             nodes = node_processor.postprocess_nodes(nodes, postprocess_info)
 

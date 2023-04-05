@@ -94,8 +94,9 @@ class Node(BaseDocument):
     def get_text(self) -> str:
         """Get text."""
         text = super().get_text()
+        extra_info_exists = self.extra_info is not None and len(self.extra_info) > 0
         result_text = (
-            text if self.extra_info_str is None else f"{self.extra_info_str}\n\n{text}"
+            text if not extra_info_exists else f"{self.extra_info_str}\n\n{text}"
         )
         return result_text
 

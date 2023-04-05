@@ -6,7 +6,7 @@ answer.
 Depending on the [type of index](/reference/indices.rst) being used,
 LLMs may also be used during index construction, insertion, and query traversal.
 
-LlamaIndex uses Langchain's [LLM](https://langchain.readthedocs.io/en/latest/modules/llms.html)
+LlamaIndex uses Langchain's [LLM](https://python.langchain.com/en/latest/modules/models/llms.html)
 and [LLMChain](https://langchain.readthedocs.io/en/latest/modules/chains.html) module to define
 the underlying abstraction. We introduce a wrapper class,
 [`LLMPredictor`](/reference/service_context/llm_predictor.rst), for integration into LlamaIndex.

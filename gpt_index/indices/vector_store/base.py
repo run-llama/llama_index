@@ -14,10 +14,7 @@ from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.token_counter.token_counter import llm_token_counter
-from gpt_index.utils import get_new_id
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
 
@@ -26,9 +23,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     """Base GPT Vector Store Index.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
         vector_store (Optional[VectorStore]): Vector store to use for
@@ -45,7 +39,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         vector_store: Optional[VectorStore] = None,
         use_async: bool = False,
         **kwargs: Any,
@@ -53,7 +46,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         """Initialize params."""
         self._vector_store = vector_store or SimpleVectorStore()
 
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
         super().__init__(
             nodes=nodes,
@@ -83,7 +75,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         id_to_embed_map: Dict[str, List[float]] = {}
 
         for n in nodes:
-            new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
+            new_id = n.get_doc_id()
             if n.embedding is None:
                 self._service_context.embed_model.queue_text_for_embeddding(
                     new_id, n.get_text()
@@ -127,7 +119,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         text_queue: List[Tuple[str, str]] = []
         for n in nodes:
-            new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
+            new_id = n.get_doc_id()
             if n.embedding is None:
                 text_queue.append((new_id, n.get_text()))
             else:
@@ -171,7 +163,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         if not self._vector_store.stores_text:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
-                self._docstore.add_documents([result.node])
+                self._docstore.add_documents([result.node], allow_update=True)
 
     def _add_nodes_to_index(
         self,
@@ -187,19 +179,18 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         new_ids = self._vector_store.add(embedding_results)
 
         if not self._vector_store.stores_text:
-            # NOTE: if the vector store doesn't store text, 
+            # NOTE: if the vector store doesn't store text,
             # we need to add the nodes to the index struct and document store
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
-                self._docstore.add_documents([result.node])
-        else: 
-            # NOTE: if the vector store keeps text, 
+                self._docstore.add_documents([result.node], allow_update=True)
+        else:
+            # NOTE: if the vector store keeps text,
             # we only need to add image and index nodes
             for result, new_id in zip(embedding_results, new_ids):
                 if isinstance(result.node, (ImageNode, IndexNode)):
                     index_struct.add_node(result.node, text_id=new_id)
-                    self._docstore.add_documents([result.node])
-            
+                    self._docstore.add_documents([result.node], allow_update=True)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
         """Build index from nodes."""
@@ -286,8 +277,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         super()._preprocess_query(mode, query_kwargs)
-        if "text_qa_template" not in query_kwargs:
-            query_kwargs["text_qa_template"] = self.text_qa_template
         # NOTE: Pass along vector store instance to query objects
         # TODO: refactor this to be more explicit
         query_kwargs["vector_store"] = self._vector_store
