@@ -168,7 +168,7 @@ class QueryRunner:
         query_kwargs = self._get_query_kwargs(config)
 
         # Inject additional query context into query kwargs
-        query_context = self._query_context[index_struct.index_id]
+        query_context = self._query_context.get(index_struct.index_id, {})
         query_kwargs.update(query_context)
 
         query_obj = query_cls(
