@@ -130,7 +130,7 @@ class ChatGPTLLMPredictor(LLMPredictor):
         """
         # try casting to validate
         try:
-            cast(BaseChatModel, self._llm)
+            llm = cast(BaseChatModel, self._llm)
         except Exception:
             raise ValueError("LLM must be a BaseChatModel to use predict_with_stream")
 
@@ -141,8 +141,8 @@ class ChatGPTLLMPredictor(LLMPredictor):
 
         # only set callback manager if it's the last response generated from the LLM
         if not is_last:
-            self._llm.callback_manager = None
+            llm.callback_manager = None
         else:
-            self._llm.callback_manager = self._callback_manager
+            llm.callback_manager = self._callback_manager
 
         return self.predict(prompt, **prompt_args)

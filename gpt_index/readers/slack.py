@@ -4,7 +4,7 @@ import os
 import time
 from datetime import datetime
 from ssl import SSLContext
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document

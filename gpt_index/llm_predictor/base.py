@@ -104,7 +104,7 @@ class BaseLLMPredictor(Protocol):
         prompt: Prompt,
         is_last: bool = False,
         **prompt_args: Any,
-    ) -> Tuple[Generator, str]:
+    ) -> Tuple[str, str]:
         """Stream the answer to a query.
 
         NOTE: this is a beta feature. Will try to build or use
@@ -241,7 +241,7 @@ class LLMPredictor(BaseLLMPredictor):
         return llm_prediction, formatted_prompt
 
     def predict_with_stream(
-        self, prompt: Prompt, **prompt_args: Any
+        self, prompt: Prompt, is_last: bool = False, **prompt_args: Any
     ) -> Tuple[str, str]:
         """Predict the answer to a query.
 

@@ -59,8 +59,10 @@ class GPTEmptyIndexQuery(BaseGPTIndexQuery[EmptyIndex]):
             )
             return Response(response)
         else:
-            stream_response, _ = self._service_context.llm_predictor.stream(
+            llm_predictor = self._service_context.llm_predictor
+            response, _ = llm_predictor.predict_with_stream(
                 self._input_prompt,
+                is_last=True,
                 query_str=query_bundle.query_str,
             )
-            return StreamingResponse(stream_response)
+            return Response(response)
