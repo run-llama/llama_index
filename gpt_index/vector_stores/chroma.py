@@ -45,7 +45,7 @@ class ChromaVectorStore(VectorStore):
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        raise NotImplementedError()
+        return cls(**config_dict)
 
     @property
     def config_dict(self) -> dict:
