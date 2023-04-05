@@ -285,5 +285,5 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             query_kwargs["text_qa_template"] = self.text_qa_template
 
     @property
-    def additional_query_context(self) -> Dict[str, Any]:
+    def query_context(self) -> Dict[str, Any]:
         return {"vector_store": self._vector_store}
