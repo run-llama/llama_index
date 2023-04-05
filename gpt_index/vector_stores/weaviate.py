@@ -49,6 +49,9 @@ class WeaviateVectorStore(VectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
+        if weaviate_client is None:
+            raise ValueError("Missing Weaviate client!")
+
         self._client = cast(Client, weaviate_client)
         # validate class prefix starts with a capital letter
         if class_prefix is not None and not class_prefix[0].isupper():
@@ -61,6 +64,8 @@ class WeaviateVectorStore(VectorStore):
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        if "weaviate_client" not in config_dict:
+            raise ValueError("Missing Weaviate client!")
         return cls(**config_dict)
 
     @property

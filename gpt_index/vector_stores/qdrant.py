@@ -46,7 +46,7 @@ class QdrantVectorStore(VectorStore):
             raise ImportError(import_err_msg)
 
         if client is None:
-            raise ValueError("client cannot be None.")
+            raise ValueError("Missing Qdrant client!")
 
         self._client = cast(qdrant_client.QdrantClient, client)
         self._collection_name = collection_name
@@ -54,6 +54,8 @@ class QdrantVectorStore(VectorStore):
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        if "client" not in config_dict:
+            raise ValueError("Missing Qdrant client!")
         return cls(**config_dict)
 
     @property

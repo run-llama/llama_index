@@ -158,6 +158,8 @@ class OpensearchVectorStore(VectorStore):
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        if "client" not in config_dict:
+            raise ValueError("Missing Opensearch client!")
         return cls(**config_dict)
 
     @property

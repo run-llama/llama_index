@@ -47,10 +47,14 @@ class FaissVectorStore(VectorStore):
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "FaissVectorStore":
-        save_path = config_dict["save_path"]
-        if save_path is None:
-            raise ValueError("Cannot load since save path is None")
-        return cls.load(save_path=save_path)
+        if "faiss_index" in config_dict:
+            return cls(**config_dict)
+        else:
+            save_path = config_dict.get("save_path", None)
+            if save_path is not None:
+                return cls.load(save_path=save_path)
+            else:
+                raise ValueError("Missing both faiss index and save path!")
 
     @property
     def config_dict(self) -> dict:

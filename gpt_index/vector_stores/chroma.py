@@ -45,6 +45,8 @@ class ChromaVectorStore(VectorStore):
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        if "chroma_collection" not in config_dict:
+            raise ValueError("Missing chroma collection!")
         return cls(**config_dict)
 
     @property
