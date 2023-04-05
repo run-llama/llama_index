@@ -21,4 +21,6 @@ select = [
     "I",
     # Pyflakes
     "F",
+    # Pycodestyle
+    "E",
 ]
