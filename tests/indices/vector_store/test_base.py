@@ -23,8 +23,8 @@ from gpt_index.data_structs.node_v2 import DocumentRelationship
 @pytest.fixture
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
-    index_kwargs = {}
-    query_kwargs = {
+    index_kwargs: Dict[str, Any] = {}
+    query_kwargs: Dict[str, Any] = {
         "text_qa_template": MOCK_TEXT_QA_PROMPT,
         "refine_template": MOCK_REFINE_PROMPT,
         "similarity_top_k": 1,

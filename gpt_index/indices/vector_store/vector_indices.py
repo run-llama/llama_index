@@ -30,7 +30,6 @@ from gpt_index.indices.vector_store.queries import (
 )
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.vector_stores import (
     ChatGPTRetrievalPluginClient,
     ChromaVectorStore,
