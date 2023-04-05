@@ -14,8 +14,6 @@ from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.vector_stores.registry import (
     load_vector_store_from_dict,
@@ -29,9 +27,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     """Base GPT Vector Store Index.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         embed_model (Optional[BaseEmbedding]): Embedding model to use for
             embedding similarity.
         vector_store (Optional[VectorStore]): Vector store to use for
@@ -48,7 +43,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         vector_store: Optional[VectorStore] = None,
         use_async: bool = False,
         **kwargs: Any,
@@ -56,7 +50,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         """Initialize params."""
         self._vector_store = vector_store or SimpleVectorStore()
 
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
         super().__init__(
             nodes=nodes,
@@ -278,11 +271,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         out_dict = super().save_to_dict()
         out_dict[VECTOR_STORE_KEY] = save_vector_store_to_dict(self._vector_store)
         return out_dict
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        super()._preprocess_query(mode, query_kwargs)
-        if "text_qa_template" not in query_kwargs:
-            query_kwargs["text_qa_template"] = self.text_qa_template
 
     @property
     def query_context(self) -> Dict[str, Any]:
