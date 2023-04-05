@@ -85,7 +85,7 @@ class QueryRunner:
         index_struct: IndexStruct,
         service_context: ServiceContext,
         docstore: DocumentStore,
-        query_context: Dict[str, Dict[str, Any]] = None,
+        query_context: Dict[str, Dict[str, Any]],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
         query_combiner: Optional[BaseQueryCombiner] = None,

@@ -7,7 +7,9 @@ from gpt_index.vector_stores.registry import (
 from gpt_index.vector_stores.types import VectorStore
 
 
-def save_query_context_to_dict(query_context: Dict[str, Dict[str, Any]]):
+def save_query_context_to_dict(
+    query_context: Dict[str, Dict[str, Any]]
+) -> Dict[str, Dict[str, Any]]:
     """Save index-specific query context dict to JSON dict.
 
     Example query context dict to save:
