@@ -30,8 +30,8 @@ class Response:
         """Get formatted sources text."""
         texts = []
         for source_node in self.source_nodes:
-            fmt_text_chunk = truncate_text(source_node.source_text, length)
-            doc_id = source_node.doc_id or "None"
+            fmt_text_chunk = truncate_text(source_node.node.get_text(), length)
+            doc_id = source_node.node.doc_id or "None"
             source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
             texts.append(source_text)
         return "\n\n".join(texts)

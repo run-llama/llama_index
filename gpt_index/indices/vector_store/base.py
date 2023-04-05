@@ -17,7 +17,6 @@ from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.token_counter.token_counter import llm_token_counter
-from gpt_index.utils import get_new_id
 from gpt_index.vector_stores.registry import (
     load_vector_store_from_dict,
     save_vector_store_to_dict,
@@ -87,7 +86,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         id_to_embed_map: Dict[str, List[float]] = {}
 
         for n in nodes:
-            new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
+            new_id = n.get_doc_id()
             if n.embedding is None:
                 self._service_context.embed_model.queue_text_for_embeddding(
                     new_id, n.get_text()
@@ -131,7 +130,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         text_queue: List[Tuple[str, str]] = []
         for n in nodes:
-            new_id = get_new_id(existing_node_ids.union(id_to_node_map.keys()))
+            new_id = n.get_doc_id()
             if n.embedding is None:
                 text_queue.append((new_id, n.get_text()))
             else:
@@ -175,7 +174,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         if not self._vector_store.stores_text:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
-                self._docstore.add_documents([result.node])
+                self._docstore.add_documents([result.node], allow_update=True)
 
     def _add_nodes_to_index(
         self,
@@ -195,7 +194,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         if not self._vector_store.stores_text:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
-                self._docstore.add_documents([result.node])
+                self._docstore.add_documents([result.node], allow_update=True)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
         """Build index from nodes."""
