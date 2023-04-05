@@ -18,10 +18,8 @@ from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMP
 @pytest.fixture
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
-    index_kwargs = {
-        "text_qa_template": MOCK_TEXT_QA_PROMPT,
-    }
-    query_kwargs = {
+    index_kwargs: Dict[str, Any] = {}
+    query_kwargs: Dict[str, Any] = {
         "text_qa_template": MOCK_TEXT_QA_PROMPT,
         "refine_template": MOCK_REFINE_PROMPT,
         "similarity_top_k": 1,

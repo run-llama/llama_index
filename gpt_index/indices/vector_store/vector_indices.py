@@ -30,7 +30,6 @@ from gpt_index.indices.vector_store.queries import (
 )
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.vector_stores import (
     ChatGPTRetrievalPluginClient,
     ChromaVectorStore,
@@ -60,9 +59,6 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
 
@@ -75,7 +71,6 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         simple_vector_store_data_dict: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
@@ -95,7 +90,6 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
@@ -134,9 +128,6 @@ class GPTFaissIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         faiss_index (faiss.Index): A Faiss Index object (required). Note: the index
             will be reset during index construction.
         service_context (ServiceContext): Service context container (contains
@@ -151,7 +142,6 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         service_context: Optional[ServiceContext] = None,
         faiss_index: Optional[Any] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -163,7 +153,6 @@ class GPTFaissIndex(GPTVectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
@@ -261,9 +250,6 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
     """
@@ -280,7 +266,6 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         query_kwargs: Optional[Dict] = None,
         delete_kwargs: Optional[Dict] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
@@ -305,7 +290,6 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            text_qa_template=text_qa_template,
             service_context=service_context,
             vector_store=vector_store,
             **kwargs,
@@ -346,9 +330,6 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
     """
@@ -362,7 +343,6 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         weaviate_client: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -376,7 +356,6 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
@@ -412,9 +391,6 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
         client (Optional[Any]): QdrantClient instance from `qdrant-client` package
@@ -430,7 +406,6 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         client: Optional[Any] = None,
         collection_name: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -444,7 +419,6 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
@@ -480,9 +454,6 @@ class GPTChromaIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
         chroma_collection (Optional[Any]): Collection instance from `chromadb` package.
@@ -497,7 +468,6 @@ class GPTChromaIndex(GPTVectorStoreIndex):
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         chroma_collection: Optional[Any] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -509,7 +479,6 @@ class GPTChromaIndex(GPTVectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
@@ -547,9 +516,6 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
     "knn_vector" field that the embeddings were mapped to.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         client (Optional[OpensearchVectorClient]): The client which encapsulates
             logic for using Opensearch as a vector store (that is, it holds stuff
             like endpoint, index_name and performs operations like initializing the
@@ -566,7 +532,6 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
         service_context: Optional[ServiceContext] = None,
         client: Optional[OpensearchVectorClient] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -577,7 +542,6 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
@@ -606,9 +570,6 @@ class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
     https://github.com/openai/chatgpt-retrieval-plugin.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         client (Optional[OpensearchVectorClient]): The client which encapsulates
             logic for using Opensearch as a vector store (that is, it holds stuff
             like endpoint, index_name and performs operations like initializing the
@@ -624,7 +585,6 @@ class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[ChatGPTRetrievalPluginIndexDict] = None,
         service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         endpoint_url: Optional[str] = None,
         bearer_token: Optional[str] = None,
         retries: Optional[Retry] = None,
@@ -646,7 +606,6 @@ class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
