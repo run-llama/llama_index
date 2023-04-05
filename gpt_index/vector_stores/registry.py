@@ -47,7 +47,8 @@ def load_vector_store_from_dict(
     config_dict: Dict[str, Any] = vector_store_dict[DATA_KEY]
 
     # Inject kwargs into data dict.
-    # This allows us to explicitly pass in unserializable objects like the vector store client.
+    # This allows us to explicitly pass in unserializable objects
+    # like the vector store client.
     config_dict.update(kwargs)
 
     cls = VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS[type]

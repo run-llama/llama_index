@@ -87,17 +87,21 @@ class PineconeVectorStore(VectorStore):
         if pinecone_index is not None:
             self._pinecone_index = cast(pinecone.Index, pinecone_index)
             _logger.warn(
-                "When directly passing in client, cannot automatically reconstruct connetion after save_to_disk/load_from_disk.\
-                         For automatic reload, store PINECONE_API_KEY in env variable and pass in index_name and environment instead."
+                "If directly passing in client, cannot automatically reconstruct "
+                "connetion after save_to_disk/load_from_disk."
+                "For automatic reload, store PINECONE_API_KEY in env variable and "
+                "pass in index_name and environment instead."
             )
         else:
             if "PINECONE_API_KEY" not in os.environ:
                 raise ValueError(
-                    "Must specify PINECONE_API_KEY via env variable if not directly passing in client."
+                    "Must specify PINECONE_API_KEY via env variable "
+                    "if not directly passing in client."
                 )
             if index_name is None or environment is None:
                 raise ValueError(
-                    "Must specify index_name and environment if not directly passing in client."
+                    "Must specify index_name and environment "
+                    "if not directly passing in client."
                 )
 
             pinecone.init(environment=environment)
