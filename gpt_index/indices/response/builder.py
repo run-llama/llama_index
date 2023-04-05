@@ -148,6 +148,10 @@ class ResponseBuilder:
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
+            refine_template = self.refine_template.partial_format(
+                query_str=query_str, existing_answer=response
+            )
+
             self._log_prompt_and_response(
                 formatted_prompt, response, log_prefix="Refined"
             )
@@ -244,8 +248,13 @@ class ResponseBuilder:
     ) -> RESPONSE_TEXT_TYPE:
         """Get compact response."""
         # use prompt helper to fix compact text_chunks under the prompt limitation
+        # TODO: This is a temporary fix - reason it's temporary is that
+        # the refine template does not account for size of previous answer.
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        refine_template = self.refine_template.partial_format(query_str=query_str)
+
         max_prompt = self._service_context.prompt_helper.get_biggest_prompt(
-            [self.text_qa_template, self.refine_template]
+            [text_qa_template, refine_template]
         )
         with temp_set_attrs(
             self._service_context.prompt_helper, use_chunk_size_limit=False

@@ -311,7 +311,10 @@ def test_sql_index_with_index_context(
     sql_context_container = context_builder.build_context_container(
         ignore_db_schema=True
     )
-    assert context_response == "Context query?:table_name: test_table"
+    print(context_response)
+    assert (
+        context_response == "Context query?:table_name: test_table:test_table_context"
+    )
     assert sql_context_container.context_str == context_response
 
     index = GPTSQLStructStoreIndex.from_documents(
