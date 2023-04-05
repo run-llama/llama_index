@@ -2,9 +2,10 @@
 
 import asyncio
 from pathlib import Path
+import sys
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Tuple, cast
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -16,7 +17,10 @@ from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableInd
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.indices.vector_store.vector_indices import GPTSimpleVectorIndex
+from gpt_index.indices.vector_store.vector_indices import (
+    GPTPineconeIndex,
+    GPTSimpleVectorIndex,
+)
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMChain,
     LLMMetadata,
@@ -24,6 +28,7 @@ from gpt_index.langchain_helpers.chain_wrapper import (
 )
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
+from tests.indices.vector_store.test_pinecone import MockPineconeIndex
 from tests.mock_utils.mock_predict import (
     mock_llmchain_predict,
     mock_llmpredictor_predict,
@@ -56,6 +61,7 @@ def struct_kwargs() -> Tuple[Dict, List]:
             "keyword_extract_template": MOCK_KEYWORD_EXTRACT_PROMPT,
         },
         "vector": {},
+        "pinecone": {},
     }
     query_configs = [
         QueryConfig(
@@ -86,6 +92,15 @@ def struct_kwargs() -> Tuple[Dict, List]:
         ),
         QueryConfig(
             index_struct_type=IndexStructType.DICT,
+            query_mode=QueryMode.DEFAULT,
+            query_kwargs={
+                "text_qa_template": MOCK_TEXT_QA_PROMPT,
+                "refine_template": MOCK_REFINE_PROMPT,
+                "similarity_top_k": 1,
+            },
+        ),
+        QueryConfig(
+            index_struct_type=IndexStructType.PINECONE,
             query_mode=QueryMode.DEFAULT,
             query_kwargs={
                 "text_qa_template": MOCK_TEXT_QA_PROMPT,
@@ -693,3 +708,112 @@ def test_recursive_query_vector_vector(
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         response = graph.query(query_str, query_configs=query_configs)
         assert str(response) == ("Cat?:Cat?:This is a test v2.")
+
+
+@patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
+@patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
+@patch.object(LLMPredictor, "total_tokens_used", return_value=0)
+@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_recursive_query_vector_vector(
+    _mock_query_embed: Any,
+    _mock_get_text_embeds: Any,
+    _mock_get_text_embed: Any,
+    _mock_init: Any,
+    _mock_total_tokens_used: Any,
+    _mock_predict: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test composing pinecone index on top of pinecone index."""
+    # NOTE: mock pinecone import
+    sys.modules["pinecone"] = MagicMock()
+    # NOTE: mock pinecone index, use separate instances
+    #       to make testing easier
+    pinecone_index1 = MockPineconeIndex()
+    pinecone_index2 = MockPineconeIndex()
+    pinecone_index3 = MockPineconeIndex()
+    pinecone_index4 = MockPineconeIndex()
+    pinecone_index5 = MockPineconeIndex()
+
+    index_kwargs, query_configs = struct_kwargs
+    pinecone_kwargs = index_kwargs["pinecone"]
+    # try building a tree for a group of 4, then a list
+    # use a diff set of documents
+    # try building a list for every two, then a tree
+    pinecone1 = GPTPineconeIndex.from_documents(
+        documents[0:2], pinecone_index=pinecone_index1, **pinecone_kwargs
+    )
+    pinecone2 = GPTPineconeIndex.from_documents(
+        documents[2:4], pinecone_index=pinecone_index2, **pinecone_kwargs
+    )
+    pinecone3 = GPTPineconeIndex.from_documents(
+        documents[4:6], pinecone_index=pinecone_index3, **pinecone_kwargs
+    )
+    pinecone4 = GPTPineconeIndex.from_documents(
+        documents[6:8], pinecone_index=pinecone_index4, **pinecone_kwargs
+    )
+
+    summary1 = "foo bar"
+    summary2 = "apple orange"
+    summary3 = "toronto london"
+    summary4 = "cat dog"
+    summaries = [summary1, summary2, summary3, summary4]
+
+    graph = ComposableGraph.from_indices(
+        GPTPineconeIndex,
+        [pinecone1, pinecone2, pinecone3, pinecone4],
+        index_summaries=summaries,
+        pinecone_index=pinecone_index5,
+        **pinecone_kwargs
+    )
+    query_str = "Foo?"
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Foo?:Foo?:This is another test.")
+    query_str = "Orange?"
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Orange?:Orange?:This is a test.")
+    query_str = "Cat?"
+    response = graph.query(query_str, query_configs=query_configs)
+    assert str(response) == ("Cat?:Cat?:This is a test v2.")
+
+    # test serialize and then back
+    # use composable graph struct
+    with TemporaryDirectory() as tmpdir:
+        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
+        query_context_kwargs = {
+            index_id: {"vector_store": {"pinecone_index": pinecone_index}}
+            for index_id, pinecone_index in zip(
+                [
+                    pinecone1.index_struct.index_id,
+                    pinecone2.index_struct.index_id,
+                    pinecone3.index_struct.index_id,
+                    pinecone4.index_struct.index_id,
+                    graph.index_struct.root_id,
+                ],
+                [
+                    pinecone_index1,
+                    pinecone_index2,
+                    pinecone_index3,
+                    pinecone_index4,
+                    pinecone_index5,
+                ],
+            )
+        }
+        print(query_context_kwargs)
+        graph = ComposableGraph.load_from_disk(
+            str(Path(tmpdir) / "tmp.json"), query_context_kwargs=query_context_kwargs
+        )
+        response = graph.query(query_str, query_configs=query_configs)
+        assert str(response) == ("Cat?:Cat?:This is a test v2.")
+
+        assert False
