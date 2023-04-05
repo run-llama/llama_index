@@ -13,7 +13,11 @@ from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store import GPTSimpleVectorIndex
 from gpt_index.readers.schema.base import Document
 
-DEFAULT_INDEX_CLASSES = [GPTSimpleVectorIndex, GPTTreeIndex, GPTListIndex]
+DEFAULT_INDEX_CLASSES: List[Type[BaseGPTIndex]] = [
+    GPTSimpleVectorIndex,
+    GPTTreeIndex,
+    GPTListIndex,
+]
 DEFAULT_MODES = ["default", "summarize", "embedding", "retrieve", "recursive"]
 
 
@@ -55,7 +59,9 @@ class Playground:
                 "Playground must be initialized with a nonempty list of Documents."
             )
 
-        indices = [index_class(documents) for index_class in index_classes]
+        indices = [
+            index_class.from_documents(documents) for index_class in index_classes
+        ]
         return cls(indices, **kwargs)
 
     def _validate_indices(self, indices: List[BaseGPTIndex]) -> None:
@@ -128,14 +134,17 @@ class Playground:
 
                 duration = time.time() - start_time
 
+                llm_token_usage = index.service_context.llm_predictor.last_token_usage
+                embed_token_usage = index.service_context.embed_model.last_token_usage
+
                 result.append(
                     {
                         "Index": index_name,
                         "Mode": mode,
                         "Output": str(output),
                         "Duration": duration,
-                        "LLM Tokens": index.llm_predictor.last_token_usage,
-                        "Embedding Tokens": index.embed_model.last_token_usage,
+                        "LLM Tokens": llm_token_usage,
+                        "Embedding Tokens": embed_token_usage,
                     }
                 )
         print(f"\nRan {len(result)} combinations in total.")

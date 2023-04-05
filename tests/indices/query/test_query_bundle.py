@@ -100,7 +100,7 @@ def test_embedding_query(
 ) -> None:
     """Test embedding query."""
     index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex(documents, **index_kwargs)
+    index = GPTListIndex.from_documents(documents, **index_kwargs)
 
     # test embedding query
     query_bundle = QueryBundle(

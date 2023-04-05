@@ -32,7 +32,7 @@ reader = ChromaReader(
 query_vector=[n1, n2, n3, ...]
 
 documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
-index = GPTListIndex(documents)
+index = GPTListIndex.from_documents(documents)
 
 response = index.query("<query_text>")
 display(Markdown(f"<b>{response}</b>"))
@@ -82,7 +82,7 @@ from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 
 # Load documents, build the GPTSimpleVectorIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTSimpleVectorIndex(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 
 # Query index
 response = index.query("What did the author do growing up?")
@@ -100,7 +100,7 @@ faiss_index = faiss.IndexFlatL2(d)
 
 # Load documents, build the GPTFaissIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTFaissIndex(documents, faiss_index=faiss_index)
+index = GPTFaissIndex.from_documents(documents, faiss_index=faiss_index)
 
 # Query index
 response = index.query("What did the author do growing up?")
@@ -123,7 +123,7 @@ client = weaviate.Client(
 
 # Load documents, build the GPTWeaviateIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTWeaviateIndex(documents, weaviate_client=client)
+index = GPTWeaviateIndex.from_documents(documents, weaviate_client=client)
 
 # Query index
 response = index.query("What did the author do growing up?")
@@ -153,7 +153,7 @@ metadata_filters = {"title": "paul_graham_essay"}
 
 # Load documents, build the GPTPineconeIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTPineconeIndex(
+index = GPTPineconeIndex.from_documents(
     documents, pinecone_index=index, metadata_filters=metadata_filters
 )
 
@@ -176,7 +176,7 @@ collection_name = "paul_graham"
 
 # Load documents, build the GPTQdrantIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTQdrantIndex(documents, collection_name=collection_name, client=client)
+index = GPTQdrantIndex.from_documents(documents, collection_name=collection_name, client=client)
 
 # Query index
 response = index.query("What did the author do growing up?")
@@ -195,7 +195,7 @@ chroma_collection = chroma_client.create_collection("quickstart")
 
 # Load documents, build the GPTChromaIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTChromaIndex(documents, chroma_collection=chroma_collection)
+index = GPTChromaIndex.from_documents(documents, chroma_collection=chroma_collection)
 
 # Query index
 response = index.query("What did the author do growing up?")

@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 from typing import Any, List, Optional, Protocol
 
-from gpt_index.data_structs.data_structs import Node
+from gpt_index.data_structs.node_v2 import Node
 
 
 @dataclass
@@ -15,6 +15,7 @@ class NodeEmbeddingResult:
         id (str): Node id
         node (Node): Node
         embedding (List[float]): Embedding
+        doc_id (str): Document id
 
     """
 

@@ -69,3 +69,6 @@ class IndexStructType(str, Enum):
 
     # EMPTY
     EMPTY = "empty"
+    COMPOSITE = "composite"
+
+    PANDAS = "pandas"

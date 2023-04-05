@@ -6,9 +6,12 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 
 import json
 from abc import abstractmethod
+from dataclasses import field
 from typing import Any, Dict, Generic, List, Optional, TypeVar, cast
 
-from gpt_index.data_structs.data_structs import IndexStruct, Node
+from gpt_index.data_structs.data_structs_v2 import Node
+from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
+from gpt_index.data_structs.node_v2 import DocumentRelationship
 from gpt_index.readers.weaviate.utils import (
     get_by_id,
     parse_get_response,
@@ -16,10 +19,10 @@ from gpt_index.readers.weaviate.utils import (
 )
 from gpt_index.utils import get_new_id
 
-IS = TypeVar("IS", bound=IndexStruct)
+IS = TypeVar("IS", bound=Node)
 
 
-class BaseWeaviateIndexStruct(Generic[IS]):
+class BaseWeaviateIndexStruct(IndexStruct, Generic[IS]):
     """Base Weaviate index struct."""
 
     @classmethod
@@ -159,16 +162,6 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         """Create schema."""
         return [
             {
-                "dataType": ["int"],
-                "description": "The index of the Node",
-                "name": "index",
-            },
-            {
-                "dataType": ["int[]"],
-                "description": "The child_indices of the Node",
-                "name": "child_indices",
-            },
-            {
                 "dataType": ["string"],
                 "description": "The ref_doc_id of the Node",
                 "name": "ref_doc_id",
@@ -177,6 +170,16 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
                 "dataType": ["string"],
                 "description": "node_info (in JSON)",
                 "name": "node_info",
+            },
+            {
+                "dataType": ["string"],
+                "description": "The hash of the Document",
+                "name": "doc_hash",
+            },
+            {
+                "dataType": ["string"],
+                "description": "The relationships of the node (in JSON)",
+                "name": "relationships",
             },
         ]
 
@@ -194,15 +197,24 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
             node_info = None
         else:
             node_info = json.loads(node_info_str)
+
+        relationships_str = entry["relationships"]
+        relationships: Dict[DocumentRelationship, str]
+        if relationships_str == "":
+            relationships = field(default_factory=dict)
+        else:
+            relationships = {
+                DocumentRelationship(k): v
+                for k, v in json.loads(relationships_str).items()
+            }
+
         return Node(
             text=entry["text"],
             doc_id=entry["doc_id"],
-            index=int(entry["index"]),
-            child_indices=entry["child_indices"],
-            ref_doc_id=entry["ref_doc_id"],
             embedding=entry["_additional"]["vector"],
             extra_info=extra_info,
             node_info=node_info,
+            relationships=relationships,
         )
 
     @classmethod
@@ -212,8 +224,8 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         """Convert from LlamaIndex."""
         node_dict = node.to_dict()
         vector = node_dict.pop("embedding")
-        extra_info = node_dict.pop("extra_info")
         # json-serialize the extra_info
+        extra_info = node_dict.pop("extra_info")
         extra_info_str = ""
         if extra_info is not None:
             extra_info_str = json.dumps(extra_info)
@@ -224,6 +236,16 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         if node_info is not None:
             node_info_str = json.dumps(node_info)
         node_dict["node_info"] = node_info_str
+        # json-serialize the relationships
+        relationships = node_dict.pop("relationships")
+        relationships_str = ""
+        if relationships is not None:
+            relationships_str = json.dumps(relationships)
+        node_dict["relationships"] = relationships_str
+
+        ref_doc_id = node.ref_doc_id
+        if ref_doc_id is not None:
+            node_dict["ref_doc_id"] = ref_doc_id
 
         # TODO: account for existing nodes that are stored
         node_id = get_new_id(set())

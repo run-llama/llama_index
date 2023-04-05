@@ -16,6 +16,7 @@ from gpt_index.embeddings.openai import OpenAIEmbedding
 
 # structured
 from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
+from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.empty import GPTEmptyIndex
 
 # indices
@@ -31,6 +32,7 @@ from gpt_index.indices.prompt_helper import PromptHelper
 
 # for composability
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
@@ -89,6 +91,9 @@ from gpt_index.readers import (
 )
 from gpt_index.readers.download import download_loader
 
+# response
+from gpt_index.response.schema import Response
+
 # token predictor
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from gpt_index.token_counter.mock_embed_model import MockEmbedding
@@ -99,6 +104,8 @@ logging.getLogger(__name__).addHandler(NullHandler())
 
 
 __all__ = [
+    "ServiceContext",
+    "ComposableGraph",
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
@@ -124,6 +131,7 @@ __all__ = [
     "QuestionAnswerPrompt",
     "KeywordExtractPrompt",
     "QueryKeywordExtractPrompt",
+    "Response",
     "WikipediaReader",
     "ObsidianReader",
     "Document",

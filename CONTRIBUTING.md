@@ -1,20 +1,170 @@
 # 💡 Contributing to LlamaIndex
-
-> ⚠️ **NOTE**: We are rebranding GPT Index as LlamaIndex! 
-> **2/19/2023**: We are still in the middle of the transition. If you are interested in contributing to LlamaIndex, make sure to follow the below steps. For testing, please do `import gpt_index` instead of `import llama_index`.
-
 Interested in contributing to LlamaIndex? Here's how to get started! 
 
-## Contributions that we're looking for:
-- Bug fixes
-- New features
+## Contribution Guideline
+The best part of LlamaIndex is our community of users and contributors.
 
-All future tasks are tracked in [Github Issues Page](https://github.com/jerryjliu/gpt_index/issues).
+
+### What should I work on?
+1. 🆕 Extend core modules
+2. 🐛 Fix bugs
+3. 🎉 Add usage examples
+4. 🧪 Add experimental features 
+5. 📄 Improve code quality & documentation
+
+Also, join our Discord for ideas and discussions: https://discord.gg/dGcwcsnxhU.
+
+
+### 1. 🆕 Extend Core Modules
+The most impactful way to contribute to LlamaIndex is extending our core modules:
+![LlamaIndex modules](docs/_static/contribution/contrib.png)
+
+We welcome contributions in _all_ modules shown above.
+So far, we have implemented a core set of functionalities for each.
+As a contributor, you can help each module unlock its full potential.
+
+**NOTE**: We are making rapid improvements to the project, and as a result, 
+some interfaces are still volatile. Specifically, we are actively working on making the following components more modular and extensible (uncolored boxes above): core indexes, document stores, index queries, query runner
+
+#### Module Details
+Below, we will describe what each module does, give a high-level idea of the interface, show existing implementations, and give some ideas for contribution.
+
+--- 
+#### Data Loaders
+A data loader ingests data of any format from anywhere into `Document` objects, which can then be parsed and indexed.
+
+**Interface**: `load_data` takes arbitrary arguments as input (e.g. path to data), and outputs a sequence of `Document` objects.
+
+
+**Examples**:
+* [Google Sheets Loader](https://github.com/emptycrown/llama-hub/tree/main/loader_hub/google_sheets)
+* [Gmail Loader](https://github.com/emptycrown/llama-hub/tree/main/loader_hub/gmail)
+* [Github Repository Loader](https://github.com/emptycrown/llama-hub/tree/main/loader_hub/github_repo)
+
+Contributing a data loader is easy and super impactful for the community.
+The preferred way to contribute is making a PR at [LlamaHub Github](https://github.com/emptycrown/llama-hub).
+
+**Ideas**
+* Want to load something but there's no LlamaHub data loader for it yet? Make a PR!
+
+---
+#### Node Parser
+A node parser parses `Document` objects into `Node` objects (atomic unit of data that LlamaIndex operates over, e.g., chunk of text, image, or table).
+It is responsible for splitting text (via text splitters) and explicitly modelling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
+
+**Interface**: `get_nodes_from_documents` takes a sequence of `Document` objects as input, and outputs a sequence of `Node` objects.
+
+**Examples**:
+* [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/node_parser/simple.py)
+
+See [the API reference](https://gpt-index.readthedocs.io/en/latest/reference/node_parser.html) for full details.
+
+**Ideas**:
+* Add new `Node` relationships to model to model hierarchical documents (e.g. play-act-scene, chapter-section-heading).
+
+---
+#### Text Splitters
+Text splitter splits a long text `str` into smaller text `str` chunks with desired size and splitting "strategy" since LLMs have a limited context window size, and the quality of text chunk used as context impacts the quality of query results.
+
+**Interface**: `split_text` takes a `str` as input, and outputs a sequence of `str`
+
+**Examples**:
+* [Token Text Splitter](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/langchain_helpers/text_splitter.py#L23)
+* [Sentence Splitter](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/langchain_helpers/text_splitter.py#L239)
+
+---
+#### Vector Stores
+Our vector store classes store embeddings and support lookup via similiarty search.
+These serve as the main data store and retrieval engine for our vector index.
+
+**Interface**:
+* `add` takes in a sequence of `NodeEmbeddingResults` and insert the embeddings (and possibly the node contents & metadata) into the vector store.
+* `delete` removes entries given document IDs.
+* `query` retrieves top-k most similar entries given a query embedding.
+
+**Examples**:
+* [Pinecone](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/vector_stores/pinecone.py)
+* [Faiss](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/vector_stores/faiss.py)
+* [Chroma](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/vector_stores/chroma.py)
+
+**Ideas**:
+* See a vector database out there that we don't support yet? Make a PR!
+
+See [reference](https://gpt-index.readthedocs.io/en/latest/reference/indices/vector_stores/stores.html) for full details.
+
+---
+#### Query Transforms
+A query transform augments a raw query string with associated transformations to improve index querying.
+This can interpreted as a pre-processing stage, before the core index query logic is executed.
+
+**Interface**: `run` takes in a `str` or `Querybundle` as input, and outputs a transformed `QueryBundle`.
+
+**Examples**:
+* [Hypothetical Document Embeddings](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/query/query_transform/base.py#L77)
+* [Query Decompose](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/query/query_transform/base.py#L124)
+
+See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/query/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
+
+---
+#### Token Usage Optimizers
+A token usage optimizer refines the retrieved `Nodes` to reduce token usage during response synthesis.
+
+**Interface**: `optimize` takes in the `QueryBundle` and a text chunk `str`, and outputs a refined text chunk `str` that yeilds a more optimized response
+
+**Examples**:
+* [Sentence Embedding Optimizer](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/optimization/optimizer.py)
+
+---
+#### Node Postprocessors
+A node postprocessor refines a list of retrieve nodes given configuration and context.
+
+**Interface**: `postprocess_nodes` takes a list of `Nodes` and extra metadata (e.g. similarity and query), and outputs a refined list of `Nodes`.
+
+
+**Examples**:
+* [Keyword Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/postprocessor/node.py#L32): filters nodes based on keyword match
+* [Similarity Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/postprocessor/node.py#L62): filers nodes based on similarity threshold
+* [Prev Next Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/postprocessor/node.py#L135): fetchs additional nodes to augment context based on node relationships.
+
+---
+#### Output Parsers
+A output parser enables us to extract structured output from the plain text output generated by the LLM.
+
+**Interface**:
+* `format`: formats a query `str` with structured output formatting instructions, and outputs the formatted `str` 
+* `parse`: takes a `str` (from LLM response) as input, and gives a parsed tructured output (optionally also validated, error-corrected).
+
+**Examples**:
+* [Guardrails Output Parser](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/output_parsers/guardrails.py)
+* [Langchain Output Parser](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/output_parsers/langchain.py)
+
+See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/output_parsing.html) for more information.
+
+---
+
+### 2. 🐛 Fix Bugs
+Most bugs are reported and tracked in the [Github Issues Page](https://github.com/jerryjliu/gpt_index/issues).
+We try our best in triaging and tagging these issues:
+* Issues tagged as `bug` are confirmed bugs. 
+* New contributors may want to start with issues tagged with `good first issue`. 
+
 Please feel free to open an issue and/or assign an issue to yourself.
 
-Also, join our Discord for discussions: https://discord.gg/dGcwcsnxhU.
+### 3. 🎉 Add Usage Examples
+If you have applied LlamaIndex to a unique use-case (e.g. interesting dataset, customized index structure, complex query), we would love your contribution in the form of:
+1. a guide: e.g. [guide to LlamIndex + Structured Data](https://gpt-index.readthedocs.io/en/latest/guides/tutorials/sql_guide.html)
+Todo.
+2. an example notebook: e.g. [Composable Indices Demo](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/ComposableIndices-Prior.ipynb)
 
-## Environment Setup
+### 4. 🧪 Add Experimental Features
+If you have a crazy idea, make a PR for it! 
+Whether if it's the latest research, or what you thought of in the shower, we'd love to see creative ways to improve LlamaIndex.
+
+### 5. 📄 Improve Code Quality & Documentation
+We would love your help in making the project cleaner, more robust, and more understandable. If you find something confusing, it most likely is for other people as well. Help us be better! 
+
+## Development Guideline
+### Environment Setup
 
 LlamaIndex is a Python package. We've tested primarily with Python versions >= 3.8. Here's a quick
 and dirty guide to getting your environment setup.
@@ -40,12 +190,12 @@ pip install -r requirements.txt
 Now you should be set! 
 
 
-## Validating your Change
+### Validating your Change
 
 Let's make sure to `format/lint` our change. For bigger changes,
 let's also make sure to `test` it and perhaps create an `example notebook`.
 
-### Formatting/Linting
+#### Formatting/Linting
 
 You can format and lint your changes with the following commands in the root directory:
 
@@ -61,7 +211,7 @@ pre-commit install
 
 We run an assortment of linters: `black`, `ruff`, `mypy`.
 
-### Testing
+#### Testing
 
 For bigger changes, you'll want to create a unit test. Our tests are in the `tests` folder.
 We use `pytest` for unit testing. To run all unit tests, run the following in the root dir:
