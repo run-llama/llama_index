@@ -312,7 +312,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 
 # Text QA templates
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
