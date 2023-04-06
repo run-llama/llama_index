@@ -1,6 +1,6 @@
 """Deprecated vector store indices."""
 
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Dict, Optional, Sequence, Type
 
 from requests.adapters import Retry
 
@@ -16,18 +16,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     WeaviateIndexDict,
 )
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
-from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.vector_store.queries import (
-    ChatGPTRetrievalPluginQuery,
-    GPTChromaIndexQuery,
-    GPTFaissIndexQuery,
-    GPTOpensearchIndexQuery,
-    GPTPineconeIndexQuery,
-    GPTQdrantIndexQuery,
-    GPTSimpleVectorIndexQuery,
-    GPTWeaviateIndexQuery,
-)
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.vector_stores import (
@@ -71,21 +60,10 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
-        simple_vector_store_data_dict: Optional[dict] = None,
+        vector_store: Optional[SimpleVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        # TODO: temporary hack to "infer" vector store from
-        # index struct if index_struct exists
-        if index_struct is not None and len(index_struct.embeddings_dict) > 0:
-            simple_vector_store_data_dict = {
-                "embedding_dict": index_struct.embeddings_dict,
-            }
-
-        vector_store = SimpleVectorStore(
-            simple_vector_store_data_dict=simple_vector_store_data_dict
-        )
-
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -93,25 +71,6 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
-
-        # TODO: Temporary hack to also store embeddings in index_struct
-        embedding_dict = vector_store._data.embedding_dict
-        self._index_struct.embeddings_dict = embedding_dict
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTSimpleVectorIndexQuery,
-            QueryMode.EMBEDDING: GPTSimpleVectorIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(SimpleVectorStore, self._vector_store)
-        query_kwargs["simple_vector_store_data_dict"] = vector_store._data
 
 
 class GPTFaissIndex(GPTVectorStoreIndex):
@@ -156,21 +115,6 @@ class GPTFaissIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTFaissIndexQuery,
-            QueryMode.EMBEDDING: GPTFaissIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(FaissVectorStore, self._vector_store)
-        query_kwargs["faiss_index"] = vector_store._faiss_index
 
     @classmethod
     def load_from_disk(
@@ -260,6 +204,8 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         self,
         nodes: Optional[Sequence[Node]] = None,
         pinecone_index: Optional[Any] = None,
+        index_name: Optional[str] = None,
+        environment: Optional[str] = None,
         metadata_filters: Optional[Dict[str, Any]] = None,
         pinecone_kwargs: Optional[Dict] = None,
         insert_kwargs: Optional[Dict] = None,
@@ -267,25 +213,24 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         delete_kwargs: Optional[Dict] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
+        vector_store: Optional[PineconeVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if pinecone_index is None:
-            raise ValueError("pinecone_index is required.")
-        if pinecone_kwargs is None:
-            pinecone_kwargs = {}
+        pinecone_kwargs = pinecone_kwargs or {}
 
-        vector_store = kwargs.pop(
-            "vector_store",
-            PineconeVectorStore(
+        if vector_store is None:
+            vector_store = PineconeVectorStore(
                 pinecone_index=pinecone_index,
+                index_name=index_name,
+                environment=environment,
                 metadata_filters=metadata_filters,
                 pinecone_kwargs=pinecone_kwargs,
                 insert_kwargs=insert_kwargs,
                 query_kwargs=query_kwargs,
                 delete_kwargs=delete_kwargs,
-            ),
-        )
+            )
+        assert vector_store is not None
 
         super().__init__(
             nodes=nodes,
@@ -294,26 +239,6 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTPineconeIndexQuery,
-            QueryMode.EMBEDDING: GPTPineconeIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(PineconeVectorStore, self._vector_store)
-        query_kwargs["pinecone_index"] = vector_store._pinecone_index
-        query_kwargs["metadata_filters"] = vector_store._metadata_filters
-        query_kwargs["pinecone_kwargs"] = vector_store._pinecone_kwargs
-        query_kwargs["insert_kwargs"] = vector_store._insert_kwargs
-        query_kwargs["query_kwargs"] = vector_store._query_kwargs
-        query_kwargs["delete_kwargs"] = vector_store._delete_kwargs
 
 
 class GPTWeaviateIndex(GPTVectorStoreIndex):
@@ -359,22 +284,6 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTWeaviateIndexQuery,
-            QueryMode.EMBEDDING: GPTWeaviateIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(WeaviateVectorStore, self._vector_store)
-        query_kwargs["weaviate_client"] = vector_store._client
-        query_kwargs["class_prefix"] = vector_store._class_prefix
 
 
 class GPTQdrantIndex(GPTVectorStoreIndex):
@@ -423,22 +332,6 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
             **kwargs,
         )
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTQdrantIndexQuery,
-            QueryMode.EMBEDDING: GPTQdrantIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(QdrantVectorStore, self._vector_store)
-        query_kwargs["client"] = vector_store._client
-        query_kwargs["collection_name"] = vector_store._collection_name
-
 
 class GPTChromaIndex(GPTVectorStoreIndex):
     """GPT Chroma Index.
@@ -482,21 +375,6 @@ class GPTChromaIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTChromaIndexQuery,
-            QueryMode.EMBEDDING: GPTChromaIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(ChromaVectorStore, self._vector_store)
-        query_kwargs["chroma_collection"] = vector_store._collection
 
 
 class GPTOpensearchIndex(GPTVectorStoreIndex):
@@ -546,21 +424,6 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
             **kwargs,
         )
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTOpensearchIndexQuery,
-            QueryMode.EMBEDDING: GPTOpensearchIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(OpensearchVectorStore, self._vector_store)
-        query_kwargs["client"] = vector_store._client
-
 
 class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
     """ChatGPTRetrievalPlugin index.
@@ -609,21 +472,3 @@ class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: ChatGPTRetrievalPluginQuery,
-            QueryMode.EMBEDDING: ChatGPTRetrievalPluginQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(ChatGPTRetrievalPluginClient, self._vector_store)
-        query_kwargs["endpoint_url"] = vector_store._endpoint_url
-        query_kwargs["bearer_token"] = vector_store._bearer_token
-        query_kwargs["retries"] = vector_store._retries
-        query_kwargs["batch_size"] = vector_store._batch_size

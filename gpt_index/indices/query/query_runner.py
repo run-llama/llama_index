@@ -85,6 +85,7 @@ class QueryRunner:
         index_struct: IndexStruct,
         service_context: ServiceContext,
         docstore: DocumentStore,
+        query_context: Dict[str, Dict[str, Any]],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
         query_combiner: Optional[BaseQueryCombiner] = None,
@@ -96,6 +97,7 @@ class QueryRunner:
         self._index_struct = index_struct
         self._service_context = service_context
         self._docstore = docstore
+        self._query_context = query_context
 
         # query configurations and transformation
         self._query_config_map = _get_query_config_map(query_configs)
@@ -164,6 +166,11 @@ class QueryRunner:
 
         query_cls = INDEX_STRUT_TYPE_TO_QUERY_MAP[index_struct_type][mode]
         query_kwargs = self._get_query_kwargs(config)
+
+        # Inject additional query context into query kwargs
+        query_context = self._query_context.get(index_struct.index_id, {})
+        query_kwargs.update(query_context)
+
         query_obj = query_cls(
             index_struct=index_struct,
             docstore=self._docstore,

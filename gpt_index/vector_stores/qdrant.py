@@ -4,7 +4,7 @@ An index that is built on top of an existing Qdrant collection.
 
 """
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.utils import get_new_id
@@ -46,11 +46,17 @@ class QdrantVectorStore(VectorStore):
             raise ImportError(import_err_msg)
 
         if client is None:
-            raise ValueError("client cannot be None.")
+            raise ValueError("Missing Qdrant client!")
 
         self._client = cast(qdrant_client.QdrantClient, client)
         self._collection_name = collection_name
         self._collection_initialized = self._collection_exists(collection_name)
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        if "client" not in config_dict:
+            raise ValueError("Missing Qdrant client!")
+        return cls(**config_dict)
 
     @property
     def config_dict(self) -> dict:

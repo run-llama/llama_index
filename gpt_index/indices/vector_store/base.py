@@ -7,7 +7,7 @@ An index that that is built on top of an existing vector store.
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from gpt_index.async_utils import run_async_tasks
-from gpt_index.constants import VECTOR_STORE_CONFIG_DICT_KEY
+from gpt_index.constants import VECTOR_STORE_KEY
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
@@ -15,6 +15,10 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
 from gpt_index.token_counter.token_counter import llm_token_counter
+from gpt_index.vector_stores.registry import (
+    load_vector_store_from_dict,
+    save_vector_store_to_dict,
+)
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
 
@@ -246,10 +250,10 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             BaseGPTIndex: The loaded index.
 
         """
-        config_dict = {}
-        if VECTOR_STORE_CONFIG_DICT_KEY in result_dict:
-            config_dict = result_dict[VECTOR_STORE_CONFIG_DICT_KEY]
-        return super().load_from_dict(result_dict, **config_dict, **kwargs)
+        vector_store = load_vector_store_from_dict(
+            result_dict[VECTOR_STORE_KEY], **kwargs
+        )
+        return super().load_from_dict(result_dict, vector_store=vector_store, **kwargs)
 
     def save_to_dict(self, **save_kwargs: Any) -> dict:
         """Save to string.
@@ -265,11 +269,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         """
         out_dict = super().save_to_dict()
-        out_dict[VECTOR_STORE_CONFIG_DICT_KEY] = self._vector_store.config_dict
+        out_dict[VECTOR_STORE_KEY] = save_vector_store_to_dict(self._vector_store)
         return out_dict
 
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        super()._preprocess_query(mode, query_kwargs)
-        # NOTE: Pass along vector store instance to query objects
-        # TODO: refactor this to be more explicit
-        query_kwargs["vector_store"] = self._vector_store
+    @property
+    def query_context(self) -> Dict[str, Any]:
+        return {"vector_store": self._vector_store}
