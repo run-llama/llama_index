@@ -12,7 +12,7 @@ This tutorial assumes you have the following packages installed:
 
 At the base level, our objective is to take text from a document, extract terms and definitions, and then provide a way for users to query that knowledge base of terms and definitions. The tutorial will go over features from both Llama Index and Streamlit, and hopefully provide some interesting solutions for common problems that come up.
 
-The final version of this tutorial can be found [here](https://github.com/logan-markewich/llama_index_starter_pack) and a live hosted demo is available on [Huggingface Spaces](https://huggingface.co/spaces/cheesyFishes/llama_index_term_definition_demo).
+The final version of this tutorial can be found [here](https://github.com/logan-markewich/llama_index_starter_pack) and a live hosted demo is available on [Huggingface Spaces](https://huggingface.co/spaces/llamaindex/llama_index_term_definition_demo).
 
 ## Uploading Text
 
@@ -491,4 +491,4 @@ In this tutorial, we covered a ton of information, while solving some common iss
 - Customizing internal prompts with Llama Index
 - Reading text from images with Llama Index
 
-The final version of this tutorial can be found [here](https://github.com/logan-markewich/llama_index_starter_pack) and a live hosted demo is available on [Huggingface Spaces](https://huggingface.co/spaces/cheesyFishes/llama_index_term_definition_demo).
+The final version of this tutorial can be found [here](https://github.com/logan-markewich/llama_index_starter_pack) and a live hosted demo is available on [Huggingface Spaces](https://huggingface.co/spaces/llamaindex/llama_index_term_definition_demo).
