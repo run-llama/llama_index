@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.indices.composability.utils import (
@@ -9,17 +9,19 @@ from gpt_index.vector_stores.types import VectorStore
 
 
 class MockVectorStore(VectorStore):
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "MockVectorStore":
-        del config_dict
-        return cls()
-
-    @property
-    def config_dict(self) -> Dict[str, Any]:
-        return {
+    def __init__(self, config_dict: Optional[Dict[str, Any]] = None) -> None:
+        self._config_dict = config_dict or {
             "attr1": 0,
             "attr2": "attr2_val",
         }
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "MockVectorStore":
+        return cls(config_dict)
+
+    @property
+    def config_dict(self) -> Dict[str, Any]:
+        return self._config_dict
 
 
 def test_save_query_context_to_dict() -> None:
@@ -56,8 +58,22 @@ def test_load_query_context_from_dict() -> None:
         }
     }
 
+    # Test without kwargs
     query_context = load_query_context_from_dict(
         save_dict, vector_store_type_to_cls={"mock_type": MockVectorStore}
     )
     loaded_vector_store = query_context["test_index_id"]["vector_store"]
     assert isinstance(loaded_vector_store, MockVectorStore)
+
+    # Test with kwargs
+    query_context_kwargs = {
+        "test_index_id": {"vector_store": {"extra_key": "extra_value"}}
+    }
+    query_context = load_query_context_from_dict(
+        save_dict,
+        vector_store_type_to_cls={"mock_type": MockVectorStore},
+        query_context_kwargs=query_context_kwargs,
+    )
+    loaded_vector_store = query_context["test_index_id"]["vector_store"]
+    assert isinstance(loaded_vector_store, MockVectorStore)
+    assert loaded_vector_store.config_dict["extra_key"] == "extra_value"
