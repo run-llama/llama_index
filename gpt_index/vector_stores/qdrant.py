@@ -60,7 +60,6 @@ class QdrantVectorStore(VectorStore):
             raise ValueError("Missing Qdrant client!")
         return cls(**config_dict)
 
-
     @property
     def config_dict(self) -> dict:
         """Return config dict."""
@@ -102,7 +101,11 @@ class QdrantVectorStore(VectorStore):
 
             self._client.upsert(
                 collection_name=self._collection_name,
-                points=rest.Batch(ids=new_ids, vectors=vectors, payloads=payloads,),
+                points=rest.Batch(
+                    ids=new_ids,
+                    vectors=vectors,
+                    payloads=payloads,
+                ),
             )
             ids.extend(new_ids)
         return ids

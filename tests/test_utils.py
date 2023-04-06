@@ -8,7 +8,7 @@ from gpt_index.utils import (
     ErrorToRetry,
     globals_helper,
     retry_on_exceptions_with_backoff,
-    iter_batch
+    iter_batch,
 )
 
 
@@ -109,4 +109,3 @@ def test_iter_batch() -> None:
     assert list(iter_batch(gen, 3)) == [[0, 1, 2], [3, 4]]
 
     assert list(iter_batch([], 3)) == []
-

@@ -8,7 +8,18 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import islice
-from typing import Any, Callable, Generator, List, Optional, Set, Type, cast, Union, Iterable
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    List,
+    Optional,
+    Set,
+    Type,
+    cast,
+    Union,
+    Iterable,
+)
 
 
 class GlobalsHelper:
