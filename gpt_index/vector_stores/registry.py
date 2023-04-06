@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, Type
+from typing import Any, Dict, Optional, Type
 from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from gpt_index.vector_stores.chroma import ChromaVectorStore
@@ -41,8 +41,11 @@ VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE: Dict[Type[VectorStore], VectorStoreType
 
 
 def load_vector_store_from_dict(
-    vector_store_dict: Dict[str, Any], **kwargs: Any
+    vector_store_dict: Dict[str, Any],
+    type_to_cls: Optional[Dict[VectorStoreType, Type[VectorStore]]] = None,
+    **kwargs: Any,
 ) -> VectorStore:
+    type_to_cls = type_to_cls or VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS
     type = vector_store_dict[TYPE_KEY]
     config_dict: Dict[str, Any] = vector_store_dict[DATA_KEY]
 
@@ -51,10 +54,14 @@ def load_vector_store_from_dict(
     # like the vector store client.
     config_dict.update(kwargs)
 
-    cls = VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS[type]
+    cls = type_to_cls[type]
     return cls.from_dict(config_dict)
 
 
-def save_vector_store_to_dict(vector_store: VectorStore) -> Dict[str, Any]:
-    type_ = VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE[type(vector_store)]
+def save_vector_store_to_dict(
+    vector_store: VectorStore,
+    cls_to_type: Optional[Dict[Type[VectorStore], VectorStoreType]] = None,
+) -> Dict[str, Any]:
+    cls_to_type = cls_to_type or VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE
+    type_ = cls_to_type[type(vector_store)]
     return {TYPE_KEY: type_, DATA_KEY: vector_store.config_dict}
