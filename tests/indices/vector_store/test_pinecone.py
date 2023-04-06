@@ -1,16 +1,16 @@
 """Test pinecone indexes."""
 
 import sys
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.vector_store.vector_indices import GPTPineconeIndex
 
 from gpt_index.readers.schema.base import Document
+from tests.indices.vector_store.utils import MockPineconeIndex
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
@@ -70,61 +70,6 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 def mock_get_query_embedding(query: str) -> List[float]:
     """Mock get query embedding."""
     return [0, 0, 1, 0, 0]
-
-
-class MockPineconeIndex:
-    def __init__(self) -> None:
-        """Mock pinecone index."""
-        self._tuples: List[Tuple[str, List[float], Dict]] = []
-
-    def upsert(
-        self, tuples: List[Tuple[str, List[float], Dict]], **kwargs: Any
-    ) -> None:
-        """Mock upsert."""
-        self._tuples.extend(tuples)
-
-    def delete(self, ids: List[str]) -> None:
-        """Mock delete."""
-        new_tuples = []
-        for tup in self._tuples:
-            if tup[0] not in ids:
-                new_tuples.append(tup)
-        self._tuples = new_tuples
-
-    def query(
-        self,
-        query_embedding: List[float],
-        top_k: int,
-        include_values: bool = True,
-        include_metadata: bool = True,
-        filter: Optional[Dict[str, Any]] = None,
-    ) -> Any:
-        """Mock query."""
-        # index_mat is n x k
-        index_mat = np.array([tup[1] for tup in self._tuples])
-        query_vec = np.array(query_embedding)[np.newaxis, :]
-
-        # compute distances
-        distances = np.linalg.norm(index_mat - query_vec, axis=1)
-
-        indices = np.argsort(distances)[:top_k]
-        # sorted_distances = distances[indices][:top_k]
-
-        matches = []
-        for index in indices:
-            tup = self._tuples[index]
-            match = MagicMock()
-            match.metadata = {
-                "text": tup[2]["text"],
-                "doc_id": tup[2]["doc_id"],
-                "id": tup[2]["id"],
-            }
-
-            matches.append(match)
-
-        response = MagicMock()
-        response.matches = matches
-        return response
 
 
 @patch_common

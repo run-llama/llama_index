@@ -200,7 +200,7 @@ class IndexDict(V2IndexStruct):
     def delete(self, doc_id: str) -> None:
         """Delete a Node."""
         if doc_id not in self.doc_id_dict:
-            raise ValueError("doc_id not found in doc_id_dict")
+            return
         for vector_id in self.doc_id_dict[doc_id]:
             del self.nodes_dict[vector_id]
         del self.doc_id_dict[doc_id]
