@@ -23,7 +23,7 @@ from gpt_index.langchain_helpers.chain_wrapper import (
 )
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
-from tests.indices.vector_store.test_pinecone import MockPineconeIndex
+from tests.indices.vector_store.utils import MockPineconeIndex
 from tests.mock_utils.mock_predict import (
     mock_llmpredictor_predict,
 )
