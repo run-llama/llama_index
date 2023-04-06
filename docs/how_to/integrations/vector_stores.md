@@ -14,6 +14,7 @@ LlamaIndex supports loading data from the following sources. See [Data Connector
 - Weaviate (`WeaviateReader`). [Installation](https://weaviate.io/developers/weaviate/current/getting-started/installation.html). [Python Client](https://weaviate.io/developers/weaviate/current/client-libraries/python.html).
 - Pinecone (`PineconeReader`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Milvus (`MilvusReader`). [Installation](https://milvus.io/docs)
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
@@ -67,6 +68,7 @@ These are found in the following classes:
 - `GPTPineconeIndex`
 - `GPTQdrantIndex`
 - `GPTChromaIndex`
+- `GPTMilvusIndex`
 
 
 An API reference of each vector index is [found here](/reference/indices/vector_store.rst).
@@ -196,6 +198,22 @@ chroma_collection = chroma_client.create_collection("quickstart")
 # Load documents, build the GPTChromaIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTChromaIndex.from_documents(documents, chroma_collection=chroma_collection)
+
+# Query index
+response = index.query("What did the author do growing up?")
+
+```
+
+**Milvus Index Construction/Querying**
+
+```python
+import pymilvus
+from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
+
+
+# Load documents, build the GPTMilvusStore
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTMilvusIndex.from_documents(documents, host='localhost', port=19530, overwrite='True')
 
 # Query index
 response = index.query("What did the author do growing up?")

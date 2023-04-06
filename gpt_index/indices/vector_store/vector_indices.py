@@ -5,45 +5,26 @@ from typing import Any, Dict, Optional, Sequence, Type, cast
 from requests.adapters import Retry
 
 from gpt_index.data_structs.data_structs_v2 import (
-    ChatGPTRetrievalPluginIndexDict,
-    ChromaIndexDict,
-    FaissIndexDict,
-    IndexDict,
-    OpensearchIndexDict,
-    PineconeIndexDict,
-    QdrantIndexDict,
-    SimpleIndexDict,
-    WeaviateIndexDict,
-)
+    ChatGPTRetrievalPluginIndexDict, ChromaIndexDict, FaissIndexDict,
+    IndexDict, MilvusIndexDict, OpensearchIndexDict, PineconeIndexDict,
+    QdrantIndexDict, SimpleIndexDict, WeaviateIndexDict)
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.vector_store.queries import (
-    ChatGPTRetrievalPluginQuery,
-    GPTChromaIndexQuery,
-    GPTFaissIndexQuery,
-    GPTOpensearchIndexQuery,
-    GPTPineconeIndexQuery,
-    GPTQdrantIndexQuery,
-    GPTSimpleVectorIndexQuery,
-    GPTWeaviateIndexQuery,
-)
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
+from gpt_index.indices.vector_store.queries import (
+    ChatGPTRetrievalPluginQuery, GPTChromaIndexQuery, GPTFaissIndexQuery,
+    GPTMilvusIndexQuery, GPTOpensearchIndexQuery, GPTPineconeIndexQuery,
+    GPTQdrantIndexQuery, GPTSimpleVectorIndexQuery, GPTWeaviateIndexQuery)
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
-from gpt_index.vector_stores import (
-    ChatGPTRetrievalPluginClient,
-    ChromaVectorStore,
-    FaissVectorStore,
-    PineconeVectorStore,
-    QdrantVectorStore,
-    SimpleVectorStore,
-    WeaviateVectorStore,
-)
-from gpt_index.vector_stores.opensearch import (
-    OpensearchVectorClient,
-    OpensearchVectorStore,
-)
+from gpt_index.vector_stores import (ChatGPTRetrievalPluginClient,
+                                     ChromaVectorStore, FaissVectorStore,
+                                     MilvusVectorStore, PineconeVectorStore,
+                                     QdrantVectorStore, SimpleVectorStore,
+                                     WeaviateVectorStore)
+from gpt_index.vector_stores.opensearch import (OpensearchVectorClient,
+                                                OpensearchVectorStore)
 
 
 class GPTSimpleVectorIndex(GPTVectorStoreIndex):
@@ -464,6 +445,79 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         vector_store = cast(QdrantVectorStore, self._vector_store)
         query_kwargs["client"] = vector_store._client
         query_kwargs["collection_name"] = vector_store._collection_name
+
+
+class GPTMilvusIndex(GPTVectorStoreIndex):
+    """GPT Milvus Index."""
+
+    index_struct_cls: Type[IndexDict] = MilvusIndexDict
+
+    def __init__(
+        self,
+        nodes: Optional[Sequence[Node]] = None,
+        collection_name: str = "llamalection",
+        index_params: dict = None,
+        search_params: dict = None,
+        dim: int = None,
+        host: str = "localhost",
+        port: int = 19530,
+        user: str = "",
+        password: str = "",
+        use_secure: bool = False,
+        overwrite: bool = False,
+        service_context: Optional[ServiceContext] = None,
+        index_struct: Optional[IndexDict] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Init params."""
+
+        vector_store = MilvusVectorStore(
+            collection_name=collection_name,
+            index_params=index_params,
+            search_params=search_params,
+            dim=dim,
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            use_secure=use_secure,
+            overwrite=overwrite,
+        )
+
+        super().__init__(
+            nodes=nodes,
+            index_struct=index_struct,
+            service_context=service_context,
+            text_qa_template=text_qa_template,
+            vector_store=vector_store,
+            **kwargs,
+        )
+
+    @classmethod
+    def get_query_map(self) -> QueryMap:
+        """Get query map."""
+        return {
+            QueryMode.DEFAULT: GPTMilvusIndexQuery,
+            QueryMode.EMBEDDING: GPTMilvusIndexQuery,
+        }
+
+    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
+        """Preprocess query."""
+        super()._preprocess_query(mode, query_kwargs)
+        del query_kwargs["vector_store"]
+        vector_store = cast(MilvusVectorStore, self._vector_store)
+        query_kwargs["collection_name"] = vector_store.collection_name
+        query_kwargs["index_params"] = vector_store.index_params
+        query_kwargs["search_params"] = vector_store.search_params
+        query_kwargs["dim"] = vector_store.dim
+        query_kwargs["host"] = vector_store.host
+        query_kwargs["port"] = vector_store.port
+        query_kwargs["user"] = vector_store.user
+        query_kwargs["password"] = vector_store.password
+        query_kwargs["use_secure"] = vector_store.use_secure
+        # Safety measure, only clear when a new MilvusIndex is called by the user.
+        query_kwargs["overwrite"] = False
 
 
 class GPTChromaIndex(GPTVectorStoreIndex):

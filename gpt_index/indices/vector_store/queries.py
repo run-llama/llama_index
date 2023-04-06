@@ -3,12 +3,15 @@
 
 from typing import Any, Dict, Optional
 
+from requests.adapters import Retry
+
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
 from gpt_index.vector_stores import (
     ChatGPTRetrievalPluginClient,
     ChromaVectorStore,
     FaissVectorStore,
+    MilvusVectorStore,
     OpensearchVectorStore,
     PineconeVectorStore,
     QdrantVectorStore,
@@ -16,7 +19,6 @@ from gpt_index.vector_stores import (
     WeaviateVectorStore,
 )
 from gpt_index.vector_stores.opensearch import OpensearchVectorClient
-from requests.adapters import Retry
 
 
 class GPTSimpleVectorIndexQuery(GPTVectorStoreIndexQuery):
@@ -177,6 +179,40 @@ class GPTQdrantIndexQuery(GPTVectorStoreIndexQuery):
         if collection_name is None:
             raise ValueError("collection_name is required.")
         vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
+        super().__init__(index_struct=index_struct, vector_store=vector_store, **kwargs)
+
+
+class GPTMilvusIndexQuery(GPTVectorStoreIndexQuery):
+    """ """
+
+    def __init__(
+        self,
+        index_struct: IndexDict,
+        collection_name: str = "llamalection",
+        index_params: dict = None,
+        search_params: dict = None,
+        dim: int = None,
+        host: str = "localhost",
+        port: int = 19530,
+        user: str = "",
+        password: str = "",
+        use_secure: bool = False,
+        overwrite: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize params."""
+        vector_store = MilvusVectorStore(
+            collection_name=collection_name,
+            index_params=index_params,
+            search_params=search_params,
+            dim=dim,
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            use_secure=use_secure,
+            overwrite=False,
+        )
         super().__init__(index_struct=index_struct, vector_store=vector_store, **kwargs)
 
 
