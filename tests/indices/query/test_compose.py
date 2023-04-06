@@ -165,7 +165,9 @@ def test_recursive_query_list_tree(
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
     response = graph.query(query_str, query_configs=query_configs)
-    assert str(response) == ("What is?:What is?:This is a test v2.")
+    assert str(response) == (
+        "What is?:What is?:This is a test v2.:This is another test."
+    )
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -203,7 +205,9 @@ def test_recursive_query_tree_list(
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
     response = graph.query(query_str, query_configs=query_configs)
-    assert str(response) == ("What is?:What is?:This is a test.")
+    assert str(response) == (
+        "What is?:What is?:This is a test.:What is?:This is a test v2."
+    )
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -237,18 +241,18 @@ def test_recursive_query_table_list(
     assert isinstance(graph, ComposableGraph)
     query_str = "World?"
     response = graph.query(query_str, query_configs=query_configs)
-    assert str(response) == ("World?:World?:Hello world.")
+    assert str(response) == ("World?:World?:Hello world.:None")
 
     query_str = "Test?"
     response = graph.query(query_str, query_configs=query_configs)
-    assert str(response) == ("Test?:Test?:This is a test.")
+    assert str(response) == ("Test?:Test?:This is a test.:Test?:This is a test.")
 
     # test serialize and then back
     with TemporaryDirectory() as tmpdir:
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         response = graph.query(query_str, query_configs=query_configs)
-        assert str(response) == ("Test?:Test?:This is a test.")
+        assert str(response) == ("Test?:Test?:This is a test.:Test?:This is a test.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -290,13 +294,13 @@ def test_recursive_query_list_table(
     assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
     response = graph.query(query_str, query_configs=query_configs)
-    assert str(response) == ("Foo?:Foo?:This is a test v2.")
+    assert str(response) == ("Foo?:Foo?:This is a test v2.:This is another test.")
     query_str = "Orange?"
     response = graph.query(query_str, query_configs=query_configs)
-    assert str(response) == ("Orange?:Orange?:This is a test.")
+    assert str(response) == ("Orange?:Orange?:This is a test.:Hello world.")
     query_str = "Cat?"
     response = graph.query(query_str, query_configs=query_configs)
-    assert str(response) == ("Cat?:Cat?:This is another test.")
+    assert str(response) == ("Cat?:Cat?:This is another test.:This is a test v2.")
 
     # test serialize and then back
     # use composable graph struct
@@ -304,7 +308,7 @@ def test_recursive_query_list_table(
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         response = graph.query(query_str, query_configs=query_configs)
-        assert str(response) == ("Cat?:Cat?:This is another test.")
+        assert str(response) == ("Cat?:Cat?:This is another test.:This is a test v2.")
 
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
