@@ -243,7 +243,16 @@ def test_query(
     index = GPTKnowledgeGraphIndex.from_documents(documents)
     response = index.query("foo")
     # when include_text is True, the first node is the raw text
-    assert str(response) == "foo:(foo, is, bar)"
+    # the second node is the query
+    rel_initial_text = (
+        "The following are knowledge triplets "
+        "in the form of (subset, predicate, object):"
+    )
+    expected_response = (
+        "foo:(foo, is, bar):" + rel_initial_text + ":('foo', 'is', 'bar')"
+    )
+
+    assert str(response) == expected_response
     assert response.extra_info is not None
     assert response.extra_info["kg_rel_map"] == {
         "foo": [("bar", "is")],
