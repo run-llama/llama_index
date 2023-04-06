@@ -1,10 +1,9 @@
 """Test pinecone indexes."""
 
 import sys
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
