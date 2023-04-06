@@ -213,7 +213,7 @@ class ComposableGraph:
         # lazy load registry
         from gpt_index.indices.registry import load_index_struct_from_dict
 
-        result_dict = json.loads(index_string)
+        result_dict: Dict[str, Any] = json.loads(index_string)
         index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
         docstore = DocumentStore.load_from_dict(result_dict[DOCSTORE_KEY])
 
@@ -221,7 +221,7 @@ class ComposableGraph:
         #       e.g. passing in vector store client
         query_context_kwargs = kwargs.pop("query_context_kwargs", None)
         query_context = load_query_context_from_dict(
-            result_dict[ADDITIONAL_QUERY_CONTEXT_KEY],
+            result_dict.get(ADDITIONAL_QUERY_CONTEXT_KEY, {}),
             query_context_kwargs=query_context_kwargs,
         )
         assert isinstance(index_struct, CompositeIndex)
