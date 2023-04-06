@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 from gpt_index.async_utils import run_async_tasks
 from gpt_index.constants import VECTOR_STORE_KEY
 from gpt_index.data_structs.data_structs_v2 import IndexDict
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import ImageNode, IndexNode, Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
@@ -182,12 +182,19 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         new_ids = self._vector_store.add(embedding_results)
 
-        # if the vector store doesn't store text, we need to add the nodes to the
-        # index struct and document store
         if not self._vector_store.stores_text:
+            # NOTE: if the vector store doesn't store text,
+            # we need to add the nodes to the index struct and document store
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
                 self._docstore.add_documents([result.node], allow_update=True)
+        else:
+            # NOTE: if the vector store keeps text,
+            # we only need to add image and index nodes
+            for result, new_id in zip(embedding_results, new_ids):
+                if isinstance(result.node, (ImageNode, IndexNode)):
+                    index_struct.add_node(result.node, text_id=new_id)
+                    self._docstore.add_documents([result.node], allow_update=True)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
         """Build index from nodes."""
