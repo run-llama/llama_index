@@ -73,7 +73,7 @@ def create_schema(client: Any, class_prefix: str) -> None:
     client.schema.create_class(class_obj)
 
 
-def to_nodes(
+def query(
     client: Any,
     class_prefix: str,
     vector: Optional[List[float]] = None,
