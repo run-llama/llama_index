@@ -23,24 +23,30 @@ class MilvusVectorStore(VectorStore):
     In this vector store we store the text, its embedding and
     a few pieces of its metadata in a Milvus collection. This implemnetation
     allows the use of an already existing collection if it is one that was created
-    this vector store. It also supports creating a new one if the collection doesnt exist
-    or if `overwrite` is set to True.
+    this vector store. It also supports creating a new one if the collection doesnt
+    exist or if `overwrite` is set to True.
 
     Args:
-        collection_name (str, optional): The name of the collection where data will be stored. Defaults to "llamalection".
-        index_params (dict, optional): The index parameters for Milvus, if none are provided an HNSW index will be used. Defaults to None.
-        search_params (dict, optional): The search parameters for a Milvus query. If none are provided, default params will be generated. Defaults to None.
-        dim (int, optional): The dimension of the embeddings. If it is not provided, collection creation will be done on first insert. Defaults to None.
+        collection_name (str, optional): The name of the collection where data will be
+            stored. Defaults to "llamalection".
+        index_params (dict, optional): The index parameters for Milvus, if none are
+            provided an HNSW index will be used. Defaults to None.
+        search_params (dict, optional): The search parameters for a Milvus query.
+            If none are provided, default params will be generated. Defaults to None.
+        dim (int, optional): The dimension of the embeddings. If it is not provided,
+            collection creation will be done on first insert. Defaults to None.
         host (str, optional): The host address of Milvus. Defaults to "localhost".
         port (int, optional): The port of Milvus. Defaults to 19530.
         user (str, optional): The username for RBAC. Defaults to "".
         password (str, optional): The password for RBAC. Defaults to "".
         use_secure (bool, optional): Use https. Defaults to False.
-        overwrite (bool, optional): Whether to overwrite existing collection with same name. Defaults to False.
+        overwrite (bool, optional): Whether to overwrite existing collection with same
+            name. Defaults to False.
 
     Raises:
         ImportError: Unable to import `pymilvus`.
-        MilvusException: Error communicating with Milvus, more can be found in logging under Debug.
+        MilvusException: Error communicating with Milvus, more can be found in logging
+            under Debug.
 
     Returns:
         MilvusVectorstore: Vectorstore that supports add, delete, and query.
@@ -128,7 +134,8 @@ class MilvusVectorStore(VectorStore):
         # If there is a collection and no index exists on it, create an index
         if self.collection is not None and len(self.collection.indexes) == 0:
             self._create_index()
-        # If using an existing index and no search params were provided, generate the correct params
+        # If using an existing index and no search params were provided,
+        #   generate the correct params
         elif self.collection is not None and self.search_params is None:
             self._create_search_params()
 
@@ -279,14 +286,16 @@ class MilvusVectorStore(VectorStore):
             "user": self.user,
             "password": self.password,
             "use_secure": self.use_secure,
-            # "overwrite": False,  # Set to false, dont want subsequent object to rewrite store
+            # Set to false, dont want subsequent object to rewrite store
+            # "overwrite": False,
         }
 
     def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
         """Add the embeddings and their nodes into Milvus.
 
         Args:
-            embedding_results (List[NodeEmbeddingResult]): The embeddings and their data to insert.
+            embedding_results (List[NodeEmbeddingResult]): The embeddings and their data
+                to insert.
 
         Raises:
             MilvusException: Failed to insert data.
@@ -320,7 +329,8 @@ class MilvusVectorStore(VectorStore):
             # Insert the data into milvus
             self.collection.insert([ids, doc_ids, texts, embeddings])
             logger.debug(
-                f"Successfully inserted embeddings into: {self.collection_name} Num Inserted: {len(ids)}"
+                f"Successfully inserted embeddings into: {self.collection_name} "
+                f"Num Inserted: {len(ids)}"
             )
         except MilvusException as e:
             logger.debug(f"Failed to insert embeddings into: {self.collection_name}")
@@ -395,11 +405,13 @@ class MilvusVectorStore(VectorStore):
                 expr=expr,
             )
             logger.debug(
-                f"Successfully searched embedding in collection: {self.collection_name} Num Results: {len(res[0])}"
+                f"Successfully searched embedding in collection: {self.collection_name}"
+                f" Num Results: {len(res[0])}"
             )
         except MilvusException as e:
             logger.debug(
-                f"Unsuccessfully searched embedding in collection: {self.collection_name}"
+                f"Unsuccessfully searched embedding in collection: "
+                f"{self.collection_name}"
             )
             raise e
 

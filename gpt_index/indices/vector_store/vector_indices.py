@@ -366,7 +366,7 @@ class GPTMilvusIndex(GPTVectorStoreIndex):
 
     Raises:
         ImportError: Unable to import `pymilvus`.
-        MilvusException: Error communicating with Milvus, 
+        MilvusException: Error communicating with Milvus,
             more can be found in logging under Debug.
 
     Returns:
