@@ -12,6 +12,7 @@ from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 
@@ -383,6 +384,9 @@ class MilvusVectorStore(VectorStore):
 
         if self.collection is None:
             raise ValueError("Milvus instance not initialized.")
+
+        if query.mode != VectorStoreQueryMode.DEFAULT:
+            raise ValueError(f"Milvus does not support {query.mode} yet.")
 
         expr: Optional[str] = None
         if query.doc_ids is not None and len(query.doc_ids) != 0:
