@@ -339,28 +339,35 @@ class GPTMilvusIndex(GPTVectorStoreIndex):
     """GPT Milvus Index.
 
     In this GPT index we store the text, its embedding and
-    a few pieces of its metadata in a Milvus collection. This implementation
-    allows the use of an already existing collection if it is one that was created
-    this vector store. It also supports creating a new one if the collection doesnt exist
+    a few pieces of its metadata in a Milvus collection.
+    This implementation allows the use of an already existing
+    collection if it is one that was created this vector store.
+    It also supports creating a new one if the collection doesnt exist
     or if `overwrite` is set to True.
 
     Args:
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
-        collection_name (str, optional): The name of the collection where data will be stored. Defaults to "llamalection".
-        index_params (dict, optional): The index parameters for Milvus, if none are provided an HNSW index will be used. Defaults to None.
-        search_params (dict, optional): The search parameters for a Milvus query. If none are provided, default params will be generated. Defaults to None.
-        dim (int, optional): The dimension of the embeddings. If it is not provided, collection creation will be done on first insert. Defaults to None.
+        collection_name (str, optional): The name of the collection
+            where data will be stored. Defaults to "llamalection".
+        index_params (dict, optional): The index parameters for Milvus,
+            if none are provided an HNSW index will be used. Defaults to None.
+        search_params (dict, optional): The search parameters for a Milvus query.
+            If none are provided, default params will be generated. Defaults to None.
+        dim (int, optional): The dimension of the embeddings. If it is not provided,
+            collection creation will be done on first insert. Defaults to None.
         host (str, optional): The host address of Milvus. Defaults to "localhost".
         port (int, optional): The port of Milvus. Defaults to 19530.
         user (str, optional): The username for RBAC. Defaults to "".
         password (str, optional): The password for RBAC. Defaults to "".
         use_secure (bool, optional): Use https. Defaults to False.
-        overwrite (bool, optional): Whether to overwrite existing collection with same name. Defaults to False.
+        overwrite (bool, optional): Whether to overwrite existing collection
+            with same name. Defaults to False.
 
     Raises:
         ImportError: Unable to import `pymilvus`.
-        MilvusException: Error communicating with Milvus, more can be found in logging under Debug.
+        MilvusException: Error communicating with Milvus, 
+            more can be found in logging under Debug.
 
     Returns:
         MilvusVectorstore: Vectorstore that supports add, delete, and query.
@@ -372,9 +379,9 @@ class GPTMilvusIndex(GPTVectorStoreIndex):
         self,
         nodes: Optional[Sequence[Node]] = None,
         collection_name: str = "llamalection",
-        index_params: dict = None,
-        search_params: dict = None,
-        dim: int = None,
+        index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
+        dim: Optional[int] = None,
         host: str = "localhost",
         port: int = 19530,
         user: str = "",

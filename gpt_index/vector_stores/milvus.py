@@ -52,9 +52,9 @@ class MilvusVectorStore(VectorStore):
     def __init__(
         self,
         collection_name: str = "llamalection",
-        index_params: dict = None,
-        search_params: dict = None,
-        dim: int = None,
+        index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
+        dim: Optional[int] = None,
         host: str = "localhost",
         port: int = 19530,
         user: str = "",
@@ -110,7 +110,7 @@ class MilvusVectorStore(VectorStore):
             self.collection = None
 
         # If a collection already exists and we are overwriting, delete it
-        if self.collection != None and self.overwrite == True:
+        if self.collection is not None and self.overwrite is True:
             try:
                 utility.drop_collection(self.collection_name, using=self.alias)
                 self.collection = None
@@ -122,21 +122,21 @@ class MilvusVectorStore(VectorStore):
                 raise e
 
         # If there is no collection and a dim is provided, we can create a collection
-        if self.collection == None and self.dim != None:
+        if self.collection is None and self.dim is not None:
             self._create_collection()
 
         # If there is a collection and no index exists on it, create an index
-        if self.collection != None and len(self.collection.indexes) == 0:
+        if self.collection is not None and len(self.collection.indexes) == 0:
             self._create_index()
         # If using an existing index and no search params were provided, generate the correct params
-        elif self.collection != None and self.search_params == None:
+        elif self.collection is not None and self.search_params is None:
             self._create_search_params()
 
         # If there is a collection with an index, make sure its loaded
-        if self.collection != None and len(self.collection.indexes) != 0:
+        if self.collection is not None and len(self.collection.indexes) != 0:
             self.collection.load()
 
-    def _create_connection_alias(self):
+    def _create_connection_alias(self) -> None:
         from pymilvus import connections
 
         self.alias = None
@@ -154,7 +154,7 @@ class MilvusVectorStore(VectorStore):
                 break
 
         # Connect to the Milvus instance using the passed in Environment variables
-        if self.alias == None:
+        if self.alias is None:
             self.alias = uuid4().hex
             connections.connect(
                 alias=self.alias,
@@ -166,7 +166,7 @@ class MilvusVectorStore(VectorStore):
             )
             logger.debug(f"Creating new connection: {self.alias}")
 
-    def _create_collection(self):
+    def _create_collection(self) -> None:
         from pymilvus import (
             Collection,
             CollectionSchema,
@@ -220,24 +220,25 @@ class MilvusVectorStore(VectorStore):
             logger.debug(f"Failure to create a new collection: {self.collection_name}")
             raise e
 
-    def _create_index(self):
+    def _create_index(self) -> None:
         from pymilvus import MilvusException
 
         try:
             # If no index params, use a default HNSW based one
-            if self.index_params == None:
+            if self.index_params is None:
                 self.index_params = {
                     "metric_type": "IP",
                     "index_type": "HNSW",
                     "params": {"M": 8, "efConstruction": 64},
                 }
+            assert self.index_params is not None
 
             self.collection.create_index(
                 "embedding", index_params=self.index_params, using=self.alias
             )
 
             # If search params dont exist already, grab the default
-            if self.search_params == None:
+            if self.search_params is None:
                 self.search_params = self.default_search_params[
                     self.index_params["index_type"]
                 ]
@@ -251,10 +252,19 @@ class MilvusVectorStore(VectorStore):
             )
             raise e
 
-    def _create_search_params(self):
+    def _create_search_params(self) -> None:
         index = self.collection.indexes[0]._index_params
         self.search_params = self.default_search_params[index["index_type"]]
         self.search_params["metric_type"] = index["metric_type"]
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        return cls(**config_dict)
+
+    @property
+    def client(self) -> Any:
+        """Get client."""
+        return self.collection
 
     @property
     def config_dict(self) -> dict:
@@ -272,10 +282,6 @@ class MilvusVectorStore(VectorStore):
             # "overwrite": False,  # Set to false, dont want subsequent object to rewrite store
         }
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        return cls(**config_dict)
-
     def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
         """Add the embeddings and their nodes into Milvus.
 
@@ -291,10 +297,11 @@ class MilvusVectorStore(VectorStore):
         from pymilvus import MilvusException
 
         # If the collection doesnt exist yet, create the collection, index, and load it
-        if self.collection == None and len(embedding_results) != 0:
+        if self.collection is None and len(embedding_results) != 0:
             self.dim = len(embedding_results[0].embedding)
             self._create_collection()
             self._create_index()
+            assert self.collection is not None
             self.collection.load()
 
         ids = []
@@ -331,23 +338,26 @@ class MilvusVectorStore(VectorStore):
         """
         from pymilvus import MilvusException
 
-        if self.collection == None:
+        if self.collection is None:
             return
 
         # Adds ability for multiple doc delete in future.
+        doc_ids: List[str]
         if type(doc_id) != list:
-            doc_id = [doc_id]
+            doc_ids = [doc_id]
+        else:
+            doc_ids = doc_id  # type: ignore
 
         try:
             # Begin by querying for the primary keys to delete
-            doc_id = ['"' + entry + '"' for entry in doc_id]
-            doc_id = self.collection.query(f"doc_id in [{','.join(doc_id)}]")
-            ids = [entry["id"] for entry in doc_id]
+            doc_ids = ['"' + entry + '"' for entry in doc_ids]
+            entries = self.collection.query(f"doc_id in [{','.join(doc_ids)}]")
+            ids = [entry["id"] for entry in entries]
             ids = ['"' + entry + '"' for entry in ids]
             self.collection.delete(f"id in [{','.join(ids)}]")
-            logger.debug(f"Successfully deleted embedding with doc_id: {doc_id}")
+            logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
         except MilvusException as e:
-            logger.debug(f"Unsuccessfully deleted embedding with doc_id: {doc_id}")
+            logger.debug(f"Unsuccessfully deleted embedding with doc_id: {doc_ids}")
             raise e
 
     def query(
@@ -366,12 +376,12 @@ class MilvusVectorStore(VectorStore):
         """
         from pymilvus import MilvusException
 
-        if self.collection == None:
+        if self.collection is None:
             raise ValueError("Milvus instance not initialized.")
 
-        if doc_ids != None and len(doc_ids) != 0:
-            expr = ['"' + entry + '"' for entry in doc_ids]
-            expr = f"doc_id in [{','.join(expr)}]"
+        if doc_ids is not None and len(doc_ids) != 0:
+            expr_list = ['"' + entry + '"' for entry in doc_ids]
+            expr = f"doc_id in [{','.join(expr_list)}]"
         else:
             expr = None
 

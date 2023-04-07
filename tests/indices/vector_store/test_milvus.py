@@ -2,7 +2,7 @@
 
 
 from typing import Any, Dict, List, Optional
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from gpt_index.indices.vector_store.vector_indices import GPTMilvusIndex
 
 from gpt_index.vector_stores.types import NodeEmbeddingResult
@@ -15,9 +15,9 @@ class MockMilvusVectorStore:
     def __init__(
         self,
         collection_name: str = "llamalection",
-        index_params: dict = None,
-        search_params: dict = None,
-        dim: int = None,
+        index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
+        dim: Optional[int] = None,
         host: str = "localhost",
         port: int = 19530,
         user: str = "",

@@ -1,6 +1,6 @@
 """Milvus reader."""
 
-from typing import List
+from typing import Any, List, Optional
 from uuid import uuid4
 
 from gpt_index.readers.base import BaseReader
@@ -27,7 +27,7 @@ class MilvusReader(BaseReader):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        from pymilvus import Collection, MilvusException
+        from pymilvus import MilvusException
 
         self.host = host
         self.port = port
@@ -57,8 +57,8 @@ class MilvusReader(BaseReader):
         self,
         query_vector: List[float],
         collection_name: str,
-        expr=None,
-        search_params: dict = None,
+        expr: Any = None,
+        search_params: Optional[dict] = None,
         limit: int = 10,
     ) -> List[Document]:
         """Load data from Milvus.
@@ -77,11 +77,13 @@ class MilvusReader(BaseReader):
             self.collection = Collection(collection_name, using=self.alias)
         except MilvusException as e:
             raise e
+
+        assert self.collection is not None
         try:
             self.collection.load()
         except MilvusException as e:
             raise e
-        if search_params == None:
+        if search_params is None:
             search_params = self._create_search_params()
 
         res = self.collection.search(
@@ -105,7 +107,7 @@ class MilvusReader(BaseReader):
 
         return documents
 
-    def _create_connection_alias(self):
+    def _create_connection_alias(self) -> None:
         from pymilvus import connections
 
         self.alias = None
@@ -121,7 +123,7 @@ class MilvusReader(BaseReader):
                 break
 
         # Connect to the Milvus instance using the passed in Environment variables
-        if self.alias == None:
+        if self.alias is None:
             self.alias = uuid4().hex
             connections.connect(
                 alias=self.alias,
@@ -132,7 +134,8 @@ class MilvusReader(BaseReader):
                 secure=self.use_secure,
             )
 
-    def _create_search_params(self):
+    def _create_search_params(self) -> dict[str, Any]:
+        assert self.collection is not None
         index = self.collection.indexes[0]._index_params
         search_params = self.default_search_params[index["index_type"]]
         search_params["metric_type"] = index["metric_type"]
