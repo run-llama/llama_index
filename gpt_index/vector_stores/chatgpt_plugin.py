@@ -12,6 +12,7 @@ from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
 )
 
 
@@ -128,17 +129,14 @@ class ChatGPTRetrievalPluginClient(VectorStore):
 
     def query(
         self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
+        query: VectorStoreQuery,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
-        if query_str is None:
+        if query.query_str is None:
             raise ValueError("query_str must be provided")
         headers = {"Authorization": f"Bearer {self._bearer_token}"}
         # TODO: add metadata filter
-        queries = [{"query": query_str, "top_k": similarity_top_k}]
+        queries = [{"query": query.query_str, "top_k": query.similarity_top_k}]
         res = requests.post(
             f"{self._endpoint_url}/query", headers=headers, json={"queries": queries}
         )

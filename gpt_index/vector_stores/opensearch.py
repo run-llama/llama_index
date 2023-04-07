@@ -1,12 +1,13 @@
 """Elasticsearch/Opensearch vector store."""
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from gpt_index.data_structs import Node
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
 )
 
 
@@ -194,13 +195,7 @@ class OpensearchVectorStore(VectorStore):
         """
         self._client.delete_doc_id(doc_id)
 
-    def query(
-        self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -208,4 +203,5 @@ class OpensearchVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
-        return self._client.do_approx_knn(query_embedding, similarity_top_k)
+        query_embedding = cast(List[float], query.query_embedding)
+        return self._client.do_approx_knn(query_embedding, query.similarity_top_k)

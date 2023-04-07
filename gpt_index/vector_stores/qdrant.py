@@ -12,6 +12,7 @@ from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
 )
 
 logger = logging.getLogger(__name__)
@@ -158,10 +159,7 @@ class QdrantVectorStore(VectorStore):
 
     def query(
         self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
+        query: VectorStoreQuery,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
@@ -178,18 +176,20 @@ class QdrantVectorStore(VectorStore):
             Payload,
         )
 
+        query_embedding = cast(List[float], query.query_embedding)
+
         response = self._client.search(
             collection_name=self._collection_name,
             query_vector=query_embedding,
-            limit=cast(int, similarity_top_k),
+            limit=cast(int, query.similarity_top_k),
             query_filter=None
-            if not doc_ids
+            if not query.doc_ids
             else Filter(
                 must=[
                     Filter(
                         should=[
                             FieldCondition(key="doc_id", match=MatchValue(value=doc_id))
-                            for doc_id in doc_ids
+                            for doc_id in query.doc_ids
                         ],
                     )
                 ]
