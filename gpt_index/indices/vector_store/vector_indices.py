@@ -9,6 +9,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     ChromaIndexDict,
     FaissIndexDict,
     IndexDict,
+    MilvusIndexDict,
     OpensearchIndexDict,
     PineconeIndexDict,
     QdrantIndexDict,
@@ -23,6 +24,7 @@ from gpt_index.vector_stores import (
     ChatGPTRetrievalPluginClient,
     ChromaVectorStore,
     FaissVectorStore,
+    MilvusVectorStore,
     PineconeVectorStore,
     QdrantVectorStore,
     SimpleVectorStore,
@@ -335,6 +337,90 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
                 raise ValueError("collection_name is required.")
             vector_store = QdrantVectorStore(
                 client=client, collection_name=collection_name
+            )
+        assert vector_store is not None
+
+        super().__init__(
+            nodes=nodes,
+            index_struct=index_struct,
+            service_context=service_context,
+            vector_store=vector_store,
+            **kwargs,
+        )
+
+
+class GPTMilvusIndex(GPTVectorStoreIndex):
+    """GPT Milvus Index.
+
+    In this GPT index we store the text, its embedding and
+    a few pieces of its metadata in a Milvus collection.
+    This implementation allows the use of an already existing
+    collection if it is one that was created this vector store.
+    It also supports creating a new one if the collection doesnt exist
+    or if `overwrite` is set to True.
+
+    Args:
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
+        collection_name (str, optional): The name of the collection
+            where data will be stored. Defaults to "llamalection".
+        index_params (dict, optional): The index parameters for Milvus,
+            if none are provided an HNSW index will be used. Defaults to None.
+        search_params (dict, optional): The search parameters for a Milvus query.
+            If none are provided, default params will be generated. Defaults to None.
+        dim (int, optional): The dimension of the embeddings. If it is not provided,
+            collection creation will be done on first insert. Defaults to None.
+        host (str, optional): The host address of Milvus. Defaults to "localhost".
+        port (int, optional): The port of Milvus. Defaults to 19530.
+        user (str, optional): The username for RBAC. Defaults to "".
+        password (str, optional): The password for RBAC. Defaults to "".
+        use_secure (bool, optional): Use https. Defaults to False.
+        overwrite (bool, optional): Whether to overwrite existing collection
+            with same name. Defaults to False.
+
+    Raises:
+        ImportError: Unable to import `pymilvus`.
+        MilvusException: Error communicating with Milvus,
+            more can be found in logging under Debug.
+
+    Returns:
+        MilvusVectorstore: Vectorstore that supports add, delete, and query.
+    """
+
+    index_struct_cls: Type[IndexDict] = MilvusIndexDict
+
+    def __init__(
+        self,
+        nodes: Optional[Sequence[Node]] = None,
+        collection_name: str = "llamalection",
+        index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
+        dim: Optional[int] = None,
+        host: str = "localhost",
+        port: int = 19530,
+        user: str = "",
+        password: str = "",
+        use_secure: bool = False,
+        overwrite: bool = False,
+        service_context: Optional[ServiceContext] = None,
+        index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[MilvusVectorStore] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Init params."""
+
+        if vector_store is None:
+            vector_store = MilvusVectorStore(
+                collection_name=collection_name,
+                index_params=index_params,
+                search_params=search_params,
+                dim=dim,
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                use_secure=use_secure,
+                overwrite=overwrite,
             )
         assert vector_store is not None
 
