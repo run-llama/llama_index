@@ -220,4 +220,11 @@ response = index.query("What did the author do growing up?")
 
 ```
 
+**Note**: `GPTMilvusIndex` depends on the `pymilvus` library.
+Use `pip install pymilvus` if not already installed.
+If you get stuck at building wheel for `grpcio`, check if you are using python 3.11
+(there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
+and try downgrading.
+
+
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).
