@@ -1,6 +1,6 @@
 """Milvus reader."""
 
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from gpt_index.readers.base import BaseReader
@@ -134,7 +134,7 @@ class MilvusReader(BaseReader):
                 secure=self.use_secure,
             )
 
-    def _create_search_params(self) -> dict[str, Any]:
+    def _create_search_params(self) -> Dict[str, Any]:
         assert self.collection is not None
         index = self.collection.indexes[0]._index_params
         search_params = self.default_search_params[index["index_type"]]
