@@ -4,12 +4,15 @@ An index that is built within Milvus.
 
 """
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
-from gpt_index.vector_stores.types import (NodeEmbeddingResult, VectorStore,
-                                           VectorStoreQueryResult)
+from gpt_index.vector_stores.types import (
+    NodeEmbeddingResult,
+    VectorStore,
+    VectorStoreQueryResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -164,8 +167,13 @@ class MilvusVectorStore(VectorStore):
             logger.debug(f"Creating new connection: {self.alias}")
 
     def _create_collection(self):
-        from pymilvus import (Collection, CollectionSchema, DataType,
-                              FieldSchema, MilvusException)
+        from pymilvus import (
+            Collection,
+            CollectionSchema,
+            DataType,
+            FieldSchema,
+            MilvusException,
+        )
 
         try:
             fields = [
@@ -263,6 +271,10 @@ class MilvusVectorStore(VectorStore):
             "use_secure": self.use_secure,
             # "overwrite": False,  # Set to false, dont want subsequent object to rewrite store
         }
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        return cls(**config_dict)
 
     def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
         """Add the embeddings and their nodes into Milvus.

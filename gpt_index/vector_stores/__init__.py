@@ -23,4 +23,5 @@ __all__ = [
     "OpensearchVectorStore",
     "OpensearchVectorClient",
     "ChatGPTRetrievalPluginClient",
+    "MilvusVectorStore",
 ]
