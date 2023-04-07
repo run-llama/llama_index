@@ -1,16 +1,9 @@
 from typing import Any, Dict, List, Optional
 from unittest.mock import Mock, patch
 
-from llama_index import OpenAIEmbedding
-
 from gpt_index.indices.vector_store.vector_indices import GPTWeaviateIndex
 from gpt_index.vector_stores.types import NodeEmbeddingResult
 from tests.mock_utils.mock_decorator import patch_common
-from tests.playground.test_base import (
-    mock_get_query_embedding,
-    mock_get_text_embedding,
-    mock_get_text_embeddings,
-)
 
 
 class MockWeaviateVectorStore:
