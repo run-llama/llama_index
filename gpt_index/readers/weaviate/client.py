@@ -18,32 +18,49 @@ from gpt_index.readers.weaviate.utils import (
 from gpt_index.utils import get_new_id
 
 
-def _get_common_properties() -> List[Dict]:
-    """Get common properties."""
-    return [
-        {
-            "dataType": ["string"],
-            "description": "Text property",
-            "name": "text",
-        },
-        {
-            "dataType": ["string"],
-            "description": "Document id",
-            "name": "doc_id",
-        },
-        {
-            "dataType": ["string"],
-            "description": "extra_info (in JSON)",
-            "name": "extra_info",
-        },
-    ]
-
+NODE_SCHEMA: List[Dict] = [
+    {
+        "dataType": ["string"],
+        "description": "Text property",
+        "name": "text",
+    },
+    {
+        "dataType": ["string"],
+        "description": "Document id",
+        "name": "doc_id",
+    },
+    {
+        "dataType": ["string"],
+        "description": "extra_info (in JSON)",
+        "name": "extra_info",
+    },
+    {
+        "dataType": ["string"],
+        "description": "The ref_doc_id of the Node",
+        "name": "ref_doc_id",
+    },
+    {
+        "dataType": ["string"],
+        "description": "node_info (in JSON)",
+        "name": "node_info",
+    },
+    {
+        "dataType": ["string"],
+        "description": "The hash of the Document",
+        "name": "doc_hash",
+    },
+    {
+        "dataType": ["string"],
+        "description": "The relationships of the node (in JSON)",
+        "name": "relationships",
+    },
+]
 
 def _get_by_id(client: Any, object_id: str, class_prefix: str) -> Dict:
     """Get entry by id."""
     validate_client(client)
     class_name = _class_name(class_prefix)
-    properties = _get_common_properties() + _get_properties()
+    properties = NODE_SCHEMA
     prop_names = [p["name"] for p in properties]
     entry = get_by_id(client, object_id, class_name, prop_names)
     return entry
@@ -61,10 +78,7 @@ def create_schema(client: Any, class_prefix: str) -> None:
     if class_name in existing_class_names:
         return
 
-    # get common properties
-    properties = _get_common_properties()
-    # get specific properties
-    properties.extend(_get_properties())
+    properties = NODE_SCHEMA
     class_obj = {
         "class": _class_name(class_prefix),  # <= note the capital "A".
         "description": f"Class for {class_name}",
@@ -82,7 +96,7 @@ def weaviate_query(
     """Convert to LlamaIndex list."""
     validate_client(client)
     class_name = _class_name(class_prefix)
-    properties = _get_common_properties() + _get_properties()
+    properties = NODE_SCHEMA
     prop_names = [p["name"] for p in properties]
     query = client.query.get(class_name, prop_names).with_additional(["id", "vector"])
     if vector is not None:
@@ -107,32 +121,6 @@ def weaviate_query(
 def _class_name(class_prefix: str) -> str:
     """Return class name."""
     return f"{class_prefix}_Node"
-
-
-def _get_properties() -> List[Dict]:
-    """Create schema."""
-    return [
-        {
-            "dataType": ["string"],
-            "description": "The ref_doc_id of the Node",
-            "name": "ref_doc_id",
-        },
-        {
-            "dataType": ["string"],
-            "description": "node_info (in JSON)",
-            "name": "node_info",
-        },
-        {
-            "dataType": ["string"],
-            "description": "The hash of the Document",
-            "name": "doc_hash",
-        },
-        {
-            "dataType": ["string"],
-            "description": "The relationships of the node (in JSON)",
-            "name": "relationships",
-        },
-    ]
 
 
 def _to_node(entry: Dict) -> Node:
