@@ -42,7 +42,7 @@ def _mock_answer(prompt_args: Dict) -> str:
 
 def _mock_refine(prompt_args: Dict) -> str:
     """Mock refine."""
-    return prompt_args["existing_answer"]
+    return prompt_args["existing_answer"] + ":" + prompt_args["context_msg"]
 
 
 def _mock_keyword_extract(prompt_args: Dict) -> str:

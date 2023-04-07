@@ -70,7 +70,14 @@ def test_give_response(
         texts=[TextChunk(documents[0].get_text())],
     )
     response = builder.get_response(query_str)
-    assert str(response) == "What is?:Hello world."
+    expected_answer = (
+        "What is?:"
+        "Hello world.:"
+        "This is a test.:"
+        "This is another test.:"
+        "This is a test v2."
+    )
+    assert str(response) == expected_answer
 
 
 @patch.object(LLMPredictor, "total_tokens_used", return_value=0)
@@ -106,8 +113,6 @@ def test_compact_response(
     texts = [
         TextChunk("This\n\nis\n\na\n\nbar"),
         TextChunk("This\n\nis\n\na\n\ntest"),
-        TextChunk("This\n\nis\n\nanother\n\ntest"),
-        TextChunk("This\n\nis\n\na\n\nfoo"),
     ]
 
     builder = ResponseBuilder(

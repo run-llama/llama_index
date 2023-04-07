@@ -4,6 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
+import os
 from typing import Any, Dict, List, Optional, cast
 
 from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
@@ -12,6 +13,9 @@ from gpt_index.vector_stores.types import (
     VectorStore,
     VectorStoreQueryResult,
 )
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 def get_metadata_from_node_info(
@@ -60,11 +64,14 @@ class PineconeVectorStore(VectorStore):
     def __init__(
         self,
         pinecone_index: Optional[Any] = None,
+        index_name: Optional[str] = None,
+        environment: Optional[str] = None,
         metadata_filters: Optional[Dict[str, Any]] = None,
         pinecone_kwargs: Optional[Dict] = None,
         insert_kwargs: Optional[Dict] = None,
         query_kwargs: Optional[Dict] = None,
         delete_kwargs: Optional[Dict] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         import_err_msg = (
@@ -74,7 +81,32 @@ class PineconeVectorStore(VectorStore):
             import pinecone  # noqa: F401
         except ImportError:
             raise ImportError(import_err_msg)
-        self._pinecone_index = cast(pinecone.Index, pinecone_index)
+
+        self._index_name = index_name
+        self._environment = environment
+        if pinecone_index is not None:
+            self._pinecone_index = cast(pinecone.Index, pinecone_index)
+            _logger.warn(
+                "If directly passing in client, cannot automatically reconstruct "
+                "connetion after save_to_disk/load_from_disk."
+                "For automatic reload, store PINECONE_API_KEY in env variable and "
+                "pass in index_name and environment instead."
+            )
+        else:
+            if "PINECONE_API_KEY" not in os.environ:
+                raise ValueError(
+                    "Must specify PINECONE_API_KEY via env variable "
+                    "if not directly passing in client."
+                )
+            if index_name is None or environment is None:
+                raise ValueError(
+                    "Must specify index_name and environment "
+                    "if not directly passing in client."
+                )
+
+            pinecone.init(environment=environment)
+            self._pinecone_index = pinecone.Index(index_name)
+
         self._metadata_filters = metadata_filters or {}
         self._pinecone_kwargs = pinecone_kwargs or {}
         if pinecone_kwargs and (insert_kwargs or query_kwargs or delete_kwargs):
@@ -91,10 +123,16 @@ class PineconeVectorStore(VectorStore):
             self._query_kwargs = query_kwargs or {}
             self._delete_kwargs = delete_kwargs or {}
 
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        return cls(**config_dict)
+
     @property
     def config_dict(self) -> dict:
         """Return config dict."""
         return {
+            "index_name": self._index_name,
+            "environment": self._environment,
             "metadata_filters": self._metadata_filters,
             "pinecone_kwargs": self._pinecone_kwargs,
             "insert_kwargs": self._insert_kwargs,

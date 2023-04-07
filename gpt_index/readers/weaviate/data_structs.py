@@ -295,5 +295,5 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         with client.batch as batch:
             for node in nodes:
                 index_id = cls._from_gpt_index(client, node, class_prefix, batch=batch)
-        index_ids.append(index_id)
+                index_ids.append(index_id)
         return index_ids
