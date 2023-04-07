@@ -536,6 +536,7 @@ def test_recursive_query_pinecone_pinecone(
         [pinecone1, pinecone2, pinecone3, pinecone4],
         index_summaries=summaries,
         pinecone_index=pinecone_index5,
+        tokenizer=mock_tokenizer,
         **pinecone_kwargs
     )
     query_str = "Foo?"
@@ -553,7 +554,12 @@ def test_recursive_query_pinecone_pinecone(
     with TemporaryDirectory() as tmpdir:
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         query_context_kwargs = {
-            index_id: {"vector_store": {"pinecone_index": pinecone_index}}
+            index_id: {
+                "vector_store": {
+                    "pinecone_index": pinecone_index,
+                    "tokenizer": mock_tokenizer,
+                }
+            }
             for index_id, pinecone_index in zip(
                 [
                     pinecone1.index_struct.index_id,
