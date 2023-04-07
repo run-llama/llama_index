@@ -324,7 +324,7 @@ class GPTMilvusIndex(GPTVectorStoreIndex):
     """GPT Milvus Index.
 
     In this GPT index we store the text, its embedding and
-    a few pieces of its metadata in a Milvus collection. This implemnetation
+    a few pieces of its metadata in a Milvus collection. This implementation
     allows the use of an already existing collection if it is one that was created
     this vector store. It also supports creating a new one if the collection doesnt exist
     or if `overwrite` is set to True.
