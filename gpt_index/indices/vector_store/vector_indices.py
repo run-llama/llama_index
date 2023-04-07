@@ -101,12 +101,14 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         service_context: Optional[ServiceContext] = None,
         faiss_index: Optional[Any] = None,
         index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[FaissVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if faiss_index is None:
-            raise ValueError("faiss_index is required.")
-        vector_store = FaissVectorStore(faiss_index)
+        if vector_store is None:
+            if faiss_index is None:
+                raise ValueError("faiss_index is required.")
+            vector_store = FaissVectorStore(faiss_index)
 
         super().__init__(
             nodes=nodes,
