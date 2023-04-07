@@ -6,7 +6,12 @@ An index that that is built on top of an existing vector store.
 
 from typing import Any, Dict, List, Optional, cast
 
-from gpt_index.readers.weaviate.data_structs import WeaviateNode
+from gpt_index.readers.weaviate.client import (
+    add_nodes,
+    create_schema,
+    delete_document,
+    weaviate_query,
+)
 from gpt_index.readers.weaviate.utils import get_default_class_prefix
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
@@ -61,7 +66,7 @@ class WeaviateVectorStore(VectorStore):
             )
         self._class_prefix = class_prefix or get_default_class_prefix()
         # try to create schema
-        WeaviateNode.create_schema(self._client, self._class_prefix)
+        create_schema(self._client, self._class_prefix)
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
@@ -95,9 +100,7 @@ class WeaviateVectorStore(VectorStore):
             # TODO: always store embedding in node
             node.embedding = embedding
 
-        WeaviateNode.from_gpt_index_batch(
-            self._client, [r.node for r in embedding_results], self._class_prefix
-        )
+        add_nodes(self._client, [r.node for r in embedding_results], self._class_prefix)
         return [result.id for result in embedding_results]
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
@@ -107,7 +110,7 @@ class WeaviateVectorStore(VectorStore):
             doc_id (str): document id
 
         """
-        WeaviateNode.delete_document(self._client, doc_id, self._class_prefix)
+        delete_document(self._client, doc_id, self._class_prefix)
 
     def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
@@ -118,8 +121,8 @@ class WeaviateVectorStore(VectorStore):
 
         """
         query_embedding = cast(List[float], query.query_embedding)
-        nodes = WeaviateNode.to_gpt_index_list(
-            self.client,
+        nodes = weaviate_query(
+            self._client,
             self._class_prefix,
             vector=query_embedding,
             object_limit=query.similarity_top_k,
