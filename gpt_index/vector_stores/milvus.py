@@ -11,6 +11,7 @@ from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
+    VectorStoreQuery,
     VectorStoreQueryResult,
 )
 
@@ -370,13 +371,7 @@ class MilvusVectorStore(VectorStore):
             logger.debug(f"Unsuccessfully deleted embedding with doc_id: {doc_ids}")
             raise e
 
-    def query(
-        self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -389,18 +384,17 @@ class MilvusVectorStore(VectorStore):
         if self.collection is None:
             raise ValueError("Milvus instance not initialized.")
 
-        if doc_ids is not None and len(doc_ids) != 0:
-            expr_list = ['"' + entry + '"' for entry in doc_ids]
+        expr: Optional[str] = None
+        if query.doc_ids is not None and len(query.doc_ids) != 0:
+            expr_list = ['"' + entry + '"' for entry in query.doc_ids]
             expr = f"doc_id in [{','.join(expr_list)}]"
-        else:
-            expr = None
 
         try:
             res = self.collection.search(
-                [query_embedding],
+                [query.query_embedding],
                 "embedding",
                 self.search_params,
-                limit=similarity_top_k,
+                limit=query.similarity_top_k,
                 output_fields=["doc_id", "text"],
                 expr=expr,
             )
