@@ -56,6 +56,9 @@ class VectorStoreQuery:
     # NOTE: current mode
     mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT
 
+    # NOTE: only for hybrid search (0 for bm25, 1 for vector search)
+    alpha: Optional[float] = None
+
 
 @runtime_checkable
 class VectorStore(Protocol):

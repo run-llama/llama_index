@@ -16,7 +16,11 @@ from gpt_index.readers.weaviate.utils import (
     validate_client,
 )
 from gpt_index.utils import get_new_id
+from gpt_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
 
+import logging
+
+_logger = logging.getLogger(__name__)
 
 NODE_SCHEMA: List[Dict] = [
     {
@@ -91,31 +95,42 @@ def create_schema(client: Any, class_prefix: str) -> None:
 def weaviate_query(
     client: Any,
     class_prefix: str,
-    vector: Optional[List[float]] = None,
-    object_limit: Optional[int] = None,
+    query_spec: VectorStoreQuery,
 ) -> List[Node]:
     """Convert to LlamaIndex list."""
     validate_client(client)
+
     class_name = _class_name(class_prefix)
-    properties = NODE_SCHEMA
-    prop_names = [p["name"] for p in properties]
+    prop_names = [p["name"] for p in NODE_SCHEMA]
+    vector = query_spec.query_embedding
+
+    # build query
     query = client.query.get(class_name, prop_names).with_additional(["id", "vector"])
-    if vector is not None:
-        query = query.with_near_vector(
-            {
-                "vector": vector,
-            }
+    if query_spec.mode == VectorStoreQueryMode.DEFAULT:
+        _logger.debug("Using vector search")
+        if vector is not None:
+            query = query.with_near_vector(
+                {
+                    "vector": vector,
+                }
+            )
+    elif query_spec.mode == VectorStoreQueryMode.HYBRID:
+        _logger.debug(f"Using hybrid search with alpha {query_spec.alpha}")
+        query = query.with_hybrid(
+            query=query_spec.query_str,
+            alpha=query_spec.alpha,
+            vector=vector,
         )
-    if object_limit is not None:
-        query = query.with_limit(object_limit)
+    query = query.with_limit(query_spec.similarity_top_k)
+    _logger.debug(f"Using limit of {query_spec.similarity_top_k}")
+
+    # execute query
     query_result = query.do()
+
+    # parse results
     parsed_result = parse_get_response(query_result)
     entries = parsed_result[class_name]
-
-    results: List[Node] = []
-    for entry in entries:
-        results.append(_to_node(entry))
-
+    results = [_to_node(entry) for entry in entries]
     return results
 
 
