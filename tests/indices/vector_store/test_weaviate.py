@@ -25,6 +25,7 @@ class MockWeaviateVectorStore:
     def from_dict(cls, config_dict: Dict[str, Any]) -> "MockWeaviateVectorStore":
         if "weaviate_client" not in config_dict:
             raise ValueError("Missing Weaviate client!")
+        return cls(**config_dict)
 
     def add(
         self,
@@ -45,7 +46,7 @@ class MockWeaviateVectorStore:
     "gpt_index.vector_stores.registry.VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS",
     {"mock_type": MockWeaviateVectorStore},
 )
-def test_save_load():
+def test_save_load() -> None:
     """Test we can save and load."""
     weaviate_client = Mock()
     index = GPTWeaviateIndex.from_documents(
