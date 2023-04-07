@@ -1,6 +1,6 @@
 """Deprecated vector store indices."""
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Dict, Optional, Sequence, Type, Callable
 
 from requests.adapters import Retry
 
@@ -216,6 +216,8 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         vector_store: Optional[PineconeVectorStore] = None,
+        add_sparse_vector: bool = False,
+        tokenizer: Optional[Callable] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -231,6 +233,8 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
                 insert_kwargs=insert_kwargs,
                 query_kwargs=query_kwargs,
                 delete_kwargs=delete_kwargs,
+                add_sparse_vector=add_sparse_vector,
+                tokenizer=tokenizer,
             )
         assert vector_store is not None
 

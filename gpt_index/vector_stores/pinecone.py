@@ -5,14 +5,18 @@ An index that that is built on top of an existing vector store.
 """
 
 import os
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast, Callable
+from functools import partial
 
 from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
 )
+from collections import Counter
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -39,6 +43,62 @@ def get_node_info_from_metadata(
     return node_extra_info
 
 
+def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
+    """Build a list of sparse dictionaries from a batch of input_ids.
+
+    NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
+
+    """
+    # store a batch of sparse embeddings
+    sparse_emb = []
+    # iterate through input batch
+    for token_ids in input_batch:
+        indices = []
+        values = []
+        # convert the input_ids list to a dictionary of key to frequency values
+        d = dict(Counter(token_ids))
+        for idx in d:
+            indices.append(idx)
+            values.append(float(d[idx]))
+        sparse_emb.append({"indices": indices, "values": values})
+    # return sparse_emb list
+    return sparse_emb
+
+
+def generate_sparse_vectors(
+    context_batch: List[str], tokenizer: Callable
+) -> List[Dict[str, Any]]:
+    """Generate sparse vectors from a batch of contexts.
+
+    NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
+
+    """
+    # create batch of input_ids
+    inputs = tokenizer(context_batch)["input_ids"]
+    # create sparse dictionaries
+    sparse_embeds = build_dict(inputs)
+    return sparse_embeds
+
+
+def get_default_tokenizer() -> Callable:
+    """Get default tokenizer.
+
+    NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
+
+    """
+    from transformers import BertTokenizerFast
+
+    orig_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+    # set some default arguments, so input is just a list of strings
+    tokenizer = partial(
+        orig_tokenizer,
+        padding=True,
+        truncation=True,
+        max_length=512,
+    )
+    return tokenizer
+
+
 class PineconeVectorStore(VectorStore):
     """Pinecone Vector Store.
 
@@ -56,6 +116,8 @@ class PineconeVectorStore(VectorStore):
         insert_kwargs (Optional[Dict]): insert kwargs during `upsert` call.
         query_kwargs (Optional[Dict]): query kwargs during `query` call.
         delete_kwargs (Optional[Dict]): delete kwargs during `delete` call.
+        add_sparse_vector (bool): whether to add sparse vector to index.
+        tokenizer (Optional[Callable]): tokenizer to use to generate sparse
 
     """
 
@@ -71,6 +133,8 @@ class PineconeVectorStore(VectorStore):
         insert_kwargs: Optional[Dict] = None,
         query_kwargs: Optional[Dict] = None,
         delete_kwargs: Optional[Dict] = None,
+        add_sparse_vector: bool = False,
+        tokenizer: Optional[Callable] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -123,6 +187,11 @@ class PineconeVectorStore(VectorStore):
             self._query_kwargs = query_kwargs or {}
             self._delete_kwargs = delete_kwargs or {}
 
+        self._add_sparse_vector = add_sparse_vector
+        if tokenizer is None:
+            tokenizer = get_default_tokenizer()
+        self._tokenizer = tokenizer
+
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
         return cls(**config_dict)
@@ -138,6 +207,7 @@ class PineconeVectorStore(VectorStore):
             "insert_kwargs": self._insert_kwargs,
             "query_kwargs": self._query_kwargs,
             "delete_kwargs": self._delete_kwargs,
+            "add_sparse_vector": self._add_sparse_vector,
         }
 
     def add(
@@ -183,9 +253,18 @@ class PineconeVectorStore(VectorStore):
                     f"metadata keys: {intersecting_keys}"
                 )
             metadata.update(self._metadata_filters)
-            self._pinecone_index.upsert(
-                [(new_id, text_embedding, metadata)], **self._pinecone_kwargs
-            )
+
+            entry = {
+                "id": new_id,
+                "values": text_embedding,
+                "metadata": metadata,
+            }
+            if self._add_sparse_vector:
+                sparse_vector = generate_sparse_vectors(
+                    [node.get_text()], self._tokenizer
+                )[0]
+                entry.update({"sparse_values": sparse_vector})
+            self._pinecone_index.upsert([entry], **self._pinecone_kwargs)
             ids.append(new_id)
         return ids
 
@@ -206,13 +285,7 @@ class PineconeVectorStore(VectorStore):
         """Return Pinecone client."""
         return self._pinecone_index
 
-    def query(
-        self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -220,9 +293,23 @@ class PineconeVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        sparse_vector = None
+        if query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID):
+            if query.query_str is None:
+                raise ValueError(
+                    "query_str must be specified if mode is SPARSE or HYBRID."
+                )
+            sparse_vector = generate_sparse_vectors([query.query_str], self._tokenizer)[
+                0
+            ]
+        query_embedding = None
+        if query.mode in (VectorStoreQueryMode.DEFAULT, VectorStoreQueryMode.HYBRID):
+            query_embedding = cast(List[float], query.query_embedding)
+
         response = self._pinecone_index.query(
-            query_embedding,
-            top_k=similarity_top_k,
+            vector=query_embedding,
+            sparse_vector=sparse_vector,
+            top_k=query.similarity_top_k,
             include_values=True,
             include_metadata=True,
             filter=self._metadata_filters,

@@ -14,6 +14,8 @@ from tests.indices.vector_store.utils import MockPineconeIndex
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
+from tests.mock_utils.mock_utils import mock_tokenizer
+
 
 @pytest.fixture
 def struct_kwargs() -> Tuple[Dict, Dict]:
@@ -103,7 +105,10 @@ def test_build_pinecone(
     index_kwargs, query_kwargs = struct_kwargs
 
     index = GPTPineconeIndex.from_documents(
-        documents=documents, pinecone_index=pinecone_index, **index_kwargs
+        documents=documents,
+        pinecone_index=pinecone_index,
+        tokenizer=mock_tokenizer,
+        **index_kwargs
     )
 
     response = index.query("What is?", **query_kwargs)

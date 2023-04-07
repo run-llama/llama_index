@@ -37,6 +37,7 @@ from tests.mock_utils.mock_prompts import (
     MOCK_TEXT_QA_PROMPT,
 )
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
+from tests.mock_utils.mock_utils import mock_tokenizer
 
 
 @pytest.fixture
@@ -500,16 +501,28 @@ def test_recursive_query_pinecone_pinecone(
     # use a diff set of documents
     # try building a list for every two, then a tree
     pinecone1 = GPTPineconeIndex.from_documents(
-        documents[0:2], pinecone_index=pinecone_index1, **pinecone_kwargs
+        documents[0:2],
+        pinecone_index=pinecone_index1,
+        tokenizer=mock_tokenizer,
+        **pinecone_kwargs
     )
     pinecone2 = GPTPineconeIndex.from_documents(
-        documents[2:4], pinecone_index=pinecone_index2, **pinecone_kwargs
+        documents[2:4],
+        pinecone_index=pinecone_index2,
+        tokenizer=mock_tokenizer,
+        **pinecone_kwargs
     )
     pinecone3 = GPTPineconeIndex.from_documents(
-        documents[4:6], pinecone_index=pinecone_index3, **pinecone_kwargs
+        documents[4:6],
+        pinecone_index=pinecone_index3,
+        tokenizer=mock_tokenizer,
+        **pinecone_kwargs
     )
     pinecone4 = GPTPineconeIndex.from_documents(
-        documents[6:8], pinecone_index=pinecone_index4, **pinecone_kwargs
+        documents[6:8],
+        pinecone_index=pinecone_index4,
+        tokenizer=mock_tokenizer,
+        **pinecone_kwargs
     )
 
     summary1 = "foo bar"
@@ -523,6 +536,7 @@ def test_recursive_query_pinecone_pinecone(
         [pinecone1, pinecone2, pinecone3, pinecone4],
         index_summaries=summaries,
         pinecone_index=pinecone_index5,
+        tokenizer=mock_tokenizer,
         **pinecone_kwargs
     )
     query_str = "Foo?"
@@ -540,7 +554,12 @@ def test_recursive_query_pinecone_pinecone(
     with TemporaryDirectory() as tmpdir:
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         query_context_kwargs = {
-            index_id: {"vector_store": {"pinecone_index": pinecone_index}}
+            index_id: {
+                "vector_store": {
+                    "pinecone_index": pinecone_index,
+                    "tokenizer": mock_tokenizer,
+                }
+            }
             for index_id, pinecone_index in zip(
                 [
                     pinecone1.index_struct.index_id,
