@@ -1,13 +1,14 @@
 """Chroma vector store."""
 import logging
 import math
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, cast
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.utils import truncate_text
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
+    VectorStoreQuery,
     VectorStoreQueryResult,
 )
 
@@ -97,13 +98,7 @@ class ChromaVectorStore(VectorStore):
         """Return client."""
         return self._collection
 
-    def query(
-        self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -112,7 +107,7 @@ class ChromaVectorStore(VectorStore):
 
         """
         results = self._collection.query(
-            query_embeddings=query_embedding, n_results=similarity_top_k
+            query_embeddings=query.query_embedding, n_results=query.similarity_top_k
         )
 
         logger.debug(f"> Top {len(results['documents'])} nodes:")

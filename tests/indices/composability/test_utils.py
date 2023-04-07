@@ -9,6 +9,7 @@ from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
 )
 
 
@@ -45,13 +46,7 @@ class MockVectorStore(VectorStore):
         """Delete doc."""
         raise NotImplementedError()
 
-    def query(
-        self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         """Query vector store."""
         raise NotImplementedError()
 

@@ -1,6 +1,6 @@
 """Deprecated vector store indices."""
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, Dict, Optional, Sequence, Type, Callable
 
 from requests.adapters import Retry
 
@@ -103,12 +103,14 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         service_context: Optional[ServiceContext] = None,
         faiss_index: Optional[Any] = None,
         index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[FaissVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if faiss_index is None:
-            raise ValueError("faiss_index is required.")
-        vector_store = FaissVectorStore(faiss_index)
+        if vector_store is None:
+            if faiss_index is None:
+                raise ValueError("faiss_index is required.")
+            vector_store = FaissVectorStore(faiss_index)
 
         super().__init__(
             nodes=nodes,
@@ -216,6 +218,8 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         vector_store: Optional[PineconeVectorStore] = None,
+        add_sparse_vector: bool = False,
+        tokenizer: Optional[Callable] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -231,6 +235,8 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
                 insert_kwargs=insert_kwargs,
                 query_kwargs=query_kwargs,
                 delete_kwargs=delete_kwargs,
+                add_sparse_vector=add_sparse_vector,
+                tokenizer=tokenizer,
             )
         assert vector_store is not None
 
@@ -270,14 +276,17 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         weaviate_client: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[WeaviateVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if weaviate_client is None:
-            raise ValueError("weaviate_client is required.")
-        vector_store = WeaviateVectorStore(
-            weaviate_client=weaviate_client, class_prefix=class_prefix
-        )
+        if vector_store is None:
+            if weaviate_client is None:
+                raise ValueError("weaviate_client is required.")
+            vector_store = WeaviateVectorStore(
+                weaviate_client=weaviate_client, class_prefix=class_prefix
+            )
+        assert vector_store is not None
 
         super().__init__(
             nodes=nodes,
@@ -317,14 +326,19 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         client: Optional[Any] = None,
         collection_name: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[QdrantVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if client is None:
-            raise ValueError("client is required.")
-        if collection_name is None:
-            raise ValueError("collection_name is required.")
-        vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
+        if vector_store is None:
+            if client is None:
+                raise ValueError("client is required.")
+            if collection_name is None:
+                raise ValueError("collection_name is required.")
+            vector_store = QdrantVectorStore(
+                client=client, collection_name=collection_name
+            )
+        assert vector_store is not None
 
         super().__init__(
             nodes=nodes,
@@ -447,12 +461,15 @@ class GPTChromaIndex(GPTVectorStoreIndex):
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         chroma_collection: Optional[Any] = None,
+        vector_store: Optional[ChromaVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if chroma_collection is None:
-            raise ValueError("chroma_collection is required.")
-        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        if vector_store is None:
+            if chroma_collection is None:
+                raise ValueError("chroma_collection is required.")
+            vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        assert vector_store is not None
 
         super().__init__(
             nodes=nodes,
@@ -496,12 +513,16 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
         service_context: Optional[ServiceContext] = None,
         client: Optional[OpensearchVectorClient] = None,
         index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[OpensearchVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if client is None:
-            raise ValueError("client is required.")
-        vector_store = OpensearchVectorStore(client)
+        if vector_store is None:
+            if client is None:
+                raise ValueError("client is required.")
+            vector_store = OpensearchVectorStore(client)
+        assert vector_store is not None
+
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -538,19 +559,24 @@ class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
         bearer_token: Optional[str] = None,
         retries: Optional[Retry] = None,
         batch_size: int = 100,
+        vector_store: Optional[ChatGPTRetrievalPluginClient] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if endpoint_url is None:
-            raise ValueError("endpoint_url is required.")
-        if bearer_token is None:
-            raise ValueError("bearer_token is required.")
-        vector_store = ChatGPTRetrievalPluginClient(
-            endpoint_url,
-            bearer_token,
-            retries=retries,
-            batch_size=batch_size,
-        )
+
+        if vector_store is None:
+            if endpoint_url is None:
+                raise ValueError("endpoint_url is required.")
+            if bearer_token is None:
+                raise ValueError("bearer_token is required.")
+            vector_store = ChatGPTRetrievalPluginClient(
+                endpoint_url,
+                bearer_token,
+                retries=retries,
+                batch_size=batch_size,
+            )
+        assert vector_store is not None
+
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,

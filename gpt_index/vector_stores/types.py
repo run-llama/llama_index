@@ -4,6 +4,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
+from enum import Enum
 from gpt_index.data_structs.node_v2 import Node
 
 
@@ -32,6 +33,28 @@ class VectorStoreQueryResult:
     nodes: Optional[List[Node]] = None
     similarities: Optional[List[float]] = None
     ids: Optional[List[str]] = None
+
+
+class VectorStoreQueryMode(str, Enum):
+    """Vector store query mode."""
+
+    DEFAULT = "default"
+    SPARSE = "sparse"
+    HYBRID = "hybrid"
+
+
+@dataclass
+class VectorStoreQuery:
+    """Vector store query."""
+
+    # dense embedding
+    query_embedding: Optional[List[float]] = None
+    similarity_top_k: int = 1
+    doc_ids: Optional[List[str]] = None
+    query_str: Optional[str] = None
+
+    # NOTE: current mode
+    mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT
 
 
 @runtime_checkable
@@ -68,10 +91,11 @@ class VectorStore(Protocol):
 
     def query(
         self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
+        query: VectorStoreQuery,
+        # query_embedding: List[float],
+        # similarity_top_k: int,
+        # doc_ids: Optional[List[str]] = None,
+        # query_str: Optional[str] = None,
     ) -> VectorStoreQueryResult:
         """Query vector store."""
         ...
