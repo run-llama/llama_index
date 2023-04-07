@@ -73,7 +73,7 @@ def create_schema(client: Any, class_prefix: str) -> None:
     client.schema.create_class(class_obj)
 
 
-def query(
+def weaviate_query(
     client: Any,
     class_prefix: str,
     vector: Optional[List[float]] = None,

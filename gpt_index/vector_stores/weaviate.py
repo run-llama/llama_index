@@ -10,7 +10,7 @@ from gpt_index.readers.weaviate.client import (
     add_nodes,
     create_schema,
     delete_document,
-    query,
+    weaviate_query,
 )
 from gpt_index.readers.weaviate.utils import get_default_class_prefix
 from gpt_index.vector_stores.types import (
@@ -121,7 +121,7 @@ class WeaviateVectorStore(VectorStore):
 
         """
         query_embedding = cast(List[float], query.query_embedding)
-        nodes = query(
+        nodes = weaviate_query(
             self._client,
             self._class_prefix,
             vector=query_embedding,
