@@ -18,6 +18,9 @@ from gpt_index.readers.weaviate.utils import (
 from gpt_index.utils import get_new_id
 from gpt_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
 
+import logging
+
+_logger = logging.getLogger(__name__)
 
 NODE_SCHEMA: List[Dict] = [
     {
@@ -92,33 +95,36 @@ def create_schema(client: Any, class_prefix: str) -> None:
 def weaviate_query(
     client: Any,
     class_prefix: str,
-    query: VectorStoreQuery,
+    query_spec: VectorStoreQuery,
 ) -> List[Node]:
     """Convert to LlamaIndex list."""
     validate_client(client)
 
     class_name = _class_name(class_prefix)
     prop_names = [p["name"] for p in NODE_SCHEMA]
-    vector = query.query_embedding
+    vector = query_spec.query_embedding
 
     # build query
     query = client.query.get(class_name, prop_names).with_additional(["id", "vector"])
-    if query.mode == VectorStoreQueryMode.DEFAULT:
+    if query_spec.mode == VectorStoreQueryMode.DEFAULT:
+        _logger.debug("Using vector search")
         if vector is not None:
             query = query.with_near_vector(
                 {
                     "vector": vector,
                 }
             )
-    elif query.mode == VectorStoreQueryMode.HYBRID:
+    elif query_spec.mode == VectorStoreQueryMode.HYBRID:
+        _logger.debug(f"Using hybrid search with alpha {query_spec.alpha}")
         query = query.with_hybrid(
-            query=query.query_str,
-            alpha=query.alpha,
+            query=query_spec.query_str,
+            alpha=query_spec.alpha,
             vector=vector,
         )
-    query = query.with_limit(query.similarity_top_k)
+    query = query.with_limit(query_spec.similarity_top_k)
+    _logger.debug(f"Using limit of {query_spec.similarity_top_k}")
 
-    # execute query 
+    # execute query
     query_result = query.do()
 
     # parse results
