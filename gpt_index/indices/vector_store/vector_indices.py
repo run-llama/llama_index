@@ -5,20 +5,35 @@ from typing import Any, Dict, Optional, Sequence, Type
 from requests.adapters import Retry
 
 from gpt_index.data_structs.data_structs_v2 import (
-    ChatGPTRetrievalPluginIndexDict, ChromaIndexDict, FaissIndexDict,
-    IndexDict, MilvusIndexDict, OpensearchIndexDict, PineconeIndexDict,
-    QdrantIndexDict, SimpleIndexDict, WeaviateIndexDict)
+    ChatGPTRetrievalPluginIndexDict,
+    ChromaIndexDict,
+    FaissIndexDict,
+    IndexDict,
+    MilvusIndexDict,
+    OpensearchIndexDict,
+    PineconeIndexDict,
+    QdrantIndexDict,
+    SimpleIndexDict,
+    WeaviateIndexDict,
+)
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.vector_stores import (ChatGPTRetrievalPluginClient,
-                                     ChromaVectorStore, FaissVectorStore,
-                                     MilvusVectorStore, PineconeVectorStore,
-                                     QdrantVectorStore, SimpleVectorStore,
-                                     WeaviateVectorStore)
-from gpt_index.vector_stores.opensearch import (OpensearchVectorClient,
-                                                OpensearchVectorStore)
+from gpt_index.vector_stores import (
+    ChatGPTRetrievalPluginClient,
+    ChromaVectorStore,
+    FaissVectorStore,
+    MilvusVectorStore,
+    PineconeVectorStore,
+    QdrantVectorStore,
+    SimpleVectorStore,
+    WeaviateVectorStore,
+)
+from gpt_index.vector_stores.opensearch import (
+    OpensearchVectorClient,
+    OpensearchVectorStore,
+)
 
 
 class GPTSimpleVectorIndex(GPTVectorStoreIndex):
@@ -350,10 +365,10 @@ class GPTMilvusIndex(GPTVectorStoreIndex):
     Returns:
         MilvusVectorstore: Vectorstore that supports add, delete, and query.
     """
+
     index_struct_cls: Type[IndexDict] = MilvusIndexDict
 
     def __init__(
-
         self,
         nodes: Optional[Sequence[Node]] = None,
         collection_name: str = "llamalection",
@@ -368,22 +383,25 @@ class GPTMilvusIndex(GPTVectorStoreIndex):
         overwrite: bool = False,
         service_context: Optional[ServiceContext] = None,
         index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[MilvusVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
 
-        vector_store = MilvusVectorStore(
-            collection_name=collection_name,
-            index_params=index_params,
-            search_params=search_params,
-            dim=dim,
-            host=host,
-            port=port,
-            user=user,
-            password=password,
-            use_secure=use_secure,
-            overwrite=overwrite,
-        )
+        if vector_store is None:
+            vector_store = MilvusVectorStore(
+                collection_name=collection_name,
+                index_params=index_params,
+                search_params=search_params,
+                dim=dim,
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                use_secure=use_secure,
+                overwrite=overwrite,
+            )
+        assert vector_store is not None
 
         super().__init__(
             nodes=nodes,
@@ -392,6 +410,7 @@ class GPTMilvusIndex(GPTVectorStoreIndex):
             vector_store=vector_store,
             **kwargs,
         )
+
 
 class GPTChromaIndex(GPTVectorStoreIndex):
     """GPT Chroma Index.
