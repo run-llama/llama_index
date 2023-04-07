@@ -21,7 +21,6 @@ from gpt_index.data_structs.data_structs import (
     IndexList,
     IndexStruct,
     KeywordTable,
-    MilvusIndexDict,
     Node,
     OpensearchIndexDict,
     PineconeIndexDict,
@@ -36,7 +35,6 @@ from gpt_index.data_structs.data_structs_v2 import IndexDict as V2IndexDict
 from gpt_index.data_structs.data_structs_v2 import IndexGraph as V2IndexGraph
 from gpt_index.data_structs.data_structs_v2 import IndexList as V2IndexList
 from gpt_index.data_structs.data_structs_v2 import KeywordTable as V2KeywordTable
-from gpt_index.data_structs.data_structs_v2 import MilvusIndexDict as V2MilvusIndexDict
 from gpt_index.data_structs.data_structs_v2 import (
     OpensearchIndexDict as V2OpensearchIndexDict,
 )
@@ -53,8 +51,8 @@ from gpt_index.data_structs.node_v2 import DocumentRelationship
 from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.node_v2 import Node as V2Node
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.docstore import DocumentStore as V2DocumentStore
 from gpt_index.old_docstore import V1DocumentStore
+from gpt_index.docstore import DocumentStore as V2DocumentStore
 from gpt_index.tools.file_utils import add_prefix_suffix_to_file_path
 
 INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[IndexStruct]] = {
@@ -72,7 +70,6 @@ INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[IndexStru
     IndexStructType.KG: KG,
     IndexStructType.EMPTY: EmptyIndex,
     IndexStructType.NODE: Node,
-    IndexStructType.MILVUS: MilvusIndexDict,
 }
 
 V1_INDEX_STRUCT_KEY = "index_struct"
@@ -187,8 +184,6 @@ def index_dict_to_v2(struct: IndexDict) -> Tuple[V2IndexDict, List[V2Node]]:
         struct_v2 = V2WeaviateIndexDict(**dataclasses.asdict(struct_v2))
     if isinstance(struct, QdrantIndexDict):
         struct_v2 = V2QdrantIndexDict(**dataclasses.asdict(struct_v2))
-    if isinstance(struct, MilvusIndexDict):
-        struct_v2 = V2MilvusIndexDict(**dataclasses.asdict(struct_v2))
     if isinstance(struct, ChromaIndexDict):
         struct_v2 = V2ChromaIndexDict(**dataclasses.asdict(struct_v2))
     if isinstance(struct, OpensearchIndexDict):

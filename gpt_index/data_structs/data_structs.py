@@ -368,15 +368,6 @@ class QdrantIndexDict(IndexDict):
         return IndexStructType.QDRANT
 
 
-class MilvusIndexDict(IndexDict):
-    """Index dict for Milvus vector index."""
-
-    @classmethod
-    def get_type(cls) -> str:
-        """Get type."""
-        return IndexStructType.MILVUS
-
-
 class ChromaIndexDict(IndexDict):
     """Index dict for Chroma vector index."""
 
