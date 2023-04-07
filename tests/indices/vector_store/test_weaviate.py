@@ -1,8 +1,16 @@
 from typing import Any, Dict, List, Optional
 from unittest.mock import Mock, patch
 
+from llama_index import OpenAIEmbedding
+
 from gpt_index.indices.vector_store.vector_indices import GPTWeaviateIndex
 from gpt_index.vector_stores.types import NodeEmbeddingResult
+from tests.mock_utils.mock_decorator import patch_common
+from tests.playground.test_base import (
+    mock_get_query_embedding,
+    mock_get_text_embedding,
+    mock_get_text_embeddings,
+)
 
 
 class MockWeaviateVectorStore:
@@ -34,6 +42,7 @@ class MockWeaviateVectorStore:
         return []
 
 
+@patch_common
 @patch(
     "gpt_index.indices.vector_store.vector_indices.WeaviateVectorStore",
     MockWeaviateVectorStore,
@@ -46,7 +55,13 @@ class MockWeaviateVectorStore:
     "gpt_index.vector_stores.registry.VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS",
     {"mock_type": MockWeaviateVectorStore},
 )
-def test_save_load() -> None:
+def test_save_load(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+) -> None:
     """Test we can save and load."""
     weaviate_client = Mock()
     index = GPTWeaviateIndex.from_documents(
