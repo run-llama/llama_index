@@ -34,7 +34,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         service_context: ServiceContext,
         vector_store: Optional[VectorStore] = None,
         similarity_top_k: int = 1,
-        vector_store_search_mode: str = VectorStoreQueryMode.DEFAULT,
+        vector_store_query_mode: str = VectorStoreQueryMode.DEFAULT,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -45,7 +45,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         if vector_store is None:
             raise ValueError("Vector store is required for vector store query.")
         self._vector_store = vector_store
-        self._vector_store_query_mode = VectorStoreQueryMode(vector_store_search_mode)
+        self._vector_store_query_mode = VectorStoreQueryMode(vector_store_query_mode)
 
     def _retrieve(
         self,

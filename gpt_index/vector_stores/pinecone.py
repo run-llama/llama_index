@@ -80,6 +80,25 @@ def generate_sparse_vectors(
     return sparse_embeds
 
 
+def get_default_tokenizer() -> Callable:
+    """Get default tokenizer.
+
+    NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
+
+    """
+    from transformers import BertTokenizerFast
+
+    orig_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+    # set some default arguments, so input is just a list of strings
+    tokenizer = partial(
+        orig_tokenizer,
+        padding=True,
+        truncation=True,
+        max_length=512,
+    )
+    return tokenizer
+
+
 class PineconeVectorStore(VectorStore):
     """Pinecone Vector Store.
 
@@ -170,18 +189,7 @@ class PineconeVectorStore(VectorStore):
 
         self._add_sparse_vector = add_sparse_vector
         if tokenizer is None:
-            from transformers import BertTokenizerFast
-
-            orig_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
-            # set some default arguments, so input is just a list of strings
-            tokenizer = partial(
-                orig_tokenizer,
-                padding=True,
-                truncation=True,
-                max_length=512,
-                # taking this out because causing errors
-                # special_tokens=False,
-            )
+            tokenizer = get_default_tokenizer()
         self._tokenizer = tokenizer
 
     @classmethod
@@ -287,6 +295,10 @@ class PineconeVectorStore(VectorStore):
         """
         sparse_vector = None
         if query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID):
+            if query.query_str is None:
+                raise ValueError(
+                    "query_str must be specified if mode is SPARSE or HYBRID."
+                )
             sparse_vector = generate_sparse_vectors([query.query_str], self._tokenizer)[
                 0
             ]
