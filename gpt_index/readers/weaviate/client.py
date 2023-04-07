@@ -56,6 +56,7 @@ NODE_SCHEMA: List[Dict] = [
     },
 ]
 
+
 def _get_by_id(client: Any, object_id: str, class_prefix: str) -> Dict:
     """Get entry by id."""
     validate_client(client)
@@ -156,24 +157,24 @@ def _to_node(entry: Dict) -> Node:
     )
 
 
-def _add_node(
-    client: Any, node: Node, class_prefix: str, batch: Optional[Any] = None
-) -> str:
-    """Add node."""
+def _node_to_dict(node: Node) -> dict:
     node_dict = node.to_dict()
-    vector = node_dict.pop("embedding")
+    node_dict.pop("embedding")  # NOTE: stored outside of dict
+
     # json-serialize the extra_info
     extra_info = node_dict.pop("extra_info")
     extra_info_str = ""
     if extra_info is not None:
         extra_info_str = json.dumps(extra_info)
     node_dict["extra_info"] = extra_info_str
+
     # json-serialize the node_info
     node_info = node_dict.pop("node_info")
     node_info_str = ""
     if node_info is not None:
         node_info_str = json.dumps(node_info)
     node_dict["node_info"] = node_info_str
+
     # json-serialize the relationships
     relationships = node_dict.pop("relationships")
     relationships_str = ""
@@ -184,6 +185,15 @@ def _add_node(
     ref_doc_id = node.ref_doc_id
     if ref_doc_id is not None:
         node_dict["ref_doc_id"] = ref_doc_id
+    return node_dict
+
+
+def _add_node(
+    client: Any, node: Node, class_prefix: str, batch: Optional[Any] = None
+) -> str:
+    """Add node."""
+    node_dict = _node_to_dict(node)
+    vector = node.embedding
 
     # TODO: account for existing nodes that are stored
     node_id = get_new_id(set())
