@@ -120,12 +120,10 @@ class WeaviateVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
-        query_embedding = cast(List[float], query.query_embedding)
         nodes = weaviate_query(
             self._client,
             self._class_prefix,
-            vector=query_embedding,
-            object_limit=query.similarity_top_k,
+            query,
         )
         nodes = nodes[: query.similarity_top_k]
         node_idxs = [str(i) for i in range(len(nodes))]

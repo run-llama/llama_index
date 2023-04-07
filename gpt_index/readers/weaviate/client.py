@@ -16,6 +16,7 @@ from gpt_index.readers.weaviate.utils import (
     validate_client,
 )
 from gpt_index.utils import get_new_id
+from gpt_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
 
 
 NODE_SCHEMA: List[Dict] = [
@@ -91,31 +92,39 @@ def create_schema(client: Any, class_prefix: str) -> None:
 def weaviate_query(
     client: Any,
     class_prefix: str,
-    vector: Optional[List[float]] = None,
-    object_limit: Optional[int] = None,
+    query: VectorStoreQuery,
 ) -> List[Node]:
     """Convert to LlamaIndex list."""
     validate_client(client)
+
     class_name = _class_name(class_prefix)
-    properties = NODE_SCHEMA
-    prop_names = [p["name"] for p in properties]
+    prop_names = [p["name"] for p in NODE_SCHEMA]
+    vector = query.query_embedding
+
+    # build query
     query = client.query.get(class_name, prop_names).with_additional(["id", "vector"])
-    if vector is not None:
-        query = query.with_near_vector(
-            {
-                "vector": vector,
-            }
+    if query.mode == VectorStoreQueryMode.DEFAULT:
+        if vector is not None:
+            query = query.with_near_vector(
+                {
+                    "vector": vector,
+                }
+            )
+    elif query.mode == VectorStoreQueryMode.HYBRID:
+        query = query.with_hybrid(
+            query=query.query_str,
+            alpha=query.alpha,
+            vector=vector,
         )
-    if object_limit is not None:
-        query = query.with_limit(object_limit)
+    query = query.with_limit(query.similarity_top_k)
+
+    # execute query 
     query_result = query.do()
+
+    # parse results
     parsed_result = parse_get_response(query_result)
     entries = parsed_result[class_name]
-
-    results: List[Node] = []
-    for entry in entries:
-        results.append(_to_node(entry))
-
+    results = [_to_node(entry) for entry in entries]
     return results
 
 
