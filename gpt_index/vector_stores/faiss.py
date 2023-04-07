@@ -12,6 +12,7 @@ from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
 )
 
 
@@ -131,10 +132,7 @@ class FaissVectorStore(VectorStore):
 
     def query(
         self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
+        query: VectorStoreQuery,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
@@ -143,8 +141,11 @@ class FaissVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        query_embedding = cast(List[float], query.query_embedding)
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
-        dists, indices = self._faiss_index.search(query_embedding_np, similarity_top_k)
+        dists, indices = self._faiss_index.search(
+            query_embedding_np, query.similarity_top_k
+        )
         dists = [d for d in dists[0]]
         # if empty, then return an empty response
         if len(indices) == 0:
