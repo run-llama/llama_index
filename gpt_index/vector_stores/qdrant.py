@@ -14,6 +14,7 @@ from gpt_index.vector_stores.types import (
     VectorStoreQueryResult,
     VectorStoreQuery,
 )
+from qdrant_client.http.exceptions import UnexpectedResponse
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +155,8 @@ class QdrantVectorStore(VectorStore):
         try:
             self._client.get_collection(collection_name)
         except ValueError:
+            return False
+        except UnexpectedResponse:
             return False
         return True
 
