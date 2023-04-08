@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.vector_store.vector_indices import (
     GPTFaissIndex,
@@ -17,16 +17,13 @@ from gpt_index.readers.schema.base import Document
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
-from gpt_index.data_structs.node_v2 import DocumentRelationship
 
 
 @pytest.fixture
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
-    index_kwargs = {
-        "text_qa_template": MOCK_TEXT_QA_PROMPT,
-    }
-    query_kwargs = {
+    index_kwargs: Dict[str, Any] = {}
+    query_kwargs: Dict[str, Any] = {
         "text_qa_template": MOCK_TEXT_QA_PROMPT,
         "refine_template": MOCK_REFINE_PROMPT,
         "similarity_top_k": 1,
@@ -397,6 +394,7 @@ def test_simple_delete(
     # test delete
     index.delete("test_id_0")
     assert len(index.index_struct.nodes_dict) == 3
+    assert len(index.index_struct.doc_id_dict) == 3
     actual_node_tups = [
         ("This is a test.", [0, 1, 0, 0, 0], "test_id_1"),
         ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),

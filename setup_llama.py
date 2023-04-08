@@ -12,7 +12,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 install_requires = [
     "dataclasses_json",
-    "langchain",
+    "langchain>=0.0.123",
     "numpy",
     "tenacity>=8.2.0,<9.0.0",
     "openai>=0.26.4",

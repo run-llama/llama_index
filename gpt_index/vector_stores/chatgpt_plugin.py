@@ -12,6 +12,7 @@ from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
 )
 
 
@@ -81,6 +82,10 @@ class ChatGPTRetrievalPluginClient(VectorStore):
         self._s = requests.Session()
         self._s.mount("http://", HTTPAdapter(max_retries=self._retries))
 
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        return cls(**config_dict)
+
     @property
     def client(self) -> None:
         """Get client."""
@@ -89,7 +94,11 @@ class ChatGPTRetrievalPluginClient(VectorStore):
     @property
     def config_dict(self) -> dict:
         """Get config dict."""
-        return {"batch_size": self._batch_size}
+        return {
+            "endpoint_url": self._endpoint_url,
+            "batch_size": self._batch_size,
+            "retries": self._retries,
+        }
 
     def add(
         self,
@@ -120,17 +129,14 @@ class ChatGPTRetrievalPluginClient(VectorStore):
 
     def query(
         self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
+        query: VectorStoreQuery,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
-        if query_str is None:
+        if query.query_str is None:
             raise ValueError("query_str must be provided")
         headers = {"Authorization": f"Bearer {self._bearer_token}"}
         # TODO: add metadata filter
-        queries = [{"query": query_str, "top_k": similarity_top_k}]
+        queries = [{"query": query.query_str, "top_k": query.similarity_top_k}]
         res = requests.post(
             f"{self._endpoint_url}/query", headers=headers, json={"queries": queries}
         )

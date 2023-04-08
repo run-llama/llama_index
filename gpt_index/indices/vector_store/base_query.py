@@ -5,14 +5,17 @@ from typing import Any, List, Optional
 
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 
-# from gpt_index.data_structs.data_structs import IndexDict, Node
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import log_vector_store_query_result
-from gpt_index.vector_stores.types import VectorStore
+from gpt_index.vector_stores.types import (
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+)
 
 
 class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
@@ -31,6 +34,8 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         service_context: ServiceContext,
         vector_store: Optional[VectorStore] = None,
         similarity_top_k: int = 1,
+        vector_store_query_mode: str = VectorStoreQueryMode.DEFAULT,
+        alpha: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -41,6 +46,8 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         if vector_store is None:
             raise ValueError("Vector store is required for vector store query.")
         self._vector_store = vector_store
+        self._vector_store_query_mode = VectorStoreQueryMode(vector_store_query_mode)
+        self._alpha = alpha
 
     def _retrieve(
         self,
@@ -54,21 +61,20 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
                         query_bundle.embedding_strs
                     )
                 )
-            query_result = self._vector_store.query(
-                query_bundle.embedding,
-                self._similarity_top_k,
-                self._doc_ids,
-            )
-        else:
-            # TODO: fix function signature of query
-            query_result = self._vector_store.query(
-                [],
-                self._similarity_top_k,
-                self._doc_ids,
-                query_str=query_bundle.query_str,
-            )
+
+        query = VectorStoreQuery(
+            query_embedding=query_bundle.embedding,
+            similarity_top_k=self._similarity_top_k,
+            doc_ids=self._doc_ids,
+            query_str=query_bundle.query_str,
+            mode=self._vector_store_query_mode,
+            alpha=self._alpha,
+        )
+        query_result = self._vector_store.query(query)
 
         if query_result.nodes is None:
+            # NOTE: vector store does not keep text and returns node indices.
+            # Need to recover all nodes from docstore
             if query_result.ids is None:
                 raise ValueError(
                     "Vector store query result should return at "
@@ -78,6 +84,13 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
             node_ids = [self._index_struct.nodes_dict[idx] for idx in query_result.ids]
             nodes = self._docstore.get_nodes(node_ids)
             query_result.nodes = nodes
+        else:
+            # NOTE: vector store keeps text, returns nodes.
+            # Only need to recover image or index nodes from docstore
+            for i in range(len(query_result.nodes)):
+                node_id = query_result.nodes[i].get_doc_id()
+                if node_id in self._docstore.docs:
+                    query_result.nodes[i] = self._docstore.get_node(node_id)
 
         log_vector_store_query_result(query_result)
 

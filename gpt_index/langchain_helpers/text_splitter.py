@@ -253,7 +253,7 @@ class SentenceSplitter(TextSplitter):
         backup_separators: Optional[List[str]] = ["\n"],
         paragraph_separator: Optional[str] = "\n\n\n",
         chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
-        secondary_chunking_regex: Optional[str] = "[^,.;]+[,.;]?",
+        secondary_chunking_regex: Optional[str] = "[^,.;。]+[,.;。]?",
     ):
         """Initialize with parameters."""
         if chunk_overlap > chunk_size:

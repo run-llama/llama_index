@@ -14,6 +14,7 @@ LlamaIndex supports loading data from the following sources. See [Data Connector
 - Weaviate (`WeaviateReader`). [Installation](https://weaviate.io/developers/weaviate/current/getting-started/installation.html). [Python Client](https://weaviate.io/developers/weaviate/current/client-libraries/python.html).
 - Pinecone (`PineconeReader`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Milvus (`MilvusReader`). [Installation](https://milvus.io/docs)
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
@@ -67,6 +68,7 @@ These are found in the following classes:
 - `GPTPineconeIndex`
 - `GPTQdrantIndex`
 - `GPTChromaIndex`
+- `GPTMilvusIndex`
 
 
 An API reference of each vector index is [found here](/reference/indices/vector_store.rst).
@@ -201,5 +203,28 @@ index = GPTChromaIndex.from_documents(documents, chroma_collection=chroma_collec
 response = index.query("What did the author do growing up?")
 
 ```
+
+**Milvus Index Construction/Querying**
+
+```python
+import pymilvus
+from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
+
+
+# Load documents, build the GPTMilvusStore
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTMilvusIndex.from_documents(documents, host='localhost', port=19530, overwrite='True')
+
+# Query index
+response = index.query("What did the author do growing up?")
+
+```
+
+**Note**: `GPTMilvusIndex` depends on the `pymilvus` library.
+Use `pip install pymilvus` if not already installed.
+If you get stuck at building wheel for `grpcio`, check if you are using python 3.11
+(there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
+and try downgrading.
+
 
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).

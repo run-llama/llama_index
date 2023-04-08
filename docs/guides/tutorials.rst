@@ -21,5 +21,6 @@ Jupyter notebook to a chatbot to a full-stack web application.
    tutorials/building_a_chatbot.md
    tutorials/fullstack_app_guide.md
    tutorials/sql_guide.md
+   tutorials/terms_definitions_tutorial.md
    SEC 10k Analysis <https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d>
 
