@@ -331,3 +331,56 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
 
         sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.get_doc_id())
         return list(sorted_nodes)
+
+
+class AutoRecencyNodePostprocessor(BaseNodePostprocessor):
+    """AutoRecency Node post-processor.
+
+    Allows users to fetch additional nodes from the document store,
+    based on the prev/next relationships of the nodes.
+
+    NOTE: difference with PrevNextPostprocessor is that
+    this infers forward/backwards direction.
+
+    NOTE: this is a beta feature.
+
+    Args:
+        docstore (DocumentStore): The document store.
+        llm_predictor (LLMPredictor): The LLM predictor.
+        num_nodes (int): The number of nodes to return (default: 1)
+        infer_prev_next_tmpl (str): The template to use for inference.
+            Required fields are {context_str} and {query_str}.
+
+    """
+
+    docstore: DocumentStore
+    service_context: ServiceContext
+    num_nodes: int = Field(default=1)
+    infer_prev_next_tmpl: str = Field(default=DEFAULT_INFER_PREV_NEXT_TMPL)
+    refine_prev_next_tmpl: str = Field(default=DEFAULT_REFINE_INFER_PREV_NEXT_TMPL)
+    verbose: bool = Field(default=False)
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    def _parse_prediction(self, raw_pred: str) -> str:
+        """Parse prediction."""
+        pred = raw_pred.strip().lower()
+        if "previous" in pred:
+            return "previous"
+        elif "next" in pred:
+            return "next"
+        elif "none" in pred:
+            return "none"
+        raise ValueError(f"Invalid prediction: {raw_pred}")
+
+    def postprocess_nodes(
+        self, nodes: List[Node], extra_info: Optional[Dict] = None
+    ) -> List[Node]:
+        """Postprocess nodes."""
+        if extra_info is None or "query_bundle" not in extra_info:
+            raise ValueError("Missing query bundle in extra info.")
+
+        query_bundle = cast(QueryBundle, extra_info["query_bundle"])
