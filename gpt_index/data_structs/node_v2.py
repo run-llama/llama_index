@@ -37,7 +37,6 @@ class DocumentRelationship(str, Enum):
     PREVIOUS = auto()
     NEXT = auto()
     PARENT = auto()
-    CHILD = auto()
 
 
 class NodeType(str, Enum):
@@ -68,10 +67,11 @@ class Node(BaseDocument):
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
 
-    # document relationships
-    relationships: Dict[DocumentRelationship, Union[str, List[str]]] = field(
-        default_factory=dict
-    )
+    # document relationships, except children
+    relationships: Dict[DocumentRelationship, str] = field(default_factory=dict)
+
+    # children
+    children: List[str] = field(default_factory=list)
 
     @property
     def ref_doc_id(self) -> Optional[str]:
@@ -106,9 +106,9 @@ class Node(BaseDocument):
     @property
     def child_node_ids(self) -> List[str]:
         """Child node ids."""
-        if DocumentRelationship.CHILD not in self.relationships:
+        if len(self.children) == 0:
             raise ValueError("Node does not have child nodes")
-        return self.relationships[DocumentRelationship.CHILD]
+        return self.children
 
     def get_text(self) -> str:
         """Get text."""
