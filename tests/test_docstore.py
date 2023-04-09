@@ -35,6 +35,7 @@ def test_docstore() -> None:
         "extra_info": None,
         "node_info": {"node": "info"},
         "relationships": {},
+        "children": [],
         TYPE_KEY: NodeType.TEXT,
     }
     doc_dict["docs"]["d1"].pop("doc_hash")
