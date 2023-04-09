@@ -77,7 +77,10 @@ class GlobalsHelper:
                 raise ImportError(
                     "`nltk` package not found, please run `pip install nltk`"
                 )
-            nltk.download("stopwords")
+            try:
+                nltk.data.find("corpora/stopwords")
+            except LookupError:
+                nltk.download("stopwords")
             self._stopwords = stopwords.words("english")
         return self._stopwords
 
