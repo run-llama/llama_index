@@ -12,7 +12,7 @@ import logging
 import warnings
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
