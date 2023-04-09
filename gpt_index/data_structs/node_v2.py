@@ -12,7 +12,7 @@ import logging
 import warnings
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -69,7 +69,7 @@ class Node(BaseDocument):
     node_info: Optional[Dict[str, Any]] = None
 
     # document relationships
-    relationships: Dict[DocumentRelationship, Union[str, list[str]]] = field(
+    relationships: Dict[DocumentRelationship, Union[str, List[str]]] = field(
         default_factory=dict
     )
 
@@ -104,7 +104,7 @@ class Node(BaseDocument):
         return self.relationships[DocumentRelationship.PARENT]
 
     @property
-    def child_node_ids(self) -> list[str]:
+    def child_node_ids(self) -> List[str]:
         """Child node ids."""
         if DocumentRelationship.CHILD not in self.relationships:
             raise ValueError("Node does not have child nodes")
