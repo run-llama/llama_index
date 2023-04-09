@@ -29,7 +29,6 @@ class DocumentRelationship(str, Enum):
         PREVIOUS: The node is the previous node in the document.
         NEXT: The node is the next node in the document.
         PARENT: The node is the parent node in the document.
-        CHILD: The node is the child node in the document.
 
     """
 
@@ -54,6 +53,7 @@ class Node(BaseDocument):
         doc_id (Optional[str]): The document id of the node.
         embeddings (Optional[List[float]]): The embeddings of the node.
         relationships (Dict[DocumentRelationship, str]): The relationships of the node.
+        children (List[str]): The children of the node.
 
     """
 
