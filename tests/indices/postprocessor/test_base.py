@@ -11,13 +11,13 @@ from gpt_index.indices.postprocessor.node import (
 )
 from gpt_index.indices.postprocessor.node_recency import (
     FixedRecencyPostprocessor,
+    EmbeddingRecencyPostprocessor,
 )
 from gpt_index.docstore import DocumentStore
 from gpt_index.llm_predictor import LLMPredictor
-from unittest.mock import patch, MagicMock, Mock
+from unittest.mock import patch
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from tests.mock_utils.mock_decorator import patch_common
-from typing import List, Any, Tuple
+from typing import List, Any, Tuple, cast, Dict
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -49,7 +49,7 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 
 def mock_get_query_embedding(query: str) -> List[float]:
     """Mock get query embedding."""
-    return [0, 0, 1, 0, 0]
+    return mock_get_text_embedding(query)
 
 
 def test_forward_back_processor() -> None:
@@ -183,9 +183,60 @@ def test_fixed_recency_postprocessor(
     postprocessor = FixedRecencyPostprocessor(
         top_k=1, service_context=service_context, in_extra_info=False
     )
-    query_bundle: QueryBundle = QueryBundle(query_str="What is?")
+    query_bundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
         nodes, extra_info={"query_bundle": query_bundle}
     )
     assert len(result_nodes) == 1
     assert result_nodes[0].get_text() == "This is a test v2."
+
+
+@patch.object(LLMPredictor, "predict", side_effect=mock_recency_predict)
+@patch.object(LLMPredictor, "__init__", return_value=None)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_embedding_recency_postprocessor(
+    _mock_query_embed: Any,
+    _mock_texts: Any,
+    _mock_text: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+) -> None:
+    """Test fixed recency processor."""
+
+    # try in node info
+    nodes = [
+        Node("Hello world.", doc_id="1", node_info={"date": "2020-01-01"}),
+        Node("This is a test.", doc_id="2", node_info={"date": "2020-01-02"}),
+        Node("This is another test.", doc_id="3", node_info={"date": "2020-01-02"}),
+        Node("This is another test.", doc_id="3v2", node_info={"date": "2020-01-03"}),
+        Node("This is a test v2.", doc_id="4", node_info={"date": "2020-01-04"}),
+    ]
+    service_context = ServiceContext.from_defaults()
+
+    postprocessor = EmbeddingRecencyPostprocessor(
+        top_k=1,
+        service_context=service_context,
+        in_extra_info=False,
+        query_embedding_tmpl="{context_str}",
+    )
+    query_bundle: QueryBundle = QueryBundle(query_str="What is?")
+    result_nodes = postprocessor.postprocess_nodes(
+        nodes, extra_info={"query_bundle": query_bundle}
+    )
+    print(result_nodes)
+    assert len(result_nodes) == 4
+    assert result_nodes[0].get_text() == "This is a test v2."
+    assert cast(Dict, result_nodes[0].node_info)["date"] == "2020-01-04"
+    assert result_nodes[1].get_text() == "This is another test."
+    assert result_nodes[1].get_doc_id() == "3v2"
+    assert cast(Dict, result_nodes[1].node_info)["date"] == "2020-01-03"
+    assert result_nodes[2].get_text() == "This is a test."
+    assert cast(Dict, result_nodes[2].node_info)["date"] == "2020-01-02"

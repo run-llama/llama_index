@@ -1,44 +1,41 @@
 """Node recency post-processor."""
 
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
-from gpt_index.docstore import DocumentStore
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.prompts.prompts import SimpleInputPrompt
 from pydantic import Field
-from typing import Optional, Dict, List, cast, Set
-from gpt_index.indices.query.schema import QueryBundle
+from typing import Optional, Dict, List, Set
 import pandas as pd
 import numpy as np
 
 
-# defau
-DEFAULT_INFER_RECENCY_TMPL = (
-    "A question is provided.\n"
-    "The goal is to determine whether the question requires finding the most recent "
-    "context.\n"
-    "Please respond with YES or NO.\n"
-    "Question: What is the current status of the patient?\n"
-    "Answer: YES.\n"
-    "Question: What happened in the Battle of Yorktown?\n"
-    "Answer: NO.\n"
-    "Question: What are the most recent changes to the project?\n"
-    "Answer: YES.\n"
-    "Question: How did Harry defeat Voldemort in the Battle of Hogwarts?\n"
-    "Answer: NO.\n"
-    "Question: {query_str}\n"
-    "Answer: NO."
-)
+# NOTE: currently not being used
+# DEFAULT_INFER_RECENCY_TMPL = (
+#     "A question is provided.\n"
+#     "The goal is to determine whether the question requires finding the most recent "
+#     "context.\n"
+#     "Please respond with YES or NO.\n"
+#     "Question: What is the current status of the patient?\n"
+#     "Answer: YES\n"
+#     "Question: What happened in the Battle of Yorktown?\n"
+#     "Answer: NO\n"
+#     "Question: What are the most recent changes to the project?\n"
+#     "Answer: YES\n"
+#     "Question: How did Harry defeat Voldemort in the Battle of Hogwarts?\n"
+#     "Answer: NO\n"
+#     "Question: {query_str}\n"
+#     "Answer: "
+# )
 
 
-def parse_recency_pred(pred: str) -> bool:
-    """Parse recency prediction."""
-    if pred == "YES":
-        return True
-    elif pred == "NO":
-        return False
-    else:
-        raise ValueError(f"Invalid recency prediction: {pred}.")
+# def parse_recency_pred(pred: str) -> bool:
+#     """Parse recency prediction."""
+#     if "YES" in pred:
+#         return True
+#     elif "NO" in pred:
+#         return False
+#     else:
+#         raise ValueError(f"Invalid recency prediction: {pred}.")
 
 
 class FixedRecencyPostprocessor(BaseNodePostprocessor):
@@ -52,9 +49,9 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
 
     """
 
-    top_k: int = 1
     service_context: ServiceContext
-    infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
+    top_k: int = 1
+    # infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
     date_key: str = "date"
     # if false, then search node info
     in_extra_info: bool = True
@@ -67,19 +64,16 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
         if extra_info is None or "query_bundle" not in extra_info:
             raise ValueError("Missing query bundle in extra info.")
 
-        query_bundle = cast(QueryBundle, extra_info["query_bundle"])
-
-        infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
-
-        raw_pred, _ = self.service_context.llm_predictor.predict(
-            prompt=infer_recency_prompt,
-            query_str=query_bundle.query_str,
-        )
-
-        pred = parse_recency_pred(raw_pred)
-        # if no need to use recency post-processor, return nodes as is
-        if not pred:
-            return nodes
+        # query_bundle = cast(QueryBundle, extra_info["query_bundle"])
+        # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
+        # raw_pred, _ = self.service_context.llm_predictor.predict(
+        #     prompt=infer_recency_prompt,
+        #     query_str=query_bundle.query_str,
+        # )
+        # pred = parse_recency_pred(raw_pred)
+        # # if no need to use recency post-processor, return nodes as is
+        # if not pred:
+        #     return nodes
 
         # sort nodes by date
         info_dict_attr = "extra_info" if self.in_extra_info else "node_info"
@@ -118,7 +112,7 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     """
 
     service_context: ServiceContext
-    infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
+    # infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
     date_key: str = "date"
     # if false, then search node info
     in_extra_info: bool = True
@@ -133,19 +127,16 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
         if extra_info is None or "query_bundle" not in extra_info:
             raise ValueError("Missing query bundle in extra info.")
 
-        query_bundle = cast(QueryBundle, extra_info["query_bundle"])
-
-        infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
-
-        raw_pred, _ = self.service_context.llm_predictor.predict(
-            prompt=infer_recency_prompt,
-            query_str=query_bundle.query_str,
-        )
-
-        pred = parse_recency_pred(raw_pred)
-        # if no need to use recency post-processor, return nodes as is
-        if not pred:
-            return nodes
+        # query_bundle = cast(QueryBundle, extra_info["query_bundle"])
+        # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
+        # raw_pred, _ = self.service_context.llm_predictor.predict(
+        #     prompt=infer_recency_prompt,
+        #     query_str=query_bundle.query_str,
+        # )
+        # pred = parse_recency_pred(raw_pred)
+        # # if no need to use recency post-processor, return nodes as is
+        # if not pred:
+        #     return nodes
 
         # sort nodes by date
         info_dict_attr = "extra_info" if self.in_extra_info else "node_info"
@@ -161,9 +152,9 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
             embed_model.queue_text_for_embeddding(node.get_doc_id(), node.get_text())
 
         _, text_embeddings = embed_model.get_queued_text_embeddings()
-        nodes_to_skip: Set[Node] = set()
+        node_ids_to_skip: Set[str] = set()
         for idx, node in enumerate(sorted_nodes):
-            if node in nodes_to_skip:
+            if node.get_doc_id() in node_ids_to_skip:
                 continue
             # get query embedding for the "query" node
             # NOTE: not the same as the text embedding because
@@ -175,13 +166,15 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
             query_embedding = embed_model.get_query_embedding(query_text)
 
             for idx2 in range(idx + 1, len(sorted_nodes)):
-                if sorted_nodes[idx2] in nodes_to_skip:
+                if sorted_nodes[idx2].get_doc_id() in node_ids_to_skip:
                     continue
                 node2 = sorted_nodes[idx2]
                 if (
                     np.dot(query_embedding, text_embeddings[idx2])
                     > self.similarity_cutoff
                 ):
-                    nodes_to_skip.add(node2)
+                    node_ids_to_skip.add(node2.get_doc_id())
 
-        return [node for node in sorted_nodes if node not in nodes_to_skip]
+        return [
+            node for node in sorted_nodes if node.get_doc_id() not in node_ids_to_skip
+        ]
