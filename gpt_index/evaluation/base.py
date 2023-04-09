@@ -56,9 +56,34 @@ DEFAULT_REFINE_PROMPT = (
     "Otherwise answer NO.\n"
 )
 
+QUERY_RESPONSE_EVAL_PROMPT = (
+"Your task is to evaluate if the response for the query \
+    is in line with the context information provided.\n"
+"You have two options to answer. Either YES/ NO.\n"
+"Answer - YES, if the response for the query \
+    is in line with context information otherwise NO.\n"
+    "Query and Response: \n {query_str}\n"
+    "Context: \n {context_str}\n"
+    "Answer: "
+)
+
+QUERY_RESPONSE_REFINE_PROMPT = (
+    "We want to understand if the following query and response is"
+    "in line with the context information: \n {query_str}\n"
+    "We have provided an existing YES/NO answer: \n {existing_answer}\n"
+    "We have the opportunity to refine the existing answer "
+    "(only if needed) with some more context below.\n"
+    "------------\n"
+    "{context_msg}\n"
+    "------------\n"
+    "If the existing answer was already YES, still answer YES. "
+    "If the information is present in the new context, answer YES. "
+    "Otherwise answer NO.\n"
+)
+
 
 class ResponseEvaluator:
-    """Evaluate based on response from indices.
+    """Evaluate based on query and response from indices.
 
     NOTE: this is a beta feature, subject to change!
 
@@ -66,6 +91,8 @@ class ResponseEvaluator:
         mode (str): Mode with which the response should be evaluated.
             1. context_response -> comparing context \
             information and response.
+            2. context_query_Response -> comparing context \
+            information, query and response.
             2. others coming soon!
     
     """
@@ -96,14 +123,17 @@ class ResponseEvaluator:
 
         return context
 
-    def evaluate(self, response: Response) -> str:
+    def evaluate(self, query: str, response: Response) -> str:
         """Evaluate the response from an index.
 
         Args:
+            query: Query for which response is generated from index.
             response: Response object from an index based on the query.
         Returns:
-            Yes -> If answer, context information are matching
-            No -> If answer, context information are not matching
+            Yes -> If answer, context information are matching \
+                    or If Query, answer and context information are matching.
+            No -> If answer, context information are not matching \
+                    or If Query, answer and context information are not matching.
         """
         answer = str(response)
 
@@ -123,6 +153,19 @@ class ResponseEvaluator:
                 refine_template=REFINE_PROMPT_TMPL,
             )
             response_txt = str(response_obj)
+        elif self.mode == "context_query_response":
+            QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(QUERY_RESPONSE_EVAL_PROMPT)
+            QUERY_RESPONSE_REFINE_PROMPT_TMPL = RefinePrompt(QUERY_RESPONSE_REFINE_PROMPT)
+
+            query_response = f'Question: {query}\nResponse: {answer}'
+
+            response_obj = index.query(
+                query_response,
+                text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
+                refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
+            )
+            response_txt = str(response_obj)
+
         else:
             raise NotImplementedError(f"Mode {self.mode} not implemented.")
 
