@@ -151,9 +151,12 @@ class QdrantVectorStore(VectorStore):
 
     def _collection_exists(self, collection_name: str) -> bool:
         """Check if a collection exists."""
+        from grpc import RpcError
+        from qdrant_client.http.exceptions import UnexpectedResponse
+
         try:
             self._client.get_collection(collection_name)
-        except ValueError:
+        except (RpcError, UnexpectedResponse):
             return False
         return True
 
