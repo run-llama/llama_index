@@ -1,12 +1,18 @@
 import os
-from configparser import ConfigParser
-from typing import Any
+from configparser import ConfigParser, SectionProxy
+from typing import Any, Type
 from llama_index.embeddings.openai import OpenAIEmbedding
 from langchain import OpenAI
+from langchain.schema import BaseLanguageModel
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index import GPTSimpleVectorIndex, ServiceContext, LLMPredictor
-from llama_index.data_structs.data_structs_v2 import SimpleIndexDict
+from llama_index import (
+    GPTSimpleVectorIndex,
+    GPTSimpleKeywordTableIndex,
+    ServiceContext,
+    LLMPredictor,
+)
+from llama_index.llm_predictor import StructuredLLMPredictor
 
 
 CONFIG_FILE_NAME = "config.ini"
@@ -37,17 +43,28 @@ def load_index(root: str = ".") -> BaseGPTIndex[Any]:
     """Load existing index file"""
     config = load_config(root)
     service_context = _load_service_context(config)
+
+    # Index type
+    index_type: Type
+    if config["index"]["type"] == "default" or config["index"]["type"] == "vector":
+        index_type = GPTSimpleVectorIndex
+    elif config["index"]["type"] == "keyword":
+        index_type = GPTSimpleKeywordTableIndex
+    else:
+        raise KeyError(f"Unknown index.type {config['index']['type']}")
+
+    # store type
     if config["store"]["type"] == "json":
         index_file = os.path.join(root, JSON_INDEX_FILE_NAME)
     else:
-        raise KeyError(f"Unknown index.type {config['index']['type']}")
+        raise KeyError(f"Unknown index.type {config['store']['type']}")
+
+    # Build index
     if os.path.exists(index_file):
-        return GPTSimpleVectorIndex.load_from_disk(
-            index_file, service_context=service_context
-        )
+        return index_type.load_from_disk(index_file, service_context=service_context)
     else:
-        return GPTSimpleVectorIndex(
-            index_struct=SimpleIndexDict(), service_context=service_context
+        return index_type(
+            index_struct=index_type.index_struct_cls(), service_context=service_context
         )
 
 
@@ -74,12 +91,20 @@ def _load_llm_predictor(config: ConfigParser) -> LLMPredictor:
     """Internal function to load LLM predictor based on configuration"""
     model_type = config["llm_predictor"]["type"].lower()
     if model_type == "default":
-        return LLMPredictor()
-    if model_type == "azure":
-        engine = config["llm_predictor"]["engine"]
-        return LLMPredictor(llm=OpenAI(engine=engine))
+        llm = _load_llm(config["llm_predictor"])
+        return LLMPredictor(llm=llm)
+    elif model_type == "structured":
+        llm = _load_llm(config["llm_predictor"])
+        return StructuredLLMPredictor(llm=llm)
     else:
         raise KeyError("llm_predictor.type")
+
+
+def _load_llm(section: SectionProxy) -> BaseLanguageModel:
+    if "engine" in section:
+        return OpenAI(engine=section["engine"])
+    else:
+        return OpenAI()
 
 
 def _load_embed_model(config: ConfigParser) -> BaseEmbedding:
