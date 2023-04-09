@@ -8,6 +8,10 @@ from gpt_index.indices.postprocessor.node import (
     PrevNextNodePostprocessor,
     AutoPrevNextNodePostprocessor,
 )
+from gpt_index.indices.postprocessor.node_recency import (
+    FixedRecencyPostprocessor,
+    EmbeddingRecencyPostprocessor,
+)
 
 __all__ = [
     "BasePostprocessor",
@@ -15,4 +19,6 @@ __all__ = [
     "KeywordNodePostprocessor",
     "PrevNextNodePostprocessor",
     "AutoPrevNextNodePostprocessor",
+    "FixedRecencyPostprocessor",
+    "EmbeddingRecencyPostprocessor",
 ]
