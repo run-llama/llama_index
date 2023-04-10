@@ -83,26 +83,87 @@ QUERY_RESPONSE_REFINE_PROMPT = (
 
 
 class ResponseEvaluator:
+    """Evaluate based on response from indices.
+
+    NOTE: this is a beta feature, subject to change!
+
+    Args:
+        service_context (Optional[ServiceContext]): ServiceContext object
+
+    """
+
+    def __init__(
+        self,
+        service_context: Optional[ServiceContext] = None,
+    ) -> None:
+        """Init params."""
+        self.service_context = service_context or ServiceContext.from_defaults()
+
+    def get_context(self, response: Response) -> List[Document]:
+        """Get context information from given Response object using source nodes.
+
+        Args:
+            response (Response): Response object from an index based on the query.
+
+        Returns:
+            List of Documents of source nodes information as context information.
+        """
+
+        context = []
+
+        for context_info in response.source_nodes:
+            context.append(Document(context_info.source_text))
+
+        return context
+
+    def evaluate(self, response: Response) -> str:
+        """Evaluate the response from an index.
+
+        Args:
+            query: Query for which response is generated from index.
+            response: Response object from an index based on the query.
+        Returns:
+            Yes -> If answer, context information are matching \
+                    or If Query, answer and context information are matching.
+            No -> If answer, context information are not matching \
+                    or If Query, answer and context information are not matching.
+        """
+        answer = str(response)
+
+        context = self.get_context(response)
+        index = GPTListIndex.from_documents(
+            context, service_context=self.service_context
+        )
+        response_txt: str = ""
+
+        EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
+        REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
+
+        response_obj = index.query(
+            answer,
+            text_qa_template=EVAL_PROMPT_TMPL,
+            refine_template=REFINE_PROMPT_TMPL,
+        )
+        response_txt = str(response_obj)
+
+        return response_txt
+
+
+class QueryResponseEvaluator:
     """Evaluate based on query and response from indices.
 
     NOTE: this is a beta feature, subject to change!
 
     Args:
-        mode (str): Mode with which the response should be evaluated.
-            1. context_response -> comparing context \
-            information and response.
-            2. context_query_Response -> comparing context \
-            information, query and response.
-    
+        service_context (Optional[ServiceContext]): ServiceContext object
+
     """
 
     def __init__(
         self,
-        mode: str = "context_response",
         service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Init params."""
-        self.mode = mode
         self.service_context = service_context or ServiceContext.from_defaults()
 
     def get_context(self, response: Response) -> List[Document]:
@@ -142,34 +203,18 @@ class ResponseEvaluator:
         )
         response_txt: str = ""
 
-        if self.mode == "context_response":
-            EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
-            REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
+        QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
+            QUERY_RESPONSE_EVAL_PROMPT
+        )
+        QUERY_RESPONSE_REFINE_PROMPT_TMPL = RefinePrompt(QUERY_RESPONSE_REFINE_PROMPT)
 
-            response_obj = index.query(
-                answer,
-                text_qa_template=EVAL_PROMPT_TMPL,
-                refine_template=REFINE_PROMPT_TMPL,
-            )
-            response_txt = str(response_obj)
-        elif self.mode == "context_query_response":
-            QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
-                QUERY_RESPONSE_EVAL_PROMPT
-            )
-            QUERY_RESPONSE_REFINE_PROMPT_TMPL = RefinePrompt(
-                QUERY_RESPONSE_REFINE_PROMPT
-            )
+        query_response = f"Question: {query}\nResponse: {answer}"
 
-            query_response = f"Question: {query}\nResponse: {answer}"
-
-            response_obj = index.query(
-                query_response,
-                text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
-                refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
-            )
-            response_txt = str(response_obj)
-
-        else:
-            raise NotImplementedError(f"Mode {self.mode} not implemented.")
+        response_obj = index.query(
+            query_response,
+            text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
+            refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
+        )
+        response_txt = str(response_obj)
 
         return response_txt
