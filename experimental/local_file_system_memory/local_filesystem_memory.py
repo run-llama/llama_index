@@ -1,13 +1,85 @@
-"""LocalMemoryAgent abstraction."""
+"""Local Filesystem Memory abstraction."""
 import os
 import json
-from llama_index import GPTSimpleVectorIndex, GPTListIndex
-from llama_index import LLMPredictor, Document
-from langchain.chat_models import ChatOpenAI
 import logging
+from llama_index import GPTSimpleVectorIndex, GPTListIndex
+from llama_index import LLMPredictor, Document, ServiceContext
+from langchain.chat_models import ChatOpenAI
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def get_chatgpt_service_context():
+    """Get the ServiceContext for use in Llama Index indexes."""
+    kwargs = {"temperature": 0, "model_name": "gpt-3.5-turbo"}
+    llm = ChatOpenAI(**kwargs)
+    llm_predictor = LLMPredictor(llm=llm)
+    service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+    return service_context
+
+
+def load_from_folder_if_exists(folder, index_folder, metadata):
+    """Load the indexes from disk if they exist."""
+    indexes = {}
+    if os.path.exists(folder):
+        logger.info("Loading indexes from disk...")
+        for index_description in metadata["index_descriptions"]:
+            name = index_description["name"]
+            service_context = get_chatgpt_service_context()
+            index_path = get_index_path(index_folder, name)
+
+            try:
+                index = GPTSimpleVectorIndex.load_from_disk(
+                    index_path, service_context=service_context
+                )
+            except FileNotFoundError as e:
+                print(
+                    f"Could not find {index_path}. Maybe the folder was corrupted. Try using a different folder name?"
+                )
+            indexes[name] = index
+    return indexes
+
+
+def create_folder_structure_if_not_exists(folder, index_folder, metadata_file):
+    """Create the folder if it does not exist."""
+    if not os.path.exists(folder):
+        # Make the folder and the indexes folder.
+        os.makedirs(folder)
+        os.makedirs(index_folder)
+        # Make the metadata file.
+        metadata = {"index_count": 0, "index_descriptions": []}
+        with open(metadata_file, "w", encoding="utf-8") as metadata_f:
+            json.dump(metadata, metadata_f)
+
+
+def get_docs_from_strings(strings):
+    """Get a list of Document objects from a list of strings."""
+    if isinstance(strings, str):
+        docs = [Document(strings)]
+    elif isinstance(strings, list):
+        if isinstance(strings[0], str):
+            docs = [Document(doc) for doc in strings]
+        else:
+            docs = strings
+    return docs
+
+
+def get_summary_description(summary_docs) -> str:
+    """Get a summary description from a list of Document objects."""
+    logger.info("Generating description for index...")
+    service_context = get_chatgpt_service_context()
+    summary_index = GPTListIndex.from_documents(
+        summary_docs, service_context=service_context
+    )
+    resp = summary_index.query("Summarize the documents.")
+    description = resp.response
+    return description
+
+
+def get_index_path(index_folder, name):
+    """Get the name of the index file to save."""
+    return os.path.join(index_folder, name + ".json")
 
 
 class LocalFilesystemMemory:
@@ -39,93 +111,44 @@ class LocalFilesystemMemory:
     }
     """
 
-    """Initialization and related private methods."""
-
     def __init__(self, folder, model="gpt-3.5-turbo"):
         self.folder = folder
         self.model = model
         self.index_folder = os.path.join(self.folder, "indexes")
         self.metadata_file = os.path.join(self.folder, "metadata.json")
-        self.__create_folder_structure_if_not_exists()
+        create_folder_structure_if_not_exists(
+            self.folder, self.index_folder, self.metadata_file
+        )
+        self.indexes = load_from_folder_if_exists(
+            folder, self.index_folder, self.metadata
+        )
 
-        # Load the indexes from disk if they exist.
-        self.indexes = {}
-        self.__load_from_folder_if_exists()
-
-    def __load_from_folder_if_exists(self):
-        """Load the indexes from disk if they exist."""
-        if os.path.exists(self.folder):
-            logger.info("Loading indexes from disk...")
-            metadata = self.metadata
-            for index_description in metadata["index_descriptions"]:
-                name = index_description["name"]
-                index = GPTSimpleVectorIndex.load_from_disk(
-                    self.__get_index_path(name)
-                )
-                self.indexes[name] = index
-
-    def __create_folder_structure_if_not_exists(self):
-        """Create the folder if it does not exist."""
-        if not os.path.exists(self.folder):
-            # Make the folder and the indexes folder.
-            os.makedirs(self.folder)
-            os.makedirs(self.index_folder)
-            # Make the metadata file.
-            metadata = {"index_count": 0, "index_descriptions": []}
-            with open(self.metadata_file, "w") as f:
-                json.dump(metadata, f)
-
-    def __get_index_path(self, name):
-        """Get the name of the index file to save."""
-        return os.path.join(self.index_folder, name + ".json")
-
-    def __save_metadata(self, metadata):
+    def _save_metadata(self, metadata):
         """Save the metadata."""
-        with open(self.metadata_file, "w") as f:
-            json.dump(metadata, f)
+        with open(self.metadata_file, "w", encoding="utf-8") as metadata_f:
+            json.dump(metadata, metadata_f)
 
     def _query_index(self, index, prompt, top_k=1):
-        kwargs = {"temperature": 0, "model_name": "gpt-3.5-turbo"}
-        llm = ChatOpenAI(**kwargs)
-        llm_predictor = LLMPredictor(llm=llm)
-        return index.query(prompt, llm_predictor=llm_predictor, similarity_top_k=top_k)
+        return index.query(prompt, similarity_top_k=top_k)
 
-    def __get_docs_from_strings(self, strings):
-        """Get a list of Document objects from a list of strings."""
-        if isinstance(strings, str):
-            docs = [Document(strings)]
-        elif isinstance(strings, list):
-            if isinstance(strings[0], str):
-                docs = [Document(doc) for doc in strings]
-            else:
-                docs = strings
-        return docs
-    
-    def __get_summaries_from_docs(self, docs):
+    def _get_summaries_from_docs(self, docs):
         """Get a list of summaries from a list of Document objects."""
         summaries = []
         for doc in docs:
-            index = GPTSimpleVectorIndex([doc])
+            service_context = get_chatgpt_service_context()
+            index = GPTSimpleVectorIndex.from_documents(
+                [doc], service_context=service_context
+            )
             resp = self._query_index(index, "Summarize:")
             summary = resp.response
             summaries.append(summary)
         return summaries
 
-    def __get_summary_description(self, summary_docs) -> str:
-        """Get a summary description from a list of Documentt objects."""
-        logger.info("Generating description for index...")
-        summary_index = GPTListIndex(summary_docs)
-        resp = summary_index.query("Summarize the documents.")
-        description = resp.response
-        return description
-
-    """CRUD and related public methods for indexes."""
-
     @property
     def metadata(self):
         """Get the metadata."""
-        with open(self.metadata_file, "r") as f:
-            return json.load(f)
+        with open(self.metadata_file, "r", encoding="utf-8") as metadata_f:
+            return json.load(metadata_f)
 
     def add_index(self, name, index, description=None):
         """Add an index to memory."""
@@ -135,11 +158,11 @@ class LocalFilesystemMemory:
         docs = []
         for key in docs_dict.keys():
             docs.append(Document(docs_dict[key].text))
-        
-        summaries = self.__get_summaries_from_docs(docs)
+
+        summaries = self._get_summaries_from_docs(docs)
         summary_docs = [Document(summary) for summary in summaries]
         if description is None:
-            description = self.__get_summary_description(summary_docs)
+            description = get_summary_description(summary_docs)
 
         metadata = self.metadata
         # Ensure that the index name is unique.
@@ -156,21 +179,24 @@ class LocalFilesystemMemory:
                 "description": description,
             }
         )
-        self.__save_metadata(metadata)
+        self._save_metadata(metadata)
 
         # Save the index to disk and add it to the indexes dictionary.
-        index.save_to_disk(self.__get_index_path(name))
+        index.save_to_disk(get_index_path(self.index_folder, name))
         self.indexes[name] = index
 
     def create_index(self, name, docs, description=None):
         """Create a new index."""
-        docs = self.__get_docs_from_strings(docs)
-        summaries = self.__get_summaries_from_docs(docs)
+        docs = get_docs_from_strings(docs)
+        summaries = self._get_summaries_from_docs(docs)
         summary_docs = [Document(summary) for summary in summaries]
         logger.info("Generating index...")
-        index = GPTSimpleVectorIndex(docs)
+        service_context = get_chatgpt_service_context()
+        index = GPTSimpleVectorIndex.from_documents(
+            docs, service_context=service_context
+        )
         if description is None:
-            description = self.__get_summary_description(summary_docs)
+            description = get_summary_description(summary_docs)
 
         metadata = self.metadata
         # Ensure that the index name is unique.
@@ -187,18 +213,21 @@ class LocalFilesystemMemory:
                 "description": description,
             }
         )
-        self.__save_metadata(metadata)
+        self._save_metadata(metadata)
 
         # Save the index to disk and add it to the indexes dictionary.
-        index.save_to_disk(self.__get_index_path(name))
+        index.save_to_disk(get_index_path(self.index_folder, name))
         self.indexes[name] = index
 
     def update_index(self, name, docs):
         """Update an existing index."""
         logger.info(f"Updating index: {name}...")
-        docs = self.__get_docs_from_strings(docs)
-        index = GPTSimpleVectorIndex(docs)
-        index.save_to_disk(self.__get_index_path(name))
+        docs = get_docs_from_strings(docs)
+        service_context = get_chatgpt_service_context()
+        index = GPTSimpleVectorIndex.from_documents(
+            docs, service_context=service_context
+        )
+        index.save_to_disk(get_index_path(self.index_folder, name))
         self.indexes[name] = index
 
     def delete_index(self, name):
@@ -209,9 +238,9 @@ class LocalFilesystemMemory:
         for index_description in metadata["index_descriptions"]:
             if index_description["name"] == name:
                 metadata["index_descriptions"].remove(index_description)
-        self.__save_metadata(metadata)
+        self._save_metadata(metadata)
         # Delete the index from disk.
-        os.remove(self.__get_index_path(name))
+        os.remove(get_index_path(self.index_folder, name))
         # Delete the index from the indexes dictionary.
         del self.indexes[name]
 
@@ -219,8 +248,7 @@ class LocalFilesystemMemory:
         """Get an existing index."""
         if name in self.indexes:
             return self.indexes[name]
-        else:
-            raise Exception(f"Index {name} does not exist.")
+        raise Exception(f"Index {name} does not exist.")
 
     def query_index(self, name, prompt, top_k=1):
         """Query an existing index."""
@@ -241,10 +269,15 @@ class LocalFilesystemMemory:
             index_names_and_descriptions += "\n============================="
             index_names_and_descriptions += "\n"
         # Create an index from the string.
-        index = GPTSimpleVectorIndex([Document(index_names_and_descriptions)])
+        service_context = get_chatgpt_service_context()
+        index = GPTSimpleVectorIndex.from_documents(
+            [Document(index_names_and_descriptions)], service_context=service_context
+        )
         # Query the index.
         prompt_wrapper = f'I want to do address the following: "{prompt}"'
-        prompt_wrapper += " Which index should I use? Answer with the index name and nothing else."
+        prompt_wrapper += (
+            " Which index should I use? Answer with the index name and nothing else."
+        )
         resp = self._query_index(index, prompt_wrapper)
         return resp.response
 
@@ -257,4 +290,4 @@ class LocalFilesystemMemory:
             return self.query_index(index_name, prompt)
         except Exception:
             logger.info("Relevant index not found.")
-            None
+            return None
