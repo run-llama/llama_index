@@ -29,6 +29,7 @@ class DocumentRelationship(str, Enum):
         PREVIOUS: The node is the previous node in the document.
         NEXT: The node is the next node in the document.
         PARENT: The node is the parent node in the document.
+        CHILD: The node is a child node in the document.
 
     """
 
@@ -36,6 +37,7 @@ class DocumentRelationship(str, Enum):
     PREVIOUS = auto()
     NEXT = auto()
     PARENT = auto()
+    CHILD = auto()
 
 
 class NodeType(str, Enum):
@@ -52,8 +54,7 @@ class Node(BaseDocument):
         text (str): The text of the node.
         doc_id (Optional[str]): The document id of the node.
         embeddings (Optional[List[float]]): The embeddings of the node.
-        relationships (Dict[DocumentRelationship, str]): The relationships of the node.
-        children (List[str]): The children of the node.
+        relationships (Dict[DocumentRelationship, Any]): The relationships of the node.
 
     """
 
@@ -67,11 +68,8 @@ class Node(BaseDocument):
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
 
-    # document relationships, except children
-    relationships: Dict[DocumentRelationship, str] = field(default_factory=dict)
-
-    # children
-    children: List[str] = field(default_factory=list)
+    # document relationships
+    relationships: Dict[DocumentRelationship, Any] = field(default_factory=dict)
 
     @property
     def ref_doc_id(self) -> Optional[str]:
@@ -106,9 +104,9 @@ class Node(BaseDocument):
     @property
     def child_node_ids(self) -> List[str]:
         """Child node ids."""
-        if len(self.children) == 0:
+        if DocumentRelationship.CHILD not in self.relationships:
             raise ValueError("Node does not have child nodes")
-        return self.children
+        return self.relationships[DocumentRelationship.CHILD]
 
     def get_text(self) -> str:
         """Get text."""
