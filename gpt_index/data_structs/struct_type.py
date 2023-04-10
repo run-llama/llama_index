@@ -27,6 +27,9 @@ class IndexStructType(str, Enum):
         QDRANT ("qdrant"): Qdrant Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Qdrant vector store index.
+        MILVUS ("milvus"): Milvus Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Milvus vector store index.
         CHROMA ("chroma"): Chroma Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Chroma vector store index.
@@ -57,6 +60,7 @@ class IndexStructType(str, Enum):
     WEAVIATE = "weaviate"
     PINECONE = "pinecone"
     QDRANT = "qdrant"
+    MILVUS = "milvus"
     CHROMA = "chroma"
     VECTOR_STORE = "vector_store"
     OPENSEARCH = "opensearch"

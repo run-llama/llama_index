@@ -76,6 +76,11 @@ A journaling app that uses AI to uncover insights and patterns over time.
 Your Digital Transformation Co-Pilot
 [[Website]](https://chat.openexo.com)
 
+###### AnySummary
+
+Summarize any document, audio or video with AI
+[[Website]](https://anysummary.app)
+
 ###### Blackmaria
 
 Python package for webscraping in Natural language.

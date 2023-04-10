@@ -5,6 +5,7 @@ from typing import Any, Dict, Type
 from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.data_structs_v2 import (
     KG,
+    ChatGPTRetrievalPluginIndexDict,
     ChromaIndexDict,
     CompositeIndex,
     EmptyIndex,
@@ -13,12 +14,13 @@ from gpt_index.data_structs.data_structs_v2 import (
     IndexGraph,
     IndexList,
     KeywordTable,
+    MilvusIndexDict,
+    OpensearchIndexDict,
     PineconeIndexDict,
     QdrantIndexDict,
     SimpleIndexDict,
     V2IndexStruct,
     WeaviateIndexDict,
-    ChatGPTRetrievalPluginIndexDict,
 )
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.data_structs.table_v2 import PandasStructTable, SQLStructTable
@@ -32,13 +34,15 @@ from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.indices.vector_store.vector_indices import (
+    ChatGPTRetrievalPluginIndex,
     GPTChromaIndex,
     GPTFaissIndex,
+    GPTMilvusIndex,
+    GPTOpensearchIndex,
     GPTPineconeIndex,
     GPTQdrantIndex,
     GPTSimpleVectorIndex,
     GPTWeaviateIndex,
-    ChatGPTRetrievalPluginIndex,
 )
 
 INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruct]] = {
@@ -50,7 +54,9 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruc
     IndexStructType.WEAVIATE: WeaviateIndexDict,
     IndexStructType.PINECONE: PineconeIndexDict,
     IndexStructType.QDRANT: QdrantIndexDict,
+    IndexStructType.MILVUS: MilvusIndexDict,
     IndexStructType.CHROMA: ChromaIndexDict,
+    IndexStructType.OPENSEARCH: OpensearchIndexDict,
     IndexStructType.VECTOR_STORE: IndexDict,
     IndexStructType.SQL: SQLStructTable,
     IndexStructType.PANDAS: PandasStructTable,
@@ -70,6 +76,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.WEAVIATE: GPTWeaviateIndex,
     IndexStructType.PINECONE: GPTPineconeIndex,
     IndexStructType.QDRANT: GPTQdrantIndex,
+    IndexStructType.MILVUS: GPTMilvusIndex,
     IndexStructType.CHROMA: GPTChromaIndex,
     IndexStructType.VECTOR_STORE: GPTVectorStoreIndex,
     IndexStructType.SQL: GPTSQLStructStoreIndex,
@@ -77,6 +84,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.KG: GPTKnowledgeGraphIndex,
     IndexStructType.EMPTY: GPTEmptyIndex,
     IndexStructType.CHATGPT_RETRIEVAL_PLUGIN: ChatGPTRetrievalPluginIndex,
+    IndexStructType.OPENSEARCH: GPTOpensearchIndex,
 }
 
 

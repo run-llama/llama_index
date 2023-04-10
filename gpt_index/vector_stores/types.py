@@ -2,8 +2,9 @@
 
 
 from dataclasses import dataclass
-from typing import Any, List, Optional, Protocol
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
+from enum import Enum
 from gpt_index.data_structs.node_v2 import Node
 
 
@@ -15,6 +16,7 @@ class NodeEmbeddingResult:
         id (str): Node id
         node (Node): Node
         embedding (List[float]): Embedding
+        doc_id (str): Document id
 
     """
 
@@ -33,11 +35,41 @@ class VectorStoreQueryResult:
     ids: Optional[List[str]] = None
 
 
+class VectorStoreQueryMode(str, Enum):
+    """Vector store query mode."""
+
+    DEFAULT = "default"
+    SPARSE = "sparse"
+    HYBRID = "hybrid"
+
+
+@dataclass
+class VectorStoreQuery:
+    """Vector store query."""
+
+    # dense embedding
+    query_embedding: Optional[List[float]] = None
+    similarity_top_k: int = 1
+    doc_ids: Optional[List[str]] = None
+    query_str: Optional[str] = None
+
+    # NOTE: current mode
+    mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT
+
+    # NOTE: only for hybrid search (0 for bm25, 1 for vector search)
+    alpha: Optional[float] = None
+
+
+@runtime_checkable
 class VectorStore(Protocol):
     """Abstract vector store protocol."""
 
     stores_text: bool
     is_embedding_query: bool = True
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        ...
 
     @property
     def client(self) -> Any:
@@ -62,10 +94,11 @@ class VectorStore(Protocol):
 
     def query(
         self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
+        query: VectorStoreQuery,
+        # query_embedding: List[float],
+        # similarity_top_k: int,
+        # doc_ids: Optional[List[str]] = None,
+        # query_str: Optional[str] = None,
     ) -> VectorStoreQueryResult:
         """Query vector store."""
         ...

@@ -7,7 +7,7 @@ from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore_v2 import DocumentStore
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
@@ -66,7 +66,6 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         if index_struct is None:
             assert nodes is not None
-            self._docstore.add_documents(nodes)
             index_struct = self.build_index_from_nodes(nodes)
             # if not isinstance(index_struct, self.index_struct_cls):
             #     raise ValueError(
@@ -126,6 +125,7 @@ class BaseGPTIndex(Generic[IS], ABC):
     @llm_token_counter("build_index_from_nodes")
     def build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""
+        self._docstore.add_documents(nodes, allow_update=True)
         return self._build_index_from_nodes(nodes)
 
     @abstractmethod
@@ -135,7 +135,7 @@ class BaseGPTIndex(Generic[IS], ABC):
     @llm_token_counter("insert")
     def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert nodes."""
-        self.docstore.add_documents(nodes)
+        self.docstore.add_documents(nodes, allow_update=True)
         self._insert(nodes, **insert_kwargs)
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
@@ -194,6 +194,16 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         return refreshed_documents
 
+    @property
+    def query_context(self) -> Dict[str, Any]:
+        """Additional context necessary for making a query.
+
+        This should capture any index-specific clients, services, etc,
+        that's not captured by index struct, docstore, and service context.
+        For example, a vector store index would pass vector store.
+        """
+        return {}
+
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
         """Preprocess query.
 
@@ -235,6 +245,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         query_runner = QueryRunner(
             index_struct=self._index_struct,
             service_context=self._service_context,
+            query_context={self._index_struct.index_id: self.query_context},
             docstore=self._docstore,
             query_configs=[query_config],
             query_transform=query_transform,
@@ -276,9 +287,10 @@ class BaseGPTIndex(Generic[IS], ABC):
             query_kwargs=query_kwargs,
         )
         query_runner = QueryRunner(
-            self._index_struct,
-            self._service_context,
-            self._docstore,
+            index_struct=self._index_struct,
+            service_context=self._service_context,
+            query_context={self._index_struct.index_id: self.query_context},
+            docstore=self._docstore,
             query_configs=[query_config],
             query_transform=query_transform,
             recursive=False,

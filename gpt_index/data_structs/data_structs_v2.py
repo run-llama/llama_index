@@ -183,7 +183,6 @@ class IndexDict(V2IndexStruct):
     def add_node(
         self,
         node: Node,
-        # NOTE: unused
         text_id: Optional[str] = None,
     ) -> str:
         """Add text to table, return current position in list."""
@@ -201,9 +200,10 @@ class IndexDict(V2IndexStruct):
     def delete(self, doc_id: str) -> None:
         """Delete a Node."""
         if doc_id not in self.doc_id_dict:
-            raise ValueError("doc_id not found in doc_id_dict")
+            return
         for vector_id in self.doc_id_dict[doc_id]:
             del self.nodes_dict[vector_id]
+        del self.doc_id_dict[doc_id]
 
     @classmethod
     def get_type(cls) -> IndexStructType:
@@ -231,10 +231,9 @@ class KG(V2IndexStruct):
         """Add embedding to dict."""
         self.embedding_dict[triplet_str] = embedding
 
-    def upsert_triplet(self, triplet: Tuple[str, str, str], node: Node) -> None:
+    def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:
         """Upsert a knowledge triplet to the graph."""
         subj, relationship, obj = triplet
-        self.add_node([subj, obj], node)
         if subj not in self.rel_map:
             self.rel_map[subj] = []
         self.rel_map[subj].append((obj, relationship))
@@ -340,6 +339,16 @@ class QdrantIndexDict(IndexDict):
     def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.QDRANT
+
+
+@dataclass
+class MilvusIndexDict(IndexDict):
+    """Index dict for Milvus vector index."""
+
+    @classmethod
+    def get_type(cls) -> IndexStructType:
+        """Get type."""
+        return IndexStructType.MILVUS
 
 
 @dataclass

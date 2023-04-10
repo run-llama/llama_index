@@ -1,12 +1,13 @@
 """Elasticsearch/Opensearch vector store."""
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from gpt_index.data_structs import Node
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
 )
 
 
@@ -40,6 +41,7 @@ class OpensearchVectorClient:
         embedding_field: str = "embedding",
         text_field: str = "content",
         method: Optional[dict] = None,
+        auth: Optional[dict] = None,
     ):
         """Init params."""
         if method is None:
@@ -57,7 +59,22 @@ class OpensearchVectorClient:
         except ImportError:
             raise ImportError(import_err_msg)
         self._embedding_field = embedding_field
-        self._client = httpx.Client(base_url=endpoint)
+
+        if auth is None:
+            self._client = httpx.Client(base_url=endpoint)
+        else:
+            if "verify" not in auth:
+                # "Open search" docker image for Dev/Test requires SSL verification
+                # when accessing with HTTPS, https://localhost:9200.
+                auth["verify"] = False
+            if "basic_auth" not in auth:
+                # 'admin:admin' is the default username/password for the "Open search"
+                # docker image.
+                auth["basic_auth"] = ("admin", "admin")
+            self._client = httpx.Client(
+                base_url=endpoint, verify=auth["verify"], auth=auth["basic_auth"]
+            )
+
         self._endpoint = endpoint
         self._dim = dim
         self._index = index
@@ -156,6 +173,12 @@ class OpensearchVectorStore(VectorStore):
             raise ImportError(import_err_msg)
         self._client = client
 
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        if "client" not in config_dict:
+            raise ValueError("Missing Opensearch client!")
+        return cls(**config_dict)
+
     @property
     def client(self) -> Any:
         """Get client."""
@@ -188,13 +211,7 @@ class OpensearchVectorStore(VectorStore):
         """
         self._client.delete_doc_id(doc_id)
 
-    def query(
-        self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -202,4 +219,5 @@ class OpensearchVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
-        return self._client.do_approx_knn(query_embedding, similarity_top_k)
+        query_embedding = cast(List[float], query.query_embedding)
+        return self._client.do_approx_knn(query_embedding, query.similarity_top_k)

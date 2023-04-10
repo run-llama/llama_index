@@ -1,4 +1,4 @@
-"""Test Faiss index."""
+"""Test vector store indexes."""
 
 import sys
 from typing import Any, Dict, List, Tuple, cast
@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
+from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.vector_store.vector_indices import (
     GPTFaissIndex,
@@ -21,10 +22,8 @@ from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMP
 @pytest.fixture
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
-    index_kwargs = {
-        "text_qa_template": MOCK_TEXT_QA_PROMPT,
-    }
-    query_kwargs = {
+    index_kwargs: Dict[str, Any] = {}
+    query_kwargs: Dict[str, Any] = {
         "text_qa_template": MOCK_TEXT_QA_PROMPT,
         "refine_template": MOCK_REFINE_PROMPT,
         "similarity_top_k": 1,
@@ -395,6 +394,7 @@ def test_simple_delete(
     # test delete
     index.delete("test_id_0")
     assert len(index.index_struct.nodes_dict) == 3
+    assert len(index.index_struct.doc_id_dict) == 3
     actual_node_tups = [
         ("This is a test.", [0, 1, 0, 0, 0], "test_id_1"),
         ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),
@@ -547,7 +547,7 @@ def test_query_and_similarity_scores(
     query_str = "What is?"
     response = index.query(query_str, **query_kwargs)
     assert len(response.source_nodes) > 0
-    assert response.source_nodes[0].similarity is not None
+    assert response.source_nodes[0].score is not None
 
 
 @patch_common
@@ -632,3 +632,100 @@ def test_simple_async(
         vector_store = cast(SimpleVectorStore, index._vector_store)
         embedding = vector_store.get(text_id)
         assert (node.text, embedding) in actual_node_tups
+
+
+@patch_common
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_simple_check_ids(
+    _mock_query_embed: Any,
+    _mock_text_embeds: Any,
+    _mock_text_embed: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test build GPTSimpleVectorIndex."""
+    index_kwargs, query_kwargs = struct_kwargs
+
+    ref_doc_id = "ref_doc_id_test"
+    source_rel = {DocumentRelationship.SOURCE: ref_doc_id}
+    nodes = [
+        Node("Hello world.", doc_id="node1", relationships=source_rel),
+        Node("This is a test.", doc_id="node2", relationships=source_rel),
+        Node("This is another test.", doc_id="node3", relationships=source_rel),
+        Node("This is a test v2.", doc_id="node4", relationships=source_rel),
+    ]
+    index = GPTSimpleVectorIndex(nodes, **index_kwargs)
+
+    # test query
+    query_str = "What is?"
+    response = index.query(query_str, **query_kwargs)
+    assert str(response) == ("What is?:This is another test.")
+    assert len(response.source_nodes) == 1
+    assert response.source_nodes[0].node.ref_doc_id == "ref_doc_id_test"
+    assert response.source_nodes[0].node.doc_id == "node3"
+    vector_store = cast(SimpleVectorStore, index._vector_store)
+    assert "node3" in vector_store._data.embedding_dict
+    assert "node3" in vector_store._data.text_id_to_doc_id
+
+
+@patch_common
+@patch.object(
+    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
+)
+@patch.object(
+    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+)
+@patch.object(
+    OpenAIEmbedding, "get_query_embedding", side_effect=mock_get_query_embedding
+)
+def test_faiss_check_ids(
+    _mock_query_embed: Any,
+    _mock_texts_embed: Any,
+    _mock_text_embed: Any,
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    documents: List[Document],
+    struct_kwargs: Dict,
+) -> None:
+    """Test embedding query."""
+    # NOTE: mock faiss import
+    sys.modules["faiss"] = MagicMock()
+    # NOTE: mock faiss index
+    faiss_index = MockFaissIndex()
+
+    index_kwargs, query_kwargs = struct_kwargs
+
+    ref_doc_id = "ref_doc_id_test"
+    source_rel = {DocumentRelationship.SOURCE: ref_doc_id}
+    nodes = [
+        Node("Hello world.", doc_id="node1", relationships=source_rel),
+        Node("This is a test.", doc_id="node2", relationships=source_rel),
+        Node("This is another test.", doc_id="node3", relationships=source_rel),
+        Node("This is a test v2.", doc_id="node4", relationships=source_rel),
+    ]
+
+    index = GPTFaissIndex(nodes, faiss_index=faiss_index, **index_kwargs)
+
+    # test query
+    query_str = "What is?"
+    response = index.query(query_str, **query_kwargs)
+    assert str(response) == ("What is?:This is another test.")
+    assert len(response.source_nodes) == 1
+    assert response.source_nodes[0].node.ref_doc_id == "ref_doc_id_test"
+    assert response.source_nodes[0].node.doc_id == "node3"

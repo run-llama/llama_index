@@ -57,10 +57,10 @@ DEFAULT_REFINE_PROMPT = (
 )
 
 QUERY_RESPONSE_EVAL_PROMPT = (
-"Your task is to evaluate if the response for the query \
+    "Your task is to evaluate if the response for the query \
     is in line with the context information provided.\n"
-"You have two options to answer. Either YES/ NO.\n"
-"Answer - YES, if the response for the query \
+    "You have two options to answer. Either YES/ NO.\n"
+    "Answer - YES, if the response for the query \
     is in line with context information otherwise NO.\n"
     "Query and Response: \n {query_str}\n"
     "Context: \n {context_str}\n"
@@ -93,7 +93,6 @@ class ResponseEvaluator:
             information and response.
             2. context_query_Response -> comparing context \
             information, query and response.
-            2. others coming soon!
     
     """
 
@@ -154,10 +153,14 @@ class ResponseEvaluator:
             )
             response_txt = str(response_obj)
         elif self.mode == "context_query_response":
-            QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(QUERY_RESPONSE_EVAL_PROMPT)
-            QUERY_RESPONSE_REFINE_PROMPT_TMPL = RefinePrompt(QUERY_RESPONSE_REFINE_PROMPT)
+            QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
+                QUERY_RESPONSE_EVAL_PROMPT
+            )
+            QUERY_RESPONSE_REFINE_PROMPT_TMPL = RefinePrompt(
+                QUERY_RESPONSE_REFINE_PROMPT
+            )
 
-            query_response = f'Question: {query}\nResponse: {answer}'
+            query_response = f"Question: {query}\nResponse: {answer}"
 
             response_obj = index.query(
                 query_response,

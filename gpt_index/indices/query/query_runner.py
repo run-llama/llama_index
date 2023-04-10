@@ -8,11 +8,10 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
-from gpt_index.data_structs.node_v2 import IndexNode, Node
+from gpt_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.docstore_v2 import DocumentStore
+from gpt_index.docstore import DocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.embedding_utils import NodeWithScore
 from gpt_index.indices.query.query_combiner.base import (
     BaseQueryCombiner,
     get_default_query_combiner,
@@ -23,7 +22,7 @@ from gpt_index.indices.query.query_transform.base import (
 )
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.response.schema import RESPONSE_TYPE, SourceNode
+from gpt_index.response.schema import RESPONSE_TYPE
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
@@ -86,6 +85,7 @@ class QueryRunner:
         index_struct: IndexStruct,
         service_context: ServiceContext,
         docstore: DocumentStore,
+        query_context: Dict[str, Dict[str, Any]],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
         query_combiner: Optional[BaseQueryCombiner] = None,
@@ -97,6 +97,7 @@ class QueryRunner:
         self._index_struct = index_struct
         self._service_context = service_context
         self._docstore = docstore
+        self._query_context = query_context
 
         # query configurations and transformation
         self._query_config_map = _get_query_config_map(query_configs)
@@ -165,6 +166,11 @@ class QueryRunner:
 
         query_cls = INDEX_STRUT_TYPE_TO_QUERY_MAP[index_struct_type][mode]
         query_kwargs = self._get_query_kwargs(config)
+
+        # Inject additional query context into query kwargs
+        query_context = self._query_context.get(index_struct.index_id, {})
+        query_kwargs.update(query_context)
+
         query_obj = query_cls(
             index_struct=index_struct,
             docstore=self._docstore,
@@ -195,9 +201,10 @@ class QueryRunner:
                 )
                 nodes_for_synthesis.append(node_with_score)
                 additional_source_nodes.extend(source_nodes)
-            return query_obj.synthesize(
+            response = query_obj.synthesize(
                 query_bundle, nodes_for_synthesis, additional_source_nodes
             )
+            return response
         else:
             return query_obj.query(query_bundle)
 
@@ -206,10 +213,10 @@ class QueryRunner:
         node_with_score: NodeWithScore,
         query_bundle: QueryBundle,
         level: int,
-    ) -> Tuple[NodeWithScore, List[SourceNode]]:
+    ) -> Tuple[NodeWithScore, List[NodeWithScore]]:
         """Fetch nodes.
 
-        Usees existing node if it's not an index node.
+        Uses existing node if it's not an index node.
         Otherwise fetch response from corresponding index.
 
         """
@@ -231,7 +238,7 @@ class QueryRunner:
         node_with_score: NodeWithScore,
         query_bundle: QueryBundle,
         level: int,
-    ) -> Tuple[NodeWithScore, List[SourceNode]]:
+    ) -> Tuple[NodeWithScore, List[NodeWithScore]]:
         """Fetch nodes.
 
         Usees existing node if it's not an index node.

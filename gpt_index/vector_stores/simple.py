@@ -1,7 +1,7 @@
 """Simple vector store index."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -10,6 +10,7 @@ from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
 )
 
 
@@ -51,6 +52,10 @@ class SimpleVectorStore(VectorStore):
         else:
             self._data = SimpleVectorStoreData.from_dict(simple_vector_store_data_dict)
 
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "SimpleVectorStore":
+        return cls(**config_dict)
+
     @property
     def client(self) -> None:
         """Get client."""
@@ -91,10 +96,7 @@ class SimpleVectorStore(VectorStore):
 
     def query(
         self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
+        query: VectorStoreQuery,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
         # TODO: consolidate with get_query_text_embedding_similarities
@@ -102,10 +104,12 @@ class SimpleVectorStore(VectorStore):
         node_ids = [t[0] for t in items]
         embeddings = [t[1] for t in items]
 
+        query_embedding = cast(List[float], query.query_embedding)
+
         top_similarities, top_ids = get_top_k_embeddings(
             query_embedding,
             embeddings,
-            similarity_top_k=similarity_top_k,
+            similarity_top_k=query.similarity_top_k,
             embedding_ids=node_ids,
         )
 

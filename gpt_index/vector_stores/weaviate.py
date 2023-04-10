@@ -4,14 +4,20 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
-from gpt_index.readers.weaviate.data_structs import WeaviateNode
+from gpt_index.readers.weaviate.client import (
+    add_nodes,
+    create_schema,
+    delete_document,
+    weaviate_query,
+)
 from gpt_index.readers.weaviate.utils import get_default_class_prefix
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
 )
 
 
@@ -49,6 +55,9 @@ class WeaviateVectorStore(VectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
+        if weaviate_client is None:
+            raise ValueError("Missing Weaviate client!")
+
         self._client = cast(Client, weaviate_client)
         # validate class prefix starts with a capital letter
         if class_prefix is not None and not class_prefix[0].isupper():
@@ -57,7 +66,13 @@ class WeaviateVectorStore(VectorStore):
             )
         self._class_prefix = class_prefix or get_default_class_prefix()
         # try to create schema
-        WeaviateNode.create_schema(self._client, self._class_prefix)
+        create_schema(self._client, self._class_prefix)
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        if "weaviate_client" not in config_dict:
+            raise ValueError("Missing Weaviate client!")
+        return cls(**config_dict)
 
     @property
     def client(self) -> Any:
@@ -85,9 +100,7 @@ class WeaviateVectorStore(VectorStore):
             # TODO: always store embedding in node
             node.embedding = embedding
 
-        WeaviateNode.from_gpt_index_batch(
-            self._client, [r.node for r in embedding_results], self._class_prefix
-        )
+        add_nodes(self._client, [r.node for r in embedding_results], self._class_prefix)
         return [result.id for result in embedding_results]
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
@@ -97,29 +110,16 @@ class WeaviateVectorStore(VectorStore):
             doc_id (str): document id
 
         """
-        WeaviateNode.delete_document(self._client, doc_id, self._class_prefix)
+        delete_document(self._client, doc_id, self._class_prefix)
 
-    def query(
-        self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
-    ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
-
-        Args:
-            query_embedding (List[float]): query embedding
-            similarity_top_k (int): top k most similar nodes
-
-        """
-        nodes = WeaviateNode.to_gpt_index_list(
-            self.client,
+    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        """Query index for top k most similar nodes."""
+        nodes = weaviate_query(
+            self._client,
             self._class_prefix,
-            vector=query_embedding,
-            object_limit=similarity_top_k,
+            query,
         )
-        nodes = nodes[:similarity_top_k]
+        nodes = nodes[: query.similarity_top_k]
         node_idxs = [str(i) for i in range(len(nodes))]
 
         return VectorStoreQueryResult(nodes=nodes, ids=node_idxs)

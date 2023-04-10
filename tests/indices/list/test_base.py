@@ -8,10 +8,9 @@ from typing import Any, Dict, List, Tuple, cast
 from unittest.mock import patch
 
 import pytest
-
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.query.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -241,9 +240,17 @@ def test_query(
 
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
-    assert str(response) == ("What is?:Hello world.")
+    expected_answer = (
+        "What is?:Hello world.:"
+        "This is a test.:"
+        "This is another test.:"
+        "This is a test v2."
+    )
+    assert str(response) == expected_answer
     node_info = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+        response.source_nodes[0].node.node_info
+        if response.source_nodes[0].node.node_info
+        else {}
     )
     assert node_info["start"] == 0
     assert node_info["end"] == 12
@@ -285,7 +292,9 @@ def test_index_overlap(
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
     node_info_0 = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+        response.source_nodes[0].node.node_info
+        if response.source_nodes[0].node.node_info
+        else {}
     )
     # First chunk: 'Hello world. This is a test 1. This is a test 2.
     # This is a test 3. This is a test 4. This is a'
@@ -293,7 +302,9 @@ def test_index_overlap(
     assert node_info_0["end"] == 94  # Length of first chunk.
 
     node_info_1 = (
-        response.source_nodes[1].node_info if response.source_nodes[1].node_info else {}
+        response.source_nodes[1].node.node_info
+        if response.source_nodes[1].node.node_info
+        else {}
     )
     # Second chunk: 'This is a test 4. This is a test 5.\n'
     assert node_info_1["start"] == 67  # Position of second chunk relative to start
@@ -318,11 +329,14 @@ def test_query_with_keywords(
     query_str = "What is?"
     query_kwargs.update({"required_keywords": ["test"]})
     response = index.query(query_str, mode="default", **query_kwargs)
-    assert str(response) == ("What is?:This is a test.")
+    expected_answer = (
+        "What is?:This is a test.:" "This is another test.:" "This is a test v2."
+    )
+    assert str(response) == expected_answer
 
-    query_kwargs.update({"exclude_keywords": ["Hello"]})
+    query_kwargs.update({"exclude_keywords": ["test"], "required_keywords": []})
     response = index.query(query_str, mode="default", **query_kwargs)
-    assert str(response) == ("What is?:This is a test.")
+    assert str(response) == ("What is?:Hello world.")
 
 
 @patch_common
@@ -450,9 +464,17 @@ def test_async_query(
     query_str = "What is?"
     task = index.aquery(query_str, mode="default", **query_kwargs)
     response = asyncio.run(task)
-    assert str(response) == ("What is?:Hello world.")
+    expected_answer = (
+        "What is?:Hello world.:"
+        "This is a test.:"
+        "This is another test.:"
+        "This is a test v2."
+    )
+    assert str(response) == expected_answer
     node_info = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+        response.source_nodes[0].node.node_info
+        if response.source_nodes[0].node.node_info
+        else {}
     )
     assert node_info["start"] == 0
     assert node_info["end"] == 12
@@ -463,9 +485,11 @@ def test_async_query(
     query_kwargs_copy["response_mode"] = "tree_summarize"
     task = index.aquery(query_str, mode="default", **query_kwargs_copy)
     response = asyncio.run(task)
-    assert str(response) == ("What is?:Hello world.")
+    assert str(response) == expected_answer
     node_info = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
+        response.source_nodes[0].node.node_info
+        if response.source_nodes[0].node.node_info
+        else {}
     )
     assert node_info["start"] == 0
     assert node_info["end"] == 12

@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
-
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
-from gpt_index.indices.query.knowledge_graph.query import GPTKGTableQuery
+from gpt_index.indices.knowledge_graph.query import GPTKGTableQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
@@ -80,7 +80,7 @@ def mock_extract_triplets(text: str) -> List[Tuple[str, str, str]]:
 @patch.object(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
-def test_build_kg(
+def test_build_kg_manual(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
@@ -90,14 +90,26 @@ def test_build_kg(
     documents: List[Document],
 ) -> None:
     """Test build knowledge graph."""
-    index = GPTKnowledgeGraphIndex.from_documents(documents)
+    index = GPTKnowledgeGraphIndex([])
+    tuples = [
+        ("foo", "is", "bar"),
+        ("hello", "is not", "world"),
+        ("Jane", "is mother of", "Bob"),
+    ]
+    nodes = [Node(str(tup)) for tup in tuples]
+    for tup, node in zip(tuples, nodes):
+        # add node
+        index.add_node([tup[0], tup[2]], node)
+        # add triplet
+        index.upsert_triplet(tup)
+
     # NOTE: in these unit tests, document text == triplets
     nodes = index.docstore.get_nodes(list(index.index_struct.node_ids))
     table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 3
-    assert "(foo, is, bar)" in table_chunks
-    assert "(hello, is not, world)" in table_chunks
-    assert "(Jane, is mother of, Bob)" in table_chunks
+    assert "('foo', 'is', 'bar')" in table_chunks
+    assert "('hello', 'is not', 'world')" in table_chunks
+    assert "('Jane', 'is mother of', 'Bob')" in table_chunks
 
     # test that expected keys are present in table
     # NOTE: in mock keyword extractor, stopwords are not filtered
@@ -109,6 +121,42 @@ def test_build_kg(
         "Jane",
         "Bob",
     }
+
+    # test upsert_triplet_and_node
+    index = GPTKnowledgeGraphIndex([])
+    tuples = [
+        ("foo", "is", "bar"),
+        ("hello", "is not", "world"),
+        ("Jane", "is mother of", "Bob"),
+    ]
+    nodes = [Node(str(tup)) for tup in tuples]
+    for tup, node in zip(tuples, nodes):
+        index.upsert_triplet_and_node(tup, node)
+
+    # NOTE: in these unit tests, document text == triplets
+    nodes = index.docstore.get_nodes(list(index.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
+    assert len(table_chunks) == 3
+    assert "('foo', 'is', 'bar')" in table_chunks
+    assert "('hello', 'is not', 'world')" in table_chunks
+    assert "('Jane', 'is mother of', 'Bob')" in table_chunks
+
+    # test that expected keys are present in table
+    # NOTE: in mock keyword extractor, stopwords are not filtered
+    assert index.index_struct.table.keys() == {
+        "foo",
+        "bar",
+        "hello",
+        "world",
+        "Jane",
+        "Bob",
+    }
+
+    # try inserting same node twice
+    index = GPTKnowledgeGraphIndex([])
+    node = Node(str(("foo", "is", "bar")), doc_id="test_node")
+    index.upsert_triplet_and_node(tup, node)
+    index.upsert_triplet_and_node(tup, node)
 
 
 @patch_common
@@ -147,6 +195,41 @@ def test_build_kg_similarity(
 @patch.object(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
+def test_build_kg(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    struct_kwargs: Any,
+    documents: List[Document],
+) -> None:
+    """Test build knowledge graph."""
+    index = GPTKnowledgeGraphIndex.from_documents(documents)
+    # NOTE: in these unit tests, document text == triplets
+    nodes = index.docstore.get_nodes(list(index.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
+    assert len(table_chunks) == 3
+    assert "(foo, is, bar)" in table_chunks
+    assert "(hello, is not, world)" in table_chunks
+    assert "(Jane, is mother of, Bob)" in table_chunks
+
+    # test that expected keys are present in table
+    # NOTE: in mock keyword extractor, stopwords are not filtered
+    assert index.index_struct.table.keys() == {
+        "foo",
+        "bar",
+        "hello",
+        "world",
+        "Jane",
+        "Bob",
+    }
+
+
+@patch_common
+@patch.object(
+    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+)
 def test_query(
     _mock_init: Any,
     _mock_predict: Any,
@@ -160,7 +243,16 @@ def test_query(
     index = GPTKnowledgeGraphIndex.from_documents(documents)
     response = index.query("foo")
     # when include_text is True, the first node is the raw text
-    assert str(response) == "foo:(foo, is, bar)"
+    # the second node is the query
+    rel_initial_text = (
+        "The following are knowledge triplets "
+        "in the form of (subset, predicate, object):"
+    )
+    expected_response = (
+        "foo:(foo, is, bar):" + rel_initial_text + ":('foo', 'is', 'bar')"
+    )
+
+    assert str(response) == expected_response
     assert response.extra_info is not None
     assert response.extra_info["kg_rel_map"] == {
         "foo": [("bar", "is")],

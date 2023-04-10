@@ -4,14 +4,15 @@ An index that is built on top of an existing Qdrant collection.
 
 """
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
-from gpt_index.utils import get_new_id
+from gpt_index.utils import iter_batch
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
+    VectorStoreQuery,
 )
 
 logger = logging.getLogger(__name__)
@@ -46,11 +47,19 @@ class QdrantVectorStore(VectorStore):
             raise ImportError(import_err_msg)
 
         if client is None:
-            raise ValueError("client cannot be None.")
+            raise ValueError("Missing Qdrant client!")
 
         self._client = cast(qdrant_client.QdrantClient, client)
         self._collection_name = collection_name
         self._collection_initialized = self._collection_exists(collection_name)
+
+        self._batch_size = kwargs.get("batch_size", 100)
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        if "client" not in config_dict:
+            raise ValueError("Missing Qdrant client!")
+        return cls(**config_dict)
 
     @property
     def config_dict(self) -> dict:
@@ -67,49 +76,39 @@ class QdrantVectorStore(VectorStore):
 
         """
         from qdrant_client.http import models as rest
-        from qdrant_client.http.exceptions import UnexpectedResponse
+
+        if len(embedding_results) > 0 and not self._collection_initialized:
+            self._create_collection(
+                collection_name=self._collection_name,
+                vector_size=len(embedding_results[0].embedding),
+            )
 
         ids = []
-        for result in embedding_results:
-            new_id = result.id
-            node = result.node
-            text_embedding = result.embedding
-            collection_name = self._collection_name
-            # assign a new_id if current_id conflicts with existing ids
-            while True:
-                try:
-                    self._client.http.points_api.get_point(
-                        collection_name=collection_name, id=new_id
-                    )
-                except UnexpectedResponse:
-                    break
-                new_id = get_new_id(set())
-
-            # Create the Qdrant collection, if it does not exist yet
-            if not self._collection_initialized:
-                self._create_collection(
-                    collection_name=collection_name,
-                    vector_size=len(text_embedding),
+        for result_batch in iter_batch(embedding_results, self._batch_size):
+            new_ids = []
+            vectors = []
+            payloads = []
+            for result in result_batch:
+                new_ids.append(result.id)
+                vectors.append(result.embedding)
+                node = result.node
+                payloads.append(
+                    {
+                        "doc_id": result.doc_id,
+                        "text": node.get_text(),
+                        "extra_info": node.extra_info,
+                    }
                 )
-                self._collection_initialized = True
-
-            payload = {
-                "doc_id": result.doc_id,
-                "text": node.get_text(),
-                "extra_info": node.extra_info,
-            }
 
             self._client.upsert(
-                collection_name=collection_name,
-                points=[
-                    rest.PointStruct(
-                        id=new_id,
-                        vector=text_embedding,
-                        payload=payload,
-                    )
-                ],
+                collection_name=self._collection_name,
+                points=rest.Batch(
+                    ids=new_ids,
+                    vectors=vectors,
+                    payloads=payloads,
+                ),
             )
-            ids.append(new_id)
+            ids.extend(new_ids)
         return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
@@ -148,23 +147,22 @@ class QdrantVectorStore(VectorStore):
                 distance=rest.Distance.COSINE,
             ),
         )
+        self._collection_initialized = True
 
     def _collection_exists(self, collection_name: str) -> bool:
         """Check if a collection exists."""
+        from grpc import RpcError
         from qdrant_client.http.exceptions import UnexpectedResponse
 
         try:
-            response = self._client.http.collections_api.get_collection(collection_name)
-            return response.result is not None
-        except UnexpectedResponse:
+            self._client.get_collection(collection_name)
+        except (RpcError, UnexpectedResponse):
             return False
+        return True
 
     def query(
         self,
-        query_embedding: List[float],
-        similarity_top_k: int,
-        doc_ids: Optional[List[str]] = None,
-        query_str: Optional[str] = None,
+        query: VectorStoreQuery,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
@@ -174,25 +172,27 @@ class QdrantVectorStore(VectorStore):
             doc_ids (Optional[List[str]]): list of doc_ids to filter by
 
         """
-        from qdrant_client.http.models.models import (
+        from qdrant_client.http.models import (
             FieldCondition,
             Filter,
             MatchValue,
             Payload,
         )
 
+        query_embedding = cast(List[float], query.query_embedding)
+
         response = self._client.search(
             collection_name=self._collection_name,
             query_vector=query_embedding,
-            limit=cast(int, similarity_top_k),
+            limit=cast(int, query.similarity_top_k),
             query_filter=None
-            if not doc_ids
+            if not query.doc_ids
             else Filter(
                 must=[
                     Filter(
                         should=[
                             FieldCondition(key="doc_id", match=MatchValue(value=doc_id))
-                            for doc_id in doc_ids
+                            for doc_id in query.doc_ids
                         ],
                     )
                 ]
@@ -207,6 +207,7 @@ class QdrantVectorStore(VectorStore):
         for point in response:
             payload = cast(Payload, point.payload)
             node = Node(
+                doc_id=str(point.id),
                 text=payload.get("text"),
                 extra_info=payload.get("extra_info"),
                 relationships={

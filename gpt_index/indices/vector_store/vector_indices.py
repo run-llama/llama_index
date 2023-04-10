@@ -1,6 +1,6 @@
 """Deprecated vector store indices."""
 
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Dict, Optional, Sequence, Type, Callable
 
 from requests.adapters import Retry
 
@@ -9,6 +9,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     ChromaIndexDict,
     FaissIndexDict,
     IndexDict,
+    MilvusIndexDict,
     OpensearchIndexDict,
     PineconeIndexDict,
     QdrantIndexDict,
@@ -16,25 +17,14 @@ from gpt_index.data_structs.data_structs_v2 import (
     WeaviateIndexDict,
 )
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
-from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.query.vector_store.queries import (
-    ChatGPTRetrievalPluginQuery,
-    GPTChromaIndexQuery,
-    GPTFaissIndexQuery,
-    GPTOpensearchIndexQuery,
-    GPTPineconeIndexQuery,
-    GPTQdrantIndexQuery,
-    GPTSimpleVectorIndexQuery,
-    GPTWeaviateIndexQuery,
-)
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from gpt_index.vector_stores import (
     ChatGPTRetrievalPluginClient,
     ChromaVectorStore,
     FaissVectorStore,
+    MilvusVectorStore,
     PineconeVectorStore,
     QdrantVectorStore,
     SimpleVectorStore,
@@ -60,9 +50,6 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
 
@@ -75,49 +62,17 @@ class GPTSimpleVectorIndex(GPTVectorStoreIndex):
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        simple_vector_store_data_dict: Optional[dict] = None,
+        vector_store: Optional[SimpleVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        # TODO: temporary hack to "infer" vector store from
-        # index struct if index_struct exists
-        if index_struct is not None and len(index_struct.embeddings_dict) > 0:
-            simple_vector_store_data_dict = {
-                "embedding_dict": index_struct.embeddings_dict,
-            }
-
-        vector_store = SimpleVectorStore(
-            simple_vector_store_data_dict=simple_vector_store_data_dict
-        )
-
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
-
-        # TODO: Temporary hack to also store embeddings in index_struct
-        embedding_dict = vector_store._data.embedding_dict
-        self._index_struct.embeddings_dict = embedding_dict
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTSimpleVectorIndexQuery,
-            QueryMode.EMBEDDING: GPTSimpleVectorIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(SimpleVectorStore, self._vector_store)
-        query_kwargs["simple_vector_store_data_dict"] = vector_store._data
 
 
 class GPTFaissIndex(GPTVectorStoreIndex):
@@ -134,9 +89,6 @@ class GPTFaissIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         faiss_index (faiss.Index): A Faiss Index object (required). Note: the index
             will be reset during index construction.
         service_context (ServiceContext): Service context container (contains
@@ -151,37 +103,22 @@ class GPTFaissIndex(GPTVectorStoreIndex):
         service_context: Optional[ServiceContext] = None,
         faiss_index: Optional[Any] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        vector_store: Optional[FaissVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if faiss_index is None:
-            raise ValueError("faiss_index is required.")
-        vector_store = FaissVectorStore(faiss_index)
+        if vector_store is None:
+            if faiss_index is None:
+                raise ValueError("faiss_index is required.")
+            vector_store = FaissVectorStore(faiss_index)
 
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTFaissIndexQuery,
-            QueryMode.EMBEDDING: GPTFaissIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(FaissVectorStore, self._vector_store)
-        query_kwargs["faiss_index"] = vector_store._faiss_index
 
     @classmethod
     def load_from_disk(
@@ -261,9 +198,6 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
     """
@@ -274,62 +208,45 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
         self,
         nodes: Optional[Sequence[Node]] = None,
         pinecone_index: Optional[Any] = None,
+        index_name: Optional[str] = None,
+        environment: Optional[str] = None,
         metadata_filters: Optional[Dict[str, Any]] = None,
         pinecone_kwargs: Optional[Dict] = None,
         insert_kwargs: Optional[Dict] = None,
         query_kwargs: Optional[Dict] = None,
         delete_kwargs: Optional[Dict] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         service_context: Optional[ServiceContext] = None,
+        vector_store: Optional[PineconeVectorStore] = None,
+        add_sparse_vector: bool = False,
+        tokenizer: Optional[Callable] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if pinecone_index is None:
-            raise ValueError("pinecone_index is required.")
-        if pinecone_kwargs is None:
-            pinecone_kwargs = {}
+        pinecone_kwargs = pinecone_kwargs or {}
 
-        vector_store = kwargs.pop(
-            "vector_store",
-            PineconeVectorStore(
+        if vector_store is None:
+            vector_store = PineconeVectorStore(
                 pinecone_index=pinecone_index,
+                index_name=index_name,
+                environment=environment,
                 metadata_filters=metadata_filters,
                 pinecone_kwargs=pinecone_kwargs,
                 insert_kwargs=insert_kwargs,
                 query_kwargs=query_kwargs,
                 delete_kwargs=delete_kwargs,
-            ),
-        )
+                add_sparse_vector=add_sparse_vector,
+                tokenizer=tokenizer,
+            )
+        assert vector_store is not None
 
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            text_qa_template=text_qa_template,
             service_context=service_context,
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTPineconeIndexQuery,
-            QueryMode.EMBEDDING: GPTPineconeIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(PineconeVectorStore, self._vector_store)
-        query_kwargs["pinecone_index"] = vector_store._pinecone_index
-        query_kwargs["metadata_filters"] = vector_store._metadata_filters
-        query_kwargs["pinecone_kwargs"] = vector_store._pinecone_kwargs
-        query_kwargs["insert_kwargs"] = vector_store._insert_kwargs
-        query_kwargs["query_kwargs"] = vector_store._query_kwargs
-        query_kwargs["delete_kwargs"] = vector_store._delete_kwargs
 
 
 class GPTWeaviateIndex(GPTVectorStoreIndex):
@@ -346,9 +263,6 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
     """
@@ -362,40 +276,25 @@ class GPTWeaviateIndex(GPTVectorStoreIndex):
         weaviate_client: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        vector_store: Optional[WeaviateVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if weaviate_client is None:
-            raise ValueError("weaviate_client is required.")
-        vector_store = WeaviateVectorStore(
-            weaviate_client=weaviate_client, class_prefix=class_prefix
-        )
+        if vector_store is None:
+            if weaviate_client is None:
+                raise ValueError("weaviate_client is required.")
+            vector_store = WeaviateVectorStore(
+                weaviate_client=weaviate_client, class_prefix=class_prefix
+            )
+        assert vector_store is not None
 
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTWeaviateIndexQuery,
-            QueryMode.EMBEDDING: GPTWeaviateIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(WeaviateVectorStore, self._vector_store)
-        query_kwargs["weaviate_client"] = vector_store._client
-        query_kwargs["class_prefix"] = vector_store._class_prefix
 
 
 class GPTQdrantIndex(GPTVectorStoreIndex):
@@ -412,9 +311,6 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
         client (Optional[Any]): QdrantClient instance from `qdrant-client` package
@@ -430,40 +326,111 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
         client: Optional[Any] = None,
         collection_name: Optional[str] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        vector_store: Optional[QdrantVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if client is None:
-            raise ValueError("client is required.")
-        if collection_name is None:
-            raise ValueError("collection_name is required.")
-        vector_store = QdrantVectorStore(client=client, collection_name=collection_name)
+        if vector_store is None:
+            if client is None:
+                raise ValueError("client is required.")
+            if collection_name is None:
+                raise ValueError("collection_name is required.")
+            vector_store = QdrantVectorStore(
+                client=client, collection_name=collection_name
+            )
+        assert vector_store is not None
 
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTQdrantIndexQuery,
-            QueryMode.EMBEDDING: GPTQdrantIndexQuery,
-        }
 
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(QdrantVectorStore, self._vector_store)
-        query_kwargs["client"] = vector_store._client
-        query_kwargs["collection_name"] = vector_store._collection_name
+class GPTMilvusIndex(GPTVectorStoreIndex):
+    """GPT Milvus Index.
+
+    In this GPT index we store the text, its embedding and
+    a few pieces of its metadata in a Milvus collection.
+    This implementation allows the use of an already existing
+    collection if it is one that was created this vector store.
+    It also supports creating a new one if the collection doesnt exist
+    or if `overwrite` is set to True.
+
+    Args:
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
+        collection_name (str, optional): The name of the collection
+            where data will be stored. Defaults to "llamalection".
+        index_params (dict, optional): The index parameters for Milvus,
+            if none are provided an HNSW index will be used. Defaults to None.
+        search_params (dict, optional): The search parameters for a Milvus query.
+            If none are provided, default params will be generated. Defaults to None.
+        dim (int, optional): The dimension of the embeddings. If it is not provided,
+            collection creation will be done on first insert. Defaults to None.
+        host (str, optional): The host address of Milvus. Defaults to "localhost".
+        port (int, optional): The port of Milvus. Defaults to 19530.
+        user (str, optional): The username for RBAC. Defaults to "".
+        password (str, optional): The password for RBAC. Defaults to "".
+        use_secure (bool, optional): Use https. Defaults to False.
+        overwrite (bool, optional): Whether to overwrite existing collection
+            with same name. Defaults to False.
+
+    Raises:
+        ImportError: Unable to import `pymilvus`.
+        MilvusException: Error communicating with Milvus,
+            more can be found in logging under Debug.
+
+    Returns:
+        MilvusVectorstore: Vectorstore that supports add, delete, and query.
+    """
+
+    index_struct_cls: Type[IndexDict] = MilvusIndexDict
+
+    def __init__(
+        self,
+        nodes: Optional[Sequence[Node]] = None,
+        collection_name: str = "llamalection",
+        index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
+        dim: Optional[int] = None,
+        host: str = "localhost",
+        port: int = 19530,
+        user: str = "",
+        password: str = "",
+        use_secure: bool = False,
+        overwrite: bool = False,
+        service_context: Optional[ServiceContext] = None,
+        index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[MilvusVectorStore] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Init params."""
+
+        if vector_store is None:
+            vector_store = MilvusVectorStore(
+                collection_name=collection_name,
+                index_params=index_params,
+                search_params=search_params,
+                dim=dim,
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                use_secure=use_secure,
+                overwrite=overwrite,
+            )
+        assert vector_store is not None
+
+        super().__init__(
+            nodes=nodes,
+            index_struct=index_struct,
+            service_context=service_context,
+            vector_store=vector_store,
+            **kwargs,
+        )
 
 
 class GPTChromaIndex(GPTVectorStoreIndex):
@@ -480,9 +447,6 @@ class GPTChromaIndex(GPTVectorStoreIndex):
     retrieved nodes.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
         chroma_collection (Optional[Any]): Collection instance from `chromadb` package.
@@ -497,37 +461,23 @@ class GPTChromaIndex(GPTVectorStoreIndex):
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         chroma_collection: Optional[Any] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        vector_store: Optional[ChromaVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if chroma_collection is None:
-            raise ValueError("chroma_collection is required.")
-        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        if vector_store is None:
+            if chroma_collection is None:
+                raise ValueError("chroma_collection is required.")
+            vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        assert vector_store is not None
 
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTChromaIndexQuery,
-            QueryMode.EMBEDDING: GPTChromaIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(ChromaVectorStore, self._vector_store)
-        query_kwargs["chroma_collection"] = vector_store._collection
 
 
 class GPTOpensearchIndex(GPTVectorStoreIndex):
@@ -547,9 +497,6 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
     "knn_vector" field that the embeddings were mapped to.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         client (Optional[OpensearchVectorClient]): The client which encapsulates
             logic for using Opensearch as a vector store (that is, it holds stuff
             like endpoint, index_name and performs operations like initializing the
@@ -566,36 +513,23 @@ class GPTOpensearchIndex(GPTVectorStoreIndex):
         service_context: Optional[ServiceContext] = None,
         client: Optional[OpensearchVectorClient] = None,
         index_struct: Optional[IndexDict] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        vector_store: Optional[OpensearchVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if client is None:
-            raise ValueError("client is required.")
-        vector_store = OpensearchVectorStore(client)
+        if vector_store is None:
+            if client is None:
+                raise ValueError("client is required.")
+            vector_store = OpensearchVectorStore(client)
+        assert vector_store is not None
+
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTOpensearchIndexQuery,
-            QueryMode.EMBEDDING: GPTOpensearchIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(OpensearchVectorStore, self._vector_store)
-        query_kwargs["client"] = vector_store._client
 
 
 class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
@@ -606,9 +540,6 @@ class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
     https://github.com/openai/chatgpt-retrieval-plugin.
 
     Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-            NOTE: this is a deprecated field.
         client (Optional[OpensearchVectorClient]): The client which encapsulates
             logic for using Opensearch as a vector store (that is, it holds stuff
             like endpoint, index_name and performs operations like initializing the
@@ -624,47 +555,32 @@ class ChatGPTRetrievalPluginIndex(GPTVectorStoreIndex):
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[ChatGPTRetrievalPluginIndexDict] = None,
         service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         endpoint_url: Optional[str] = None,
         bearer_token: Optional[str] = None,
         retries: Optional[Retry] = None,
         batch_size: int = 100,
+        vector_store: Optional[ChatGPTRetrievalPluginClient] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if endpoint_url is None:
-            raise ValueError("endpoint_url is required.")
-        if bearer_token is None:
-            raise ValueError("bearer_token is required.")
-        vector_store = ChatGPTRetrievalPluginClient(
-            endpoint_url,
-            bearer_token,
-            retries=retries,
-            batch_size=batch_size,
-        )
+
+        if vector_store is None:
+            if endpoint_url is None:
+                raise ValueError("endpoint_url is required.")
+            if bearer_token is None:
+                raise ValueError("bearer_token is required.")
+            vector_store = ChatGPTRetrievalPluginClient(
+                endpoint_url,
+                bearer_token,
+                retries=retries,
+                batch_size=batch_size,
+            )
+        assert vector_store is not None
+
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            text_qa_template=text_qa_template,
             vector_store=vector_store,
             **kwargs,
         )
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: ChatGPTRetrievalPluginQuery,
-            QueryMode.EMBEDDING: ChatGPTRetrievalPluginQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query."""
-        super()._preprocess_query(mode, query_kwargs)
-        del query_kwargs["vector_store"]
-        vector_store = cast(ChatGPTRetrievalPluginClient, self._vector_store)
-        query_kwargs["endpoint_url"] = vector_store._endpoint_url
-        query_kwargs["bearer_token"] = vector_store._bearer_token
-        query_kwargs["retries"] = vector_store._retries
-        query_kwargs["batch_size"] = vector_store._batch_size

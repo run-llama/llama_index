@@ -7,7 +7,19 @@ import traceback
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, Generator, List, Optional, Set, Type, cast
+from itertools import islice
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    List,
+    Optional,
+    Set,
+    Type,
+    cast,
+    Union,
+    Iterable,
+)
 
 
 class GlobalsHelper:
@@ -65,7 +77,10 @@ class GlobalsHelper:
                 raise ImportError(
                     "`nltk` package not found, please run `pip install nltk`"
                 )
-            nltk.download("stopwords")
+            try:
+                nltk.data.find("corpora/stopwords")
+            except LookupError:
+                nltk.download("stopwords")
             self._stopwords = stopwords.words("english")
         return self._stopwords
 
@@ -175,3 +190,17 @@ def retry_on_exceptions_with_backoff(
 def truncate_text(text: str, max_length: int) -> str:
     """Truncate text to a maximum length."""
     return text[: max_length - 3] + "..."
+
+
+def iter_batch(iterable: Union[Iterable, Generator], size: int) -> Iterable:
+    """Iterate over an iterable in batches.
+
+    >>> list(iter_batch([1,2,3,4,5], 3))
+    [[1, 2, 3], [4, 5]]
+    """
+    source_iter = iter(iterable)
+    while source_iter:
+        b = list(islice(source_iter, size))
+        if len(b) == 0:
+            break
+        yield b

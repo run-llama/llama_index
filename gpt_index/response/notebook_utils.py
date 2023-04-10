@@ -2,9 +2,10 @@
 from typing import Any, Dict, Tuple
 
 from IPython.display import Markdown, display
+from gpt_index.data_structs.node_v2 import ImageNode, NodeWithScore
 
 from gpt_index.img_utils import b64_2_img
-from gpt_index.response.schema import Response, SourceNode
+from gpt_index.response.schema import Response
 from gpt_index.utils import truncate_text
 
 DEFAULT_THUMBNAIL_SIZE = (512, 512)
@@ -17,19 +18,20 @@ def display_image(img_str: str, size: Tuple[int, int] = DEFAULT_THUMBNAIL_SIZE) 
     display(img)
 
 
-def display_source_node(source_node: SourceNode, source_length: int = 100) -> None:
+def display_source_node(source_node: NodeWithScore, source_length: int = 100) -> None:
     """Display source node for jupyter notebook."""
-    source_text_fmt = truncate_text(source_node.source_text.strip(), source_length)
+    source_text_fmt = truncate_text(source_node.node.get_text().strip(), source_length)
     text_md = (
-        f"**Document ID:** {source_node.doc_id}<br>"
-        f"**Similarity:** {source_node.similarity}<br>"
+        f"**Document ID:** {source_node.node.doc_id}<br>"
+        f"**Similarity:** {source_node.score}<br>"
         f"**Text:** {source_text_fmt}<br>"
     )
-    if source_node.image is not None:
+    if isinstance(source_node.node, ImageNode):
         text_md += "**Image:**"
+
     display(Markdown(text_md))
-    if source_node.image is not None:
-        display_image(source_node.image)
+    if isinstance(source_node.node, ImageNode) and source_node.node.image is not None:
+        display_image(source_node.node.image)
 
 
 def display_extra_info(extra_info: Dict[str, Any]) -> None:
