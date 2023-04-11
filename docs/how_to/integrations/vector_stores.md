@@ -206,6 +206,7 @@ response = index.query("What did the author do growing up?")
 
 **Milvus Index Construction/Querying**
 
+Milvus:
 ```python
 import pymilvus
 from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
@@ -214,6 +215,21 @@ from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
 # Load documents, build the GPTMilvusStore
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTMilvusIndex.from_documents(documents, host='localhost', port=19530, overwrite='True')
+
+# Query index
+response = index.query("What did the author do growing up?")
+
+```
+
+Zilliz:
+```python
+import pymilvus
+from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
+
+
+# Load documents, build the GPTMilvusStore
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTMilvusIndex.from_documents(documents, host='foo.vectordb.zillizcloud.com', port=403, user="db_admin", password="foo", use_secure=True, overwrite='True')
 
 # Query index
 response = index.query("What did the author do growing up?")
