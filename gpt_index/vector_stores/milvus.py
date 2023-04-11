@@ -41,7 +41,8 @@ class MilvusVectorStore(VectorStore):
         port (int, optional): The port of Milvus. Defaults to 19530.
         user (str, optional): The username for RBAC. Defaults to "".
         password (str, optional): The password for RBAC. Defaults to "".
-        use_secure (bool, optional): Use https. Required for Zilliz Cloud. Defaults to False.
+        use_secure (bool, optional): Use https. Required for Zilliz Cloud.
+            Defaults to False.
         overwrite (bool, optional): Whether to overwrite existing collection with same
             name. Defaults to False.
 
@@ -153,7 +154,7 @@ class MilvusVectorStore(VectorStore):
         # Attempt to reuse an open connection
         for x in connections.list_connections():
             addr = connections.get_connection_addr(x[0])
-            tmp_user = "" if self.user == None else self.user
+            tmp_user = "" if self.user is None else self.user
             if (
                 x[1]
                 and ("address" in addr)
@@ -250,7 +251,7 @@ class MilvusVectorStore(VectorStore):
                     "embedding", index_params=self.index_params, using=self.alias
                 )
             # If default did not work, most likely on Zilliz Cloud
-            except MilvusException as e:
+            except MilvusException:
                 # Attempt creating autoindex
                 self.index_params = {
                     "metric_type": "IP",
