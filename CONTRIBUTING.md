@@ -180,6 +180,12 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
+if you are in windows, use the following to activate your virtual environment:
+
+```bash
+.venv\scripts\activate
+```
+
 Install the required dependencies (this will also install gpt-index through `pip install -e .` 
 so that you can start developing on it):
 
