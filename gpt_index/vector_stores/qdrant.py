@@ -169,7 +169,7 @@ class QdrantVectorStore(VectorStore):
         Args:
             query (VectorStoreQuery): query
         """
-        from qdrant_client.http.models import Payload
+        from qdrant_client.http.models import Payload, Filter
 
         query_embedding = cast(List[float], query.query_embedding)
 
@@ -177,7 +177,7 @@ class QdrantVectorStore(VectorStore):
             collection_name=self._collection_name,
             query_vector=query_embedding,
             limit=cast(int, query.similarity_top_k),
-            query_filter=self._build_query_filter(query),
+            query_filter=cast(Filter, self._build_query_filter(query)),
         )
 
         logger.debug(f"> Top {len(response)} nodes:")
@@ -201,7 +201,7 @@ class QdrantVectorStore(VectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    def _build_query_filter(self, query: VectorStoreQuery) -> Optional["Filter"]:
+    def _build_query_filter(self, query: VectorStoreQuery) -> Optional[Any]:
         if not query.doc_ids and not query.query_str:
             return None
 
