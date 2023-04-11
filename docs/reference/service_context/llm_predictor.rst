@@ -10,7 +10,7 @@ Our LLMPredictor is a wrapper around Langchain's `LLMChain` that allows easy int
    :inherited-members:
 
 
-Our MockLLMPredictor is used for token prediction. See `Cost Analysis How-To <../how_to/cost_analysis.html>`_ for more information.
+Our MockLLMPredictor is used for token prediction. See `Cost Analysis How-To <../../how_to/analysis/cost_analysis.html>`_ for more information.
 
 .. automodule:: gpt_index.token_counter.mock_chain_wrapper
    :members:
