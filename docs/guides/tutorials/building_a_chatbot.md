@@ -76,7 +76,7 @@ for year in years:
 
 ### Composing a Graph to Synthesize Answers Across 10-K Filings
 
-Since we have access to documents of 4 questions, we may not only want to ask questions regarding the 10-K document of a given year, but ask questions that require analysis over all 10-K filings. 
+Since we have access to documents of 4 years, we may not only want to ask questions regarding the 10-K document of a given year, but ask questions that require analysis over all 10-K filings. 
 
 To address this, we compose a "graph" which consists of a list index defined over the 4 vector indices. Querying this graph would first retrieve information from each vector index, and combine information together via the list index.
 
