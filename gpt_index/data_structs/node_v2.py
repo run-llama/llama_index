@@ -85,6 +85,8 @@ class Node(BaseDocument):
         """Prev node id."""
         if DocumentRelationship.PREVIOUS not in self.relationships:
             raise ValueError("Node does not have previous node")
+        if not isinstance(self.relationships[DocumentRelationship.PREVIOUS], str):
+            raise ValueError("Previous node must be a string")
         return self.relationships[DocumentRelationship.PREVIOUS]
 
     @property
@@ -92,6 +94,8 @@ class Node(BaseDocument):
         """Next node id."""
         if DocumentRelationship.NEXT not in self.relationships:
             raise ValueError("Node does not have next node")
+        if not isinstance(self.relationships[DocumentRelationship.NEXT], str):
+            raise ValueError("Next node must be a string")
         return self.relationships[DocumentRelationship.NEXT]
 
     @property
@@ -99,6 +103,8 @@ class Node(BaseDocument):
         """Parent node id."""
         if DocumentRelationship.PARENT not in self.relationships:
             raise ValueError("Node does not have parent node")
+        if not isinstance(self.relationships[DocumentRelationship.PARENT], str):
+            raise ValueError("Parent node must be a string")
         return self.relationships[DocumentRelationship.PARENT]
 
     @property
@@ -106,6 +112,8 @@ class Node(BaseDocument):
         """Child node ids."""
         if DocumentRelationship.CHILD not in self.relationships:
             raise ValueError("Node does not have child nodes")
+        if not isinstance(self.relationships[DocumentRelationship.CHILD], list):
+            raise ValueError("Child nodes must be a list")
         return self.relationships[DocumentRelationship.CHILD]
 
     def get_text(self) -> str:
