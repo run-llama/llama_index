@@ -102,7 +102,7 @@ class QdrantVectorStore(VectorStore):
 
             self._client.upsert(
                 collection_name=self._collection_name,
-                points=rest.Batch(
+                points=rest.Batch.construct(
                     ids=new_ids,
                     vectors=vectors,
                     payloads=payloads,
