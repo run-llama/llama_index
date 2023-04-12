@@ -41,7 +41,8 @@ class MilvusVectorStore(VectorStore):
         port (int, optional): The port of Milvus. Defaults to 19530.
         user (str, optional): The username for RBAC. Defaults to "".
         password (str, optional): The password for RBAC. Defaults to "".
-        use_secure (bool, optional): Use https. Defaults to False.
+        use_secure (bool, optional): Use https. Required for Zilliz Cloud.
+            Defaults to False.
         overwrite (bool, optional): Whether to overwrite existing collection with same
             name. Defaults to False.
 
@@ -153,10 +154,13 @@ class MilvusVectorStore(VectorStore):
         # Attempt to reuse an open connection
         for x in connections.list_connections():
             addr = connections.get_connection_addr(x[0])
+            tmp_user = "" if self.user is None else self.user
             if (
                 x[1]
                 and ("address" in addr)
                 and (addr["address"] == "{}:{}".format(self.host, self.port))
+                and ("user" in addr)
+                and (addr["user"] == tmp_user)
             ):
                 self.alias = x[0]
                 logger.debug(f"Using previous connection: {self.alias}")
@@ -242,9 +246,21 @@ class MilvusVectorStore(VectorStore):
                 }
             assert self.index_params is not None
 
-            self.collection.create_index(
-                "embedding", index_params=self.index_params, using=self.alias
-            )
+            try:
+                self.collection.create_index(
+                    "embedding", index_params=self.index_params, using=self.alias
+                )
+            # If default did not work, most likely on Zilliz Cloud
+            except MilvusException:
+                # Attempt creating autoindex
+                self.index_params = {
+                    "metric_type": "IP",
+                    "index_type": "AUTOINDEX",
+                    "params": {},
+                }
+                self.collection.create_index(
+                    "embedding", index_params=self.index_params, using=self.alias
+                )
 
             # If search params dont exist already, grab the default
             if self.search_params is None:
