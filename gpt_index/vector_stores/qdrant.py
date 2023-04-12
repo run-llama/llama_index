@@ -102,7 +102,7 @@ class QdrantVectorStore(VectorStore):
 
             self._client.upsert(
                 collection_name=self._collection_name,
-                points=rest.Batch(
+                points=rest.Batch.construct(
                     ids=new_ids,
                     vectors=vectors,
                     payloads=payloads,
@@ -156,7 +156,7 @@ class QdrantVectorStore(VectorStore):
 
         try:
             self._client.get_collection(collection_name)
-        except (RpcError, UnexpectedResponse):
+        except (RpcError, UnexpectedResponse, ValueError):
             return False
         return True
 
@@ -167,17 +167,9 @@ class QdrantVectorStore(VectorStore):
         """Query index for top k most similar nodes.
 
         Args:
-            query_embedding (List[float]): query embedding
-            similarity_top_k (int): top k most similar nodes
-            doc_ids (Optional[List[str]]): list of doc_ids to filter by
-
+            query (VectorStoreQuery): query
         """
-        from qdrant_client.http.models import (
-            FieldCondition,
-            Filter,
-            MatchValue,
-            Payload,
-        )
+        from qdrant_client.http.models import Payload, Filter
 
         query_embedding = cast(List[float], query.query_embedding)
 
@@ -185,18 +177,7 @@ class QdrantVectorStore(VectorStore):
             collection_name=self._collection_name,
             query_vector=query_embedding,
             limit=cast(int, query.similarity_top_k),
-            query_filter=None
-            if not query.doc_ids
-            else Filter(
-                must=[
-                    Filter(
-                        should=[
-                            FieldCondition(key="doc_id", match=MatchValue(value=doc_id))
-                            for doc_id in query.doc_ids
-                        ],
-                    )
-                ]
-            ),
+            query_filter=cast(Filter, self._build_query_filter(query)),
         )
 
         logger.debug(f"> Top {len(response)} nodes:")
@@ -219,3 +200,34 @@ class QdrantVectorStore(VectorStore):
             ids.append(str(point.id))
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def _build_query_filter(self, query: VectorStoreQuery) -> Optional[Any]:
+        if not query.doc_ids and not query.query_str:
+            return None
+
+        from qdrant_client.http.models import (
+            FieldCondition,
+            Filter,
+            MatchAny,
+            MatchText,
+        )
+
+        must_conditions = []
+
+        if query.doc_ids:
+            must_conditions.append(
+                FieldCondition(
+                    key="doc_id",
+                    match=MatchAny(any=[doc_id for doc_id in query.doc_ids]),
+                )
+            )
+
+        if query.query_str:
+            must_conditions.append(
+                FieldCondition(
+                    key="text",
+                    match=MatchText(text=query.query_str),
+                )
+            )
+
+        return Filter(must=must_conditions)

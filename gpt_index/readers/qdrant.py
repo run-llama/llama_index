@@ -12,7 +12,14 @@ class QdrantReader(BaseReader):
     Retrieve documents from existing Qdrant collections.
 
     Args:
-        host: Host name of Qdrant service.
+        location:
+            If `:memory:` - use in-memory Qdrant instance.
+            If `str` - use it as a `url` parameter.
+            If `None` - use default values for `host` and `port`.
+        url:
+            either host or str of
+            "Optional[scheme], host, Optional[port], Optional[prefix]".
+            Default: `None`
         port: Port of the REST API interface. Default: 6333
         grpc_port: Port of the gRPC interface. Default: 6334
         prefer_grpc: If `true` - use gPRC interface whenever possible in custom methods.
@@ -26,18 +33,23 @@ class QdrantReader(BaseReader):
         timeout:
             Timeout for REST and gRPC API requests.
             Default: 5.0 seconds for REST and unlimited for gRPC
+        host: Host name of Qdrant service. If url and host are None, set to 'localhost'.
+            Default: `None`
     """
 
     def __init__(
         self,
-        host: str,
-        port: int = 6333,
+        location: Optional[str] = None,
+        url: Optional[str] = None,
+        port: Optional[int] = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,
         https: Optional[bool] = None,
         api_key: Optional[str] = None,
         prefix: Optional[str] = None,
         timeout: Optional[float] = None,
+        host: Optional[str] = None,
+        path: Optional[str] = None,
     ):
         """Initialize with parameters."""
         import_err_msg = (
@@ -49,7 +61,8 @@ class QdrantReader(BaseReader):
             raise ImportError(import_err_msg)
 
         self._client = qdrant_client.QdrantClient(
-            url=host,
+            location=location,
+            url=url,
             port=port,
             grpc_port=grpc_port,
             prefer_grpc=prefer_grpc,
@@ -57,6 +70,8 @@ class QdrantReader(BaseReader):
             api_key=api_key,
             prefix=prefix,
             timeout=timeout,
+            host=host,
+            path=path,
         )
 
     def load_data(
