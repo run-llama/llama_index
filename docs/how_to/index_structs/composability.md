@@ -57,7 +57,7 @@ We can query, save, and load the graph to/from disk as any other index.
 ```python
 from llama_index.indices.composability import ComposableGraph
 
-graph = ComposableGraph.build_from_indices(
+graph = ComposableGraph.from_indices(
     GPTListIndex,
     [index1, index2, index3],
     index_summaries=[index1_summary, index2_summary, index3_summary],
