@@ -11,10 +11,13 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
-from gpt_index.vector_stores.types import (NodeEmbeddingResult, VectorStore,
-                                           VectorStoreQuery,
-                                           VectorStoreQueryMode,
-                                           VectorStoreQueryResult)
+from gpt_index.vector_stores.types import (
+    NodeEmbeddingResult,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+    VectorStoreQueryResult,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -257,7 +260,7 @@ class PineconeVectorStore(VectorStore):
                 "id": new_id,
                 "values": text_embedding,
                 "metadata": metadata,
-                "namespace": self._namespace
+                "namespace": self._namespace,
             }
             if self._add_sparse_vector:
                 sparse_vector = generate_sparse_vectors(
@@ -312,7 +315,7 @@ class PineconeVectorStore(VectorStore):
             top_k=query.similarity_top_k,
             include_values=True,
             include_metadata=True,
-            namespace = self._namespace,
+            namespace=self._namespace,
             filter=self._metadata_filters,
             **self._pinecone_kwargs,
         )
