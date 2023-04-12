@@ -1,7 +1,11 @@
 from typing import List, cast
 
 import pytest
-import qdrant_client
+
+try:
+    import qdrant_client
+except ImportError:
+    qdrant_client = None
 
 from gpt_index.data_structs import Node
 from gpt_index.vector_stores import QdrantVectorStore
@@ -31,6 +35,7 @@ def node_embeddings(node: Node) -> List[NodeEmbeddingResult]:
     ]
 
 
+@pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
 def test_add_stores_data(node_embeddings: List[NodeEmbeddingResult]) -> None:
     client = qdrant_client.QdrantClient(":memory:")
     qdrant_vector_store = QdrantVectorStore(collection_name="test", client=client)
@@ -43,6 +48,7 @@ def test_add_stores_data(node_embeddings: List[NodeEmbeddingResult]) -> None:
     assert client.count("test").count == 2
 
 
+@pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
 def test_build_query_filter_returns_none() -> None:
     client = qdrant_client.QdrantClient(":memory:")
     qdrant_vector_store = QdrantVectorStore(collection_name="test", client=client)
@@ -53,6 +59,7 @@ def test_build_query_filter_returns_none() -> None:
     assert query_filter is None
 
 
+@pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
 def test_build_query_filter_returns_match_any() -> None:
     from qdrant_client.http.models import Filter, FieldCondition, MatchAny
 
@@ -70,6 +77,7 @@ def test_build_query_filter_returns_match_any() -> None:
     assert query_filter.must[0].match.any == ["1", "2", "3"]  # type: ignore[index]
 
 
+@pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
 def test_build_query_filter_returns_text_filter() -> None:
     from qdrant_client.http.models import Filter, FieldCondition, MatchText
 
@@ -87,6 +95,7 @@ def test_build_query_filter_returns_text_filter() -> None:
     assert query_filter.must[0].match.text == "lorem"  # type: ignore[index]
 
 
+@pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
 def test_build_query_filter_returns_combined_filter() -> None:
     from qdrant_client.http.models import Filter, FieldCondition, MatchText, MatchAny
 
