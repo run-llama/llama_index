@@ -206,6 +206,10 @@ response = index.query("What did the author do growing up?")
 
 **Milvus Index Construction/Querying**
 
+- The Milvus Index can be used for both Milvus (open-source vector database) and Zilliz (hosted version of Milvus)
+
+- Both Milvus and Zilliz offer the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and do not include extra_info. 
+
 Milvus:
 ```python
 import pymilvus
