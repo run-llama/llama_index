@@ -1,17 +1,17 @@
 from enum import Enum
 from typing import Any, Dict, Optional, Type
 
-from gpt_index.constants import DATA_KEY, TYPE_KEY
-from gpt_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
-from gpt_index.vector_stores.chroma import ChromaVectorStore
-from gpt_index.vector_stores.faiss import FaissVectorStore
-from gpt_index.vector_stores.milvus import MilvusVectorStore
-from gpt_index.vector_stores.opensearch import OpensearchVectorStore
-from gpt_index.vector_stores.pinecone import PineconeVectorStore
-from gpt_index.vector_stores.qdrant import QdrantVectorStore
-from gpt_index.vector_stores.simple import SimpleVectorStore
-from gpt_index.vector_stores.types import VectorStore
-from gpt_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.constants import DATA_KEY, TYPE_KEY
+from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.vector_stores.faiss import FaissVectorStore
+from llama_index.vector_stores.milvus import MilvusVectorStore
+from llama_index.vector_stores.opensearch import OpensearchVectorStore
+from llama_index.vector_stores.pinecone import PineconeVectorStore
+from llama_index.vector_stores.qdrant import QdrantVectorStore
+from llama_index.vector_stores.simple import SimpleVectorStore
+from llama_index.vector_stores.types import VectorStore
+from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
 
 class VectorStoreType(str, Enum):
@@ -48,6 +48,7 @@ def load_vector_store_from_dict(
     type_to_cls: Optional[Dict[VectorStoreType, Type[VectorStore]]] = None,
     **kwargs: Any,
 ) -> VectorStore:
+    print(vector_store_dict)
     type_to_cls = type_to_cls or VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS
     type = vector_store_dict[TYPE_KEY]
     config_dict: Dict[str, Any] = vector_store_dict[DATA_KEY]
