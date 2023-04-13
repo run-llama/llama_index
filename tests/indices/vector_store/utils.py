@@ -29,6 +29,7 @@ class MockPineconeIndex:
         include_values: bool = True,
         include_metadata: bool = True,
         filter: Optional[Dict[str, Any]] = None,
+        namespace: Optional[str] = None,
     ) -> Any:
         """Mock query."""
         # index_mat is n x k
