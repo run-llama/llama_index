@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 class BaseNodePostprocessor(BasePostprocessor, BaseModel):
     """Node postprocessor."""
 
+    class Config:
+        arbitrary_types_allowed = True
+
     @abstractmethod
     def postprocess_nodes(
         self, nodes: List[Node], extra_info: Optional[Dict] = None

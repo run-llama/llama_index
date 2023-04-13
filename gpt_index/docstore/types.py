@@ -1,25 +1,25 @@
-from typing import Any, Dict, List, Optional, Protocol, Sequence, runtime_checkable
+from abc import ABC
+from typing import Any, Dict, List, Optional, Sequence
 from gpt_index.data_structs.node_v2 import Node
 
 from gpt_index.schema import BaseDocument
 
 
-@runtime_checkable
-class DocumentStore(Protocol):
-    # ===== Save/load =====
+class DocumentStore(ABC):
+    # ===== Constructors =====
     @classmethod
-    def load_from_dict(
-        cls,
-        docs_dict: Dict[str, Any],
+    def from_documents(
+        cls, docs: Sequence[BaseDocument], allow_update: bool = True
     ) -> "DocumentStore":
         ...
 
-    def to_dict(self) -> Dict[str, Any]:
+    @classmethod
+    def merge(cls, docstores: Sequence["DocumentStore"]) -> "DocumentStore":
         ...
 
     # ===== Main interface =====
     def docs(self) -> Dict[str, BaseDocument]:
-        pass
+        ...
 
     def add_documents(
         self, docs: Sequence[BaseDocument], allow_update: bool = True
@@ -53,4 +53,15 @@ class DocumentStore(Protocol):
         ...
 
     def get_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, Node]:
+        ...
+
+    # ===== Save/load =====
+    @classmethod
+    def from_dict(
+        cls,
+        docs_dict: Dict[str, Any],
+    ) -> "DocumentStore":
+        ...
+
+    def to_dict(self) -> Dict[str, Any]:
         ...

@@ -7,12 +7,13 @@ from typing import Any, Dict, List, Optional, Sequence
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.node_v2 import Node
+from gpt_index.docstore.types import DocumentStore
 from gpt_index.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument
 
 
 @dataclass
-class SimpleDocumentStore(DataClassJsonMixin):
+class SimpleDocumentStore(DataClassJsonMixin, DocumentStore):
     """Document (Node) store.
 
     NOTE: at the moment, this store is primarily used to store Node objects.
@@ -55,7 +56,7 @@ class SimpleDocumentStore(DataClassJsonMixin):
         return {"docs": docs_dict, "ref_doc_info": self.ref_doc_info}
 
     @classmethod
-    def load_from_dict(
+    def from_dict(
         cls,
         docs_dict: Dict[str, Any],
     ) -> "SimpleDocumentStore":

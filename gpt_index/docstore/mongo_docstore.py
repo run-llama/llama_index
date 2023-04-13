@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Sequence
 import uuid
 from gpt_index.data_structs.node_v2 import Node
+from gpt_index.docstore.types import DocumentStore
 from gpt_index.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument
 
@@ -8,7 +9,7 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 
 
-class MongoDocumentStore:
+class MongoDocumentStore(DocumentStore):
     def __init__(
         self,
         client: MongoClient,
