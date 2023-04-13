@@ -1,5 +1,5 @@
 from typing import Any, List, Optional
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 import uuid
 
 import pytest
@@ -72,9 +72,8 @@ class MockMongoDB:
 
 
 class MockMongoClient:
-    def __init__(self) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         self._db = MockMongoDB()
-        pass
 
     def __getitem__(self, db: str) -> MockMongoDB:
         del db
@@ -120,3 +119,24 @@ def test_mongo_docstore_save_load(documents: List[Document]):
     save_dict["mongo_client"] = mongo_client
     ds_loaded = MongoDocumentStore.from_dict(save_dict)
     assert len(ds_loaded.docs) == 2
+    assert ds_loaded._collection_name == ds._collection_name
+    assert ds_loaded._db_name == ds._db_name
+
+
+_mock_client = MockMongoClient()
+
+
+@patch(
+    "gpt_index.docstore.mongo_docstore.MongoClient",
+    return_value=_mock_client,
+)
+def test_mongo_docstore_save_load(mock_mongo_client: Any, documents: List[Document]):
+    ds = MongoDocumentStore.from_uri(uri="test_uri")
+    ds.add_documents(documents)
+    assert len(ds.docs) == 2
+
+    save_dict = ds.to_dict()
+    ds_loaded = MongoDocumentStore.from_dict(save_dict)
+    assert len(ds_loaded.docs) == 2
+    assert ds_loaded._collection_name == ds._collection_name
+    assert ds_loaded._db_name == ds._db_name

@@ -13,10 +13,18 @@ class MongoDocumentStore(DocumentStore):
     def __init__(
         self,
         mongo_client: MongoClient,
+        uri: Optional[str] = None,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ):
         self._client = mongo_client
+
+        self._uri = uri
+        self._host = host
+        self._port = port
+
         self._db_name = db_name or "db_docstore"
         self._collection_name = collection_name or f"collection_{uuid.uuid4()}"
 
@@ -27,8 +35,13 @@ class MongoDocumentStore(DocumentStore):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ) -> "MongoDocumentStore":
-        client = MongoClient(uri)
-        return cls(client=client, db_name=db_name, collection_name=collection_name)
+        mongo_client = MongoClient(uri)
+        return cls(
+            mongo_client=mongo_client,
+            db_name=db_name,
+            collection_name=collection_name,
+            uri=uri,
+        )
 
     @classmethod
     def from_host_and_port(
@@ -38,12 +51,47 @@ class MongoDocumentStore(DocumentStore):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ) -> "MongoDocumentStore":
-        client = MongoClient(host, port)
-        return cls(client=client, db_name=db_name, collection_name=collection_name)
+        mongo_client = MongoClient(host, port)
+        return cls(
+            mongo_client=mongo_client,
+            db_name=db_name,
+            collection_name=collection_name,
+            host=host,
+            port=port,
+        )
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "MongoDocumentStore":
-        return cls(**config_dict)
+        if config_dict.get("mongo_client", None) is not None:
+            return cls(**config_dict)
+        elif config_dict.get("uri", None) is not None:
+            return cls.from_uri(
+                uri=config_dict["uri"],
+                db_name=config_dict["db_name"],
+                collection_name=config_dict["collection_name"],
+            )
+        elif (
+            config_dict.get("host", None) is not None
+            and config_dict.get("port", None) is not None
+        ):
+            return cls.from_host_and_port(
+                host=config_dict["host"],
+                port=config_dict["port"],
+                db_name=config_dict["db_name"],
+                collection_name=config_dict["collection_name"],
+            )
+        else:
+            raise ValueError("Cannot construct MongoDocumentStore.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to dict."""
+        return {
+            "db_name": self._db_name,
+            "collection_name": self._collection_name,
+            "uri": self._uri,
+            "host": self._host,
+            "port": self._port,
+        }
 
     @property
     def collection(self) -> Collection:
@@ -140,11 +188,4 @@ class MongoDocumentStore(DocumentStore):
         """
         return {
             index: self.get_node(node_id) for index, node_id in node_id_dict.items()
-        }
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dict."""
-        return {
-            "db_name": self._db_name,
-            "collection_name": self._collection_name,
         }
