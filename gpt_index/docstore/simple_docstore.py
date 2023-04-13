@@ -1,10 +1,8 @@
 """Document store."""
 
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence
-
-from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore.types import DocumentStore
@@ -98,18 +96,6 @@ class SimpleDocumentStore(DocumentStore):
         obj = cls()
         obj.add_documents(docs, allow_update=allow_update)
         return obj
-
-    @classmethod
-    def merge(cls, docstores: Sequence["SimpleDocumentStore"]) -> "SimpleDocumentStore":
-        """Merge docstores.
-
-        Args:
-            docstores (List[SimpleDocumentStore]): docstores to merge
-        """
-        merged_docstore = cls()
-        for docstore in docstores:
-            merged_docstore.update_docstore(docstore)
-        return merged_docstore
 
     def update_docstore(self, other: "SimpleDocumentStore") -> None:
         """Update docstore.

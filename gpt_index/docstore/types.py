@@ -13,10 +13,6 @@ class DocumentStore(ABC):
     ) -> "DocumentStore":
         ...
 
-    @classmethod
-    def merge(cls, docstores: Sequence["DocumentStore"]) -> "DocumentStore":
-        ...
-
     # ===== Main interface =====
     @property
     def docs(self) -> Dict[str, BaseDocument]:
@@ -37,6 +33,10 @@ class DocumentStore(ABC):
         ...
 
     def document_exists(self, doc_id: str) -> bool:
+        ...
+
+    def update_docstore(self, other: "DocumentStore") -> None:
+        """Update docstore."""
         ...
 
     # ===== Hash =====

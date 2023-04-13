@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Sequence, Type
 
 from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.docstore.simple_docstore import SimpleDocumentStore
@@ -52,3 +52,11 @@ def save_docstore_to_dict(
     cls_to_type = cls_to_type or DOCSTORE_CLASS_TO_TYPE
     type_ = cls_to_type[type(docstore)]
     return {TYPE_KEY: type_, DATA_KEY: docstore.to_dict()}
+
+
+def merge_docstores(docstores: Sequence[DocumentStore]) -> DocumentStore:
+    if all(isinstance(docstore, SimpleDocumentStore) for docstore in docstores):
+        merged_docstore = SimpleDocumentStore()
+        for docstore in docstores:
+            merged_docstore.update_docstore(docstore)
+        return merged_docstore
