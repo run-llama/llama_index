@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 import uuid
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore.utils import doc_to_json, json_to_doc
@@ -25,7 +25,7 @@ class MongoDocumentStore:
         uri: str,
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
-    ):
+    ) -> "MongoDocumentStore":
         client = MongoClient(uri)
         return cls(client=client, db_name=db_name, collection_name=collection_name)
 
@@ -36,9 +36,13 @@ class MongoDocumentStore:
         port: str,
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
-    ):
+    ) -> "MongoDocumentStore":
         client = MongoClient(host, port)
         return cls(client=client, db_name=db_name, collection_name=collection_name)
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "MongoDocumentStore":
+        return cls(**config_dict)
 
     @property
     def collection(self) -> Collection:
@@ -135,4 +139,11 @@ class MongoDocumentStore:
         """
         return {
             index: self.get_node(node_id) for index, node_id in node_id_dict.items()
+        }
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to dict."""
+        return {
+            "db_name": self._db_name,
+            "collection_name": self._collection_name,
         }

@@ -8,6 +8,7 @@ from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
+from gpt_index.docstore.registry import get_default_docstore, load_docstore_from_dict, save_docstore_to_dict
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
@@ -62,7 +63,7 @@ class BaseGPTIndex(Generic[IS], ABC):
                 raise ValueError("nodes must be a list of Node objects.")
 
         self._service_context = service_context or ServiceContext.from_defaults()
-        self._docstore = docstore or DocumentStore()
+        self._docstore = docstore or get_default_docstore()
 
         if index_struct is None:
             assert nodes is not None
@@ -90,7 +91,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         """
         service_context = service_context or ServiceContext.from_defaults()
-        docstore = docstore or DocumentStore()
+        docstore = docstore or get_default_docstore()
 
         for doc in documents:
             docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
@@ -313,7 +314,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
         assert isinstance(index_struct, cls.index_struct_cls)
-        docstore = DocumentStore.load_from_dict(result_dict[DOCSTORE_KEY])
+        docstore = load_docstore_from_dict(result_dict[DOCSTORE_KEY], **kwargs)
         return cls(index_struct=index_struct, docstore=docstore, **kwargs)
 
     @classmethod
@@ -367,7 +368,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         """Save to dict."""
         out_dict: Dict[str, Any] = {
             INDEX_STRUCT_KEY: self.index_struct.to_dict(),
-            DOCSTORE_KEY: self.docstore.serialize_to_dict(),
+            DOCSTORE_KEY: save_docstore_to_dict(self.docstore),
         }
         return out_dict
 

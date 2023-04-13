@@ -263,7 +263,7 @@ class ComposableGraph:
         """
         out_dict: Dict[str, Any] = {
             INDEX_STRUCT_KEY: self._index_struct.to_dict(),
-            DOCSTORE_KEY: self._docstore.serialize_to_dict(),
+            DOCSTORE_KEY: self._docstore.to_dict(),
             ADDITIONAL_QUERY_CONTEXT_KEY: save_query_context_to_dict(
                 self._query_context
             ),

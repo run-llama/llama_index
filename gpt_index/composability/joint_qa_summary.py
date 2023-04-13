@@ -2,6 +2,7 @@
 
 
 from typing import Sequence, Optional
+from gpt_index.docstore.registry import get_default_docstore
 
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.composability import ComposableGraph
@@ -44,7 +45,7 @@ class QASummaryGraphBuilder:
         qa_text: str = DEFAULT_QA_TEXT,
     ) -> None:
         """Init params."""
-        self._docstore = docstore or DocumentStore()
+        self._docstore = docstore or get_default_docstore()
         self._service_context = service_context or ServiceContext.from_defaults()
         self._summary_text = summary_text
         self._qa_text = qa_text

@@ -12,7 +12,7 @@ from gpt_index.schema import BaseDocument
 
 
 @dataclass
-class DocumentStore(DataClassJsonMixin):
+class SimpleDocumentStore(DataClassJsonMixin):
     """Document (Node) store.
 
     NOTE: at the moment, this store is primarily used to store Node objects.
@@ -27,7 +27,7 @@ class DocumentStore(DataClassJsonMixin):
         response = index.query("<query_str>", mode="default")
 
         nodes = SimpleNodeParser.get_nodes_from_documents()
-        docstore = DocumentStore()
+        docstore = SimpleDocumentStore()
         docstore.add_documents(nodes)
 
         list_index = GPTListIndex(nodes, docstore=docstore)
@@ -47,7 +47,7 @@ class DocumentStore(DataClassJsonMixin):
         default_factory=lambda: defaultdict(dict)
     )
 
-    def serialize_to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict."""
         docs_dict = {}
         for doc_id, doc in self.docs.items():
@@ -58,7 +58,7 @@ class DocumentStore(DataClassJsonMixin):
     def load_from_dict(
         cls,
         docs_dict: Dict[str, Any],
-    ) -> "DocumentStore":
+    ) -> "SimpleDocumentStore":
         """Load from dict.
 
         Args:
@@ -78,7 +78,7 @@ class DocumentStore(DataClassJsonMixin):
     @classmethod
     def from_documents(
         cls, docs: Sequence[BaseDocument], allow_update: bool = True
-    ) -> "DocumentStore":
+    ) -> "SimpleDocumentStore":
         """Create from documents.
 
         Args:
@@ -92,22 +92,22 @@ class DocumentStore(DataClassJsonMixin):
         return obj
 
     @classmethod
-    def merge(cls, docstores: Sequence["DocumentStore"]) -> "DocumentStore":
+    def merge(cls, docstores: Sequence["SimpleDocumentStore"]) -> "SimpleDocumentStore":
         """Merge docstores.
 
         Args:
-            docstores (List[DocumentStore]): docstores to merge
+            docstores (List[SimpleDocumentStore]): docstores to merge
         """
         merged_docstore = cls()
         for docstore in docstores:
             merged_docstore.update_docstore(docstore)
         return merged_docstore
 
-    def update_docstore(self, other: "DocumentStore") -> None:
+    def update_docstore(self, other: "SimpleDocumentStore") -> None:
         """Update docstore.
 
         Args:
-            other (DocumentStore): docstore to update from
+            other (SimpleDocumentStore): docstore to update from
 
         """
         self.docs.update(other.docs)
