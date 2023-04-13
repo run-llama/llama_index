@@ -4,20 +4,20 @@ An index that that is built on top of an existing vector store.
 
 """
 
+import logging
 import os
-from typing import Any, Dict, List, Optional, cast, Callable
+from collections import Counter
 from functools import partial
+from typing import Any, Callable, Dict, List, Optional, cast
 
-from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
+from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
-    VectorStoreQueryResult,
     VectorStoreQuery,
     VectorStoreQueryMode,
+    VectorStoreQueryResult,
 )
-from collections import Counter
-import logging
 
 _logger = logging.getLogger(__name__)
 
@@ -128,6 +128,7 @@ class PineconeVectorStore(VectorStore):
         pinecone_index: Optional[Any] = None,
         index_name: Optional[str] = None,
         environment: Optional[str] = None,
+        namespace: Optional[str] = None,
         metadata_filters: Optional[Dict[str, Any]] = None,
         pinecone_kwargs: Optional[Dict] = None,
         insert_kwargs: Optional[Dict] = None,
@@ -148,6 +149,7 @@ class PineconeVectorStore(VectorStore):
 
         self._index_name = index_name
         self._environment = environment
+        self._namespace = namespace
         if pinecone_index is not None:
             self._pinecone_index = cast(pinecone.Index, pinecone_index)
             _logger.warn(
@@ -202,6 +204,7 @@ class PineconeVectorStore(VectorStore):
         return {
             "index_name": self._index_name,
             "environment": self._environment,
+            "namespace": self._namespace,
             "metadata_filters": self._metadata_filters,
             "pinecone_kwargs": self._pinecone_kwargs,
             "insert_kwargs": self._insert_kwargs,
@@ -264,7 +267,9 @@ class PineconeVectorStore(VectorStore):
                     [node.get_text()], self._tokenizer
                 )[0]
                 entry.update({"sparse_values": sparse_vector})
-            self._pinecone_index.upsert([entry], **self._pinecone_kwargs)
+            self._pinecone_index.upsert(
+                [entry], namespace=self._namespace, **self._pinecone_kwargs
+            )
             ids.append(new_id)
         return ids
 
@@ -312,6 +317,7 @@ class PineconeVectorStore(VectorStore):
             top_k=query.similarity_top_k,
             include_values=True,
             include_metadata=True,
+            namespace=self._namespace,
             filter=self._metadata_filters,
             **self._pinecone_kwargs,
         )
