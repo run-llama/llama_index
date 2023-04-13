@@ -204,6 +204,7 @@ class PineconeVectorStore(VectorStore):
         return {
             "index_name": self._index_name,
             "environment": self._environment,
+            "namespace": self._namespace,
             "metadata_filters": self._metadata_filters,
             "pinecone_kwargs": self._pinecone_kwargs,
             "insert_kwargs": self._insert_kwargs,
@@ -260,14 +261,15 @@ class PineconeVectorStore(VectorStore):
                 "id": new_id,
                 "values": text_embedding,
                 "metadata": metadata,
-                "namespace": self._namespace,
             }
             if self._add_sparse_vector:
                 sparse_vector = generate_sparse_vectors(
                     [node.get_text()], self._tokenizer
                 )[0]
                 entry.update({"sparse_values": sparse_vector})
-            self._pinecone_index.upsert([entry], **self._pinecone_kwargs)
+            self._pinecone_index.upsert(
+                [entry], namespace=self._namespace, **self._pinecone_kwargs
+            )
             ids.append(new_id)
         return ids
 
