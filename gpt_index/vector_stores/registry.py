@@ -48,7 +48,6 @@ def load_vector_store_from_dict(
     type_to_cls: Optional[Dict[VectorStoreType, Type[VectorStore]]] = None,
     **kwargs: Any,
 ) -> VectorStore:
-    print(vector_store_dict)
     type_to_cls = type_to_cls or VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS
     type = vector_store_dict[TYPE_KEY]
     config_dict: Dict[str, Any] = vector_store_dict[DATA_KEY]
