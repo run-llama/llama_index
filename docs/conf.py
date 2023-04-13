@@ -53,3 +53,10 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+
+html_css_files = [
+    "css/custom.css",
+]
+html_js_files = [
+    "js/mendablesearch.js",
+]
