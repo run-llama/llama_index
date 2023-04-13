@@ -2,8 +2,8 @@
 
 from typing import Any, List, Optional, Union
 
-from llama_index.readers.base import BaseReader
-from llama_index.readers.schema.base import Document
+from gpt_index.readers.base import BaseReader
+from gpt_index.readers.schema.base import Document
 
 
 class ChromaReader(BaseReader):

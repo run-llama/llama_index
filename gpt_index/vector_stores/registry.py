@@ -1,17 +1,17 @@
 from enum import Enum
 from typing import Any, Dict, Optional, Type
 
-from llama_index.constants import DATA_KEY, TYPE_KEY
-from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
-from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.vector_stores.faiss import FaissVectorStore
-from llama_index.vector_stores.milvus import MilvusVectorStore
-from llama_index.vector_stores.opensearch import OpensearchVectorStore
-from llama_index.vector_stores.pinecone import PineconeVectorStore
-from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.vector_stores.simple import SimpleVectorStore
-from llama_index.vector_stores.types import VectorStore
-from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from gpt_index.constants import DATA_KEY, TYPE_KEY
+from gpt_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
+from gpt_index.vector_stores.chroma import ChromaVectorStore
+from gpt_index.vector_stores.faiss import FaissVectorStore
+from gpt_index.vector_stores.milvus import MilvusVectorStore
+from gpt_index.vector_stores.opensearch import OpensearchVectorStore
+from gpt_index.vector_stores.pinecone import PineconeVectorStore
+from gpt_index.vector_stores.qdrant import QdrantVectorStore
+from gpt_index.vector_stores.simple import SimpleVectorStore
+from gpt_index.vector_stores.types import VectorStore
+from gpt_index.vector_stores.weaviate import WeaviateVectorStore
 
 
 class VectorStoreType(str, Enum):
