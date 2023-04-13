@@ -49,16 +49,37 @@ class MongoDocumentStore:
         results = self.collection.find()
         output = {}
         for result in results:
-            _id = result.pop("_id")
-            output[_id] = result
+            result.pop("_id")
+            doc_id = result["doc_id"]
+            output[doc_id] = result
         return output
 
     def add_documents(
         self, docs: Sequence[BaseDocument], allow_update: bool = True
     ) -> List[str]:
-        docs_json = [doc_to_json(doc) for doc in docs]
-        result = self.collection.insert_many(docs_json)
-        return [str(id_) for id_ in result.inserted_ids]
+        for doc in docs:
+            if doc.is_doc_id_none:
+                raise ValueError("doc_id not set")
+
+            # NOTE: doc could already exist in the store, but we overwrite it
+            if not allow_update and self.document_exists(doc.get_doc_id()):
+                raise ValueError(
+                    f"doc_id {doc.get_doc_id()} already exists. "
+                    "Set allow_update to True to overwrite."
+                )
+
+            doc_json = doc_to_json(doc)
+            self.collection.replace_one(
+                {"doc_id": doc.doc_id},
+                doc_json,
+                upsert=True,
+            )
+        return [doc.doc_id for doc in docs]
+
+    def document_exists(self, doc_id: str) -> bool:
+        """Check if document exists."""
+        result = self.collection.find_one({"doc_id": doc_id})
+        return result is not None
 
     def get_document(
         self, doc_id: str, raise_error: bool = True
