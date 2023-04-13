@@ -123,20 +123,35 @@ def test_mongo_docstore_save_load(documents: List[Document]):
     assert ds_loaded._db_name == ds._db_name
 
 
-_mock_client = MockMongoClient()
+def test_mongo_docstore_save_load_uri(documents: List[Document]):
+    _mock_client = MockMongoClient()
+    with patch(
+        "gpt_index.docstore.mongo_docstore.MongoClient",
+        return_value=_mock_client,
+    ):
+        ds = MongoDocumentStore.from_uri(uri="test_uri")
+        ds.add_documents(documents)
+        assert len(ds.docs) == 2
+
+        save_dict = ds.to_dict()
+        ds_loaded = MongoDocumentStore.from_dict(save_dict)
+        assert len(ds_loaded.docs) == 2
+        assert ds_loaded._collection_name == ds._collection_name
+        assert ds_loaded._db_name == ds._db_name
 
 
-@patch(
-    "gpt_index.docstore.mongo_docstore.MongoClient",
-    return_value=_mock_client,
-)
-def test_mongo_docstore_save_load(mock_mongo_client: Any, documents: List[Document]):
-    ds = MongoDocumentStore.from_uri(uri="test_uri")
-    ds.add_documents(documents)
-    assert len(ds.docs) == 2
+def test_mongo_docstore_save_load_host_port(documents: List[Document]):
+    _mock_client = MockMongoClient()
+    with patch(
+        "gpt_index.docstore.mongo_docstore.MongoClient",
+        return_value=_mock_client,
+    ):
+        ds = MongoDocumentStore.from_host_and_port(host="test_host", port="test_port")
+        ds.add_documents(documents)
+        assert len(ds.docs) == 2
 
-    save_dict = ds.to_dict()
-    ds_loaded = MongoDocumentStore.from_dict(save_dict)
-    assert len(ds_loaded.docs) == 2
-    assert ds_loaded._collection_name == ds._collection_name
-    assert ds_loaded._db_name == ds._db_name
+        save_dict = ds.to_dict()
+        ds_loaded = MongoDocumentStore.from_dict(save_dict)
+        assert len(ds_loaded.docs) == 2
+        assert ds_loaded._collection_name == ds._collection_name
+        assert ds_loaded._db_name == ds._db_name
