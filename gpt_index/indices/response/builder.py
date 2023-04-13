@@ -20,7 +20,7 @@ from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.logger.base import LlamaLogger
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
-from gpt_index.response.utils import get_response_text
+from gpt_index.response.utils import get_response_context_rouge_score, get_response_text
 from gpt_index.types import RESPONSE_TEXT_TYPE
 from gpt_index.utils import temp_set_attrs
 
@@ -55,6 +55,9 @@ class ResponseBuilder:
         refine_template: RefinePrompt,
         texts: Optional[List[TextChunk]] = None,
         nodes: Optional[List[Node]] = None,
+        overlap_threshold: float = 0.4,
+        remove_outlier_responses: bool = False,
+        early_stopping: bool = False,
         use_async: bool = False,
         streaming: bool = False,
     ) -> None:
@@ -67,6 +70,38 @@ class ResponseBuilder:
         self.source_nodes: List[NodeWithScore] = [NodeWithScore(node) for node in nodes]
         self._use_async = use_async
         self._streaming = streaming
+        self._overlap_threshold = overlap_threshold
+        self._remove_outlier_responses = remove_outlier_responses
+        self._early_stopping = early_stopping
+        self._prev_responses: List[str] = []
+
+    def _revert_response(self) -> Optional[str]:
+        if len(self._prev_responses) == 0:
+            return None
+        return self._prev_responses.pop()
+
+    def _check_overlap_update_response(
+        self, response: Optional[str], context: str
+    ) -> Optional[str]:
+        """Check for responses that do not relate to the context."""
+        if response is None:
+            return response
+
+        if self._remove_outlier_responses:
+            overlap_score = get_response_context_rouge_score(response, context)
+            if overlap_score < self._overlap_threshold:
+                response = self._revert_response()
+                return response
+        self._prev_responses.append(response)
+        return response
+
+    def _should_early_stop(self, response: str, context: str) -> bool:
+        """Detect if response meets overl_threshold with context."""
+        if self._early_stopping:
+            overlap_score = get_response_context_rouge_score(response, context)
+            if overlap_score > self._overlap_threshold:
+                return True
+        return False
 
     def _log_prompt_and_response(
         self,
@@ -148,6 +183,11 @@ class ResponseBuilder:
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
+            if isinstance(response, str):
+                response = self._check_overlap_update_response(response, cur_text_chunk)
+                if self._should_early_stop(response, cur_text_chunk):
+                    break
+
             refine_template = self.refine_template.partial_format(
                 query_str=query_str, existing_answer=response
             )
@@ -198,6 +238,10 @@ class ResponseBuilder:
                     query_str,
                     cur_text_chunk,
                 )
+            if isinstance(response, str):
+                response = self._check_overlap_update_response(response, cur_text_chunk)
+                if self._should_early_stop(response, cur_text_chunk):
+                    break
         if isinstance(response, str):
             response = response or "Empty Response"
         else:
@@ -211,6 +255,9 @@ class ResponseBuilder:
         prev_response: Optional[str] = None,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
+        if prev_response is not None:
+            self._prev_responses.append(prev_response)
+
         prev_response_obj = cast(Optional[RESPONSE_TEXT_TYPE], prev_response)
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
@@ -230,10 +277,15 @@ class ResponseBuilder:
                     prev_response_obj, query_str, text_chunk.text
                 )
             prev_response_obj = response
-        if isinstance(response, str):
+            if isinstance(response, str) and self._should_early_stop(
+                response, text_chunk.text
+            ):
+                break
+        if isinstance(response, str) or response is None:
             response = response or "Empty Response"
         else:
             response = cast(Generator, response)
+        self._prev_responses = []
         return response
 
     def _get_response_default(

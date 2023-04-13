@@ -2,18 +2,7 @@
 
 import logging
 from abc import ABC
-from typing import (
-    Any,
-    Dict,
-    Generator,
-    Generic,
-    List,
-    Optional,
-    Sequence,
-    TypeVar,
-)
-
-from langchain.input import print_text
+from typing import Any, Dict, Generator, Generic, List, Optional, Sequence, TypeVar
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
@@ -25,24 +14,17 @@ from gpt_index.indices.postprocessor.node import (
 )
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.builder import (
-    ResponseBuilder,
-    ResponseMode,
-    TextChunk,
-)
+from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.response.schema import (
-    RESPONSE_TYPE,
-    Response,
-    StreamingResponse,
-)
+from gpt_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.types import RESPONSE_TEXT_TYPE
 from gpt_index.utils import truncate_text
+from langchain.input import print_text
 
 # to prevent us from having to remove all instances of v2 later
 IndexStruct = V2IndexStruct
@@ -129,6 +111,9 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         doc_ids: Optional[List[str]] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        overlap_threshold: float = 0.4,
+        remove_outlier_responses: bool = False,
+        early_stopping: bool = False,
         verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
@@ -165,6 +150,9 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
             self.refine_template,
             use_async=use_async,
             streaming=streaming,
+            overlap_threshold=overlap_threshold,
+            remove_outlier_responses=remove_outlier_responses,
+            early_stopping=early_stopping,
         )
 
         # TODO: deprecated
