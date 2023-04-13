@@ -12,11 +12,11 @@ from pymongo.collection import Collection
 class MongoDocumentStore(DocumentStore):
     def __init__(
         self,
-        client: MongoClient,
+        mongo_client: MongoClient,
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ):
-        self._client = client
+        self._client = mongo_client
         self._db_name = db_name or "db_docstore"
         self._collection_name = collection_name or f"collection_{uuid.uuid4()}"
 

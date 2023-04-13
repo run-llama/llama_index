@@ -90,7 +90,7 @@ def documents() -> List[Document]:
 
 
 def test_mongo_docstore(documents: List[Document]):
-    ds = MongoDocumentStore(client=MockMongoClient())
+    ds = MongoDocumentStore(mongo_client=MockMongoClient())
     assert len(ds.docs) == 0
 
     # test adding documents
@@ -108,3 +108,15 @@ def test_mongo_docstore(documents: List[Document]):
     # test deleting documents
     ds.delete_document(documents[0].doc_id)
     assert len(ds.docs) == 1
+
+
+def test_mongo_docstore_save_load(documents: List[Document]):
+    mongo_client = MockMongoClient()
+    ds = MongoDocumentStore(mongo_client=mongo_client)
+    ds.add_documents(documents)
+    assert len(ds.docs) == 2
+
+    save_dict = ds.to_dict()
+    save_dict["mongo_client"] = mongo_client
+    ds_loaded = MongoDocumentStore.from_dict(save_dict)
+    assert len(ds_loaded.docs) == 2

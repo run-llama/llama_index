@@ -60,3 +60,5 @@ def merge_docstores(docstores: Sequence[DocumentStore]) -> DocumentStore:
         for docstore in docstores:
             merged_docstore.update_docstore(docstore)
         return merged_docstore
+    else:
+        raise NotImplementedError()
