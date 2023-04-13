@@ -1,6 +1,7 @@
 """Node postprocessor tests."""
 
 import pytest
+from gpt_index.docstore.simple_docstore import SimpleDocumentStore
 
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.prompts.prompts import Prompt, SimpleInputPrompt
@@ -71,7 +72,7 @@ def test_forward_back_processor() -> None:
                 {DocumentRelationship.NEXT: nodes[i + 1].get_doc_id()},
             )
 
-    docstore = DocumentStore()
+    docstore = SimpleDocumentStore()
     docstore.add_documents(nodes)
 
     # check for a single node

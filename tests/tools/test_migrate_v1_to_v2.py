@@ -217,7 +217,7 @@ def test_convert_to_v2_dict() -> None:
 
     v1_dict = {
         "index_struct_id": struct_v1.get_doc_id(),
-        "docstore": docstore_v1.serialize_to_dict(),
+        "docstore": docstore_v1.to_dict(),
     }
 
     v2_dict = convert_to_v2_dict(v1_dict)

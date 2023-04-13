@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional, Protocol, Sequence, runtime_checkable
+from gpt_index.data_structs.node_v2 import Node
 
 from gpt_index.schema import BaseDocument
 
