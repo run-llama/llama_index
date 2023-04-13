@@ -18,6 +18,7 @@ class DocumentStore(ABC):
         ...
 
     # ===== Main interface =====
+    @property
     def docs(self) -> Dict[str, BaseDocument]:
         ...
 

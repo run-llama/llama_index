@@ -29,13 +29,18 @@ def get_default_docstore() -> DocumentStore:
 
 def load_docstore_from_dict(
     docstore_dict: Dict[str, Any],
+    type_to_cls: Optional[Dict[DocumentStoreType, Type[DocumentStore]]] = None,
     **kwargs: Any,
 ):
     type_to_cls = type_to_cls or DOCSTORE_TYPE_TO_CLASS
     type = docstore_dict[TYPE_KEY]
     config_dict: Dict[str, Any] = docstore_dict[DATA_KEY]
 
+    # Inject kwargs into data dict.
+    # This allows us to explicitly pass in unserializable objects
+    # like the data storage (e.g. MongoDB) client.
     config_dict.update(kwargs)
+
     cls = type_to_cls[type]
     return cls.from_dict(config_dict)
 

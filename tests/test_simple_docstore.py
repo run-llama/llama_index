@@ -42,5 +42,5 @@ def test_docstore() -> None:
     assert doc_dict["docs"]["d1"] == d1_expected
     assert doc_dict["docs"]["d2"] == d2_expected
 
-    docstore_loaded = SimpleDocumentStore.load_from_dict(doc_dict)
+    docstore_loaded = SimpleDocumentStore.from_dict(doc_dict)
     assert docstore_loaded == docstore
