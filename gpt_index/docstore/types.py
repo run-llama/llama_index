@@ -6,17 +6,22 @@ from gpt_index.schema import BaseDocument
 
 
 class DocumentStore(ABC):
-    # ===== Constructors =====
-    @abstractmethod
+    # ===== Save/load =====
     @classmethod
-    def from_documents(
-        cls, docs: Sequence[BaseDocument], allow_update: bool = True
+    @abstractmethod
+    def from_dict(
+        cls,
+        docs_dict: Dict[str, Any],
     ) -> "DocumentStore":
         ...
 
-    # ===== Main interface =====
     @abstractmethod
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+
+    # ===== Main interface =====
     @property
+    @abstractmethod
     def docs(self) -> Dict[str, BaseDocument]:
         ...
 
@@ -56,27 +61,36 @@ class DocumentStore(ABC):
         ...
 
     # ===== Nodes =====
-    @abstractmethod
     def get_nodes(self, node_ids: List[str], raise_error: bool = True) -> List[Node]:
-        ...
+        """Get nodes from docstore.
 
-    @abstractmethod
+        Args:
+            node_ids (List[str]): node ids
+            raise_error (bool): raise error if node_id not found
+
+        """
+        return [self.get_node(node_id, raise_error=raise_error) for node_id in node_ids]
+
     def get_node(self, node_id: str, raise_error: bool = True) -> Node:
-        ...
+        """Get node from docstore.
 
-    @abstractmethod
+        Args:
+            node_id (str): node id
+            raise_error (bool): raise error if node_id not found
+
+        """
+        doc = self.get_document(node_id, raise_error=raise_error)
+        if not isinstance(doc, Node):
+            raise ValueError(f"Document {node_id} is not a Node.")
+        return doc
+
     def get_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, Node]:
-        ...
+        """Get node dict from docstore given a mapping of index to node ids.
 
-    # ===== Save/load =====
-    @abstractmethod
-    @classmethod
-    def from_dict(
-        cls,
-        docs_dict: Dict[str, Any],
-    ) -> "DocumentStore":
-        ...
+        Args:
+            node_id_dict (Dict[int, str]): mapping of index to node ids
 
-    @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
-        ...
+        """
+        return {
+            index: self.get_node(node_id) for index, node_id in node_id_dict.items()
+        }

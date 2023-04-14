@@ -27,6 +27,7 @@ class MongoDocumentStore(DocumentStore):
 
         self._db_name = db_name or "db_docstore"
         self._collection_name = collection_name or f"collection_{uuid.uuid4()}"
+        self._hash_collection_name = f"{collection_name}/ref_doc_info"
 
     @classmethod
     def from_uri(
@@ -98,6 +99,10 @@ class MongoDocumentStore(DocumentStore):
         return self._client[self._db_name][self._collection_name]
 
     @property
+    def hash_collection(self) -> Collection:
+        return self._client[self._db_name][self._hash_collection_name]
+
+    @property
     def docs(self) -> Dict[str, BaseDocument]:
         results = self.collection.find()
         output = {}
@@ -153,36 +158,33 @@ class MongoDocumentStore(DocumentStore):
             else:
                 return None
 
-    def get_nodes(self, node_ids: List[str], raise_error: bool = True) -> List[Node]:
-        """Get nodes from docstore.
+    def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
+        """Set the hash for a given doc_id."""
+        self._ref_doc_info[doc_id]["doc_hash"] = doc_hash
+
+    def get_document_hash(self, doc_id: str) -> Optional[str]:
+        """Get the stored hash for a document, if it exists."""
+        return self._ref_doc_info[doc_id].get("doc_hash", None)
+
+    def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
+        """Set the hash for a given doc_id."""
+        self.hash_collection.update_one(
+            filter={"doc_id": doc_id}, update={"doc_hash": doc_hash}
+        )
+
+    def get_document_hash(self, doc_id: str) -> Optional[str]:
+        """Get the stored hash for a document, if it exists."""
+        obj = self.hash_collection.find_one(filter={"doc_id": doc_id})
+        if obj is not None:
+            return obj.get("doc_hash", None)
+        return None
+
+    def update_docstore(self, other: "DocumentStore") -> None:
+        """Update docstore.
 
         Args:
-            node_ids (List[str]): node ids
-            raise_error (bool): raise error if node_id not found
+            other (SimpleDocumentStore): docstore to update from
 
         """
-        return [self.get_node(node_id, raise_error=raise_error) for node_id in node_ids]
-
-    def get_node(self, node_id: str, raise_error: bool = True) -> Node:
-        """Get node from docstore.
-
-        Args:
-            node_id (str): node id
-            raise_error (bool): raise error if node_id not found
-
-        """
-        doc = self.get_document(node_id, raise_error=raise_error)
-        if not isinstance(doc, Node):
-            raise ValueError(f"Document {node_id} is not a Node.")
-        return doc
-
-    def get_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, Node]:
-        """Get node dict from docstore given a mapping of index to node ids.
-
-        Args:
-            node_id_dict (Dict[int, str]): mapping of index to node ids
-
-        """
-        return {
-            index: self.get_node(node_id) for index, node_id in node_id_dict.items()
-        }
+        assert isinstance(other, MongoDocumentStore)
+        self.add_documents(other.docs.values())

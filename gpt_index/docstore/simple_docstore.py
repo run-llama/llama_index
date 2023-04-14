@@ -81,22 +81,6 @@ class SimpleDocumentStore(DocumentStore):
             ref_doc_info=defaultdict(dict, **docs_dict.get("ref_doc_info", {})),
         )
 
-    @classmethod
-    def from_documents(
-        cls, docs: Sequence[BaseDocument], allow_update: bool = True
-    ) -> "SimpleDocumentStore":
-        """Create from documents.
-
-        Args:
-            docs (List[BaseDocument]): documents
-            allow_update (bool): allow update of docstore from document
-                with same doc_id.
-
-        """
-        obj = cls()
-        obj.add_documents(docs, allow_update=allow_update)
-        return obj
-
     def update_docstore(self, other: "DocumentStore") -> None:
         """Update docstore.
 
@@ -145,14 +129,6 @@ class SimpleDocumentStore(DocumentStore):
             raise ValueError(f"doc_id {doc_id} not found.")
         return doc
 
-    def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
-        """Set the hash for a given doc_id."""
-        self._ref_doc_info[doc_id]["doc_hash"] = doc_hash
-
-    def get_document_hash(self, doc_id: str) -> Optional[str]:
-        """Get the stored hash for a document, if it exists."""
-        return self._ref_doc_info[doc_id].get("doc_hash", None)
-
     def document_exists(self, doc_id: str) -> bool:
         """Check if document exists."""
         return doc_id in self.docs
@@ -164,36 +140,10 @@ class SimpleDocumentStore(DocumentStore):
         if doc is None and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
 
-    def get_nodes(self, node_ids: List[str], raise_error: bool = True) -> List[Node]:
-        """Get nodes from docstore.
+    def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
+        """Set the hash for a given doc_id."""
+        self._ref_doc_info[doc_id]["doc_hash"] = doc_hash
 
-        Args:
-            node_ids (List[str]): node ids
-            raise_error (bool): raise error if node_id not found
-
-        """
-        return [self.get_node(node_id, raise_error=raise_error) for node_id in node_ids]
-
-    def get_node(self, node_id: str, raise_error: bool = True) -> Node:
-        """Get node from docstore.
-
-        Args:
-            node_id (str): node id
-            raise_error (bool): raise error if node_id not found
-
-        """
-        doc = self.get_document(node_id, raise_error=raise_error)
-        if not isinstance(doc, Node):
-            raise ValueError(f"Document {node_id} is not a Node.")
-        return doc
-
-    def get_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, Node]:
-        """Get node dict from docstore given a mapping of index to node ids.
-
-        Args:
-            node_id_dict (Dict[int, str]): mapping of index to node ids
-
-        """
-        return {
-            index: self.get_node(node_id) for index, node_id in node_id_dict.items()
-        }
+    def get_document_hash(self, doc_id: str) -> Optional[str]:
+        """Get the stored hash for a document, if it exists."""
+        return self._ref_doc_info[doc_id].get("doc_hash", None)

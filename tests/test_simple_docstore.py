@@ -13,7 +13,8 @@ def test_docstore() -> None:
     node = Node("my node", doc_id="d2", node_info={"node": "info"})
 
     # test get document
-    docstore = SimpleDocumentStore.from_documents([doc, node])
+    docstore = SimpleDocumentStore()
+    docstore.add_documents([doc, node])
     gd1 = docstore.get_document("d1")
     assert gd1 == doc
     gd2 = docstore.get_document("d2")
