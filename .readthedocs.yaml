@@ -10,6 +10,8 @@ search:
     guides/*: 2
     how_to/*: 2
     use_cases/*: 2
+    reference/*: 1
+    index.rst/*: 2
 
 conda:
   environment: docs/readthedocs-environment.yml
