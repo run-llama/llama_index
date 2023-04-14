@@ -141,7 +141,7 @@ def test_mongo_docstore_save_load(documents: List[Document]) -> None:
 def test_mongo_docstore_save_load_uri(documents: List[Document]) -> None:
     _mock_client = MockMongoClient()
     with patch(
-        "gpt_index.docstore.mongo_docstore.MongoClient",
+        "pymongo.MongoClient",
         return_value=_mock_client,
     ):
         ds = MongoDocumentStore.from_uri(uri="test_uri")
@@ -158,7 +158,7 @@ def test_mongo_docstore_save_load_uri(documents: List[Document]) -> None:
 def test_mongo_docstore_save_load_host_port(documents: List[Document]) -> None:
     _mock_client = MockMongoClient()
     with patch(
-        "gpt_index.docstore.mongo_docstore.MongoClient",
+        "pymongo.MongoClient",
         return_value=_mock_client,
     ):
         ds = MongoDocumentStore.from_host_and_port(host="test_host", port=8000)
