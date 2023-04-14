@@ -6,10 +6,12 @@ formats:
 
 search:
   ranking:
+    '*': 1
     getting_started/*: 2
     guides/*: 2
     how_to/*: 2
     use_cases/*: 2
+    gallery/*: 2
     reference/*: 1
     index.html*: 2
 
