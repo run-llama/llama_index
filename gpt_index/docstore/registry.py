@@ -67,7 +67,7 @@ def merge_docstores(docstores: Sequence[DocumentStore]) -> DocumentStore:
 
         docstore = docstores[0]
         assert isinstance(docstore, MongoDocumentStore)
-        merged_docstore = MongoDocumentStore(
+        merged_mongo_docstore: MongoDocumentStore = MongoDocumentStore(
             mongo_client=docstore.client,
             uri=docstore._uri,
             host=docstore._host,
@@ -77,7 +77,7 @@ def merge_docstores(docstores: Sequence[DocumentStore]) -> DocumentStore:
 
         for docstore in docstores:
             assert isinstance(docstore, MongoDocumentStore)
-            merged_docstore.update_docstore(docstore)
-        return merged_docstore
+            merged_mongo_docstore.update_docstore(docstore)
+        return merged_mongo_docstore
     else:
         raise ValueError("All docstores must be of the same type to merge.")

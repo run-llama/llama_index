@@ -1,24 +1,29 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, cast
 import uuid
 from gpt_index.docstore.types import DocumentStore
 from gpt_index.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument
 
-from pymongo import MongoClient
-from pymongo.collection import Collection
+
+IMPORT_ERROR_MSG = "`pymongo` package not found, please run `pip install pymongo`"
 
 
 class MongoDocumentStore(DocumentStore):
     def __init__(
         self,
-        mongo_client: MongoClient,
+        mongo_client: Any,
         uri: Optional[str] = None,
         host: Optional[str] = None,
         port: Optional[int] = None,
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ):
-        self._client = mongo_client
+        try:
+            from pymongo import MongoClient
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
+        self._client = cast(MongoClient, mongo_client)
 
         self._uri = uri
         self._host = host
@@ -35,6 +40,11 @@ class MongoDocumentStore(DocumentStore):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ) -> "MongoDocumentStore":
+        try:
+            from pymongo import MongoClient
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
         mongo_client: MongoClient = MongoClient(uri)
         return cls(
             mongo_client=mongo_client,
@@ -51,6 +61,11 @@ class MongoDocumentStore(DocumentStore):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ) -> "MongoDocumentStore":
+        try:
+            from pymongo import MongoClient
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
         mongo_client: MongoClient = MongoClient(host, port)
         return cls(
             mongo_client=mongo_client,
@@ -94,15 +109,15 @@ class MongoDocumentStore(DocumentStore):
         }
 
     @property
-    def client(self) -> MongoClient:
+    def client(self) -> Any:
         return self._client
 
     @property
-    def collection(self) -> Collection:
+    def collection(self) -> Any:
         return self._client[self._db_name][self._collection_name]
 
     @property
-    def hash_collection(self) -> Collection:
+    def hash_collection(self) -> Any:
         return self._client[self._db_name][self._hash_collection_name]
 
     @property
