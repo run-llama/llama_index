@@ -209,7 +209,6 @@ class QdrantVectorStore(VectorStore):
             FieldCondition,
             Filter,
             MatchAny,
-            MatchText,
         )
 
         must_conditions = []
