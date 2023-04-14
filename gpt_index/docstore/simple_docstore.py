@@ -2,9 +2,8 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
-from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore.types import DocumentStore
 from gpt_index.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument

@@ -1,6 +1,5 @@
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 import uuid
-from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore.types import DocumentStore
 from gpt_index.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument
@@ -184,4 +183,4 @@ class MongoDocumentStore(DocumentStore):
 
         """
         assert isinstance(other, MongoDocumentStore)
-        self.add_documents(other.docs.values())
+        self.add_documents(list(other.docs.values()))
