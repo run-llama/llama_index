@@ -315,6 +315,26 @@ def test_insert(
     assert nodes[0].ref_doc_id == "new_doc_test"
 
 
+@patch_common
+def test_twice_insert_empty(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+) -> None:
+    """# test twice insert from empty (with_id)"""
+    tree = GPTTreeIndex.from_documents([])
+
+    # test first insert
+    new_doc = Document("This is a new doc.", doc_id="new_doc")
+    tree.insert(new_doc)
+    # test second insert
+    new_doc_second = Document("This is a new doc2.", doc_id="new_doc_2")
+    tree.insert(new_doc_second)
+    assert len(tree.index_struct.all_nodes) == 2
+
+
 def _mock_tokenizer(text: str) -> int:
     """Mock tokenizer that splits by spaces."""
     return len(text.split(" "))
