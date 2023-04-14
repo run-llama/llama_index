@@ -61,5 +61,23 @@ def merge_docstores(docstores: Sequence[DocumentStore]) -> DocumentStore:
             assert isinstance(docstore, SimpleDocumentStore)
             merged_docstore.update_docstore(docstore)
         return merged_docstore
+    elif all(isinstance(docstore, MongoDocumentStore) for docstore in docstores):
+        if len(docstores) == 0:
+            raise ValueError("No docstores to merge.")
+
+        docstore = docstores[0]
+        assert isinstance(docstore, MongoDocumentStore)
+        merged_docstore = MongoDocumentStore(
+            mongo_client=docstore.client,
+            uri=docstore._uri,
+            host=docstore._host,
+            port=docstore._port,
+            db_name=docstore._db_name,
+        )
+
+        for docstore in docstores:
+            assert isinstance(docstore, MongoDocumentStore)
+            merged_docstore.update_docstore(docstore)
+        return merged_docstore
     else:
-        raise NotImplementedError()
+        raise ValueError("All docstores must be of the same type to merge.")

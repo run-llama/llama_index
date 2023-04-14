@@ -94,6 +94,10 @@ class MongoDocumentStore(DocumentStore):
         }
 
     @property
+    def client(self) -> MongoClient:
+        return self._client
+
+    @property
     def collection(self) -> Collection:
         return self._client[self._db_name][self._collection_name]
 
@@ -108,7 +112,7 @@ class MongoDocumentStore(DocumentStore):
         for result in results:
             result.pop("_id")
             doc_id = result["doc_id"]
-            output[doc_id] = result
+            output[doc_id] = json_to_doc(result)
         return output
 
     def add_documents(
@@ -159,9 +163,9 @@ class MongoDocumentStore(DocumentStore):
 
     def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
         """Set the hash for a given doc_id."""
-        self.hash_collection.update_one(
-            filter={"doc_id": doc_id},
-            update={
+        self.hash_collection.replace_one(
+            {"doc_id": doc_id},
+            {
                 "doc_id": doc_id,
                 "doc_hash": doc_hash,
             },

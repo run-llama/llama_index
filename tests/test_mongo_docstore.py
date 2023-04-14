@@ -6,6 +6,7 @@ import pytest
 
 from gpt_index.docstore.mongo_docstore import MongoDocumentStore
 from gpt_index.readers.schema.base import Document
+from gpt_index.schema import BaseDocument
 
 
 class MockMongoCollection:
@@ -107,6 +108,7 @@ def test_mongo_docstore(documents: List[Document]) -> None:
     # test adding documents
     ds.add_documents(documents)
     assert len(ds.docs) == 2
+    assert all(isinstance(doc, BaseDocument) for doc in ds.docs.values())
 
     # test updating documents
     ds.add_documents(documents)
