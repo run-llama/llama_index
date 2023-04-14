@@ -12,4 +12,4 @@ search:
     use_cases/*: 2
 
 conda:
-  file: docs/readthedocs-environment.yml
+  environment: docs/readthedocs-environment.yml
