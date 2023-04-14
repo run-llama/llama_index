@@ -28,3 +28,7 @@ class LangchainEmbedding(BaseEmbedding):
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         return self._langchain_embedding.embed_documents([text])[0]
+
+    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Get text embeddings."""
+        return self._langchain_embedding.embed_documents(texts)
