@@ -13,3 +13,4 @@ dependencies:
     - myst-parser
     - docutils<0.17
     - furo>=2023.3.27
+    - -e .
