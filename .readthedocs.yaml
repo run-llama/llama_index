@@ -6,7 +6,6 @@ formats:
 
 search:
   ranking:
-    *: 1
     getting_started/*: 2
     guides/*: 2
     how_to/*: 2
