@@ -53,7 +53,7 @@ def get_exports(raw_content: str) -> List:
     return exports
 
 
-def rewrite_exports(exports: List[str]) -> None:
+def rewrite_exports(exports: List[str], custom_path: Optional[str] = None) -> None:
     """Write the `__all__` variable to the `__init__.py` file in the modules dir.
 
     Removes the line that contains `__all__` and appends a new line with the updated
@@ -63,7 +63,10 @@ def rewrite_exports(exports: List[str]) -> None:
         - exports: A list of exported class names.
 
     """
-    dirpath = Path(__file__).parent / "llamahub_modules"
+    if custom_path is not None:
+        dirpath = Path(custom_path)
+    else:
+        dirpath = Path(__file__).parent / "llamahub_modules"
     init_path = f"{dirpath}/__init__.py"
     with open(init_path, "r") as f:
         lines = f.readlines()
@@ -81,6 +84,7 @@ def download_loader(
     loader_hub_url: str = LOADER_HUB_URL,
     refresh_cache: Optional[bool] = False,
     use_gpt_index_import: bool = False,
+    custom_path: Optional[str] = None,
 ) -> Type[BaseReader]:
     """Download a single loader from the Loader Hub.
 
@@ -94,11 +98,15 @@ def download_loader(
             the loader files use llama_index as the base dependency.
             NOTE: this is a temporary workaround while we fully migrate all usages
             to llama_index.
+        custom_path: Custom dirpath to download loader into.
 
     Returns:
         A Loader.
     """
-    dirpath = Path(__file__).parent / "llamahub_modules"
+    if custom_path is not None:
+        dirpath = Path(custom_path)
+    else:
+        dirpath = Path(__file__).parent / "llamahub_modules"
     if not os.path.exists(dirpath):
         # Create a new directory because it does not exist
         os.makedirs(dirpath)
@@ -168,7 +176,9 @@ def download_loader(
                 with open(dirpath / "__init__.py", "r+") as f:
                     f.write(f"from .{loader_id} import {', '.join(loader_exports)}")
                     existing_exports = get_exports(f.read())
-                rewrite_exports(existing_exports + loader_exports)
+                rewrite_exports(
+                    existing_exports + loader_exports, custom_path=custom_path
+                )
             with open(f"{loader_path}/{extra_file}", "w") as f:
                 f.write(extra_file_raw_content)
 
