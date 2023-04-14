@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from unittest.mock import Mock, patch
 import uuid
 
@@ -10,7 +10,7 @@ from gpt_index.readers.schema.base import Document
 
 class MockMongoCollection:
     def __init__(self) -> None:
-        self._data = {}
+        self._data: Dict[str, dict] = {}
 
     def find_one(self, filter: dict) -> Optional[dict]:
         for data in self._data.values():
@@ -72,7 +72,7 @@ class MockMongoDB:
 
 
 class MockMongoClient:
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._db = MockMongoDB()
 
     def __getitem__(self, db: str) -> MockMongoDB:
@@ -88,8 +88,8 @@ def documents() -> List[Document]:
     ]
 
 
-def test_mongo_docstore(documents: List[Document]):
-    ds = MongoDocumentStore(mongo_client=MockMongoClient())
+def test_mongo_docstore(documents: List[Document]) -> None:
+    ds = MongoDocumentStore(mongo_client=MockMongoClient())  # type: ignore
     assert len(ds.docs) == 0
 
     # test adding documents
@@ -101,17 +101,18 @@ def test_mongo_docstore(documents: List[Document]):
     assert len(ds.docs) == 2
 
     # test getting documents
-    doc0 = ds.get_document(documents[0].doc_id)
+    doc0 = ds.get_document(documents[0].get_doc_id())
+    assert doc0 is not None
     assert documents[0].text == doc0.text
 
     # test deleting documents
-    ds.delete_document(documents[0].doc_id)
+    ds.delete_document(documents[0].get_doc_id())
     assert len(ds.docs) == 1
 
 
-def test_mongo_docstore_save_load(documents: List[Document]):
+def test_mongo_docstore_save_load(documents: List[Document]) -> None:
     mongo_client = MockMongoClient()
-    ds = MongoDocumentStore(mongo_client=mongo_client)
+    ds = MongoDocumentStore(mongo_client=mongo_client)  # type: ignore
     ds.add_documents(documents)
     assert len(ds.docs) == 2
 
@@ -123,7 +124,7 @@ def test_mongo_docstore_save_load(documents: List[Document]):
     assert ds_loaded._db_name == ds._db_name
 
 
-def test_mongo_docstore_save_load_uri(documents: List[Document]):
+def test_mongo_docstore_save_load_uri(documents: List[Document]) -> None:
     _mock_client = MockMongoClient()
     with patch(
         "gpt_index.docstore.mongo_docstore.MongoClient",
@@ -140,13 +141,13 @@ def test_mongo_docstore_save_load_uri(documents: List[Document]):
         assert ds_loaded._db_name == ds._db_name
 
 
-def test_mongo_docstore_save_load_host_port(documents: List[Document]):
+def test_mongo_docstore_save_load_host_port(documents: List[Document]) -> None:
     _mock_client = MockMongoClient()
     with patch(
         "gpt_index.docstore.mongo_docstore.MongoClient",
         return_value=_mock_client,
     ):
-        ds = MongoDocumentStore.from_host_and_port(host="test_host", port="test_port")
+        ds = MongoDocumentStore.from_host_and_port(host="test_host", port=8000)
         ds.add_documents(documents)
         assert len(ds.docs) == 2
 

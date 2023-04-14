@@ -18,7 +18,6 @@ from gpt_index.docstore.registry import (
     merge_docstores,
     save_docstore_to_dict,
 )
-from gpt_index.docstore.simple_docstore import SimpleDocumentStore
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.composability.utils import (
     load_query_context_from_dict,

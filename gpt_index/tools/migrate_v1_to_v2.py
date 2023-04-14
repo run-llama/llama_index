@@ -227,7 +227,7 @@ def load_v1_index_struct_in_docstore(
     file_dict: dict,
 ) -> Tuple[IndexStruct, V1DocumentStore]:
     index_struct_id = file_dict[V1_INDEX_STRUCT_ID_KEY]
-    docstore = V1DocumentStore.load_from_dict(
+    docstore = V1DocumentStore.from_dict(
         file_dict[V1_DOC_STORE_KEY],
         type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS,  # type: ignore
     )
@@ -241,7 +241,7 @@ def load_v1_index_struct_separate(
 ) -> Tuple[IndexStruct, V1DocumentStore]:
     index_struct_cls = INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS[index_struct_type]
     index_struct = index_struct_cls.from_dict(file_dict[V1_INDEX_STRUCT_KEY])
-    docstore = V1DocumentStore.load_from_dict(
+    docstore = V1DocumentStore.from_dict(
         file_dict[V1_DOC_STORE_KEY],
         type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS,  # type: ignore
     )

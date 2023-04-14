@@ -44,7 +44,7 @@ class SimpleDocumentStore(DocumentStore):
     def __init__(
         self,
         docs: Optional[Dict[str, BaseDocument]] = None,
-        ref_doc_info: Dict[str, Dict[str, Any]] = None,
+        ref_doc_info: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
         self._docs = docs or {}
         self._ref_doc_info = ref_doc_info or defaultdict(dict)
@@ -97,13 +97,14 @@ class SimpleDocumentStore(DocumentStore):
         obj.add_documents(docs, allow_update=allow_update)
         return obj
 
-    def update_docstore(self, other: "SimpleDocumentStore") -> None:
+    def update_docstore(self, other: "DocumentStore") -> None:
         """Update docstore.
 
         Args:
             other (SimpleDocumentStore): docstore to update from
 
         """
+        assert isinstance(other, SimpleDocumentStore)
         self.docs.update(other.docs)
 
     def add_documents(

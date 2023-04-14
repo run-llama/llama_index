@@ -14,7 +14,6 @@ from gpt_index.indices.postprocessor.node_recency import (
     FixedRecencyPostprocessor,
     EmbeddingRecencyPostprocessor,
 )
-from gpt_index.docstore import DocumentStore
 from gpt_index.llm_predictor import LLMPredictor
 from unittest.mock import patch
 from gpt_index.embeddings.openai import OpenAIEmbedding

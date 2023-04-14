@@ -8,7 +8,11 @@ from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
-from gpt_index.docstore.registry import get_default_docstore, load_docstore_from_dict, save_docstore_to_dict
+from gpt_index.docstore.registry import (
+    get_default_docstore,
+    load_docstore_from_dict,
+    save_docstore_to_dict,
+)
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform

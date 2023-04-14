@@ -31,7 +31,7 @@ def load_docstore_from_dict(
     docstore_dict: Dict[str, Any],
     type_to_cls: Optional[Dict[DocumentStoreType, Type[DocumentStore]]] = None,
     **kwargs: Any,
-):
+) -> DocumentStore:
     type_to_cls = type_to_cls or DOCSTORE_TYPE_TO_CLASS
     type = docstore_dict[TYPE_KEY]
     config_dict: Dict[str, Any] = docstore_dict[DATA_KEY]
@@ -58,6 +58,7 @@ def merge_docstores(docstores: Sequence[DocumentStore]) -> DocumentStore:
     if all(isinstance(docstore, SimpleDocumentStore) for docstore in docstores):
         merged_docstore = SimpleDocumentStore()
         for docstore in docstores:
+            assert isinstance(docstore, SimpleDocumentStore)
             merged_docstore.update_docstore(docstore)
         return merged_docstore
     else:

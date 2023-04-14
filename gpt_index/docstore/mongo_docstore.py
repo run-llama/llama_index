@@ -15,7 +15,7 @@ class MongoDocumentStore(DocumentStore):
         mongo_client: MongoClient,
         uri: Optional[str] = None,
         host: Optional[str] = None,
-        port: Optional[str] = None,
+        port: Optional[int] = None,
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ):
@@ -35,7 +35,7 @@ class MongoDocumentStore(DocumentStore):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ) -> "MongoDocumentStore":
-        mongo_client = MongoClient(uri)
+        mongo_client: MongoClient = MongoClient(uri)
         return cls(
             mongo_client=mongo_client,
             db_name=db_name,
@@ -47,11 +47,11 @@ class MongoDocumentStore(DocumentStore):
     def from_host_and_port(
         cls,
         host: str,
-        port: str,
+        port: int,
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ) -> "MongoDocumentStore":
-        mongo_client = MongoClient(host, port)
+        mongo_client: MongoClient = MongoClient(host, port)
         return cls(
             mongo_client=mongo_client,
             db_name=db_name,
@@ -109,7 +109,7 @@ class MongoDocumentStore(DocumentStore):
 
     def add_documents(
         self, docs: Sequence[BaseDocument], allow_update: bool = True
-    ) -> List[str]:
+    ) -> None:
         for doc in docs:
             if doc.is_doc_id_none:
                 raise ValueError("doc_id not set")
@@ -127,7 +127,6 @@ class MongoDocumentStore(DocumentStore):
                 doc_json,
                 upsert=True,
             )
-        return [doc.doc_id for doc in docs]
 
     def document_exists(self, doc_id: str) -> bool:
         """Check if document exists."""
@@ -146,9 +145,7 @@ class MongoDocumentStore(DocumentStore):
         result.pop("_id")
         return json_to_doc(result)
 
-    def delete_document(
-        self, doc_id: str, raise_error: bool = True
-    ) -> Optional[BaseDocument]:
+    def delete_document(self, doc_id: str, raise_error: bool = True) -> None:
         result = self.collection.delete_one({"doc_id": doc_id})
         if result.deleted_count == 0:
             if raise_error:

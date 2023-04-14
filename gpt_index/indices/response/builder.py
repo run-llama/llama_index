@@ -14,7 +14,6 @@ from typing import Any, Dict, Generator, List, Optional, Tuple, cast
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
-from gpt_index.docstore import DocumentStore
 from gpt_index.docstore.registry import get_default_docstore
 from gpt_index.indices.common_tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.service_context import ServiceContext
