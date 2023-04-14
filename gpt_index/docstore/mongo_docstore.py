@@ -160,16 +160,13 @@ class MongoDocumentStore(DocumentStore):
 
     def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
         """Set the hash for a given doc_id."""
-        self._ref_doc_info[doc_id]["doc_hash"] = doc_hash
-
-    def get_document_hash(self, doc_id: str) -> Optional[str]:
-        """Get the stored hash for a document, if it exists."""
-        return self._ref_doc_info[doc_id].get("doc_hash", None)
-
-    def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
-        """Set the hash for a given doc_id."""
         self.hash_collection.update_one(
-            filter={"doc_id": doc_id}, update={"doc_hash": doc_hash}
+            filter={"doc_id": doc_id},
+            update={
+                "doc_id": doc_id,
+                "doc_hash": doc_hash,
+            },
+            upsert=True,
         )
 
     def get_document_hash(self, doc_id: str) -> Optional[str]:

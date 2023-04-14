@@ -53,6 +53,15 @@ class MockMongoCollection:
         insert_result.inserted_id = _id
         return insert_result
 
+    def update_one(self, filter: dict, update: dict, upsert: bool = False) -> Any:
+        matched = self.find_one(filter)
+        if matched is not None:
+            _id = matched["_id"]
+            self._data[_id].update(update)
+        else:
+            if upsert:
+                self.insert_one(update)
+
     def insert_many(self, objs: List[dict]) -> Any:
         results = [self.insert_one(obj) for obj in objs]
         inserted_ids = [result.inserted_id for result in results]
@@ -65,10 +74,13 @@ class MockMongoCollection:
 class MockMongoDB:
     def __init__(self) -> None:
         self._collection = MockMongoCollection()
+        self._hash_collection = MockMongoCollection()
 
     def __getitem__(self, collection: str) -> MockMongoCollection:
-        del collection
-        return self._collection
+        if collection.endswith("hash"):
+            return self._hash_collection
+        else:
+            return self._collection
 
 
 class MockMongoClient:
@@ -156,3 +168,22 @@ def test_mongo_docstore_save_load_host_port(documents: List[Document]) -> None:
         assert len(ds_loaded.docs) == 2
         assert ds_loaded._collection_name == ds._collection_name
         assert ds_loaded._db_name == ds._db_name
+
+
+def test_mongo_docstore_hash(documents: List[Document]) -> None:
+    mongo_client = MockMongoClient()
+    ds = MongoDocumentStore(mongo_client=mongo_client)  # type: ignore
+
+    # Test setting hash
+    ds.set_document_hash("test_doc_id", "test_doc_hash")
+    doc_hash = ds.get_document_hash("test_doc_id")
+    assert doc_hash == "test_doc_hash"
+
+    # Test updating hash
+    ds.set_document_hash("test_doc_id", "test_doc_hash_new")
+    doc_hash = ds.get_document_hash("test_doc_id")
+    assert doc_hash == "test_doc_hash_new"
+
+    # Test getting non-existent
+    doc_hash = ds.get_document_hash("test_not_exist")
+    assert doc_hash is None
