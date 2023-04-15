@@ -8,16 +8,15 @@ about its relationship to other `Node` objects (and `Document` objects).
 
 It is often used as an atomic unit of data in various indices.
 """
+import logging
+import warnings
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, Optional
-import warnings
+from typing import Any, Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
 from gpt_index.schema import BaseDocument
-
-import logging
 
 _logger = logging.getLogger(__name__)
 
@@ -29,12 +28,16 @@ class DocumentRelationship(str, Enum):
         SOURCE: The node is the source document.
         PREVIOUS: The node is the previous node in the document.
         NEXT: The node is the next node in the document.
+        PARENT: The node is the parent node in the document.
+        CHILD: The node is a child node in the document.
 
     """
 
     SOURCE = auto()
     PREVIOUS = auto()
     NEXT = auto()
+    PARENT = auto()
+    CHILD = auto()
 
 
 class NodeType(str, Enum):
@@ -51,7 +54,7 @@ class Node(BaseDocument):
         text (str): The text of the node.
         doc_id (Optional[str]): The document id of the node.
         embeddings (Optional[List[float]]): The embeddings of the node.
-        relationships (Dict[DocumentRelationship, str]): The relationships of the node.
+        relationships (Dict[DocumentRelationship, Any]): The relationships of the node.
 
     """
 
@@ -66,7 +69,7 @@ class Node(BaseDocument):
     node_info: Optional[Dict[str, Any]] = None
 
     # document relationships
-    relationships: Dict[DocumentRelationship, str] = field(default_factory=dict)
+    relationships: Dict[DocumentRelationship, Any] = field(default_factory=dict)
 
     @property
     def ref_doc_id(self) -> Optional[str]:
@@ -82,6 +85,8 @@ class Node(BaseDocument):
         """Prev node id."""
         if DocumentRelationship.PREVIOUS not in self.relationships:
             raise ValueError("Node does not have previous node")
+        if not isinstance(self.relationships[DocumentRelationship.PREVIOUS], str):
+            raise ValueError("Previous node must be a string")
         return self.relationships[DocumentRelationship.PREVIOUS]
 
     @property
@@ -89,7 +94,27 @@ class Node(BaseDocument):
         """Next node id."""
         if DocumentRelationship.NEXT not in self.relationships:
             raise ValueError("Node does not have next node")
+        if not isinstance(self.relationships[DocumentRelationship.NEXT], str):
+            raise ValueError("Next node must be a string")
         return self.relationships[DocumentRelationship.NEXT]
+
+    @property
+    def parent_node_id(self) -> str:
+        """Parent node id."""
+        if DocumentRelationship.PARENT not in self.relationships:
+            raise ValueError("Node does not have parent node")
+        if not isinstance(self.relationships[DocumentRelationship.PARENT], str):
+            raise ValueError("Parent node must be a string")
+        return self.relationships[DocumentRelationship.PARENT]
+
+    @property
+    def child_node_ids(self) -> List[str]:
+        """Child node ids."""
+        if DocumentRelationship.CHILD not in self.relationships:
+            raise ValueError("Node does not have child nodes")
+        if not isinstance(self.relationships[DocumentRelationship.CHILD], list):
+            raise ValueError("Child nodes must be a list")
+        return self.relationships[DocumentRelationship.CHILD]
 
     def get_text(self) -> str:
         """Get text."""

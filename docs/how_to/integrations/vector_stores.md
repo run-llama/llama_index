@@ -15,6 +15,8 @@ LlamaIndex supports loading data from the following sources. See [Data Connector
 - Pinecone (`PineconeReader`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
 - Milvus (`MilvusReader`). [Installation](https://milvus.io/docs)
+- Zilliz (`MilvusReader`). [Quickstart](https://zilliz.com/doc/quick_start)
+
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
@@ -205,6 +207,7 @@ response = index.query("What did the author do growing up?")
 ```
 
 **Milvus Index Construction/Querying**
+- Milvus Index offers the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and does not include extra_info.
 
 ```python
 import pymilvus
@@ -225,6 +228,41 @@ Use `pip install pymilvus` if not already installed.
 If you get stuck at building wheel for `grpcio`, check if you are using python 3.11
 (there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
 and try downgrading.
+
+
+**Zilliz Index Construction/Querying**
+- Zilliz Cloud (hosted version of Milvus) uses the Milvus Index with some extra arguments.
+
+```python
+import pymilvus
+from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
+
+
+# Load documents, build the GPTMilvusStore
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTMilvusIndex.from_documents(
+    documents, 
+    host='foo.vectordb.zillizcloud.com', 
+    port=403, 
+    user="db_admin", 
+    password="foo", 
+    use_secure=True, 
+    overwrite='True'
+)
+
+# Query index
+response = index.query("What did the author do growing up?")
+
+```
+
+**Note**: `GPTMilvusIndex` depends on the `pymilvus` library.
+Use `pip install pymilvus` if not already installed.
+If you get stuck at building wheel for `grpcio`, check if you are using python 3.11
+(there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
+and try downgrading.
+
+
+
 
 
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).
