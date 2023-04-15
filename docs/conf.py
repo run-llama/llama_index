@@ -59,3 +59,9 @@ html_static_path = ["_static"]
 
 # nbsphinx options
 nbsphinx_execute = "never"
+html_css_files = [
+    "css/custom.css",
+]
+html_js_files = [
+    "js/mendablesearch.js",
+]
