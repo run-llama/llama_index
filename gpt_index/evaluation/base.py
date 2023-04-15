@@ -218,3 +218,51 @@ class QueryResponseEvaluator:
         response_txt = str(response_obj)
 
         return response_txt
+
+    def evaluatesourcenodes(self, query: str, response: Response) -> List[str]:
+        """Evaluate the response from an index.
+
+        Args:
+            query: Query for which response is generated from index.
+            response: Response object from an index based on the query.
+        Returns:
+            List of Yes/ No which can be used to know which source node contains \
+                answer.
+            Yes -> If answer, context information are matching \
+                    or If Query, answer and context information are matching \
+                        for a source node.
+            No -> If answer, context information are not matching \
+                    or If Query, answer and context information are not matching \
+                        for a source node.
+        """
+        answer = str(response)
+
+        context = self.get_context(response)
+
+        response_source_node = []
+
+        for cont in context:
+            index = GPTListIndex.from_documents(
+                [cont], service_context=self.service_context
+            )
+            response_txt: str = ""
+
+            QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
+                QUERY_RESPONSE_EVAL_PROMPT
+            )
+            QUERY_RESPONSE_REFINE_PROMPT_TMPL = RefinePrompt(
+                QUERY_RESPONSE_REFINE_PROMPT
+            )
+
+            query_response = f"Question: {query}\nResponse: {answer}"
+
+            response_obj = index.query(
+                query_response,
+                text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
+                refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
+            )
+            response_txt = str(response_obj)
+
+            response_source_node.append(response_txt)
+
+        return response_source_node
