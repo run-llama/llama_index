@@ -15,10 +15,8 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
 from gpt_index.token_counter.token_counter import llm_token_counter
-from gpt_index.vector_stores.registry import (
-    load_vector_store_from_dict,
-    save_vector_store_to_dict,
-)
+from gpt_index.vector_stores.registry import (load_vector_store_from_dict,
+                                              save_vector_store_to_dict)
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
 
@@ -232,6 +230,10 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
+        # first delete subdocuments from docstore
+        for id in self._index_struct.doc_id_dict[doc_id]:
+            self.docstore.delete_document(id)
+        # now delete info related to document from index_struct and vector_store
         self._index_struct.delete(doc_id)
         self._vector_store.delete(doc_id)
 
