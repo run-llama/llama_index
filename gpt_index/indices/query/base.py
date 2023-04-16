@@ -3,7 +3,6 @@
 import logging
 from abc import ABC
 from typing import (
-    Any,
     Dict,
     Generic,
     List,
@@ -16,8 +15,6 @@ from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.postprocessor.node import (
     BaseNodePostprocessor,
-    KeywordNodePostprocessor,
-    SimilarityPostprocessor,
 )
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
@@ -25,8 +22,6 @@ from gpt_index.indices.query.synthesis import ResponseSynthesizer
 from gpt_index.indices.response.builder import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
-from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.response.schema import (
     RESPONSE_TYPE,

@@ -7,7 +7,6 @@ from typing import (
     Generator,
     List,
     Optional,
-    Sequence,
 )
 
 from langchain.input import print_text
@@ -22,6 +21,8 @@ from gpt_index.indices.response.builder import (
 )
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
+from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
+from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.response.schema import (
     RESPONSE_TYPE,
@@ -61,8 +62,8 @@ class ResponseSynthesizer:
         response_builder = get_response_builder(
             response_mode,
             service_context,
-            text_qa_template,
-            refine_template,
+            text_qa_template or DEFAULT_TEXT_QA_PROMPT,
+            refine_template or DEFAULT_REFINE_PROMPT_SEL,
             use_async=use_async,
             streaming=streaming,
 
