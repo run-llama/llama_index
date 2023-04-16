@@ -13,11 +13,14 @@ from enum import Enum
 from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, cast
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.data_structs.node_v2 import Node, NodeWithScore
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore import DocumentStore
 from gpt_index.indices.common_tree.base import GPTTreeIndexBuilder
+from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
+from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
+from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
 from gpt_index.response.utils import get_response_text
 from gpt_index.types import RESPONSE_TEXT_TYPE
@@ -25,42 +28,6 @@ from gpt_index.utils import temp_set_attrs
 
 logger = logging.getLogger(__name__)
 
-
-class ResponseMode(str, Enum):
-    """Response modes."""
-
-    DEFAULT = "default"
-    COMPACT = "compact"
-    TREE_SUMMARIZE = "tree_summarize"
-    NO_TEXT = "no_text"
-
-
-def get_response_builder(
-        mode: ResponseMode,
-        service_context: ServiceContext,
-        text_qa_template: QuestionAnswerPrompt,
-        refine_template: RefinePrompt,
-    ):
-    if mode == ResponseMode.DEFAULT:
-        return Refine(
-            service_context=service_context, 
-            text_qa_template=text_qa_template, 
-            refine_template=refine_template
-        )
-    elif mode == ResponseMode.COMPACT:
-        return CompactAndRefine(
-            service_context=service_context, 
-            text_qa_template=text_qa_template, 
-            refine_template=refine_template
-        )
-    elif mode == ResponseMode.TREE_SUMMARIZE:
-        return TreeSummarize(
-            service_context=service_context, 
-            text_qa_template=text_qa_template, 
-            refine_template=refine_template
-        )
-    else:
-        raise ValueError(f'Unknown mode: {mode}')
 
 
 class BaseResponseBuilder(ABC):
@@ -136,7 +103,7 @@ class Refine(BaseResponseBuilder):
         self, 
         text_chunks: Sequence[str],
         query_str: str, 
-        prev_response: Optional[str]
+        prev_response: Optional[str] = None,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
         prev_response_obj = cast(Optional[RESPONSE_TEXT_TYPE], prev_response)
@@ -272,7 +239,7 @@ class CompactAndRefine(Refine):
         self, 
         query_str: str, 
         text_chunks: Sequence[str], 
-        prev_response: Optional[str],
+        prev_response: Optional[str] = None,
     ) -> RESPONSE_TEXT_TYPE:
         return self.get_response(query_str, text_chunks, prev_response)
 
@@ -280,7 +247,7 @@ class CompactAndRefine(Refine):
         self, 
         query_str: str, 
         text_chunks: Sequence[str], 
-        prev_response: Optional[str],
+        prev_response: Optional[str] = None,
     ) -> RESPONSE_TEXT_TYPE:
         """Get compact response."""
         # use prompt helper to fix compact text_chunks under the prompt limitation
@@ -298,9 +265,8 @@ class CompactAndRefine(Refine):
             new_texts = self._service_context.prompt_helper.compact_text_chunks(
                 max_prompt, text_chunks
             )
-            new_nodes = [NodeWithScore(Node(text=text)) for text in new_texts]
             response = super().get_response(
-                query_str, new_nodes, prev_response=prev_response
+                query_str=query_str, text_chunks=new_texts, prev_response=prev_response
             )
         return response
 
@@ -326,19 +292,19 @@ class TreeSummarize(Refine):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str],
+        prev_response: Optional[str] = None,
         num_children: int = 10,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(text_qa_template)
 
-        index_builder, text_chunks = self._get_tree_index_builder_and_nodes(
+        index_builder, nodes = self._get_tree_index_builder_and_nodes(
             summary_template, query_str, text_chunks, num_children
         )
         index_graph = IndexGraph()
-        for text_chunk in text_chunks:
-            index_graph.insert(Node(text_chunk))
+        for node in nodes:
+            index_graph.insert(node)
         index_graph = await index_builder.abuild_index_from_nodes(
             index_graph, index_graph.all_nodes, index_graph.all_nodes
         )
@@ -355,19 +321,19 @@ class TreeSummarize(Refine):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str],
+        prev_response: Optional[str] = None,
         num_children: int = 10,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(text_qa_template)
 
-        index_builder, text_chunks = self._get_tree_index_builder_and_nodes(
-            summary_template, query_str, num_children
+        index_builder, nodes = self._get_tree_index_builder_and_nodes(
+            summary_template, query_str, text_chunks, num_children
         )
         index_graph = IndexGraph()
-        for text_chunk in text_chunks:
-            index_graph.insert(Node(text=text_chunk))
+        for node in nodes:
+            index_graph.insert(node)
         index_graph = index_builder.build_index_from_nodes(
             index_graph, index_graph.all_nodes, index_graph.all_nodes
         )
@@ -401,7 +367,7 @@ class TreeSummarize(Refine):
         new_nodes = [Node(text=t) for t in text_chunks]
 
         docstore = DocumentStore()
-        docstore.add_documents(text_chunks, allow_update=False)
+        docstore.add_documents(new_nodes, allow_update=False)
         index_builder = GPTTreeIndexBuilder(
             num_children,
             summary_template,
@@ -425,10 +391,46 @@ class TreeSummarize(Refine):
         )
         # NOTE: the final response could be a string or a stream
         response = super().get_response(
-            query_str,
-            [NodeWithScore(Node(text=node_text))],
+            query_str=query_str,
+            text_chunks=[node_text],
             prev_response=prev_response,
         )
         if isinstance(response, str):
             response = response or "Empty Response"
         return response
+
+
+def get_response_builder(
+        service_context: ServiceContext,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
+        mode: ResponseMode = ResponseMode.DEFAULT,
+        use_async: bool = False,
+        streaming: bool = False,
+    ) -> BaseResponseBuilder:
+    text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+    refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
+    if mode == ResponseMode.DEFAULT:
+        return Refine(
+            service_context=service_context, 
+            text_qa_template=text_qa_template, 
+            refine_template=refine_template,
+            streaming=streaming,
+        )
+    elif mode == ResponseMode.COMPACT:
+        return CompactAndRefine(
+            service_context=service_context, 
+            text_qa_template=text_qa_template, 
+            refine_template=refine_template,
+            streaming=streaming,
+        )
+    elif mode == ResponseMode.TREE_SUMMARIZE:
+        return TreeSummarize(
+            service_context=service_context, 
+            text_qa_template=text_qa_template, 
+            refine_template=refine_template,
+            streaming=streaming,
+            use_async=use_async,
+        )
+    else:
+        raise ValueError(f'Unknown mode: {mode}')

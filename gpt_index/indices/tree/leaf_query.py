@@ -10,7 +10,7 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.builder import ResponseBuilder
+from gpt_index.indices.response.response_builder import get_response_builder
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
@@ -77,7 +77,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         query_str = query_bundle.query_str
 
         if len(self.index_struct.get_children(selected_node)) == 0:
-            response_builder = ResponseBuilder(
+            response_builder = get_response_builder(
                 self._service_context,
                 self.text_qa_template,
                 self.refine_template,

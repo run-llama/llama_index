@@ -18,8 +18,8 @@ from gpt_index.indices.postprocessor.node import (
 )
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.query.synthesis import ResponseSynthesizer
-from gpt_index.indices.response.builder import ResponseMode
+from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
+from gpt_index.indices.response.response_builder import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
@@ -94,7 +94,6 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
     def from_args(cls, 
         index_struct: IS,
         service_context: ServiceContext,
-        response_synthesizer: ResponseSynthesizer,
         docstore: Optional[DocumentStore] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,

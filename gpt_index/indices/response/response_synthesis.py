@@ -13,7 +13,7 @@ from langchain.input import print_text
 
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.builder import (
+from gpt_index.indices.response.response_builder import (
     BaseResponseBuilder,
     BaseResponseBuilder,
     ResponseMode,
@@ -60,10 +60,10 @@ class ResponseSynthesizer:
         response_kwargs: Optional[Dict] = None,
     ) -> "ResponseSynthesizer":
         response_builder = get_response_builder(
-            response_mode,
             service_context,
             text_qa_template or DEFAULT_TEXT_QA_PROMPT,
             refine_template or DEFAULT_REFINE_PROMPT_SEL,
+            response_mode,
             use_async=use_async,
             streaming=streaming,
 

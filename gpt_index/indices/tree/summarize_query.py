@@ -8,7 +8,7 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.builder import ResponseMode
+from gpt_index.indices.response.response_builder import ResponseMode
 from gpt_index.indices.utils import get_sorted_node_list
 
 logger = logging.getLogger(__name__)
