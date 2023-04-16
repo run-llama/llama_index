@@ -1,12 +1,19 @@
 version: 2
-sphinx:
-  configuration: docs/conf.py
-build:
-  image: testing
-formats: all
-python:
-  version: 3.9
-  install:
-    - requirements: docs/requirements.txt
-    - method: pip
-      path: .
+
+formats:
+  - htmlzip
+  - epub
+
+search:
+  ranking:
+    '*': 1
+    getting_started/*: 2
+    guides/*: 2
+    how_to/*: 2
+    use_cases/*: 2
+    gallery/*: 2
+    reference/*: 1
+    index.html*: 2
+
+conda:
+  environment: docs/readthedocs-environment.yml
