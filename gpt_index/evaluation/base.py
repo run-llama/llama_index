@@ -220,9 +220,9 @@ class QueryResponseEvaluator:
         return response_txt
 
     def evaluate_source_nodes(self, query: str, response: Response) -> List[str]:
-        """Function to evaluate if each source node contains the answer to a given query \
-            by comparing the query, response, and context information. \
-                It returns a list of Yes/No values. 
+        """Function to evaluate if each source node contains the answer \
+            to a given query by comparing the query, response, \
+                and context information.
 
         Args:
             query: Query for which response is generated from index.
