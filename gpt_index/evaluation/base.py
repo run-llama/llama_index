@@ -134,7 +134,7 @@ class ResponseEvaluator:
         index = GPTListIndex.from_documents(
             context, service_context=self.service_context
         )
-        response_txt: str = ""
+        response_txt = ""
 
         EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
         REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
@@ -201,7 +201,7 @@ class QueryResponseEvaluator:
         index = GPTListIndex.from_documents(
             context, service_context=self.service_context
         )
-        response_txt: str = ""
+        response_txt = ""
 
         QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
             QUERY_RESPONSE_EVAL_PROMPT
@@ -219,8 +219,10 @@ class QueryResponseEvaluator:
 
         return response_txt
 
-    def evaluatesourcenodes(self, query: str, response: Response) -> List[str]:
-        """Evaluate the response from an index.
+    def evaluate_source_nodes(self, query: str, response: Response) -> List[str]:
+        """Function to evaluate if each source node contains the answer to a given query \
+            by comparing the query, response, and context information. \
+                It returns a list of Yes/No values. 
 
         Args:
             query: Query for which response is generated from index.
@@ -237,15 +239,15 @@ class QueryResponseEvaluator:
         """
         answer = str(response)
 
-        context = self.get_context(response)
+        context_list = self.get_context(response)
 
-        response_source_node = []
+        response_texts = []
 
-        for cont in context:
+        for context in context_list:
             index = GPTListIndex.from_documents(
-                [cont], service_context=self.service_context
+                [context], service_context=self.service_context
             )
-            response_txt: str = ""
+            response_txt = ""
 
             QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
                 QUERY_RESPONSE_EVAL_PROMPT
@@ -261,8 +263,15 @@ class QueryResponseEvaluator:
                 text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
                 refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
             )
-            response_txt = str(response_obj)
+            raw_response_txt = str(response_obj)
 
-            response_source_node.append(response_txt)
+            if "yes" in raw_response_txt.lower():
+                response_txt = "YES"
+            elif "no" in raw_response_txt.lower():
+                response_txt = "NO"
+            else:
+                raise ValueError("The response is invalid")
 
-        return response_source_node
+            response_texts.append(response_txt)
+
+        return response_texts
