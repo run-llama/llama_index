@@ -54,8 +54,8 @@ class ResponseSynthesizer:
     def from_args(
         cls,
         service_context:  ServiceContext, 
-        streaming: bool, 
-        use_async: bool,
+        streaming: bool = False, 
+        use_async: bool = False,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None, 
         simple_template: Optional[SimpleInputPrompt] = None,
@@ -97,7 +97,7 @@ class ResponseSynthesizer:
         nodes: List[Node],
     ) -> Optional[Dict[str, Any]]:
         """Get extra info for response."""
-        return None
+        return {node.get_doc_id(): node.extra_info for node in nodes}
 
     def _prepare_response_output(
         self,
