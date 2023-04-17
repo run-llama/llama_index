@@ -52,7 +52,7 @@ from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.node_v2 import Node as V2Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.old_docstore import V1DocumentStore
-from gpt_index.docstore import DocumentStore as V2DocumentStore
+from gpt_index.docstore import SimpleDocumentStore as V2DocumentStore
 from gpt_index.tools.file_utils import add_prefix_suffix_to_file_path
 
 INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[IndexStruct]] = {
@@ -227,7 +227,7 @@ def load_v1_index_struct_in_docstore(
     file_dict: dict,
 ) -> Tuple[IndexStruct, V1DocumentStore]:
     index_struct_id = file_dict[V1_INDEX_STRUCT_ID_KEY]
-    docstore = V1DocumentStore.load_from_dict(
+    docstore = V1DocumentStore.from_dict(
         file_dict[V1_DOC_STORE_KEY],
         type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS,  # type: ignore
     )
@@ -241,7 +241,7 @@ def load_v1_index_struct_separate(
 ) -> Tuple[IndexStruct, V1DocumentStore]:
     index_struct_cls = INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS[index_struct_type]
     index_struct = index_struct_cls.from_dict(file_dict[V1_INDEX_STRUCT_KEY])
-    docstore = V1DocumentStore.load_from_dict(
+    docstore = V1DocumentStore.from_dict(
         file_dict[V1_DOC_STORE_KEY],
         type_to_struct=INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS,  # type: ignore
     )
@@ -266,7 +266,7 @@ def load_v1(
 def save_v2(index_struct: V2IndexStruct, docstore: V2DocumentStore) -> dict:
     return {
         INDEX_STRUCT_KEY: index_struct.to_dict(),
-        DOCSTORE_KEY: docstore.serialize_to_dict(),
+        DOCSTORE_KEY: docstore.to_dict(),
     }
 
 

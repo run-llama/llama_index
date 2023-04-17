@@ -7,7 +7,7 @@ import pytest
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import BaseDocumentStore
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMChain,
@@ -63,7 +63,7 @@ def documents() -> List[Document]:
 
 
 def _get_left_or_right_node(
-    docstore: DocumentStore,
+    docstore: BaseDocumentStore,
     index_graph: IndexGraph,
     node: Optional[Node],
     left: bool = True,

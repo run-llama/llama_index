@@ -14,7 +14,7 @@ from typing import Any, Dict, Generator, List, Optional, Tuple, cast
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore.registry import get_default_docstore
 from gpt_index.indices.common_tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
@@ -286,7 +286,7 @@ class ResponseBuilder:
         text_chunks = text_splitter.split_text(all_text)
         nodes = [Node(text=t) for t in text_chunks]
 
-        docstore = DocumentStore()
+        docstore = get_default_docstore()
         docstore.add_documents(nodes, allow_update=False)
         index_builder = GPTTreeIndexBuilder(
             num_children,

@@ -2,6 +2,7 @@
 
 
 from typing import Sequence, Optional
+from gpt_index.docstore.registry import get_default_docstore
 
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.composability import ComposableGraph
@@ -9,7 +10,7 @@ from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store.vector_indices import GPTSimpleVectorIndex
 from gpt_index.readers.schema.base import Document
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import BaseDocumentStore
 
 DEFAULT_SUMMARY_TEXT = "Use this index for summarization queries"
 DEFAULT_QA_TEXT = (
@@ -27,7 +28,7 @@ class QASummaryGraphBuilder:
     NOTE: this is a beta feature. The API may change in the future.
 
     Args:
-        docstore (DocumentStore): A DocumentStore to use for storing nodes.
+        docstore (BaseDocumentStore): A BaseDocumentStore to use for storing nodes.
         service_context (ServiceContext): A ServiceContext to use for
             building indices.
         summary_text (str): Text to use for the summary index.
@@ -38,13 +39,13 @@ class QASummaryGraphBuilder:
 
     def __init__(
         self,
-        docstore: Optional[DocumentStore] = None,
+        docstore: Optional[BaseDocumentStore] = None,
         service_context: Optional[ServiceContext] = None,
         summary_text: str = DEFAULT_SUMMARY_TEXT,
         qa_text: str = DEFAULT_QA_TEXT,
     ) -> None:
         """Init params."""
-        self._docstore = docstore or DocumentStore()
+        self._docstore = docstore or get_default_docstore()
         self._service_context = service_context or ServiceContext.from_defaults()
         self._summary_text = summary_text
         self._qa_text = qa_text

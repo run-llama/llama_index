@@ -10,7 +10,7 @@ import logging
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import BaseDocumentStore
 from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
 from gpt_index.indices.postprocessor.base import BasePostprocessor
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class BaseNodePostprocessor(BasePostprocessor, BaseModel):
     """Node postprocessor."""
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @abstractmethod
     def postprocess_nodes(
@@ -93,7 +96,7 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
 
 
 def get_forward_nodes(
-    node: Node, num_nodes: int, docstore: DocumentStore
+    node: Node, num_nodes: int, docstore: BaseDocumentStore
 ) -> Dict[str, Node]:
     """Get forward nodes."""
     nodes: Dict[str, Node] = {node.get_doc_id(): node}
@@ -113,7 +116,7 @@ def get_forward_nodes(
 
 
 def get_backward_nodes(
-    node: Node, num_nodes: int, docstore: DocumentStore
+    node: Node, num_nodes: int, docstore: BaseDocumentStore
 ) -> Dict[str, Node]:
     """Get backward nodes."""
     # get backward nodes in an iterative manner
@@ -141,14 +144,14 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
     NOTE: this is a beta feature.
 
     Args:
-        docstore (DocumentStore): The document store.
+        docstore (BaseDocumentStore): The document store.
         num_nodes (int): The number of nodes to return (default: 1)
         mode (str): The mode of the post-processor.
             Can be "previous", "next", or "both.
 
     """
 
-    docstore: DocumentStore
+    docstore: BaseDocumentStore
     num_nodes: int = Field(default=1)
     mode: str = Field(default="next")
 
@@ -251,7 +254,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
     NOTE: this is a beta feature.
 
     Args:
-        docstore (DocumentStore): The document store.
+        docstore (BaseDocumentStore): The document store.
         llm_predictor (LLMPredictor): The LLM predictor.
         num_nodes (int): The number of nodes to return (default: 1)
         infer_prev_next_tmpl (str): The template to use for inference.
@@ -259,7 +262,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
 
     """
 
-    docstore: DocumentStore
+    docstore: BaseDocumentStore
     service_context: ServiceContext
     num_nodes: int = Field(default=1)
     infer_prev_next_tmpl: str = Field(default=DEFAULT_INFER_PREV_NEXT_TMPL)
