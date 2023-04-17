@@ -63,7 +63,7 @@ class DeepLakeVectorStore(VectorStore):
 
 
     Returns:
-        DeeplakeVectorstore: Vectorstore that supports add, delete, and query.
+        DeepLakeVectorstore: Vectorstore that supports add, delete, and query.
     """
 
     _LLAMA_INDEX_DEFAULT_DEEPLAKE_PATH = "mem://llama_index"
