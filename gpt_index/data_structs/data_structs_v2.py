@@ -101,6 +101,7 @@ class IndexGraph(V2IndexStruct):
         new_index = new_index or self.size
         if parent_node is None:
             self.root_nodes[new_index] = node.get_doc_id()
+            self.node_id_to_children_ids[node.get_doc_id()] = []
         else:
             if parent_node.doc_id not in self.node_id_to_children_ids:
                 self.node_id_to_children_ids[parent_node.get_doc_id()] = []
