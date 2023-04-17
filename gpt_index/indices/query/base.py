@@ -92,7 +92,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
                 }
             )
 
-        self.node_preprocessors = node_postprocessors or []
+        self._node_postprocessors = node_postprocessors or []
         self._verbose = verbose
 
     @classmethod
@@ -167,7 +167,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
             "similarity_tracker": similarity_tracker,
             "query_bundle": query_bundle,
         }
-        for node_processor in self.node_preprocessors:
+        for node_processor in self._node_postprocessors:
             nodes = node_processor.postprocess_nodes(nodes, postprocess_info)
 
         # TODO: create a `display` method to allow subclasses to print the Node
