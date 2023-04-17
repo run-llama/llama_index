@@ -14,7 +14,7 @@ from typing import (
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import BaseDocumentStore
 from gpt_index.indices.postprocessor.node import (
     BaseNodePostprocessor,
 )
@@ -66,7 +66,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         index_struct: IS,
         service_context: ServiceContext,
         response_synthesizer: ResponseSynthesizer,
-        docstore: Optional[DocumentStore] = None,
+        docstore: Optional[BaseDocumentStore] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
     ) -> None:

@@ -6,6 +6,7 @@ from typing import Any, List
 from unittest.mock import patch
 
 import pytest
+from gpt_index.constants import DATA_KEY, DOCSTORE_KEY
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.readers.schema.base import Document
@@ -60,7 +61,7 @@ def test_write_ascii(
             escaped = f.read().replace("\\", "\\\\")
             data = json.loads(escaped)
 
-            docs = data["docstore"]["docs"]
+            docs = data[DOCSTORE_KEY][DATA_KEY]["docs"]
             doc_key = list(node_ids)[0]
             node_dict = docs[doc_key]
             assert node_dict["text"] == "\\u00e1"
@@ -105,7 +106,7 @@ def test_write_utf8(
             escaped = f.read().replace("\\", "\\\\")
             data = json.loads(escaped)
 
-            docs = data["docstore"]["docs"]
+            docs = data[DOCSTORE_KEY][DATA_KEY]["docs"]
             doc_key = list(node_ids)[0]
             node_dict = docs[doc_key]
             assert node_dict["text"] == "á"

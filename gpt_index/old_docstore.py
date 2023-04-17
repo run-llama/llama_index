@@ -4,8 +4,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Type, Union
 
-from dataclasses_json import DataClassJsonMixin
-
 from gpt_index.data_structs.data_structs import IndexStruct
 from gpt_index.readers.schema.base import Document
 
@@ -16,7 +14,7 @@ TYPE_KEY = "__type__"
 
 
 @dataclass
-class V1DocumentStore(DataClassJsonMixin):
+class V1DocumentStore:
     """Document store."""
 
     docs: Dict[str, DOC_TYPE] = field(default_factory=dict)
@@ -24,7 +22,7 @@ class V1DocumentStore(DataClassJsonMixin):
         default_factory=lambda: defaultdict(dict)
     )
 
-    def serialize_to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict."""
         docs_dict = {}
         for doc_id, doc in self.docs.items():
@@ -42,7 +40,7 @@ class V1DocumentStore(DataClassJsonMixin):
         return False
 
     @classmethod
-    def load_from_dict(
+    def from_dict(
         cls,
         docs_dict: Dict[str, Any],
         type_to_struct: Optional[Dict[str, Type[IndexStruct]]] = None,
