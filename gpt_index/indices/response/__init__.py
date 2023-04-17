@@ -22,4 +22,3 @@ __all__ = [
     "get_response_builder",
     "ResponseSynthesizer",
 ]
-

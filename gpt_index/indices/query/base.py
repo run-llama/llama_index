@@ -100,7 +100,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         cls,
         index_struct: IS,
         service_context: ServiceContext,
-        docstore: Optional[DocumentStore] = None,
+        docstore: Optional[BaseDocumentStore] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
         # response synthesizer args
