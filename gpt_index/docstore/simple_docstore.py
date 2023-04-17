@@ -147,5 +147,6 @@ class SimpleDocumentStore(BaseDocumentStore):
         """Get the stored hash for a document, if it exists."""
         return self._ref_doc_info[doc_id].get("doc_hash", None)
 
+
 # alias for backwards compatibility
 DocumentStore = SimpleDocumentStore
