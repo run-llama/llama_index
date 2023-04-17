@@ -1,18 +1,25 @@
 """Summarize query."""
 
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
+
+from llama_index import QuestionAnswerPrompt, RefinePrompt, ServiceContext
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
+from gpt_index.docstore import DocumentStore
+from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import ResponseMode
+from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 from gpt_index.indices.utils import get_sorted_node_list
+from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_NUM_CHILDREN = 10
 
 class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
     """GPT Tree Index summarize query.
@@ -34,19 +41,29 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
     def __init__(
         self,
         index_struct: IndexGraph,
-        num_children: int = 10,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        if "response_mode" in kwargs:
+        super().__init__(
+            index_struct,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_args(cls, 
+        response_mode: ResponseMode = ResponseMode.TREE_SUMMARIZE,
+        response_kwargs: Optional[Dict] = None,
+        **kwargs: Any,
+    ):
+        if response_mode != ResponseMode.TREE_SUMMARIZE: 
             raise ValueError(
                 "response_mode should not be specified for summarize query"
             )
         response_kwargs = kwargs.pop("response_kwargs", {})
-        response_kwargs.update(num_children=num_children)
-        super().__init__(
-            index_struct,
-            response_mode=ResponseMode.TREE_SUMMARIZE,
+        response_kwargs.update(num_children=kwargs.pop('num_children', DEFAULT_NUM_CHILDREN))
+
+        return super().from_args(
+            response_mode=response_mode,
             response_kwargs=response_kwargs,
             **kwargs,
         )

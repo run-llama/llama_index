@@ -8,6 +8,7 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.knowledge_graph.query import GPTKGTableQuery
+from gpt_index.indices.postprocessor.node import SimilarityPostprocessor
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
@@ -325,6 +326,7 @@ def test_query_similarity(
 
     # Filters embeddings
     try:
-        response = index.query("foo", similarity_cutoff=10000000)
+        similarity_threshold = SimilarityPostprocessor(10000000)
+        response = index.query("foo", node_postprocessors=[similarity_threshold])
     except ValueError as e:
         assert str(e) == "kg_rel_map must be found in at least one Node."

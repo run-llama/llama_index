@@ -3,10 +3,12 @@
 import logging
 from abc import ABC
 from typing import (
+    Any,
     Dict,
     Generic,
     List,
     Optional,
+    Sequence,
     TypeVar,
 )
 
@@ -22,7 +24,7 @@ from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 from gpt_index.indices.response.response_builder import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SimpleInputPrompt
 from gpt_index.response.schema import (
     RESPONSE_TYPE,
 )
@@ -101,15 +103,19 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         response_mode: ResponseMode = ResponseMode.DEFAULT,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
+        simple_template: Optional[SimpleInputPrompt] = None,
         response_kwargs: Optional[Dict] = None,
         use_async: bool = False,
         streaming: bool = False,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
+        # class-specific args
+        **kwargs: Any,
     ):
         response_synthesizer = ResponseSynthesizer.from_args(
             service_context=service_context,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
+            simple_template=simple_template,
             response_mode=response_mode,
             response_kwargs=response_kwargs,
             use_async=use_async,
@@ -117,12 +123,13 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
             optimizer=optimizer
         )
         return cls(
-            index_struct,
-            service_context,
-            response_synthesizer,
-            docstore,
-            node_postprocessors,
-            verbose,
+            index_struct=index_struct,
+            service_context=service_context,
+            response_synthesizer=response_synthesizer,
+            docstore=docstore,
+            node_postprocessors=node_postprocessors,
+            verbose=verbose,
+            **kwargs,
         )
 
     @property
@@ -133,6 +140,14 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
     def _validate_index_struct(self, index_struct: IS) -> None:
         """Validate the index struct."""
         pass
+
+    def _retrieve(
+        self,
+        query_bundle: QueryBundle,
+        similarity_tracker: Optional[SimilarityTracker] = None,
+    ) -> List[Node]:
+        """Get nodes for response."""
+        return []
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Get list of tuples of node and similarity for response.
@@ -154,35 +169,39 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         # TODO: create a `display` method to allow subclasses to print the Node
         return similarity_tracker.get_zipped_nodes(nodes)
 
-    def _retrieve(
-        self,
-        query_bundle: QueryBundle,
-        similarity_tracker: Optional[SimilarityTracker] = None,
-    ) -> List[Node]:
-        """Get nodes for response."""
-        return []
+    def synthesize(self, 
+            query_bundle: QueryBundle, 
+            nodes: Sequence[NodeWithScore], 
+            additional_source_nodes: Optional[Sequence[NodeWithScore]]= None,
+        ) -> RESPONSE_TYPE:
+            return self._response_synthesizer.synthesize(
+                query_bundle=query_bundle, 
+                nodes=nodes, 
+                additional_source_nodes=additional_source_nodes
+            )
 
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Answer a query."""
-        # TODO: remove _query and just use query
-        nodes = self.retrieve(query_bundle)
-        return self._synthesizer.synthesize(query_bundle, nodes)
-
-    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Answer a query asynchronously."""
-        # TODO: remove _query and just use query
-        nodes = self.retrieve(query_bundle)
-        response = await self._synthesizer.asynthesize(query_bundle, nodes)
-        return response
+    async def asynthesize(self, 
+            query_bundle: QueryBundle, 
+            nodes: Sequence[NodeWithScore], 
+            additional_source_nodes: Optional[Sequence[NodeWithScore]]= None,
+        ) -> RESPONSE_TYPE:
+            return await self._response_synthesizer.asynthesize(
+                query_bundle=query_bundle, 
+                nodes=nodes, 
+                additional_source_nodes=additional_source_nodes
+            )
 
     @llm_token_counter("query")
     def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         # TODO: support include summary
-        return self._query(query_bundle)
+        nodes = self.retrieve(query_bundle)
+        return self.synthesize(query_bundle, nodes)
 
     @llm_token_counter("query")
     async def aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         # TODO: support include summary
-        return await self._aquery(query_bundle)
+        nodes = self.retrieve(query_bundle)
+        response = await self.asynthesize(query_bundle, nodes)
+        return response

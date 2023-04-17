@@ -9,7 +9,6 @@ Will support different modes, from 1) stuffing chunks into prompt,
 """
 from abc import ABC, abstractmethod
 import logging
-from enum import Enum
 from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, cast
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
@@ -20,8 +19,8 @@ from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import get_sorted_node_list, truncate_text
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SummaryPrompt
+from gpt_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT, DEFAULT_TEXT_QA_PROMPT
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SimpleInputPrompt, SummaryPrompt
 from gpt_index.response.utils import get_response_text
 from gpt_index.types import RESPONSE_TEXT_TYPE
 from gpt_index.utils import temp_set_attrs
@@ -76,7 +75,6 @@ class BaseResponseBuilder(ABC):
         query_str: str,
         text_chunks: Sequence[str],
         prev_response: Optional[str] = None,
-        mode: ResponseMode = ResponseMode.DEFAULT,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get response."""
@@ -95,14 +93,14 @@ class Refine(BaseResponseBuilder):
         self._refine_template = refine_template
 
     async def aget_response(
-        self, query_str: str, prev_response: Optional[str]
+        self, query_str: str, text_chunks: Sequence[str], prev_response: Optional[str] = None
     ) -> RESPONSE_TEXT_TYPE:
-        return self.get_response(query_str, prev_response)
+        return self.get_response(query_str, text_chunks, prev_response)
 
     def get_response(
         self, 
-        text_chunks: Sequence[str],
         query_str: str, 
+        text_chunks: Sequence[str],
         prev_response: Optional[str] = None,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
@@ -399,17 +397,162 @@ class TreeSummarize(Refine):
             response = response or "Empty Response"
         return response
 
+class SimpleSummarize(BaseResponseBuilder):
+    def __init__(self, 
+        service_context: ServiceContext, 
+        text_qa_template: QuestionAnswerPrompt,
+        streaming: bool = False,
+    ) -> None:
+        super().__init__(service_context, streaming)
+        self._text_qa_template = text_qa_template
+
+
+    async def aget_response(
+        self, 
+        query_str: str, 
+        text_chunks: Sequence[str], 
+        prev_response: Optional[str] = None,
+    ) -> RESPONSE_TEXT_TYPE:
+        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
+        node_text = self._service_context.prompt_helper.get_text_from_nodes(
+            [Node(text=text) for text in text_qa_template], 
+            prompt=text_qa_template
+        )
+
+        if not self._streaming:
+            (
+                response,
+                formatted_prompt,
+            ) = await self._service_context.llm_predictor.apredict(
+                text_qa_template,
+                context_str=node_text,
+            )
+            self._log_prompt_and_response(
+                formatted_prompt, response
+            )
+        else :
+            response, formatted_prompt = self._service_context.llm_predictor.stream(
+                text_qa_template,
+                context_str=node_text,
+            )
+            self._log_prompt_and_response(
+                formatted_prompt, response
+            )
+        if isinstance(response, str):
+            response = response or "Empty Response"
+        else:
+            response = cast(Generator, response)
+
+        return response
+
+
+    def get_response(
+        self, 
+        query_str: str, 
+        text_chunks: Sequence[str], 
+        prev_response: Optional[str] = None,
+    ) -> RESPONSE_TEXT_TYPE:
+        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
+        node_text = self._service_context.prompt_helper.get_text_from_nodes(
+            [Node(text=text) for text in text_chunks], 
+            prompt=text_qa_template
+        )
+
+        if not self._streaming:
+            (
+                response,
+                formatted_prompt,
+            ) = self._service_context.llm_predictor.predict(
+                text_qa_template,
+                context_str=node_text,
+            )
+            self._log_prompt_and_response(
+                formatted_prompt, response
+            )
+        else :
+            response, formatted_prompt = self._service_context.llm_predictor.stream(
+                text_qa_template,
+                context_str=node_text,
+            )
+            self._log_prompt_and_response(
+                formatted_prompt, response
+            )
+        if isinstance(response, str):
+            response = response or "Empty Response"
+        else:
+            response = cast(Generator, response)
+
+        return response
+
+
+class Generation(BaseResponseBuilder):
+    def __init__(self, 
+        service_context: ServiceContext, 
+        simple_template: Optional[SimpleInputPrompt] = None,
+        streaming: bool = False,
+    ) -> None:
+        super().__init__(service_context, streaming)
+        self._input_prompt = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
+
+    async def aget_response(
+        self, 
+        query_str: str, 
+        text_chunks: Sequence[str], 
+        prev_response: Optional[str] = None,
+    ) -> RESPONSE_TEXT_TYPE:
+       # NOTE: ignore text chunks and previous response
+        del text_chunks
+        del prev_response
+
+        if not self._streaming:
+            response, _ = await self._service_context.llm_predictor.apredict(
+                self._input_prompt,
+                query_str=query_str,
+            )
+            return response
+        else:
+            stream_response, _ = self._service_context.llm_predictor.stream(
+                self._input_prompt,
+                query_str=query_str,
+            )
+            return stream_response
+
+    def get_response(
+        self, 
+        query_str: str, 
+        text_chunks: Sequence[str], 
+        prev_response: Optional[str] = None,
+    ) -> RESPONSE_TEXT_TYPE:
+        # NOTE: ignore text chunks and previous response
+        del text_chunks
+        del prev_response
+
+        if not self._streaming:
+            response, _ = self._service_context.llm_predictor.predict(
+                self._input_prompt,
+                query_str=query_str,
+            )
+            return response
+        else:
+            stream_response, _ = self._service_context.llm_predictor.stream(
+                self._input_prompt,
+                query_str=query_str,
+            )
+            return stream_response
+
 
 def get_response_builder(
         service_context: ServiceContext,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
+        simple_template: Optional[SimpleInputPrompt] = None,
         mode: ResponseMode = ResponseMode.DEFAULT,
         use_async: bool = False,
         streaming: bool = False,
     ) -> BaseResponseBuilder:
     text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
     refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
+    simple_template = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
     if mode == ResponseMode.DEFAULT:
         return Refine(
             service_context=service_context, 
@@ -431,6 +574,18 @@ def get_response_builder(
             refine_template=refine_template,
             streaming=streaming,
             use_async=use_async,
+        )
+    elif mode == ResponseMode.SIMPLE_SUMMARIZE:
+        return SimpleSummarize(
+            service_context=service_context, 
+            text_qa_template=text_qa_template, 
+            streaming=streaming,
+        )
+    elif mode == ResponseMode.GENERATION:
+        return Generation(
+            service_context=service_context, 
+            simple_template=simple_template,
+            streaming=streaming,
         )
     else:
         raise ValueError(f'Unknown mode: {mode}')

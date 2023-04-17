@@ -9,5 +9,7 @@ class ResponseMode(str, Enum):
 
     DEFAULT = "default"
     COMPACT = "compact"
+    SIMPLE_SUMMARIZE = "simple_summarize"
     TREE_SUMMARIZE = "tree_summarize"
+    GENERATION = "generation"
     NO_TEXT = "no_text"

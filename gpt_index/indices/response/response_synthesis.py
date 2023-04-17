@@ -22,8 +22,8 @@ from gpt_index.indices.response.response_builder import (
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from gpt_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT, DEFAULT_TEXT_QA_PROMPT
+from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SimpleInputPrompt
 from gpt_index.response.schema import (
     RESPONSE_TYPE,
     Response,
@@ -42,11 +42,13 @@ class ResponseSynthesizer:
         response_mode: ResponseMode,
         response_kwargs: Optional[Dict] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
+        verbose: bool = False,
     ) -> None:
         self._response_builder = response_builder
         self._response_mode = response_mode
-        self._response_kwargs = response_kwargs
+        self._response_kwargs = response_kwargs or {}
         self._optimizer = optimizer
+        self._verbose = verbose
 
     @classmethod
     def from_args(
@@ -56,19 +58,22 @@ class ResponseSynthesizer:
         use_async: bool,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None, 
+        simple_template: Optional[SimpleInputPrompt] = None,
         response_mode: ResponseMode = ResponseMode.DEFAULT,
         response_kwargs: Optional[Dict] = None,
+        optimizer: Optional[BaseTokenUsageOptimizer] = None,
     ) -> "ResponseSynthesizer":
         response_builder = get_response_builder(
             service_context,
-            text_qa_template or DEFAULT_TEXT_QA_PROMPT,
-            refine_template or DEFAULT_REFINE_PROMPT_SEL,
+            text_qa_template,
+            refine_template,
+            simple_template, 
             response_mode,
             use_async=use_async,
             streaming=streaming,
 
         )
-        return cls(response_builder, response_mode, response_kwargs)
+        return cls(response_builder, response_mode, response_kwargs, optimizer)
     
 
     def _get_text_from_node(
@@ -96,8 +101,8 @@ class ResponseSynthesizer:
 
     def _prepare_response_output(
         self,
-        source_nodes: List[NodeWithScore],
         response_str: Optional[RESPONSE_TEXT_TYPE],
+        source_nodes: List[NodeWithScore],
     ) -> RESPONSE_TYPE:
         """Prepare response object from response string."""
         response_extra_info = self._get_extra_info_for_response(
@@ -134,8 +139,8 @@ class ResponseSynthesizer:
 
         if self._response_mode != ResponseMode.NO_TEXT:
             response_str = self._response_builder.get_response(
-                query_bundle.query_str,
-                text_chunks,
+                query_str=query_bundle.query_str,
+                text_chunks=text_chunks,
                 **self._response_kwargs,
             )
         else:
@@ -144,7 +149,7 @@ class ResponseSynthesizer:
         additional_source_nodes = additional_source_nodes or []
         source_nodes = nodes + additional_source_nodes
 
-        return self._prepare_response_output(self.response_builder, response_str, source_nodes)
+        return self._prepare_response_output(response_str, source_nodes)
 
     async def asynthesize(
         self,
@@ -161,7 +166,7 @@ class ResponseSynthesizer:
 
         if self._response_mode != ResponseMode.NO_TEXT:
             response_str = await self._response_builder.aget_response(
-                query_bundle.query_str,
+                query_str=query_bundle.query_str,
                 text_chunks=text_chunks,
                 **self._response_kwargs,
             )
@@ -171,4 +176,4 @@ class ResponseSynthesizer:
         additional_source_nodes = additional_source_nodes or []
         source_nodes = nodes + additional_source_nodes
 
-        return self._prepare_response_output(self._response_builder, response_str, source_nodes)
+        return self._prepare_response_output(response_str, source_nodes)

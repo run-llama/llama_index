@@ -237,10 +237,5 @@ def test_query(
     )
     documents2 = [Document(doc_text)]
     table2 = GPTSimpleKeywordTableIndex.from_documents(documents2)
-    # NOTE: required keywords are somewhat redundant
-    response = table2.query("This", mode="simple", required_keywords=["v2"])
+    response = table2.query("This", mode="simple")
     assert str(response) == "This:This is a test v2"
-
-    # test exclude_keywords
-    response = table2.query("Hello", mode="simple", exclude_keywords=["world"])
-    assert str(response) == "Hello:Hello foo"

@@ -144,7 +144,6 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
                 rel_text_embeddings,
                 similarity_top_k=self.similarity_top_k,
                 embedding_ids=all_rel_texts,
-                similarity_cutoff=self.similarity_cutoff,
             )
             logger.debug(
                 f"Found the following rel_texts+query similarites: {str(similarities)}"
