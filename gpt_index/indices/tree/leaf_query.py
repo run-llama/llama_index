@@ -11,7 +11,6 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import get_response_builder
-from gpt_index.indices.response.response_synthesis import get_text_from_node
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import (
@@ -26,8 +25,26 @@ from gpt_index.prompts.prompts import (
     TreeSelectPrompt,
 )
 from gpt_index.response.schema import Response
+from gpt_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
+
+
+def get_text_from_node(
+    node: Node,
+    level: Optional[int] = None,
+    verbose: bool = False,
+) -> str:
+    """Get text from node."""
+    level_str = "" if level is None else f"[Level {level}]"
+    fmt_text_chunk = truncate_text(node.get_text(), 50)
+    logger.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
+
+    response_txt = node.get_text()
+    fmt_response = truncate_text(response_txt, 200)
+    if verbose:
+        print_text(f">{level_str} Got node text: {fmt_response}\n", color="blue")
+    return response_txt
 
 
 class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):

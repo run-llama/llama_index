@@ -8,8 +8,6 @@ from typing import (
     Sequence,
 )
 
-from langchain.input import print_text
-
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import (
@@ -30,26 +28,8 @@ from gpt_index.response.schema import (
     StreamingResponse,
 )
 from gpt_index.types import RESPONSE_TEXT_TYPE
-from gpt_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
-
-
-def get_text_from_node(
-    node: Node,
-    level: Optional[int] = None,
-    verbose: bool = False,
-) -> str:
-    """Get text from node."""
-    level_str = "" if level is None else f"[Level {level}]"
-    fmt_text_chunk = truncate_text(node.get_text(), 50)
-    logger.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
-
-    response_txt = node.get_text()
-    fmt_response = truncate_text(response_txt, 200)
-    if verbose:
-        print_text(f">{level_str} Got node text: {fmt_response}\n", color="blue")
-    return response_txt
 
 
 class ResponseSynthesizer:
@@ -131,7 +111,7 @@ class ResponseSynthesizer:
     ) -> RESPONSE_TYPE:
         text_chunks = []
         for node_with_score in nodes:
-            text = get_text_from_node(node_with_score.node, verbose=self._verbose)
+            text = node_with_score.node.get_text()
             if self._optimizer is not None:
                 text = self._optimizer.optimize(query_bundle, text)
             text_chunks.append(text)
@@ -158,7 +138,7 @@ class ResponseSynthesizer:
     ) -> RESPONSE_TYPE:
         text_chunks = []
         for node_with_score in nodes:
-            text = get_text_from_node(node_with_score.node, verbose=self._verbose)
+            text = node_with_score.node.get_text()
             if self._optimizer is not None:
                 text = self._optimizer.optimize(query_bundle, text)
             text_chunks.append(text)
