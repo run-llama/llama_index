@@ -5,6 +5,7 @@ from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
 from gpt_index.indices.vector_store.vector_indices import (
     ChatGPTRetrievalPluginIndex,
     GPTChromaIndex,
+    GPTDeepLakeIndex,
     GPTFaissIndex,
     GPTMilvusIndex,
     GPTOpensearchIndex,
@@ -26,4 +27,5 @@ __all__ = [
     "GPTOpensearchIndex",
     "ChatGPTRetrievalPluginIndex",
     "GPTVectorStoreIndexQuery",
+    "GPTDeepLakeIndex",
 ]

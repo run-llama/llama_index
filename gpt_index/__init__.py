@@ -37,6 +37,7 @@ from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
     GPTChromaIndex,
+    GPTDeepLakeIndex,
     GPTFaissIndex,
     GPTMilvusIndex,
     GPTPineconeIndex,
@@ -171,6 +172,7 @@ __all__ = [
     "TwitterTweetReader",
     "download_loader",
     "GithubRepositoryReader",
+    "GPTDeepLakeIndex",
 ]
 
 # NOTE: keep for backwards compatibility

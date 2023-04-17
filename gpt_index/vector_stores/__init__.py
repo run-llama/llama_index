@@ -2,6 +2,7 @@
 
 from gpt_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from gpt_index.vector_stores.chroma import ChromaVectorStore
+from gpt_index.vector_stores.deeplake import DeepLakeVectorStore
 from gpt_index.vector_stores.faiss import FaissVectorStore
 from gpt_index.vector_stores.milvus import MilvusVectorStore
 from gpt_index.vector_stores.opensearch import (
@@ -24,4 +25,5 @@ __all__ = [
     "OpensearchVectorClient",
     "ChatGPTRetrievalPluginClient",
     "MilvusVectorStore",
+    "DeepLakeVectorStore",
 ]
