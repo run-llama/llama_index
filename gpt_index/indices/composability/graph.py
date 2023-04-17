@@ -12,7 +12,7 @@ from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, DocumentRelationship
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import BaseDocumentStore
 from gpt_index.docstore.registry import (
     load_docstore_from_dict,
     merge_docstores,
@@ -39,7 +39,7 @@ class ComposableGraph:
     def __init__(
         self,
         index_struct: CompositeIndex,
-        docstore: DocumentStore,
+        docstore: BaseDocumentStore,
         service_context: Optional[ServiceContext] = None,
         query_context: Optional[Dict[str, Dict[str, Any]]] = None,
         **kwargs: Any,
@@ -63,7 +63,7 @@ class ComposableGraph:
         cls,
         all_index_structs: Dict[str, IndexStruct],
         root_id: str,
-        docstores: Sequence[DocumentStore],
+        docstores: Sequence[BaseDocumentStore],
         query_context: Optional[Dict[str, Dict[str, Any]]] = None,
         service_context: Optional[ServiceContext] = None,
     ) -> "ComposableGraph":

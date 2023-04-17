@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Sequence, cast
 import uuid
-from gpt_index.docstore.types import DocumentStore
+from gpt_index.docstore.types import BaseDocumentStore
 from gpt_index.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument
 
@@ -8,7 +8,7 @@ from gpt_index.schema import BaseDocument
 IMPORT_ERROR_MSG = "`pymongo` package not found, please run `pip install pymongo`"
 
 
-class MongoDocumentStore(DocumentStore):
+class MongoDocumentStore(BaseDocumentStore):
     def __init__(
         self,
         mongo_client: Any,
@@ -194,12 +194,11 @@ class MongoDocumentStore(DocumentStore):
             return obj.get("doc_hash", None)
         return None
 
-    def update_docstore(self, other: "DocumentStore") -> None:
+    def update_docstore(self, other: "BaseDocumentStore") -> None:
         """Update docstore.
 
         Args:
-            other (SimpleDocumentStore): docstore to update from
+            other (BaseDocumentStore): docstore to update from
 
         """
-        assert isinstance(other, MongoDocumentStore)
         self.add_documents(list(other.docs.values()))

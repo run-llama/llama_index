@@ -5,14 +5,14 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.schema import BaseDocument
 
 
-class DocumentStore(ABC):
+class BaseDocumentStore(ABC):
     # ===== Save/load =====
     @classmethod
     @abstractmethod
     def from_dict(
         cls,
         docs_dict: Dict[str, Any],
-    ) -> "DocumentStore":
+    ) -> "BaseDocumentStore":
         ...
 
     @abstractmethod
@@ -47,7 +47,7 @@ class DocumentStore(ABC):
         ...
 
     @abstractmethod
-    def update_docstore(self, other: "DocumentStore") -> None:
+    def update_docstore(self, other: "BaseDocumentStore") -> None:
         """Update docstore."""
         ...
 

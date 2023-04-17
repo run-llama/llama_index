@@ -4,13 +4,13 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Sequence
 
-from gpt_index.docstore.types import DocumentStore
+from gpt_index.docstore.types import BaseDocumentStore
 from gpt_index.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument
 
 
 @dataclass
-class SimpleDocumentStore(DocumentStore):
+class SimpleDocumentStore(BaseDocumentStore):
     """Document (Node) store.
 
     NOTE: at the moment, this store is primarily used to store Node objects.
@@ -80,7 +80,7 @@ class SimpleDocumentStore(DocumentStore):
             ref_doc_info=defaultdict(dict, **docs_dict.get("ref_doc_info", {})),
         )
 
-    def update_docstore(self, other: "DocumentStore") -> None:
+    def update_docstore(self, other: "BaseDocumentStore") -> None:
         """Update docstore.
 
         Args:
@@ -146,3 +146,6 @@ class SimpleDocumentStore(DocumentStore):
     def get_document_hash(self, doc_id: str) -> Optional[str]:
         """Get the stored hash for a document, if it exists."""
         return self._ref_doc_info[doc_id].get("doc_hash", None)
+
+# alias for backwards compatibility
+DocumentStore = SimpleDocumentStore

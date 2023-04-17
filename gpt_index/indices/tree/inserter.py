@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import BaseDocumentStore
 from gpt_index.docstore.registry import get_default_docstore
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
@@ -25,7 +25,7 @@ class GPTTreeIndexInserter:
         num_children: int = 10,
         insert_prompt: Prompt = DEFAULT_INSERT_PROMPT,
         summary_prompt: Prompt = DEFAULT_SUMMARY_PROMPT,
-        docstore: Optional[DocumentStore] = None,
+        docstore: Optional[BaseDocumentStore] = None,
     ) -> None:
         """Initialize with params."""
         if num_children < 2:

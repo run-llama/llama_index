@@ -7,7 +7,7 @@ from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import BaseDocumentStore
 from gpt_index.docstore.registry import (
     get_default_docstore,
     load_docstore_from_dict,
@@ -47,7 +47,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IS] = None,
-        docstore: Optional[DocumentStore] = None,
+        docstore: Optional[BaseDocumentStore] = None,
         service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Initialize with parameters."""
@@ -83,7 +83,7 @@ class BaseGPTIndex(Generic[IS], ABC):
     def from_documents(
         cls,
         documents: Sequence[Document],
-        docstore: Optional[DocumentStore] = None,
+        docstore: Optional[BaseDocumentStore] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "BaseGPTIndex":
@@ -115,7 +115,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         return self._index_struct
 
     @property
-    def docstore(self) -> DocumentStore:
+    def docstore(self) -> BaseDocumentStore:
         """Get the docstore corresponding to the index."""
         return self._docstore
 

@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Sequence, Type
 from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.docstore.simple_docstore import SimpleDocumentStore
 from gpt_index.docstore.mongo_docstore import MongoDocumentStore
-from gpt_index.docstore.types import DocumentStore
+from gpt_index.docstore.types import BaseDocumentStore
 
 
 class DocumentStoreType(str, Enum):
@@ -12,26 +12,26 @@ class DocumentStoreType(str, Enum):
     SIMPLE = "simple"
 
 
-DOCSTORE_TYPE_TO_CLASS: Dict[DocumentStoreType, Type[DocumentStore]] = {
+DOCSTORE_TYPE_TO_CLASS: Dict[DocumentStoreType, Type[BaseDocumentStore]] = {
     DocumentStoreType.MONGO: MongoDocumentStore,
     DocumentStoreType.SIMPLE: SimpleDocumentStore,
 }
 
 
-DOCSTORE_CLASS_TO_TYPE: Dict[Type[DocumentStore], DocumentStoreType] = {
+DOCSTORE_CLASS_TO_TYPE: Dict[Type[BaseDocumentStore], DocumentStoreType] = {
     cls_: type_ for type_, cls_ in DOCSTORE_TYPE_TO_CLASS.items()
 }
 
 
-def get_default_docstore() -> DocumentStore:
+def get_default_docstore() -> BaseDocumentStore:
     return SimpleDocumentStore()
 
 
 def load_docstore_from_dict(
     docstore_dict: Dict[str, Any],
-    type_to_cls: Optional[Dict[DocumentStoreType, Type[DocumentStore]]] = None,
+    type_to_cls: Optional[Dict[DocumentStoreType, Type[BaseDocumentStore]]] = None,
     **kwargs: Any,
-) -> DocumentStore:
+) -> BaseDocumentStore:
     type_to_cls = type_to_cls or DOCSTORE_TYPE_TO_CLASS
     type = docstore_dict[TYPE_KEY]
     config_dict: Dict[str, Any] = docstore_dict[DATA_KEY]
@@ -46,15 +46,15 @@ def load_docstore_from_dict(
 
 
 def save_docstore_to_dict(
-    docstore: DocumentStore,
-    cls_to_type: Optional[Dict[Type[DocumentStore], DocumentStoreType]] = None,
+    docstore: BaseDocumentStore,
+    cls_to_type: Optional[Dict[Type[BaseDocumentStore], DocumentStoreType]] = None,
 ) -> Dict[str, Any]:
     cls_to_type = cls_to_type or DOCSTORE_CLASS_TO_TYPE
     type_ = cls_to_type[type(docstore)]
     return {TYPE_KEY: type_, DATA_KEY: docstore.to_dict()}
 
 
-def merge_docstores(docstores: Sequence[DocumentStore]) -> DocumentStore:
+def merge_docstores(docstores: Sequence[BaseDocumentStore]) -> BaseDocumentStore:
     if all(isinstance(docstore, SimpleDocumentStore) for docstore in docstores):
         merged_docstore = SimpleDocumentStore()
         for docstore in docstores:
