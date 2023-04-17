@@ -11,6 +11,7 @@ import pytest
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.list.embedding_query import GPTListIndexEmbeddingQuery
+from gpt_index.indices.postprocessor.node import KeywordNodePostprocessor
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
@@ -327,15 +328,21 @@ def test_query_with_keywords(
 
     # test query with keywords
     query_str = "What is?"
-    query_kwargs.update({"required_keywords": ["test"]})
-    response = index.query(query_str, mode="default", **query_kwargs)
+    keyword_filter = KeywordNodePostprocessor(required_keywords=["test"])
+    response = index.query(
+        query_str, mode="default", **query_kwargs, node_postprocessors=[keyword_filter]
+    )
     expected_answer = (
         "What is?:This is a test.:" "This is another test.:" "This is a test v2."
     )
     assert str(response) == expected_answer
 
-    query_kwargs.update({"exclude_keywords": ["test"], "required_keywords": []})
-    response = index.query(query_str, mode="default", **query_kwargs)
+    keyword_filter = KeywordNodePostprocessor(
+        required_keywords=[], exclude_keywords=["test"]
+    )
+    response = index.query(
+        query_str, mode="default", **query_kwargs, node_postprocessors=[keyword_filter]
+    )
     assert str(response) == ("What is?:Hello world.")
 
 

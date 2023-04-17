@@ -8,13 +8,14 @@ from pydantic import BaseModel, Field, validator
 
 import logging
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.docstore import BaseDocumentStore
 from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
 from gpt_index.indices.postprocessor.base import BasePostprocessor
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
-from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
+from gpt_index.indices.response.response_builder import get_response_builder
 
 logger = logging.getLogger(__name__)
 
@@ -304,15 +305,15 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
             all_nodes[node.get_doc_id()] = node
             # use response builder instead of llm_predictor directly
             # to be more robust to handling long context
-            response_builder = ResponseBuilder(
-                self.service_context,
-                infer_prev_next_prompt,
-                refine_infer_prev_next_prompt,
+            response_builder = get_response_builder(
+                service_context=self.service_context,
+                text_qa_template=infer_prev_next_prompt,
+                refine_template=refine_infer_prev_next_prompt,
+                mode=ResponseMode.TREE_SUMMARIZE,
             )
-            response_builder.add_text_chunks([TextChunk(node.get_text())])
             raw_pred = response_builder.get_response(
+                text_chunks=[node.get_text()],
                 query_str=query_bundle.query_str,
-                response_mode="tree_summarize",
             )
             raw_pred = cast(str, raw_pred)
             mode = self._parse_prediction(raw_pred)

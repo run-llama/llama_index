@@ -93,7 +93,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         sorted_chunk_indices = sorted_chunk_indices[: self.num_chunks_per_query]
         sorted_nodes = self._docstore.get_nodes(sorted_chunk_indices)
         # filter sorted nodes
-        for node_processor in self.node_preprocessors:
+        for node_processor in self._node_postprocessors:
             sorted_nodes = node_processor.postprocess_nodes(sorted_nodes)
 
         if logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG:

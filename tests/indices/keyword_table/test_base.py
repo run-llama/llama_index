@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from gpt_index.indices.postprocessor.node import KeywordNodePostprocessor
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
@@ -237,10 +238,13 @@ def test_query(
     )
     documents2 = [Document(doc_text)]
     table2 = GPTSimpleKeywordTableIndex.from_documents(documents2)
-    # NOTE: required keywords are somewhat redundant
-    response = table2.query("This", mode="simple", required_keywords=["v2"])
+    keyword_filter = KeywordNodePostprocessor(required_keywords=["v2"])
+    response = table2.query("This", mode="simple", node_postprocessors=[keyword_filter])
     assert str(response) == "This:This is a test v2"
 
     # test exclude_keywords
-    response = table2.query("Hello", mode="simple", exclude_keywords=["world"])
+    keyword_filter = KeywordNodePostprocessor(exclude_keywords=["world"])
+    response = table2.query(
+        "Hello", mode="simple", node_postprocessors=[keyword_filter]
+    )
     assert str(response) == "Hello:Hello foo"

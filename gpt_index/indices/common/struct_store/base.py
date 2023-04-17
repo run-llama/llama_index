@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table import StructDatapoint
-from gpt_index.indices.response.builder import ResponseBuilder, TextChunk
+from gpt_index.indices.response.response_builder import get_response_builder
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
@@ -104,18 +104,20 @@ class SQLDocumentContextBuilder:
             )
         )
         # we use the ResponseBuilder to iteratively go through all texts
-        response_builder = ResponseBuilder(
+        response_builder = get_response_builder(
             self._service_context,
             prompt_with_schema,
             refine_prompt_with_schema,
         )
+        text_chunks = []
         for doc in documents:
-            text_chunks = text_splitter.split_text(doc.get_text())
-            for text_chunk in text_chunks:
-                response_builder.add_text_chunks([TextChunk(text_chunk)])
+            chunks = text_splitter.split_text(doc.get_text())
+            text_chunks.extend(chunks)
 
         # feed in the "query_str" or the task
-        table_context = response_builder.get_response(self._table_context_task)
+        table_context = response_builder.get_response(
+            text_chunks=text_chunks, query_str=self._table_context_task
+        )
         return cast(str, table_context)
 
 
