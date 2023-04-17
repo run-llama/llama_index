@@ -270,7 +270,6 @@ class SentenceSplitter(TextSplitter):
             import nltk.tokenize.punkt as pkt
 
             class CustomLanguageVars(pkt.PunktLanguageVars):
-
                 _period_context_fmt = r"""
                     %(SentEndChars)s             # a potential sentence ending
                     (\)\"\s)\s*                  # other end chars and

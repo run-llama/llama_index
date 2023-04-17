@@ -9,10 +9,12 @@ from gpt_index.indices.query.query_transform.base import (
     StepDecomposeQueryTransform,
 )
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.response_builder import BaseResponseBuilder, ResponseMode, get_response_builder
+from gpt_index.indices.response.response_builder import (
+    BaseResponseBuilder,
+    ResponseMode,
+    get_response_builder,
+)
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.response.schema import RESPONSE_TYPE, Response
 
@@ -201,8 +203,8 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
 
         # synthesize a final response
         final_response_str = self.response_builder.get_response(
-            text_chunks,
-            query_bundle.query_str,
+            query_str=query_bundle.query_str,
+            text_chunks=text_chunks,
             **self._response_kwargs,
         )
         if isinstance(final_response_str, Generator):

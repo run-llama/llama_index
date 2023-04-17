@@ -283,7 +283,7 @@ def test_recursive_query_vector_table_query_configs(
                 "refine_template": MOCK_REFINE_PROMPT,
                 "similarity_top_k": 2,
                 "node_postprocessors": [
-                    KeywordNodePostprocessor(required_keywords=['v2'])
+                    KeywordNodePostprocessor(required_keywords=["v2"])
                 ],
             },
         ),
@@ -296,7 +296,7 @@ def test_recursive_query_vector_table_query_configs(
                 "refine_template": MOCK_REFINE_PROMPT,
                 "similarity_top_k": 2,
                 "node_postprocessors": [
-                    KeywordNodePostprocessor(required_keywords=['world'])
+                    KeywordNodePostprocessor(required_keywords=["world"])
                 ],
             },
         ),

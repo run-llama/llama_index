@@ -328,15 +328,21 @@ def test_query_with_keywords(
 
     # test query with keywords
     query_str = "What is?"
-    keyword_filter = KeywordNodePostprocessor(required_keywords=['test'])
-    response = index.query(query_str, mode="default", **query_kwargs, node_postprocessors=[keyword_filter])
+    keyword_filter = KeywordNodePostprocessor(required_keywords=["test"])
+    response = index.query(
+        query_str, mode="default", **query_kwargs, node_postprocessors=[keyword_filter]
+    )
     expected_answer = (
         "What is?:This is a test.:" "This is another test.:" "This is a test v2."
     )
     assert str(response) == expected_answer
 
-    keyword_filter = KeywordNodePostprocessor(required_keywords=[], exclude_keywords=['test'])
-    response = index.query(query_str, mode="default", **query_kwargs, node_postprocessors=[keyword_filter])
+    keyword_filter = KeywordNodePostprocessor(
+        required_keywords=[], exclude_keywords=["test"]
+    )
+    response = index.query(
+        query_str, mode="default", **query_kwargs, node_postprocessors=[keyword_filter]
+    )
     assert str(response) == ("What is?:Hello world.")
 
 

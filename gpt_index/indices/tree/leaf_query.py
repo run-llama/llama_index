@@ -11,12 +11,20 @@ from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import get_response_builder
+from gpt_index.indices.response.response_synthesis import get_text_from_node
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
+from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
     DEFAULT_QUERY_PROMPT_MULTIPLE,
+    DEFAULT_TEXT_QA_PROMPT,
 )
-from gpt_index.prompts.prompts import TreeSelectMultiplePrompt, TreeSelectPrompt
+from gpt_index.prompts.prompts import (
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    TreeSelectMultiplePrompt,
+    TreeSelectPrompt,
+)
 from gpt_index.response.schema import Response
 
 logger = logging.getLogger(__name__)
@@ -49,12 +57,16 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         self,
         index_struct: IndexGraph,
         query_template: Optional[TreeSelectPrompt] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
+        refine_template: Optional[RefinePrompt] = None,
         query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
         child_branch_factor: int = 1,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct, **kwargs)
+        self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self.query_template = query_template or DEFAULT_QUERY_PROMPT
         self.query_template_multiple = (
             query_template_multiple or DEFAULT_QUERY_PROMPT_MULTIPLE
@@ -79,13 +91,12 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         if len(self.index_struct.get_children(selected_node)) == 0:
             response_builder = get_response_builder(
                 self._service_context,
-                self.text_qa_template,
-                self.refine_template,
+                self._text_qa_template,
+                self._refine_template,
             )
-            self.response_builder.add_node_as_source(selected_node)
             # use response builder to get answer from node
-            node_text = self._get_text_from_node(selected_node, level=level)
-            cur_response = response_builder.get_response_over_chunks(
+            node_text = get_text_from_node(selected_node, level=level)
+            cur_response = response_builder.get_response(
                 query_str, [node_text], prev_response=prev_response
             )
             cur_response = cast(str, cur_response)
@@ -105,7 +116,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
                 cur_response,
                 formatted_refine_prompt,
             ) = self._service_context.llm_predictor.predict(
-                self.refine_template,
+                self._refine_template,
                 query_str=query_str,
                 existing_answer=prev_response,
                 context_msg=context_msg,
@@ -240,7 +251,8 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             query_bundle,
             level=0,
         ).strip()
-        return Response(response_str, source_nodes=self.response_builder.get_sources())
+        # TODO: fix source nodes
+        return Response(response_str, source_nodes=[])
 
     def _select_nodes(
         self,

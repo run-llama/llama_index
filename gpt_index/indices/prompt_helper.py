@@ -5,7 +5,7 @@ structs but keeping token limitations in mind.
 
 """
 
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Sequence
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP
 from gpt_index.data_structs.node_v2 import Node
@@ -219,7 +219,9 @@ class PromptHelper:
             number += 1
         return "\n\n".join(results)
 
-    def compact_text_chunks(self, prompt: Prompt, text_chunks: List[str]) -> List[str]:
+    def compact_text_chunks(
+        self, prompt: Prompt, text_chunks: Sequence[str]
+    ) -> List[str]:
         """Compact text chunks.
 
         This will combine text chunks into consolidated chunks

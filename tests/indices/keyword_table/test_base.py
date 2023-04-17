@@ -238,11 +238,13 @@ def test_query(
     )
     documents2 = [Document(doc_text)]
     table2 = GPTSimpleKeywordTableIndex.from_documents(documents2)
-    keyword_filter = KeywordNodePostprocessor(required_keywords=['v2'])
+    keyword_filter = KeywordNodePostprocessor(required_keywords=["v2"])
     response = table2.query("This", mode="simple", node_postprocessors=[keyword_filter])
     assert str(response) == "This:This is a test v2"
 
     # test exclude_keywords
-    keyword_filter = KeywordNodePostprocessor(exclude_keywords=['world'])
-    response = table2.query("Hello", mode="simple", node_postprocessors=[keyword_filter])
+    keyword_filter = KeywordNodePostprocessor(exclude_keywords=["world"])
+    response = table2.query(
+        "Hello", mode="simple", node_postprocessors=[keyword_filter]
+    )
     assert str(response) == "Hello:Hello foo"

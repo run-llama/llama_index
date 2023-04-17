@@ -8,7 +8,10 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.knowledge_graph.query import GPTKGTableQuery
-from gpt_index.indices.postprocessor.node import KeywordNodePostprocessor, SimilarityPostprocessor
+from gpt_index.indices.postprocessor.node import (
+    KeywordNodePostprocessor,
+    SimilarityPostprocessor,
+)
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 from gpt_index.readers.schema.base import Document
@@ -259,7 +262,7 @@ def test_query(
 
     # test keyword filter
     # NOTE: all nodes will be excluded except triplets (and it will be blank)
-    keyword_filter = KeywordNodePostprocessor(exclude_keywords=['foo'])
+    keyword_filter = KeywordNodePostprocessor(exclude_keywords=["foo"])
     response = index.query("foo", node_postprocessors=[keyword_filter])
     assert "foo:The following are knowledge triplets" in str(response)
 
@@ -267,7 +270,9 @@ def test_query(
     query = GPTKGTableQuery(
         index.index_struct,
         service_context=index.service_context,
-        response_synthesizer=ResponseSynthesizer.from_args(service_context=index.service_context),
+        response_synthesizer=ResponseSynthesizer.from_args(
+            service_context=index.service_context
+        ),
         docstore=index.docstore,
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
     )
@@ -282,7 +287,9 @@ def test_query(
     query = GPTKGTableQuery(
         index.index_struct,
         service_context=index.service_context,
-        response_synthesizer=ResponseSynthesizer.from_args(service_context=index.service_context),
+        response_synthesizer=ResponseSynthesizer.from_args(
+            service_context=index.service_context
+        ),
         docstore=index.docstore,
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
         include_text=False,

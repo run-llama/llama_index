@@ -9,8 +9,10 @@ import pytest
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.postprocessor.base import BasePostprocessor
-from gpt_index.indices.postprocessor.node import KeywordNodePostprocessor, SimilarityPostprocessor
+from gpt_index.indices.postprocessor.node import (
+    KeywordNodePostprocessor,
+    SimilarityPostprocessor,
+)
 from gpt_index.indices.vector_store.vector_indices import (
     GPTFaissIndex,
     GPTSimpleVectorIndex,
@@ -462,8 +464,10 @@ def test_simple_query(
     # test with keyword filter (required)
     query_kwargs_copy = query_kwargs.copy()
     query_kwargs_copy["similarity_top_k"] = 5
-    keyword_filter = KeywordNodePostprocessor(required_keywords=['Hello'])
-    response = index.query(query_str, **query_kwargs_copy, node_postprocessors=[keyword_filter])
+    keyword_filter = KeywordNodePostprocessor(required_keywords=["Hello"])
+    response = index.query(
+        query_str, **query_kwargs_copy, node_postprocessors=[keyword_filter]
+    )
     assert str(response) == ("What is?:Hello world.")
 
     # test with keyword filter (exclude)
@@ -471,8 +475,10 @@ def test_simple_query(
     index.insert(Document(text="This is bar test."))
     query_kwargs_copy = query_kwargs.copy()
     query_kwargs_copy["similarity_top_k"] = 2
-    keyword_filter = KeywordNodePostprocessor(exclude_keywords=['another'])
-    response = index.query(query_str, **query_kwargs_copy, node_postprocessors=[keyword_filter])
+    keyword_filter = KeywordNodePostprocessor(exclude_keywords=["another"])
+    response = index.query(
+        query_str, **query_kwargs_copy, node_postprocessors=[keyword_filter]
+    )
     assert str(response) == ("What is?:This is bar test.")
 
 
@@ -586,17 +592,20 @@ def test_query_and_similarity_scores_with_cutoff(
     index_kwargs, query_kwargs = struct_kwargs
     index = GPTSimpleVectorIndex.from_documents([document], **index_kwargs)
 
-
     # test embedding query - no nodes
     query_str = "What is?"
     similarity_threshold = SimilarityPostprocessor(similarity_cutoff=1.1)
-    response = index.query(query_str, node_postprocessors=[similarity_threshold], **query_kwargs)
+    response = index.query(
+        query_str, node_postprocessors=[similarity_threshold], **query_kwargs
+    )
     assert len(response.source_nodes) == 0
 
     # test embedding query - 1 node
     query_str = "What is?"
     similarity_threshold = SimilarityPostprocessor(similarity_cutoff=0.9)
-    response = index.query(query_str, node_postprocessors=[similarity_threshold], **query_kwargs)
+    response = index.query(
+        query_str, node_postprocessors=[similarity_threshold], **query_kwargs
+    )
     assert len(response.source_nodes) == 1
 
 

@@ -1,5 +1,4 @@
 """Default query for GPTEmptyIndex."""
-from ast import Dict
 from typing import Any, List, Optional
 
 from gpt_index.data_structs.data_structs_v2 import EmptyIndex
@@ -9,11 +8,6 @@ from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.type import ResponseMode
 from gpt_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from gpt_index.prompts.prompts import SimpleInputPrompt
-from gpt_index.response.schema import (
-    RESPONSE_TYPE,
-    Response,
-    StreamingResponse,
-)
 
 
 class GPTEmptyIndexQuery(BaseGPTIndexQuery[EmptyIndex]):
@@ -46,14 +40,13 @@ class GPTEmptyIndexQuery(BaseGPTIndexQuery[EmptyIndex]):
         return []
 
     @classmethod
-    def from_args(cls, 
+    def from_args(  # type: ignore
+        cls,
         response_mode: ResponseMode = ResponseMode.GENERATION,
         **kwargs: Any,
-    ):
-        if response_mode != ResponseMode.GENERATION: 
-            raise ValueError(
-                "response_mode should not be specified for empty query"
-            )
+    ) -> BaseGPTIndexQuery:
+        if response_mode != ResponseMode.GENERATION:
+            raise ValueError("response_mode should not be specified for empty query")
 
         return super().from_args(
             response_mode=response_mode,

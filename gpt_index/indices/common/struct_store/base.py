@@ -109,13 +109,15 @@ class SQLDocumentContextBuilder:
             prompt_with_schema,
             refine_prompt_with_schema,
         )
-        text_chunks= []
+        text_chunks = []
         for doc in documents:
             chunks = text_splitter.split_text(doc.get_text())
             text_chunks.extend(chunks)
 
         # feed in the "query_str" or the task
-        table_context = response_builder.get_response(text_chunks=text_chunks, query_str=self._table_context_task)
+        table_context = response_builder.get_response(
+            text_chunks=text_chunks, query_str=self._table_context_task
+        )
         return cast(str, table_context)
 
 

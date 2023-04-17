@@ -24,7 +24,11 @@ from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 from gpt_index.indices.response.response_builder import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt, SimpleInputPrompt
+from gpt_index.prompts.prompts import (
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    SimpleInputPrompt,
+)
 from gpt_index.response.schema import (
     RESPONSE_TYPE,
 )
@@ -90,10 +94,10 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
 
         self.node_preprocessors = node_postprocessors or []
         self._verbose = verbose
-    
 
     @classmethod
-    def from_args(cls, 
+    def from_args(
+        cls,
         index_struct: IS,
         service_context: ServiceContext,
         docstore: Optional[DocumentStore] = None,
@@ -110,7 +114,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         # class-specific args
         **kwargs: Any,
-    ):
+    ) -> "BaseGPTIndexQuery":
         response_synthesizer = ResponseSynthesizer.from_args(
             service_context=service_context,
             text_qa_template=text_qa_template,
@@ -120,7 +124,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
             response_kwargs=response_kwargs,
             use_async=use_async,
             streaming=streaming,
-            optimizer=optimizer
+            optimizer=optimizer,
         )
         return cls(
             index_struct=index_struct,
@@ -169,27 +173,29 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         # TODO: create a `display` method to allow subclasses to print the Node
         return similarity_tracker.get_zipped_nodes(nodes)
 
-    def synthesize(self, 
-            query_bundle: QueryBundle, 
-            nodes: Sequence[NodeWithScore], 
-            additional_source_nodes: Optional[Sequence[NodeWithScore]]= None,
-        ) -> RESPONSE_TYPE:
-            return self._response_synthesizer.synthesize(
-                query_bundle=query_bundle, 
-                nodes=nodes, 
-                additional_source_nodes=additional_source_nodes
-            )
+    def synthesize(
+        self,
+        query_bundle: QueryBundle,
+        nodes: Sequence[NodeWithScore],
+        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+    ) -> RESPONSE_TYPE:
+        return self._response_synthesizer.synthesize(
+            query_bundle=query_bundle,
+            nodes=nodes,
+            additional_source_nodes=additional_source_nodes,
+        )
 
-    async def asynthesize(self, 
-            query_bundle: QueryBundle, 
-            nodes: Sequence[NodeWithScore], 
-            additional_source_nodes: Optional[Sequence[NodeWithScore]]= None,
-        ) -> RESPONSE_TYPE:
-            return await self._response_synthesizer.asynthesize(
-                query_bundle=query_bundle, 
-                nodes=nodes, 
-                additional_source_nodes=additional_source_nodes
-            )
+    async def asynthesize(
+        self,
+        query_bundle: QueryBundle,
+        nodes: Sequence[NodeWithScore],
+        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+    ) -> RESPONSE_TYPE:
+        return await self._response_synthesizer.asynthesize(
+            query_bundle=query_bundle,
+            nodes=nodes,
+            additional_source_nodes=additional_source_nodes,
+        )
 
     @llm_token_counter("query")
     def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:

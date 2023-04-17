@@ -7,7 +7,10 @@ import pytest
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.response_builder import ResponseMode, get_response_builder
+from gpt_index.indices.response.response_builder import (
+    ResponseMode,
+    get_response_builder,
+)
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
@@ -59,10 +62,14 @@ def test_give_response(
         text_qa_template=MOCK_TEXT_QA_PROMPT,
         refine_template=MOCK_REFINE_PROMPT,
     )
-    response = builder.get_response(text_chunks=['This is a single line.'], query_str=query_str)
+    response = builder.get_response(
+        text_chunks=["This is a single line."], query_str=query_str
+    )
 
     # test multiple lines
-    response = builder.get_response(text_chunks=[documents[0].get_text()], query_str=query_str)
+    response = builder.get_response(
+        text_chunks=[documents[0].get_text()], query_str=query_str
+    )
     expected_answer = (
         "What is?:"
         "Hello world.:"

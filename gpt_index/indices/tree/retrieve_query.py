@@ -1,15 +1,14 @@
 """Retrieve query."""
 import logging
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.data_structs.node_v2 import Node, NodeWithScore
+from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.utils import get_sorted_node_list
-from gpt_index.response.schema import RESPONSE_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +43,13 @@ class GPTTreeIndexRetQuery(BaseGPTIndexQuery[IndexGraph]):
         return get_sorted_node_list(root_nodes)
 
     @classmethod
-    def from_args(cls, 
+    def from_args(  # type: ignore
+        cls,
         response_mode: ResponseMode = ResponseMode.SIMPLE_SUMMARIZE,
         **kwargs: Any,
-    ):
-        if response_mode != ResponseMode.SIMPLE_SUMMARIZE: 
-            raise ValueError(
-                "response_mode should not be specified for retrieve query"
-            )
+    ) -> BaseGPTIndexQuery:
+        if response_mode != ResponseMode.SIMPLE_SUMMARIZE:
+            raise ValueError("response_mode should not be specified for retrieve query")
 
         return super().from_args(
             response_mode=response_mode,
