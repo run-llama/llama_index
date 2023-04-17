@@ -446,15 +446,15 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
 
     Args:
         deeplake_path (str, optional): Path to the deeplake dataset, where data will be
-        stored. Defaults to "mem://llama_index".
+        stored. Defaults to "llama_index".
         overwrite (bool, optional): Whether to overwrite existing dataset with same
             name. Defaults to False.
         token (str, optional): the deeplake token that allows you to access the dataset
             with proper access. Defaults to None.
         read_only (bool, optional): Whether to open the dataset with read only mode.
-        ingestion_batch_size (bool, 1024): used for controlling batched data injestion to
+        ingestion_batch_size (bool): used for controlling batched data injestion to
             deeplake dataset. Defaults to 1024.
-        ingestion_num_workers (int, 1): number of workers to use during data injestion. Defaults to 4.
+        ingestion_num_workers (int): number of workers to use during data injestion. Defaults to 4.
         overwrite (bool, optional): Whether to overwrite existing dataset with the new dataset
             with the same name.
 
@@ -468,7 +468,7 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
 
 
     Returns:
-        DeeplakeVectorstore: Vectorstore that supports add, delete, and query.
+        DeepLakeVectorstore: Vectorstore that supports add, delete, and query.
     """
 
     def __init__(
@@ -476,12 +476,13 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
-        vector_store: Optional[ChromaVectorStore] = None,
-        dataset_path: Optional[str] = None,
+        vector_store: Optional[DeepLakeVectorStore] = None,
+        dataset_path: Optional[str] = "llama_index",
         overwrite: bool = False,
         read_only: bool = False,
         ingestion_batch_size: int = 1024,
         ingestion_num_workers: int = 4,
+        token: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         vector_store = DeepLakeVectorStore(
@@ -490,8 +491,8 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
             read_only=read_only,
             ingestion_batch_size=ingestion_batch_size,
             ingestion_num_workers=ingestion_num_workers,
+            token=token,
         )
-
         super(GPTDeepLakeIndex, self).__init__(
             nodes=nodes,
             index_struct=index_struct,

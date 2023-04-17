@@ -41,7 +41,7 @@ class DeepLakeVectorStore(VectorStore):
 
     Args:
         deeplake_path (str, optional): Path to the deeplake dataset, where data will be
-        stored. Defaults to "mem://llama_index".
+        stored. Defaults to "llama_index".
         overwrite (bool, optional): Whether to overwrite existing dataset with same
             name. Defaults to False.
         token (str, optional): the deeplake token that allows you to access the dataset
@@ -66,21 +66,20 @@ class DeepLakeVectorStore(VectorStore):
         DeepLakeVectorstore: Vectorstore that supports add, delete, and query.
     """
 
-    _LLAMA_INDEX_DEFAULT_DEEPLAKE_PATH = "mem://llama_index"
     stores_text: bool = False
 
     def __init__(
         self,
-        dataset_path: str = _LLAMA_INDEX_DEFAULT_DEEPLAKE_PATH,
+        dataset_path: str = "llama_index",
         token: Optional[str] = None,
         read_only: Optional[bool] = False,
         ingestion_batch_size: int = 1024,
-        injestion_num_workers: int = 4,
-        overwrite=False,
+        ingestion_num_workers: int = 4,
+        overwrite: bool = False,
     ):
         """Initialize with Deep Lake client."""
         self.ingestion_batch_size = ingestion_batch_size
-        self.num_workers = injestion_num_workers
+        self.num_workers = ingestion_num_workers
         self.token = token
         self.read_only = read_only
         self.dataset_path = dataset_path
@@ -96,9 +95,7 @@ class DeepLakeVectorStore(VectorStore):
         self._deeplake = deeplake
 
         if deeplake.exists(dataset_path, token=token) and not overwrite:
-            self.ds = deeplake.load(
-                dataset_path, token=token, read_only=read_only, overwrite=overwrite
-            )
+            self.ds = deeplake.load(dataset_path, token=token, read_only=read_only)
             logger.warning(
                 f"Deep Lake Dataset in {dataset_path} already exists, "
                 f"loading from the storage"
@@ -154,7 +151,7 @@ class DeepLakeVectorStore(VectorStore):
             "token": self.token,
             "read_only": self.read_only,
             "ingestion_batch_size": self.ingestion_batch_size,
-            "num_workers": self.num_workers,
+            "ingestion_num_workers": self.num_workers,
         }
 
     @property
@@ -209,32 +206,15 @@ class DeepLakeVectorStore(VectorStore):
 
     def delete(
         self,
-        ids: Optional[List[str]] = None,
-        filter: Optional[Dict[str, str]] = None,
-        delete_all: Optional[bool] = None,
+        id: str,
     ) -> bool:
         """Delete the entities in the dataset
         Args:
-            ids (Optional[List[str]], optional): The document_ids to delete.
-                Defaults to None.
-            filter (Optional[Dict[str, str]], optional): The filter to delete by.
-                Defaults to None.
-            delete_all (Optional[bool], optional): Whether to drop the dataset.
-                Defaults to None.
+            id (Optional[str], optional): The id to delete.
         """
-        if delete_all:
-            self.ds.delete()
-            return True
-
         view = None
-        if ids:
-            view = self.ds.filter(lambda x: x["ids"].data()["value"] in ids)
-            ids = list(view.sample_indices)
-
-        if filter:
-            if view is None:
-                view = self.ds
-            view = view.filter(partial(dp_filter, filter=filter))
+        if id:
+            view = self.ds.filter(lambda x: x["ids"].numpy().tolist() == [id])
             ids = list(view.sample_indices)
 
         with self.ds:
@@ -242,7 +222,7 @@ class DeepLakeVectorStore(VectorStore):
                 self.ds.pop(id)
 
             self.ds.commit(f"deleted {len(ids)} samples", allow_empty=True)
-
+            self.ds.summary()
         return True
 
     def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
