@@ -34,7 +34,6 @@ class SimpleNodeParser(NodeParser):
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
-        include_extra_info: bool = True,
     ) -> List[Node]:
         """Parse document into nodes.
 
@@ -48,7 +47,7 @@ class SimpleNodeParser(NodeParser):
             nodes = get_nodes_from_document(
                 document,
                 self._text_splitter,
-                include_extra_info,
+                self._include_extra_info,
                 include_prev_next_rel=self._include_prev_next_rel,
             )
             all_nodes.extend(nodes)
