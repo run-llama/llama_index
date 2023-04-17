@@ -1,4 +1,4 @@
-# Storage Layer
+# Document Store
 
 LlamaIndex provides a high-level interface for ingesting, indexing, and querying your external data.
 
