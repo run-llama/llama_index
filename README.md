@@ -14,8 +14,8 @@ Discord: https://discord.gg/dGcwcsnxhU.
 
 ### Ecosystem
 
-LlamaHub (community library of data loaders): https://llamahub.ai
-Llama Lab (cutting-edge AGI projects using LlamaIndex): https://github.com/run-llama/llama-lab
+- LlamaHub (community library of data loaders): https://llamahub.ai
+- Llama Lab (cutting-edge AGI projects using LlamaIndex): https://github.com/run-llama/llama-lab
 
 
 ## 🚀 Overview
