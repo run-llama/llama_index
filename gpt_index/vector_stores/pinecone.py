@@ -308,7 +308,7 @@ class PineconeVectorStore(VectorStore):
                 0
             ]
             if query.alpha is not None:
-                new_sparse_vector = {
+                sparse_vector = {
                     "indices": sparse_vector["indices"],
                     "values": [v * (1 - query.alpha) for v in sparse_vector["values"]],
                 }
@@ -321,7 +321,7 @@ class PineconeVectorStore(VectorStore):
 
         response = self._pinecone_index.query(
             vector=query_embedding,
-            sparse_vector=new_sparse_vector,
+            sparse_vector=sparse_vector,
             top_k=query.similarity_top_k,
             include_values=True,
             include_metadata=True,
