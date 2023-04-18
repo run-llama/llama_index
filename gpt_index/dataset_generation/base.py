@@ -72,7 +72,7 @@ class DatasetGenerator:
         Generates questions for each document.
         """
 
-        def document_question_generator(chunks):
+        def document_question_generator(chunks) -> List[str]:
             questions = []
 
             for chunk in chunks:
