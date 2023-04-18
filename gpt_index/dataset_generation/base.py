@@ -95,7 +95,7 @@ class DatasetGenerator:
                     use_async=True,
                 )
 
-                result = response.response.strip().split("\n")
+                result = str(response).strip().split("\n")
                 cleaned_questions = [
                     re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
                 ]
