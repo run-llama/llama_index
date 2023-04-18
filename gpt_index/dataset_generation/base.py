@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from typing import List, Optional
-from pathlib import Path
 import re
 
 from gpt_index import (
@@ -86,7 +85,8 @@ class DatasetGenerator:
                 )
 
                 response = index.query(
-                    f"You are a Teacher/ Professor. Your task is to setup {self.num_questions_per_chunk} questions for an upcoming \
+                    f"You are a Teacher/ Professor. Your task is to setup \
+                        {self.num_questions_per_chunk} questions for an upcoming \
                         quiz/examination. The questions should be diverse in nature \
                             across the document. Restrict the questions to the \
                                 context information provided.",
