@@ -31,6 +31,7 @@ jobs:
       - name: Use package
         run: |
           cd dist
+          python -m pip install --find-links=. gpt-index
           python -m pip install --no-index --find-links=. gpt-index
       - name: Run import
         run: |
