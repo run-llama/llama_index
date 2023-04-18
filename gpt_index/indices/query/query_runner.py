@@ -171,7 +171,6 @@ class QueryRunner:
         query_context = self._query_context.get(index_struct.index_id, {})
         query_kwargs.update(query_context)
 
-        print(query_kwargs)
         query_obj = query_cls.from_args(
             index_struct=index_struct,
             docstore=self._docstore,
