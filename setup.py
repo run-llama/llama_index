@@ -14,6 +14,7 @@ install_requires = [
     "dataclasses_json",
     "langchain>=0.0.123",
     "numpy",
+    "jinja2",
     "tenacity>=8.2.0,<9.0.0",
     "openai>=0.26.4",
     "pandas",
