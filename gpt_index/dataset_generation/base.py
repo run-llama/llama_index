@@ -41,7 +41,7 @@ class DatasetGenerator:
 
     def __init__(
         self,
-        data_folder: Path,
+        data_folder: Optional[str],
         model_name: str = "gpt-3.5-turbo",
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[QuestionAnswerPrompt] = None,
