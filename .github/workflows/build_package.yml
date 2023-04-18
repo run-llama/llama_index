@@ -26,13 +26,15 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          python -m pip install wheel setuptools
-          python setup.py sdist bdist_wheel
-      - name: Use package
+          python -m pip install build
+      - name: Build
         run: |
-          cd dist
-          python -m pip install --find-links=. gpt-index
-      - name: Run import
+          python -m build --sdist --wheel .
+      - name: Test installing package
+        run: |
+          python -m pip install .
+      - name: Test import
+        working-directory: ${{ vars.RUNNER_TEMP }}
         run: |
           python -c "import gpt_index"
         
