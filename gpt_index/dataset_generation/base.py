@@ -11,20 +11,18 @@ from gpt_index import (
     QuestionAnswerPrompt,
     ServiceContext,
     SimpleDirectoryReader,
-    LLMPredictor
+    LLMPredictor,
 )
 
 from langchain.chat_models import ChatOpenAI
-from llama_index.langchain_helpers.text_splitter import (
-    TokenTextSplitter
-)
+from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 
-DEFAULT_QUESTION_GENERATION_PROMPT = '''"Context information is below.\n"
+DEFAULT_QUESTION_GENERATION_PROMPT = """"Context information is below.\n"
 "\n---------------------\n{context_str}\n---------------------\n"
 "Given the context information and not prior knowledge.\n"
 "generate only questions based on the below query.\n"
 "{query_str}\n"
-'''
+"""
 
 
 class DatasetGenerator:
@@ -43,28 +41,29 @@ class DatasetGenerator:
 
     def __init__(
         self,
-        data_folder: Path = None,
+        data_folder: Path,
         model_name: str = "gpt-3.5-turbo",
         num_questions_per_chunk: int = 10,
-        text_question_template: Optional[QuestionAnswerPrompt] = None
+        text_question_template: Optional[QuestionAnswerPrompt] = None,
     ) -> None:
         """Init params."""
         self.documents = SimpleDirectoryReader(data_folder).load_data()
         self.model_name = model_name
         self.num_questions_per_chunk = num_questions_per_chunk
         self.text_question_template = text_question_template or QuestionAnswerPrompt(
-            DEFAULT_QUESTION_GENERATION_PROMPT)
+            DEFAULT_QUESTION_GENERATION_PROMPT
+        )
         self.document_chunks = self.create_document_chunks()
 
     def create_document_chunks(self) -> List[List[str]]:
         """
         Creates chunks for each document.
         """
-        text_splitter = TokenTextSplitter(
-            chunk_size=1000, chunk_overlap=100)
+        text_splitter = TokenTextSplitter(chunk_size=1000, chunk_overlap=100)
 
-        document_chunks = [text_splitter.split_text(document.text)
-                           for document in self.documents]
+        document_chunks = [
+            text_splitter.split_text(document.text) for document in self.documents
+        ]
 
         return document_chunks
 
@@ -79,10 +78,12 @@ class DatasetGenerator:
             for chunk in chunks:
                 index = GPTListIndex.from_documents([Document(chunk)])
 
-                llm_predictor = LLMPredictor(llm=ChatOpenAI(
-                    temperature=0, model_name=self.model_name))
+                llm_predictor = LLMPredictor(
+                    llm=ChatOpenAI(temperature=0, model_name=self.model_name)
+                )
                 service_context = ServiceContext.from_defaults(
-                    llm_predictor=llm_predictor, chunk_size_limit=3000)
+                    llm_predictor=llm_predictor, chunk_size_limit=3000
+                )
 
                 response = index.query(
                     f"You are a Teacher/ Professor. Your task is to setup {self.num_questions_per_chunk} questions for an upcoming \
@@ -91,19 +92,21 @@ class DatasetGenerator:
                                 context information provided.",
                     service_context=service_context,
                     text_qa_template=self.text_question_template,
-                    use_async=True
+                    use_async=True,
                 )
 
                 result = response.response.strip().split("\n")
-                cleaned_questions = [re.sub(r'^\d+[\).\s]', '', question).strip()
-                                     for question in result]
+                cleaned_questions = [
+                    re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
+                ]
                 questions.extend(cleaned_questions)
 
-            questions = [question for question in questions if question != '']
+            questions = [question for question in questions if question != ""]
 
             return questions
 
-        questions = [document_question_generator(
-            chunks) for chunks in self.document_chunks]
+        questions = [
+            document_question_generator(chunks) for chunks in self.document_chunks
+        ]
 
         return questions
