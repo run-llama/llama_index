@@ -24,6 +24,9 @@ class IndexStructType(str, Enum):
         PINECONE ("pinecone"): Pinecone Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Pinecone vector store index.
+        DEEPLAKE ("deeplake"): DeepLake Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Pinecone vector store index.
         QDRANT ("qdrant"): Qdrant Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Qdrant vector store index.
@@ -65,7 +68,7 @@ class IndexStructType(str, Enum):
     VECTOR_STORE = "vector_store"
     OPENSEARCH = "opensearch"
     CHATGPT_RETRIEVAL_PLUGIN = "chatgpt_retrieval_plugin"
-
+    DEEPLAKE = "deeplake"
     # for SQL index
     SQL = "sql"
     # for KG index

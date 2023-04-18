@@ -141,6 +141,14 @@ class DeepLakeVectorStore(VectorStore):
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
+        """Initialize a VectorStore from a dictionary
+
+        Args:
+            config_dict (Dict[str, Any]): dictionary of configuration
+
+        Returns:
+            VectorStore: loaded DeepLakeVectorStore
+        """
         return cls(**config_dict)
 
     @property
@@ -160,6 +168,22 @@ class DeepLakeVectorStore(VectorStore):
         return self.ds
 
     def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
+        """Add the embeddings and their nodes into DeepLake.
+
+        Args:
+            embedding_results (List[NodeEmbeddingResult]): The embeddings and their data
+                to insert.
+
+        Raises:
+            UserNotLoggedinException: When user is not logged in with credentials
+                or token.
+            TokenPermissionError: When dataset does not exist or user doesn't have
+                enough permissions to modify the dataset.
+            InvalidTokenException: If the specified token is invalid
+
+        Returns:
+            List[str]: List of ids inserted.
+        """
         data_to_injest = []
         ids = []
 
@@ -226,10 +250,17 @@ class DeepLakeVectorStore(VectorStore):
         return True
 
     def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        """Query index for top k most similar nodes.
+
+        Args:
+            query_embedding (List[float]): query embedding
+            similarity_top_k (int): top k most similar nodes
+        """
         query_embedding = query.query_embedding
         embeddings = self.ds.embedding.numpy(fetch_chunks=True)
         embedding_ids = self.ds.ids.numpy(fetch_chunks=True)
         embedding_ids = [str(embedding_id[0]) for embedding_id in embedding_ids]
+
         top_similarities, top_ids = get_top_k_embeddings(
             query_embedding,
             embeddings,
