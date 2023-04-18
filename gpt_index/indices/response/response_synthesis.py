@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class ResponseSynthesizer:
     def __init__(
         self,
-        response_builder: BaseResponseBuilder,
+        response_builder: Optional[BaseResponseBuilder],
         response_mode: ResponseMode,
         response_kwargs: Optional[Dict] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
@@ -60,15 +60,17 @@ class ResponseSynthesizer:
         response_kwargs: Optional[Dict] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
     ) -> "ResponseSynthesizer":
-        response_builder = get_response_builder(
-            service_context,
-            text_qa_template,
-            refine_template,
-            simple_template,
-            response_mode,
-            use_async=use_async,
-            streaming=streaming,
-        )
+        response_builder: Optional[BaseResponseBuilder] = None
+        if response_mode != ResponseMode.NO_TEXT:
+            response_builder = get_response_builder(
+                service_context,
+                text_qa_template,
+                refine_template,
+                simple_template,
+                response_mode,
+                use_async=use_async,
+                streaming=streaming,
+            )
         return cls(response_builder, response_mode, response_kwargs, optimizer)
 
     def _get_extra_info_for_response(
@@ -117,6 +119,7 @@ class ResponseSynthesizer:
             text_chunks.append(text)
 
         if self._response_mode != ResponseMode.NO_TEXT:
+            assert self._response_builder is not None
             response_str = self._response_builder.get_response(
                 query_str=query_bundle.query_str,
                 text_chunks=text_chunks,
@@ -144,6 +147,7 @@ class ResponseSynthesizer:
             text_chunks.append(text)
 
         if self._response_mode != ResponseMode.NO_TEXT:
+            assert self._response_builder is not None
             response_str = await self._response_builder.aget_response(
                 query_str=query_bundle.query_str,
                 text_chunks=text_chunks,
