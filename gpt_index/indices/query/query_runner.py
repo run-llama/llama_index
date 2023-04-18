@@ -13,9 +13,13 @@ from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.docstore import BaseDocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_combiner.base import (
-    BaseQueryCombiner, get_default_query_combiner)
+    BaseQueryCombiner,
+    get_default_query_combiner,
+)
 from gpt_index.indices.query.query_transform.base import (
-    BaseQueryTransform, IdentityQueryTransform)
+    BaseQueryTransform,
+    IdentityQueryTransform,
+)
 from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.response.schema import RESPONSE_TYPE

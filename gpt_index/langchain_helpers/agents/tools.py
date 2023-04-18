@@ -6,8 +6,7 @@ from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.composability.graph import (QUERY_CONFIG_TYPE,
-                                                   ComposableGraph)
+from gpt_index.indices.composability.graph import QUERY_CONFIG_TYPE, ComposableGraph
 from gpt_index.response.schema import RESPONSE_TYPE
 
 
@@ -15,10 +14,13 @@ def _get_response_with_sources(response: RESPONSE_TYPE) -> str:
     """Return a response with source node info."""
     source_data = []
     for source_node in response.source_nodes:
-        source_data.append(source_node.node.node_info)
-        source_data[-1]['ref_doc_id'] = source_node.node.ref_doc_id
-        source_data[-1]['score'] = source_node.score
-    return str({'answer': str(response), 'sources': source_data})
+        metadata = (
+            source_node.node.node_info if source_node.node.node_info is not None else {}
+        )
+        source_data.append(metadata)
+        source_data[-1]["ref_doc_id"] = source_node.node.ref_doc_id
+        source_data[-1]["score"] = source_node.score
+    return str({"answer": str(response), "sources": source_data})
 
 
 class IndexToolConfig(BaseModel):
@@ -62,7 +64,7 @@ class LlamaIndexTool(BaseTool):
     @classmethod
     def from_tool_config(cls, tool_config: IndexToolConfig) -> "LlamaIndexTool":
         """Create a tool from a tool config."""
-        return_sources = tool_config.tool_kwargs.pop('return_sources', False)
+        return_sources = tool_config.tool_kwargs.pop("return_sources", False)
         return cls(
             index=tool_config.index,
             name=tool_config.name,
@@ -96,7 +98,7 @@ class LlamaGraphTool(BaseTool):
     @classmethod
     def from_tool_config(cls, tool_config: GraphToolConfig) -> "LlamaGraphTool":
         """Create a tool from a tool config."""
-        return_sources = tool_config.tool_kwargs.pop('return_sources', False)
+        return_sources = tool_config.tool_kwargs.pop("return_sources", False)
         return cls(
             graph=tool_config.graph,
             name=tool_config.name,
