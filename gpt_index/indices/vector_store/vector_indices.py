@@ -1,8 +1,6 @@
 """Deprecated vector store indices."""
 
-from typing import Any, Dict, Optional, Sequence, Type, Callable
-
-from requests.adapters import Retry
+from typing import Any, Callable, Dict, Optional, Sequence, Type
 
 from gpt_index.data_structs.data_structs_v2 import (
     ChatGPTRetrievalPluginIndexDict,
@@ -23,6 +21,7 @@ from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.vector_stores import (
     ChatGPTRetrievalPluginClient,
     ChromaVectorStore,
+    DeepLakeVectorStore,
     FaissVectorStore,
     MilvusVectorStore,
     PineconeVectorStore,
@@ -34,6 +33,7 @@ from gpt_index.vector_stores.opensearch import (
     OpensearchVectorClient,
     OpensearchVectorStore,
 )
+from requests.adapters import Retry
 
 
 class GPTSimpleVectorIndex(GPTVectorStoreIndex):
@@ -427,6 +427,74 @@ class GPTMilvusIndex(GPTVectorStoreIndex):
         assert vector_store is not None
 
         super().__init__(
+            nodes=nodes,
+            index_struct=index_struct,
+            service_context=service_context,
+            vector_store=vector_store,
+            **kwargs,
+        )
+
+
+class GPTDeepLakeIndex(GPTVectorStoreIndex):
+    """GPT DeepLake Vector Store.
+
+    In this vector store we store the text, its embedding and
+    a few pieces of its metadata in a deeplake dataset. This implemnetation
+    allows the use of an already existing deeplake dataset if it is one that was created
+    this vector store. It also supports creating a new one if the dataset doesnt
+    exist or if `overwrite` is set to True.
+
+    Args:
+        deeplake_path (str, optional): Path to the deeplake dataset, where data will be
+        stored. Defaults to "llama_index".
+        overwrite (bool, optional): Whether to overwrite existing dataset with same
+            name. Defaults to False.
+        token (str, optional): the deeplake token that allows you to access the dataset
+            with proper access. Defaults to None.
+        read_only (bool, optional): Whether to open the dataset with read only mode.
+        ingestion_batch_size (bool): used for controlling batched data injestion to
+            deeplake dataset. Defaults to 1024.
+        ingestion_num_workers (int): number of workers to use during data injestion.
+            Defaults to 4.
+        overwrite (bool, optional): Whether to overwrite existing dataset with the
+            new dataset with the same name.
+
+    Raises:
+        ImportError: Unable to import `deeplake`.
+        UserNotLoggedinException: When user is not logged in with credentials
+            or token.
+        TokenPermissionError: When dataset does not exist or user doesn't have
+            enough permissions to modify the dataset.
+        InvalidTokenException: If the specified token is invalid
+
+
+    Returns:
+        DeepLakeVectorstore: Vectorstore that supports add, delete, and query.
+    """
+
+    def __init__(
+        self,
+        nodes: Optional[Sequence[Node]] = None,
+        index_struct: Optional[IndexDict] = None,
+        service_context: Optional[ServiceContext] = None,
+        vector_store: Optional[DeepLakeVectorStore] = None,
+        dataset_path: str = "llama_index",
+        overwrite: bool = False,
+        read_only: bool = False,
+        ingestion_batch_size: int = 1024,
+        ingestion_num_workers: int = 4,
+        token: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
+        vector_store = DeepLakeVectorStore(
+            dataset_path=dataset_path,
+            overwrite=overwrite,
+            read_only=read_only,
+            ingestion_batch_size=ingestion_batch_size,
+            ingestion_num_workers=ingestion_num_workers,
+            token=token,
+        )
+        super(GPTDeepLakeIndex, self).__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,

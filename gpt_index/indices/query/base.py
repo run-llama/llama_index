@@ -68,6 +68,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         response_synthesizer: ResponseSynthesizer,
         docstore: Optional[BaseDocumentStore] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        include_extra_info: bool = False,
         verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
@@ -94,6 +95,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
 
         self._node_postprocessors = node_postprocessors or []
         self._verbose = verbose
+        self._include_extra_info = include_extra_info
 
     @classmethod
     def from_args(
