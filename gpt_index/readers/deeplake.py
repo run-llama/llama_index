@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 import numpy as np
 from gpt_index.readers.base import BaseReader
