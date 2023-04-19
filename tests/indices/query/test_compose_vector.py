@@ -13,6 +13,7 @@ from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from gpt_index.indices.postprocessor.node import KeywordNodePostprocessor
 from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.vector_store.vector_indices import (
     GPTPineconeIndex,
@@ -281,7 +282,9 @@ def test_recursive_query_vector_table_query_configs(
                 "text_qa_template": MOCK_TEXT_QA_PROMPT,
                 "refine_template": MOCK_REFINE_PROMPT,
                 "similarity_top_k": 2,
-                "required_keywords": ["v2"],
+                "node_postprocessors": [
+                    KeywordNodePostprocessor(required_keywords=["v2"])
+                ],
             },
         ),
         QueryConfig(
@@ -292,7 +295,9 @@ def test_recursive_query_vector_table_query_configs(
                 "text_qa_template": MOCK_TEXT_QA_PROMPT,
                 "refine_template": MOCK_REFINE_PROMPT,
                 "similarity_top_k": 2,
-                "required_keywords": ["world"],
+                "node_postprocessors": [
+                    KeywordNodePostprocessor(required_keywords=["world"])
+                ],
             },
         ),
     ]

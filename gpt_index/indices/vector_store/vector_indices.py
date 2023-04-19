@@ -454,9 +454,10 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
         read_only (bool, optional): Whether to open the dataset with read only mode.
         ingestion_batch_size (bool): used for controlling batched data injestion to
             deeplake dataset. Defaults to 1024.
-        ingestion_num_workers (int): number of workers to use during data injestion. Defaults to 4.
-        overwrite (bool, optional): Whether to overwrite existing dataset with the new dataset
-            with the same name.
+        ingestion_num_workers (int): number of workers to use during data injestion.
+            Defaults to 4.
+        overwrite (bool, optional): Whether to overwrite existing dataset with the
+            new dataset with the same name.
 
     Raises:
         ImportError: Unable to import `deeplake`.
@@ -477,7 +478,7 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         vector_store: Optional[DeepLakeVectorStore] = None,
-        dataset_path: Optional[str] = "llama_index",
+        dataset_path: str = "llama_index",
         overwrite: bool = False,
         read_only: bool = False,
         ingestion_batch_size: int = 1024,

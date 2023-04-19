@@ -4,8 +4,7 @@ An index that is built within DeepLake.
 
 """
 import logging
-from typing import Any, Dict, List, Optional
-from uuid import uuid4
+from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
@@ -42,11 +41,12 @@ class DeepLakeVectorStore(VectorStore):
         token (str, optional): the deeplake token that allows you to access the dataset
             with proper access. Defaults to None.
         read_only (bool, optional): Whether to open the dataset with read only mode.
-        ingestion_batch_size (bool, 1024): used for controlling batched data injestion to
-            deeplake dataset. Defaults to 1024.
-        injestion_num_workers (int, 1): number of workers to use during data injestion. Defaults to 4.
-        overwrite (bool, optional): Whether to overwrite existing dataset with the new dataset
-            with the same name.
+        ingestion_batch_size (bool, 1024): used for controlling batched data
+            injestion to deeplake dataset. Defaults to 1024.
+        injestion_num_workers (int, 1): number of workers to use during data injestion.
+            Defaults to 4.
+        overwrite (bool, optional): Whether to overwrite existing dataset with the
+            new dataset with the same name.
 
     Raises:
         ImportError: Unable to import `deeplake`.
@@ -200,7 +200,7 @@ class DeepLakeVectorStore(VectorStore):
             ids.append(id)
 
         @self._deeplake.compute
-        def ingest(sample_in: list, sample_out: list) -> None:
+        def ingest(sample_in: List[Dict], sample_out: Any) -> None:
             for item in sample_in:
                 sample_out.text.append(item["text"])
                 sample_out.metadata.append(item["metadata"])
@@ -223,17 +223,14 @@ class DeepLakeVectorStore(VectorStore):
         self.ds.summary()
         return ids
 
-    def delete(
-        self,
-        id: str,
-    ) -> bool:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete the entities in the dataset
         Args:
             id (Optional[str], optional): The id to delete.
         """
         view = None
-        if id:
-            view = self.ds.filter(lambda x: x["ids"].numpy().tolist() == [id])
+        if doc_id:
+            view = self.ds.filter(lambda x: x["ids"].numpy().tolist() == [doc_id])
             ids = list(view.sample_indices)
 
         with self.ds:
@@ -242,7 +239,6 @@ class DeepLakeVectorStore(VectorStore):
 
             self.ds.commit(f"deleted {len(ids)} samples", allow_empty=True)
             self.ds.summary()
-        return True
 
     def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
@@ -251,7 +247,7 @@ class DeepLakeVectorStore(VectorStore):
             query_embedding (List[float]): query embedding
             similarity_top_k (int): top k most similar nodes
         """
-        query_embedding = query.query_embedding
+        query_embedding = cast(List[float], query.query_embedding)
         embeddings = self.ds.embedding.numpy(fetch_chunks=True)
         embedding_ids = self.ds.ids.numpy(fetch_chunks=True)
         embedding_ids = [str(embedding_id[0]) for embedding_id in embedding_ids]

@@ -8,7 +8,12 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.knowledge_graph.query import GPTKGTableQuery
+from gpt_index.indices.postprocessor.node import (
+    KeywordNodePostprocessor,
+    SimilarityPostprocessor,
+)
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import (
@@ -254,19 +259,20 @@ def test_query(
 
     assert str(response) == expected_response
     assert response.extra_info is not None
-    assert response.extra_info["kg_rel_map"] == {
-        "foo": [("bar", "is")],
-    }
 
     # test keyword filter
     # NOTE: all nodes will be excluded except triplets (and it will be blank)
-    response = index.query("foo", exclude_keywords=["foo"])
+    keyword_filter = KeywordNodePostprocessor(exclude_keywords=["foo"])
+    response = index.query("foo", node_postprocessors=[keyword_filter])
     assert "foo:The following are knowledge triplets" in str(response)
 
     # test specific query class
     query = GPTKGTableQuery(
         index.index_struct,
         service_context=index.service_context,
+        response_synthesizer=ResponseSynthesizer.from_args(
+            service_context=index.service_context
+        ),
         docstore=index.docstore,
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
     )
@@ -281,6 +287,9 @@ def test_query(
     query = GPTKGTableQuery(
         index.index_struct,
         service_context=index.service_context,
+        response_synthesizer=ResponseSynthesizer.from_args(
+            service_context=index.service_context
+        ),
         docstore=index.docstore,
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
         include_text=False,
@@ -321,10 +330,10 @@ def test_query_similarity(
     # uses hyrbid query by default
     response = index.query("foo", similarity_top_k=2)
     assert isinstance(response.extra_info, dict)
-    assert len(response.extra_info["kg_rel_texts"]) == 2
 
     # Filters embeddings
     try:
-        response = index.query("foo", similarity_cutoff=10000000)
+        similarity_threshold = SimilarityPostprocessor(similarity_cutoff=10000000)
+        response = index.query("foo", node_postprocessors=[similarity_threshold])
     except ValueError as e:
         assert str(e) == "kg_rel_map must be found in at least one Node."

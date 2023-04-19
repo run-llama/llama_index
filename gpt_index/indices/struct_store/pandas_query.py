@@ -110,7 +110,7 @@ class GPTNLPandasIndexQuery(BaseGPTIndexQuery[PandasStructTable]):
         """Get table context."""
         return str(self.df.head(self._head))
 
-    def _query(self, query_bundle: QueryBundle) -> Response:
+    def query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         context = self._get_table_context()
 

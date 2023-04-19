@@ -5,7 +5,7 @@ import pytest
 try:
     import qdrant_client
 except ImportError:
-    qdrant_client = None
+    qdrant_client = None  # type: ignore
 
 from gpt_index.data_structs import Node
 from gpt_index.vector_stores import QdrantVectorStore

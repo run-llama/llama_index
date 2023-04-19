@@ -36,6 +36,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         similarity_top_k: int = 1,
         vector_store_query_mode: str = VectorStoreQueryMode.DEFAULT,
         alpha: Optional[float] = None,
+        doc_ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -48,6 +49,7 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         self._vector_store = vector_store
         self._vector_store_query_mode = VectorStoreQueryMode(vector_store_query_mode)
         self._alpha = alpha
+        self._doc_ids = doc_ids
 
     def _retrieve(
         self,

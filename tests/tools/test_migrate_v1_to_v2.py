@@ -15,7 +15,7 @@ from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.old_docstore import V1DocumentStore
-from gpt_index.docstore import DocumentStore as V2DocumentStore
+from gpt_index.docstore import BaseDocumentStore as V2DocumentStore
 from gpt_index.tools.migrate_v1_to_v2 import (
     convert_to_v2_dict,
     convert_to_v2_index_struct_and_docstore,
@@ -217,7 +217,7 @@ def test_convert_to_v2_dict() -> None:
 
     v1_dict = {
         "index_struct_id": struct_v1.get_doc_id(),
-        "docstore": docstore_v1.serialize_to_dict(),
+        "docstore": docstore_v1.to_dict(),
     }
 
     v2_dict = convert_to_v2_dict(v1_dict)

@@ -1,5 +1,5 @@
 -e .
 sphinx>=4.3.0
-sphinx_rtd_theme>=0.5.1
+furo>=2023.3.27
 docutils<0.17
 myst-parser

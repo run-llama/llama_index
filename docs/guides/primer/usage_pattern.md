@@ -29,7 +29,7 @@ text_list = [text1, text2, ...]
 documents = [Document(t) for t in text_list]
 ```
 
-A Document represents a lightweight container around the data source. You can now to choose to proceed with one of the 
+A Document represents a lightweight container around the data source. You can now choose to proceed with one of the 
 following steps:
 1. Feed the Document object directly into the index (see section 3).
 2. First convert the Document into Node objects (see section 2).
@@ -97,9 +97,9 @@ define a DocumentStore object, add the Node objects to the DocumentStore,
 and pass the DocumentStore around.
 
 ```python
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import SimpleDocumentStore
 
-docstore = DocumentStore()
+docstore = SimpleDocumentStore()
 docstore.add_documents(nodes)
 
 index1 = GPTSimpleVectorIndex(nodes, docstore=docstore)

@@ -134,7 +134,7 @@ class ResponseEvaluator:
         index = GPTListIndex.from_documents(
             context, service_context=self.service_context
         )
-        response_txt: str = ""
+        response_txt = ""
 
         EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
         REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
@@ -144,9 +144,62 @@ class ResponseEvaluator:
             text_qa_template=EVAL_PROMPT_TMPL,
             refine_template=REFINE_PROMPT_TMPL,
         )
-        response_txt = str(response_obj)
+
+        raw_response_txt = str(response_obj)
+
+        if "yes" in raw_response_txt.lower():
+            response_txt = "YES"
+        elif "no" in raw_response_txt.lower():
+            response_txt = "NO"
+        else:
+            raise ValueError("The response is invalid")
 
         return response_txt
+
+    def evaluate_source_nodes(self, response: Response) -> List[str]:
+        """Function to evaluate if each source node contains the answer \
+            by comparing the response, and context information (source node).
+
+        Args:
+            response: Response object from an index based on the query.
+        Returns:
+            List of Yes/ No which can be used to know which source node contains \
+                answer.
+            Yes -> If response and context information are matching.
+            No -> If response and context information are not matching.
+        """
+        answer = str(response)
+
+        context_list = self.get_context(response)
+
+        response_texts = []
+
+        for context in context_list:
+            index = GPTListIndex.from_documents(
+                [context], service_context=self.service_context
+            )
+            response_txt = ""
+
+            EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
+            REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
+
+            response_obj = index.query(
+                answer,
+                text_qa_template=EVAL_PROMPT_TMPL,
+                refine_template=REFINE_PROMPT_TMPL,
+            )
+            raw_response_txt = str(response_obj)
+
+            if "yes" in raw_response_txt.lower():
+                response_txt = "YES"
+            elif "no" in raw_response_txt.lower():
+                response_txt = "NO"
+            else:
+                raise ValueError("The response is invalid")
+
+            response_texts.append(response_txt)
+
+        return response_texts
 
 
 class QueryResponseEvaluator:
@@ -201,7 +254,7 @@ class QueryResponseEvaluator:
         index = GPTListIndex.from_documents(
             context, service_context=self.service_context
         )
-        response_txt: str = ""
+        response_txt = ""
 
         QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
             QUERY_RESPONSE_EVAL_PROMPT
@@ -215,6 +268,71 @@ class QueryResponseEvaluator:
             text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
             refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
         )
-        response_txt = str(response_obj)
+
+        raw_response_txt = str(response_obj)
+
+        if "yes" in raw_response_txt.lower():
+            response_txt = "YES"
+        elif "no" in raw_response_txt.lower():
+            response_txt = "NO"
+        else:
+            raise ValueError("The response is invalid")
 
         return response_txt
+
+    def evaluate_source_nodes(self, query: str, response: Response) -> List[str]:
+        """Function to evaluate if each source node contains the answer \
+            to a given query by comparing the query, response, \
+                and context information.
+
+        Args:
+            query: Query for which response is generated from index.
+            response: Response object from an index based on the query.
+        Returns:
+            List of Yes/ No which can be used to know which source node contains \
+                answer.
+            Yes -> If answer, context information are matching \
+                    or If Query, answer and context information are matching \
+                        for a source node.
+            No -> If answer, context information are not matching \
+                    or If Query, answer and context information are not matching \
+                        for a source node.
+        """
+        answer = str(response)
+
+        context_list = self.get_context(response)
+
+        response_texts = []
+
+        for context in context_list:
+            index = GPTListIndex.from_documents(
+                [context], service_context=self.service_context
+            )
+            response_txt = ""
+
+            QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
+                QUERY_RESPONSE_EVAL_PROMPT
+            )
+            QUERY_RESPONSE_REFINE_PROMPT_TMPL = RefinePrompt(
+                QUERY_RESPONSE_REFINE_PROMPT
+            )
+
+            query_response = f"Question: {query}\nResponse: {answer}"
+
+            response_obj = index.query(
+                query_response,
+                text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
+                refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
+            )
+            raw_response_txt = str(response_obj)
+
+            if "yes" in raw_response_txt.lower():
+                response_txt = "YES"
+            elif "no" in raw_response_txt.lower():
+                response_txt = "NO"
+            else:
+                raise ValueError("The response is invalid")
+
+            response_texts.append(response_txt)
+
+        return response_texts

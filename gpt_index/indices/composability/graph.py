@@ -12,7 +12,12 @@ from gpt_index.data_structs.data_structs_v2 import CompositeIndex
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, DocumentRelationship
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import BaseDocumentStore
+from gpt_index.docstore.registry import (
+    load_docstore_from_dict,
+    merge_docstores,
+    save_docstore_to_dict,
+)
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.composability.utils import (
     load_query_context_from_dict,
@@ -34,7 +39,7 @@ class ComposableGraph:
     def __init__(
         self,
         index_struct: CompositeIndex,
-        docstore: DocumentStore,
+        docstore: BaseDocumentStore,
         service_context: Optional[ServiceContext] = None,
         query_context: Optional[Dict[str, Dict[str, Any]]] = None,
         **kwargs: Any,
@@ -58,7 +63,7 @@ class ComposableGraph:
         cls,
         all_index_structs: Dict[str, IndexStruct],
         root_id: str,
-        docstores: Sequence[DocumentStore],
+        docstores: Sequence[BaseDocumentStore],
         query_context: Optional[Dict[str, Dict[str, Any]]] = None,
         service_context: Optional[ServiceContext] = None,
     ) -> "ComposableGraph":
@@ -66,7 +71,7 @@ class ComposableGraph:
             all_index_structs=all_index_structs,
             root_id=root_id,
         )
-        merged_docstore = DocumentStore.merge(docstores)
+        merged_docstore = merge_docstores(docstores)
         return cls(
             index_struct=composite_index_struct,
             docstore=merged_docstore,
@@ -215,7 +220,7 @@ class ComposableGraph:
 
         result_dict: Dict[str, Any] = json.loads(index_string)
         index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
-        docstore = DocumentStore.load_from_dict(result_dict[DOCSTORE_KEY])
+        docstore = load_docstore_from_dict(result_dict[DOCSTORE_KEY])
 
         # NOTE: this allows users to pass in kwargs at load time
         #       e.g. passing in vector store client
@@ -263,7 +268,7 @@ class ComposableGraph:
         """
         out_dict: Dict[str, Any] = {
             INDEX_STRUCT_KEY: self._index_struct.to_dict(),
-            DOCSTORE_KEY: self._docstore.serialize_to_dict(),
+            DOCSTORE_KEY: save_docstore_to_dict(self._docstore),
             ADDITIONAL_QUERY_CONTEXT_KEY: save_query_context_to_dict(
                 self._query_context
             ),
