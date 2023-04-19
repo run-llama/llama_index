@@ -16,7 +16,7 @@ from gpt_index import (
 from langchain.chat_models import ChatOpenAI
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 
-DEFAULT_QUESTION_GENERATION_PROMPT = """"Context information is below.\n"
+DEFAULT_QUESTION_GENERATION_PROMPT = """Context information is below.\n"
 "\n---------------------\n{context_str}\n---------------------\n"
 "Given the context information and not prior knowledge.\n"
 "generate only questions based on the below query.\n"
@@ -44,13 +44,21 @@ class DatasetGenerator:
         model_name: str = "gpt-3.5-turbo",
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[QuestionAnswerPrompt] = None,
+        question_gen_query: str = None,
     ) -> None:
         """Init params."""
         self.documents = SimpleDirectoryReader(data_folder).load_data()
         self.model_name = model_name
-        self.num_questions_per_chunk = num_questions_per_chunk
         self.text_question_template = text_question_template or QuestionAnswerPrompt(
             DEFAULT_QUESTION_GENERATION_PROMPT
+        )
+        self.question_gen_query = (
+            question_gen_query
+            or f"You are a Teacher/ Professor. Your task is to setup \
+                        {num_questions_per_chunk} questions for an upcoming \
+                        quiz/examination. The questions should be diverse in nature \
+                            across the document. Restrict the questions to the \
+                                context information provided."
         )
         self.document_chunks = self.create_document_chunks()
 
@@ -66,47 +74,43 @@ class DatasetGenerator:
 
         return document_chunks
 
+    def _document_question_generator(self, chunks: List[str]) -> List[str]:
+        questions = []
+
+        for chunk in chunks:
+            index = GPTListIndex.from_documents([Document(chunk)])
+
+            llm_predictor = LLMPredictor(
+                llm=ChatOpenAI(temperature=0, model_name=self.model_name)
+            )
+            service_context = ServiceContext.from_defaults(
+                llm_predictor=llm_predictor, chunk_size_limit=3000
+            )
+
+            response = index.query(
+                self.question_gen_query,
+                service_context=service_context,
+                text_qa_template=self.text_question_template,
+                use_async=True,
+            )
+
+            result = str(response).strip().split("\n")
+            cleaned_questions = [
+                re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
+            ]
+            questions.extend(cleaned_questions)
+
+        questions = [question for question in questions if question != ""]
+
+        return questions
+
     def generate_questions(self) -> List[List[str]]:
         """
         Generates questions for each document.
         """
 
-        def document_question_generator(chunks: List[str]) -> List[str]:
-            questions = []
-
-            for chunk in chunks:
-                index = GPTListIndex.from_documents([Document(chunk)])
-
-                llm_predictor = LLMPredictor(
-                    llm=ChatOpenAI(temperature=0, model_name=self.model_name)
-                )
-                service_context = ServiceContext.from_defaults(
-                    llm_predictor=llm_predictor, chunk_size_limit=3000
-                )
-
-                response = index.query(
-                    f"You are a Teacher/ Professor. Your task is to setup \
-                        {self.num_questions_per_chunk} questions for an upcoming \
-                        quiz/examination. The questions should be diverse in nature \
-                            across the document. Restrict the questions to the \
-                                context information provided.",
-                    service_context=service_context,
-                    text_qa_template=self.text_question_template,
-                    use_async=True,
-                )
-
-                result = str(response).strip().split("\n")
-                cleaned_questions = [
-                    re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
-                ]
-                questions.extend(cleaned_questions)
-
-            questions = [question for question in questions if question != ""]
-
-            return questions
-
         questions = [
-            document_question_generator(chunks) for chunks in self.document_chunks
+            self._document_question_generator(chunks) for chunks in self.document_chunks
         ]
 
         return questions
