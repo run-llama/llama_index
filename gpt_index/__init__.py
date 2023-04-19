@@ -69,6 +69,7 @@ from gpt_index.prompts.prompts import (
 from gpt_index.readers import (
     BeautifulSoupWebReader,
     ChromaReader,
+    DeepLakeReader,
     DiscordReader,
     Document,
     FaissReader,
@@ -150,6 +151,7 @@ __all__ = [
     "WeaviateReader",
     "FaissReader",
     "ChromaReader",
+    "DeepLakeReader",
     "PineconeReader",
     "QdrantReader",
     "MilvusReader",
