@@ -139,13 +139,21 @@ def get_embeddings(
     like matplotlib, plotly, scipy, sklearn.
 
     """
-    assert len(list_of_text) <= 2048, "The batch size should not be larger than 2048."
-
     # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    data = openai.Embedding.create(input=list_of_text, engine=engine).data
-    data = sorted(data, key=lambda x: x["index"])  # maintain the same order as input.
+    # iterate using the max batch size
+    all_data: List[Any] = []
+    for i in range(0, len(list_of_text), EMBED_MAX_TOKEN_LIMIT):
+        texts = list_of_text[i : i + EMBED_MAX_TOKEN_LIMIT]
+
+        data = openai.Embedding.create(input=texts, engine=engine).data
+        data = sorted(
+            data, key=lambda x: x["index"]
+        )  # maintain the same order as input.
+
+        # concat with all_data
+        all_data = all_data + data
     return [d["embedding"] for d in data]
 
 
