@@ -68,6 +68,13 @@ class Node(BaseDocument):
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
 
+    # By default, extra info keys are included in the text
+    # extra info keys to exclude from the text
+    exclude_extra_info_keys_from_text: Optional[List[str]] = field(default_factory=list)
+
+    # exclude all from extra info
+    exclude_all_extra_info_from_text: bool = False
+
     # document relationships
     relationships: Dict[DocumentRelationship, Any] = field(default_factory=dict)
 
@@ -119,11 +126,31 @@ class Node(BaseDocument):
     def get_text(self) -> str:
         """Get text."""
         text = super().get_text()
-        extra_info_exists = self.extra_info is not None and len(self.extra_info) > 0
-        result_text = (
-            text if not extra_info_exists else f"{self.extra_info_str}\n\n{text}"
-        )
-        return result_text
+        if self.exclude_all_extra_info_from_text:
+            return text
+        else:
+            extra_info_exists = self.extra_info_str is not None
+            result_text = (
+                text if not extra_info_exists else f"{self.extra_info_str}\n\n{text}"
+            )
+            return result_text
+
+    @property
+    def extra_info_str(self) -> Optional[str]:
+        """Extra info string."""
+        if self.extra_info is None or len(self.extra_info) == 0:
+            return None
+
+        extra_info_keys = list(self.extra_info.keys())
+        for key in self.exclude_extra_info_keys_from_text:
+            if key in extra_info_keys:
+                extra_info_keys.remove(key)
+            else:
+                raise ValueError(f"Key {key} not in extra info keys")
+        if len(extra_info_keys) == 0:
+            return None
+
+        return "\n".join([f"{k}: {str(self.extra_info[k])}" for k in extra_info_keys])
 
     @classmethod
     def get_type(cls) -> str:
