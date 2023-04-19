@@ -44,7 +44,7 @@ class DatasetGenerator:
         model_name: str = "gpt-3.5-turbo",
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[QuestionAnswerPrompt] = None,
-        question_gen_query: Optional[str] = None
+        question_gen_query: Optional[str] = None,
     ) -> None:
         """Init params."""
         self.documents = SimpleDirectoryReader(data_folder).load_data()
