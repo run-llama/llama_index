@@ -72,7 +72,7 @@ These are found in the following classes:
 - `GPTQdrantIndex`
 - `GPTChromaIndex`
 - `GPTMilvusIndex`
-- `GPTDeepLakesIndex`
+- `GPTDeepLakeIndex`
 
 
 An API reference of each vector index is [found here](/reference/indices/vector_store.rst).
@@ -100,7 +100,7 @@ response = index.query("What did the author do growing up?")
 import os
 import getpath
 
-from gpt_index import GPTFaissIndex, SimpleDirectoryReader
+from gpt_index import GPTDeepLakeIndex, SimpleDirectoryReader
 
 
 os.environ["OPENAI_API_KEY"] = getpath.getpath("OPENAI_API_KEY: ")

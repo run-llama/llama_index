@@ -78,5 +78,4 @@ __all__ = [
     "ElasticsearchReader",
     "SteamshipFileReader",
     "ChatGPTRetrievalPluginReader",
-    "DeepLakeReader",
 ]
