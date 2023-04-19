@@ -129,6 +129,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
         doc_ids: Optional[List[str]] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        include_extra_info: bool = False,
         verbose: bool = False,
     ) -> None:
         """Initialize with parameters."""
@@ -185,6 +186,7 @@ class BaseGPTIndexQuery(Generic[IS], ABC):
             init_node_preprocessors + node_postprocessors
         )
         self._verbose = verbose
+        self._include_extra_info = include_extra_info
 
     def _get_text_from_node(
         self,
