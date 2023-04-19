@@ -51,7 +51,7 @@ from sqlalchemy import insert
 rows = [
     {"city_name": "Toronto", "population": 2731571, "country": "Canada"},
     {"city_name": "Tokyo", "population": 13929286, "country": "Japan"},
-    {"city_name": "Berlin", "population": 600000, "country": "United States"},
+    {"city_name": "Berlin", "population": 600000, "country": "Germany"},
 ]
 for row in rows:
     stmt = insert(city_stats_table).values(**row)
