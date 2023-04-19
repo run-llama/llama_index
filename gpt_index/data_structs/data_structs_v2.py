@@ -300,6 +300,14 @@ class SimpleIndexDict(IndexDict):
         """Get type."""
         return IndexStructType.SIMPLE_DICT
 
+@dataclass
+class RedisIndexDict(IndexDict):
+    """Index dict for Redis vector index."""
+
+    @classmethod
+    def get_type(cls) -> IndexStructType:
+        """Get type."""
+        return IndexStructType.REDIS
 
 @dataclass
 class FaissIndexDict(IndexDict):

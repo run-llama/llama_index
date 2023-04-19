@@ -15,6 +15,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     QdrantIndexDict,
     SimpleIndexDict,
     WeaviateIndexDict,
+    RedisIndexDict
 )
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
@@ -29,6 +30,7 @@ from gpt_index.vector_stores import (
     QdrantVectorStore,
     SimpleVectorStore,
     WeaviateVectorStore,
+    RedisVectorStore
 )
 from gpt_index.vector_stores.opensearch import (
     OpensearchVectorClient,
@@ -239,6 +241,54 @@ class GPTPineconeIndex(GPTVectorStoreIndex):
                 delete_kwargs=delete_kwargs,
                 add_sparse_vector=add_sparse_vector,
                 tokenizer=tokenizer,
+            )
+        assert vector_store is not None
+
+        super().__init__(
+            nodes=nodes,
+            index_struct=index_struct,
+            service_context=service_context,
+            vector_store=vector_store,
+            **kwargs,
+        )
+
+class GPTRedisIndex(GPTVectorStoreIndex):
+    """GPT Redis Index.
+
+    The GPTRedisIndex is a data structure where nodes are keyed by
+    embeddings, and those embeddings are stored within a redis index.
+    During index construction, the document texts are chunked up,
+    converted to nodes with text; they are then encoded in
+    document embeddings stored within Redis.
+
+    During query time, the index uses Redis to query for the top
+    k most similar nodes, and synthesizes an answer from the
+    retrieved nodes.
+
+    Args:
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
+    """
+
+    index_struct_cls: Type[IndexDict] = RedisIndexDict
+
+    def __init__(
+        self,
+        nodes: Optional[Sequence[Node]] = None,
+        service_context: Optional[ServiceContext] = None,
+        redis_client: Optional[Any] = None,
+        index_name: Optional[str] = None,
+        index_prefix: Optional[IndexDict] = None,
+        index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[RedisVectorStore] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Init params."""
+        if vector_store is None:
+            if redis_client is None:
+                raise ValueError("redis_client is required.")
+            vector_store = RedisVectorStore(
+                redis_client=redis_client, index_name=index_name, index_prefix=index_prefix, **kwargs
             )
         assert vector_store is not None
 

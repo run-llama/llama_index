@@ -30,6 +30,7 @@ from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
 from gpt_index.readers.obsidian import ObsidianReader
 from gpt_index.readers.pinecone import PineconeReader
+from gpt_index.readers.redis import RedisReader
 from gpt_index.readers.qdrant import QdrantReader
 from gpt_index.readers.schema.base import Document
 from gpt_index.readers.slack import SlackReader
@@ -52,6 +53,7 @@ __all__ = [
     "SimpleDirectoryReader",
     "JSONReader",
     "SimpleMongoReader",
+    "RedisReader",
     "NotionPageReader",
     "GoogleDocsReader",
     "DiscordReader",

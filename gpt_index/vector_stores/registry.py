@@ -12,10 +12,12 @@ from gpt_index.vector_stores.qdrant import QdrantVectorStore
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import VectorStore
 from gpt_index.vector_stores.weaviate import WeaviateVectorStore
+from gpt_index.vector_stores.redis import RedisVectorStore
 
 
 class VectorStoreType(str, Enum):
     SIMPLE = "simple"
+    REDIS = "redis"
     WEAVIATE = "weaviate"
     QDRANT = "qdrant"
     PINECONE = "pinecone"
@@ -28,6 +30,7 @@ class VectorStoreType(str, Enum):
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
     VectorStoreType.SIMPLE: SimpleVectorStore,
+    VectorStoreType.REDIS: RedisVectorStore,
     VectorStoreType.WEAVIATE: WeaviateVectorStore,
     VectorStoreType.QDRANT: QdrantVectorStore,
     VectorStoreType.MILVUS: MilvusVectorStore,

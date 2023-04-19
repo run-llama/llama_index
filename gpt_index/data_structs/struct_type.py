@@ -18,6 +18,9 @@ class IndexStructType(str, Enum):
         SIMPLE_DICT ("simple_dict"): Simple Vector Store Index. See
             :ref:`Ref-Indices-VectorStore`
             for more information on the simple vector store index.
+        REDIS ("redis"): Redis Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the Redis vector store index.
         WEAVIATE ("weaviate"): Weaviate Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Weaviate vector store index.
@@ -57,6 +60,7 @@ class IndexStructType(str, Enum):
     DICT = "dict"
     # simple
     SIMPLE_DICT = "simple_dict"
+    REDIS = "redis"
     WEAVIATE = "weaviate"
     PINECONE = "pinecone"
     QDRANT = "qdrant"
