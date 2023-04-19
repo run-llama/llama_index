@@ -15,6 +15,12 @@ LlamaIndex (GPT Index) is a project that provides a central interface to connect
 - Twitter: https://twitter.com/gpt_index
 - Discord https://discord.gg/dGcwcsnxhU
 
+Ecosystem
+^^^^^^^^^
+
+- 🏡 LlamaHub: https://llamahub.ai
+- 🧪 LlamaLab: https://github.com/run-llama/llama-lab
+
 
 🚀 Overview
 -----------
