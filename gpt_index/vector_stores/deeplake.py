@@ -4,22 +4,17 @@ An index that is built within DeepLake.
 
 """
 import logging
-from functools import partial
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 import numpy as np
-from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQuery,
-    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from torch.utils.data import DataLoader, Dataset
-from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
