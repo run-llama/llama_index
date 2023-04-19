@@ -38,7 +38,7 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 @patch.object(
     OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
-def test_get_queued_text_embedings(
+def test_get_queued_text_embeddings(
     _mock_get_text_embeddings: Any, _mock_get_text_embedding: Any
 ) -> None:
     """Test get queued text embeddings."""
