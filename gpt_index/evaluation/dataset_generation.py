@@ -50,7 +50,7 @@ class DatasetGenerator:
 
     def __init__(
         self,
-        nodes: Optional[List[Node]] = None,
+        nodes: List[Node],
         service_context: Optional[ServiceContext] = None,
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[QuestionAnswerPrompt] = None,
