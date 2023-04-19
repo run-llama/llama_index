@@ -81,7 +81,7 @@ class DatasetGenerator:
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[QuestionAnswerPrompt] = None,
         question_gen_query: Optional[str] = None,
-    ) -> List[str]:
+    ) -> "DatasetGenerator":
         """Generate dataset from documents."""
         if service_context is None:
             service_context = _get_default_service_context()
@@ -119,8 +119,6 @@ class DatasetGenerator:
 
         return questions
 
-    def generate_questions_from_nodes(self) -> List[List[str]]:
-        """
-        Generates questions for each document.
-        """
+    def generate_questions_from_nodes(self) -> List[str]:
+        """Generates questions for each document."""
         return self._node_question_generator(self.nodes)
