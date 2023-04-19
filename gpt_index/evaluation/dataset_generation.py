@@ -9,12 +9,11 @@ from gpt_index import (
     GPTListIndex,
     QuestionAnswerPrompt,
     ServiceContext,
-    SimpleDirectoryReader,
     LLMPredictor,
 )
+from gpt_index.data_structs.node_v2 import Node
 
 from langchain.chat_models import ChatOpenAI
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """Context information is below.\n"
 "\n---------------------\n{context_str}\n---------------------\n"
@@ -24,6 +23,17 @@ DEFAULT_QUESTION_GENERATION_PROMPT = """Context information is below.\n"
 """
 
 
+def _get_default_service_context() -> ServiceContext:
+    """Get default service context."""
+    llm_predictor = LLMPredictor(
+        llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+    )
+    service_context = ServiceContext.from_defaults(
+        llm_predictor=llm_predictor, chunk_size_limit=3000
+    )
+    return service_context
+
+
 class DatasetGenerator:
     """Generate dataset (question/ question-answer pairs) \
     based on the given documents.
@@ -31,8 +41,8 @@ class DatasetGenerator:
     NOTE: this is a beta feature, subject to change!
 
     Args:
-        data_folder: Path to documents folder,
-        model_name: "gpt-3.5-turbo" or "gpt-4",
+        nodes (List[Node]): List of nodes. (Optional)
+        service_context (ServiceContext): Service Context.
         num_questions_per_chunk: number of question to be \
         generated per chunk. Each document is chunked of size 512 words.
         text_question_template: Question generation template.
@@ -40,15 +50,16 @@ class DatasetGenerator:
 
     def __init__(
         self,
-        data_folder: Optional[str],
-        model_name: str = "gpt-3.5-turbo",
+        nodes: List[Node],
+        service_context: Optional[ServiceContext] = None,
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[QuestionAnswerPrompt] = None,
         question_gen_query: Optional[str] = None,
     ) -> None:
         """Init params."""
-        self.documents = SimpleDirectoryReader(data_folder).load_data()
-        self.model_name = model_name
+        if service_context is None:
+            service_context = _get_default_service_context()
+        self.service_context = service_context
         self.text_question_template = text_question_template or QuestionAnswerPrompt(
             DEFAULT_QUESTION_GENERATION_PROMPT
         )
@@ -60,36 +71,40 @@ class DatasetGenerator:
                             across the document. Restrict the questions to the \
                                 context information provided."
         )
-        self.document_chunks = self.create_document_chunks()
+        self.nodes = nodes
 
-    def create_document_chunks(self) -> List[List[str]]:
-        """
-        Creates chunks for each document.
-        """
-        text_splitter = TokenTextSplitter(chunk_size=1000, chunk_overlap=100)
+    @classmethod
+    def from_documents(
+        cls,
+        documents: List[Document],
+        service_context: Optional[ServiceContext] = None,
+        num_questions_per_chunk: int = 10,
+        text_question_template: Optional[QuestionAnswerPrompt] = None,
+        question_gen_query: Optional[str] = None,
+    ) -> "DatasetGenerator":
+        """Generate dataset from documents."""
+        if service_context is None:
+            service_context = _get_default_service_context()
+        nodes = service_context.node_parser.get_nodes_from_documents(documents)
 
-        document_chunks = [
-            text_splitter.split_text(document.text) for document in self.documents
-        ]
+        return cls(
+            nodes=nodes,
+            service_context=service_context,
+            num_questions_per_chunk=num_questions_per_chunk,
+            text_question_template=text_question_template,
+            question_gen_query=question_gen_query,
+        )
 
-        return document_chunks
-
-    def _document_question_generator(self, chunks: List[str]) -> List[str]:
+    def _node_question_generator(self, nodes: List[Node]) -> List[str]:
+        """Node question generator."""
         questions = []
 
-        for chunk in chunks:
-            index = GPTListIndex.from_documents([Document(chunk)])
-
-            llm_predictor = LLMPredictor(
-                llm=ChatOpenAI(temperature=0, model_name=self.model_name)
-            )
-            service_context = ServiceContext.from_defaults(
-                llm_predictor=llm_predictor, chunk_size_limit=3000
-            )
+        for node in nodes:
+            index = GPTListIndex.from_documents([Document(node.get_text())])
 
             response = index.query(
                 self.question_gen_query,
-                service_context=service_context,
+                service_context=self.service_context,
                 text_qa_template=self.text_question_template,
                 use_async=True,
             )
@@ -104,13 +119,6 @@ class DatasetGenerator:
 
         return questions
 
-    def generate_questions(self) -> List[List[str]]:
-        """
-        Generates questions for each document.
-        """
-
-        questions = [
-            self._document_question_generator(chunks) for chunks in self.document_chunks
-        ]
-
-        return questions
+    def generate_questions_from_nodes(self) -> List[str]:
+        """Generates questions for each document."""
+        return self._node_question_generator(self.nodes)
