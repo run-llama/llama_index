@@ -240,6 +240,6 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
         # set __last_accessed__ to now
         if self.time_access_refresh:
             for node in result_nodes:
-                node.get_node_info[self.last_accessed_key] = now
+                node.get_node_info()[self.last_accessed_key] = now
 
         return result_nodes
