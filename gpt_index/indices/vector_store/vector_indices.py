@@ -543,6 +543,7 @@ class GPTMyscaleIndex(GPTVectorStoreIndex):
         metric: str = "cosine",
         batch_size: int = 32,
         index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
         nodes: Optional[Sequence[Node]] = None,
         service_context: Optional[ServiceContext] = None,
         index_struct: Optional[IndexDict] = None,
@@ -560,6 +561,7 @@ class GPTMyscaleIndex(GPTVectorStoreIndex):
                 metric=metric,
                 batch_size=batch_size,
                 index_params=index_params,
+                search_params=search_params,
                 service_context=service_context,
             )
         assert vector_store is not None

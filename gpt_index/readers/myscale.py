@@ -91,7 +91,9 @@ class MyscaleReader(BaseReader):
         table (str) : Table name to operate on. Defaults to 'vector_table'.
         index_type (str): index type string. Default to "IVFLAT"
         metric (str) : Metric to compute distance, supported are ('l2', 'cosine', 'ip'). Defaults to 'cosine'
-        index_param (dict): index build parameter. Default to None
+        batch_size (int, optional): the size of documents to insert. Defaults to 32.
+        index_params (dict, optional): The index parameters for MyScale. Defaults to None.
+        search_params (dict, optional): The search parameters for a MyScale query. Defaults to None.
 
     """
 
@@ -105,7 +107,9 @@ class MyscaleReader(BaseReader):
         table: str = "llama_index",
         index_type: str = "IVFLAT",
         metric: str = "cosine",
+        batch_size: int = 32,
         index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -127,7 +131,9 @@ class MyscaleReader(BaseReader):
             database=database,
             index_type=index_type,
             metric=metric,
+            batch_size=batch_size,
             index_params=index_params,
+            search_params=search_params,
             **kwargs,
         )
 
