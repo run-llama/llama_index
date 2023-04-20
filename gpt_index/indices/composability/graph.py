@@ -9,13 +9,9 @@ from gpt_index.constants import (
     INDEX_STRUCT_KEY,
 )
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex
-from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
-from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, DocumentRelationship
-from gpt_index.docstore import BaseDocumentStore
 from gpt_index.docstore.registry import (
     load_docstore_from_dict,
-    merge_docstores,
     save_docstore_to_dict,
 )
 from gpt_index.indices.base import BaseGPTIndex
