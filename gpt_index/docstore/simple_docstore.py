@@ -7,6 +7,8 @@ from typing import Any, Dict, Optional, Sequence
 from gpt_index.docstore.types import BaseDocumentStore
 from gpt_index.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument
+from gpt_index.storage.keyval_store.in_memory import InMemoryKeyValStore
+from gpt_index.storage.keyval_store.types import BaseKeyValStore
 
 
 @dataclass
@@ -39,43 +41,14 @@ class SimpleDocumentStore(BaseDocumentStore):
 
     def __init__(
         self,
-        docs: Optional[Dict[str, BaseDocument]] = None,
-        ref_doc_info: Optional[Dict[str, Dict[str, Any]]] = None,
+        keyval_store: Optional[BaseKeyValStore] = None,
     ):
-        self._docs = docs or {}
-        self._ref_doc_info = ref_doc_info or defaultdict(dict)
+        self._keyval_store = keyval_store or InMemoryKeyValStore()
 
     @property
     def docs(self) -> Dict[str, BaseDocument]:
-        return self._docs
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dict."""
-        docs_dict = {}
-        for doc_id, doc in self.docs.items():
-            docs_dict[doc_id] = doc_to_json(doc)
-        return {"docs": docs_dict, "ref_doc_info": self._ref_doc_info}
-
-    @classmethod
-    def from_dict(
-        cls,
-        docs_dict: Dict[str, Any],
-    ) -> "SimpleDocumentStore":
-        """Load from dict.
-
-        Args:
-            docs_dict (Dict[str, Any]): dict of documents
-
-        """
-        docs_obj_dict = {
-            doc_id: json_to_doc(doc_dict)
-            for doc_id, doc_dict in docs_dict["docs"].items()
-        }
-
-        return cls(
-            docs=docs_obj_dict,
-            ref_doc_info=defaultdict(dict, **docs_dict.get("ref_doc_info", {})),
-        )
+        jsons = self._keyval_store.get_all()
+        return [json_to_doc(json) for json in jsons]
 
     def update_docstore(self, other: "BaseDocumentStore") -> None:
         """Update docstore.
@@ -107,8 +80,11 @@ class SimpleDocumentStore(BaseDocumentStore):
                     f"doc_id {doc.get_doc_id()} already exists. "
                     "Set allow_update to True to overwrite."
                 )
-            self.docs[doc.get_doc_id()] = doc
-            self._ref_doc_info[doc.get_doc_id()]["doc_hash"] = doc.get_doc_hash()
+            key = doc.get_doc_id()
+            data = doc_to_json(doc)
+            metadata = {"doc_hash": doc.get_doc_hash()}
+            self._keyval_store.add(key, data)
+            self._keyval_store.add(key, metadata, collection="metadata")
 
     def get_document(
         self, doc_id: str, raise_error: bool = True
@@ -120,29 +96,37 @@ class SimpleDocumentStore(BaseDocumentStore):
             raise_error (bool): raise error if doc_id not found
 
         """
-        doc = self.docs.get(doc_id, None)
-        if doc is None and raise_error:
-            raise ValueError(f"doc_id {doc_id} not found.")
-        return doc
+        json = self._keyval_store.get(doc_id)
+        if json is None:
+            if raise_error:
+                raise ValueError(f"doc_id {doc_id} not found.")
+            else:
+                return None
+        return json_to_doc(json)
 
     def document_exists(self, doc_id: str) -> bool:
         """Check if document exists."""
-        return doc_id in self.docs
+        return self._keyval_store.get(doc_id) is not None
 
     def delete_document(self, doc_id: str, raise_error: bool = True) -> None:
         """Delete a document from the store."""
-        doc = self.docs.pop(doc_id, None)
-        self._ref_doc_info.pop(doc_id, None)
-        if doc is None and raise_error:
+        delete_success = self._keyval_store.delete(doc_id)
+        _ = self._keyval_store.delete(doc_id, collection="metadata")
+        if not delete_success and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
 
     def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
         """Set the hash for a given doc_id."""
-        self._ref_doc_info[doc_id]["doc_hash"] = doc_hash
+        metadata = {"doc_hash": doc_hash}
+        self._keyval_store.add(doc_id, metadata, collection="metadata")
 
     def get_document_hash(self, doc_id: str) -> Optional[str]:
         """Get the stored hash for a document, if it exists."""
-        return self._ref_doc_info[doc_id].get("doc_hash", None)
+        metadata = self._keyval_store.get(doc_id, collection="metadata")
+        if metadata is not None:
+            return metadata.get("doc_hash", None)
+        else:
+            return None
 
 
 # alias for backwards compatibility
