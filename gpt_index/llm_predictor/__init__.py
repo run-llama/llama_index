@@ -5,4 +5,4 @@ from gpt_index.llm_predictor.base import LLMPredictor
 from gpt_index.llm_predictor.stable_lm import StableLMPredictor
 from gpt_index.llm_predictor.structured import StructuredLLMPredictor
 
-__all__ = ["LLMPredictor", "StructuredLLMPredictor", "StableLLMPredictor"]
+__all__ = ["LLMPredictor", "StructuredLLMPredictor", "StableLMPredictor"]

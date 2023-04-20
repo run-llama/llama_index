@@ -4,21 +4,17 @@ NOTE: this is a beta wrapper, will replace once better abstractions
 (e.g. from langchain) come out.
 
 """
-import logging
-from typing import Any, Generator, List, Optional, Tuple, Union
-
-import openai
+from typing import Any, Generator, Optional, Tuple
 
 from gpt_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from gpt_index.prompts.base import Prompt
-from gpt_index.utils import ErrorToRetry, retry_on_exceptions_with_backoff
 
 DEFAULT_SYSTEM_PROMPT = """<|SYSTEM|># StableLM Tuned (Alpha version)
 - StableLM is a helpful and harmless open-source AI language model developed by StabilityAI.
 - StableLM is excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
 - StableLM is more than just an information source, StableLM is also able to write poetry, short stories, and make jokes.
 - StableLM will refuse to participate in anything that could harm a human.
-"""
+"""  # noqa: E501
 
 
 class StableLMPredictor(BaseLLMPredictor):
@@ -46,7 +42,7 @@ class StableLMPredictor(BaseLLMPredictor):
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
     ) -> None:
         """Initialize params."""
-        from transformers import AutoModelForCausalLM, AutoTokenizer, StoppingCriteria
+        from transformers import AutoModelForCausalLM, AutoTokenizer
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             "StabilityAI/stablelm-tuned-alpha-3b"
