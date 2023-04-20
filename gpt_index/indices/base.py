@@ -15,12 +15,8 @@ from gpt_index.docstore.registry import (
 )
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.query_runner import QueryRunner
-from gpt_index.indices.query.query_transform.base import BaseQueryTransform
-from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
-from gpt_index.response.schema import RESPONSE_TYPE
 from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=V2IndexStruct)
@@ -209,100 +205,6 @@ class BaseGPTIndex(Generic[IS], ABC):
         For example, a vector store index would pass vector store.
         """
         return {}
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
-        """Preprocess query.
-
-        This allows subclasses to pass in additional query kwargs
-        to query, for instance arguments that are shared between the
-        index and the query class. By default, this does nothing.
-        This also allows subclasses to do validation.
-
-        """
-        pass
-
-    def query(
-        self,
-        query_str: Union[str, QueryBundle],
-        mode: str = QueryMode.DEFAULT,
-        query_transform: Optional[BaseQueryTransform] = None,
-        use_async: bool = False,
-        **query_kwargs: Any,
-    ) -> RESPONSE_TYPE:
-        """Answer a query.
-
-        When `query` is called, we query the index with the given `mode` and
-        `query_kwargs`. The `mode` determines the type of query to run, and
-        `query_kwargs` are parameters that are specific to the query type.
-
-        For a comprehensive documentation of available `mode` and `query_kwargs` to
-        query a given index, please visit :ref:`Ref-Query`.
-
-
-        """
-        mode_enum = QueryMode(mode)
-        self._preprocess_query(mode_enum, query_kwargs)
-        # TODO: pass in query config directly
-        query_config = QueryConfig(
-            index_struct_type=self._index_struct.get_type(),
-            query_mode=mode_enum,
-            query_kwargs=query_kwargs,
-        )
-        query_runner = QueryRunner(
-            index_struct=self._index_struct,
-            service_context=self._service_context,
-            query_context={self._index_struct.index_id: self.query_context},
-            docstore=self._docstore,
-            query_configs=[query_config],
-            query_transform=query_transform,
-            recursive=False,
-            use_async=use_async,
-        )
-        return query_runner.query(query_str)
-
-    async def aquery(
-        self,
-        query_str: Union[str, QueryBundle],
-        mode: str = QueryMode.DEFAULT,
-        query_transform: Optional[BaseQueryTransform] = None,
-        **query_kwargs: Any,
-    ) -> RESPONSE_TYPE:
-        """Asynchronously answer a query.
-
-        When `query` is called, we query the index with the given `mode` and
-        `query_kwargs`. The `mode` determines the type of query to run, and
-        `query_kwargs` are parameters that are specific to the query type.
-
-        For a comprehensive documentation of available `mode` and `query_kwargs` to
-        query a given index, please visit :ref:`Ref-Query`.
-
-
-        """
-        # TODO: currently we don't have async versions of all
-        # underlying functions. Setting use_async=True
-        # will cause async nesting errors because we assume
-        # it's called in a synchronous setting.
-        use_async = False
-
-        mode_enum = QueryMode(mode)
-        self._preprocess_query(mode_enum, query_kwargs)
-        # TODO: pass in query config directly
-        query_config = QueryConfig(
-            index_struct_type=self._index_struct.get_type(),
-            query_mode=mode_enum,
-            query_kwargs=query_kwargs,
-        )
-        query_runner = QueryRunner(
-            index_struct=self._index_struct,
-            service_context=self._service_context,
-            query_context={self._index_struct.index_id: self.query_context},
-            docstore=self._docstore,
-            query_configs=[query_config],
-            query_transform=query_transform,
-            recursive=False,
-            use_async=use_async,
-        )
-        return await query_runner.aquery(query_str)
 
     @abstractmethod
     def as_retriever(self) -> BaseRetriever:

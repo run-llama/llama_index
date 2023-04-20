@@ -23,11 +23,8 @@ from gpt_index.indices.composability.utils import (
     load_query_context_from_dict,
     save_query_context_to_dict,
 )
-from gpt_index.indices.query.query_runner import QueryRunner
-from gpt_index.indices.query.query_transform.base import BaseQueryTransform
-from gpt_index.indices.query.schema import QueryBundle, QueryConfig
+from gpt_index.indices.query.schema import QueryConfig
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.response.schema import RESPONSE_TYPE
 
 # TMP: refactor query config type
 QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
@@ -147,46 +144,6 @@ class ComposableGraph:
             service_context=root_index.service_context,
             query_context=query_context,
         )
-
-    def query(
-        self,
-        query_str: Union[str, QueryBundle],
-        query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
-        query_transform: Optional[BaseQueryTransform] = None,
-        service_context: Optional[ServiceContext] = None,
-    ) -> RESPONSE_TYPE:
-        """Query the index."""
-        service_context = service_context or self._service_context
-        query_runner = QueryRunner(
-            index_struct=self._index_struct,
-            service_context=service_context,
-            query_context=self._query_context,
-            docstore=self._docstore,
-            query_configs=query_configs,
-            query_transform=query_transform,
-            recursive=True,
-        )
-        return query_runner.query(query_str)
-
-    async def aquery(
-        self,
-        query_str: Union[str, QueryBundle],
-        query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
-        query_transform: Optional[BaseQueryTransform] = None,
-        service_context: Optional[ServiceContext] = None,
-    ) -> RESPONSE_TYPE:
-        """Query the index."""
-        service_context = service_context or self._service_context
-        query_runner = QueryRunner(
-            index_struct=self._index_struct,
-            service_context=service_context,
-            query_context=self._query_context,
-            docstore=self._docstore,
-            query_configs=query_configs,
-            query_transform=query_transform,
-            recursive=True,
-        )
-        return await query_runner.aquery(query_str)
 
     def get_index(
         self, index_struct_id: str, index_cls: Type[BaseGPTIndex], **kwargs: Any
