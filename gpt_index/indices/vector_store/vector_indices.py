@@ -517,15 +517,16 @@ class GPTMyscaleIndex(GPTVectorStoreIndex):
     or if `overwrite` is set to True.
 
     Args:
-        myscale_client (ServiceContext): clickhouse client of an existing MyScale cluster.
+        myscale_client (httpclient): clickhouse httpclient of an existing MyScale cluster.
         table_name (str, optional): The name of the MyScale table
             where data will be stored. Defaults to "llama_index".
-        index_params (dict, optional): The index parameters for MyScale,
-            if none are provided an IVFFLAT index will be used. Defaults to None.
-        search_params (dict, optional): The search parameters for a MyScale query.
-            If none are provided, default params will be generated. Defaults to None.
-        overwrite (bool, optional): Whether to overwrite existing collection
-            with same name. Defaults to False.
+        database_name (str, optional): The name of the MyScale database
+            where data will be stored. Defaults to "default".
+        index_type (str, optional): The type of the MyScale vector index. Defaults to "IVFFLAT".
+        metric (str, optional): The metric type of the MyScale vector index. Defaults to "cosine".
+        batch_size (int, optional): the size of documents to insert. Defaults to 32.
+        index_params (dict, optional): The index parameters for MyScale. Defaults to None.
+        search_params (dict, optional): The search parameters for a MyScale query. Defaults to None.
 
     Returns:
         MyscaleVectorstore: Vectorstore that supports add, delete, and query.
@@ -536,12 +537,13 @@ class GPTMyscaleIndex(GPTVectorStoreIndex):
     def __init__(
         self,
         myscale_client: Optional[Any] = None,
-        nodes: Optional[Sequence[Node]] = None,
         table_name: str = "llama_index",
         database_name: str = "default",
         index_type: str = "IVFFLAT",
-        index_params: Optional[dict] = None,
         metric: str = "cosine",
+        batch_size: int = 32,
+        index_params: Optional[dict] = None,
+        nodes: Optional[Sequence[Node]] = None,
         service_context: Optional[ServiceContext] = None,
         index_struct: Optional[IndexDict] = None,
         vector_store: Optional[MyscaleVectorStore] = None,
@@ -551,12 +553,13 @@ class GPTMyscaleIndex(GPTVectorStoreIndex):
 
         if vector_store is None:
             vector_store = MyscaleVectorStore(
+                myscale_client=myscale_client,
                 table=table_name,
                 database=database_name,
                 index_type=index_type,
                 metric=metric,
+                batch_size=batch_size,
                 index_params=index_params,
-                myscale_client=myscale_client,
                 service_context=service_context,
             )
         assert vector_store is not None

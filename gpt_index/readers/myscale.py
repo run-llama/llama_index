@@ -1,5 +1,5 @@
 """MyScale reader."""
-
+import json
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -10,6 +10,12 @@ logger = logging.getLogger(__name__)
 
 BS = "\\"
 must_escape = (BS, "'")
+escape_str = (
+    lambda value: "".join(f"{BS}{c}" if c in must_escape else c for c in value)
+    if value
+    else ""
+)
+format_list_to_string = lambda list: "[" + ",".join(str(item) for item in list) + "]"
 
 
 class MyScaleSettings:
@@ -19,8 +25,10 @@ class MyScaleSettings:
         table (str) : Table name to operate on.
         database (str) : Database name to find the table.
         index_type (str): index type string
-        metric (str) : Metric to compute distance, supported are ('l2', 'cosine', 'ip'). Defaults to 'cosine'.
-        index_params (Optional[dict]): index build parameter
+        metric (str) : metric type to compute distance
+        batch_size (int): the size of documents to insert
+        index_params (dict, optional): index build parameter
+        search_params (dict, optional): index search parameters for MyScale query
     """
 
     def __init__(
@@ -29,53 +37,46 @@ class MyScaleSettings:
         database: str,
         index_type: str,
         metric: str,
+        batch_size: int,
         index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         self.table = table
         self.database = database
         self.index_type = index_type
         self.metric = metric
+        self.batch_size = batch_size
         self.index_params = index_params
+        self.search_params = search_params
 
+    def build_query_statement(
+        self,
+        query_embed: List[float],
+        where_str: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> str:
+        query_embed_str = format_list_to_string(query_embed)
+        where_str = f"PREWHERE {where_str}" if where_str else ""
+        order = "DESC" if self.metric.lower() == "ip" else "ASC"
 
-def _escape_str(value: Optional[str]) -> str:
-    return (
-        "".join(f"{BS}{c}" if c in must_escape else c for c in value) if value else ""
-    )
+        search_params_str = (
+            (
+                "("
+                + ",".join([f"'{k}={v}'" for k, v in self.search_params.items()])
+                + ")"
+            )
+            if self.search_params
+            else ""
+        )
 
-
-def _build_query_statement(
-    config: MyScaleSettings,
-    query_embed: List[float],
-    where_str: Optional[str] = None,
-    limit: Optional[int] = None,
-    search_params: Optional[dict] = None,
-) -> str:
-    query_embed_str = ",".join(str(num) for num in query_embed)
-    if where_str is not None:
-        where_str = f"WHERE {where_str}"
-    else:
-        where_str = ""
-
-    if config.metric.lower() == "ip":
-        order = "DESC"
-    else:
-        order = "ASC"
-
-    search_params_str = (
-        "(" + ",".join([f"'{k}={v}'" for k, v in search_params.items()]) + ")"
-        if search_params
-        else ""
-    )
-
-    query_statement = f"""
-        SELECT id, doc_id, text, node_info, extra_info, distance{search_params_str}(vector, [{query_embed_str}]) AS dist
-        FROM {config.database}.{config.table} {where_str}
-        ORDER BY dist {order}
-        LIMIT {limit}
-        """
-    return query_statement
+        query_statement = f"""
+            SELECT id, doc_id, text, node_info, extra_info, distance{search_params_str}(vector, {query_embed_str}) AS dist
+            FROM {self.database}.{self.table} {where_str}
+            ORDER BY dist {order}
+            LIMIT {limit}
+            """
+        return query_statement
 
 
 class MyscaleReader(BaseReader):
@@ -89,8 +90,8 @@ class MyscaleReader(BaseReader):
         database (str) : Database name to find the table. Defaults to 'default'.
         table (str) : Table name to operate on. Defaults to 'vector_table'.
         index_type (str): index type string. Default to "IVFLAT"
+        metric (str) : Metric to compute distance, supported are ('l2', 'cosine', 'ip'). Defaults to 'cosine'
         index_param (dict): index build parameter. Default to None
-
 
     """
 
@@ -119,7 +120,6 @@ class MyscaleReader(BaseReader):
             port=myscale_port,
             username=username,
             password=password,
-            **kwargs,
         )
 
         self.config = MyScaleSettings(
@@ -128,21 +128,19 @@ class MyscaleReader(BaseReader):
             index_type=index_type,
             metric=metric,
             index_params=index_params,
+            **kwargs,
         )
 
     def load_data(
         self,
         query_vector: List[float],
-        config: MyScaleSettings,
         where_str: Optional[str] = None,
-        search_params: Optional[dict] = None,
         limit: int = 10,
     ) -> List[Document]:
         """Load data from MyScale.
 
         Args:
             query_vector (List[float]): Query vector.
-            table_name (str): Name of the MyScale table.
             where_str (Optional[str], optional): where condition string. Defaults to None.
             limit (int): Number of results to return.
 
@@ -150,19 +148,16 @@ class MyscaleReader(BaseReader):
             List[Document]: A list of documents.
         """
 
-        query_statement = _build_query_statement(
-            config=config,
+        query_statement = self.config.build_query_statement(
             query_embed=query_vector,
             where_str=where_str,
             limit=limit,
-            search_params=search_params,
         )
 
         try:
             return [
-                Document(doc_id=r["id"], text=r["text"])
+                Document(doc_id=r["doc_id"], text=r["text"], extra_info=r["extra_info"])
                 for r in self.client.query(query_statement).named_results()
             ]
         except Exception as e:
-            logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
             raise e

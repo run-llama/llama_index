@@ -8,13 +8,8 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
-from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.readers.myscale import (
-    MyScaleSettings,
-    _build_query_statement,
-    _escape_str,
-)
+from gpt_index.readers.myscale import MyScaleSettings, escape_str, format_list_to_string
 from gpt_index.utils import iter_batch
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
@@ -36,8 +31,17 @@ class MyscaleVectorStore(VectorStore):
     k most similar nodes.
 
     Args:
-        collection_name: (str): name of the Qdrant collection
-        client (Optional[Any]): QdrantClient instance from `qdrant-client` package
+        myscale_client (httpclient): clickhouse httpclient of an existing MyScale cluster.
+        table (str, optional): The name of the MyScale table
+            where data will be stored. Defaults to "llama_index".
+        database (str, optional): The name of the MyScale database
+            where data will be stored. Defaults to "default".
+        index_type (str, optional): The type of the MyScale vector index. Defaults to "IVFFLAT".
+        metric (str, optional): The metric type of the MyScale vector index. Defaults to "cosine".
+        batch_size (int, optional): the size of documents to insert. Defaults to 32.
+        index_params (dict, optional): The index parameters for MyScale. Defaults to None.
+        search_params (dict, optional): The search parameters for a MyScale query. Defaults to None.
+        service_context (ServiceContext, optional): Vector store service context. Defaults to None
 
     """
 
@@ -46,12 +50,14 @@ class MyscaleVectorStore(VectorStore):
 
     def __init__(
         self,
+        myscale_client: Optional[Any] = None,
         table: str = "llama_index",
         database: str = "default",
         index_type: str = "IVFFLAT",
         metric: str = "cosine",
+        batch_size: int = 32,
         index_params: Optional[dict] = None,
-        myscale_client: Optional[Any] = None,
+        search_params: Optional[dict] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
@@ -71,9 +77,33 @@ class MyscaleVectorStore(VectorStore):
             database=database,
             index_type=index_type,
             metric=metric,
+            batch_size=batch_size,
             index_params=index_params,
+            search_params=search_params,
+            **kwargs,
         )
-        self._batch_size = 32
+
+        # schema column name, type, and construct format method
+        self.column_config: Dict = {
+            "id": {"type": "String", "extract_func": lambda x: x.id},
+            "doc_id": {"type": "String", "extract_func": lambda x: x.doc_id},
+            "text": {
+                "type": "String",
+                "extract_func": lambda x: escape_str(x.node.text),
+            },
+            "vector": {
+                "type": "Array(Float32)",
+                "extract_func": lambda x: format_list_to_string(x.embedding),
+            },
+            "node_info": {
+                "type": "JSON",
+                "extract_func": lambda x: json.dumps(x.node.node_info),
+            },
+            "extra_info": {
+                "type": "JSON",
+                "extract_func": lambda x: json.dumps(x.node.extra_info),
+            },
+        }
 
         if service_context is not None:
             service_context = cast(ServiceContext, service_context)
@@ -104,12 +134,7 @@ class MyscaleVectorStore(VectorStore):
         )
         schema_ = f"""
             CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
-                id String,
-                doc_id String,
-                text String,
-                vector Array(Float32),
-                node_info JSON,
-                extra_info JSON,
+                {",".join([f'{k} {v["type"]}' for k, v in self.column_config.items()])},
                 CONSTRAINT vector_length CHECK length(vector) = {dimension},
                 VECTOR INDEX {self.config.table}_index vector TYPE {self.config.index_type}('metric_type={self.config.metric}'{index_params})
             ) ENGINE = MergeTree ORDER BY id
@@ -120,22 +145,24 @@ class MyscaleVectorStore(VectorStore):
         self._index_existed = True
 
     def _build_insert_statement(
-        self, values: List[NodeEmbeddingResult], column_names: List[str]
+        self,
+        values: List[NodeEmbeddingResult],
     ) -> str:
-        columns = ",".join(column_names)
         _data = []
         for item in values:
-            item_embedding = ",".join(str(num) for num in item.embedding)
-            # escape quota in document text
-            item_text = _escape_str(item.node.text)
-            item_value_str = f"""('{item.id}', '{item.doc_id}', '{item_text}', [{item_embedding}], 
-            '{json.dumps(item.node.node_info)}', '{json.dumps(item.node.extra_info)}')"""
-            _data.append(item_value_str)
+            item_value_str = ",".join(
+                [
+                    f"'{column['extract_func'](item)}'"
+                    for column in self.column_config.values()
+                ]
+            )
+            _data.append(f"({item_value_str})")
+
         insert_statement = f"""
                 INSERT INTO TABLE 
-                    {self.config.database}.{self.config.table}({columns})
+                    {self.config.database}.{self.config.table}({",".join(self.column_config.keys())})
                 VALUES
-                {','.join(_data)}
+                    {','.join(_data)}
                 """
         return insert_statement
 
@@ -153,11 +180,8 @@ class MyscaleVectorStore(VectorStore):
         if not self._index_existed:
             self._create_index(len(embedding_results))
 
-        column_names = ["id", "doc_id", "text", "vector", "node_info", "extra_info"]
-        for result_batch in iter_batch(embedding_results, self._batch_size):
-            insert_statement = self._build_insert_statement(
-                values=result_batch, column_names=column_names
-            )
+        for result_batch in iter_batch(embedding_results, self.config.batch_size):
+            insert_statement = self._build_insert_statement(values=result_batch)
             self._client.command(insert_statement)
 
         return [result.id for result in embedding_results]
@@ -170,7 +194,7 @@ class MyscaleVectorStore(VectorStore):
 
         """
         self._client.commend(
-            f"""DELETE FROM TABLE {self.config.database}.{self.config.table} WHERE doc_id = '{doc_id}'"""
+            f"DELETE FROM TABLE {self.config.database}.{self.config.table} WHERE doc_id = '{doc_id}'"
         )
 
     def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
@@ -189,14 +213,12 @@ class MyscaleVectorStore(VectorStore):
         """
 
         query_embedding = cast(List[float], query.query_embedding)
-
-        where_str = None
-        if query.doc_ids is not None:
-            doc_id_filter = ",".join(str(id) for id in query.doc_ids)
-            where_str = f"doc_id in [{doc_id_filter}]"
-
-        query_statement = _build_query_statement(
-            config=self.config,
+        where_str = (
+            f"doc_id in {format_list_to_string(query.doc_ids)}"
+            if query.doc_ids
+            else None
+        )
+        query_statement = self.config.build_query_statement(
             query_embed=query_embedding,
             where_str=where_str,
             limit=query.similarity_top_k,
@@ -222,5 +244,4 @@ class MyscaleVectorStore(VectorStore):
                 nodes=nodes, similarities=similarities, ids=ids
             )
         except Exception as e:
-            logger.error(f"\033[91m\033[1m{type(e)}\033[0m \033[95m{str(e)}\033[0m")
             raise e

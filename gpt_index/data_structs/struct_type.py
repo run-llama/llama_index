@@ -49,6 +49,7 @@ class IndexStructType(str, Enum):
             for more information on the SQL vector store index.
         KG ("kg"): Knowledge Graph index.
             See :ref:`Ref-Indices-Knowledge-Graph` for KG indices.
+
     """
 
     # TODO: refactor so these are properties on the base class
