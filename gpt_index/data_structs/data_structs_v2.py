@@ -371,6 +371,16 @@ class DeepLakeIndexDict(IndexDict):
 
 
 @dataclass
+class MyscaleIndexDict(IndexDict):
+    """Index dict for MyScale vector index."""
+
+    @classmethod
+    def get_type(cls) -> IndexStructType:
+        """Get type."""
+        return IndexStructType.MYSCALE
+
+
+@dataclass
 class OpensearchIndexDict(IndexDict):
     """Index dict for Opensearch vector index."""
 

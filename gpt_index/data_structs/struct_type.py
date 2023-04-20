@@ -39,6 +39,9 @@ class IndexStructType(str, Enum):
         OPENSEARCH ("opensearch"): Opensearch Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Opensearch vector store index.
+        MYSCALE ("myscale"): MyScale Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the MyScale vector store index.
         CHATGPT_RETRIEVAL_PLUGIN ("chatgpt_retrieval_plugin"): ChatGPT
             retrieval plugin index.
         SQL ("SQL"): SQL Structured Store Index.
@@ -46,7 +49,6 @@ class IndexStructType(str, Enum):
             for more information on the SQL vector store index.
         KG ("kg"): Knowledge Graph index.
             See :ref:`Ref-Indices-Knowledge-Graph` for KG indices.
-
     """
 
     # TODO: refactor so these are properties on the base class
@@ -65,6 +67,7 @@ class IndexStructType(str, Enum):
     QDRANT = "qdrant"
     MILVUS = "milvus"
     CHROMA = "chroma"
+    MYSCALE = "myscale"
     VECTOR_STORE = "vector_store"
     OPENSEARCH = "opensearch"
     CHATGPT_RETRIEVAL_PLUGIN = "chatgpt_retrieval_plugin"
