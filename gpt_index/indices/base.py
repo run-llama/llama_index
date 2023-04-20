@@ -13,6 +13,7 @@ from gpt_index.docstore.registry import (
     load_docstore_from_dict,
     save_docstore_to_dict,
 )
+from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_runner import QueryRunner
 from gpt_index.indices.query.query_transform.base import BaseQueryTransform
@@ -303,10 +304,9 @@ class BaseGPTIndex(Generic[IS], ABC):
         )
         return await query_runner.aquery(query_str)
 
-    @classmethod
     @abstractmethod
-    def get_query_map(cls) -> QueryMap:
-        """Get query map."""
+    def as_retriever(self) -> BaseRetriever:
+        pass
 
     @classmethod
     def load_from_dict(

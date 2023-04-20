@@ -4,14 +4,15 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from gpt_index.data_structs.data_structs_v2 import KeywordTable, Node
+from llama_index import GPTKeywordTableIndex
+
+from gpt_index.data_structs.data_structs_v2 import Node
+from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.utils import (
     extract_keywords_given_response,
     rake_extract_keywords,
     simple_extract_keywords,
 )
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
@@ -25,7 +26,7 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 logger = logging.getLogger(__name__)
 
 
-class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
+class BaseKeywordTableRetriever(BaseRetriever):
     """Base GPT Keyword Table Index Query.
 
     Arguments are shared among subclasses.
@@ -48,7 +49,7 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
 
     def __init__(
         self,
-        index_struct: KeywordTable,
+        index: GPTKeywordTableIndex,
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,
@@ -56,7 +57,10 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, **kwargs)
+        self._index = index
+        self._docstore = index.docstore
+        self._service_context = index.service_context
+
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
         self.keyword_extract_template = (
@@ -71,7 +75,6 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
     def _retrieve(
         self,
         query_bundle: QueryBundle,
-        similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[Node]:
         """Get nodes for response."""
         logger.info(f"> Starting query: {query_bundle.query_str}")
@@ -92,9 +95,6 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         )
         sorted_chunk_indices = sorted_chunk_indices[: self.num_chunks_per_query]
         sorted_nodes = self._docstore.get_nodes(sorted_chunk_indices)
-        # filter sorted nodes
-        for node_processor in self._node_postprocessors:
-            sorted_nodes = node_processor.postprocess_nodes(sorted_nodes)
 
         if logging.getLogger(__name__).getEffectiveLevel() == logging.DEBUG:
             for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
@@ -106,8 +106,8 @@ class BaseGPTKeywordTableQuery(BaseGPTIndexQuery[KeywordTable]):
         return sorted_nodes
 
 
-class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
-    """GPT Keyword Table Index Query.
+class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
+    """Keyword Table Index GPT Retriever.
 
     Extracts keywords using GPT. Set when `mode="default"` in `query` method of
     `GPTKeywordTableIndex`.
@@ -131,8 +131,8 @@ class GPTKeywordTableGPTQuery(BaseGPTKeywordTableQuery):
         return list(keywords)
 
 
-class GPTKeywordTableSimpleQuery(BaseGPTKeywordTableQuery):
-    """GPT Keyword Table Index Simple Query.
+class KeywordTableSimpleRetriever(BaseKeywordTableRetriever):
+    """Keyword Table Index Simple Retriever.
 
     Extracts keywords using simple regex-based keyword extractor.
     Set when `mode="simple"` in `query` method of `GPTKeywordTableIndex`.
@@ -152,8 +152,8 @@ class GPTKeywordTableSimpleQuery(BaseGPTKeywordTableQuery):
         )
 
 
-class GPTKeywordTableRAKEQuery(BaseGPTKeywordTableQuery):
-    """GPT Keyword Table Index RAKE Query.
+class KeywordTableRAKERetriever(BaseKeywordTableRetriever):
+    """Keyword Table Index RAKE Retriever.
 
     Extracts keywords using RAKE keyword extractor.
     Set when `mode="rake"` in `query` method of `GPTKeywordTableIndex`.

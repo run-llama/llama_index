@@ -92,12 +92,6 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
 }
 
 
-INDEX_STRUT_TYPE_TO_QUERY_MAP: Dict[IndexStructType, QueryMap] = {
-    index_type: index_cls.get_query_map()
-    for index_type, index_cls in INDEX_STRUCT_TYPE_TO_INDEX_CLASS.items()
-}
-
-
 def load_index_struct_from_dict(struct_dict: Dict[str, Any]) -> "V2IndexStruct":
     type = struct_dict[TYPE_KEY]
     data_dict = struct_dict[DATA_KEY]
