@@ -219,7 +219,7 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
             if node.node_info is None:
                 raise ValueError("node_info is None")
 
-            last_accessed = node.node_info.get("__last_accessed__", None)
+            last_accessed = node.node_info.get(self.last_accessed_key, None)
             if last_accessed is None:
                 last_accessed = now
 
@@ -240,6 +240,6 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
         # set __last_accessed__ to now
         if self.time_access_refresh:
             for node in result_nodes:
-                node.get_node_info()["__last_accessed__"] = now
+                node.get_node_info[self.last_accessed_key] = now
 
         return result_nodes
