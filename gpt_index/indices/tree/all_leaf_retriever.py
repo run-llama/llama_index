@@ -5,11 +5,12 @@ from typing import Any, Dict, List, Optional, cast
 
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import NodeWithScore
+from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import ResponseMode
+from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.utils import get_sorted_node_list
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_NUM_CHILDREN = 10
 
 
-class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
+class TreeAllLeafRetriever(BaseRetriever):
     """GPT Tree Index summarize query.
 
     This class builds a query-specific tree from leaf nodes to return a response.
@@ -34,16 +35,10 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
 
     """
 
-    def __init__(
-        self,
-        index_struct: IndexGraph,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize params."""
-        super().__init__(
-            index_struct,
-            **kwargs,
-        )
+    def __init__(self, index: GPTTreeIndex):
+        self._index = index
+        self._index_struct = index.index_struct
+        self._docstore = index.docstore
 
     @classmethod
     def from_args(  # type: ignore
@@ -68,14 +63,13 @@ class GPTTreeIndexSummarizeQuery(BaseGPTIndexQuery[IndexGraph]):
             **kwargs,
         )
 
-    def _retrieve(
+    def retrieve(
         self,
         query_bundle: QueryBundle,
-        similarity_tracker: Optional[SimilarityTracker] = None,
-    ) -> List[Node]:
+    ) -> List[NodeWithScore]:
         """Get nodes for response."""
         logger.info(f"> Starting query: {query_bundle.query_str}")
         index_struct = cast(IndexGraph, self._index_struct)
         all_nodes = self._docstore.get_node_dict(index_struct.all_nodes)
         sorted_node_list = get_sorted_node_list(all_nodes)
-        return sorted_node_list
+        return [NodeWithScore(node) for node in sorted_node_list]

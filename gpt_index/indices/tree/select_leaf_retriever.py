@@ -5,12 +5,11 @@ from typing import Any, Dict, List, Optional, cast
 
 from langchain.input import print_text
 
-from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.embedding_utils import SimilarityTracker
+from gpt_index.data_structs.node_v2 import Node, NodeWithScore
+from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import get_response_builder
+from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import (
@@ -47,7 +46,7 @@ def get_text_from_node(
     return response_txt
 
 
-class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
+class TreeSelectLeafRetriever(BaseRetriever):
     """GPT Tree Index leaf query.
 
     This class traverses the index graph and searches for a leaf node that can best
@@ -72,16 +71,19 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
     def __init__(
         self,
-        index_struct: IndexGraph,
+        index: GPTTreeIndex,
         query_template: Optional[TreeSelectPrompt] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
         child_branch_factor: int = 1,
         **kwargs: Any,
-    ) -> None:
-        """Initialize params."""
-        super().__init__(index_struct, **kwargs)
+    ):
+        self._index = index
+        self._index_struct = index.index_struct
+        self._docstore = index.docstore
+        self._service_context = index.service_context
+
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self.query_template = query_template or DEFAULT_QUERY_PROMPT
@@ -105,7 +107,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         """
         query_str = query_bundle.query_str
 
-        if len(self.index_struct.get_children(selected_node)) == 0:
+        if len(self._index_struct.get_children(selected_node)) == 0:
             response_builder = get_response_builder(
                 self._service_context,
                 self._text_qa_template,
@@ -120,7 +122,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
             logger.debug(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query_level(
-                self.index_struct.get_children(selected_node),
+                self._index_struct.get_children(selected_node),
                 query_bundle,
                 level=level + 1,
             )
@@ -264,7 +266,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         if self._verbose:
             print_text(info_str, end="\n")
         response_str = self._query_level(
-            self.index_struct.root_nodes,
+            self._index_struct.root_nodes,
             query_bundle,
             level=0,
         ).strip()
@@ -393,7 +395,7 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
 
         children_nodes = {}
         for node in selected_nodes:
-            node_dict = self.index_struct.get_children(node)
+            node_dict = self._index_struct.get_children(node)
             children_nodes.update(node_dict)
 
         if len(children_nodes) == 0:
@@ -402,14 +404,14 @@ class GPTTreeIndexLeafQuery(BaseGPTIndexQuery[IndexGraph]):
         else:
             return self._retrieve_level(children_nodes, query_bundle, level + 1)
 
-    def _retrieve(
+    def retrieve(
         self,
         query_bundle: QueryBundle,
-        similarity_tracker: Optional[SimilarityTracker] = None,
-    ) -> List[Node]:
+    ) -> List[NodeWithScore]:
         """Get nodes for response."""
-        return self._retrieve_level(
-            self.index_struct.root_nodes,
+        nodes = self._retrieve_level(
+            self._index_struct.root_nodes,
             query_bundle,
             level=0,
         )
+        return [NodeWithScore(node) for node in nodes]

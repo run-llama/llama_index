@@ -1,19 +1,20 @@
 """Query Tree using embedding similarity between query and node text."""
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Tuple, cast
 
-from gpt_index.data_structs.data_structs_v2 import IndexGraph
+
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
+from gpt_index.indices.tree.select_leaf_retriever import (
+    TreeSelectLeafRetriever,
+)
 from gpt_index.indices.utils import get_sorted_node_list
-from gpt_index.prompts.prompts import TreeSelectMultiplePrompt, TreeSelectPrompt
 
 logger = logging.getLogger(__name__)
 
 
-class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
+class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):
     """
     GPT Tree Index embedding query.
 
@@ -42,24 +43,6 @@ class GPTTreeIndexEmbeddingQuery(GPTTreeIndexLeafQuery):
             embedding similarity.
 
     """
-
-    def __init__(
-        self,
-        index_struct: IndexGraph,
-        query_template: Optional[TreeSelectPrompt] = None,
-        query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
-        child_branch_factor: int = 1,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize params."""
-        super().__init__(
-            index_struct,
-            query_template=query_template,
-            query_template_multiple=query_template_multiple,
-            child_branch_factor=child_branch_factor,
-            **kwargs,
-        )
-        self.child_branch_factor = child_branch_factor
 
     def _query_level(
         self,
