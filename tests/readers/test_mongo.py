@@ -1,7 +1,4 @@
-from unittest.mock import Mock, patch
-
-import pytest
-from pymongo import MongoClient
+from unittest.mock import patch
 
 from gpt_index.readers.mongo import SimpleMongoReader
 
