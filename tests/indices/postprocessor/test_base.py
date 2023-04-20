@@ -233,7 +233,6 @@ def test_embedding_recency_postprocessor(
     result_nodes = postprocessor.postprocess_nodes(
         nodes, extra_info={"query_bundle": query_bundle}
     )
-    print(result_nodes)
     assert len(result_nodes) == 4
     assert result_nodes[0].get_text() == "This is a test v2."
     assert cast(Dict, result_nodes[0].node_info)["date"] == "2020-01-04"
@@ -285,10 +284,18 @@ def test_time_weighted_postprocessor(
     result_nodes_with_score = similarity_tracker.get_zipped_nodes(result_nodes)
     assert len(result_nodes_with_score) == 1
     assert result_nodes_with_score[0].node.get_text() == "This is a test v2."
+    assert cast(Dict, nodes[0].node_info)[key] == 0
+    assert cast(Dict, nodes[3].node_info)[key] != 3
 
     # low time decay
     # artifically make earlier nodes more relevant
     # therefore postprocessor should still rank earlier nodes higher
+    nodes = [
+        Node("Hello world.", doc_id="1", node_info={key: 0}),
+        Node("This is a test.", doc_id="2", node_info={key: 1}),
+        Node("This is another test.", doc_id="3", node_info={key: 2}),
+        Node("This is a test v2.", doc_id="4", node_info={key: 3}),
+    ]
     similarity_tracker = SimilarityTracker()
     for idx, node in enumerate(nodes):
         similarity_tracker.add(node, -float(idx))
@@ -301,3 +308,5 @@ def test_time_weighted_postprocessor(
     result_nodes_with_score = similarity_tracker.get_zipped_nodes(result_nodes)
     assert len(result_nodes_with_score) == 1
     assert result_nodes_with_score[0].node.get_text() == "Hello world."
+    assert cast(Dict, nodes[0].node_info)[key] != 0
+    assert cast(Dict, nodes[3].node_info)[key] == 3

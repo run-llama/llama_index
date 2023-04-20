@@ -2,6 +2,7 @@
 
 from typing import Callable, Dict, List, Optional, Tuple
 
+from dataclasses import field, dataclass
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.embeddings.base import similarity as default_similarity_fn
 
@@ -41,11 +42,12 @@ def get_top_k_embeddings(
     return result_similarities, result_ids
 
 
+@dataclass
 class SimilarityTracker:
     """Helper class to manage node similarities during lifecycle of a single query."""
 
     # TODO: smarter way to store this information
-    lookup: Dict[str, float] = {}
+    lookup: Dict[str, float] = field(default_factory=dict)
 
     def _hash(self, node: Node) -> str:
         """Generate a unique key for each node."""
