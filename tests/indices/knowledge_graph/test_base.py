@@ -7,7 +7,7 @@ import pytest
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
-from gpt_index.indices.knowledge_graph.query import GPTKGTableQuery
+from gpt_index.indices.knowledge_graph.retrievers import KGTableRetriever
 from gpt_index.indices.postprocessor.node import (
     KeywordNodePostprocessor,
     SimilarityPostprocessor,

@@ -4,10 +4,10 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from gpt_index.data_structs.data_structs_v2 import KG
 from gpt_index.data_structs.node_v2 import Node
+from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.query.embedding_utils import (
     SimilarityTracker,
     get_top_k_embeddings,
@@ -40,7 +40,7 @@ class KGQueryMode(str, Enum):
     HYBRID = "hybrid"
 
 
-class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
+class KGTableRetriever(BaseRetriever):
     """Base GPT KG Table Index Query.
 
     Arguments are shared among subclasses.
@@ -66,7 +66,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
 
     def __init__(
         self,
-        index_struct: KG,
+        index: GPTKnowledgeGraphIndex,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
@@ -76,7 +76,10 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, **kwargs)
+        self._index = index
+        self._service_context = self._index.service_context
+        self._index_struct = self._index.index_struct
+
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
@@ -120,24 +123,24 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
 
         if self._embedding_mode != KGQueryMode.EMBEDDING:
             for keyword in keywords:
-                cur_rel_texts = self.index_struct.get_rel_map_texts(keyword)
+                cur_rel_texts = self._index_struct.get_rel_map_texts(keyword)
                 rel_texts.extend(cur_rel_texts)
-                cur_rel_map[keyword] = self.index_struct.get_rel_map_tuples(keyword)
+                cur_rel_map[keyword] = self._index_struct.get_rel_map_tuples(keyword)
                 if self._include_text:
-                    for node_id in self.index_struct.get_node_ids(keyword):
+                    for node_id in self._index_struct.get_node_ids(keyword):
                         chunk_indices_count[node_id] += 1
 
         if (
             self._embedding_mode != KGQueryMode.KEYWORD
-            and len(self.index_struct.embedding_dict) > 0
+            and len(self._index_struct.embedding_dict) > 0
         ):
             query_embedding = self._service_context.embed_model.get_text_embedding(
                 query_bundle.query_str
             )
-            all_rel_texts = list(self.index_struct.embedding_dict.keys())
+            all_rel_texts = list(self._index_struct.embedding_dict.keys())
 
             rel_text_embeddings = [
-                self.index_struct.embedding_dict[_id] for _id in all_rel_texts
+                self._index_struct.embedding_dict[_id] for _id in all_rel_texts
             ]
             similarities, top_rel_texts = get_top_k_embeddings(
                 query_embedding,
@@ -153,13 +156,13 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
             if self._include_text:
                 keywords = self._extract_rel_text_keywords(top_rel_texts)
                 nested_node_ids = [
-                    self.index_struct.get_node_ids(keyword) for keyword in keywords
+                    self._index_struct.get_node_ids(keyword) for keyword in keywords
                 ]
                 # flatten list
                 node_ids = [_id for ids in nested_node_ids for _id in ids]
                 for node_id in node_ids:
                     chunk_indices_count[node_id] += 1
-        elif len(self.index_struct.embedding_dict) == 0:
+        elif len(self._index_struct.embedding_dict) == 0:
             logger.error(
                 "Index was not constructed with embeddings, skipping embedding usage..."
             )
@@ -175,19 +178,14 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         )
         sorted_chunk_indices = sorted_chunk_indices[: self.num_chunks_per_query]
         sorted_nodes = self._docstore.get_nodes(sorted_chunk_indices)
-        # filter sorted nodes
-        postprocess_info = {"similarity_tracker": similarity_tracker}
-        for node_processor in self._node_postprocessors:
-            sorted_nodes = node_processor.postprocess_nodes(
-                sorted_nodes, postprocess_info
-            )
 
         # TMP/TODO: also filter rel_texts as nodes until we figure out better
         # abstraction
-        rel_text_nodes = [Node(text=rel_text) for rel_text in rel_texts]
-        for node_processor in self._node_postprocessors:
-            rel_text_nodes = node_processor.postprocess_nodes(rel_text_nodes)
-        rel_texts = [node.get_text() for node in rel_text_nodes]
+        # TODO(suo): figure out what this does
+        # rel_text_nodes = [Node(text=rel_text) for rel_text in rel_texts]
+        # for node_processor in self._node_postprocessors:
+        #     rel_text_nodes = node_processor.postprocess_nodes(rel_text_nodes)
+        # rel_texts = [node.get_text() for node in rel_text_nodes]
 
         for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
             # nodes are found with keyword mapping, give high conf to avoid cutoff

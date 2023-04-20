@@ -14,7 +14,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from gpt_index.data_structs.data_structs_v2 import KG
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex, QueryMap
-from gpt_index.indices.knowledge_graph.query import GPTKGTableQuery, KGQueryMode
+from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.knowledge_graph.retrievers import KGTableRetriever
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
@@ -70,12 +71,8 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             **kwargs,
         )
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTKGTableQuery,
-        }
+    def as_retriever(self) -> BaseRetriever:
+        return KGTableRetriever(self)
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
