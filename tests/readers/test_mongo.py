@@ -6,13 +6,7 @@ from pymongo import MongoClient
 from gpt_index.readers.mongo import SimpleMongoReader
 
 
-@pytest.fixture
-def mock_mongo_client():
-    client = Mock(MongoClient)
-    return client
-
-
-def test_load_data(mock_mongo_client):
+def test_load_data() -> None:
     """Test Mongo reader using default field_names."""
     mock_cursor = [{"text": "one"}, {"text": "two"}, {"text": "three"}]
 
@@ -28,7 +22,7 @@ def test_load_data(mock_mongo_client):
         assert documents[2].text == "three"
 
 
-def test_load_data_with_field_name(mock_mongo_client):
+def test_load_data_with_field_name() -> None:
     """Test Mongo reader using passed in field_names."""
     mock_cursor = [
         {"first": "first1", "second": "second1", "third": "third1"},
@@ -45,7 +39,6 @@ def test_load_data_with_field_name(mock_mongo_client):
         )
 
         assert len(documents) == 3
-        print(documents)
         assert documents[0].text == "first1second1third1"
         assert documents[1].text == "first2second2third2"
         assert documents[2].text == "first3second3third3"
