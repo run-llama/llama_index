@@ -61,15 +61,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             **kwargs,
         )
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTListIndexQuery,
-            QueryMode.EMBEDDING: GPTListIndexEmbeddingQuery,
-        }
-
-    def to_retriever(self, mode: QueryMode, **kwargs) -> BaseRetriever:
+    def as_retriever(self, mode: QueryMode, **kwargs) -> BaseRetriever:
         if mode == QueryMode.DEFAULT:
             return ListIndexRetriever(self)
         elif mode == QueryMode.EMBEDDING:
