@@ -72,11 +72,14 @@ class SimpleMongoReader(BaseReader):
             cursor = db[collection_name].find(query_dict)
 
         for item in cursor:
+            text = ""
             for field_name in field_names:
                 if field_name not in item:
                     raise ValueError(
                         f"`{field_name}` field not found in Mongo document."
                     )
-                documents.append(Document(item[field_name]))
+                text += item[field_name]
+
+            documents.append(Document(text))
 
         return documents
