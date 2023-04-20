@@ -35,46 +35,24 @@ class ComposableGraph:
 
     def __init__(
         self,
-        index_struct: CompositeIndex,
-        docstore: BaseDocumentStore,
-        service_context: Optional[ServiceContext] = None,
-        query_context: Optional[Dict[str, Dict[str, Any]]] = None,
-        **kwargs: Any,
+        all_indices: Dict[str, BaseGPTIndex],
+        root_id: str,
     ) -> None:
         """Init params."""
-        self._docstore = docstore
-        self._index_struct = index_struct
-        self._service_context = service_context or ServiceContext.from_defaults()
-        self._query_context = query_context or {}
+        self._all_indices = all_indices
+        self._root_id = root_id
+
+    @property
+    def all_indices(self) -> Dict[str, BaseGPTIndex]:
+        return self._all_indices
 
     @property
     def index_struct(self) -> CompositeIndex:
-        return self._index_struct
+        return self._all_indices[self._root_id].index_struct
 
     @property
     def service_context(self) -> ServiceContext:
-        return self._service_context
-
-    @classmethod
-    def from_index_structs_and_docstores(
-        cls,
-        all_index_structs: Dict[str, IndexStruct],
-        root_id: str,
-        docstores: Sequence[BaseDocumentStore],
-        query_context: Optional[Dict[str, Dict[str, Any]]] = None,
-        service_context: Optional[ServiceContext] = None,
-    ) -> "ComposableGraph":
-        composite_index_struct = CompositeIndex(
-            all_index_structs=all_index_structs,
-            root_id=root_id,
-        )
-        merged_docstore = merge_docstores(docstores)
-        return cls(
-            index_struct=composite_index_struct,
-            docstore=merged_docstore,
-            query_context=query_context,
-            service_context=service_context,
-        )
+        return self._all_indices[self._root_id].service_context
 
     @classmethod
     def from_indices(
@@ -128,21 +106,9 @@ class ComposableGraph:
             root_index
         ]
 
-        # collect query context, e.g. vector stores
-        query_context: Dict[str, Dict[str, Any]] = {}
-        for index in list(children_indices) + [root_index]:
-            assert isinstance(index.index_struct, V2IndexStruct)
-            index_id = index.index_struct.index_id
-            query_context[index_id] = index.query_context
-
-        return cls.from_index_structs_and_docstores(
-            all_index_structs={
-                index.index_struct.index_id: index.index_struct for index in all_indices
-            },
+        return cls(
+            all_indices={index.index_struct.index_id for index in all_indices},
             root_id=root_index.index_struct.index_id,
-            docstores=[index.docstore for index in all_indices],
-            service_context=root_index.service_context,
-            query_context=query_context,
         )
 
     def get_index(

@@ -39,11 +39,11 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
 
     def __init__(
         self,
-        list_index: GPTListIndex,
+        index: GPTListIndex,
         similarity_top_k: Optional[int] = 1,
         **kwargs: Any,
     ) -> None:
-        self._index = list_index
+        self._index = index
         self._similarity_top_k = similarity_top_k
 
     def retrieve(
