@@ -207,7 +207,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         return {}
 
     @abstractmethod
-    def as_retriever(self) -> BaseRetriever:
+    def as_retriever(self, **kwargs) -> BaseRetriever:
         pass
 
     @classmethod

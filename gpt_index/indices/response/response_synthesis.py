@@ -59,6 +59,7 @@ class ResponseSynthesizer:
         response_mode: ResponseMode = ResponseMode.DEFAULT,
         response_kwargs: Optional[Dict] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
+        verbose: bool = False,
     ) -> "ResponseSynthesizer":
         response_builder: Optional[BaseResponseBuilder] = None
         if response_mode != ResponseMode.NO_TEXT:
@@ -71,7 +72,7 @@ class ResponseSynthesizer:
                 use_async=use_async,
                 streaming=streaming,
             )
-        return cls(response_builder, response_mode, response_kwargs, optimizer)
+        return cls(response_builder, response_mode, response_kwargs, optimizer, verbose)
 
     def _get_extra_info_for_response(
         self,

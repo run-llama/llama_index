@@ -67,12 +67,12 @@ class RetrieverQueryEngine:
             use_async=use_async,
             streaming=streaming,
             optimizer=optimizer,
+            verbose=verbose,
         )
         return cls(
             retriever=retriever,
             response_synthesizer=response_synthesizer,
             node_postprocessors=node_postprocessors,
-            verbose=verbose,
             **kwargs,
         )
 

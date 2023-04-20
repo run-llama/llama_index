@@ -26,6 +26,6 @@ __all__ = [
     "GPTChromaIndex",
     "GPTOpensearchIndex",
     "ChatGPTRetrievalPluginIndex",
-    "GPTVectorStoreIndexQuery",
+    "VectorIndexRetriever",
     "GPTDeepLakeIndex",
 ]

@@ -4,7 +4,6 @@ from typing import Any, List, Optional, Tuple
 
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
-from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.embedding_utils import (
     SimilarityTracker,
     get_top_k_embeddings,
@@ -17,7 +16,10 @@ logger = logging.getLogger(__name__)
 class ListIndexRetriever(BaseRetriever):
     """Simple retriever for ListIndex that returns all nodes."""
 
-    def __init__(self, index: GPTListIndex) -> None:
+    def __init__(self, index: Any) -> None:
+        from gpt_index.indices.list.base import GPTListIndex
+
+        assert isinstance(index, GPTListIndex)
         self._index = index
 
     def retrieve(
@@ -39,10 +41,13 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: GPTListIndex,
+        index: Any,
         similarity_top_k: Optional[int] = 1,
         **kwargs: Any,
     ) -> None:
+        from gpt_index.indices.list.base import GPTListIndex
+
+        assert isinstance(index, GPTListIndex)
         self._index = index
         self._similarity_top_k = similarity_top_k
 

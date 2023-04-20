@@ -10,7 +10,6 @@ from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import ResponseMode
-from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.utils import get_sorted_node_list
 
 logger = logging.getLogger(__name__)
@@ -35,7 +34,10 @@ class TreeAllLeafRetriever(BaseRetriever):
 
     """
 
-    def __init__(self, index: GPTTreeIndex):
+    def __init__(self, index: Any):
+        from gpt_index.indices.tree.base import GPTTreeIndex
+
+        assert isinstance(index, GPTTreeIndex)
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore
