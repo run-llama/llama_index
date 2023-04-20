@@ -13,6 +13,7 @@ from gpt_index.vector_stores.pinecone import PineconeVectorStore
 from gpt_index.vector_stores.qdrant import QdrantVectorStore
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.weaviate import WeaviateVectorStore
+from gpt_index.vector_stores.types import VectorStoreQueryConfig
 
 __all__ = [
     "SimpleVectorStore",
@@ -26,4 +27,5 @@ __all__ = [
     "ChatGPTRetrievalPluginClient",
     "MilvusVectorStore",
     "DeepLakeVectorStore",
+    "VectorStoreQueryConfig",
 ]

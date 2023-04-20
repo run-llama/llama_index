@@ -1,7 +1,10 @@
 """Simple vector store index."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast, Callable, Tuple
+from gpt_index.embeddings.base import similarity as default_similarity_fn
+from functools import partial
+from datetime import datetime
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -11,7 +14,81 @@ from gpt_index.vector_stores.types import (
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
+    VectorStoreQueryConfig,
 )
+from gpt_index.embeddings.base import similarity as default_similarity_fn
+from gpt_index.data_structs.node_v2 import Node
+
+
+def time_weighted_similarity_fn(
+    time_decay_rate: float,
+    hours_passed: int,
+    query_embedding: List[float],
+    embedding: List[float],
+) -> float:
+    """Time weighted similarity function."""
+    semantic_similarity = default_similarity_fn(query_embedding, embedding)
+    time_similarity = (1 - time_decay_rate) ** hours_passed
+    return semantic_similarity + time_similarity
+
+
+def get_top_k_nodes(
+    query_embedding: List[float],
+    nodes: List[Node],
+    node_embeddings: List[List[float]],
+    embed_similarity_fn: Optional[Callable[..., float]] = None,
+    query_config: Optional[VectorStoreQueryConfig] = None,
+    similarity_cutoff: Optional[float] = None,
+    now: Optional[float] = None,
+) -> Tuple[List[float], List]:
+    """Get top k node ids by similarity.
+
+    More general version of get_top_k_embeddings in
+    gpt_index.indices.query.embedding_utils. Allows for time decay.
+
+    """
+    now = now or datetime.now().timestamp()
+    # TODO: refactor with get_top_k_embeddings
+
+    query_config = query_config or VectorStoreQueryConfig()
+    similarity_fn = embed_similarity_fn or default_similarity_fn
+    similarities = []
+    for idx, node in enumerate(nodes):
+        node_embedding = node_embeddings[idx]
+        embed_similarity = similarity_fn(query_embedding, node_embedding)
+        if node.node_info is None:
+            raise ValueError("node_info is None")
+
+        last_accessed = node.node_info.get("__last_accessed__", None)
+        if last_accessed is None:
+            last_accessed = now
+
+        hours_passed = (now - last_accessed) / 3600
+        time_similarity = (1 - query_config.time_decay_rate) ** hours_passed
+
+        similarity = embed_similarity + time_similarity
+
+        similarities.append(similarity)
+
+    sorted_tups = sorted(zip(similarities, nodes), key=lambda x: x[0], reverse=True)
+
+    if similarity_cutoff is not None:
+        sorted_tups = [tup for tup in sorted_tups if tup[0] > similarity_cutoff]
+
+    similarity_top_k = query_config.similarity_top_k or len(sorted_tups)
+    result_tups = sorted_tups[:similarity_top_k]
+
+    result_similarities = [s for s, _ in result_tups]
+    result_nodes = [n for _, n in result_tups]
+
+    # set __last_accessed__ to now
+    if query_config.time_access_refresh:
+        for node in result_nodes:
+            node.get_node_info()["__last_accessed__"] = now
+
+    result_ids = [n.get_doc_id() for n in result_nodes]
+
+    return result_similarities, result_ids
 
 
 @dataclass
@@ -105,12 +182,22 @@ class SimpleVectorStore(VectorStore):
         embeddings = [t[1] for t in items]
 
         query_embedding = cast(List[float], query.query_embedding)
-
-        top_similarities, top_ids = get_top_k_embeddings(
-            query_embedding,
-            embeddings,
-            similarity_top_k=query.similarity_top_k,
-            embedding_ids=node_ids,
-        )
+        if query.query_config.use_time_decay:
+            if query.docstore is None:
+                raise ValueError("query.docstore cannot be None")
+            nodes = query.docstore.get_nodes(node_ids)
+            top_similarities, top_ids = get_top_k_nodes(
+                query_embedding,
+                nodes,
+                embeddings,
+                query_config=query.query_config,
+            )
+        else:
+            top_similarities, top_ids = get_top_k_embeddings(
+                query_embedding,
+                embeddings,
+                similarity_top_k=query.query_config.similarity_top_k,
+                embedding_ids=node_ids,
+            )
 
         return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)

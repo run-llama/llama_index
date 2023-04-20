@@ -15,6 +15,7 @@ from gpt_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
+    VectorStoreQueryConfig,
 )
 
 
@@ -37,19 +38,27 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
         vector_store_query_mode: str = VectorStoreQueryMode.DEFAULT,
         alpha: Optional[float] = None,
         doc_ids: Optional[List[str]] = None,
+        vector_store_query_config: Optional[VectorStoreQueryConfig] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             index_struct=index_struct, service_context=service_context, **kwargs
         )
-        self._similarity_top_k = similarity_top_k
         if vector_store is None:
             raise ValueError("Vector store is required for vector store query.")
         self._vector_store = vector_store
-        self._vector_store_query_mode = VectorStoreQueryMode(vector_store_query_mode)
-        self._alpha = alpha
-        self._doc_ids = doc_ids
+        # self._similarity_top_k = similarity_top_k
+        # self._vector_store_query_mode = VectorStoreQueryMode(vector_store_query_mode)
+        # self._alpha = alpha
+        # self._doc_ids = doc_ids
+        if vector_store_query_config is None:
+            vector_store_query_config = VectorStoreQueryConfig()
+        vector_store_query_config.similarity_top_k = similarity_top_k
+        vector_store_query_config.mode = VectorStoreQueryMode(vector_store_query_mode)
+        vector_store_query_config.alpha = alpha
+        vector_store_query_config.doc_ids = doc_ids
+        self._query_config = vector_store_query_config
 
     def _retrieve(
         self,
@@ -66,11 +75,9 @@ class GPTVectorStoreIndexQuery(BaseGPTIndexQuery[IndexDict]):
 
         query = VectorStoreQuery(
             query_embedding=query_bundle.embedding,
-            similarity_top_k=self._similarity_top_k,
-            doc_ids=self._doc_ids,
             query_str=query_bundle.query_str,
-            mode=self._vector_store_query_mode,
-            alpha=self._alpha,
+            query_config=self._query_config,
+            docstore=self._docstore,
         )
         query_result = self._vector_store.query(query)
 

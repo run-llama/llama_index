@@ -9,7 +9,11 @@ except ImportError:
 
 from gpt_index.data_structs import Node
 from gpt_index.vector_stores import QdrantVectorStore
-from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStoreQuery
+from gpt_index.vector_stores.types import (
+    NodeEmbeddingResult,
+    VectorStoreQuery,
+    VectorStoreQueryConfig,
+)
 
 
 @pytest.fixture
@@ -66,7 +70,8 @@ def test_build_query_filter_returns_match_any() -> None:
     client = qdrant_client.QdrantClient(":memory:")
     qdrant_vector_store = QdrantVectorStore(collection_name="test", client=client)
 
-    query = VectorStoreQuery(doc_ids=["1", "2", "3"])
+    query_config = VectorStoreQueryConfig(doc_ids=["1", "2", "3"])
+    query = VectorStoreQuery(query_config=query_config)
     query_filter = cast(Filter, qdrant_vector_store._build_query_filter(query))
 
     assert query_filter is not None
@@ -102,7 +107,8 @@ def test_build_query_filter_returns_combined_filter() -> None:
     client = qdrant_client.QdrantClient(":memory:")
     qdrant_vector_store = QdrantVectorStore(collection_name="test", client=client)
 
-    query = VectorStoreQuery(query_str="lorem", doc_ids=["1", "2", "3"])
+    query_config = VectorStoreQueryConfig(doc_ids=["1", "2", "3"])
+    query = VectorStoreQuery(query_str="lorem", query_config=query_config)
     query_filter = cast(Filter, qdrant_vector_store._build_query_filter(query))
 
     assert query_filter is not None
