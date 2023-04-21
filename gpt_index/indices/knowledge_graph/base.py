@@ -111,7 +111,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
             if self.include_embeddings:
                 for i, triplet in enumerate(triplets):
-                    self._service_context.embed_model.queue_text_for_embeddding(
+                    self._service_context.embed_model.queue_text_for_embedding(
                         str(triplet), str(triplet)
                     )
 
