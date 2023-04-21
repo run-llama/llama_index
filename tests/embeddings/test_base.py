@@ -1,6 +1,7 @@
 """Embeddings."""
 from typing import Any, List
 from unittest.mock import patch
+from gpt_index.embeddings.base import mean_agg
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 
@@ -65,3 +66,20 @@ def test_get_queued_text_embeddings(
     for i in range(20, 24):
         assert result_ids[i] == f"id:{i-20}"
         assert result_embeddings[i] == [0, 0, 0, 1, 0]
+
+
+def test_embedding_similarity() -> None:
+    """Test embedding similarity."""
+    embed_model = OpenAIEmbedding()
+    text_embedding = [3.0, 4.0, 0.0]
+    query_embedding = [0.0, 1.0, 0.0]
+    cosine = embed_model.similarity(query_embedding, text_embedding)
+    assert cosine == 0.8
+
+
+def test_mean_agg() -> None:
+    """Test mean aggregation for embeddings."""
+    embedding_0 = [3.0, 4.0, 0.0]
+    embedding_1 = [0.0, 1.0, 0.0]
+    output = mean_agg([embedding_0, embedding_1])
+    assert output == [1.5, 2.5, 0.0]

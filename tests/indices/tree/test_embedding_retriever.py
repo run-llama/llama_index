@@ -7,8 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.embeddings.base import mean_agg
-from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.tree.select_leaf_embedding_retriever import (
     TreeSelectLeafEmbeddingRetriever,
 )
@@ -34,23 +33,6 @@ from tests.mock_utils.mock_text_splitter import (
 )
 
 
-def test_embedding_similarity() -> None:
-    """Test embedding similarity."""
-    embed_model = OpenAIEmbedding()
-    text_embedding = [3.0, 4.0, 0.0]
-    query_embedding = [0.0, 1.0, 0.0]
-    cosine = embed_model.similarity(query_embedding, text_embedding)
-    assert cosine == 0.8
-
-
-def test_mean_agg() -> None:
-    """Test mean aggregation for embeddings."""
-    embedding_0 = [3.0, 4.0, 0.0]
-    embedding_1 = [0.0, 1.0, 0.0]
-    output = mean_agg([embedding_0, embedding_1])
-    assert output == [1.5, 2.5, 0.0]
-
-
 @pytest.fixture
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
@@ -59,12 +41,8 @@ def struct_kwargs() -> Tuple[Dict, Dict]:
         "insert_prompt": MOCK_INSERT_PROMPT,
         "num_children": 2,
     }
-    query_kwargs = {
-        "query_template": MOCK_QUERY_PROMPT,
-        "text_qa_template": MOCK_TEXT_QA_PROMPT,
-        "refine_template": MOCK_REFINE_PROMPT,
-    }
-    return index_kwargs, query_kwargs
+    retrieval_kwargs = {}
+    return index_kwargs, retrieval_kwargs
 
 
 @pytest.fixture
@@ -99,7 +77,7 @@ def _get_node_text_embedding_similarities(
 
 @patch_common
 @patch.object(
-    GPTTreeIndexEmbeddingQuery,
+    TreeSelectLeafEmbeddingRetriever,
     "_get_query_text_embedding_similarities",
     side_effect=_get_node_text_embedding_similarities,
 )
@@ -114,13 +92,14 @@ def test_embedding_query(
     documents: List[Document],
 ) -> None:
     """Test embedding query."""
-    index_kwargs, query_kwargs = struct_kwargs
+    index_kwargs, retrieval_kwargs = struct_kwargs
     tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
-    response = tree.query(query_str, mode="embedding", **query_kwargs)
-    assert str(response) == ("What is?:Hello world.")
+    retriever = tree.as_retriever(mode="embedding", **retrieval_kwargs)
+    nodes = retriever.retrieve(QueryBundle(query_str))
+    assert nodes[0].node.text == "Hello world."
 
 
 def _mock_tokenizer(text: str) -> int:
@@ -133,7 +112,7 @@ def _mock_tokenizer(text: str) -> int:
 @patch.object(LLMPredictor, "get_llm_metadata", return_value=LLMMetadata())
 @patch.object(LLMChain, "__init__", return_value=None)
 @patch.object(
-    GPTTreeIndexEmbeddingQuery,
+    TreeSelectLeafEmbeddingRetriever,
     "_get_query_text_embedding_similarities",
     side_effect=_get_node_text_embedding_similarities,
 )
@@ -155,7 +134,7 @@ def test_query_and_count_tokens(
     documents: List[Document],
 ) -> None:
     """Test query and count tokens."""
-    index_kwargs, query_kwargs = struct_kwargs
+    index_kwargs, retrieval_kwargs = struct_kwargs
     # First block is "Hello world.\nThis is a test.\n"
     # Second block is "This is another test.\nThis is a test v2."
     # first block is 5 tokens because
@@ -170,19 +149,3 @@ def test_query_and_count_tokens(
     assert tree.service_context.llm_predictor.total_tokens_used == (
         first_block_count + llmchain_mock_resp_token_count
     ) + (second_block_count + llmchain_mock_resp_token_count)
-
-    # test embedding query
-    start_token_ct = tree._service_context.llm_predictor.total_tokens_used
-    query_str = "What is?"
-    # context is "hello world." which is 2 tokens
-    context_tokens = 2
-    # query is "what is?" which is 2 tokens
-    query_tokens = 2
-    # subtract one because the last token of the context is joined with first
-    input_tokens = context_tokens + query_tokens - 1
-
-    tree.query(query_str, mode="embedding", **query_kwargs)
-    assert (
-        tree.service_context.llm_predictor.total_tokens_used - start_token_ct
-        == input_tokens + llmchain_mock_resp_token_count
-    )

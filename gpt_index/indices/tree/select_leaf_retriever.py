@@ -23,6 +23,7 @@ from gpt_index.prompts.prompts import (
     TreeSelectPrompt,
 )
 from gpt_index.response.schema import Response
+from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -408,6 +409,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         else:
             return self._retrieve_level(children_nodes, query_bundle, level + 1)
 
+    @llm_token_counter("retrieve")
     def retrieve(
         self,
         query_bundle: QueryBundle,
