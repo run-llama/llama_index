@@ -96,7 +96,7 @@ def get_forward_nodes(
 ) -> Dict[str, NodeWithScore]:
     """Get forward nodes."""
     node = node_with_score.node
-    nodes: Dict[str, Node] = {node.get_doc_id(): node}
+    nodes: Dict[str, NodeWithScore] = {node.get_doc_id(): node_with_score}
     cur_count = 0
     # get forward nodes in an iterative manner
     while cur_count < num_nodes:
@@ -118,7 +118,7 @@ def get_backward_nodes(
     """Get backward nodes."""
     node = node_with_score.node
     # get backward nodes in an iterative manner
-    nodes: Dict[str, Node] = {node.get_doc_id(): node}
+    nodes: Dict[str, Node] = {node.get_doc_id(): node_with_score}
     cur_count = 0
     while cur_count < num_nodes:
         if DocumentRelationship.PREVIOUS not in node.relationships:
@@ -166,7 +166,7 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
         """Postprocess nodes."""
         all_nodes: Dict[str, NodeWithScore] = {}
         for node in nodes:
-            all_nodes[node.get_doc_id()] = node
+            all_nodes[node.node.get_doc_id()] = node
             if self.mode == "next":
                 all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
             elif self.mode == "previous":
@@ -181,7 +181,7 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
 
-        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.get_doc_id())
+        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.node.get_doc_id())
         return list(sorted_nodes)
 
 
