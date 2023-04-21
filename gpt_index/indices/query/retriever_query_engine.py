@@ -3,6 +3,7 @@ from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.query.base import BaseQueryEngine
+from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 from gpt_index.indices.response.type import ResponseMode
