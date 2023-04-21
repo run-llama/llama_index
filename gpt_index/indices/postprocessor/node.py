@@ -49,16 +49,14 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
             if self.required_keywords is not None:
                 for keyword in self.required_keywords:
                     pattern = r"\b" + re.escape(keyword) + r"\b"
-                    keyword_presence = re.search(pattern, 
-                                                 node.get_text())
+                    keyword_presence = re.search(pattern, node.get_text())
                     if not keyword_presence:
                         should_use_node = False
 
             if self.exclude_keywords is not None:
                 for keyword in self.exclude_keywords:
                     pattern = r"\b" + re.escape(keyword) + r"\b"
-                    keyword_presence = re.search(keyword, 
-                                                 node.get_text())
+                    keyword_presence = re.search(keyword, node.get_text())
                     if keyword_presence:
                         should_use_node = False
 
