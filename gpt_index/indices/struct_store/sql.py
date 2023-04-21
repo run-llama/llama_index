@@ -4,17 +4,13 @@ from typing import Any, Dict, Optional, Sequence
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
-from gpt_index.indices.struct_store.sql_query import (
-    GPTNLStructStoreIndexQuery,
-    GPTSQLStructStoreIndexQuery,
-)
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
 
@@ -121,14 +117,6 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             ref_doc_id_column=self._ref_doc_id_column,
         )
         data_extractor.insert_datapoint_from_nodes(nodes)
-
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTNLStructStoreIndexQuery,
-            QueryMode.SQL: GPTSQLStructStoreIndexQuery,
-        }
 
     def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
         """Preprocess query.

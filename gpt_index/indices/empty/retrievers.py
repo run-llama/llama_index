@@ -2,7 +2,6 @@
 from typing import Any, List, Optional
 from gpt_index.indices.common.base_retriever import BaseRetriever
 
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.type import ResponseMode
@@ -49,7 +48,7 @@ class EmptyIndexRetriever(BaseRetriever):
         cls,
         response_mode: ResponseMode = ResponseMode.GENERATION,
         **kwargs: Any,
-    ) -> BaseGPTIndexQuery:
+    ) -> "EmptyIndexRetriever":
         if response_mode != ResponseMode.GENERATION:
             raise ValueError("response_mode should not be specified for empty query")
 

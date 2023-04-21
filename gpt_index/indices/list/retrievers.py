@@ -27,7 +27,6 @@ class ListIndexRetriever(BaseRetriever):
     ) -> List[NodeWithScore]:
         """Retrieve nodes."""
         del query_bundle
-        del similarity_tracker
 
         node_ids = self._index.index_struct.nodes
         nodes = self._index.docstore.get_nodes(node_ids)

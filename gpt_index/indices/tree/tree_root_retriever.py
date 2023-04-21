@@ -4,7 +4,6 @@ from typing import Any, List
 
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.utils import get_sorted_node_list
@@ -55,7 +54,7 @@ class TreeRootRetriever(BaseRetriever):
         cls,
         response_mode: ResponseMode = ResponseMode.SIMPLE_SUMMARIZE,
         **kwargs: Any,
-    ) -> BaseGPTIndexQuery:
+    ) -> "TreeRootRetriever":
         if response_mode != ResponseMode.SIMPLE_SUMMARIZE:
             raise ValueError("response_mode should not be specified for retrieve query")
 

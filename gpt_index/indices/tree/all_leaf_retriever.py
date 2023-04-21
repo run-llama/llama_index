@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, cast
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import ResponseMode
 from gpt_index.indices.utils import get_sorted_node_list
@@ -48,7 +47,7 @@ class TreeAllLeafRetriever(BaseRetriever):
         response_mode: ResponseMode = ResponseMode.TREE_SUMMARIZE,
         response_kwargs: Optional[Dict] = None,
         **kwargs: Any,
-    ) -> BaseGPTIndexQuery:
+    ) -> "TreeAllLeafRetriever":
         if response_mode != ResponseMode.TREE_SUMMARIZE:
             raise ValueError(
                 "response_mode should not be specified for summarize query"
