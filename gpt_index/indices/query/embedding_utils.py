@@ -5,7 +5,6 @@ from typing import Callable, Dict, List, Optional, Tuple
 from dataclasses import field, dataclass
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.embeddings.base import similarity as default_similarity_fn
-from sklearn import svm, linear_model
 import numpy as np
 from gpt_index.vector_stores.types import VectorStoreQueryMode
 
@@ -60,6 +59,11 @@ def get_top_k_embeddings_learner(
     Can fit SVM, linear regression, and more.
 
     """
+    try:
+        from sklearn import svm, linear_model
+    except ImportError:
+        raise ImportError("Please install scikit-learn to use this feature.")
+
     if embedding_ids is None:
         embedding_ids = [i for i in range(len(embeddings))]
     query_embedding_np = np.array(query_embedding)
