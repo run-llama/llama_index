@@ -4,6 +4,12 @@ This guide seeks to walk you through using LlamaIndex with a production-ready we
 called [Delphic](https://github.com/JSv4/Delphic). All code examples here are available from
 the [Delphic](https://github.com/JSv4/Delphic) repo
 
+# What We're Building
+
+Here's a quick demo of the out-of-the-box functionality of Delphic:
+
+https://user-images.githubusercontent.com/5049984/233236432-aa4980b6-a510-42f3-887a-81485c9644e6.mp4
+
 # Architectural Overview
 
 Delphic leverages the LlamaIndex python library to let users to create their own document collections they can then
@@ -776,7 +782,3 @@ information.
 6. Enter the required information for the new user, such as username and password. Click “Save” to create the user.
 7. To grant the new user additional permissions or make them a superuser, click on their username in the user list,
    scroll down to the “Permissions” section, and configure their permissions accordingly. Save your changes.
-
-## Create Collections and Query Documents
-
-Checkout a brief demo of how to use the application [here on Youtube](https://www.youtube.com/watch?v=UvFPnMWODrE).  
