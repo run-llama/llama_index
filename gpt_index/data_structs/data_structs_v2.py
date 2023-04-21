@@ -10,10 +10,11 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
+from pydantic import Json
+
 from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
-from pydantic import Json
 
 
 @dataclass
@@ -368,6 +369,16 @@ class DeepLakeIndexDict(IndexDict):
     def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.DEEPLAKE
+
+
+@dataclass
+class MyScaleIndexDict(IndexDict):
+    """Index dict for MyScale vector index."""
+
+    @classmethod
+    def get_type(cls) -> IndexStructType:
+        """Get type."""
+        return IndexStructType.MYSCALE
 
 
 @dataclass

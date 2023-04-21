@@ -7,6 +7,7 @@ from gpt_index.vector_stores.chroma import ChromaVectorStore
 from gpt_index.vector_stores.deeplake import DeepLakeVectorStore
 from gpt_index.vector_stores.faiss import FaissVectorStore
 from gpt_index.vector_stores.milvus import MilvusVectorStore
+from gpt_index.vector_stores.myscale import MyScaleVectorStore
 from gpt_index.vector_stores.opensearch import OpensearchVectorStore
 from gpt_index.vector_stores.pinecone import PineconeVectorStore
 from gpt_index.vector_stores.qdrant import QdrantVectorStore
@@ -26,6 +27,7 @@ class VectorStoreType(str, Enum):
     CHATGPT_PLUGIN = "chatgpt_plugin"
     MILVUS = "milvus"
     DEEPLAKE = "deeplake"
+    MYSCALE = "myscale"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -39,6 +41,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.CHROMA: ChromaVectorStore,
     VectorStoreType.CHATGPT_PLUGIN: ChatGPTRetrievalPluginClient,
     VectorStoreType.DEEPLAKE: DeepLakeVectorStore,
+    VectorStoreType.MYSCALE: MyScaleVectorStore,
 }
 
 VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE: Dict[Type[VectorStore], VectorStoreType] = {

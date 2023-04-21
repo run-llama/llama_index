@@ -5,6 +5,7 @@ from gpt_index.vector_stores.chroma import ChromaVectorStore
 from gpt_index.vector_stores.deeplake import DeepLakeVectorStore
 from gpt_index.vector_stores.faiss import FaissVectorStore
 from gpt_index.vector_stores.milvus import MilvusVectorStore
+from gpt_index.vector_stores.myscale import MyScaleVectorStore
 from gpt_index.vector_stores.opensearch import (
     OpensearchVectorClient,
     OpensearchVectorStore,
@@ -26,4 +27,5 @@ __all__ = [
     "ChatGPTRetrievalPluginClient",
     "MilvusVectorStore",
     "DeepLakeVectorStore",
+    "MyScaleVectorStore",
 ]
