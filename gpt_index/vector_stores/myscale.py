@@ -178,7 +178,7 @@ class MyScaleVectorStore(VectorStore):
         """
 
         if not self._index_existed:
-            self._create_index(len(embedding_results))
+            self._create_index(len(embedding_results[0].embedding))
 
         for result_batch in iter_batch(embedding_results, self.config.batch_size):
             insert_statement = self._build_insert_statement(values=result_batch)
@@ -193,23 +193,22 @@ class MyScaleVectorStore(VectorStore):
             doc_id (str): document id
 
         """
-        self._client.commend(
-            f"DELETE FROM TABLE {self.config.database}.{self.config.table} WHERE doc_id = '{doc_id}'"
+        raise NotImplementedError("Delete not yet implemented for MyScale index.")
+
+    def drop(self) -> None:
+        """DROP MyScale Index and table"""
+        self._client.command(
+            f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
         )
 
     def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes."""
+        """Query index for top k most similar nodes.
 
-        """Perform a similarity search with MyScale by vectors
         Args:
-            query (str): query string
-            k (int, optional): Top K neighbors to retrieve. Defaults to 4.
-            where_str (Optional[str], optional): where condition string. Defaults to None.
-            NOTE: Please do not let end-user to fill this out and always be aware of SQL injection.
-                  When dealing with metadatas, remeber to use `{metadata-name-you-set}.attribute` 
-                  instead of `attribute` alone. The default name for metadat column is `metadata`.
-        Returns:
-            List[Document]: List of (Document, similarity)
+            query_embedding (List[float]): target embedding
+            similarity_top_k (int, optional): Top K neighbors to retrieve.
+            doc_ids (Optional[List[str]], optional): condition for vector search, only search for these doc_ids
+
         """
 
         query_embedding = cast(List[float], query.query_embedding)
