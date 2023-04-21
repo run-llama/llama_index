@@ -83,7 +83,9 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             **kwargs,
         )
 
-    def as_retriever(self, mode: QueryMode, **kwargs) -> BaseRetriever:
+    def as_retriever(
+        self, mode: QueryMode = QueryMode.DEFAULT, **kwargs
+    ) -> BaseRetriever:
         if mode == QueryMode.DEFAULT:
             return KeywordTableGPTRetriever(self, **kwargs)
         elif mode == QueryMode.SIMPLE:

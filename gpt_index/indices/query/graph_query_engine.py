@@ -1,5 +1,6 @@
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 from gpt_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
+from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.query.schema import QueryBundle
@@ -11,11 +12,13 @@ class ComposedGraphQueryEngine:
     def __init__(
         self,
         graph: ComposableGraph,
+        retrievers: Dict[str, BaseRetriever],
         response_synthesizer: ResponseSynthesizer,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         recursive: bool = True,
     ) -> None:
         self._graph = graph
+        self._retrievers = retrievers
         self._response_synthesizer = response_synthesizer
         self._node_postprocessors = node_postprocessors
 
@@ -31,9 +34,9 @@ class ComposedGraphQueryEngine:
         index_id: Optional[str] = None,
         level: int = 0,
     ) -> RESPONSE_TYPE:
-        index = self._graph.all_indices[index_id]
-
-        nodes = index.as_retriever().retrieve(query_bundle)
+        index_id = index_id or self._graph.root_id
+        retriever = self._retrievers[index_id]
+        nodes = retriever.retrieve(query_bundle)
 
         if self._recursive:
             # do recursion here

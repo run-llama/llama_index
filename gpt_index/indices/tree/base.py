@@ -12,7 +12,9 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
 from gpt_index.indices.tree.inserter import GPTTreeIndexInserter
-from gpt_index.indices.tree.select_leaf_embedding_retriever import TreeSelectLeafEmbeddingRetriever
+from gpt_index.indices.tree.select_leaf_embedding_retriever import (
+    TreeSelectLeafEmbeddingRetriever,
+)
 from gpt_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
 from gpt_index.indices.tree.tree_root_retriever import TreeRootRetriever
 from gpt_index.prompts.default_prompts import (
@@ -77,7 +79,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             **kwargs,
         )
 
-    def as_retriever(self, mode, **kwargs) -> BaseRetriever:
+    def as_retriever(
+        self, mode: QueryMode = QueryMode.DEFAULT, **kwargs
+    ) -> BaseRetriever:
         if mode == QueryMode.DEFAULT:
             return TreeSelectLeafRetriever(self, **kwargs)
         elif mode == QueryMode.EMBEDDING:
@@ -87,7 +91,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         elif mode == QueryMode.SUMMARIZE:
             return TreeAllLeafRetriever(self, **kwargs)
         else:
-            raise ValueError(f'Unknown mode: {mode}')
+            raise ValueError(f"Unknown mode: {mode}")
 
     def _validate_build_tree_required(self, mode: QueryMode) -> None:
         """Check if index supports modes that require trees."""

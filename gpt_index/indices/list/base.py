@@ -54,7 +54,9 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             **kwargs,
         )
 
-    def as_retriever(self, mode: QueryMode, **kwargs) -> BaseRetriever:
+    def as_retriever(
+        self, mode: QueryMode = QueryMode.DEFAULT, **kwargs
+    ) -> BaseRetriever:
         if mode == QueryMode.DEFAULT:
             return ListIndexRetriever(self, **kwargs)
         elif mode == QueryMode.EMBEDDING:

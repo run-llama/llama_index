@@ -39,8 +39,16 @@ class ComposableGraph:
         self._root_id = root_id
 
     @property
+    def root_id(self) -> str:
+        return self._root_id
+
+    @property
     def all_indices(self) -> Dict[str, BaseGPTIndex]:
         return self._all_indices
+
+    @property
+    def root_index(self) -> BaseGPTIndex:
+        return self._all_indices[self._root_id]
 
     @property
     def index_struct(self) -> CompositeIndex:
@@ -107,8 +115,10 @@ class ComposableGraph:
             root_id=root_index.index_struct.index_id,
         )
 
-    def get_index(self, index_struct_id: str) -> BaseGPTIndex:
+    def get_index(self, index_struct_id: Optional[str] = None) -> BaseGPTIndex:
         """Get index from index struct id."""
+        if index_struct_id is None:
+            index_struct_id = self._root_id
         return self._all_indices[index_struct_id]
 
     @classmethod
