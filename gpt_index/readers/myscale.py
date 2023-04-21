@@ -8,14 +8,17 @@ from gpt_index.readers.schema.base import Document
 
 logger = logging.getLogger(__name__)
 
-BS = "\\"
-must_escape = (BS, "'")
-escape_str = (
-    lambda value: "".join(f"{BS}{c}" if c in must_escape else c for c in value)
-    if value
-    else ""
-)
-format_list_to_string = lambda list: "[" + ",".join(str(item) for item in list) + "]"
+
+def escape_str(value: str) -> str:
+    BS = "\\"
+    must_escape = (BS, "'")
+    return (
+        "".join(f"{BS}{c}" if c in must_escape else c for c in value) if value else ""
+    )
+
+
+def format_list_to_string(lst: List) -> str:
+    return "[" + ",".join(str(item) for item in lst) + "]"
 
 
 class MyScaleSettings:
@@ -160,10 +163,7 @@ class MyScaleReader(BaseReader):
             limit=limit,
         )
 
-        try:
-            return [
-                Document(doc_id=r["doc_id"], text=r["text"], extra_info=r["extra_info"])
-                for r in self.client.query(query_statement).named_results()
-            ]
-        except Exception as e:
-            raise e
+        return [
+            Document(doc_id=r["doc_id"], text=r["text"], extra_info=r["extra_info"])
+            for r in self.client.query(query_statement).named_results()
+        ]

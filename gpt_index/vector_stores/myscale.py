@@ -224,24 +224,19 @@ class MyScaleVectorStore(VectorStore):
             limit=query.similarity_top_k,
         )
 
-        try:
-            nodes = []
-            ids = []
-            similarities = []
-            for r in self._client.query(query_statement).named_results():
-                node = Node(
-                    doc_id=r["doc_id"],
-                    text=r["text"],
-                    extra_info=r["extra_info"],
-                    node_info=r["node_info"],
-                    relationships={DocumentRelationship.SOURCE: r["doc_id"]},
-                )
-
-                nodes.append(node)
-                similarities.append(r["dist"])
-                ids.append(r["id"])
-            return VectorStoreQueryResult(
-                nodes=nodes, similarities=similarities, ids=ids
+        nodes = []
+        ids = []
+        similarities = []
+        for r in self._client.query(query_statement).named_results():
+            node = Node(
+                doc_id=r["doc_id"],
+                text=r["text"],
+                extra_info=r["extra_info"],
+                node_info=r["node_info"],
+                relationships={DocumentRelationship.SOURCE: r["doc_id"]},
             )
-        except Exception as e:
-            raise e
+
+            nodes.append(node)
+            similarities.append(r["dist"])
+            ids.append(r["id"])
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)

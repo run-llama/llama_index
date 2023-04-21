@@ -514,7 +514,7 @@ class GPTMyScaleIndex(GPTVectorStoreIndex):
     a vector index build for the embedding column.
     This implementation allows the use of an already existing
     table if it is one that was created this vector store.
-    It also supports creating a new table if the collection doesnt exist
+    It also supports creating a new table if the table doesn't exist
 
     Args:
         myscale_client (httpclient): clickhouse httpclient of an existing MyScale cluster.
