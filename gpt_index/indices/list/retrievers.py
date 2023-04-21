@@ -5,7 +5,6 @@ from typing import Any, List, Optional, Tuple
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.embedding_utils import (
-    SimilarityTracker,
     get_top_k_embeddings,
 )
 from gpt_index.indices.query.schema import QueryBundle
@@ -25,7 +24,6 @@ class ListIndexRetriever(BaseRetriever):
     def retrieve(
         self,
         query_bundle: QueryBundle,
-        similarity_tracker: Optional[SimilarityTracker] = None,
     ) -> List[NodeWithScore]:
         """Retrieve nodes."""
         del query_bundle

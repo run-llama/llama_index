@@ -8,7 +8,7 @@ from gpt_index.constants import (
     DOCSTORE_KEY,
     INDEX_STRUCT_KEY,
 )
-from gpt_index.data_structs.data_structs_v2 import CompositeIndex
+from gpt_index.data_structs.data_structs_v2 import CompositeIndex, V2IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, DocumentRelationship
 from gpt_index.docstore.registry import (
     load_docstore_from_dict,
@@ -107,16 +107,9 @@ class ComposableGraph:
             root_id=root_index.index_struct.index_id,
         )
 
-    def get_index(
-        self, index_struct_id: str, index_cls: Type[BaseGPTIndex], **kwargs: Any
-    ) -> BaseGPTIndex:
+    def get_index(self, index_struct_id: str) -> BaseGPTIndex:
         """Get index from index struct id."""
-        index_struct = self._index_struct.all_index_structs[index_struct_id]
-        return index_cls(
-            index_struct=index_struct,
-            docstore=self._docstore,
-            **kwargs,
-        )
+        return self._all_indices[index_struct_id]
 
     @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "ComposableGraph":

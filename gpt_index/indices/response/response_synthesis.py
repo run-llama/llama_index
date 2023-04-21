@@ -50,7 +50,7 @@ class ResponseSynthesizer:
     @classmethod
     def from_args(
         cls,
-        service_context: ServiceContext,
+        service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
         use_async: bool = False,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
@@ -61,6 +61,7 @@ class ResponseSynthesizer:
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         verbose: bool = False,
     ) -> "ResponseSynthesizer":
+        service_context = service_context or ServiceContext.from_defaults()
         response_builder: Optional[BaseResponseBuilder] = None
         if response_mode != ResponseMode.NO_TEXT:
             response_builder = get_response_builder(

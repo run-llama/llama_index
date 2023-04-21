@@ -71,8 +71,8 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             **kwargs,
         )
 
-    def as_retriever(self) -> BaseRetriever:
-        return KGTableRetriever(self)
+    def as_retriever(self, **kwargs) -> BaseRetriever:
+        return KGTableRetriever(self, **kwargs)
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""

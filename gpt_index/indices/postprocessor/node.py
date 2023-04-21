@@ -14,7 +14,6 @@ from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.docstore import BaseDocumentStore
 from gpt_index.data_structs.node_v2 import Node, DocumentRelationship, NodeWithScore
 from gpt_index.indices.postprocessor.base import BasePostprocessor
-from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.response.response_builder import get_response_builder
 
 logger = logging.getLogger(__name__)

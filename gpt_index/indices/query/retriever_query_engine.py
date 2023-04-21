@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Sequence
 from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
+from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 from gpt_index.indices.response.type import ResponseMode
@@ -17,25 +17,17 @@ from gpt_index.response.schema import RESPONSE_TYPE
 from gpt_index.token_counter.token_counter import llm_token_counter
 
 
-class BaseQueryEngine(ABC):
-    @abstractmethod
-    def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        pass
-
-    @abstractmethod
-    async def aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        pass
-
-
-class RetrieverQueryEngine:
+class RetrieverQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         retriever: BaseRetriever,
-        response_synthesizer: ResponseSynthesizer,
+        response_synthesizer: Optional[ResponseSynthesizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
     ) -> None:
         self._retriever = retriever
-        self._response_synthesizer = response_synthesizer
+        self._response_synthesizer = (
+            response_synthesizer or ResponseSynthesizer.from_args()
+        )
         self._node_postprocessors = node_postprocessors
 
     @classmethod
@@ -56,7 +48,7 @@ class RetrieverQueryEngine:
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         # class-specific args
         **kwargs: Any,
-    ) -> "BaseQueryEngine":
+    ) -> "RetrieverQueryEngine":
         response_synthesizer = ResponseSynthesizer.from_args(
             service_context=service_context,
             text_qa_template=text_qa_template,

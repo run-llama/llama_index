@@ -4,12 +4,10 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.query.embedding_utils import (
-    SimilarityTracker,
     get_top_k_embeddings,
 )
 from gpt_index.indices.query.schema import QueryBundle
@@ -18,6 +16,7 @@ from gpt_index.prompts.prompts import QueryKeywordExtractPrompt
 from gpt_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
+DEFAULT_NODE_SCORE = 1000.0
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ class KGTableRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: GPTKnowledgeGraphIndex,
+        index: Any,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
@@ -76,6 +75,9 @@ class KGTableRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
+        from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
+
+        assert isinstance(index, GPTKnowledgeGraphIndex)
         self._index = index
         self._service_context = self._index.service_context
         self._index_struct = self._index.index_struct
@@ -108,11 +110,10 @@ class KGTableRetriever(BaseRetriever):
                 keywords.append(keyword.strip("(\"'"))
         return keywords
 
-    def _retrieve(
+    def retrieve(
         self,
         query_bundle: QueryBundle,
-        similarity_tracker: Optional[SimilarityTracker] = None,
-    ) -> List[Node]:
+    ) -> List[NodeWithScore]:
         """Get nodes for response."""
         logger.info(f"> Starting query: {query_bundle.query_str}")
         keywords = self._get_keywords(query_bundle.query_str)
@@ -187,10 +188,10 @@ class KGTableRetriever(BaseRetriever):
         #     rel_text_nodes = node_processor.postprocess_nodes(rel_text_nodes)
         # rel_texts = [node.get_text() for node in rel_text_nodes]
 
+        sorted_nodes_with_scores = []
         for chunk_idx, node in zip(sorted_chunk_indices, sorted_nodes):
             # nodes are found with keyword mapping, give high conf to avoid cutoff
-            if similarity_tracker is not None:
-                similarity_tracker.add(node, 1000.0)
+            sorted_nodes_with_scores.append(NodeWithScore(node, DEFAULT_NODE_SCORE))
             logger.info(
                 f"> Querying with idx: {chunk_idx}: "
                 f"{truncate_text(node.get_text(), 80)}"
@@ -209,8 +210,9 @@ class KGTableRetriever(BaseRetriever):
         }
         rel_text_node = Node(text="\n".join(rel_info), node_info=rel_node_info)
         # this node is constructed from rel_texts, give high confidence to avoid cutoff
-        if similarity_tracker is not None:
-            similarity_tracker.add(rel_text_node, 1000.0)
+        sorted_nodes_with_scores.append(
+            NodeWithScore(rel_text_node, DEFAULT_NODE_SCORE)
+        )
         rel_info_text = "\n".join(rel_info)
         logger.info(f"> Extracted relationships: {rel_info_text}")
         sorted_nodes.append(rel_text_node)
