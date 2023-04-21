@@ -60,6 +60,8 @@ def get_top_k_embeddings_learner(
     Can fit SVM, linear regression, and more.
 
     """
+    if embedding_ids is None:
+        embedding_ids = [i for i in range(len(embeddings))]
     query_embedding_np = np.array(query_embedding)
     embeddings_np = np.array(embeddings)
     # create dataset
