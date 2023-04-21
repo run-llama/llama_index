@@ -126,7 +126,7 @@ class BaseEmbedding:
         self._total_tokens_used += text_tokens_count
         return text_embedding
 
-    def queue_text_for_embeddding(self, text_id: str, text: str) -> None:
+    def queue_text_for_embedding(self, text_id: str, text: str) -> None:
         """Queue text for embedding.
 
         Used for batching texts during embedding calls.
