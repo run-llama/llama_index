@@ -91,13 +91,15 @@ class DatasetGenerator:
         if service_context is None:
             service_context = _get_default_service_context()
         nodes = service_context.node_parser.get_nodes_from_documents(documents)
-        
+
         # use node postprocessor to filter nodes
         required_keywords = required_keywords or []
         exclude_keywords = exclude_keywords or []
-        node_postprocessor = KeywordNodePostprocessor(service_context=service_context, 
-                                                      required_keywords=required_keywords, 
-                                                      exclude_keywords=exclude_keywords)
+        node_postprocessor = KeywordNodePostprocessor(
+            service_context=service_context,
+            required_keywords=required_keywords,
+            exclude_keywords=exclude_keywords,
+        )
         nodes = node_postprocessor.postprocess_nodes(nodes)
 
         return cls(
