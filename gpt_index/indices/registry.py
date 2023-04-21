@@ -25,7 +25,7 @@ from gpt_index.data_structs.data_structs_v2 import (
 )
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.data_structs.table_v2 import PandasStructTable, SQLStructTable
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.empty.base import GPTEmptyIndex
 from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex

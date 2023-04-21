@@ -7,8 +7,9 @@ import pandas as pd
 from langchain.input import print_text
 
 from gpt_index.data_structs.table_v2 import PandasStructTable
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.struct_store.pandas import GPTPandasIndex
 from gpt_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from gpt_index.prompts.prompts import PandasPrompt
 from gpt_index.response.schema import Response
@@ -64,7 +65,7 @@ def default_output_processor(
         return err_string
 
 
-class GPTNLPandasIndexQuery(BaseGPTIndexQuery[PandasStructTable]):
+class GPTNLPandasQueryEngine(BaseQueryEngine):
     """GPT Pandas query.
 
     Convert natural language to Pandas python code.
@@ -86,25 +87,25 @@ class GPTNLPandasIndexQuery(BaseGPTIndexQuery[PandasStructTable]):
 
     def __init__(
         self,
-        index_struct: PandasStructTable,
-        df: Optional[pd.DataFrame] = None,
+        index: GPTPandasIndex,
         instruction_str: Optional[str] = None,
         output_processor: Optional[Callable] = None,
         pandas_prompt: Optional[PandasPrompt] = None,
         output_kwargs: Optional[dict] = None,
         head: int = 5,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, **kwargs)
-        if df is None:
-            raise ValueError("df must be provided.")
-        self.df = df
+        self.df = index.df
+        self._service_context = index.service_context
+
         self._head = head
         self._pandas_prompt = pandas_prompt or DEFAULT_PANDAS_PROMPT
         self._instruction_str = instruction_str or DEFAULT_INSTRUCTION_STR
         self._output_processor = output_processor or default_output_processor
         self._output_kwargs = output_kwargs or {}
+        self._verbose = verbose
 
     def _get_table_context(self) -> str:
         """Get table context."""

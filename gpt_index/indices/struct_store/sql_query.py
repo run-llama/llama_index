@@ -2,9 +2,11 @@
 import logging
 from typing import Any, Optional
 
+from llama_index import GPTSQLStructStoreIndex
+
 from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
-from gpt_index.indices.query.base import BaseGPTIndexQuery
+from gpt_index.indices.query.base import BaseGPTIndexQuery, BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle, QueryMode
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
@@ -15,7 +17,7 @@ from gpt_index.token_counter.token_counter import llm_token_counter
 logger = logging.getLogger(__name__)
 
 
-class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
+class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
     """GPT SQL query over a structured database.
 
     Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made here.
@@ -30,16 +32,12 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
 
     def __init__(
         self,
-        index_struct: SQLStructTable,
-        sql_database: Optional[SQLDatabase] = None,
-        sql_context_container: Optional[SQLContextContainer] = None,
+        index: GPTSQLStructStoreIndex,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, **kwargs)
-        if sql_database is None:
-            raise ValueError("sql_database must be provided.")
-        self._sql_database = sql_database
+        self._sql_database = index.sql_database
+        self._sql_context_container = index.sql_context_container
 
     @llm_token_counter("query")
     def query(self, query_bundle: QueryBundle) -> Response:
@@ -56,7 +54,7 @@ class GPTSQLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         return self.query(query_bundle)
 
 
-class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
+class GPTNLStructStoreQueryEngine(BaseQueryEngine):
     """GPT natural language query over a structured database.
 
     Given a natural language query, we will extract the query to SQL.
@@ -74,8 +72,7 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     def __init__(
         self,
         index_struct: SQLStructTable,
-        sql_database: Optional[SQLDatabase] = None,
-        sql_context_container: Optional[SQLContextContainer] = None,
+        index: GPTSQLStructStoreIndex,
         ref_doc_id_column: Optional[str] = None,
         text_to_sql_prompt: Optional[TextToSQLPrompt] = None,
         context_query_mode: QueryMode = QueryMode.DEFAULT,
@@ -84,12 +81,10 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
     ) -> None:
         """Initialize params."""
         super().__init__(index_struct=index_struct, **kwargs)
-        if sql_database is None:
-            raise ValueError("sql_database must be provided.")
-        self._sql_database = sql_database
-        if sql_context_container is None:
-            raise ValueError("sql_context_container must be provided.")
-        self._sql_context_container = sql_context_container
+        self._sql_database = index.sql_database
+        self._sql_context_container = index.sql_context_container
+        self._service_context = index.service_context
+
         self._ref_doc_id_column = ref_doc_id_column
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._context_query_mode = context_query_mode

@@ -14,7 +14,7 @@ from typing import Any, Optional, Sequence, Set
 from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs_v2 import KeywordTable
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
+from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
 from gpt_index.indices.keyword_table.retrievers import (

@@ -14,7 +14,6 @@ from gpt_index.docstore.registry import (
     save_docstore_to_dict,
 )
 from gpt_index.indices.common.base_retriever import BaseRetriever
-from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
 from gpt_index.token_counter.token_counter import llm_token_counter
@@ -22,10 +21,6 @@ from gpt_index.token_counter.token_counter import llm_token_counter
 IS = TypeVar("IS", bound=V2IndexStruct)
 
 logger = logging.getLogger(__name__)
-
-
-# map from mode to query class
-QueryMap = Dict[str, Type[BaseGPTIndexQuery]]
 
 
 class BaseGPTIndex(Generic[IS], ABC):
