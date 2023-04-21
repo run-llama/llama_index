@@ -71,6 +71,22 @@ def test_retrievers(
         "form of (subset, predicate, object):\n('foo', 'is', 'bar')"
     )
 
+
+@patch_common
+@patch.object(
+    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+)
+def test_retriever_no_text(
+    _mock_init: Any,
+    _mock_predict: Any,
+    _mock_total_tokens_used: Any,
+    _mock_split_text_overlap: Any,
+    _mock_split_text: Any,
+    struct_kwargs: Any,
+    documents: List[Document],
+) -> None:
+    # test specific retriever class
+    index = GPTKnowledgeGraphIndex.from_documents(documents)
     retriever = KGTableRetriever(
         index,
         query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
@@ -95,7 +111,7 @@ def test_retrievers(
 @patch.object(
     OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
-def test_query_similarity(
+def test_retrieve_similarity(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
