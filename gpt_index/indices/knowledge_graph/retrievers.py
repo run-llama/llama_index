@@ -81,6 +81,7 @@ class KGTableRetriever(BaseRetriever):
         self._index = index
         self._service_context = self._index.service_context
         self._index_struct = self._index.index_struct
+        self._docstore = self._index.docstore
 
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
@@ -215,9 +216,8 @@ class KGTableRetriever(BaseRetriever):
         )
         rel_info_text = "\n".join(rel_info)
         logger.info(f"> Extracted relationships: {rel_info_text}")
-        sorted_nodes.append(rel_text_node)
 
-        return sorted_nodes
+        return sorted_nodes_with_scores
 
     def _get_extra_info_for_response(
         self, nodes: List[Node]

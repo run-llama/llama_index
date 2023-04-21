@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 from llama_index import GPTKeywordTableIndex
 
 from gpt_index.data_structs.data_structs_v2 import Node
+from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.utils import (
     extract_keywords_given_response,
@@ -72,10 +73,10 @@ class BaseKeywordTableRetriever(BaseRetriever):
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
 
-    def _retrieve(
+    def retrieve(
         self,
         query_bundle: QueryBundle,
-    ) -> List[Node]:
+    ) -> List[NodeWithScore]:
         """Get nodes for response."""
         logger.info(f"> Starting query: {query_bundle.query_str}")
         keywords = self._get_keywords(query_bundle.query_str)
@@ -102,8 +103,9 @@ class BaseKeywordTableRetriever(BaseRetriever):
                     f"> Querying with idx: {chunk_idx}: "
                     f"{truncate_text(node.get_text(), 50)}"
                 )
+        sorted_nodes_with_scores = [NodeWithScore(node) for node in sorted_nodes]
 
-        return sorted_nodes
+        return sorted_nodes_with_scores
 
 
 class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
