@@ -9,6 +9,7 @@ from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.utils import log_vector_store_query_result
+from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -47,6 +48,7 @@ class VectorIndexRetriever(BaseRetriever):
         self._alpha = alpha
         self._doc_ids = doc_ids
 
+    @llm_token_counter("retrieve")
     def retrieve(
         self,
         query_bundle: QueryBundle,
@@ -77,8 +79,10 @@ class VectorIndexRetriever(BaseRetriever):
                     "Vector store query result should return at "
                     "least one of nodes or ids."
                 )
-            assert isinstance(self._index_struct, IndexDict)
-            node_ids = [self._index_struct.nodes_dict[idx] for idx in query_result.ids]
+            assert isinstance(self._index.index_struct, IndexDict)
+            node_ids = [
+                self._index.index_struct.nodes_dict[idx] for idx in query_result.ids
+            ]
             nodes = self._docstore.get_nodes(node_ids)
             query_result.nodes = nodes
         else:
@@ -93,6 +97,6 @@ class VectorIndexRetriever(BaseRetriever):
 
         node_with_scores = []
         for node, similarity in zip(query_result.nodes, query_result.similarities):
-            node_with_scores(NodeWithScore(node, score=similarity))
+            node_with_scores.append(NodeWithScore(node, score=similarity))
 
         return node_with_scores

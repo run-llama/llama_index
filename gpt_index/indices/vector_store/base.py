@@ -63,7 +63,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         return self._vector_store
 
     def as_retriever(self, **kwargs) -> BaseRetriever:
-        return VectorIndexRetriever(self._vector_store, **kwargs)
+        return VectorIndexRetriever(self, **kwargs)
 
     def _get_node_embedding_results(
         self, nodes: Sequence[Node], existing_node_ids: Set
