@@ -76,8 +76,12 @@ class TreeSelectLeafRetriever(BaseRetriever):
         refine_template: Optional[RefinePrompt] = None,
         query_template_multiple: Optional[TreeSelectMultiplePrompt] = None,
         child_branch_factor: int = 1,
+        verbose: bool = False,
         **kwargs: Any,
     ):
+        from gpt_index.indices.tree.base import GPTTreeIndex
+
+        assert isinstance(index, GPTTreeIndex)
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore
@@ -90,6 +94,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             query_template_multiple or DEFAULT_QUERY_PROMPT_MULTIPLE
         )
         self.child_branch_factor = child_branch_factor
+        self._verbose = verbose
 
     def _query_with_selected_node(
         self,

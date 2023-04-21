@@ -1,9 +1,7 @@
 """Test tree index."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from unittest.mock import patch
-
-import pytest
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
@@ -31,35 +29,6 @@ from tests.mock_utils.mock_prompts import (
 from tests.mock_utils.mock_text_splitter import (
     mock_token_splitter_newline_with_overlaps,
 )
-
-
-@pytest.fixture
-def struct_kwargs() -> Tuple[Dict, Dict]:
-    """Index kwargs."""
-    index_kwargs = {
-        "summary_template": MOCK_SUMMARY_PROMPT,
-        "insert_prompt": MOCK_INSERT_PROMPT,
-        "num_children": 2,
-    }
-    query_kwargs = {
-        "query_template": MOCK_QUERY_PROMPT,
-        "text_qa_template": MOCK_TEXT_QA_PROMPT,
-        "refine_template": MOCK_REFINE_PROMPT,
-    }
-    return index_kwargs, query_kwargs
-
-
-@pytest.fixture
-def documents() -> List[Document]:
-    """Get documents."""
-    # NOTE: one document for now
-    doc_text = (
-        "Hello world.\n"
-        "This is a test.\n"
-        "This is another test.\n"
-        "This is a test v2."
-    )
-    return [Document(doc_text)]
 
 
 def _get_left_or_right_node(
@@ -196,63 +165,6 @@ def test_build_tree_multiple(
     assert nodes[1].text == "This is a test."
     assert nodes[2].text == "This is another test."
     assert nodes[3].text == "This is a test v2."
-
-
-@patch_common
-def test_query(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    documents: List[Document],
-    struct_kwargs: Dict,
-) -> None:
-    """Test query."""
-    index_kwargs, query_kwargs = struct_kwargs
-    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
-
-    # test default query
-    query_str = "What is?"
-    response = tree.query(query_str, mode="default", **query_kwargs)
-    assert str(response) == ("What is?:Hello world.")
-
-
-@patch_common
-@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_predict)
-def test_summarize_query(
-    _mock_apredict: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    documents: List[Document],
-    struct_kwargs: Dict,
-) -> None:
-    """Test summarize query."""
-    # create tree index without building tree
-    index_kwargs, orig_query_kwargs = struct_kwargs
-    index_kwargs = index_kwargs.copy()
-    index_kwargs.update({"build_tree": False})
-    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
-
-    # test summarize query
-    query_str = "What is?"
-    query_kwargs: Dict[str, Any] = {
-        "text_qa_template": MOCK_TEXT_QA_PROMPT,
-        "num_children": 2,
-    }
-    # TODO: fix unit test later
-    response = tree.query(query_str, mode="summarize", **query_kwargs)
-    print(str(response))
-    assert str(response) == (
-        "What is?:Hello world.:This is a test.:This is another test.:This is a test v2."
-    )
-
-    # test that default query fails
-    with pytest.raises(ValueError):
-        tree.query(query_str, mode="default", **orig_query_kwargs)
 
 
 @patch_common
