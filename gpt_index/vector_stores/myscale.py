@@ -177,7 +177,7 @@ class MyScaleVectorStore(VectorStore):
 
         """
 
-        if embedding_results is None or len(embedding_results) == 0:
+        if not embedding_results:
             return []
 
         if not self._index_existed:
