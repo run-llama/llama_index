@@ -20,6 +20,7 @@ Jupyter notebook to a chatbot to a full-stack web application.
 
    tutorials/building_a_chatbot.md
    tutorials/fullstack_app_guide.md
+   tutorials/fullstack_with_delphic.md
    tutorials/sql_guide.md
    tutorials/terms_definitions_tutorial.md
    tutorials/graph.md
