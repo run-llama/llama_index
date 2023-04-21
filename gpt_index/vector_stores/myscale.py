@@ -21,7 +21,7 @@ from gpt_index.vector_stores.types import (
 logger = logging.getLogger(__name__)
 
 
-class MyscaleVectorStore(VectorStore):
+class MyScaleVectorStore(VectorStore):
     """MyScale Vector Store.
 
     In this vector store, embeddings and docs are stored within an existing

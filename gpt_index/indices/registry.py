@@ -16,7 +16,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     IndexList,
     KeywordTable,
     MilvusIndexDict,
-    MyscaleIndexDict,
+    MyScaleIndexDict,
     OpensearchIndexDict,
     PineconeIndexDict,
     QdrantIndexDict,
@@ -41,7 +41,7 @@ from gpt_index.indices.vector_store.vector_indices import (
     GPTDeepLakeIndex,
     GPTFaissIndex,
     GPTMilvusIndex,
-    GPTMyscaleIndex,
+    GPTMyScaleIndex,
     GPTOpensearchIndex,
     GPTPineconeIndex,
     GPTQdrantIndex,
@@ -69,7 +69,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruc
     IndexStructType.COMPOSITE: CompositeIndex,
     IndexStructType.CHATGPT_RETRIEVAL_PLUGIN: ChatGPTRetrievalPluginIndexDict,
     IndexStructType.DEEPLAKE: DeepLakeIndexDict,
-    IndexStructType.MYSCALE: MyscaleIndexDict,
+    IndexStructType.MYSCALE: MyScaleIndexDict,
 }
 
 
@@ -92,7 +92,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.CHATGPT_RETRIEVAL_PLUGIN: ChatGPTRetrievalPluginIndex,
     IndexStructType.OPENSEARCH: GPTOpensearchIndex,
     IndexStructType.DEEPLAKE: GPTDeepLakeIndex,
-    IndexStructType.MYSCALE: GPTMyscaleIndex,
+    IndexStructType.MYSCALE: GPTMyScaleIndex,
 }
 
 

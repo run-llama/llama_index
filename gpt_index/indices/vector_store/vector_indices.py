@@ -10,7 +10,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     FaissIndexDict,
     IndexDict,
     MilvusIndexDict,
-    MyscaleIndexDict,
+    MyScaleIndexDict,
     OpensearchIndexDict,
     PineconeIndexDict,
     QdrantIndexDict,
@@ -27,7 +27,7 @@ from gpt_index.vector_stores import (
     DeepLakeVectorStore,
     FaissVectorStore,
     MilvusVectorStore,
-    MyscaleVectorStore,
+    MyScaleVectorStore,
     PineconeVectorStore,
     QdrantVectorStore,
     SimpleVectorStore,
@@ -506,7 +506,7 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
         )
 
 
-class GPTMyscaleIndex(GPTVectorStoreIndex):
+class GPTMyScaleIndex(GPTVectorStoreIndex):
     """GPT MyScale Index.
 
     In this GPT index we store the text, its embedding and
@@ -529,10 +529,10 @@ class GPTMyscaleIndex(GPTVectorStoreIndex):
         search_params (dict, optional): The search parameters for a MyScale query. Defaults to None.
 
     Returns:
-        MyscaleVectorstore: Vectorstore that supports add, delete, and query.
+        MyScaleVectorstore: Vectorstore that supports add, delete, and query.
     """
 
-    index_struct_cls: Type[IndexDict] = MyscaleIndexDict
+    index_struct_cls: Type[IndexDict] = MyScaleIndexDict
 
     def __init__(
         self,
@@ -547,13 +547,13 @@ class GPTMyscaleIndex(GPTVectorStoreIndex):
         nodes: Optional[Sequence[Node]] = None,
         service_context: Optional[ServiceContext] = None,
         index_struct: Optional[IndexDict] = None,
-        vector_store: Optional[MyscaleVectorStore] = None,
+        vector_store: Optional[MyScaleVectorStore] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
 
         if vector_store is None:
-            vector_store = MyscaleVectorStore(
+            vector_store = MyScaleVectorStore(
                 myscale_client=myscale_client,
                 table=table_name,
                 database=database_name,

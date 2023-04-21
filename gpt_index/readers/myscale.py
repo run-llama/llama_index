@@ -79,7 +79,7 @@ class MyScaleSettings:
         return query_statement
 
 
-class MyscaleReader(BaseReader):
+class MyScaleReader(BaseReader):
     """MyScale reader.
 
     Args:
