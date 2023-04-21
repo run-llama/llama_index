@@ -40,16 +40,14 @@ class StableLMPredictor(BaseLLMPredictor):
         temperature: float = 0.7,
         do_sample: bool = False,
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
+        tokenizer_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
+        model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
     ) -> None:
         """Initialize params."""
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            "StabilityAI/stablelm-tuned-alpha-3b"
-        )
-        self.model = AutoModelForCausalLM.from_pretrained(
-            "StabilityAI/stablelm-tuned-alpha-3b"
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+        self.model = AutoModelForCausalLM.from_pretrained(model_name)
         self.model.half().cuda()
 
         self._max_new_tokens = max_new_tokens
