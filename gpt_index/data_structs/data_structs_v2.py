@@ -434,4 +434,3 @@ class CompositeIndex(V2IndexStruct):
             DATA_KEY: data_dict,
         }
         return out_dict
-        return out_dict

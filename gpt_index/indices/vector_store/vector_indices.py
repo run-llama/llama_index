@@ -510,11 +510,11 @@ class GPTMyScaleIndex(GPTVectorStoreIndex):
     """GPT MyScale Index.
 
     In this GPT index we store the text, its embedding and
-    a few pieces of its metadata in a Milvus collection.
+    a few pieces of its metadata in a MyScale table. There will be
+    a vector index build for the embedding column.
     This implementation allows the use of an already existing
-    collection if it is one that was created this vector store.
-    It also supports creating a new one if the collection doesnt exist
-    or if `overwrite` is set to True.
+    table if it is one that was created this vector store.
+    It also supports creating a new table if the collection doesnt exist
 
     Args:
         myscale_client (httpclient): clickhouse httpclient of an existing MyScale cluster.
@@ -529,7 +529,7 @@ class GPTMyScaleIndex(GPTVectorStoreIndex):
         search_params (dict, optional): The search parameters for a MyScale query. Defaults to None.
 
     Returns:
-        MyScaleVectorstore: Vectorstore that supports add, delete, and query.
+        MyScaleVectorStore: Vectorstore that supports add, delete, and query.
     """
 
     index_struct_cls: Type[IndexDict] = MyScaleIndexDict

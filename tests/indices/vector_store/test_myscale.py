@@ -28,7 +28,7 @@ def documents() -> List[Document]:
         "This is another test.\n"
         "This is a test v2."
     )
-    return [Document(doc_text)]
+    return [Document(doc_text=doc_text, extra_info={})]
 
 
 @pytest.mark.skipif(
@@ -47,6 +47,4 @@ def test_build_myscale(documents: List[Document]) -> None:
     )
     index = GPTMyScaleIndex.from_documents(documents, myscale_client=client)
     response = index.query("How many tests?")
-    print(response)
-    assert str(response).strip() == ("Three tests.")
     assert str(response).strip() == ("Three tests.")
