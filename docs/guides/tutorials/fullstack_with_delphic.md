@@ -4,13 +4,13 @@ This guide seeks to walk you through using LlamaIndex with a production-ready we
 called [Delphic](https://github.com/JSv4/Delphic). All code examples here are available from
 the [Delphic](https://github.com/JSv4/Delphic) repo
 
-# What We're Building
+## What We're Building
 
 Here's a quick demo of the out-of-the-box functionality of Delphic:
 
 https://user-images.githubusercontent.com/5049984/233236432-aa4980b6-a510-42f3-887a-81485c9644e6.mp4
 
-# Architectural Overview
+## Architectural Overview
 
 Delphic leverages the LlamaIndex python library to let users to create their own document collections they can then
 query in a responsive frontend.
@@ -36,16 +36,16 @@ developer experience, built-in authentication and user management, asynchronous 
 web-socket-based query connections for a responsive UI. In addition, our frontend is built with TypeScript and is based
 on MUI React for a responsive and modern user interface.
 
-# System Requirements
+## System Requirements
 
 Celery doesn't work on Windows. It may be deployable with Windows Subsystem for Linux, but configuring that is beyond
 the scope of this tutorial. For this reason, we recommend you only follow this tutorial if you're running Linux or OSX.
 You will need Docker and Docker Compose installed to deploy the application. Local development will require node version
 manager (nvm).
 
-# Django Backend
+## Django Backend
 
-## Project Directory Overview
+### Project Directory Overview
 
 The Delphic application has a structured backend directory organization that follows common Django project conventions.
 From the repo root, in the `./delphic` subfolder, the main folders are:
@@ -67,7 +67,7 @@ From the repo root, in the `./delphic` subfolder, the main folders are:
 5. `utils`: This directory contains utility modules and functions that are used across the application, such as custom
    storage backends, path helpers, and collection-related utilities.
 
-## Database Models
+### Database Models
 
 The Delphic application has two core models: `Document` and `Collection`. These models represent the central entities
 the application deals with when indexing and querying documents using LLMs. They're defined in
@@ -96,7 +96,7 @@ the application deals with when indexing and querying documents using LLMs. They
 
 These models provide a solid foundation for collections of documents and the indexes created from them with LlamaIndex.
 
-## Django Ninja API
+### Django Ninja API
 
 Django Ninja is a web framework for building APIs with Django and Python 3.7+ type hints. It provides a simple,
 intuitive, and expressive way of defining API endpoints, leveraging Python’s type hints to automatically generate input
@@ -197,7 +197,7 @@ async def add_file_to_collection(request,
     collection = await sync_to_async(Collection.objects.get)(id=collection_id
 ```
 
-## Intro to Websockets
+### Intro to Websockets
 
 WebSockets are a communication protocol that enables bidirectional and full-duplex communication between a client and a
 server over a single, long-lived connection. The WebSocket protocol is designed to work over the same ports as HTTP and
@@ -249,7 +249,7 @@ application = ProtocolTypeRouter(
 This configuration allows clients to establish WebSocket connections with the Delphic application to efficiently query
 document collections using the LLMs, without the need to reload the models for each request.
 
-## Websocket Handler
+### Websocket Handler
 
 The `CollectionQueryConsumer` class
 in [`config/api/websockets/queries.py`](https://github.com/JSv4/Delphic/blob/main/config/api/websockets/queries.py) is
@@ -262,7 +262,7 @@ The `CollectionQueryConsumer` class has three main methods:
 2. `disconnect`: Called when a WebSocket closes for any reason.
 3. `receive`: Called when the server receives a message from the WebSocket.
 
-### Websocket connect listener
+#### Websocket connect listener
 
 The `connect` method is responsible for establishing the connection, extracting the collection ID from the connection
 path, loading the collection model, and accepting the connection.
@@ -281,12 +281,12 @@ except Exception as e:
 pass
 ```
 
-### Websocket disconnect listener
+#### Websocket disconnect listener
 
 The `disconnect` method is empty in this case, as there are no additional actions to be taken when the WebSocket is
 closed.
 
-### Websocket receive listener
+#### Websocket receive listener
 
 The `receive` method is responsible for processing incoming messages from the WebSocket. It takes the incoming message,
 decodes it, and then queries the loaded collection model using the provided query. The response is then formatted as a
@@ -383,9 +383,9 @@ async def load_collection_model(collection_id: str | int) -> GPTSimpleVectorInde
     return index
 ```
 
-# React Frontend
+## React Frontend
 
-## Overview
+### Overview
 
 We chose to use TypeScript, React and Material-UI (MUI) for the Delphic project’s frontend for a couple reasons. First,
 as the most popular component library (MUI) for the most popular frontend framework (React), this choice makes this
@@ -393,7 +393,7 @@ project accessible to a huge community of developers. Second, React is, at this 
 framework that delivers valuable abstractions in the form of its virtual DOM while still being relatively stable and, in
 our opinion, pretty easy to learn, again making it accessible.
 
-## Frontend Project Structure
+### Frontend Project Structure
 
 The frontend can be found in the [`/frontend`](https://github.com/JSv4/Delphic/tree/main/frontend) directory of the
 repo, with the React-related components being in `/frontend/src` . You’ll notice there is a DockerFile in the `frontend`
@@ -410,7 +410,7 @@ application and provides the navigation and main content areas.
 Since the application is relatively simple, we can get away with not using a complex state management solution like
 Redux and just use React’s useState hooks.
 
-## Grabbing Collections from the Backend
+### Grabbing Collections from the Backend
 
 The collections available to the logged-in user are retrieved and displayed in the DrawerLayout2 component. The process
 can be broken down into the following steps:
@@ -448,7 +448,7 @@ The `fetchCollections` function retrieves the collections for the logged-in user
 function with the user's access token. It then updates the `collections` state with the retrieved data and sets
 the `loading` state to `false` to indicate that fetching is complete.
 
-## Displaying Collections
+### Displaying Collections
 
 The latest collectios are displayed in the drawer like this:
 
@@ -513,7 +513,7 @@ return () = > clearInterval(interval);
 }, [collections]);
 ```
 
-## Chat View Component
+### Chat View Component
 
 The `ChatView` component in `frontend/src/chat/ChatView.tsx` is responsible for handling and displaying a chat interface
 for a user to interact with a collection. The component establishes a WebSocket connection to communicate in real-time
@@ -531,7 +531,7 @@ Key features of the `ChatView` component include:
 Together, all of this allows users to interact with their selected collection with a very smooth, low-latency
 experience.
 
-### Chat Websocket Client
+#### Chat Websocket Client
 
 The WebSocket connection in the `ChatView` component is used to establish real-time communication between the client and
 the server. The WebSocket connection is set up and managed in the `ChatView` component as follows:
@@ -657,7 +657,7 @@ updates the states to reflect the error and logs the error event:
     };
   ```
 
-### Rendering our Chat Messages
+#### Rendering our Chat Messages
 
 In the `ChatView` component, the layout is determined using CSS styling and Material-UI components. The main layout
 consists of a container with a `flex` display and a column-oriented `flexDirection`. This ensures that the content
@@ -679,9 +679,9 @@ There are three primary sections within the layout:
 The user inputs accepted in the `ChatView` component are text messages that the user types in the `TextField`. The
 component processes these text inputs and sends them to the server through the WebSocket connection.
 
-# Deployment
+## Deployment
 
-## Prerequisites
+### Prerequisites
 
 To deploy the app, you're going to need Docker and Docker Compose installed. If you're on Ubuntu or another, common
 Linux distribution, DigitalOcean has
@@ -691,7 +691,7 @@ for [Docker Compose](https://www.digitalocean.com/community/tutorials/how-to-ins
 you can follow. If those don't work for you, try
 the [official docker documentation.](https://docs.docker.com/engine/install/)
 
-## Build and Deploy
+### Build and Deploy
 
 The project is based on django-cookiecutter, and it’s pretty easy to get it deployed on a VM and configured to serve
 HTTPs traffic for a specific domain. The configuration is somewhat involved, however — not because of this project, but
@@ -751,9 +751,9 @@ sudo docker-compose -f local.yml up
 
 Now, visit `localhost:3000` in your browser to see the frontend, and use the Delphic application locally.
 
-# Using the Application
+## Using the Application
 
-## Setup Users
+### Setup Users
 
 In order to actually use the application (at the moment, we intend to make it possible to share certain models with
 unauthenticated users), you need a login. You can use either a superuser or non-superuser. In either case, someone needs
