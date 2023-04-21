@@ -177,6 +177,9 @@ class MyScaleVectorStore(VectorStore):
 
         """
 
+        if embedding_results is None or len(embedding_results) == 0:
+            return []
+
         if not self._index_existed:
             self._create_index(len(embedding_results[0].embedding))
 
@@ -196,7 +199,7 @@ class MyScaleVectorStore(VectorStore):
         raise NotImplementedError("Delete not yet implemented for MyScale index.")
 
     def drop(self) -> None:
-        """DROP MyScale Index and table"""
+        """Drop MyScale Index and table"""
         self._client.command(
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
         )
@@ -205,9 +208,7 @@ class MyScaleVectorStore(VectorStore):
         """Query index for top k most similar nodes.
 
         Args:
-            query_embedding (List[float]): target embedding
-            similarity_top_k (int, optional): Top K neighbors to retrieve.
-            doc_ids (Optional[List[str]], optional): condition for vector search, only search for these doc_ids
+            query (VectorStoreQuery): query
 
         """
 
