@@ -64,7 +64,6 @@ class RetrieverQueryEngine(BaseQueryEngine):
             retriever=retriever,
             response_synthesizer=response_synthesizer,
             node_postprocessors=node_postprocessors,
-            **kwargs,
         )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:

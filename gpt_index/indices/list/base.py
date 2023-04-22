@@ -61,6 +61,8 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             return ListIndexRetriever(self, **kwargs)
         elif mode == QueryMode.EMBEDDING:
             return ListIndexEmbeddingRetriever(self, **kwargs)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexList:
         """Build the index from documents.

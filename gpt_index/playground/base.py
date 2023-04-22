@@ -123,13 +123,17 @@ class Playground:
         result = []
         for i, index in enumerate(self._indices):
             for mode in self._modes:
-                if mode not in index.get_query_map():
-                    continue
                 start_time = time.time()
 
                 index_name = type(index).__name__
                 print_text(f"\033[1m{index_name}\033[0m, mode = {mode}", end="\n")
-                output = index.query(query_text, mode=mode)
+                # TODO: refactor query mode
+                try:
+                    query_engine = index.as_query_engine(mode=mode)
+                except ValueError:
+                    continue
+
+                output = query_engine.query(query_text)
                 print_text(str(output), color=self.index_colors[str(i)], end="\n\n")
 
                 duration = time.time() - start_time

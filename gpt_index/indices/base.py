@@ -43,6 +43,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         index_struct: Optional[IS] = None,
         docstore: Optional[BaseDocumentStore] = None,
         service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and nodes is None:
@@ -209,7 +210,9 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     def as_query_engine(self, **kwargs) -> BaseQueryEngine:
         retriever = self.as_retriever(**kwargs)
-        return RetrieverQueryEngine.from_args(retriever, **kwargs)
+        return RetrieverQueryEngine.from_args(
+            retriever=retriever, service_context=self._service_context, **kwargs
+        )
 
     @classmethod
     def load_from_dict(
