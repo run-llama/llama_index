@@ -15,8 +15,10 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
 from gpt_index.token_counter.token_counter import llm_token_counter
-from gpt_index.vector_stores.registry import (load_vector_store_from_dict,
-                                              save_vector_store_to_dict)
+from gpt_index.vector_stores.registry import (
+    load_vector_store_from_dict,
+    save_vector_store_to_dict,
+)
 from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
 
