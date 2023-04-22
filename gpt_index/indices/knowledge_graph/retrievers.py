@@ -111,7 +111,7 @@ class KGTableRetriever(BaseRetriever):
                 keywords.append(keyword.strip("(\"'"))
         return keywords
 
-    def retrieve(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:

@@ -3,7 +3,6 @@ from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.query.base import BaseQueryEngine
-from gpt_index.indices.query.query_transform.base import BaseQueryTransform
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 from gpt_index.indices.response.type import ResponseMode
@@ -15,7 +14,6 @@ from gpt_index.prompts.prompts import (
     SimpleInputPrompt,
 )
 from gpt_index.response.schema import RESPONSE_TYPE
-from gpt_index.token_counter.token_counter import llm_token_counter
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
@@ -29,7 +27,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         self._response_synthesizer = (
             response_synthesizer or ResponseSynthesizer.from_args()
         )
-        self._node_postprocessors = node_postprocessors
+        self._node_postprocessors = node_postprocessors or []
 
     @classmethod
     def from_args(
@@ -69,15 +67,13 @@ class RetrieverQueryEngine(BaseQueryEngine):
             **kwargs,
         )
 
-    @llm_token_counter("query")
-    def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         # TODO: support include summary
         nodes = self.retrieve(query_bundle)
         return self.synthesize(query_bundle, nodes)
 
-    @llm_token_counter("query")
-    async def aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         # TODO: support include summary
         nodes = self.retrieve(query_bundle)

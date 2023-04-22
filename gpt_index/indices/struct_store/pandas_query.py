@@ -6,10 +6,8 @@ from typing import Any, Callable, Optional
 import pandas as pd
 from langchain.input import print_text
 
-from gpt_index.data_structs.table_v2 import PandasStructTable
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.struct_store.pandas import GPTPandasIndex
 from gpt_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from gpt_index.prompts.prompts import PandasPrompt
 from gpt_index.response.schema import Response
@@ -87,7 +85,7 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
 
     def __init__(
         self,
-        index: GPTPandasIndex,
+        index: Any,
         instruction_str: Optional[str] = None,
         output_processor: Optional[Callable] = None,
         pandas_prompt: Optional[PandasPrompt] = None,
@@ -97,6 +95,9 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
+        from gpt_index.indices.struct_store.pandas import GPTPandasIndex
+
+        assert isinstance(index, GPTPandasIndex)
         self.df = index.df
         self._service_context = index.service_context
 
@@ -111,7 +112,7 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
         """Get table context."""
         return str(self.df.head(self._head))
 
-    def query(self, query_bundle: QueryBundle) -> Response:
+    def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         context = self._get_table_context()
 
@@ -136,3 +137,6 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
         }
 
         return Response(response=pandas_output, extra_info=response_extra_info)
+
+    async def _aquery(self, query_bundle: QueryBundle) -> Response:
+        return self._query(query_bundle)

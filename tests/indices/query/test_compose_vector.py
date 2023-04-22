@@ -215,13 +215,14 @@ def test_recursive_query_vector_table(
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
-    response = graph.query(query_str, query_configs=query_configs)
+    query_engine = graph.as_query_engine()
+    response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
-    response = graph.query(query_str, query_configs=query_configs)
+    response = query_engine.query(query_str)
     assert str(response) == ("Orange?:Orange?:This is a test.")
     query_str = "Cat?"
-    response = graph.query(query_str, query_configs=query_configs)
+    response = query_engine.query(query_str)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
     # test serialize and then back

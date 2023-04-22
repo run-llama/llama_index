@@ -1,41 +1,52 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from gpt_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
-from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
+from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 from gpt_index.response.schema import RESPONSE_TYPE
 
 
-class ComposedGraphQueryEngine:
+class ComposableGraphQueryEngine(BaseQueryEngine):
     def __init__(
         self,
-        graph: ComposableGraph,
-        retrievers: Dict[str, BaseRetriever],
-        response_synthesizer: ResponseSynthesizer,
+        graph: Any,
+        response_synthesizer: Optional[ResponseSynthesizer] = None,
+        retrievers: Optional[Dict[str, BaseRetriever]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         recursive: bool = True,
     ) -> None:
+        from gpt_index.indices.composability.graph import ComposableGraph
+
+        assert isinstance(graph, ComposableGraph)
         self._graph = graph
-        self._retrievers = retrievers
-        self._response_synthesizer = response_synthesizer
+        self._response_synthesizer = (
+            response_synthesizer or ResponseSynthesizer.from_args()
+        )
+        self._retrievers = retrievers or {}
         self._node_postprocessors = node_postprocessors
 
         # additional configs
         self._recursive = recursive
 
-    def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        return self._query(query_bundle, index_id=None, level=0)
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        return self._query_index(query_bundle, index_id=None, level=0)
 
-    def _query(
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        return self._query_index(query_bundle, index_id=None, level=0)
+
+    def _query_index(
         self,
         query_bundle: Union[str, QueryBundle],
         index_id: Optional[str] = None,
         level: int = 0,
     ) -> RESPONSE_TYPE:
         index_id = index_id or self._graph.root_id
-        retriever = self._retrievers[index_id]
+        retriever = self._retrievers.get(index_id, None)
+        if retriever is None:
+            # NOTE: use default retriever
+            retriever = self._graph.get_index(index_id).as_retriever()
         nodes = retriever.retrieve(query_bundle)
 
         if self._recursive:
@@ -71,7 +82,7 @@ class ComposedGraphQueryEngine:
         if isinstance(node_with_score.node, IndexNode):
             index_node = node_with_score.node
             # recursive call
-            response = self.query(query_bundle, index_node.index_id, level + 1)
+            response = self._query_index(query_bundle, index_node.index_id, level + 1)
 
             new_node = Node(text=str(response))
             new_node_with_score = NodeWithScore(

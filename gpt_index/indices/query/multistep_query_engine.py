@@ -32,12 +32,12 @@ class MultiStepQueryEngine(BaseQueryEngine):
         if not self._early_stopping and self._num_steps is None:
             raise ValueError("Must specify num_steps if early_stopping is False.")
 
-    def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        nodes, source_nodes, extra_info = self._query(query_bundle)
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
         return self.synthesize(query_bundle, nodes, source_nodes, extra_info)
 
-    async def aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        nodes, source_nodes, extra_info = self._query(query_bundle)
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
         return await self.synthesize(query_bundle, nodes, source_nodes, extra_info)
 
     def _combine_queries(
@@ -52,7 +52,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         )
         return query_bundle
 
-    def _query(
+    def _query_multistep(
         self, query_bundle: QueryBundle
     ) -> Tuple[List[NodeWithScore], List[NodeWithScore], Dict[str, Any]]:
         """Run query combiner."""

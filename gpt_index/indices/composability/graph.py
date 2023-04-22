@@ -19,6 +19,8 @@ from gpt_index.indices.composability.utils import (
     load_query_context_from_dict,
     save_query_context_to_dict,
 )
+from gpt_index.indices.query.base import BaseQueryEngine
+from gpt_index.indices.query.graph_query_engine import ComposableGraphQueryEngine
 from gpt_index.indices.query.schema import QueryConfig
 from gpt_index.indices.service_context import ServiceContext
 
@@ -111,7 +113,7 @@ class ComposableGraph:
         ]
 
         return cls(
-            all_indices={index.index_struct.index_id for index in all_indices},
+            all_indices={index.index_struct.index_id: index for index in all_indices},
             root_id=root_index.index_struct.index_id,
         )
 
@@ -120,6 +122,9 @@ class ComposableGraph:
         if index_struct_id is None:
             index_struct_id = self._root_id
         return self._all_indices[index_struct_id]
+
+    def as_query_engine(self, **kwargs) -> BaseQueryEngine:
+        return ComposableGraphQueryEngine(self, **kwargs)
 
     @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "ComposableGraph":

@@ -59,6 +59,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
     ) -> None:
         """Initialize params."""
         self._index = index
+        self._index_struct = index.index_struct
         self._docstore = index.docstore
         self._service_context = index.service_context
 
@@ -73,7 +74,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
 
-    def retrieve(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
@@ -84,10 +85,10 @@ class BaseKeywordTableRetriever(BaseRetriever):
 
         # go through text chunks in order of most matching keywords
         chunk_indices_count: Dict[str, int] = defaultdict(int)
-        keywords = [k for k in keywords if k in self.index_struct.keywords]
+        keywords = [k for k in keywords if k in self._index_struct.keywords]
         logger.info(f"> Extracted keywords: {keywords}")
         for k in keywords:
-            for node_id in self.index_struct.table[k]:
+            for node_id in self._index_struct.table[k]:
                 chunk_indices_count[node_id] += 1
         sorted_chunk_indices = sorted(
             list(chunk_indices_count.keys()),

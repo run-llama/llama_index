@@ -39,7 +39,7 @@ class TreeRootRetriever(BaseRetriever):
         self._index_struct = index.index_struct
         self._docstore = index.docstore
 
-    def retrieve(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[Node]:

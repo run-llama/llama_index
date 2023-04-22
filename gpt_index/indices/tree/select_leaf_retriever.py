@@ -410,7 +410,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             return self._retrieve_level(children_nodes, query_bundle, level + 1)
 
     @llm_token_counter("retrieve")
-    def retrieve(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:

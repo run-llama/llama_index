@@ -7,12 +7,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.vector_store.vector_indices import GPTPineconeIndex
 
 from gpt_index.readers.schema.base import Document
 from tests.indices.vector_store.utils import MockPineconeIndex
 from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 from tests.mock_utils.mock_utils import mock_tokenizer
 
@@ -21,12 +21,10 @@ from tests.mock_utils.mock_utils import mock_tokenizer
 def struct_kwargs() -> Tuple[Dict, Dict]:
     """Index kwargs."""
     index_kwargs: Dict[str, Any] = {}
-    query_kwargs: Dict[str, Any] = {
-        "text_qa_template": MOCK_TEXT_QA_PROMPT,
-        "refine_template": MOCK_REFINE_PROMPT,
+    retrieval_kwargs: Dict[str, Any] = {
         "similarity_top_k": 1,
     }
-    return index_kwargs, query_kwargs
+    return index_kwargs, retrieval_kwargs
 
 
 @pytest.fixture
@@ -102,7 +100,7 @@ def test_build_pinecone(
     # NOTE: mock pinecone index
     pinecone_index = MockPineconeIndex()
 
-    index_kwargs, query_kwargs = struct_kwargs
+    index_kwargs, retrieval_kwargs = struct_kwargs
 
     index = GPTPineconeIndex.from_documents(
         documents=documents,
@@ -111,5 +109,7 @@ def test_build_pinecone(
         **index_kwargs
     )
 
-    response = index.query("What is?", **query_kwargs)
-    assert str(response) == ("What is?:This is another test.")
+    retriever = index.as_retriever(**retrieval_kwargs)
+    nodes = retriever.retrieve(QueryBundle("What is?"))
+    assert len(nodes) == 1
+    assert nodes[0].node.get_text() == "This is another test."

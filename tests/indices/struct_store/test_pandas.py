@@ -1,24 +1,13 @@
 """Test pandas index."""
 
-from typing import Any, Dict, Tuple, cast
+from typing import Any, Dict, cast
 
 import pandas as pd
-import pytest
+from gpt_index.indices.query.schema import QueryBundle
 
 from gpt_index.indices.struct_store.pandas import GPTPandasIndex
+from gpt_index.indices.struct_store.pandas_query import GPTNLPandasQueryEngine
 from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_prompts import MOCK_PANDAS_PROMPT
-
-
-@pytest.fixture
-def struct_kwargs() -> Tuple[Dict, Dict]:
-    """Index kwargs."""
-    # NOTE: QuestionAnswer and Refine templates aren't technically used
-    index_kwargs: Dict[str, Any] = {}
-    query_kwargs = {
-        "pandas_prompt": MOCK_PANDAS_PROMPT,
-    }
-    return index_kwargs, query_kwargs
 
 
 @patch_common
@@ -28,7 +17,6 @@ def test_pandas_index(
     _mock_total_tokens_used: Any,
     _mock_split_text_overlap: Any,
     _mock_split_text: Any,
-    struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test GPTPandasIndex."""
     # Test on some sample data
@@ -40,7 +28,8 @@ def test_pandas_index(
     )
     index = GPTPandasIndex(df=df)
     # the mock prompt just takes the first item in the given column
-    response = index.query("population", verbose=True)
+    query_engine = GPTNLPandasQueryEngine(index=index, verbose=True)
+    response = query_engine.query(QueryBundle("population"))
     import sys
 
     if sys.version_info < (3, 9):

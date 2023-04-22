@@ -2,12 +2,11 @@
 import logging
 from typing import Any, Optional
 
-from llama_index import GPTSQLStructStoreIndex
-
 from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle, QueryMode
+from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from gpt_index.prompts.prompts import TextToSQLPrompt
@@ -39,8 +38,7 @@ class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
         self._sql_database = index.sql_database
         self._sql_context_container = index.sql_context_container
 
-    @llm_token_counter("query")
-    def query(self, query_bundle: QueryBundle) -> Response:
+    def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         # NOTE: override query method in order to fetch the right results.
         # NOTE: since the query_str is a SQL query, it doesn't make sense
@@ -49,9 +47,8 @@ class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
         response = Response(response=response_str, extra_info=extra_info)
         return response
 
-    @llm_token_counter("query")
-    async def aquery(self, query_bundle: QueryBundle) -> Response:
-        return self.query(query_bundle)
+    async def _aquery(self, query_bundle: QueryBundle) -> Response:
+        return self._query(query_bundle)
 
 
 class GPTNLStructStoreQueryEngine(BaseQueryEngine):
@@ -71,21 +68,19 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
 
     def __init__(
         self,
-        index_struct: SQLStructTable,
         index: GPTSQLStructStoreIndex,
-        ref_doc_id_column: Optional[str] = None,
         text_to_sql_prompt: Optional[TextToSQLPrompt] = None,
         context_query_mode: QueryMode = QueryMode.DEFAULT,
         context_query_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(index_struct=index_struct, **kwargs)
+        self._index = index
         self._sql_database = index.sql_database
         self._sql_context_container = index.sql_context_container
         self._service_context = index.service_context
+        self._ref_doc_id_column = index.ref_doc_id_column
 
-        self._ref_doc_id_column = ref_doc_id_column
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._context_query_mode = context_query_mode
         self._context_query_kwargs = context_query_kwargs or {}
@@ -118,7 +113,8 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
 
         return tables_desc_str
 
-    def query(self, query_bundle: QueryBundle) -> Response:
+    @llm_token_counter("query")
+    def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
@@ -138,7 +134,8 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
         response = Response(response=response_str, extra_info=extra_info)
         return response
 
-    async def aquery(self, query_bundle: QueryBundle) -> Response:
+    @llm_token_counter("aquery")
+    async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")

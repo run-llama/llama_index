@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 class ListIndexRetriever(BaseRetriever):
     """Simple retriever for ListIndex that returns all nodes."""
 
-    def __init__(self, index: Any) -> None:
+    def __init__(self, index: Any, **kwargs: Any) -> None:
         from gpt_index.indices.list.base import GPTListIndex
 
         assert isinstance(index, GPTListIndex)
         self._index = index
 
-    def retrieve(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
@@ -48,7 +48,7 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
         self._index = index
         self._similarity_top_k = similarity_top_k
 
-    def retrieve(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:

@@ -64,7 +64,7 @@ class TreeAllLeafRetriever(BaseRetriever):
             **kwargs,
         )
 
-    def retrieve(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:

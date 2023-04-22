@@ -38,7 +38,7 @@ class EmptyIndexRetriever(BaseRetriever):
         self._input_prompt = input_prompt or DEFAULT_SIMPLE_INPUT_PROMPT
         super().__init__(**kwargs)
 
-    def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve relevant nodes."""
         del query_bundle  # Unused
         return []

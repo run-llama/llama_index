@@ -13,12 +13,12 @@ class TransformQueryEngine:
         self._query_engine = query_engine
         self._query_transform = query_transform
 
-    def query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         query_bundle = self._query_transform.run(query_bundle)
         return self._query_engine.query(query_bundle)
 
-    async def aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         query_bundle = self._query_transform.run(query_bundle)
         return await self._query_engine.aquery(query_bundle)

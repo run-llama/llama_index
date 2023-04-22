@@ -164,6 +164,7 @@ def test_recursive_query_list_tree(
     query_str = "What is?"
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
+    query_engine = graph.as_query_engine()
     response = graph.query(query_str, query_configs=query_configs)
     assert str(response) == (
         "What is?:What is?:This is a test v2.:This is another test."

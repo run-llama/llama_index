@@ -14,19 +14,6 @@ from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMP
 
 
 @pytest.fixture
-def struct_kwargs() -> Tuple[Dict, Dict]:
-    """Index kwargs."""
-    index_kwargs = {
-        "text_qa_template": MOCK_TEXT_QA_PROMPT,
-    }
-    query_kwargs = {
-        "text_qa_template": MOCK_TEXT_QA_PROMPT,
-        "refine_template": MOCK_REFINE_PROMPT,
-    }
-    return index_kwargs, query_kwargs
-
-
-@pytest.fixture
 def documents() -> List[Document]:
     """Get documents."""
     # NOTE: one document for now
@@ -96,11 +83,9 @@ def test_embedding_query(
     _mock_split_text_overlap: Any,
     _mock_split_text: Any,
     documents: List[Document],
-    struct_kwargs: Dict,
 ) -> None:
     """Test embedding query."""
-    index_kwargs, query_kwargs = struct_kwargs
-    index = GPTListIndex.from_documents(documents, **index_kwargs)
+    index = GPTListIndex.from_documents(documents)
 
     # test embedding query
     query_bundle = QueryBundle(
@@ -110,7 +95,7 @@ def test_embedding_query(
             "The meaning of life",
         ],
     )
-    response = index.query(
-        query_bundle, mode="embedding", similarity_top_k=1, **query_kwargs
-    )
-    assert str(response) == ("What is?:Correct.")
+    retriever = index.as_retriever(mode="embedding", similarity_top_k=1)
+    nodes = retriever.retrieve(query_bundle)
+    assert len(nodes) == 1
+    assert nodes[0].node.text == "Correct."

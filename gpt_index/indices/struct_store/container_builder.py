@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
+from gpt_index.indices.query.retriever_query_engine import RetrieverQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.base import Document
@@ -138,7 +139,9 @@ class SQLContextContainerBuilder:
             context_query_str = query_str
         else:
             context_query_str = query_tmpl.format(orig_query_str=query_str)
-        response = index.query(context_query_str, **index_kwargs)
+        retriever = index.as_retriever()
+        query_engine = RetrieverQueryEngine(retriever=retriever)
+        response = query_engine.query(QueryBundle(context_query_str))
         context_str = str(response)
         if store_context_str:
             self.context_str = context_str
