@@ -5,7 +5,7 @@ import asyncio
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, Dict, List, Tuple
 from unittest.mock import MagicMock, patch
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
@@ -42,9 +42,9 @@ from tests.mock_utils.mock_utils import mock_tokenizer
 
 
 @pytest.fixture
-def struct_kwargs() -> Tuple[Dict, List]:
+def index_kwargs() -> Dict:
     """Index kwargs."""
-    index_kwargs = {
+    return {
         "tree": {
             "summary_template": MOCK_SUMMARY_PROMPT,
             "insert_prompt": MOCK_INSERT_PROMPT,
@@ -59,53 +59,27 @@ def struct_kwargs() -> Tuple[Dict, List]:
         "vector": {},
         "pinecone": {},
     }
-    query_configs = [
-        QueryConfig(
-            index_struct_type=IndexStructType.TREE,
-            query_mode=QueryMode.DEFAULT,
-            query_kwargs={
-                "query_template": MOCK_QUERY_PROMPT,
-                "text_qa_template": MOCK_TEXT_QA_PROMPT,
-                "refine_template": MOCK_REFINE_PROMPT,
-            },
-        ),
-        QueryConfig(
-            index_struct_type=IndexStructType.LIST,
-            query_mode=QueryMode.DEFAULT,
-            query_kwargs={
-                "text_qa_template": MOCK_TEXT_QA_PROMPT,
-                "refine_template": MOCK_REFINE_PROMPT,
-            },
-        ),
-        QueryConfig(
-            index_struct_type=IndexStructType.KEYWORD_TABLE,
-            query_mode=QueryMode.DEFAULT,
-            query_kwargs={
-                "query_keyword_extract_template": MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
-                "text_qa_template": MOCK_TEXT_QA_PROMPT,
-                "refine_template": MOCK_REFINE_PROMPT,
-            },
-        ),
-        QueryConfig(
-            index_struct_type=IndexStructType.DICT,
-            query_mode=QueryMode.DEFAULT,
-            query_kwargs={
-                "text_qa_template": MOCK_TEXT_QA_PROMPT,
-                "refine_template": MOCK_REFINE_PROMPT,
-                "similarity_top_k": 1,
-            },
-        ),
-        QueryConfig(
-            index_struct_type=IndexStructType.PINECONE,
-            query_mode=QueryMode.DEFAULT,
-            query_kwargs={
-                "text_qa_template": MOCK_TEXT_QA_PROMPT,
-                "refine_template": MOCK_REFINE_PROMPT,
-                "similarity_top_k": 1,
-            },
-        ),
-    ]
-    return index_kwargs, query_configs
+
+
+@pytest.fixture
+def retriever_kwargs() -> Dict:
+    return {
+        IndexStructType.TREE: {
+            "query_template": MOCK_QUERY_PROMPT,
+            "text_qa_template": MOCK_TEXT_QA_PROMPT,
+            "refine_template": MOCK_REFINE_PROMPT,
+        },
+        IndexStructType.LIST: {},
+        IndexStructType.KEYWORD_TABLE: {
+            "query_keyword_extract_template": MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
+        },
+        IndexStructType.DICT: {
+            "similarity_top_k": 1,
+        },
+        IndexStructType.PINECONE: {
+            "similarity_top_k": 1,
+        },
+    }
 
 
 @pytest.fixture
@@ -186,10 +160,10 @@ def test_recursive_query_vector_table(
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
-    struct_kwargs: Dict,
+    index_kwargs: Dict,
+    retriever_kwargs: Dict,
 ) -> None:
     """Test query."""
-    index_kwargs, query_configs = struct_kwargs
     vector_kwargs = index_kwargs["vector"]
     table_kwargs = index_kwargs["table"]
     # try building a tree for a group of 4, then a list
@@ -215,7 +189,7 @@ def test_recursive_query_vector_table(
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
-    query_engine = graph.as_query_engine()
+    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
     response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
@@ -230,7 +204,8 @@ def test_recursive_query_vector_table(
     with TemporaryDirectory() as tmpdir:
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        response = graph.query(query_str, query_configs=query_configs)
+        query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+        response = query_engine.query(query_str)
         assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
 
@@ -256,7 +231,7 @@ def test_recursive_query_vector_table_query_configs(
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
-    struct_kwargs: Dict,
+    index_kwargs: Dict,
 ) -> None:
     """Test query.
 
@@ -264,44 +239,13 @@ def test_recursive_query_vector_table_query_configs(
     assert that they're passed in.
 
     """
-    index_kwargs, _ = struct_kwargs
-    query_configs = [
-        QueryConfig(
-            index_struct_type=IndexStructType.KEYWORD_TABLE,
-            query_mode=QueryMode.DEFAULT,
-            query_kwargs={
-                "query_keyword_extract_template": MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
-                "text_qa_template": MOCK_TEXT_QA_PROMPT,
-                "refine_template": MOCK_REFINE_PROMPT,
-            },
-        ),
-        QueryConfig(
-            index_struct_id="vector1",
-            index_struct_type=IndexStructType.DICT,
-            query_mode=QueryMode.DEFAULT,
-            query_kwargs={
-                "text_qa_template": MOCK_TEXT_QA_PROMPT,
-                "refine_template": MOCK_REFINE_PROMPT,
-                "similarity_top_k": 2,
-                "node_postprocessors": [
-                    KeywordNodePostprocessor(required_keywords=["v2"])
-                ],
-            },
-        ),
-        QueryConfig(
-            index_struct_id="vector2",
-            index_struct_type=IndexStructType.DICT,
-            query_mode=QueryMode.DEFAULT,
-            query_kwargs={
-                "text_qa_template": MOCK_TEXT_QA_PROMPT,
-                "refine_template": MOCK_REFINE_PROMPT,
-                "similarity_top_k": 2,
-                "node_postprocessors": [
-                    KeywordNodePostprocessor(required_keywords=["world"])
-                ],
-            },
-        ),
-    ]
+    retriever_kwargs = {
+        "keyword_table": {
+            "query_keyword_extract_template": MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
+        },
+        "vector1": {"similarity_top_k": 2},
+        "vector2": {"similarity_top_k": 2},
+    }
 
     vector_kwargs = index_kwargs["vector"]
     table_kwargs = index_kwargs["table"]
@@ -326,12 +270,13 @@ def test_recursive_query_vector_table_query_configs(
         **table_kwargs
     )
     assert isinstance(graph, ComposableGraph)
-    query_str = "Foo?"
-    response = graph.query(query_str, query_configs=query_configs)  # type: ignore
-    assert str(response) == ("Foo?:Foo?:This is a test v2.")
-    query_str = "Orange?"
-    response = graph.query(query_str, query_configs=query_configs)  # type: ignore
-    assert str(response) == ("Orange?:Orange?:Hello world.")
+
+    query_engine = graph.as_query_engine(retriever_id_kwargs=retriever_kwargs)
+    response = query_engine.query("Foo?")  # type: ignore
+    assert str(response) == ("Foo?:Foo?:This is another test.:This is a test v2.")
+
+    response = query_engine.query("Orange?")  # type: ignore
+    assert str(response) == ("Orange?:Orange?:This is a test.:Hello world.")
 
     # test serialize and then back
     # use composable graph struct
@@ -339,8 +284,9 @@ def test_recursive_query_vector_table_query_configs(
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         # cast to Any to avoid mypy error
-        response = graph.query(query_str, query_configs=cast(Any, query_configs))
-        assert str(response) == ("Orange?:Orange?:Hello world.")
+        query_engine = graph.as_query_engine(retriever_id_kwargs=retriever_kwargs)
+        response = query_engine.query("Orange?")
+        assert str(response) == ("Orange?:Orange?:This is a test.:Hello world.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -365,10 +311,10 @@ def test_recursive_query_vector_table_async(
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
-    struct_kwargs: Dict,
+    index_kwargs: Dict,
+    retriever_kwargs: Dict,
 ) -> None:
     """Test async query of table index over vector indices."""
-    index_kwargs, query_configs = struct_kwargs
     vector_kwargs = index_kwargs["vector"]
     table_kwargs = index_kwargs["table"]
     # try building a tree for a group of 4, then a list
@@ -394,8 +340,8 @@ def test_recursive_query_vector_table_async(
     )
     assert isinstance(graph, ComposableGraph)
 
-    query_str = "Cat?"
-    task = graph.aquery(query_str, query_configs=query_configs)
+    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    task = query_engine.aquery("Cat?")
     response = asyncio.run(task)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
@@ -422,10 +368,10 @@ def test_recursive_query_vector_vector(
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
-    struct_kwargs: Dict,
+    index_kwargs: Dict,
+    retriever_kwargs: Dict,
 ) -> None:
     """Test query."""
-    index_kwargs, query_configs = struct_kwargs
     vector_kwargs = index_kwargs["vector"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
@@ -448,13 +394,14 @@ def test_recursive_query_vector_vector(
         **vector_kwargs
     )
     query_str = "Foo?"
-    response = graph.query(query_str, query_configs=query_configs)
+    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
-    response = graph.query(query_str, query_configs=query_configs)
+    response = query_engine.query(query_str)
     assert str(response) == ("Orange?:Orange?:This is a test.")
     query_str = "Cat?"
-    response = graph.query(query_str, query_configs=query_configs)
+    response = query_engine.query(query_str)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
     # test serialize and then back
@@ -462,7 +409,8 @@ def test_recursive_query_vector_vector(
     with TemporaryDirectory() as tmpdir:
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        response = graph.query(query_str, query_configs=query_configs)
+        query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+        response = query_engine.query(query_str)
         assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
 
@@ -488,7 +436,8 @@ def test_recursive_query_pinecone_pinecone(
     _mock_predict: Any,
     _mock_split_text: Any,
     documents: List[Document],
-    struct_kwargs: Dict,
+    index_kwargs: Dict,
+    retriever_kwargs: Dict,
 ) -> None:
     """Test composing pinecone index on top of pinecone index."""
     # NOTE: mock pinecone import
@@ -501,7 +450,6 @@ def test_recursive_query_pinecone_pinecone(
     pinecone_index4 = MockPineconeIndex()
     pinecone_index5 = MockPineconeIndex()
 
-    index_kwargs, query_configs = struct_kwargs
     pinecone_kwargs = index_kwargs["pinecone"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
@@ -546,25 +494,24 @@ def test_recursive_query_pinecone_pinecone(
         **pinecone_kwargs
     )
     query_str = "Foo?"
-    response = graph.query(query_str, query_configs=query_configs)
+    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
-    response = graph.query(query_str, query_configs=query_configs)
+    response = query_engine.query(query_str)
     assert str(response) == ("Orange?:Orange?:This is a test.")
     query_str = "Cat?"
-    response = graph.query(query_str, query_configs=query_configs)
+    response = query_engine.query(query_str)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
     # test serialize and then back
     # use composable graph struct
     with TemporaryDirectory() as tmpdir:
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
-        query_context_kwargs = {
+        index_kwargs = {
             index_id: {
-                "vector_store": {
-                    "pinecone_index": pinecone_index,
-                    "tokenizer": mock_tokenizer,
-                }
+                "pinecone_index": pinecone_index,
+                "tokenizer": mock_tokenizer,
             }
             for index_id, pinecone_index in zip(
                 [
@@ -572,7 +519,7 @@ def test_recursive_query_pinecone_pinecone(
                     pinecone2.index_struct.index_id,
                     pinecone3.index_struct.index_id,
                     pinecone4.index_struct.index_id,
-                    graph.index_struct.root_id,
+                    graph.root_id,
                 ],
                 [
                     pinecone_index1,
@@ -583,9 +530,9 @@ def test_recursive_query_pinecone_pinecone(
                 ],
             )
         }
-        print(query_context_kwargs)
         graph = ComposableGraph.load_from_disk(
-            str(Path(tmpdir) / "tmp.json"), query_context_kwargs=query_context_kwargs
+            str(Path(tmpdir) / "tmp.json"), index_kwargs=index_kwargs
         )
-        response = graph.query(query_str, query_configs=query_configs)
+        query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+        response = query_engine.query(query_str)
         assert str(response) == ("Cat?:Cat?:This is a test v2.")

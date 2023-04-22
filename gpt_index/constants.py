@@ -9,6 +9,8 @@ INDEX_STRUCT_KEY = "index_struct"
 DOCSTORE_KEY = "docstore"
 VECTOR_STORE_KEY = "vector_store"
 ADDITIONAL_QUERY_CONTEXT_KEY = "query_context"
+ALL_INDICES_KEY = "all_indices"
+ROOT_INDEX_ID_KEY = "root_index_id"
 
 TYPE_KEY = "__type__"
 DATA_KEY = "__data__"

@@ -4,24 +4,16 @@ import json
 from typing import Any, Dict, List, Optional, Sequence, Type, Union, cast
 
 from gpt_index.constants import (
-    ADDITIONAL_QUERY_CONTEXT_KEY,
-    DOCSTORE_KEY,
-    INDEX_STRUCT_KEY,
+    ALL_INDICES_KEY,
+    ROOT_INDEX_ID_KEY,
 )
 from gpt_index.data_structs.data_structs_v2 import CompositeIndex, V2IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, DocumentRelationship
-from gpt_index.docstore.registry import (
-    load_docstore_from_dict,
-    save_docstore_to_dict,
-)
 from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.composability.utils import (
-    load_query_context_from_dict,
-    save_query_context_to_dict,
-)
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.graph_query_engine import ComposableGraphQueryEngine
 from gpt_index.indices.query.schema import QueryConfig
+from gpt_index.indices.registry import save_index_to_dict
 from gpt_index.indices.service_context import ServiceContext
 
 # TMP: refactor query config type
@@ -143,26 +135,17 @@ class ComposableGraph:
 
         """
         # lazy load registry
-        from gpt_index.indices.registry import load_index_struct_from_dict
+        from gpt_index.indices.registry import load_index_from_dict
 
         result_dict: Dict[str, Any] = json.loads(index_string)
-        index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
-        docstore = load_docstore_from_dict(result_dict[DOCSTORE_KEY])
-
-        # NOTE: this allows users to pass in kwargs at load time
-        #       e.g. passing in vector store client
-        query_context_kwargs = kwargs.pop("query_context_kwargs", None)
-        query_context = load_query_context_from_dict(
-            result_dict.get(ADDITIONAL_QUERY_CONTEXT_KEY, {}),
-            query_context_kwargs=query_context_kwargs,
-        )
-        assert isinstance(index_struct, CompositeIndex)
-        return cls(
-            index_struct=index_struct,
-            docstore=docstore,
-            query_context=query_context,
-            **kwargs,
-        )
+        all_indices_dict: Dict[str, dict] = result_dict[ALL_INDICES_KEY]
+        root_id = result_dict[ROOT_INDEX_ID_KEY]
+        index_kwargs = kwargs.get("index_kwargs", {})
+        all_indices = {
+            index_id: load_index_from_dict(index_dict, **index_kwargs.get(index_id, {}))
+            for index_id, index_dict in all_indices_dict.items()
+        }
+        return cls(all_indices, root_id)
 
     @classmethod
     def load_from_disk(cls, save_path: str, **kwargs: Any) -> "ComposableGraph":
@@ -194,11 +177,11 @@ class ComposableGraph:
 
         """
         out_dict: Dict[str, Any] = {
-            INDEX_STRUCT_KEY: self._index_struct.to_dict(),
-            DOCSTORE_KEY: save_docstore_to_dict(self._docstore),
-            ADDITIONAL_QUERY_CONTEXT_KEY: save_query_context_to_dict(
-                self._query_context
-            ),
+            ALL_INDICES_KEY: {
+                index_id: save_index_to_dict(index)
+                for index_id, index in self._all_indices.items()
+            },
+            ROOT_INDEX_ID_KEY: self._root_id,
         }
         return json.dumps(out_dict)
 

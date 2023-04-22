@@ -13,7 +13,8 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         self,
         graph: Any,
         response_synthesizer: Optional[ResponseSynthesizer] = None,
-        retrievers: Optional[Dict[str, BaseRetriever]] = None,
+        retriever_id_kwargs: Optional[Dict[str, dict]] = None,
+        retriever_type_kwargs: Optional[Dict[str, dict]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         recursive: bool = True,
     ) -> None:
@@ -24,7 +25,8 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         self._response_synthesizer = (
             response_synthesizer or ResponseSynthesizer.from_args()
         )
-        self._retrievers = retrievers or {}
+        self._retriever_id_kwargs = retriever_id_kwargs or {}
+        self._retriever_type_kwargs = retriever_type_kwargs or {}
         self._node_postprocessors = node_postprocessors
 
         # additional configs
@@ -43,10 +45,14 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         level: int = 0,
     ) -> RESPONSE_TYPE:
         index_id = index_id or self._graph.root_id
-        retriever = self._retrievers.get(index_id, None)
-        if retriever is None:
-            # NOTE: use default retriever
-            retriever = self._graph.get_index(index_id).as_retriever()
+        index_type = self._graph.get_index(index_id).index_struct.get_type()
+
+        # get retriever args
+        retriever_kwarg = {}
+        retriever_kwarg.update(self._retriever_type_kwargs.get(index_type, {}))
+        retriever_kwarg.update(self._retriever_id_kwargs.get(index_id, {}))
+
+        retriever = self._graph.get_index(index_id).as_retriever(**retriever_kwarg)
         nodes = retriever.retrieve(query_bundle)
 
         if self._recursive:

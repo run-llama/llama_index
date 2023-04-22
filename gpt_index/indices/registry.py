@@ -95,16 +95,20 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
 def load_index_struct_from_dict(struct_dict: Dict[str, Any]) -> "V2IndexStruct":
     type = struct_dict[TYPE_KEY]
     data_dict = struct_dict[DATA_KEY]
-
     cls = INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS[type]
+    return cls.from_dict(data_dict)
 
-    if type == IndexStructType.COMPOSITE:
-        struct_dicts: Dict[str, Any] = data_dict["all_index_structs"]
-        root_id = data_dict["root_id"]
-        all_index_structs = {
-            id_: load_index_struct_from_dict(struct_dict)
-            for id_, struct_dict in struct_dicts.items()
-        }
-        return CompositeIndex(all_index_structs=all_index_structs, root_id=root_id)
-    else:
-        return cls.from_dict(data_dict)
+
+def load_index_from_dict(index_dict: Dict[str, Any], **kwargs) -> "BaseGPTIndex":
+    type = index_dict[TYPE_KEY]
+    data_dict = index_dict[DATA_KEY]
+    cls = INDEX_STRUCT_TYPE_TO_INDEX_CLASS[type]
+    return cls.load_from_dict(data_dict, **kwargs)
+
+
+def save_index_to_dict(index: BaseGPTIndex) -> dict:
+    index_dict = {
+        TYPE_KEY: index.index_struct.get_type(),
+        DATA_KEY: index.save_to_dict(),
+    }
+    return index_dict
