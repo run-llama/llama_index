@@ -111,7 +111,7 @@ created for each index during index construction. You can access the docstore
 associated with a given index through `index.docstore`.
 
 
-### Inserting Documents
+### Inserting Documents or Nodes
 
 You can also take advantage of the `insert` capability of indices to insert Document objects
 one at a time instead of during index construction. 
@@ -125,9 +125,19 @@ for doc in documents:
 
 ```
 
-See the [Update Index How-To](/how_to/index_structs/update.md) for details and an example notebook.
+If you want to insert nodes on directly you can use `insert_nodes` function
+instead.
 
-**NOTE**: An `insert_node` function is coming!
+```python
+from llama_index import GPTSimpleVectorIndex
+
+# nodes: Sequence[Node]
+index = GPTSimpleVectorIndex([])
+index.insert_nodes(nodes)
+
+```
+
+See the [Update Index How-To](/how_to/index_structs/update.md) for details and an example notebook.
 
 ### Customizing LLM's
 
