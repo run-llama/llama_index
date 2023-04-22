@@ -49,14 +49,6 @@ changes are saved. This enables a much shorter feedback loop which can help boos
 productivity when writing documentation.
 
 Simply run the following command from LlamaIndex project's root directory: 
-
-```bash
-sphinx-autobuild docs/ docs/_build/html
-```
-
-If you have `make` installed, you may also run:
-
 ```bash
 make watch-docs
 ```
-
