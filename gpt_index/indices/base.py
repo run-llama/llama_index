@@ -2,7 +2,7 @@
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
@@ -21,6 +21,7 @@ from gpt_index.readers.schema.base import Document
 from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=V2IndexStruct)
+IndexType = TypeVar("IndexType", bound="BaseGPTIndex")
 
 logger = logging.getLogger(__name__)
 
@@ -76,12 +77,12 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type[IndexType],
         documents: Sequence[Document],
         docstore: Optional[BaseDocumentStore] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
-    ) -> "BaseGPTIndex":
+    ) -> IndexType:
         """Create index from documents.
 
         Args:
@@ -205,10 +206,10 @@ class BaseGPTIndex(Generic[IS], ABC):
         return {}
 
     @abstractmethod
-    def as_retriever(self, **kwargs) -> BaseRetriever:
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         pass
 
-    def as_query_engine(self, **kwargs) -> BaseQueryEngine:
+    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         retriever = self.as_retriever(**kwargs)
         return RetrieverQueryEngine.from_args(
             retriever=retriever, service_context=self._service_context, **kwargs

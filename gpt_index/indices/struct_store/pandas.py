@@ -6,7 +6,6 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import PandasStructTable
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.base import BaseQueryEngine
-from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 
 import pandas as pd
@@ -34,8 +33,8 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
 
     def __init__(
         self,
+        df: pd.DataFrame,
         nodes: Optional[Sequence[Node]] = None,
-        df: Optional[pd.DataFrame] = None,
         index_struct: Optional[PandasStructTable] = None,
         **kwargs: Any,
     ) -> None:
@@ -50,10 +49,10 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
             **kwargs,
         )
 
-    def as_retriever(self, **kwargs) -> BaseRetriever:
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         raise NotImplementedError("Not supported")
 
-    def as_query_engine(self, **kwargs) -> BaseQueryEngine:
+    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         return GPTNLPandasQueryEngine(self, **kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> PandasStructTable:

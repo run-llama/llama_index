@@ -12,7 +12,7 @@ from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.docstore import BaseDocumentStore
-from gpt_index.data_structs.node_v2 import Node, DocumentRelationship, NodeWithScore
+from gpt_index.data_structs.node_v2 import DocumentRelationship, NodeWithScore
 from gpt_index.indices.postprocessor.base import BasePostprocessor
 from gpt_index.indices.response.response_builder import get_response_builder
 
@@ -118,7 +118,7 @@ def get_backward_nodes(
     """Get backward nodes."""
     node = node_with_score.node
     # get backward nodes in an iterative manner
-    nodes: Dict[str, Node] = {node.get_doc_id(): node_with_score}
+    nodes: Dict[str, NodeWithScore] = {node.get_doc_id(): node_with_score}
     cur_count = 0
     while cur_count < num_nodes:
         if DocumentRelationship.PREVIOUS not in node.relationships:
@@ -267,8 +267,8 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
         raise ValueError(f"Invalid prediction: {raw_pred}")
 
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         if extra_info is None or "query_bundle" not in extra_info:
             raise ValueError("Missing query bundle in extra info.")
@@ -280,9 +280,9 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
         )
         refine_infer_prev_next_prompt = RefinePrompt(self.refine_prev_next_tmpl)
 
-        all_nodes: Dict[str, Node] = {}
+        all_nodes: Dict[str, NodeWithScore] = {}
         for node in nodes:
-            all_nodes[node.get_doc_id()] = node
+            all_nodes[node.node.get_doc_id()] = node
             # use response builder instead of llm_predictor directly
             # to be more robust to handling long context
             response_builder = get_response_builder(
@@ -292,7 +292,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
                 mode=ResponseMode.TREE_SUMMARIZE,
             )
             raw_pred = response_builder.get_response(
-                text_chunks=[node.get_text()],
+                text_chunks=[node.node.get_text()],
                 query_str=query_bundle.query_str,
             )
             raw_pred = cast(str, raw_pred)
@@ -313,5 +313,5 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
             else:
                 raise ValueError(f"Invalid mode: {mode}")
 
-        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.get_doc_id())
+        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.node.get_doc_id())
         return list(sorted_nodes)

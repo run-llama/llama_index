@@ -42,7 +42,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
             **kwargs,
         )
 
-    def as_retriever(self) -> BaseRetriever:
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         return EmptyIndexRetriever(self)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> EmptyIndex:

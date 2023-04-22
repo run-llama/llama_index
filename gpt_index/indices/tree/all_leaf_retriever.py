@@ -1,14 +1,13 @@
 """Summarize query."""
 
 import logging
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, List, cast
 
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.response_builder import ResponseMode
 from gpt_index.indices.utils import get_sorted_node_list
 
 logger = logging.getLogger(__name__)
@@ -40,29 +39,6 @@ class TreeAllLeafRetriever(BaseRetriever):
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore
-
-    @classmethod
-    def from_args(  # type: ignore
-        cls,
-        response_mode: ResponseMode = ResponseMode.TREE_SUMMARIZE,
-        response_kwargs: Optional[Dict] = None,
-        **kwargs: Any,
-    ) -> "TreeAllLeafRetriever":
-        if response_mode != ResponseMode.TREE_SUMMARIZE:
-            raise ValueError(
-                "response_mode should not be specified for summarize query"
-            )
-        response_kwargs = kwargs.pop("response_kwargs", {})
-        assert isinstance(response_kwargs, dict)
-        response_kwargs.update(
-            num_children=kwargs.pop("num_children", DEFAULT_NUM_CHILDREN)
-        )
-
-        return super().from_args(
-            response_mode=response_mode,
-            response_kwargs=response_kwargs,
-            **kwargs,
-        )
 
     def _retrieve(
         self,

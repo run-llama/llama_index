@@ -2,10 +2,9 @@
 import logging
 from typing import Any, List
 
-from gpt_index.data_structs.node_v2 import Node, NodeWithScore
+from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.utils import get_sorted_node_list
 
 logger = logging.getLogger(__name__)
@@ -42,23 +41,9 @@ class TreeRootRetriever(BaseRetriever):
     def _retrieve(
         self,
         query_bundle: QueryBundle,
-    ) -> List[Node]:
+    ) -> List[NodeWithScore]:
         """Get nodes for response."""
         logger.info(f"> Starting query: {query_bundle.query_str}")
         root_nodes = self._docstore.get_node_dict(self._index_struct.root_nodes)
         sorted_nodes = get_sorted_node_list(root_nodes)
         return [NodeWithScore(node) for node in sorted_nodes]
-
-    @classmethod
-    def from_args(  # type: ignore
-        cls,
-        response_mode: ResponseMode = ResponseMode.SIMPLE_SUMMARIZE,
-        **kwargs: Any,
-    ) -> "TreeRootRetriever":
-        if response_mode != ResponseMode.SIMPLE_SUMMARIZE:
-            raise ValueError("response_mode should not be specified for retrieve query")
-
-        return super().from_args(
-            response_mode=response_mode,
-            **kwargs,
-        )

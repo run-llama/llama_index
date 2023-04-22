@@ -64,7 +64,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         return self._vector_store
 
     def as_retriever(
-        self, mode: QueryMode = QueryMode.DEFAULT, **kwargs
+        self, mode: QueryMode = QueryMode.DEFAULT, **kwargs: Any
     ) -> BaseRetriever:
         if mode in [QueryMode.DEFAULT, QueryMode.EMBEDDING]:
             return VectorIndexRetriever(self, **kwargs)

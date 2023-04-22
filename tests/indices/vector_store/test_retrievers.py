@@ -161,13 +161,13 @@ def test_simple_check_ids(
 
     ref_doc_id = "ref_doc_id_test"
     source_rel = {DocumentRelationship.SOURCE: ref_doc_id}
-    nodes = [
+    all_nodes = [
         Node("Hello world.", doc_id="node1", relationships=source_rel),
         Node("This is a test.", doc_id="node2", relationships=source_rel),
         Node("This is another test.", doc_id="node3", relationships=source_rel),
         Node("This is a test v2.", doc_id="node4", relationships=source_rel),
     ]
-    index = GPTSimpleVectorIndex(nodes, **index_kwargs)
+    index = GPTSimpleVectorIndex(all_nodes, **index_kwargs)
 
     # test query
     query_str = "What is?"
@@ -213,14 +213,14 @@ def test_faiss_check_ids(
 
     ref_doc_id = "ref_doc_id_test"
     source_rel = {DocumentRelationship.SOURCE: ref_doc_id}
-    nodes = [
+    all_nodes = [
         Node("Hello world.", doc_id="node1", relationships=source_rel),
         Node("This is a test.", doc_id="node2", relationships=source_rel),
         Node("This is another test.", doc_id="node3", relationships=source_rel),
         Node("This is a test v2.", doc_id="node4", relationships=source_rel),
     ]
 
-    index = GPTFaissIndex(nodes, faiss_index=faiss_index, **index_kwargs)
+    index = GPTFaissIndex(all_nodes, faiss_index=faiss_index, **index_kwargs)
 
     # test query
     query_str = "What is?"

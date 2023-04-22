@@ -2,7 +2,7 @@
 
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import NodeWithScore
 from pydantic import Field
 from typing import Optional, Dict, List, Set
 import pandas as pd
@@ -57,8 +57,8 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
     in_extra_info: bool = True
 
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
         if extra_info is None or "query_bundle" not in extra_info:
@@ -78,7 +78,7 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
         # sort nodes by date
         info_dict_attr = "extra_info" if self.in_extra_info else "node_info"
         node_dates = pd.to_datetime(
-            [getattr(node, info_dict_attr)[self.date_key] for node in nodes]
+            [getattr(node.node, info_dict_attr)[self.date_key] for node in nodes]
         )
         sorted_node_idxs = np.flip(node_dates.argsort())
         sorted_nodes = [nodes[idx] for idx in sorted_node_idxs]
@@ -120,8 +120,8 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)
 
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
         if extra_info is None or "query_bundle" not in extra_info:
@@ -141,40 +141,44 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
         # sort nodes by date
         info_dict_attr = "extra_info" if self.in_extra_info else "node_info"
         node_dates = pd.to_datetime(
-            [getattr(node, info_dict_attr)[self.date_key] for node in nodes]
+            [getattr(node.node, info_dict_attr)[self.date_key] for node in nodes]
         )
         sorted_node_idxs = np.flip(node_dates.argsort())
-        sorted_nodes: List[Node] = [nodes[idx] for idx in sorted_node_idxs]
+        sorted_nodes: List[NodeWithScore] = [nodes[idx] for idx in sorted_node_idxs]
 
         # get embeddings for each node
         embed_model = self.service_context.embed_model
         for node in sorted_nodes:
-            embed_model.queue_text_for_embeddding(node.get_doc_id(), node.get_text())
+            embed_model.queue_text_for_embeddding(
+                node.node.get_doc_id(), node.node.get_text()
+            )
 
         _, text_embeddings = embed_model.get_queued_text_embeddings()
         node_ids_to_skip: Set[str] = set()
         for idx, node in enumerate(sorted_nodes):
-            if node.get_doc_id() in node_ids_to_skip:
+            if node.node.get_doc_id() in node_ids_to_skip:
                 continue
             # get query embedding for the "query" node
             # NOTE: not the same as the text embedding because
             # we want to optimize for retrieval results
 
             query_text = self.query_embedding_tmpl.format(
-                context_str=node.get_text(),
+                context_str=node.node.get_text(),
             )
             query_embedding = embed_model.get_query_embedding(query_text)
 
             for idx2 in range(idx + 1, len(sorted_nodes)):
-                if sorted_nodes[idx2].get_doc_id() in node_ids_to_skip:
+                if sorted_nodes[idx2].node.get_doc_id() in node_ids_to_skip:
                     continue
                 node2 = sorted_nodes[idx2]
                 if (
                     np.dot(query_embedding, text_embeddings[idx2])
                     > self.similarity_cutoff
                 ):
-                    node_ids_to_skip.add(node2.get_doc_id())
+                    node_ids_to_skip.add(node2.node.get_doc_id())
 
         return [
-            node for node in sorted_nodes if node.get_doc_id() not in node_ids_to_skip
+            node
+            for node in sorted_nodes
+            if node.node.get_doc_id() not in node_ids_to_skip
         ]

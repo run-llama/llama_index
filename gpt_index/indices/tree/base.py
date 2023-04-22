@@ -1,6 +1,6 @@
 """Tree-based index."""
 
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Union
 
 # from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
@@ -80,7 +80,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         )
 
     def as_retriever(
-        self, mode: QueryMode = QueryMode.DEFAULT, **kwargs
+        self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
     ) -> BaseRetriever:
         if mode == QueryMode.DEFAULT:
             return TreeSelectLeafRetriever(self, **kwargs)
@@ -100,11 +100,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
                 "Index was constructed without building trees, "
                 f"but mode {mode} requires trees."
             )
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Query mode to class."""
-        super()._preprocess_query(mode, query_kwargs)
-        self._validate_build_tree_required(mode)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexGraph:
         """Build the index from nodes."""

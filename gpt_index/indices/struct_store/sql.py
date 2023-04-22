@@ -122,7 +122,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         )
         data_extractor.insert_datapoint_from_nodes(nodes)
 
-    def as_retriever(self, **kwargs) -> BaseRetriever:
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         raise NotImplementedError("Not supported")
 
     @classmethod

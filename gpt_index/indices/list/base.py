@@ -5,7 +5,7 @@ in sequence in order to answer a given query.
 
 """
 
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Union
 
 from gpt_index.data_structs.data_structs_v2 import IndexList
 from gpt_index.data_structs.node_v2 import Node
@@ -55,7 +55,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         )
 
     def as_retriever(
-        self, mode: QueryMode = QueryMode.DEFAULT, **kwargs
+        self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
     ) -> BaseRetriever:
         if mode == QueryMode.DEFAULT:
             return ListIndexRetriever(self, **kwargs)

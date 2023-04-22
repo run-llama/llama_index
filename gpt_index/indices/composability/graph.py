@@ -115,7 +115,7 @@ class ComposableGraph:
             index_struct_id = self._root_id
         return self._all_indices[index_struct_id]
 
-    def as_query_engine(self, **kwargs) -> BaseQueryEngine:
+    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         return ComposableGraphQueryEngine(self, **kwargs)
 
     @classmethod

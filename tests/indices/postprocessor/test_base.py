@@ -165,16 +165,17 @@ def test_fixed_recency_postprocessor(
         Node("This is another test.", doc_id="3", extra_info={"date": "2020-01-03"}),
         Node("This is a test v2.", doc_id="4", extra_info={"date": "2020-01-04"}),
     ]
+    node_with_scores = [NodeWithScore(node) for node in nodes]
 
     service_context = ServiceContext.from_defaults()
 
     postprocessor = FixedRecencyPostprocessor(top_k=1, service_context=service_context)
     query_bundle: QueryBundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        nodes, extra_info={"query_bundle": query_bundle}
+        node_with_scores, extra_info={"query_bundle": query_bundle}
     )
     assert len(result_nodes) == 1
-    assert result_nodes[0].get_text() == "date: 2020-01-04\n\nThis is a test v2."
+    assert result_nodes[0].node.get_text() == "date: 2020-01-04\n\nThis is a test v2."
 
     # try in node info
     nodes = [
@@ -183,6 +184,7 @@ def test_fixed_recency_postprocessor(
         Node("This is another test.", doc_id="3", node_info={"date": "2020-01-03"}),
         Node("This is a test v2.", doc_id="4", node_info={"date": "2020-01-04"}),
     ]
+    node_with_scores = [NodeWithScore(node) for node in nodes]
     service_context = ServiceContext.from_defaults()
 
     postprocessor = FixedRecencyPostprocessor(
@@ -190,10 +192,10 @@ def test_fixed_recency_postprocessor(
     )
     query_bundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        nodes, extra_info={"query_bundle": query_bundle}
+        node_with_scores, extra_info={"query_bundle": query_bundle}
     )
     assert len(result_nodes) == 1
-    assert result_nodes[0].get_text() == "This is a test v2."
+    assert result_nodes[0].node.get_text() == "This is a test v2."
 
 
 @patch.object(LLMPredictor, "predict", side_effect=mock_recency_predict)
@@ -224,6 +226,7 @@ def test_embedding_recency_postprocessor(
         Node("This is another test.", doc_id="3v2", node_info={"date": "2020-01-03"}),
         Node("This is a test v2.", doc_id="4", node_info={"date": "2020-01-04"}),
     ]
+    nodes_with_scores = [NodeWithScore(node) for node in nodes]
     service_context = ServiceContext.from_defaults()
 
     postprocessor = EmbeddingRecencyPostprocessor(
@@ -234,14 +237,14 @@ def test_embedding_recency_postprocessor(
     )
     query_bundle: QueryBundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        nodes, extra_info={"query_bundle": query_bundle}
+        nodes_with_scores, extra_info={"query_bundle": query_bundle}
     )
     print(result_nodes)
     assert len(result_nodes) == 4
-    assert result_nodes[0].get_text() == "This is a test v2."
+    assert result_nodes[0].node.get_text() == "This is a test v2."
     assert cast(Dict, result_nodes[0].node_info)["date"] == "2020-01-04"
-    assert result_nodes[1].get_text() == "This is another test."
-    assert result_nodes[1].get_doc_id() == "3v2"
+    assert result_nodes[1].node.get_text() == "This is another test."
+    assert result_nodes[1].node.get_doc_id() == "3v2"
     assert cast(Dict, result_nodes[1].node_info)["date"] == "2020-01-03"
-    assert result_nodes[2].get_text() == "This is a test."
+    assert result_nodes[2].node.get_text() == "This is a test."
     assert cast(Dict, result_nodes[2].node_info)["date"] == "2020-01-02"

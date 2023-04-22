@@ -9,7 +9,7 @@ existing keywords in the table.
 """
 
 from abc import abstractmethod
-from typing import Any, Optional, Sequence, Set
+from typing import Any, Optional, Sequence, Set, Union
 
 from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs_v2 import KeywordTable
@@ -84,7 +84,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         )
 
     def as_retriever(
-        self, mode: QueryMode = QueryMode.DEFAULT, **kwargs
+        self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
     ) -> BaseRetriever:
         if mode == QueryMode.DEFAULT:
             return KeywordTableGPTRetriever(self, **kwargs)

@@ -1,7 +1,7 @@
 """Test embedding functionalities."""
 
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 from unittest.mock import patch
 
 import pytest
@@ -23,10 +23,7 @@ from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_predict import mock_llmchain_predict
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
-    MOCK_QUERY_PROMPT,
-    MOCK_REFINE_PROMPT,
     MOCK_SUMMARY_PROMPT,
-    MOCK_TEXT_QA_PROMPT,
 )
 from tests.mock_utils.mock_text_splitter import (
     mock_token_splitter_newline_with_overlaps,
@@ -34,15 +31,13 @@ from tests.mock_utils.mock_text_splitter import (
 
 
 @pytest.fixture
-def struct_kwargs() -> Tuple[Dict, Dict]:
+def index_kwargs() -> dict:
     """Index kwargs."""
-    index_kwargs = {
+    return {
         "summary_template": MOCK_SUMMARY_PROMPT,
         "insert_prompt": MOCK_INSERT_PROMPT,
         "num_children": 2,
     }
-    retrieval_kwargs = {}
-    return index_kwargs, retrieval_kwargs
 
 
 @pytest.fixture
@@ -88,16 +83,15 @@ def test_embedding_query(
     _mock_total_tokens_used: Any,
     _mock_split_text_overlap: Any,
     _mock_split_text: Any,
-    struct_kwargs: Dict,
+    index_kwargs: Dict,
     documents: List[Document],
 ) -> None:
     """Test embedding query."""
-    index_kwargs, retrieval_kwargs = struct_kwargs
     tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
-    retriever = tree.as_retriever(mode="embedding", **retrieval_kwargs)
+    retriever = tree.as_retriever(mode="embedding")
     nodes = retriever.retrieve(QueryBundle(query_str))
     assert nodes[0].node.text == "Hello world."
 
@@ -130,11 +124,10 @@ def test_query_and_count_tokens(
     _mock_llm_metadata: Any,
     _mock_init: Any,
     _mock_predict: Any,
-    struct_kwargs: Dict,
+    index_kwargs: Dict,
     documents: List[Document],
 ) -> None:
     """Test query and count tokens."""
-    index_kwargs, retrieval_kwargs = struct_kwargs
     # First block is "Hello world.\nThis is a test.\n"
     # Second block is "This is another test.\nThis is a test v2."
     # first block is 5 tokens because

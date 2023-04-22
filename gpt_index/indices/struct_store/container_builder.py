@@ -141,7 +141,7 @@ class SQLContextContainerBuilder:
             context_query_str = query_tmpl.format(orig_query_str=query_str)
         retriever = index.as_retriever()
         query_engine = RetrieverQueryEngine(retriever=retriever)
-        response = query_engine.query(QueryBundle(context_query_str))
+        response = query_engine.query(context_query_str)
         context_str = str(response)
         if store_context_str:
             self.context_str = context_str

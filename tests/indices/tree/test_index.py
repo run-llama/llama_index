@@ -19,13 +19,6 @@ from tests.mock_utils.mock_predict import (
     mock_llmchain_predict,
     mock_llmpredictor_predict,
 )
-from tests.mock_utils.mock_prompts import (
-    MOCK_INSERT_PROMPT,
-    MOCK_QUERY_PROMPT,
-    MOCK_REFINE_PROMPT,
-    MOCK_SUMMARY_PROMPT,
-    MOCK_TEXT_QA_PROMPT,
-)
 from tests.mock_utils.mock_text_splitter import (
     mock_token_splitter_newline_with_overlaps,
 )

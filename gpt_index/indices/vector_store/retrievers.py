@@ -5,7 +5,7 @@ from typing import Any, List, Optional
 
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 
-from gpt_index.data_structs.node_v2 import Node, NodeWithScore
+from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.utils import log_vector_store_query_result
@@ -52,7 +52,7 @@ class VectorIndexRetriever(BaseRetriever):
     def _retrieve(
         self,
         query_bundle: QueryBundle,
-    ) -> List[Node]:
+    ) -> List[NodeWithScore]:
         if self._vector_store.is_embedding_query:
             if query_bundle.embedding is None:
                 query_bundle.embedding = (
@@ -95,8 +95,11 @@ class VectorIndexRetriever(BaseRetriever):
 
         log_vector_store_query_result(query_result)
 
-        node_with_scores = []
-        for node, similarity in zip(query_result.nodes, query_result.similarities):
-            node_with_scores.append(NodeWithScore(node, score=similarity))
+        node_with_scores: List[NodeWithScore] = []
+        for ind, node in enumerate(query_result.nodes):
+            score: Optional[float] = None
+            if query_result.similarities is not None:
+                score = query_result.similarities[ind]
+            node_with_scores.append(NodeWithScore(node, score=score))
 
         return node_with_scores

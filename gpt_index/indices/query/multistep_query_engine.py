@@ -49,7 +49,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
-        return await self.synthesize(query_bundle, nodes, source_nodes, extra_info)
+        return await self.asynthesize(query_bundle, nodes, source_nodes, extra_info)
 
     def _combine_queries(
         self, query_bundle: QueryBundle, prev_reasoning: str

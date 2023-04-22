@@ -1,6 +1,3 @@
-
-
-
 from typing import List
 
 import pytest
@@ -14,4 +11,3 @@ def documents() -> List[Document]:
     # NOTE: in this unit test, document text == triplets
     doc_text = "(foo, is, bar)\n" "(hello, is not, world)\n" "(Jane, is mother of, Bob)"
     return [Document(doc_text)]
-

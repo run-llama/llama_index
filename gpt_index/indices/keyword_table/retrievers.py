@@ -4,11 +4,11 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from llama_index import GPTKeywordTableIndex
-
-from gpt_index.data_structs.data_structs_v2 import Node
 from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.keyword_table.base import (
+    BaseGPTKeywordTableIndex,
+)
 from gpt_index.indices.keyword_table.utils import (
     extract_keywords_given_response,
     rake_extract_keywords,
@@ -50,7 +50,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: GPTKeywordTableIndex,
+        index: BaseGPTKeywordTableIndex,
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,

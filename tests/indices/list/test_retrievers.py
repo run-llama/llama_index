@@ -23,7 +23,7 @@ def test_retrieve_default(
     retriever = index.as_retriever(mode="default")
     nodes = retriever.retrieve(query_str)
 
-    for node_with_score, line in zip(nodes, documents[0].text.split("\n")):
+    for node_with_score, line in zip(nodes, documents[0].get_text().split("\n")):
         assert node_with_score.node.text == line
 
 

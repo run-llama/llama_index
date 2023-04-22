@@ -25,7 +25,8 @@ def _generate_sql(
     nl_query_text: str,
 ) -> str:
     """Generate SQL query for the given NL query text."""
-    response = llama_index.query(nl_query_text)
+    query_engine = llama_index.as_query_engine()
+    response = query_engine.query(nl_query_text)
     if (
         response.extra_info is None
         or "sql_query" not in response.extra_info

@@ -69,7 +69,8 @@ class GPTIndexMemory(Memory):
         # TODO: wrap in prompt
         # TODO: add option to return the raw text
         # NOTE: currently it's a hack
-        response = self.index.query(query_str, **self.query_kwargs)
+        query_engine = self.index.as_query_engine(**self.query_kwargs)
+        response = query_engine.query(query_str)
         return {self.memory_key: str(response)}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
@@ -138,7 +139,8 @@ class GPTIndexChatMemory(BaseChatMemory):
         prompt_input_key = self._get_prompt_input_key(inputs)
         query_str = inputs[prompt_input_key]
 
-        response_obj = self.index.query(query_str, **self.query_kwargs)
+        query_engine = self.index.as_query_engine(**self.query_kwargs)
+        response_obj = query_engine.query(query_str)
         if self.return_source:
             source_nodes = response_obj.source_nodes
             if self.return_messages:

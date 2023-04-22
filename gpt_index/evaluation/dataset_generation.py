@@ -102,11 +102,13 @@ class DatasetGenerator:
         for node in nodes:
             index = GPTListIndex.from_documents([Document(node.get_text())])
 
-            response = index.query(
-                self.question_gen_query,
+            query_engine = index.as_query_engine(
                 service_context=self.service_context,
                 text_qa_template=self.text_question_template,
                 use_async=True,
+            )
+            response = query_engine.query(
+                self.question_gen_query,
             )
 
             result = str(response).strip().split("\n")

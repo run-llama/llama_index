@@ -99,7 +99,7 @@ def load_index_struct_from_dict(struct_dict: Dict[str, Any]) -> "V2IndexStruct":
     return cls.from_dict(data_dict)
 
 
-def load_index_from_dict(index_dict: Dict[str, Any], **kwargs) -> "BaseGPTIndex":
+def load_index_from_dict(index_dict: Dict[str, Any], **kwargs: Any) -> "BaseGPTIndex":
     type = index_dict[TYPE_KEY]
     data_dict = index_dict[DATA_KEY]
     cls = INDEX_STRUCT_TYPE_TO_INDEX_CLASS[type]

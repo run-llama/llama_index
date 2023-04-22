@@ -236,7 +236,7 @@ def test_to_from_string(
 
 def test_as_retriever(
     list_index: GPTListIndex,
-):
+) -> None:
     default_retriever = list_index.as_retriever(mode=QueryMode.DEFAULT)
     assert isinstance(default_retriever, BaseRetriever)
 

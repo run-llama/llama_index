@@ -1,6 +1,5 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 from gpt_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
-from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
@@ -40,7 +39,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
 
     def _query_index(
         self,
-        query_bundle: Union[str, QueryBundle],
+        query_bundle: QueryBundle,
         index_id: Optional[str] = None,
         level: int = 0,
     ) -> RESPONSE_TYPE:
