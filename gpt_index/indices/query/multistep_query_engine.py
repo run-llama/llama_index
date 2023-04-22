@@ -1,11 +1,22 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.query.base import BaseQueryEngine
-from gpt_index.indices.query.query_combiner.base import default_stop_fn
 from gpt_index.indices.query.query_transform.base import StepDecomposeQueryTransform
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 from gpt_index.response.schema import RESPONSE_TYPE
+
+
+def default_stop_fn(stop_dict: Dict) -> bool:
+    """Stop function for multi-step query combiner."""
+    query_bundle = cast(QueryBundle, stop_dict.get("query_bundle"))
+    if query_bundle is None:
+        raise ValueError("Response must be provided to stop function.")
+
+    if "none" in query_bundle.query_str.lower():
+        return True
+    else:
+        return False
 
 
 class MultiStepQueryEngine(BaseQueryEngine):
