@@ -41,11 +41,7 @@ def test_decompose_query_transform(
 
     # initialize list index
     # documents aren't used for this test
-    index = GPTListIndex.from_documents(documents)
-    index.index_struct.summary = "Foo bar"
     query_str = "What is?"
-    new_query_bundle = query_transform.run(
-        query_str, {"index_struct": index.index_struct}
-    )
+    new_query_bundle = query_transform.run(query_str, {"index_summary": "Foo bar"})
     assert new_query_bundle.query_str == "What is?:Foo bar"
     assert new_query_bundle.embedding_strs == ["What is?:Foo bar"]

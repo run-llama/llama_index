@@ -47,11 +47,23 @@ class MultiStepQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
-        return self.synthesize(query_bundle, nodes, source_nodes, extra_info)
+        final_response = self._response_synthesizer.synthesize(
+            query_bundle=query_bundle,
+            nodes=nodes,
+            additional_source_nodes=source_nodes,
+        )
+        final_response.extra_info = extra_info
+        return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
-        return await self.asynthesize(query_bundle, nodes, source_nodes, extra_info)
+        final_response = await self._response_synthesizer.asynthesize(
+            query_bundle=query_bundle,
+            nodes=nodes,
+            additional_source_nodes=source_nodes,
+        )
+        final_response.extra_info = extra_info
+        return final_response
 
     def _combine_queries(
         self, query_bundle: QueryBundle, prev_reasoning: str
@@ -117,33 +129,3 @@ class MultiStepQueryEngine(BaseQueryEngine):
 
         nodes = [NodeWithScore(Node(text_chunk)) for text_chunk in text_chunks]
         return nodes, source_nodes, final_response_extra_info
-
-    def synthesize(
-        self,
-        query_bundle: QueryBundle,
-        nodes: Sequence[NodeWithScore],
-        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
-        extra_info: Optional[dict] = None,
-    ) -> RESPONSE_TYPE:
-        final_response = self._response_synthesizer.synthesize(
-            query_bundle=query_bundle,
-            nodes=nodes,
-            additional_source_nodes=additional_source_nodes,
-        )
-        final_response.extra_info = extra_info
-        return final_response
-
-    async def asynthesize(
-        self,
-        query_bundle: QueryBundle,
-        nodes: Sequence[NodeWithScore],
-        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
-        extra_info: Optional[dict] = None,
-    ) -> RESPONSE_TYPE:
-        final_response = await self._response_synthesizer.asynthesize(
-            query_bundle=query_bundle,
-            nodes=nodes,
-            additional_source_nodes=additional_source_nodes,
-        )
-        final_response.extra_info = extra_info
-        return final_response

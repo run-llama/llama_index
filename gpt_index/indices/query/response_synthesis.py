@@ -121,7 +121,7 @@ class ResponseSynthesizer:
     def synthesize(
         self,
         query_bundle: QueryBundle,
-        nodes: Sequence[NodeWithScore],
+        nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         for node_processor in self._node_postprocessors:
@@ -154,7 +154,7 @@ class ResponseSynthesizer:
     async def asynthesize(
         self,
         query_bundle: QueryBundle,
-        nodes: Sequence[NodeWithScore],
+        nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         for node_processor in self._node_postprocessors:

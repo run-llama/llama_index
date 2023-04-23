@@ -1,7 +1,7 @@
 import os
 from .configuration import load_index, save_index
 from argparse import Namespace, _SubParsersAction
-from llama_index import SimpleDirectoryReader
+from gpt_index import SimpleDirectoryReader
 
 
 def add_cli(args: Namespace) -> None:
