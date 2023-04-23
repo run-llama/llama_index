@@ -14,16 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
-    """GPT SQL query over a structured database.
+    """GPT SQL query engine over a structured database.
 
     Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made here.
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="sql")
-
     """
 
     def __init__(
@@ -49,18 +44,13 @@ class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
 
 
 class GPTNLStructStoreQueryEngine(BaseQueryEngine):
-    """GPT natural language query over a structured database.
+    """GPT natural language query engine over a structured database.
 
     Given a natural language query, we will extract the query to SQL.
     Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made during
     the SQL execution.
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="default")
-
     """
 
     def __init__(

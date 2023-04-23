@@ -16,15 +16,11 @@ DEFAULT_NUM_CHILDREN = 10
 
 
 class TreeAllLeafRetriever(BaseRetriever):
-    """GPT Tree Index summarize query.
+    """GPT all leaf retriever.
 
     This class builds a query-specific tree from leaf nodes to return a response.
     Using this query mode means that the tree index doesn't need to be built
     when initialized, since we rebuild the tree for each query.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="summarize")
 
     Args:
         text_qa_template (Optional[QuestionAnswerPrompt]): Question-Answer Prompt

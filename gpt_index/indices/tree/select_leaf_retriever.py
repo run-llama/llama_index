@@ -48,14 +48,10 @@ def get_text_from_node(
 
 
 class TreeSelectLeafRetriever(BaseRetriever):
-    """GPT Tree Index leaf query.
+    """Tree select leaf retriever.
 
     This class traverses the index graph and searches for a leaf node that can best
     answer the query.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="default")
 
     Args:
         query_template (Optional[TreeSelectPrompt]): Tree Select Query Prompt
