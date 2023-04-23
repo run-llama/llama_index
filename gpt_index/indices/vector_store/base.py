@@ -11,7 +11,7 @@ from gpt_index.constants import VECTOR_STORE_KEY
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.data_structs.node_v2 import ImageNode, IndexNode, Node
 from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.token_counter.token_counter import llm_token_counter

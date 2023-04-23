@@ -38,7 +38,8 @@ query_vector=[n1, n2, n3, ...]
 documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
 index = GPTListIndex.from_documents(documents)
 
-response = index.query("<query_text>")
+query_engine = index.as_query_engine()
+response = query_engine.query("<query_text>")
 display(Markdown(f"<b>{response}</b>"))
 ```
 
@@ -91,7 +92,8 @@ documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTSimpleVectorIndex.from_documents(documents)
 
 # Query index
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 
 ```
 
@@ -113,7 +115,8 @@ deeplake_dataset_path = "hub://adilkhan/paul_graham_essay"
 index = GPTDeepLakeIndex.from_documents(documents, dataset_path=dataset_path, overwrite=True)
 
 # Query index
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 ```
 
 **Faiss Index Construction/Querying**
@@ -130,7 +133,8 @@ documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTFaissIndex.from_documents(documents, faiss_index=faiss_index)
 
 # Query index
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 
 ```
 
@@ -153,7 +157,8 @@ documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTWeaviateIndex.from_documents(documents, weaviate_client=client)
 
 # Query index
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 
 ```
 
@@ -185,7 +190,8 @@ index = GPTPineconeIndex.from_documents(
 )
 
 # Query index
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 ```
 
 **Qdrant Index Construction/Querying**
@@ -206,7 +212,8 @@ documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTQdrantIndex.from_documents(documents, collection_name=collection_name, client=client)
 
 # Query index
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 ```
 
 **Chroma Index Construction/Querying**
@@ -225,7 +232,8 @@ documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTChromaIndex.from_documents(documents, chroma_collection=chroma_collection)
 
 # Query index
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 
 ```
 
@@ -242,7 +250,8 @@ documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTMilvusIndex.from_documents(documents, host='localhost', port=19530, overwrite='True')
 
 # Query index
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 
 ```
 
@@ -274,7 +283,8 @@ index = GPTMilvusIndex.from_documents(
 )
 
 # Query index
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 
 ```
 

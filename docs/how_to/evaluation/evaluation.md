@@ -11,7 +11,7 @@ and combine these with LLM calls.
 
 ## Evaluation of the Response + Context
 
-Each response from an `index.query` calls returns both the synthesized response as well as source documents.
+Each response from an `query_engine.query` calls returns both the synthesized response as well as source documents.
 
 We can evaluate the response against the retrieved sources - without taking into account the query!
 
@@ -40,7 +40,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 evaluator = ResponseEvaluator(service_context=service_context)
 
 # query index
-response = vector_index.query("What battles took place in New York City in the American Revolution?")
+query_engine = vector_index.as_query_engine()
+response = query_engine.query("What battles took place in New York City in the American Revolution?")
 eval_result = evaluator.evaluate(response)
 print(str(eval_result))
 
@@ -74,7 +75,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 evaluator = ResponseEvaluator(service_context=service_context)
 
 # query index
-response = vector_index.query("What battles took place in New York City in the American Revolution?")
+query_engine = vector_index.as_query_engine()
+response = query_engine.query("What battles took place in New York City in the American Revolution?")
 eval_result = evaluator.evaluate_source_nodes(response)
 print(str(eval_result))
 
@@ -117,7 +119,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 evaluator = QueryResponseEvaluator(service_context=service_context)
 
 # query index
-response = vector_index.query("What battles took place in New York City in the American Revolution?")
+query_engine = vector_index.as_query_engine()
+response = query_engine.query("What battles took place in New York City in the American Revolution?")
 eval_result = evaluator.evaluate(response)
 print(str(eval_result))
 
@@ -147,7 +150,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 evaluator = QueryResponseEvaluator(service_context=service_context)
 
 # query index
-response = vector_index.query("What battles took place in New York City in the American Revolution?")
+query_engine = vector_index.as_query_engine()
+response = query_engine.query("What battles took place in New York City in the American Revolution?")
 eval_result = evaluator.evaluate_source_nodes(response)
 print(str(eval_result))
 

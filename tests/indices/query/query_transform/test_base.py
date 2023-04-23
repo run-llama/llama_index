@@ -4,7 +4,6 @@ from typing import Any, List
 
 import pytest
 
-from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
 from gpt_index.readers.schema.base import Document
 from tests.indices.query.query_transform.mock_utils import MOCK_DECOMPOSE_PROMPT
@@ -41,11 +40,7 @@ def test_decompose_query_transform(
 
     # initialize list index
     # documents aren't used for this test
-    index = GPTListIndex.from_documents(documents)
-    index.index_struct.summary = "Foo bar"
     query_str = "What is?"
-    new_query_bundle = query_transform.run(
-        query_str, {"index_struct": index.index_struct}
-    )
+    new_query_bundle = query_transform.run(query_str, {"index_summary": "Foo bar"})
     assert new_query_bundle.query_str == "What is?:Foo bar"
     assert new_query_bundle.embedding_strs == ["What is?:Foo bar"]

@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Type, Union
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
-from gpt_index.indices.query.retriever_query_engine import RetrieverQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.base import Document
@@ -22,7 +21,7 @@ class SQLContextContainerBuilder:
     """SQLContextContainerBuilder.
 
     Build a SQLContextContainer that can be passed to the SQL index
-    during index construction or during queryt-time.
+    during index construction or during query-time.
 
     NOTE: if context_str is specified, that will be used as context
     instead of context_dict
@@ -139,8 +138,7 @@ class SQLContextContainerBuilder:
             context_query_str = query_str
         else:
             context_query_str = query_tmpl.format(orig_query_str=query_str)
-        retriever = index.as_retriever()
-        query_engine = RetrieverQueryEngine(retriever=retriever)
+        query_engine = index.as_query_engine()
         response = query_engine.query(context_query_str)
         context_str = str(response)
         if store_context_str:

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.query_transform.base import StepDecomposeQueryTransform
@@ -27,6 +27,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[ResponseSynthesizer] = None,
         num_steps: Optional[int] = 3,
         early_stopping: bool = True,
+        index_summary: str = "None",
         stop_fn: Optional[Callable[[Dict], bool]] = None,
     ) -> None:
         self._query_engine = query_engine
@@ -35,6 +36,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
             response_synthesizer or ResponseSynthesizer.from_args()
         )
 
+        self._index_summary = index_summary
         self._num_steps = num_steps
         self._early_stopping = early_stopping
         # TODO: make interface to stop function better
@@ -45,11 +47,23 @@ class MultiStepQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
-        return self.synthesize(query_bundle, nodes, source_nodes, extra_info)
+        final_response = self._response_synthesizer.synthesize(
+            query_bundle=query_bundle,
+            nodes=nodes,
+            additional_source_nodes=source_nodes,
+        )
+        final_response.extra_info = extra_info
+        return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
-        return await self.asynthesize(query_bundle, nodes, source_nodes, extra_info)
+        final_response = await self._response_synthesizer.asynthesize(
+            query_bundle=query_bundle,
+            nodes=nodes,
+            additional_source_nodes=source_nodes,
+        )
+        final_response.extra_info = extra_info
+        return final_response
 
     def _combine_queries(
         self, query_bundle: QueryBundle, prev_reasoning: str
@@ -57,6 +71,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         """Combine queries."""
         transform_extra_info = {
             "prev_reasoning": prev_reasoning,
+            "index_summary": self._index_summary,
         }
         query_bundle = self._query_transform(
             query_bundle, extra_info=transform_extra_info
@@ -114,33 +129,3 @@ class MultiStepQueryEngine(BaseQueryEngine):
 
         nodes = [NodeWithScore(Node(text_chunk)) for text_chunk in text_chunks]
         return nodes, source_nodes, final_response_extra_info
-
-    def synthesize(
-        self,
-        query_bundle: QueryBundle,
-        nodes: Sequence[NodeWithScore],
-        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
-        extra_info: Optional[dict] = None,
-    ) -> RESPONSE_TYPE:
-        final_response = self._response_synthesizer.synthesize(
-            query_bundle=query_bundle,
-            nodes=nodes,
-            additional_source_nodes=additional_source_nodes,
-        )
-        final_response.extra_info = extra_info
-        return final_response
-
-    async def asynthesize(
-        self,
-        query_bundle: QueryBundle,
-        nodes: Sequence[NodeWithScore],
-        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
-        extra_info: Optional[dict] = None,
-    ) -> RESPONSE_TYPE:
-        final_response = await self._response_synthesizer.asynthesize(
-            query_bundle=query_bundle,
-            nodes=nodes,
-            additional_source_nodes=additional_source_nodes,
-        )
-        final_response.extra_info = extra_info
-        return final_response

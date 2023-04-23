@@ -13,9 +13,8 @@ from gpt_index.docstore.registry import (
     load_docstore_from_dict,
     save_docstore_to_dict,
 )
-from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.query.base import BaseQueryEngine
-from gpt_index.indices.query.retriever_query_engine import RetrieverQueryEngine
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
 from gpt_index.token_counter.token_counter import llm_token_counter
@@ -109,6 +108,11 @@ class BaseGPTIndex(Generic[IS], ABC):
     def index_struct(self) -> IS:
         """Get the index struct."""
         return self._index_struct
+
+    @property
+    def index_id(self) -> str:
+        """Get the index struct."""
+        return self._index_struct.index_id
 
     @property
     def docstore(self) -> BaseDocumentStore:
@@ -210,10 +214,15 @@ class BaseGPTIndex(Generic[IS], ABC):
         pass
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        # NOTE: lazy import
+        from gpt_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+
         retriever = self.as_retriever(**kwargs)
-        return RetrieverQueryEngine.from_args(
-            retriever=retriever, service_context=self._service_context, **kwargs
-        )
+
+        kwargs["retriever"] = retriever
+        if "service_context" not in kwargs:
+            kwargs["service_context"] = self._service_context
+        return RetrieverQueryEngine.from_args(**kwargs)
 
     @classmethod
     def load_from_dict(

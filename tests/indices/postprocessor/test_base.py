@@ -15,7 +15,6 @@ from gpt_index.indices.postprocessor.node_recency import (
     EmbeddingRecencyPostprocessor,
     TimeWeightedPostprocessor,
 )
-from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.llm_predictor import LLMPredictor
 from unittest.mock import patch
 from gpt_index.embeddings.openai import OpenAIEmbedding
@@ -279,17 +278,14 @@ def test_time_weighted_postprocessor(
         Node("This is another test.", doc_id="3", node_info={key: 2}),
         Node("This is a test v2.", doc_id="4", node_info={key: 3}),
     ]
+    node_with_scores = [NodeWithScore(node) for node in nodes]
 
     # high time decay
-    similarity_tracker = SimilarityTracker()
     postprocessor = TimeWeightedPostprocessor(
         top_k=1, time_decay=0.99999, time_access_refresh=True, now=4.0
     )
-    result_nodes = postprocessor.postprocess_nodes(
-        nodes, extra_info={"similarity_tracker": similarity_tracker}
-    )
+    result_nodes_with_score = postprocessor.postprocess_nodes(node_with_scores)
 
-    result_nodes_with_score = similarity_tracker.get_zipped_nodes(result_nodes)
     assert len(result_nodes_with_score) == 1
     assert result_nodes_with_score[0].node.get_text() == "This is a test v2."
     assert cast(Dict, nodes[0].node_info)[key] == 0
@@ -304,16 +300,13 @@ def test_time_weighted_postprocessor(
         Node("This is another test.", doc_id="3", node_info={key: 2}),
         Node("This is a test v2.", doc_id="4", node_info={key: 3}),
     ]
-    similarity_tracker = SimilarityTracker()
-    for idx, node in enumerate(nodes):
-        similarity_tracker.add(node, -float(idx))
+    node_with_scores = [
+        NodeWithScore(node, -float(idx)) for idx, node in enumerate(nodes)
+    ]
     postprocessor = TimeWeightedPostprocessor(
         top_k=1, time_decay=0.000000000002, time_access_refresh=True, now=4.0
     )
-    result_nodes = postprocessor.postprocess_nodes(
-        nodes, extra_info={"similarity_tracker": similarity_tracker}
-    )
-    result_nodes_with_score = similarity_tracker.get_zipped_nodes(result_nodes)
+    result_nodes_with_score = postprocessor.postprocess_nodes(node_with_scores)
     assert len(result_nodes_with_score) == 1
     assert result_nodes_with_score[0].node.get_text() == "Hello world."
     assert cast(Dict, nodes[0].node_info)[key] != 0

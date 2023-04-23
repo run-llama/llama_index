@@ -6,7 +6,6 @@ from typing import Dict, Optional, Union, cast
 
 from langchain.input import print_text
 
-from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,
@@ -149,11 +148,8 @@ class DecomposeQueryTransform(BaseQueryTransform):
 
     def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         """Run query transform."""
-        index_struct = cast(IndexStruct, extra_info.get("index_struct", None))
         # currently, just get text from the index structure
-        index_text = (
-            index_struct.get_summary() if index_struct.summary is not None else "None"
-        )
+        index_summary = cast(str, extra_info.get("index_summary", "None"))
 
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
@@ -161,7 +157,7 @@ class DecomposeQueryTransform(BaseQueryTransform):
         new_query_str, _ = self._llm_predictor.predict(
             self._decompose_query_prompt,
             query_str=query_str,
-            context_str=index_text,
+            context_str=index_summary,
         )
 
         if self.verbose:
@@ -237,8 +233,10 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
 
     def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         """Run query transform."""
-        index_struct = cast(IndexStruct, extra_info.get("index_struct", None))
-        index_text = index_struct.get_summary()
+        index_summary = cast(
+            str,
+            extra_info.get("index_summary", "None"),
+        )
         prev_reasoning = cast(Response, extra_info.get("prev_reasoning"))
         fmt_prev_reasoning = f"\n{prev_reasoning}" if prev_reasoning else "None"
 
@@ -249,7 +247,7 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
             self._step_decompose_query_prompt,
             prev_reasoning=fmt_prev_reasoning,
             query_str=query_str,
-            context_str=index_text,
+            context_str=index_summary,
         )
         if self.verbose:
             print_text(f"> Current query: {query_str}\n", color="yellow")

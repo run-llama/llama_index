@@ -299,7 +299,8 @@ async def receive(self, text_data):
     if self.index is not None:
         query_str = text_data_json["query"]
         modified_query_str = f"Please return a nicely formatted markdown string to this request:\n\n{query_str}"
-        response = self.index.query(modified_query_str)
+        query_engine = self.index.as_query_engine()
+        response = query_engine.query(modified_query_str)
 
         markdown_response = f"## Response\n\n{response}\n\n"
         if response.source_nodes:

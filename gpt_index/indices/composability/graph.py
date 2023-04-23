@@ -1,7 +1,7 @@
 """Composability graphs."""
 
 import json
-from typing import Any, Dict, List, Optional, Sequence, Type, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Type, cast
 
 from gpt_index.constants import (
     ALL_INDICES_KEY,
@@ -11,12 +11,8 @@ from gpt_index.data_structs.data_structs_v2 import CompositeIndex, V2IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, DocumentRelationship
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.base import BaseQueryEngine
-from gpt_index.indices.query.schema import QueryConfig
 from gpt_index.indices.registry import save_index_to_dict
 from gpt_index.indices.service_context import ServiceContext
-
-# TMP: refactor query config type
-QUERY_CONFIG_TYPE = Union[Dict, QueryConfig]
 
 
 class ComposableGraph:
@@ -116,11 +112,11 @@ class ComposableGraph:
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from gpt_index.indices.query.graph_query_engine import (
+        from gpt_index.query_engine.graph_query_engine import (
             ComposableGraphQueryEngine,
         )
 
-        return ComposableGraphQueryEngine(self, **kwargs)
+        return ComposableGraphQueryEngine.from_args(self, **kwargs)
 
     @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "ComposableGraph":

@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle, QueryMode
+from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from gpt_index.prompts.prompts import TextToSQLPrompt
@@ -14,26 +15,24 @@ logger = logging.getLogger(__name__)
 
 
 class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
-    """GPT SQL query over a structured database.
+    """GPT SQL query engine over a structured database.
 
     Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made here.
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="sql")
-
     """
 
     def __init__(
         self,
         index: GPTSQLStructStoreIndex,
+        sql_context_container: Optional[SQLContextContainerBuilder] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._sql_database = index.sql_database
-        self._sql_context_container = index.sql_context_container
+        self._sql_context_container = (
+            sql_context_container or index.sql_context_container
+        )
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
@@ -49,18 +48,13 @@ class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
 
 
 class GPTNLStructStoreQueryEngine(BaseQueryEngine):
-    """GPT natural language query over a structured database.
+    """GPT natural language query engine over a structured database.
 
     Given a natural language query, we will extract the query to SQL.
     Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made during
     the SQL execution.
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="default")
-
     """
 
     def __init__(

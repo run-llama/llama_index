@@ -3,7 +3,7 @@ import logging
 from typing import Any, List
 
 from gpt_index.data_structs.node_v2 import NodeWithScore
-from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.utils import get_sorted_node_list
 
@@ -18,15 +18,6 @@ class TreeRootRetriever(BaseRetriever):
     Unlike GPTTreeIndexLeafQuery, this class assumes the graph already stores
     the answer (because it was constructed with a query_str), so it does not
     attempt to parse information down the graph in order to synthesize an answer.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="retrieve")
-
-    Args:
-        text_qa_template (Optional[QuestionAnswerPrompt]): Question-Answer Prompt
-            (see :ref:`Prompt-Templates`).
-
     """
 
     def __init__(self, index: Any):

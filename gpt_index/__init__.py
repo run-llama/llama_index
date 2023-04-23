@@ -31,7 +31,7 @@ from gpt_index.indices.list import GPTListIndex
 from gpt_index.indices.prompt_helper import PromptHelper
 
 # for composability
-from gpt_index.indices.query.schema import QueryConfig, QueryMode
+from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
@@ -168,7 +168,6 @@ __all__ = [
     "SQLDocumentContextBuilder",
     "SQLContextBuilder",
     "PromptHelper",
-    "QueryConfig",
     "QueryMode",
     "IndexStructType",
     "TwitterTweetReader",

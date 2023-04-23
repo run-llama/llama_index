@@ -1,6 +1,6 @@
 """Default query for GPTEmptyIndex."""
 from typing import Any, List, Optional
-from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.base_retriever import BaseRetriever
 
 from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.query.schema import QueryBundle
@@ -14,10 +14,6 @@ class EmptyIndexRetriever(BaseRetriever):
     """GPTEmptyIndex query.
 
     Passes the raw LLM call to the underlying LLM model.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="default")
 
     Args:
         input_prompt (Optional[SimpleInputPrompt]): A Simple Input Prompt

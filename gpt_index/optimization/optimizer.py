@@ -46,9 +46,10 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
                         these cutoffs can also be used together.
                     )
 
-        response = index.query(
-            "<query_str>", optimizer=optimizer
+        query_engine = index.as_query_engine(
+            optimizer=optimizer
         )
+        response = query_engine.query("<query_str>")
         """
         self.embed_model = embed_model or OpenAIEmbedding()
         self._percentile_cutoff = percentile_cutoff

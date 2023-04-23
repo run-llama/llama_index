@@ -30,7 +30,7 @@ of using LLMs to traverse nodes.
 #### How are Embeddings Generated?
 
 Since we offer embedding support during *query-time* for our list and tree indices, 
-embeddings are lazily generated and then cached (if `mode="embedding"` is specified during `index.query(...)`), and not during index construction.
+embeddings are lazily generated and then cached (if `mode="embedding"` is specified during `query(...)`), and not during index construction.
 This design choice prevents the need to generate embeddings for all text chunks during index construction.
 
 NOTE: Our [vector-store based indices](/how_to/integrations/vector_stores.md) generate embeddings during index construction.
@@ -77,12 +77,12 @@ service_context = ServiceContext.from_defaults(embed_model=embed_model)
 new_index = GPTListIndex.load_from_disk('index_list_emb.json')
 
 # query with embed_model specified
-response = new_index.query(
-    "<query_text>", 
+query_engine = new_index.as_query_engine(
     mode="embedding", 
     verbose=True, 
     service_context=service_context
 )
+response = query_engine.query("<query_text>")
 print(response)
 ```
 
@@ -104,10 +104,10 @@ new_index = GPTSimpleVectorIndex.load_from_disk(
 )
 
 # query will use the same embed_model
-response = new_index.query(
-    "<query_text>", 
+query_engine = new_index.as_query_engine(
     mode="default", 
     verbose=True, 
 )
+response = query_engine.query("<query_text>")
 print(response)
 ```

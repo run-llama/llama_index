@@ -31,7 +31,8 @@ index.save_to_disk('index_tree.json')
 # load index from disk
 index = GPTTreeIndex.load_from_disk('index_tree.json')
 # query
-response = index.query("<question text>", mode="default")
+query_engine = index.as_query_engine()
+response = query_engine.query("<question text>")
 ```
 
 ### FAQ

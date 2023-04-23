@@ -3,7 +3,7 @@ import logging
 from typing import Any, List, Optional, Tuple
 
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
-from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
 )

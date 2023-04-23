@@ -69,10 +69,6 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
 
     Convert natural language to Pandas python code.
 
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="default")
-
     Args:
         df (pd.DataFrame): Pandas dataframe to use.
         instruction_str (Optional[str]): Instruction string to use.

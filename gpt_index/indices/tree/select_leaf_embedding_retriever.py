@@ -15,15 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):
-    """
-    GPT Tree Index embedding query.
+    """Tree select leaf embedding retriever.
 
     This class traverses the index graph using the embedding similarity between the
     query and the node text.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="embedding")
 
     Args:
         query_template (Optional[TreeSelectPrompt]): Tree Select Query Prompt
