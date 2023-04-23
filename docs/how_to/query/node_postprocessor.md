@@ -41,7 +41,7 @@ The full API reference can be found [here](/reference/node_postprocessor.rst).
 
 ## Example Usage
 
-The postprocessor can be used as part of an `index.query` call, or on its own.
+The postprocessor can be used as part of a `ResponseSynthesizer` in a `QueryEngine`, or on its own.
 
 #### Index querying
 
@@ -98,8 +98,7 @@ response = query_engine.query(query_str)
 
 ### Default Postprocessors
 
-These postprocessors are simple modules that are already included by default during
-an `index.query` call
+These postprocessors are simple modules that are already included by default.
 
 #### KeywordNodePostprocessor
 

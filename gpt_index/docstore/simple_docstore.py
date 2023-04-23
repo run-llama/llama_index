@@ -21,9 +21,6 @@ class SimpleDocumentStore(BaseDocumentStore):
     otherwise, each index would create a docstore under the hood.
 
     .. code-block:: python
-
-        response = index.query("<query_str>", mode="default")
-
         nodes = SimpleNodeParser.get_nodes_from_documents()
         docstore = SimpleDocumentStore()
         docstore.add_documents(nodes)

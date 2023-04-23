@@ -15,10 +15,6 @@ class EmptyIndexRetriever(BaseRetriever):
 
     Passes the raw LLM call to the underlying LLM model.
 
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="default")
-
     Args:
         input_prompt (Optional[SimpleInputPrompt]): A Simple Input Prompt
             (see :ref:`Prompt-Templates`).

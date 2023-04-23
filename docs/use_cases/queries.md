@@ -41,7 +41,10 @@ Empirically, setting `response_mode="tree_summarize"` also leads to better summa
 ```python
 index = GPTListIndex.from_documents(documents)
 
-response = index.query("<summarization_query>", response_mode="tree_summarize")
+query_engine = index.as_query_engine(
+    response_mode="tree_summarize"
+)
+response = query_engine.query("<summarization_query>")
 ```
 
 ### Queries over Structured Data
@@ -70,7 +73,8 @@ index1 = GPTSimpleVectorIndex.from_documents(notion_docs)
 index2 = GPTSimpleVectorIndex.from_documents(slack_docs)
 
 graph = ComposableGraph.from_indices(GPTListIndex, [index1, index2], index_summaries=["summary1", "summary2"])
-response = graph.query("<query_str>", mode="recursive", query_configs=...)
+query_engine = graph.as_query_engine()
+response = query_engine.query("<query_str>")
 
 ```
 
@@ -102,16 +106,15 @@ index1 = GPTSimpleVectorIndex.from_documents(notion_docs)
 index2 = GPTSimpleVectorIndex.from_documents(slack_docs)
 
 # tree index for routing
-tree_index = ComposableGraph.from_indices(
+graph = ComposableGraph.from_indices(
     GPTTreeIndex, 
     [index1, index2],
     index_summaries=["summary1", "summary2"]
 )
 
-response = tree_index.query(
-    "In Notion, give me a summary of the product roadmap.",
-    mode="recursive",
-    query_configs=...
+query_engine = graph.as_query_engine()
+response = query_engine.query(
+    "In Notion, give me a summary of the product roadmap."
 )
 
 ```

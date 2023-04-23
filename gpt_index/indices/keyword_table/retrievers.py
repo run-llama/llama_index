@@ -115,10 +115,6 @@ class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
     Extracts keywords using GPT. Set when `mode="default"` in `query` method of
     `GPTKeywordTableIndex`.
 
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="default")
-
     See BaseGPTKeywordTableQuery for arguments.
 
     """
@@ -140,10 +136,6 @@ class KeywordTableSimpleRetriever(BaseKeywordTableRetriever):
     Extracts keywords using simple regex-based keyword extractor.
     Set when `mode="simple"` in `query` method of `GPTKeywordTableIndex`.
 
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="simple")
-
     See BaseGPTKeywordTableQuery for arguments.
 
     """
@@ -160,10 +152,6 @@ class KeywordTableRAKERetriever(BaseKeywordTableRetriever):
 
     Extracts keywords using RAKE keyword extractor.
     Set when `mode="rake"` in `query` method of `GPTKeywordTableIndex`.
-
-    .. code-block:: python
-
-        response = index.query("<query_str>", mode="rake")
 
     See BaseGPTKeywordTableQuery for arguments.
 

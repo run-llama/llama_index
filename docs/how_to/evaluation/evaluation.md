@@ -11,7 +11,7 @@ and combine these with LLM calls.
 
 ## Evaluation of the Response + Context
 
-Each response from an `index.query` calls returns both the synthesized response as well as source documents.
+Each response from an `query_engine.query` calls returns both the synthesized response as well as source documents.
 
 We can evaluate the response against the retrieved sources - without taking into account the query!
 
