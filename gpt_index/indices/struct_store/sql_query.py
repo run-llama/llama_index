@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle, QueryMode
+from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from gpt_index.prompts.prompts import TextToSQLPrompt
@@ -24,11 +25,14 @@ class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         index: GPTSQLStructStoreIndex,
+        sql_context_container: Optional[SQLContextContainerBuilder] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._sql_database = index.sql_database
-        self._sql_context_container = index.sql_context_container
+        self._sql_context_container = (
+            sql_context_container or index.sql_context_container
+        )
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""

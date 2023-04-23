@@ -13,7 +13,7 @@ from gpt_index.docstore.registry import (
     load_docstore_from_dict,
     save_docstore_to_dict,
 )
-from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.retriever_query_engine import RetrieverQueryEngine
 from gpt_index.indices.service_context import ServiceContext

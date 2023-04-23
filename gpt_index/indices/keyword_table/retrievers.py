@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
 from gpt_index.data_structs.node_v2 import NodeWithScore
-from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.base import (
     BaseGPTKeywordTableIndex,
 )

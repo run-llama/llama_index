@@ -4,7 +4,7 @@ from typing import Any, Optional, Sequence
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import PandasStructTable
-from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 

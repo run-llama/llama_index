@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, cast
 from langchain.input import print_text
 
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
-from gpt_index.indices.common.base_retriever import BaseRetriever
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import get_response_builder
 from gpt_index.indices.tree.base import GPTTreeIndex
