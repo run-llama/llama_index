@@ -31,7 +31,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
     def from_args(
         cls,
         retriever: BaseRetriever,
-        service_context: ServiceContext,
+        service_context: Optional[ServiceContext] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
         # response synthesizer args

@@ -85,7 +85,8 @@ index = GPTSimpleVectorIndex.load_from_disk('index.json')
 
 To query:
 ```python
-index.query("<question_text>?")
+query_engine = index.as_query_engine()
+query_engine.query("<question_text>?")
 ```
 
 ## 🔧 Dependencies

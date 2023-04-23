@@ -247,78 +247,143 @@ see our [Query Use Cases](/use_cases/queries.md). For technical details and exam
 
 ## 5. Query the index.
 
-After building the index, you can now query it. Note that a "query" is simply an input to an LLM - 
+After building the index, you can now query it with a `QueryEngine`. Note that a "query" is simply an input to an LLM - 
 this means that you can use the index for question-answering, but you can also do more than that! 
 
-To start, you can query an index without specifying any additional keyword arguments, as follows:
+### High-level API
+To start, you can query an index with the default `QueryEngine` (i.e., using default query configs), as follows:
 
 ```python
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 print(response)
 
-response = index.query("Write an email to the user given their background information.")
+response = query_engine.query("Write an email to the user given their background information.")
 print(response)
 ```
 
-However, you also have a variety of keyword arguments at your disposal, depending on the type of
-index being used. A full treatment of all the index-dependent query keyword arguments can be 
-found [here](/reference/query.rst).
+### Low-level API
+We also support a low-level composition API that gives you more granular control over the query logic.
+Below we highlight a few of the possible customizations.
+```python
+from llama_index import (
+    GPTSimpleVectorIndex,
+    VectorIndexRetriever,
+    ResponseSynthesizer,
+    RetrieverQueryEngine,
+)
 
-### Setting `mode`
+# build index
+index = GPTSimpleVectorIndex.from_documents(documents)
 
-An index can have a variety of query modes. For instance, you can choose to specify
-`mode="default"` or `mode="embedding"` for a list index. `mode="default"` will a
-create and refine an answer sequentially through the nodes of the list. 
-`mode="embedding"` will synthesize an answer by fetching the top-k
-nodes by embedding similarity.
+# configure retriever
+retriever = VectorIndexRetriever(
+    index=index, 
+    similarity_top_k=2,
+)
+
+# configure response synthesizer
+response_synthesizer = ResponseSynthesizer.from_args(
+    node_postprocessors=[
+        SimilarityPostprocessor(required_keywords=['hello'])
+    ]
+)
+
+# assemble query engine
+query_engine = RetrieverQueryEngine(
+    retriever=retriever,
+    response_synthesizer=response_synthesizer,
+)
+```
+You may also add your own retrieval, response synthesis, and overall query logic, by implementing the corresponding interfaces.
+
+For a full list of implemented components and the supported configurations, please see the detailed [reference docs](/reference/query.rst).
+
+In the following, we discuss some commonly used configurations in detail.
+### Configuring retriever
+An index can have a variety of index-specific retrieval modes.
+For instance, a list index supports the default `ListIndexRetriever` that retrieves all nodes, and
+`ListIndexEmbeddingRetriever` that retrieves the top-k nodes by embedding similarity.
+
+For convienience, you can also use the following shorthand:
 
 ```python
-index = GPTListIndex.from_documents(documents)
-# mode="default"
-response = index.query("What did the author do growing up?", mode="default")
-# mode="embedding"
-response = index.query("What did the author do growing up?", mode="embedding")
-
+    # ListIndexRetriever
+    retriever = index.as_retriever(mode='default')
+    # ListIndexEmbeddingRetriever
+    retriever = index.as_retriever(mode='embedding')
 ```
 
-The full set of modes per index are documented in the [Query Reference](/reference/query.rst).
+After choosing your desired retriever, you can construct your query engine:
+
+```python
+query_engine = RetrieverQueryEngine(retriever)
+response = query_engine.query("What did the author do growing up?")
+```
+
+The full list of retrievers for each index (and their shorthand) is documented in the [Query Reference](/reference/query.rst).
 
 (setting-response-mode)=
-### Setting `response_mode`
+### Configuring response synthesis
+After a retriever fetches relevant nodes, a `ResponseSynthesizer` synthesizes the final response by combining the information.
 
-Note: This option is not available/utilized in `GPTTreeIndex`.
+You can configure it via
+```python
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode=<response_mode>)
+```
 
-An index can also have the following response modes through `response_mode`:
-- `default`: For the given index, "create and refine" an answer by sequentially going through each Node; 
-    make a separate LLM call per Node. Good for more detailed answers.
-- `compact`: For the given index, "compact" the prompt during each LLM call by stuffing as 
-    many Node text chunks that can fit within the maximum prompt size. If there are 
+Right now, we support the following options:
+- `default`: "create and refine" an answer by sequentially going through each retrieved `Node`; 
+    This make a separate LLM call per Node. Good for more detailed answers.
+- `compact`: "compact" the prompt during each LLM call by stuffing as 
+    many `Node` text chunks that can fit within the maximum prompt size. If there are 
     too many chunks to stuff in one prompt, "create and refine" an answer by going through
     multiple prompts.
-- `tree_summarize`: Given a set of Nodes and the query, recursively construct a tree 
+- `tree_summarize`: Given a set of `Node` objects and the query, recursively construct a tree 
     and return the root node as the response. Good for summarization purposes.
 
 ```python
 index = GPTListIndex.from_documents(documents)
-# mode="default"
-response = index.query("What did the author do growing up?", response_mode="default")
-# mode="compact"
-response = index.query("What did the author do growing up?", response_mode="compact")
-# mode="tree_summarize"
-response = index.query("What did the author do growing up?", response_mode="tree_summarize")
+retriever = index.as_retriever()
+
+# default
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='default')
+response = query_engine.query("What did the author do growing up?")
+
+# compact
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='compact')
+response = query_engine.query("What did the author do growing up?")
+
+# tree summarize
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='tree_summarize')
+response = query_engine.query("What did the author do growing up?")
 ```
 
 
-### Setting `required_keywords` and `exclude_keywords`
+### Configuring node postprocessors (i.e. filtering and augmentation)
+We also support advanced `Node` filtering and augmentation that can further improve the relevancy of the retrieved `Node` objects.
+This can help reduce the time/number of LLM calls/cost or improve response quality.
 
-You can set `required_keywords` and `exclude_keywords` on most of our indices (the only exclusion is the GPTTreeIndex). This will preemptively filter out nodes that do not contain `required_keywords` or contain `exclude_keywords`, reducing the search space
-and hence time/number of LLM calls/cost.
+For example:
+* `KeywordNodePostprocessor`: filters nodes by `required_keywords` and `exclude_keywords`.
+* `SimilarityPostprocessor`: filters nodes by setting a threshold on the similarity score (thus only supported by embedding-based retrievers)
+* `PrevNextNodePostprocessor`: augments retrieved `Node` objects with additional relevant context based on `Node` relationships.
+
+The full list of node postprocessors is documented in the [Node Postprocessor Reference](/reference/node_postprocessor.rst).
+
+To configure the desired node postprocessors:
 
 ```python
-index.query(
-    "What did the author do after Y Combinator?", required_keywords=["Combinator"], 
-    exclude_keywords=["Italy"]
+node_postprocessors = [
+    KeywordNodePostprocessor(
+        required_keywords=["Combinator"], 
+        exclude_keywords=["Italy"]
+    )
+]
+query_engine = RetrieverQueryEngine.from_args(
+    retriever, node_postprocessors=node_postprocessors
 )
+response = query_engine.query("What did the author do growing up?")
 ```
 
 
@@ -329,7 +394,7 @@ The object returned is a [`Response` object](/reference/response.rst).
 The object contains both the response text as well as the "sources" of the response:
 
 ```python
-response = index.query("<query_str>")
+response = query_engine.query("<query_str>")
 
 # get response
 # response.response

@@ -44,7 +44,8 @@ index = GPTSimpleVectorIndex.from_documents(documents)
 This builds an index over the documents in the `data` folder (which in this case just consists of the essay text). We then run the following
 
 ```python
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
