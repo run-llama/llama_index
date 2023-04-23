@@ -3,7 +3,7 @@ from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.query_transform.base import StepDecomposeQueryTransform
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
+from gpt_index.indices.query.response_synthesis import ResponseSynthesizer
 from gpt_index.response.schema import RESPONSE_TYPE
 
 

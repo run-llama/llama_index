@@ -9,6 +9,7 @@ from typing import (
 )
 
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
+from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import (
     BaseResponseBuilder,
@@ -39,12 +40,14 @@ class ResponseSynthesizer:
         response_mode: ResponseMode,
         response_kwargs: Optional[Dict] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
     ) -> None:
         self._response_builder = response_builder
         self._response_mode = response_mode
         self._response_kwargs = response_kwargs or {}
         self._optimizer = optimizer
+        self._node_postprocessors = node_postprocessors or []
         self._verbose = verbose
 
     @classmethod
@@ -58,6 +61,7 @@ class ResponseSynthesizer:
         simple_template: Optional[SimpleInputPrompt] = None,
         response_mode: ResponseMode = ResponseMode.DEFAULT,
         response_kwargs: Optional[Dict] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         verbose: bool = False,
     ) -> "ResponseSynthesizer":
@@ -73,7 +77,14 @@ class ResponseSynthesizer:
                 use_async=use_async,
                 streaming=streaming,
             )
-        return cls(response_builder, response_mode, response_kwargs, optimizer, verbose)
+        return cls(
+            response_builder,
+            response_mode,
+            response_kwargs,
+            optimizer,
+            node_postprocessors,
+            verbose,
+        )
 
     def _get_extra_info_for_response(
         self,
@@ -113,6 +124,11 @@ class ResponseSynthesizer:
         nodes: Sequence[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
+        for node_processor in self._node_postprocessors:
+            nodes = node_processor.postprocess_nodes(
+                nodes, {"query_bundle": query_bundle}
+            )
+
         text_chunks = []
         for node_with_score in nodes:
             text = node_with_score.node.get_text()
@@ -141,6 +157,11 @@ class ResponseSynthesizer:
         nodes: Sequence[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
+        for node_processor in self._node_postprocessors:
+            nodes = node_processor.postprocess_nodes(
+                nodes, {"query_bundle": query_bundle}
+            )
+
         text_chunks = []
         for node_with_score in nodes:
             text = node_with_score.node.get_text()

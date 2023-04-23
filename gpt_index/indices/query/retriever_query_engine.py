@@ -4,7 +4,7 @@ from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
+from gpt_index.indices.query.response_synthesis import ResponseSynthesizer
 from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
@@ -21,13 +21,11 @@ class RetrieverQueryEngine(BaseQueryEngine):
         self,
         retriever: BaseRetriever,
         response_synthesizer: Optional[ResponseSynthesizer] = None,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
     ) -> None:
         self._retriever = retriever
         self._response_synthesizer = (
             response_synthesizer or ResponseSynthesizer.from_args()
         )
-        self._node_postprocessors = node_postprocessors or []
 
     @classmethod
     def from_args(
@@ -58,64 +56,26 @@ class RetrieverQueryEngine(BaseQueryEngine):
             use_async=use_async,
             streaming=streaming,
             optimizer=optimizer,
+            node_postprocessors=node_postprocessors,
             verbose=verbose,
         )
         return cls(
             retriever=retriever,
             response_synthesizer=response_synthesizer,
-            node_postprocessors=node_postprocessors,
         )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        # TODO: support include summary
-        nodes = self.retrieve(query_bundle)
-        return self.synthesize(query_bundle, nodes)
-
-    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Answer a query."""
-        # TODO: support include summary
-        nodes = self.retrieve(query_bundle)
-        response = await self.asynthesize(query_bundle, nodes)
-        return response
-
-    def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Get list of tuples of node and similarity for response.
-
-        First part of the tuple is the node.
-        Second part of tuple is the distance from query to the node.
-        If not applicable, it's None.
-        """
         nodes = self._retriever.retrieve(query_bundle)
-
-        postprocess_info = {
-            "query_bundle": query_bundle,
-        }
-        for node_processor in self._node_postprocessors:
-            nodes = node_processor.postprocess_nodes(nodes, postprocess_info)
-
-        return nodes
-
-    def synthesize(
-        self,
-        query_bundle: QueryBundle,
-        nodes: Sequence[NodeWithScore],
-        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
-    ) -> RESPONSE_TYPE:
         return self._response_synthesizer.synthesize(
             query_bundle=query_bundle,
             nodes=nodes,
-            additional_source_nodes=additional_source_nodes,
         )
 
-    async def asynthesize(
-        self,
-        query_bundle: QueryBundle,
-        nodes: Sequence[NodeWithScore],
-        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
-    ) -> RESPONSE_TYPE:
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Answer a query."""
+        nodes = self._retriever.retrieve(query_bundle)
         return await self._response_synthesizer.asynthesize(
             query_bundle=query_bundle,
             nodes=nodes,
-            additional_source_nodes=additional_source_nodes,
         )
