@@ -111,6 +111,11 @@ class BaseGPTIndex(Generic[IS], ABC):
         return self._index_struct
 
     @property
+    def index_id(self) -> str:
+        """Get the index struct."""
+        return self._index_struct.index_id
+
+    @property
     def docstore(self) -> BaseDocumentStore:
         """Get the docstore corresponding to the index."""
         return self._docstore
