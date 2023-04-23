@@ -210,7 +210,7 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
         similarities = []
         for node_with_score in nodes:
             # embedding similarity score
-            score = node_with_score.score
+            score = node_with_score.score or 1.0
             node = node_with_score.node
             # time score
             if node.node_info is None:
@@ -231,7 +231,7 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
 
         top_k = min(self.top_k, len(sorted_tups))
         result_tups = sorted_tups[:top_k]
-        result_nodes = [NodeWithScore(n, score) for score, n in result_tups]
+        result_nodes = [NodeWithScore(n.node, score) for score, n in result_tups]
 
         # set __last_accessed__ to now
         if self.time_access_refresh:

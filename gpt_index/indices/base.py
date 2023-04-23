@@ -215,7 +215,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from gpt_index.indices.query.retriever_query_engine import RetrieverQueryEngine
+        from gpt_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
         return RetrieverQueryEngine.from_args(
