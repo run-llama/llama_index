@@ -42,7 +42,9 @@ class ChromaReader(BaseReader):
                 chroma_api_impl="rest",
                 chroma_server_host=host,
                 chroma_server_http_port=port,
-                persist_directory=persist_directory if persist_directory else './chroma'
+                persist_directory=persist_directory
+                if persist_directory
+                else "./chroma",
             )
         )
 
