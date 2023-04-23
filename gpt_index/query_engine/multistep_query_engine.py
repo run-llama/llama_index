@@ -27,6 +27,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[ResponseSynthesizer] = None,
         num_steps: Optional[int] = 3,
         early_stopping: bool = True,
+        index_summary: str = "None",
         stop_fn: Optional[Callable[[Dict], bool]] = None,
     ) -> None:
         self._query_engine = query_engine
@@ -35,6 +36,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
             response_synthesizer or ResponseSynthesizer.from_args()
         )
 
+        self._index_summary = index_summary
         self._num_steps = num_steps
         self._early_stopping = early_stopping
         # TODO: make interface to stop function better
@@ -57,6 +59,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         """Combine queries."""
         transform_extra_info = {
             "prev_reasoning": prev_reasoning,
+            "index_summary": self._index_summary,
         }
         query_bundle = self._query_transform(
             query_bundle, extra_info=transform_extra_info

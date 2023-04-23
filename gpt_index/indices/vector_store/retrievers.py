@@ -1,7 +1,7 @@
 """Base vector store index query."""
 
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 
@@ -34,6 +34,7 @@ class VectorIndexRetriever(BaseRetriever):
         vector_store_query_mode: str = VectorStoreQueryMode.DEFAULT,
         alpha: Optional[float] = None,
         doc_ids: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._index = index

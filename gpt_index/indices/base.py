@@ -218,9 +218,11 @@ class BaseGPTIndex(Generic[IS], ABC):
         from gpt_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
-        return RetrieverQueryEngine.from_args(
-            retriever=retriever, service_context=self._service_context, **kwargs
-        )
+
+        kwargs["retriever"] = retriever
+        if "service_context" not in kwargs:
+            kwargs["service_context"] = self._service_context
+        return RetrieverQueryEngine.from_args(**kwargs)
 
     @classmethod
     def load_from_dict(
