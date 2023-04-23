@@ -8,6 +8,7 @@ from gpt_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
 )
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.list.base import GPTListIndex
 
 logger = logging.getLogger(__name__)
 
@@ -15,10 +16,7 @@ logger = logging.getLogger(__name__)
 class ListIndexRetriever(BaseRetriever):
     """Simple retriever for ListIndex that returns all nodes."""
 
-    def __init__(self, index: Any, **kwargs: Any) -> None:
-        from gpt_index.indices.list.base import GPTListIndex
-
-        assert isinstance(index, GPTListIndex)
+    def __init__(self, index: GPTListIndex, **kwargs: Any) -> None:
         self._index = index
 
     def _retrieve(
@@ -38,13 +36,10 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: Any,
+        index: GPTListIndex,
         similarity_top_k: Optional[int] = 1,
         **kwargs: Any,
     ) -> None:
-        from gpt_index.indices.list.base import GPTListIndex
-
-        assert isinstance(index, GPTListIndex)
         self._index = index
         self._similarity_top_k = similarity_top_k
 

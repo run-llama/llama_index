@@ -7,13 +7,16 @@ from typing import Any, Dict, List, Optional
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
+from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
 )
+from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from gpt_index.prompts.prompts import QueryKeywordExtractPrompt
 from gpt_index.utils import truncate_text
+
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 DEFAULT_NODE_SCORE = 1000.0
@@ -65,7 +68,7 @@ class KGTableRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: Any,
+        index: GPTKnowledgeGraphIndex,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
@@ -75,7 +78,6 @@ class KGTableRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 
         assert isinstance(index, GPTKnowledgeGraphIndex)
         self._index = index

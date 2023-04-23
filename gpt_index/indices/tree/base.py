@@ -10,13 +10,7 @@ from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.common_tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
 from gpt_index.indices.tree.inserter import GPTTreeIndexInserter
-from gpt_index.indices.tree.select_leaf_embedding_retriever import (
-    TreeSelectLeafEmbeddingRetriever,
-)
-from gpt_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
-from gpt_index.indices.tree.tree_root_retriever import TreeRootRetriever
 from gpt_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
@@ -82,6 +76,14 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
     def as_retriever(
         self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
     ) -> BaseRetriever:
+        # NOTE: lazy import
+        from gpt_index.indices.tree.select_leaf_embedding_retriever import (
+            TreeSelectLeafEmbeddingRetriever,
+        )
+        from gpt_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
+        from gpt_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
+        from gpt_index.indices.tree.tree_root_retriever import TreeRootRetriever
+
         if mode == QueryMode.DEFAULT:
             return TreeSelectLeafRetriever(self, **kwargs)
         elif mode == QueryMode.EMBEDDING:

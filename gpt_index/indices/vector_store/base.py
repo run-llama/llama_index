@@ -13,7 +13,6 @@ from gpt_index.data_structs.node_v2 import ImageNode, IndexNode, Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.vector_store.retrievers import VectorIndexRetriever
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.vector_stores.registry import (
@@ -66,6 +65,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     def as_retriever(
         self, mode: QueryMode = QueryMode.DEFAULT, **kwargs: Any
     ) -> BaseRetriever:
+        # NOTE: lazy import
+        from gpt_index.indices.vector_store.retrievers import VectorIndexRetriever
+
         if mode in [QueryMode.DEFAULT, QueryMode.EMBEDDING]:
             return VectorIndexRetriever(self, **kwargs)
         else:

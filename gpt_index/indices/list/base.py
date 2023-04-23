@@ -11,10 +11,6 @@ from gpt_index.data_structs.data_structs_v2 import IndexList
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.base_retriever import BaseRetriever
-from gpt_index.indices.list.retrievers import (
-    ListIndexEmbeddingRetriever,
-    ListIndexRetriever,
-)
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 
@@ -57,6 +53,11 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
     def as_retriever(
         self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
     ) -> BaseRetriever:
+        from gpt_index.indices.list.retrievers import (
+            ListIndexEmbeddingRetriever,
+            ListIndexRetriever,
+        )
+
         if mode == QueryMode.DEFAULT:
             return ListIndexRetriever(self, **kwargs)
         elif mode == QueryMode.EMBEDDING:

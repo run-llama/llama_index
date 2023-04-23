@@ -15,7 +15,6 @@ from gpt_index.data_structs.data_structs_v2 import KG
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.base_retriever import BaseRetriever
-from gpt_index.indices.knowledge_graph.retrievers import KGQueryMode, KGTableRetriever
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
@@ -71,6 +70,11 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        from gpt_index.indices.knowledge_graph.retrievers import (
+            KGQueryMode,
+            KGTableRetriever,
+        )
+
         if len(self.index_struct.embedding_dict) > 0 and "embedding_mode" not in kwargs:
             kwargs["embedding_mode"] = KGQueryMode.HYBRID
 

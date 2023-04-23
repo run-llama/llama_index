@@ -17,11 +17,6 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.keyword_table.retrievers import (
-    KeywordTableGPTRetriever,
-    KeywordTableRAKERetriever,
-    KeywordTableSimpleRetriever,
-)
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.default_prompts import (
@@ -86,6 +81,13 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
     def as_retriever(
         self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
     ) -> BaseRetriever:
+        # NOTE: lazy import
+        from gpt_index.indices.keyword_table.retrievers import (
+            KeywordTableGPTRetriever,
+            KeywordTableRAKERetriever,
+            KeywordTableSimpleRetriever,
+        )
+
         if mode == QueryMode.DEFAULT:
             return KeywordTableGPTRetriever(self, **kwargs)
         elif mode == QueryMode.SIMPLE:

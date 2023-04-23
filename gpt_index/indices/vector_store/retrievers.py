@@ -9,6 +9,7 @@ from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.utils import log_vector_store_query_result
+from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.vector_stores.types import (
     VectorStoreQuery,
@@ -28,16 +29,13 @@ class VectorIndexRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: Any,
+        index: GPTVectorStoreIndex,
         similarity_top_k: int = 1,
         vector_store_query_mode: str = VectorStoreQueryMode.DEFAULT,
         alpha: Optional[float] = None,
         doc_ids: Optional[List[str]] = None,
     ) -> None:
         """Initialize params."""
-        from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-
-        assert isinstance(index, GPTVectorStoreIndex)
         self._index = index
         self._vector_store = self._index.vector_store
         self._service_context = self._index.service_context

@@ -4,7 +4,7 @@ from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.response.schema import RESPONSE_TYPE
 
 
-class TransformQueryEngine:
+class TransformQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         query_engine: BaseQueryEngine,

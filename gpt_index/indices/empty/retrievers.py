@@ -7,6 +7,8 @@ from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from gpt_index.prompts.prompts import SimpleInputPrompt
 
+from gpt_index.indices.empty.base import GPTEmptyIndex
+
 
 class EmptyIndexRetriever(BaseRetriever):
     """GPTEmptyIndex query.
@@ -25,14 +27,11 @@ class EmptyIndexRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: Any,
+        index: GPTEmptyIndex,
         input_prompt: Optional[SimpleInputPrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        from gpt_index.indices.empty.base import GPTEmptyIndex
-
-        assert isinstance(index, GPTEmptyIndex)
         self._index = index
         self._input_prompt = input_prompt or DEFAULT_SIMPLE_INPUT_PROMPT
 
