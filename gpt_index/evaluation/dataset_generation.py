@@ -11,6 +11,7 @@ from gpt_index import (
     ServiceContext,
     LLMPredictor,
 )
+from gpt_index.indices.postprocessor.node import KeywordNodePostprocessor
 from gpt_index.data_structs.node_v2 import Node
 
 from langchain.chat_models import ChatOpenAI
@@ -55,6 +56,8 @@ class DatasetGenerator:
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[QuestionAnswerPrompt] = None,
         question_gen_query: Optional[str] = None,
+        required_keywords: Optional[List[str]] = None,
+        exclude_keywords: Optional[List[str]] = None,
     ) -> None:
         """Init params."""
         if service_context is None:
@@ -81,11 +84,23 @@ class DatasetGenerator:
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[QuestionAnswerPrompt] = None,
         question_gen_query: Optional[str] = None,
+        required_keywords: Optional[List[str]] = None,
+        exclude_keywords: Optional[List[str]] = None,
     ) -> "DatasetGenerator":
         """Generate dataset from documents."""
         if service_context is None:
             service_context = _get_default_service_context()
         nodes = service_context.node_parser.get_nodes_from_documents(documents)
+
+        # use node postprocessor to filter nodes
+        required_keywords = required_keywords or []
+        exclude_keywords = exclude_keywords or []
+        node_postprocessor = KeywordNodePostprocessor(
+            service_context=service_context,
+            required_keywords=required_keywords,
+            exclude_keywords=exclude_keywords,
+        )
+        nodes = node_postprocessor.postprocess_nodes(nodes)
 
         return cls(
             nodes=nodes,
