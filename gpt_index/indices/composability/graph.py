@@ -116,7 +116,7 @@ class ComposableGraph:
             ComposableGraphQueryEngine,
         )
 
-        return ComposableGraphQueryEngine(self, **kwargs)
+        return ComposableGraphQueryEngine.from_args(self, **kwargs)
 
     @classmethod
     def load_from_string(cls, index_string: str, **kwargs: Any) -> "ComposableGraph":
