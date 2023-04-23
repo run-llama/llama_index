@@ -96,7 +96,8 @@ def extract_terms(documents, term_extract_str, llm_name, model_temperature, api_
                                                    chunk_size_limit=1024)
 
     temp_index = GPTListIndex.from_documents(documents, service_context=service_context)
-    terms_definitions = str(temp_index.query(term_extract_str, response_mode="tree_summarize"))
+    query_engine = temp_index.as_query_engine(response_mode="tree_summarize")
+    terms_definitions = str(query_engine.query(term_extract_str))
     terms_definitions = [x for x in terms_definitions.split("\n") if x and 'Term:' in x and 'Definition:' in x]
     # parse the text into a dict
     terms_to_definition = {x.split("Definition:")[0].split("Term:")[-1].strip(): x.split("Definition:")[-1].strip() for x in terms_definitions}

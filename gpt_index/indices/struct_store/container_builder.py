@@ -22,7 +22,7 @@ class SQLContextContainerBuilder:
     """SQLContextContainerBuilder.
 
     Build a SQLContextContainer that can be passed to the SQL index
-    during index construction or during queryt-time.
+    during index construction or during query-time.
 
     NOTE: if context_str is specified, that will be used as context
     instead of context_dict
