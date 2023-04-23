@@ -15,7 +15,6 @@ from gpt_index.docstore.registry import (
 )
 from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.query.base import BaseQueryEngine
-from gpt_index.indices.query.retriever_query_engine import RetrieverQueryEngine
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
 from gpt_index.token_counter.token_counter import llm_token_counter
@@ -215,6 +214,9 @@ class BaseGPTIndex(Generic[IS], ABC):
         pass
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        # NOTE: lazy import
+        from gpt_index.indices.query.retriever_query_engine import RetrieverQueryEngine
+
         retriever = self.as_retriever(**kwargs)
         return RetrieverQueryEngine.from_args(
             retriever=retriever, service_context=self._service_context, **kwargs

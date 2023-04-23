@@ -112,7 +112,7 @@ class ComposableGraph:
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from gpt_index.indices.query.graph_query_engine import (
+        from gpt_index.query_engine.graph_query_engine import (
             ComposableGraphQueryEngine,
         )
 

@@ -1,5 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence
-from gpt_index.data_structs.node_v2 import NodeWithScore
+from typing import Any, Dict, List, Optional
 from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.query.base import BaseQueryEngine

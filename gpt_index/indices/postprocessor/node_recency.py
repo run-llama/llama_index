@@ -8,7 +8,6 @@ from typing import Optional, Dict, List, Set
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from gpt_index.indices.query.embedding_utils import SimilarityTracker
 
 
 # NOTE: currently not being used
@@ -201,24 +200,18 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
     top_k: int = 1
 
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         extra_info = extra_info or {}
         now = self.now or datetime.now().timestamp()
         # TODO: refactor with get_top_k_embeddings
 
-        similarity_tracker = extra_info.get("similarity_tracker", None)
-        if similarity_tracker is None:
-            similarity_tracker = SimilarityTracker()
-        scores = []
-        for node in nodes:
-            scores.append(similarity_tracker.find(node) or 0)
-
         similarities = []
-        for idx, node in enumerate(nodes):
+        for node_with_score in nodes:
             # embedding similarity score
-            score = scores[idx]
+            score = node_with_score.score
+            node = node_with_score.node
             # time score
             if node.node_info is None:
                 raise ValueError("node_info is None")
@@ -231,7 +224,6 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
             time_similarity = (1 - self.time_decay) ** hours_passed
 
             similarity = score + time_similarity
-            similarity_tracker.add(node, similarity)
 
             similarities.append(similarity)
 
@@ -239,11 +231,11 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
 
         top_k = min(self.top_k, len(sorted_tups))
         result_tups = sorted_tups[:top_k]
-        result_nodes = [n for _, n in result_tups]
+        result_nodes = [NodeWithScore(n, score) for score, n in result_tups]
 
         # set __last_accessed__ to now
         if self.time_access_refresh:
-            for node in result_nodes:
-                node.get_node_info()[self.last_accessed_key] = now
+            for node_with_score in result_nodes:
+                node_with_score.node.get_node_info()[self.last_accessed_key] = now
 
         return result_nodes
