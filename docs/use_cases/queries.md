@@ -55,11 +55,11 @@ Here are some relevant resources:
 - [Pandas Demo Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/struct_indices/PandasIndexDemo.ipynb).
 
 
-### Synthesis over Heterogenous Data
+### Synthesis over Heterogeneous Data
 
-LlamaIndex supports synthesizing across heterogenous data sources. This can be done by composing a graph over your existing data.
+LlamaIndex supports synthesizing across heterogeneous data sources. This can be done by composing a graph over your existing data.
 Specifically, compose a list index over your subindices. A list index inherently combines information for each node; therefore
-it can synthesize information across your heteregenous data sources.
+it can synthesize information across your heterogeneous data sources.
 
 ```python
 from llama_index import GPTSimpleVectorIndex, GPTListIndex
@@ -79,9 +79,9 @@ Here are some relevant resources:
 
 
 
-### Routing over Heterogenous Data
+### Routing over Heterogeneous Data
 
-LlamaIndex also supports routing over heteregenous data sources - for instance, if you want to "route" a query to an 
+LlamaIndex also supports routing over heterogeneous data sources - for instance, if you want to "route" a query to an 
 underlying Document or a subindex.
 Here you have three options: `GPTTreeIndex`, `GPTKeywordTableIndex`, or a
 [Vector Store Index](vector-store-index).

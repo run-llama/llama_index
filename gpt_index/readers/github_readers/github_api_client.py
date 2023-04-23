@@ -258,6 +258,7 @@ class GithubClient:
                 response = await _client.request(
                     method, url=self._endpoints[endpoint].format(**kwargs)
                 )
+                response.raise_for_status()
             except httpx.HTTPError as excp:
                 print(f"HTTP Exception for {excp.request.url} - {excp}")
                 raise excp

@@ -82,7 +82,7 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
                 similarity = node.score
                 if similarity is None:
                     should_use_node = False
-                if cast(float, similarity) < cast(float, self.similarity_cutoff):
+                elif cast(float, similarity) < cast(float, self.similarity_cutoff):
                     should_use_node = False
 
             if should_use_node:

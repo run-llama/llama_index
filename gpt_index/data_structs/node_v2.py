@@ -71,6 +71,12 @@ class Node(BaseDocument):
     # document relationships
     relationships: Dict[DocumentRelationship, Any] = field(default_factory=dict)
 
+    def get_node_info(self) -> Dict[str, Any]:
+        """Get node info."""
+        if self.node_info is None:
+            raise ValueError("Node info not set.")
+        return self.node_info
+
     @property
     def ref_doc_id(self) -> Optional[str]:
         """Source document id.
