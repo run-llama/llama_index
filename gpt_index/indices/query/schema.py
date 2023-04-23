@@ -5,9 +5,9 @@ exposed for recursive queries over composable indices.
 
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 

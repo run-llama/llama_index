@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.query_transform.base import StepDecomposeQueryTransform

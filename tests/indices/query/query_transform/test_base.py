@@ -4,7 +4,6 @@ from typing import Any, List
 
 import pytest
 
-from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
 from gpt_index.readers.schema.base import Document
 from tests.indices.query.query_transform.mock_utils import MOCK_DECOMPOSE_PROMPT
