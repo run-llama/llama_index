@@ -185,7 +185,7 @@ documents = SimpleDirectoryReader('./data').load_data()
 index = GPTListIndex.from_documents(documents, service_context=service_context)
 
 # Query and print response
-response = new_index.query("<query_text>")
+response = index.query("<query_text>")
 print(response)
 ```
 

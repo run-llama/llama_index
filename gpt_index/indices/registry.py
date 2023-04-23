@@ -8,6 +8,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     ChatGPTRetrievalPluginIndexDict,
     ChromaIndexDict,
     CompositeIndex,
+    DeepLakeIndexDict,
     EmptyIndex,
     FaissIndexDict,
     IndexDict,
@@ -36,6 +37,7 @@ from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.indices.vector_store.vector_indices import (
     ChatGPTRetrievalPluginIndex,
     GPTChromaIndex,
+    GPTDeepLakeIndex,
     GPTFaissIndex,
     GPTMilvusIndex,
     GPTOpensearchIndex,
@@ -64,6 +66,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruc
     IndexStructType.EMPTY: EmptyIndex,
     IndexStructType.COMPOSITE: CompositeIndex,
     IndexStructType.CHATGPT_RETRIEVAL_PLUGIN: ChatGPTRetrievalPluginIndexDict,
+    IndexStructType.DEEPLAKE: DeepLakeIndexDict,
 }
 
 
@@ -85,6 +88,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.EMPTY: GPTEmptyIndex,
     IndexStructType.CHATGPT_RETRIEVAL_PLUGIN: ChatGPTRetrievalPluginIndex,
     IndexStructType.OPENSEARCH: GPTOpensearchIndex,
+    IndexStructType.DEEPLAKE: GPTDeepLakeIndex,
 }
 
 

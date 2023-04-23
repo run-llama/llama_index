@@ -81,7 +81,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         for n in nodes:
             new_id = n.get_doc_id()
             if n.embedding is None:
-                self._service_context.embed_model.queue_text_for_embeddding(
+                self._service_context.embed_model.queue_text_for_embedding(
                     new_id, n.get_text()
                 )
             else:

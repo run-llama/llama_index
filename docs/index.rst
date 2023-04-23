@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to LlamaIndex 🦙 (GPT Index)!
+Welcome to LlamaIndex 🦙 !
 =====================================
 
 LlamaIndex (GPT Index) is a project that provides a central interface to connect your LLM's with external data.
@@ -14,6 +14,12 @@ LlamaIndex (GPT Index) is a project that provides a central interface to connect
    - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
 - Twitter: https://twitter.com/gpt_index
 - Discord https://discord.gg/dGcwcsnxhU
+
+Ecosystem
+^^^^^^^^^
+
+- 🏡 LlamaHub: https://llamahub.ai
+- 🧪 LlamaLab: https://github.com/run-llama/llama-lab
 
 
 🚀 Overview
@@ -79,7 +85,9 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    how_to/customization.rst
    how_to/analysis.rst
    how_to/output_parsing.md
+   how_to/evaluation/evaluation.md
    how_to/integrations.rst
+   how_to/storage.md 
 
    .. evaluation
    .. integrations

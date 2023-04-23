@@ -37,6 +37,7 @@ from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import (
     GPTChromaIndex,
+    GPTDeepLakeIndex,
     GPTFaissIndex,
     GPTMilvusIndex,
     GPTPineconeIndex,
@@ -68,6 +69,7 @@ from gpt_index.prompts.prompts import (
 from gpt_index.readers import (
     BeautifulSoupWebReader,
     ChromaReader,
+    DeepLakeReader,
     DiscordReader,
     Document,
     FaissReader,
@@ -149,6 +151,7 @@ __all__ = [
     "WeaviateReader",
     "FaissReader",
     "ChromaReader",
+    "DeepLakeReader",
     "PineconeReader",
     "QdrantReader",
     "MilvusReader",
@@ -171,6 +174,7 @@ __all__ = [
     "TwitterTweetReader",
     "download_loader",
     "GithubRepositoryReader",
+    "GPTDeepLakeIndex",
 ]
 
 # NOTE: keep for backwards compatibility

@@ -5,13 +5,23 @@ from typing import Any, Dict, List, Optional, cast
 
 from dataclasses_json import DataClassJsonMixin
 
-from gpt_index.indices.query.embedding_utils import get_top_k_embeddings
+from gpt_index.indices.query.embedding_utils import (
+    get_top_k_embeddings,
+    get_top_k_embeddings_learner,
+)
 from gpt_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
+    VectorStoreQueryMode,
 )
+
+LEARNER_MODES = {
+    VectorStoreQueryMode.SVM,
+    VectorStoreQueryMode.LINEAR_REGRESSION,
+    VectorStoreQueryMode.LOGISTIC_REGRESSION,
+}
 
 
 @dataclass
@@ -106,11 +116,21 @@ class SimpleVectorStore(VectorStore):
 
         query_embedding = cast(List[float], query.query_embedding)
 
-        top_similarities, top_ids = get_top_k_embeddings(
-            query_embedding,
-            embeddings,
-            similarity_top_k=query.similarity_top_k,
-            embedding_ids=node_ids,
-        )
+        if query.mode in LEARNER_MODES:
+            top_similarities, top_ids = get_top_k_embeddings_learner(
+                query_embedding,
+                embeddings,
+                similarity_top_k=query.similarity_top_k,
+                embedding_ids=node_ids,
+            )
+        elif query.mode == VectorStoreQueryMode.DEFAULT:
+            top_similarities, top_ids = get_top_k_embeddings(
+                query_embedding,
+                embeddings,
+                similarity_top_k=query.similarity_top_k,
+                embedding_ids=node_ids,
+            )
+        else:
+            raise ValueError(f"Invalid query mode: {query.mode}")
 
         return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)

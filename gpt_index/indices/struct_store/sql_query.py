@@ -123,7 +123,7 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
 
         return tables_desc_str
 
-    def _query(self, query_bundle: QueryBundle) -> Response:
+    def query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
@@ -143,7 +143,7 @@ class GPTNLStructStoreIndexQuery(BaseGPTIndexQuery[SQLStructTable]):
         response = Response(response=response_str, extra_info=extra_info)
         return response
 
-    async def _aquery(self, query_bundle: QueryBundle) -> Response:
+    async def aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")

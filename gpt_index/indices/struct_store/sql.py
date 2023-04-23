@@ -193,7 +193,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         """
         out_dict: Dict[str, Any] = {
             "index_id": self.index_struct.index_id,
-            "docstore": self.docstore.serialize_to_dict(),
+            "docstore": self.docstore.to_dict(),
             "sql_context_container": self.sql_context_container.to_dict(),
         }
         return json.dumps(out_dict, **save_kwargs)

@@ -209,7 +209,6 @@ class QdrantVectorStore(VectorStore):
             FieldCondition,
             Filter,
             MatchAny,
-            MatchText,
         )
 
         must_conditions = []
@@ -221,13 +220,4 @@ class QdrantVectorStore(VectorStore):
                     match=MatchAny(any=[doc_id for doc_id in query.doc_ids]),
                 )
             )
-
-        if query.query_str:
-            must_conditions.append(
-                FieldCondition(
-                    key="text",
-                    match=MatchText(text=query.query_str),
-                )
-            )
-
         return Filter(must=must_conditions)

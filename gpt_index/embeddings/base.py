@@ -48,11 +48,15 @@ def similarity(
 class BaseEmbedding:
     """Base class for embeddings."""
 
-    def __init__(self, embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE) -> None:
+    def __init__(
+        self,
+        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        tokenizer: Optional[Callable] = None,
+    ) -> None:
         """Init params."""
         self._total_tokens_used = 0
         self._last_token_usage: Optional[int] = None
-        self._tokenizer: Callable = globals_helper.tokenizer
+        self._tokenizer = tokenizer or globals_helper.tokenizer
         # list of tuples of id, text
         self._text_queue: List[Tuple[str, str]] = []
         if embed_batch_size <= 0:
@@ -122,7 +126,7 @@ class BaseEmbedding:
         self._total_tokens_used += text_tokens_count
         return text_embedding
 
-    def queue_text_for_embeddding(self, text_id: str, text: str) -> None:
+    def queue_text_for_embedding(self, text_id: str, text: str) -> None:
         """Queue text for embedding.
 
         Used for batching texts during embedding calls.

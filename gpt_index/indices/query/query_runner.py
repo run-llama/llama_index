@@ -10,7 +10,7 @@ from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct as IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
 from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.docstore import DocumentStore
+from gpt_index.docstore import BaseDocumentStore
 from gpt_index.indices.query.base import BaseGPTIndexQuery
 from gpt_index.indices.query.query_combiner.base import (
     BaseQueryCombiner,
@@ -84,7 +84,7 @@ class QueryRunner:
         self,
         index_struct: IndexStruct,
         service_context: ServiceContext,
-        docstore: DocumentStore,
+        docstore: BaseDocumentStore,
         query_context: Dict[str, Dict[str, Any]],
         query_configs: Optional[List[QUERY_CONFIG_TYPE]] = None,
         query_transform: Optional[BaseQueryTransform] = None,
@@ -171,7 +171,7 @@ class QueryRunner:
         query_context = self._query_context.get(index_struct.index_id, {})
         query_kwargs.update(query_context)
 
-        query_obj = query_cls(
+        query_obj = query_cls.from_args(
             index_struct=index_struct,
             docstore=self._docstore,
             **query_kwargs,

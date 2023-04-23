@@ -144,7 +144,6 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
                 rel_text_embeddings,
                 similarity_top_k=self.similarity_top_k,
                 embedding_ids=all_rel_texts,
-                similarity_cutoff=self.similarity_cutoff,
             )
             logger.debug(
                 f"Found the following rel_texts+query similarites: {str(similarities)}"
@@ -178,7 +177,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         sorted_nodes = self._docstore.get_nodes(sorted_chunk_indices)
         # filter sorted nodes
         postprocess_info = {"similarity_tracker": similarity_tracker}
-        for node_processor in self.node_preprocessors:
+        for node_processor in self._node_postprocessors:
             sorted_nodes = node_processor.postprocess_nodes(
                 sorted_nodes, postprocess_info
             )
@@ -186,7 +185,7 @@ class GPTKGTableQuery(BaseGPTIndexQuery[KG]):
         # TMP/TODO: also filter rel_texts as nodes until we figure out better
         # abstraction
         rel_text_nodes = [Node(text=rel_text) for rel_text in rel_texts]
-        for node_processor in self.node_preprocessors:
+        for node_processor in self._node_postprocessors:
             rel_text_nodes = node_processor.postprocess_nodes(rel_text_nodes)
         rel_texts = [node.get_text() for node in rel_text_nodes]
 

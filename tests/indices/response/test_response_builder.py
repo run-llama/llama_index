@@ -7,7 +7,10 @@ import pytest
 
 from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
+from gpt_index.indices.response.response_builder import (
+    ResponseMode,
+    get_response_builder,
+)
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
@@ -53,23 +56,20 @@ def test_give_response(
     query_str = "What is?"
 
     # test single line
-    builder = ResponseBuilder(
-        service_context,
-        MOCK_TEXT_QA_PROMPT,
-        MOCK_REFINE_PROMPT,
-        texts=[TextChunk("This is a single line.")],
+    builder = get_response_builder(
+        mode=ResponseMode.DEFAULT,
+        service_context=service_context,
+        text_qa_template=MOCK_TEXT_QA_PROMPT,
+        refine_template=MOCK_REFINE_PROMPT,
     )
-    response = builder.get_response(query_str)
-    assert str(response) == "What is?:This is a single line."
+    response = builder.get_response(
+        text_chunks=["This is a single line."], query_str=query_str
+    )
 
     # test multiple lines
-    builder = ResponseBuilder(
-        service_context,
-        MOCK_TEXT_QA_PROMPT,
-        MOCK_REFINE_PROMPT,
-        texts=[TextChunk(documents[0].get_text())],
+    response = builder.get_response(
+        text_chunks=[documents[0].get_text()], query_str=query_str
     )
-    response = builder.get_response(query_str)
     expected_answer = (
         "What is?:"
         "Hello world.:"
@@ -111,17 +111,17 @@ def test_compact_response(
     # within compact, make sure that chunk size is 8
     query_str = "What is?"
     texts = [
-        TextChunk("This\n\nis\n\na\n\nbar"),
-        TextChunk("This\n\nis\n\na\n\ntest"),
+        "This\n\nis\n\na\n\nbar",
+        "This\n\nis\n\na\n\ntest",
     ]
-
-    builder = ResponseBuilder(
-        service_context,
-        mock_qa_prompt,
-        mock_refine_prompt,
-        texts=texts,
+    builder = get_response_builder(
+        service_context=service_context,
+        text_qa_template=mock_qa_prompt,
+        refine_template=mock_refine_prompt,
+        mode=ResponseMode.COMPACT,
     )
-    response = builder.get_response(query_str, mode=ResponseMode.COMPACT)
+
+    response = builder.get_response(text_chunks=texts, query_str=query_str)
     assert str(response) == (
         "What is?:" "This\n\nis\n\na\n\nbar\n\n" "This\n\nis\n\na\n\ntest"
     )
@@ -154,20 +154,21 @@ def test_tree_summarize_response(
     # within tree_summarize, make sure that chunk size is 8
     query_str = "What is?"
     texts = [
-        TextChunk("This\n\nis\n\na\n\nbar"),
-        TextChunk("This\n\nis\n\na\n\ntest"),
-        TextChunk("This\n\nis\n\nanother\n\ntest"),
-        TextChunk("This\n\nis\n\na\n\nfoo"),
+        "This\n\nis\n\na\n\nbar",
+        "This\n\nis\n\na\n\ntest",
+        "This\n\nis\n\nanother\n\ntest",
+        "This\n\nis\n\na\n\nfoo",
     ]
 
-    builder = ResponseBuilder(
-        service_context,
-        mock_qa_prompt,
-        mock_refine_prompt,
-        texts=texts,
+    builder = get_response_builder(
+        mode=ResponseMode.TREE_SUMMARIZE,
+        service_context=service_context,
+        text_qa_template=mock_qa_prompt,
+        refine_template=mock_refine_prompt,
     )
+
     response = builder.get_response(
-        query_str, mode=ResponseMode.TREE_SUMMARIZE, num_children=2
+        text_chunks=texts, query_str=query_str, num_children=2
     )
     # TODO: fix this output, the \n join appends unnecessary results at the end
     assert str(response) == (

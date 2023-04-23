@@ -10,11 +10,10 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
-from pydantic import Json
-
 from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
+from pydantic import Json
 
 
 @dataclass
@@ -101,6 +100,7 @@ class IndexGraph(V2IndexStruct):
         new_index = new_index or self.size
         if parent_node is None:
             self.root_nodes[new_index] = node.get_doc_id()
+            self.node_id_to_children_ids[node.get_doc_id()] = []
         else:
             if parent_node.doc_id not in self.node_id_to_children_ids:
                 self.node_id_to_children_ids[parent_node.get_doc_id()] = []
@@ -359,6 +359,15 @@ class ChromaIndexDict(IndexDict):
     def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.CHROMA
+
+
+class DeepLakeIndexDict(IndexDict):
+    """Index dict for DeepLake vector index."""
+
+    @classmethod
+    def get_type(cls) -> IndexStructType:
+        """Get type."""
+        return IndexStructType.DEEPLAKE
 
 
 @dataclass

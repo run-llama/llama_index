@@ -10,11 +10,14 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex supports loading data from the following sources. See [Data Connectors](/how_to/data_connectors.md) for more details and API documentation.
 
 - Chroma (`ChromaReader`) [Installation](https://docs.trychroma.com/getting-started)
+- DeepLake (`DeepLakeReader`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - Qdrant (`QdrantReader`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - Weaviate (`WeaviateReader`). [Installation](https://weaviate.io/developers/weaviate/current/getting-started/installation.html). [Python Client](https://weaviate.io/developers/weaviate/current/client-libraries/python.html).
 - Pinecone (`PineconeReader`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
 - Milvus (`MilvusReader`). [Installation](https://milvus.io/docs)
+- Zilliz (`MilvusReader`). [Quickstart](https://zilliz.com/doc/quick_start)
+
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
@@ -69,6 +72,7 @@ These are found in the following classes:
 - `GPTQdrantIndex`
 - `GPTChromaIndex`
 - `GPTMilvusIndex`
+- `GPTDeepLakeIndex`
 
 
 An API reference of each vector index is [found here](/reference/indices/vector_store.rst).
@@ -89,6 +93,27 @@ index = GPTSimpleVectorIndex.from_documents(documents)
 # Query index
 response = index.query("What did the author do growing up?")
 
+```
+
+**DeepLake Index Construction/Querying**
+```python
+import os
+import getpath
+
+from gpt_index import GPTDeepLakeIndex, SimpleDirectoryReader
+
+
+os.environ["OPENAI_API_KEY"] = getpath.getpath("OPENAI_API_KEY: ")
+os.environ["ACTIVELOOP_TOKEN"] = getpath.getpath("ACTIVELOOP_TOKEN: ")
+
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+deeplake_dataset_path = "hub://adilkhan/paul_graham_essay"
+
+# Create an index over the documnts
+index = GPTDeepLakeIndex.from_documents(documents, dataset_path=dataset_path, overwrite=True)
+
+# Query index
+response = index.query("What did the author do growing up?")
 ```
 
 **Faiss Index Construction/Querying**
@@ -205,12 +230,8 @@ response = index.query("What did the author do growing up?")
 ```
 
 **Milvus Index Construction/Querying**
+- Milvus Index offers the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and does not include extra_info.
 
-- The Milvus Index can be used for both Milvus (open-source vector database) and Zilliz (hosted version of Milvus)
-
-- Both Milvus and Zilliz offer the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and do not include extra_info. 
-
-Milvus:
 ```python
 import pymilvus
 from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
@@ -225,7 +246,16 @@ response = index.query("What did the author do growing up?")
 
 ```
 
-Zilliz:
+**Note**: `GPTMilvusIndex` depends on the `pymilvus` library.
+Use `pip install pymilvus` if not already installed.
+If you get stuck at building wheel for `grpcio`, check if you are using python 3.11
+(there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
+and try downgrading.
+
+
+**Zilliz Index Construction/Querying**
+- Zilliz Cloud (hosted version of Milvus) uses the Milvus Index with some extra arguments.
+
 ```python
 import pymilvus
 from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
@@ -233,7 +263,15 @@ from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
 
 # Load documents, build the GPTMilvusStore
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTMilvusIndex.from_documents(documents, host='foo.vectordb.zillizcloud.com', port=403, user="db_admin", password="foo", use_secure=True, overwrite='True')
+index = GPTMilvusIndex.from_documents(
+    documents, 
+    host='foo.vectordb.zillizcloud.com', 
+    port=403, 
+    user="db_admin", 
+    password="foo", 
+    use_secure=True, 
+    overwrite='True'
+)
 
 # Query index
 response = index.query("What did the author do growing up?")
@@ -245,6 +283,9 @@ Use `pip install pymilvus` if not already installed.
 If you get stuck at building wheel for `grpcio`, check if you are using python 3.11
 (there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
 and try downgrading.
+
+
+
 
 
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).

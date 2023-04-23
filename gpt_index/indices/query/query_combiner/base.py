@@ -9,10 +9,12 @@ from gpt_index.indices.query.query_transform.base import (
     StepDecomposeQueryTransform,
 )
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.response.builder import ResponseBuilder, ResponseMode, TextChunk
+from gpt_index.indices.response.response_builder import (
+    BaseResponseBuilder,
+    ResponseMode,
+    get_response_builder,
+)
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
-from gpt_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from gpt_index.response.schema import RESPONSE_TYPE, Response
 
@@ -129,12 +131,10 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
             raise ValueError("Must specify num_steps if early_stopping is False.")
 
         self._response_mode = ResponseMode(response_mode)
-        self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
-        self.refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
-        self.response_builder = ResponseBuilder(
+        self.response_builder: BaseResponseBuilder = get_response_builder(
             self._service_context,
-            self.text_qa_template,
-            self.refine_template,
+            text_qa_template=text_qa_template,
+            refine_template=refine_template,
             use_async=use_async,
         )
         self._response_kwargs = response_kwargs or {}
@@ -160,9 +160,10 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
         cur_steps = 0
 
         # use response
-        self.response_builder.reset()
         final_response_extra_info: Dict[str, Any] = {"sub_qa": []}
 
+        text_chunks = []
+        source_nodes = []
         while not should_stop:
             if self._num_steps is not None and cur_steps >= self._num_steps:
                 should_stop = True
@@ -187,9 +188,9 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
                 f"\nQuestion: {updated_query_bundle.query_str}\n"
                 f"Answer: {str(cur_response)}"
             )
-            self.response_builder.add_text_chunks([TextChunk(cur_qa_text)])
+            text_chunks.append(cur_qa_text)
             for source_node in cur_response.source_nodes:
-                self.response_builder.add_node_with_score(source_node)
+                source_nodes.append(source_node)
             # update extra info
             final_response_extra_info["sub_qa"].append(
                 (updated_query_bundle.query_str, cur_response)
@@ -202,15 +203,15 @@ class MultiStepQueryCombiner(BaseQueryCombiner):
 
         # synthesize a final response
         final_response_str = self.response_builder.get_response(
-            query_bundle.query_str,
-            mode=self._response_mode,
+            query_str=query_bundle.query_str,
+            text_chunks=text_chunks,
             **self._response_kwargs,
         )
         if isinstance(final_response_str, Generator):
             raise ValueError("Currently streaming is not supported for query combiner.")
         return Response(
             response=final_response_str,
-            source_nodes=self.response_builder.get_sources(),
+            source_nodes=source_nodes,
             extra_info=final_response_extra_info,
         )
 

@@ -38,19 +38,19 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 @patch.object(
     OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
-def test_get_queued_text_embedings(
+def test_get_queued_text_embeddings(
     _mock_get_text_embeddings: Any, _mock_get_text_embedding: Any
 ) -> None:
     """Test get queued text embeddings."""
     embed_model = OpenAIEmbedding(embed_batch_size=8)
     for i in range(8):
-        embed_model.queue_text_for_embeddding(f"id:{i}", "Hello world.")
+        embed_model.queue_text_for_embedding(f"id:{i}", "Hello world.")
     for i in range(8):
-        embed_model.queue_text_for_embeddding(f"id:{i}", "This is a test.")
+        embed_model.queue_text_for_embedding(f"id:{i}", "This is a test.")
     for i in range(4):
-        embed_model.queue_text_for_embeddding(f"id:{i}", "This is another test.")
+        embed_model.queue_text_for_embedding(f"id:{i}", "This is another test.")
     for i in range(4):
-        embed_model.queue_text_for_embeddding(f"id:{i}", "This is a test v2.")
+        embed_model.queue_text_for_embedding(f"id:{i}", "This is a test v2.")
 
     result_ids, result_embeddings = embed_model.get_queued_text_embeddings()
     for i in range(8):
