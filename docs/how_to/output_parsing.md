@@ -70,11 +70,15 @@ qa_prompt = QuestionAnswerPrompt(fmt_qa_tmpl, output_parser=output_parser)
 refine_prompt = RefinePrompt(fmt_refine_tmpl, output_parser=output_parser)
 
 # obtain a structured response
-response = index.query(
-    "What are the three items the author did growing up?", 
-    text_qa_template=qa_prompt, 
+query_engine = index.as_query_engine(
+    service_context=ServiceContext.from_defaults(
+        llm_predictor=llm_predictor
+    ),
+    text_qa_temjlate=qa_prompt, 
     refine_template=refine_prompt, 
-    llm_predictor=llm_predictor
+)
+response = query_engine.query(
+    "What are the three items the author did growing up?", 
 )
 print(response)
 
@@ -121,11 +125,15 @@ qa_prompt = QuestionAnswerPrompt(fmt_qa_tmpl, output_parser=output_parser)
 refine_prompt = RefinePrompt(fmt_refine_tmpl, output_parser=output_parser)
 
 # query index
-response = index.query(
-    "What are a few things the author did growing up?", 
-    text_qa_template=qa_prompt, 
+query_engine = index.as_query_engine(
+    service_context=ServiceContext.from_defaults(
+        llm_predictor=llm_predictor
+    ),
+    text_qa_temjlate=qa_prompt, 
     refine_template=refine_prompt, 
-    llm_predictor=llm_predictor
+)
+response = query_engine.query(
+    "What are a few things the author did growing up?", 
 )
 print(str(response))
 ```

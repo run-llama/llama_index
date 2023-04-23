@@ -8,7 +8,8 @@ from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
 index = GPTSimpleVectorIndex.from_documents(documents)
-response = index.query("Summarize the documents.")
+query_engine = index.as_query_engine()
+response = query_engine.query("Summarize the documents.")
 ```
 
 Under the hood, LlamaIndex also supports a swappable **storage layer** that allows you to customize where ingested data (i.e., `Node` objects) are stored.
