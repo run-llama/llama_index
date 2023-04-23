@@ -1,7 +1,7 @@
 """Base vector store index query."""
 
 
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 
