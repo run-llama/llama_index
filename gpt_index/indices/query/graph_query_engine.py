@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
 from gpt_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
+from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
@@ -12,8 +13,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         self,
         graph: Any,
         response_synthesizer: Optional[ResponseSynthesizer] = None,
-        retriever_id_kwargs: Optional[Dict[str, dict]] = None,
-        retriever_type_kwargs: Optional[Dict[str, dict]] = None,
+        custom_retrievers: Optional[Dict[str, BaseRetriever]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         recursive: bool = True,
     ) -> None:
@@ -24,8 +24,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         self._response_synthesizer = (
             response_synthesizer or ResponseSynthesizer.from_args()
         )
-        self._retriever_id_kwargs = retriever_id_kwargs or {}
-        self._retriever_type_kwargs = retriever_type_kwargs or {}
+        self._custom_retrievers = custom_retrievers or {}
         self._node_postprocessors = node_postprocessors
 
         # additional configs
@@ -44,14 +43,12 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         level: int = 0,
     ) -> RESPONSE_TYPE:
         index_id = index_id or self._graph.root_id
-        index_type = self._graph.get_index(index_id).index_struct.get_type()
 
-        # get retriever args
-        retriever_kwarg = {}
-        retriever_kwarg.update(self._retriever_type_kwargs.get(index_type, {}))
-        retriever_kwarg.update(self._retriever_id_kwargs.get(index_id, {}))
-
-        retriever = self._graph.get_index(index_id).as_retriever(**retriever_kwarg)
+        # get retriever
+        if index_id in self._custom_retrievers:
+            retriever = self._custom_retrievers[index_id]
+        else:
+            retriever = self._graph.get_index(index_id).as_retriever()
         nodes = retriever.retrieve(query_bundle)
 
         if self._recursive:
