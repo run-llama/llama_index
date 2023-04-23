@@ -9,6 +9,7 @@ from gpt_index.indices.service_context import ServiceContext
 from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
 from gpt_index.indices.postprocessor.node import (
     PrevNextNodePostprocessor,
+    KeywordNodePostprocessor,
 )
 from gpt_index.indices.postprocessor.node_recency import (
     FixedRecencyPostprocessor,
@@ -310,3 +311,39 @@ def test_time_weighted_postprocessor(
     assert result_nodes_with_score[0].node.get_text() == "Hello world."
     assert cast(Dict, nodes[0].node_info)[key] != 0
     assert cast(Dict, nodes[3].node_info)[key] == 3
+
+
+def test_keyword_postprocessor() -> None:
+    """Test keyword processor."""
+
+    key = "__last_accessed__"
+    # try in extra_info
+    nodes = [
+        Node("Hello world.", doc_id="1", node_info={key: 0}),
+        Node("This is a test.", doc_id="2", node_info={key: 1}),
+        Node("This is another test.", doc_id="3", node_info={key: 2}),
+        Node("This is a test v2.", doc_id="4", node_info={key: 3}),
+    ]
+
+    postprocessor = KeywordNodePostprocessor(required_keywords=["This"])
+    new_nodes = postprocessor.postprocess_nodes(nodes)
+    assert new_nodes[0].get_text() == "This is a test."
+    assert new_nodes[1].get_text() == "This is another test."
+    assert new_nodes[2].get_text() == "This is a test v2."
+
+    postprocessor = KeywordNodePostprocessor(required_keywords=["Hello"])
+    new_nodes = postprocessor.postprocess_nodes(nodes)
+    assert new_nodes[0].get_text() == "Hello world."
+    assert len(new_nodes) == 1
+
+    postprocessor = KeywordNodePostprocessor(required_keywords=["is another"])
+    new_nodes = postprocessor.postprocess_nodes(nodes)
+    assert new_nodes[0].get_text() == "This is another test."
+    assert len(new_nodes) == 1
+
+    # test exclude keywords
+    postprocessor = KeywordNodePostprocessor(exclude_keywords=["is another"])
+    new_nodes = postprocessor.postprocess_nodes(nodes)
+    assert new_nodes[1].get_text() == "This is a test."
+    assert new_nodes[2].get_text() == "This is a test v2."
+    assert len(new_nodes) == 3
