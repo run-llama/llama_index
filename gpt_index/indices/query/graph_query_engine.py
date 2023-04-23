@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
+
+from llama_index import ComposableGraph
 from gpt_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
@@ -11,15 +13,12 @@ from gpt_index.response.schema import RESPONSE_TYPE
 class ComposableGraphQueryEngine(BaseQueryEngine):
     def __init__(
         self,
-        graph: Any,
+        graph: ComposableGraph,
         response_synthesizer: Optional[ResponseSynthesizer] = None,
         custom_retrievers: Optional[Dict[str, BaseRetriever]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         recursive: bool = True,
     ) -> None:
-        from gpt_index.indices.composability.graph import ComposableGraph
-
-        assert isinstance(graph, ComposableGraph)
         self._graph = graph
         self._response_synthesizer = (
             response_synthesizer or ResponseSynthesizer.from_args()

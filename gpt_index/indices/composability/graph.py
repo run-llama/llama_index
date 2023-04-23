@@ -11,7 +11,6 @@ from gpt_index.data_structs.data_structs_v2 import CompositeIndex, V2IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, DocumentRelationship
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.query.base import BaseQueryEngine
-from gpt_index.indices.query.graph_query_engine import ComposableGraphQueryEngine
 from gpt_index.indices.query.schema import QueryConfig
 from gpt_index.indices.registry import save_index_to_dict
 from gpt_index.indices.service_context import ServiceContext
@@ -116,6 +115,11 @@ class ComposableGraph:
         return self._all_indices[index_struct_id]
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        # NOTE: lazy import
+        from gpt_index.indices.query.graph_query_engine import (
+            ComposableGraphQueryEngine,
+        )
+
         return ComposableGraphQueryEngine(self, **kwargs)
 
     @classmethod

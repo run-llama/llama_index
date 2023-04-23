@@ -10,8 +10,6 @@ from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 
 import pandas as pd
 
-from gpt_index.indices.struct_store.pandas_query import GPTNLPandasQueryEngine
-
 
 class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
     """Base GPT Pandas Index.
@@ -53,6 +51,9 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
         raise NotImplementedError("Not supported")
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        # NOTE: lazy import
+        from gpt_index.indices.struct_store.pandas_query import GPTNLPandasQueryEngine
+
         return GPTNLPandasQueryEngine(self, **kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> PandasStructTable:

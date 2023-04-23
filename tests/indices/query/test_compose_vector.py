@@ -300,7 +300,6 @@ def test_recursive_query_vector_vector(
     _mock_split_text: Any,
     documents: List[Document],
     index_kwargs: Dict,
-    retriever_kwargs: Dict,
 ) -> None:
     """Test query."""
     vector_kwargs = index_kwargs["vector"]
@@ -368,7 +367,6 @@ def test_recursive_query_pinecone_pinecone(
     _mock_split_text: Any,
     documents: List[Document],
     index_kwargs: Dict,
-    retriever_kwargs: Dict,
 ) -> None:
     """Test composing pinecone index on top of pinecone index."""
     # NOTE: mock pinecone import

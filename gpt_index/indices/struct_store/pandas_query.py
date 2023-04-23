@@ -8,6 +8,7 @@ from langchain.input import print_text
 
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.struct_store.pandas import GPTPandasIndex
 from gpt_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from gpt_index.prompts.prompts import PandasPrompt
 from gpt_index.response.schema import Response
@@ -85,7 +86,7 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
 
     def __init__(
         self,
-        index: Any,
+        index: GPTPandasIndex,
         instruction_str: Optional[str] = None,
         output_processor: Optional[Callable] = None,
         pandas_prompt: Optional[PandasPrompt] = None,
@@ -95,9 +96,6 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        from gpt_index.indices.struct_store.pandas import GPTPandasIndex
-
-        assert isinstance(index, GPTPandasIndex)
         self.df = index.df
         self._service_context = index.service_context
 

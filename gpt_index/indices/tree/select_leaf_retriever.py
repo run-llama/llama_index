@@ -9,6 +9,7 @@ from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.common.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.response_builder import get_response_builder
+from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from gpt_index.prompts.default_prompts import (
@@ -71,7 +72,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: Any,
+        index: GPTTreeIndex,
         query_template: Optional[TreeSelectPrompt] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
@@ -80,9 +81,6 @@ class TreeSelectLeafRetriever(BaseRetriever):
         verbose: bool = False,
         **kwargs: Any,
     ):
-        from gpt_index.indices.tree.base import GPTTreeIndex
-
-        assert isinstance(index, GPTTreeIndex)
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore
