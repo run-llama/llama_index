@@ -94,7 +94,6 @@ def test_recursive_query_vector_table(
     _mock_split_text: Any,
     documents: List[Document],
     index_kwargs: Dict,
-    retriever_kwargs: Dict,
 ) -> None:
     """Test query."""
     vector_kwargs = index_kwargs["vector"]
@@ -102,8 +101,8 @@ def test_recursive_query_vector_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
-    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
+    vector1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
+    vector2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
     list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **vector_kwargs)
     list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **vector_kwargs)
 
@@ -116,13 +115,13 @@ def test_recursive_query_vector_table(
 
     graph = ComposableGraph.from_indices(
         GPTSimpleKeywordTableIndex,
-        [list1, list2, list3, list4],
+        [vector1, vector2, list3, list4],
         index_summaries=summaries,
         **table_kwargs
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
-    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    query_engine = graph.as_query_engine()
     response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
@@ -137,7 +136,7 @@ def test_recursive_query_vector_table(
     with TemporaryDirectory() as tmpdir:
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+        query_engine = graph.as_query_engine()
         response = query_engine.query(query_str)
         assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
@@ -172,25 +171,17 @@ def test_recursive_query_vector_table_query_configs(
     assert that they're passed in.
 
     """
-    retriever_kwargs = {
-        "keyword_table": {
-            "query_keyword_extract_template": MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
-        },
-        "vector1": {"similarity_top_k": 2},
-        "vector2": {"similarity_top_k": 2},
-    }
-
     vector_kwargs = index_kwargs["vector"]
     table_kwargs = index_kwargs["table"]
     # try building a tre for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
-    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
-    assert isinstance(list1.index_struct, V2IndexStruct)
-    assert isinstance(list2.index_struct, V2IndexStruct)
-    list1.index_struct.index_id = "vector1"
-    list2.index_struct.index_id = "vector2"
+    vector1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
+    vector2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
+    assert isinstance(vector1.index_struct, V2IndexStruct)
+    assert isinstance(vector2.index_struct, V2IndexStruct)
+    vector1.index_struct.index_id = "vector1"
+    vector2.index_struct.index_id = "vector2"
     summaries = [
         "foo bar",
         "apple orange",
@@ -198,13 +189,21 @@ def test_recursive_query_vector_table_query_configs(
 
     graph = ComposableGraph.from_indices(
         GPTSimpleKeywordTableIndex,
-        [list1, list2],
+        [vector1, vector2],
         index_summaries=summaries,
         **table_kwargs
     )
     assert isinstance(graph, ComposableGraph)
 
-    query_engine = graph.as_query_engine(retriever_id_kwargs=retriever_kwargs)
+    custom_retrievers = {
+        "keyword_table": graph.root_index.as_retriever(
+            query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
+        ),
+        "vector1": vector1.as_retriever(similarity_top_k=2),
+        "vector2": vector2.as_retriever(similarity_top_k=2),
+    }
+
+    query_engine = graph.as_query_engine(custom_retrievers=custom_retrievers)
     response = query_engine.query("Foo?")  # type: ignore
     assert str(response) == ("Foo?:Foo?:This is another test.:This is a test v2.")
 
@@ -217,7 +216,7 @@ def test_recursive_query_vector_table_query_configs(
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
         # cast to Any to avoid mypy error
-        query_engine = graph.as_query_engine(retriever_id_kwargs=retriever_kwargs)
+        query_engine = graph.as_query_engine(custom_retrievers=custom_retrievers)
         response = query_engine.query("Orange?")
         assert str(response) == ("Orange?:Orange?:This is a test.:Hello world.")
 
@@ -245,7 +244,6 @@ def test_recursive_query_vector_table_async(
     _mock_split_text: Any,
     documents: List[Document],
     index_kwargs: Dict,
-    retriever_kwargs: Dict,
 ) -> None:
     """Test async query of table index over vector indices."""
     vector_kwargs = index_kwargs["vector"]
@@ -253,8 +251,8 @@ def test_recursive_query_vector_table_async(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
-    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
+    vector1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
+    vector2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
     list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **vector_kwargs)
     list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **vector_kwargs)
 
@@ -267,13 +265,13 @@ def test_recursive_query_vector_table_async(
 
     graph = ComposableGraph.from_indices(
         GPTSimpleKeywordTableIndex,
-        [list1, list2, list3, list4],
+        [vector1, vector2, list3, list4],
         index_summaries=summaries,
         **table_kwargs
     )
     assert isinstance(graph, ComposableGraph)
 
-    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    query_engine = graph.as_query_engine()
     task = query_engine.aquery("Cat?")
     response = asyncio.run(task)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
@@ -309,8 +307,8 @@ def test_recursive_query_vector_vector(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
-    list2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
+    vector1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
+    vector2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
     list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **vector_kwargs)
     list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **vector_kwargs)
 
@@ -322,12 +320,12 @@ def test_recursive_query_vector_vector(
 
     graph = ComposableGraph.from_indices(
         GPTSimpleVectorIndex,
-        [list1, list2, list3, list4],
+        [vector1, vector2, list3, list4],
         index_summaries=summaries,
         **vector_kwargs
     )
     query_str = "Foo?"
-    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    query_engine = graph.as_query_engine()
     response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
@@ -342,7 +340,7 @@ def test_recursive_query_vector_vector(
     with TemporaryDirectory() as tmpdir:
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+        query_engine = graph.as_query_engine()
         response = query_engine.query(query_str)
         assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
@@ -427,7 +425,7 @@ def test_recursive_query_pinecone_pinecone(
         **pinecone_kwargs
     )
     query_str = "Foo?"
-    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    query_engine = graph.as_query_engine()
     response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
@@ -466,6 +464,6 @@ def test_recursive_query_pinecone_pinecone(
         graph = ComposableGraph.load_from_disk(
             str(Path(tmpdir) / "tmp.json"), index_kwargs=index_kwargs
         )
-        query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+        query_engine = graph.as_query_engine()
         response = query_engine.query(query_str)
         assert str(response) == ("Cat?:Cat?:This is a test v2.")

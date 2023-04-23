@@ -20,6 +20,11 @@ from tests.mock_utils.mock_predict import (
     mock_llmchain_predict,
     mock_llmpredictor_predict,
 )
+from tests.mock_utils.mock_prompts import (
+    MOCK_QUERY_PROMPT,
+    MOCK_REFINE_PROMPT,
+    MOCK_TEXT_QA_PROMPT,
+)
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
@@ -34,7 +39,6 @@ def test_recursive_query_list_tree(
     _mock_split_text: Any,
     documents: List[Document],
     index_kwargs: Dict,
-    retriever_kwargs: Dict,
 ) -> None:
     """Test query."""
     list_kwargs = index_kwargs["list"]
@@ -68,7 +72,7 @@ def test_recursive_query_list_tree(
     query_str = "What is?"
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
-    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    query_engine = graph.as_query_engine()
     response = query_engine.query(query_str)
     assert str(response) == (
         "What is?:What is?:This is a test v2.:This is another test."
@@ -86,7 +90,6 @@ def test_recursive_query_tree_list(
     _mock_split_text: Any,
     documents: List[Document],
     index_kwargs: Dict,
-    retriever_kwargs: Dict,
 ) -> None:
     """Test query."""
     list_kwargs = index_kwargs["list"]
@@ -109,7 +112,7 @@ def test_recursive_query_tree_list(
     query_str = "What is?"
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
-    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    query_engine = graph.as_query_engine()
     response = query_engine.query(query_str)
     assert str(response) == (
         "What is?:What is?:This is a test.:What is?:This is a test v2."
@@ -127,7 +130,6 @@ def test_recursive_query_table_list(
     _mock_split_text: Any,
     documents: List[Document],
     index_kwargs: Dict,
-    retriever_kwargs: Dict,
 ) -> None:
     """Test query."""
     list_kwargs = index_kwargs["list"]
@@ -146,7 +148,7 @@ def test_recursive_query_table_list(
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "World?"
-    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    query_engine = graph.as_query_engine()
     response = query_engine.query(query_str)
     assert str(response) == ("World?:World?:Hello world.:None")
 
@@ -158,7 +160,7 @@ def test_recursive_query_table_list(
     with TemporaryDirectory() as tmpdir:
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+        query_engine = graph.as_query_engine()
         response = query_engine.query(query_str)
         assert str(response) == ("Test?:Test?:This is a test.:Test?:This is a test.")
 
@@ -174,7 +176,6 @@ def test_recursive_query_list_table(
     _mock_split_text: Any,
     documents: List[Document],
     index_kwargs: Dict,
-    retriever_kwargs: Dict,
 ) -> None:
     """Test query."""
     list_kwargs = index_kwargs["list"]
@@ -201,7 +202,7 @@ def test_recursive_query_list_table(
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"
-    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    query_engine = graph.as_query_engine()
     response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is a test v2.:This is another test.")
     query_str = "Orange?"
@@ -216,7 +217,7 @@ def test_recursive_query_list_table(
     with TemporaryDirectory() as tmpdir:
         graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
         graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+        query_engine = graph.as_query_engine()
         response = query_engine.query(query_str)
         assert str(response) == ("Cat?:Cat?:This is another test.:This is a test v2.")
 
@@ -232,7 +233,6 @@ def test_recursive_query_list_tree_token_count(
     _mock_predict: Any,
     documents: List[Document],
     index_kwargs: Dict,
-    retriever_kwargs: Dict,
 ) -> None:
     """Test query."""
     list_kwargs = index_kwargs["list"]
@@ -263,6 +263,13 @@ def test_recursive_query_list_tree_token_count(
         index_summaries=summaries,
         **tree_kwargs
     )
+    custom_retrievers = {
+        graph.root_id: graph.root_index.as_retriever(
+            query_template=MOCK_QUERY_PROMPT,
+            text_qa_template=MOCK_TEXT_QA_PROMPT,
+            refine_template=MOCK_REFINE_PROMPT,
+        )
+    }
     assert isinstance(graph, ComposableGraph)
     # first pass prompt is "summary1\nsummary2\n" (6 tokens),
     # response is the mock response (10 tokens)
@@ -273,7 +280,7 @@ def test_recursive_query_list_tree_token_count(
     # query should first pick the left root node, then pick list1
     # within list1, it should go through the first document and second document
     start_token_ct = graph.service_context.llm_predictor.total_tokens_used
-    query_engine = graph.as_query_engine(retriever_type_kwargs=retriever_kwargs)
+    query_engine = graph.as_query_engine(custom_retrievers=custom_retrievers)
     query_engine.query(query_str)
     # prompt is which is 35 tokens, plus 10 for the mock response
     assert graph.service_context.llm_predictor.total_tokens_used - start_token_ct == 45
