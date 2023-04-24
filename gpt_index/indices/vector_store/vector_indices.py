@@ -16,6 +16,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     QdrantIndexDict,
     SimpleIndexDict,
     WeaviateIndexDict,
+    DeepLakeIndexDict,
 )
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
@@ -474,6 +475,8 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
     Returns:
         DeepLakeVectorstore: Vectorstore that supports add, delete, and query.
     """
+
+    index_struct_cls: Type[IndexDict] = DeepLakeIndexDict
 
     def __init__(
         self,
