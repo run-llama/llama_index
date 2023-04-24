@@ -517,16 +517,22 @@ class GPTMyScaleIndex(GPTVectorStoreIndex):
     It also supports creating a new table if the table doesn't exist
 
     Args:
-        myscale_client (httpclient): clickhouse httpclient of an existing MyScale cluster.
+        myscale_client (httpclient): clickhouse-connect httpclient of
+            an existing MyScale cluster.
         table_name (str, optional): The name of the MyScale table
             where data will be stored. Defaults to "llama_index".
         database_name (str, optional): The name of the MyScale database
             where data will be stored. Defaults to "default".
-        index_type (str, optional): The type of the MyScale vector index. Defaults to "IVFFLAT".
-        metric (str, optional): The metric type of the MyScale vector index. Defaults to "cosine".
-        batch_size (int, optional): the size of documents to insert. Defaults to 32.
-        index_params (dict, optional): The index parameters for MyScale. Defaults to None.
-        search_params (dict, optional): The search parameters for a MyScale query. Defaults to None.
+        index_type (str, optional): The type of the MyScale vector index.
+            Defaults to "IVFFLAT".
+        metric (str, optional): The metric type of the MyScale vector index.
+            Defaults to "cosine".
+        batch_size (int, optional): the size of documents to insert.
+            Defaults to 32.
+        index_params (dict, optional): The index parameters for MyScale.
+            Defaults to None.
+        search_params (dict, optional): The search parameters for a MyScale query.
+            Defaults to None.
 
     Returns:
         MyScaleVectorStore: Vectorstore that supports add, delete, and query.
