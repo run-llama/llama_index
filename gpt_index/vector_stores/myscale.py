@@ -31,17 +31,23 @@ class MyScaleVectorStore(VectorStore):
     k most similar nodes.
 
     Args:
-        myscale_client (httpclient): clickhouse httpclient of an existing MyScale cluster.
+        myscale_client (httpclient): clickhouse-connect httpclient of
+            an existing MyScale cluster.
         table (str, optional): The name of the MyScale table
             where data will be stored. Defaults to "llama_index".
         database (str, optional): The name of the MyScale database
             where data will be stored. Defaults to "default".
-        index_type (str, optional): The type of the MyScale vector index. Defaults to "IVFFLAT".
-        metric (str, optional): The metric type of the MyScale vector index. Defaults to "cosine".
+        index_type (str, optional): The type of the MyScale vector index.
+            Defaults to "IVFFLAT".
+        metric (str, optional): The metric type of the MyScale vector index.
+            Defaults to "cosine".
         batch_size (int, optional): the size of documents to insert. Defaults to 32.
-        index_params (dict, optional): The index parameters for MyScale. Defaults to None.
-        search_params (dict, optional): The search parameters for a MyScale query. Defaults to None.
-        service_context (ServiceContext, optional): Vector store service context. Defaults to None
+        index_params (dict, optional): The index parameters for MyScale.
+            Defaults to None.
+        search_params (dict, optional): The search parameters for a MyScale query.
+            Defaults to None.
+        service_context (ServiceContext, optional): Vector store service context.
+            Defaults to None
 
     """
 
@@ -62,7 +68,10 @@ class MyScaleVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        import_err_msg = "`clickhouse_connect` package not found, please run `pip install clickhouse-connect`"
+        import_err_msg = """
+            `clickhouse_connect` package not found, 
+            please run `pip install clickhouse-connect`
+        """
         try:
             from clickhouse_connect.driver.httpclient import HttpClient  # noqa: F401
         except ImportError:
@@ -136,7 +145,8 @@ class MyScaleVectorStore(VectorStore):
             CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
                 {",".join([f'{k} {v["type"]}' for k, v in self.column_config.items()])},
                 CONSTRAINT vector_length CHECK length(vector) = {dimension},
-                VECTOR INDEX {self.config.table}_index vector TYPE {self.config.index_type}('metric_type={self.config.metric}'{index_params})
+                VECTOR INDEX {self.config.table}_index vector TYPE 
+                {self.config.index_type}('metric_type={self.config.metric}'{index_params})
             ) ENGINE = MergeTree ORDER BY id
             """
         self.dim = dimension

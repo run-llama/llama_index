@@ -1,7 +1,6 @@
 """MyScale reader."""
-import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
@@ -74,7 +73,8 @@ class MyScaleSettings:
         )
 
         query_statement = f"""
-            SELECT id, doc_id, text, node_info, extra_info, distance{search_params_str}(vector, {query_embed_str}) AS dist
+            SELECT id, doc_id, text, node_info, extra_info, 
+            distance{search_params_str}(vector, {query_embed_str}) AS dist
             FROM {self.database}.{self.table} {where_str}
             ORDER BY dist {order}
             LIMIT {limit}
@@ -93,10 +93,13 @@ class MyScaleReader(BaseReader):
         database (str) : Database name to find the table. Defaults to 'default'.
         table (str) : Table name to operate on. Defaults to 'vector_table'.
         index_type (str): index type string. Default to "IVFLAT"
-        metric (str) : Metric to compute distance, supported are ('l2', 'cosine', 'ip'). Defaults to 'cosine'
+        metric (str) : Metric to compute distance, supported are ('l2', 'cosine', 'ip').
+            Defaults to 'cosine'
         batch_size (int, optional): the size of documents to insert. Defaults to 32.
-        index_params (dict, optional): The index parameters for MyScale. Defaults to None.
-        search_params (dict, optional): The search parameters for a MyScale query. Defaults to None.
+        index_params (dict, optional): The index parameters for MyScale.
+            Defaults to None.
+        search_params (dict, optional): The search parameters for a MyScale query.
+            Defaults to None.
 
     """
 
@@ -116,7 +119,10 @@ class MyScaleReader(BaseReader):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        import_err_msg = "`clickhouse_connect` package not found, please run `pip install clickhouse-connect`"
+        import_err_msg = """
+            `clickhouse_connect` package not found, 
+            please run `pip install clickhouse-connect`
+        """
         try:
             import clickhouse_connect  # noqa: F401
         except ImportError:
@@ -150,7 +156,8 @@ class MyScaleReader(BaseReader):
 
         Args:
             query_vector (List[float]): Query vector.
-            where_str (Optional[str], optional): where condition string. Defaults to None.
+            where_str (Optional[str], optional): where condition string.
+                Defaults to None.
             limit (int): Number of results to return.
 
         Returns:
