@@ -142,8 +142,8 @@ root_summary = (
 
 ```
 
-Querying this graph (with a query transform module), allows us to easily compare/contrast between different cities. An example
-is shown below - we define query_configs and send a query through this graph.
+Querying this graph (with a query transform module), allows us to easily compare/contrast between different cities. 
+An example is shown below.
 
 ```python
 # define decompose_transform
@@ -151,36 +151,31 @@ from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
     llm_predictor_chatgpt, verbose=True
 )
-# set query config
-query_configs = [
-    {
-        "index_struct_type": "simple_dict",
-        "query_mode": "default",
-        "query_kwargs": {
-            "similarity_top_k": 1
-        },
-        # NOTE: set query transform for subindices
-        "query_transform": decompose_transform
-    },
-    {
-        "index_struct_type": "keyword_table",
-        "query_mode": "simple",
-        "query_kwargs": {
-            "response_mode": "tree_summarize",
-            "verbose": True
-        },
-    },
-]
+
+# define custom retrievers
+custom_retrievers = {}
+for index in vector_indices.values():
+    retriever = index.as_retriever()
+    retriever = TransformRetriever(
+        retriever,
+        query_transform=decompose_transform,
+        transform_extra_info={'index_summary': index.index_struct.summary},
+    )
+    custom_retrievers[index.index_id] = retriever
+custom_retrievers[graph.root_id] = graph.root_index.as_retriever(mode='simple')
+
+# define query engine
+query_engine = graph.as_query_engine(
+    custom_retrievers=custom_retrievers,
+    response_mode='tree_summarize',
+    service_context=service_context,
+)
 
 # query the graph
 query_str = (
     "Compare and contrast the arts and culture of Houston and Boston. "
 )
-response_chatgpt = graph.query(
-    query_str, 
-    query_configs=query_configs, 
-    service_context=service_context,
-)
+response_chatgpt = query_engine.query(query_str)
 ```
 
 
@@ -227,34 +222,23 @@ and also compare/contrast different cities.
 
 
 ```python
-# set query config
-query_configs = [
-    {
-        "index_struct_type": "keyword_table",
-        "query_mode": "simple",
-        "query_kwargs": {
-            "response_mode": "tree_summarize",
-            "verbose": True
-        },
-    },
-    {
-        "index_struct_type": "tree",
-        "query_mode": "default",
-        
-    }
-]
-for wiki_title in wiki_titles:
-    query_config = {
-        "index_struct_id": wiki_title,
-        "index_struct_type": "simple_dict",
-        "query_mode": "default",
-        "query_kwargs": {
-            "similarity_top_k": 1
-        },
-        # NOTE: set query transform for subindices
-        "query_transform": decompose_transform
-    }
-    query_configs.append(query_config)
+# define custom retrievers
+custom_retrievers = {}
+for index in vector_indices.values():
+    retriever = index.as_retriever()
+    retriever = TransformRetriever(
+        retriever,
+        query_transform=decompose_transform,
+        transform_extra_info={'index_summary': index.index_struct.summary},
+    )
+    custom_retrievers[index.index_id] = retriever
+custom_retrievers[graph.root_id] = graph.root_index.as_retriever(mode='simple')
+
+# define query engine
+outer_query_engine = outer_graph.as_query_engine(
+    service_context=service_context,
+    custom_retrievers=custom_retrievers,
+)
 
 ```
 
@@ -264,10 +248,8 @@ Let's take a look at a few examples!
 
 ```python
 # ask a compare/contrast question 
-response = outer_graph.query(
+response = outer_query_engine.query(
     "Compare and contrast the arts and culture of Houston and Boston.",
-    query_configs=query_configs,
-    service_context=service_context
 )
 print(str(response)
 ```
@@ -277,7 +259,7 @@ print(str(response)
 
 ```python
 
-response = outer_graph.query("What are the sports teams in Toronto?")
+response = outer_query_engine.query("What are the sports teams in Toronto?")
 print(str(response))
 
 ```
