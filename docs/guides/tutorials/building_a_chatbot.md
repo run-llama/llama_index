@@ -123,13 +123,13 @@ from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
 from langchain.agents import initialize_agent
 
-from llama_index.langchain_helpers.agents import LlamaToolkit, create_llama_chat_agent, IndexToolConfig, GraphToolConfig
+from llama_index.langchain_helpers.agents import LlamaToolkit, create_llama_chat_agent, IndexToolConfig
 ```
 
 We want to define a separate Tool for each index (corresponding to a given year), as well 
 as the graph. We can define all tools under a central `LlamaToolkit` interface.
 
-Below, we define a `GraphToolConfig` for our graph. Note that we also import a `DecomposeQueryTransform` module for use within each vector index within the graph - this allows us to "decompose" the overall query into a query that can be answered from each subindex. (see example below).
+Below, we define a `IndexToolConfig` for our graph. Note that we also import a `DecomposeQueryTransform` module for use within each vector index within the graph - this allows us to "decompose" the overall query into a query that can be answered from each subindex. (see example below).
 
 ```python
 # define a decompose transform
@@ -138,32 +138,29 @@ decompose_transform = DecomposeQueryTransform(
     llm_predictor, verbose=True
 )
 
-# define query configs for graph 
-query_configs = [
-    {
-        "index_struct_type": "simple_dict",
-        "query_mode": "default",
-        "query_kwargs": {
-            "similarity_top_k": 1,
-            # "include_summary": True
-        },
-        "query_transform": decompose_transform
-    },
-    {
-        "index_struct_type": "list",
-        "query_mode": "default",
-        "query_kwargs": {
-            "response_mode": "tree_summarize",
-            "verbose": True
-        }
-    },
-]
-# graph config
-graph_config = GraphToolConfig(
-    graph=graph,
+# define custom retrievers
+from gpt_index.indices.transform_retriever import TransformRetriever
+custom_retrievers = {}
+for index in index_set.values():
+    retriever = index.as_retriever()
+    retriever = TransformRetriever(
+        retriever,
+        query_transform=decompose_transform,
+        transform_extra_info={'index_summary': index.index_struct.summary},
+    )
+    custom_retrievers[index.index_id] = retriever
+
+# construct query engine
+query_engine = graph.as_query_engine(
+    response_mode='tree_summarize',
+    verbose=True,
+)
+
+# tool config
+graph_config = IndexToolConfig(
+    query_engine=query_engine,
     name=f"Graph Index",
     description="useful for when you want to answer queries that require analyzing multiple SEC 10-K documents for Uber.",
-    query_configs=query_configs,
     tool_kwargs={"return_direct": True}
 )
 ```
@@ -174,11 +171,13 @@ Besides the `GraphToolConfig` object, we also define an `IndexToolConfig` corres
 # define toolkit
 index_configs = []
 for y in range(2019, 2023):
+    query_engine = index_set[y].as_query_engine(
+        similarity_top_k=3,
+    )
     tool_config = IndexToolConfig(
-        index=index_set[y], 
+        query_engine=query_engine, 
         name=f"Vector Index {y}",
         description=f"useful for when you want to answer queries about the {y} SEC 10-K for Uber",
-        index_query_kwargs={"similarity_top_k": 3},
         tool_kwargs={"return_direct": True}
     )
     index_configs.append(tool_config)
@@ -188,8 +187,7 @@ Finally, we combine these configs with our `LlamaToolkit`:
 
 ```python
 toolkit = LlamaToolkit(
-    index_configs=index_configs,
-    graph_configs=[graph_config]
+    index_configs=index_configs + [graph_config],
 )
 ```
 
