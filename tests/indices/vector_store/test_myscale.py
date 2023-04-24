@@ -13,6 +13,7 @@ from gpt_index.data_structs.data_structs_v2 import MyScaleIndexDict
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.vector_store import GPTMyScaleIndex
 from gpt_index.readers.schema.base import Document
+from gpt_index.vector_stores import MyScaleVectorStore
 from gpt_index.vector_stores.types import VectorStoreQuery
 
 # local test only, update variable here for test
@@ -51,7 +52,6 @@ def query() -> VectorStoreQuery:
     or MYSCALE_CLUSTER_PASSWORD is None,
     reason="myscale-client not configured",
 )
-@pytest.mark.first
 def test_overall_workflow(documents: List[Document]) -> None:
     client = clickhouse_connect.get_client(
         host=MYSCALE_CLUSTER_URL,
@@ -70,7 +70,7 @@ def test_overall_workflow(documents: List[Document]) -> None:
         for doc in documents:
             index.delete(doc_id=cast(str, doc.doc_id))
 
-    index._vector_store.drop()
+    cast(MyScaleVectorStore, index._vector_store).drop()
 
 
 @pytest.mark.skipif(
@@ -80,7 +80,6 @@ def test_overall_workflow(documents: List[Document]) -> None:
     or MYSCALE_CLUSTER_PASSWORD is None,
     reason="myscale-client not configured",
 )
-@pytest.mark.second
 def test_init_without_documents(
     indexDict: MyScaleIndexDict, documents: List[Document]
 ) -> None:
@@ -99,7 +98,7 @@ def test_init_without_documents(
     response = index.query("What is?")
     assert str(response).strip() == ("What is what?")
 
-    index._vector_store.drop()
+    cast(MyScaleVectorStore, index._vector_store).drop()
 
 
 @pytest.mark.skipif(
@@ -109,7 +108,6 @@ def test_init_without_documents(
     or MYSCALE_CLUSTER_PASSWORD is None,
     reason="myscale-client not configured",
 )
-@pytest.mark.third
 def test_myscale_combine_search(
     documents: List[Document], query: VectorStoreQuery
 ) -> None:
@@ -129,4 +127,4 @@ def test_myscale_combine_search(
     responseNodes = cast(List[Node], index._vector_store.query(query).nodes)
     assert len(responseNodes) == 1
     assert responseNodes[0].doc_id == "1"
-    index._vector_store.drop()
+    cast(MyScaleVectorStore, index._vector_store).drop()
