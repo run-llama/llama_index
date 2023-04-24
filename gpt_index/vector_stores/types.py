@@ -42,6 +42,11 @@ class VectorStoreQueryMode(str, Enum):
     SPARSE = "sparse"
     HYBRID = "hybrid"
 
+    # fit learners
+    SVM = "svm"
+    LOGISTIC_REGRESSION = "logistic_regression"
+    LINEAR_REGRESSION = "linear_regression"
+
 
 @dataclass
 class VectorStoreQuery:

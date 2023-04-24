@@ -11,6 +11,7 @@ from gpt_index.indices.postprocessor.node import (
 from gpt_index.indices.postprocessor.node_recency import (
     FixedRecencyPostprocessor,
     EmbeddingRecencyPostprocessor,
+    TimeWeightedPostprocessor,
 )
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "AutoPrevNextNodePostprocessor",
     "FixedRecencyPostprocessor",
     "EmbeddingRecencyPostprocessor",
+    "TimeWeightedPostprocessor",
 ]
