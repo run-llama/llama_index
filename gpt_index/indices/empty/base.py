@@ -35,8 +35,8 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
     ) -> None:
         """Initialize params."""
         super().__init__(
-            nodes=[],
-            index_struct=index_struct,
+            nodes=None,
+            index_struct=index_struct or EmptyIndex(),
             service_context=service_context,
             **kwargs,
         )
