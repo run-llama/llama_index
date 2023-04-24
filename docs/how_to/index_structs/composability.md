@@ -100,7 +100,7 @@ query_engine = graph.as_query_engine(
 response = query_engine.query("Where did the author grow up?")
 ```
 
-> Note that specifying query config for index struct by id
+> Note that specifying custom retriever for index by id
 > might require you to inspect e.g., `index1.index_struct.index_id`.
 > Alternatively, you can explicitly set it as follows:
 ```python

@@ -1,4 +1,4 @@
-"""Query Configuration Schema.
+"""Query Schema.
 
 This schema is used under the hood for all queries, but is primarily
 exposed for recursive queries over composable indices.

@@ -251,7 +251,7 @@ After building the index, you can now query it with a `QueryEngine`. Note that a
 this means that you can use the index for question-answering, but you can also do more than that! 
 
 ### High-level API
-To start, you can query an index with the default `QueryEngine` (i.e., using default query configs), as follows:
+To start, you can query an index with the default `QueryEngine` (i.e., using default configs), as follows:
 
 ```python
 query_engine = index.as_query_engine()
