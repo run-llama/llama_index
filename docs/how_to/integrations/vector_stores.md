@@ -17,6 +17,7 @@ LlamaIndex supports loading data from the following sources. See [Data Connector
 - Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
 - Milvus (`MilvusReader`). [Installation](https://milvus.io/docs)
 - Zilliz (`MilvusReader`). [Quickstart](https://zilliz.com/doc/quick_start)
+- MyScale (`MyScaleReader`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/). 
 
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
@@ -73,6 +74,7 @@ These are found in the following classes:
 - `GPTChromaIndex`
 - `GPTMilvusIndex`
 - `GPTDeepLakeIndex`
+- `GPTMyScaleIndex`
 
 
 An API reference of each vector index is [found here](/reference/indices/vector_store.rst).
@@ -284,8 +286,28 @@ If you get stuck at building wheel for `grpcio`, check if you are using python 3
 (there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
 and try downgrading.
 
+**MyScale Index Construction/Querying**
 
+```python
+import clickhouse_connect
+from gpt_index import GPTMyScaleIndex, SimpleDirectoryReader
 
+# Creating a MyScale client
+
+client = clickhouse_connect.get_client(
+    host='YOUR_CLUSTER_HOST', 
+    port=8443, 
+    username='YOUR_USERNAME', 
+    password='YOUR_CLUSTER_PASSWORD'
+)
+
+# Load documents, build the GPTMyScaleIndex
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTMyScaleIndex.from_documents(documents, myscale_client=client)
+
+# Query index
+response = index.query("What did the author do growing up?")
+```
 
 
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).

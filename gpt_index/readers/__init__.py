@@ -28,6 +28,7 @@ from gpt_index.readers.make_com.wrapper import MakeWrapper
 from gpt_index.readers.mbox import MboxReader
 from gpt_index.readers.milvus import MilvusReader
 from gpt_index.readers.mongo import SimpleMongoReader
+from gpt_index.readers.myscale import MyScaleReader
 from gpt_index.readers.notion import NotionPageReader
 from gpt_index.readers.obsidian import ObsidianReader
 from gpt_index.readers.pinecone import PineconeReader
@@ -64,6 +65,7 @@ __all__ = [
     "ChromaReader",
     "DeepLakeReader",
     "FaissReader",
+    "MyScaleReader",
     "Document",
     "StringIterableReader",
     "SimpleWebPageReader",
