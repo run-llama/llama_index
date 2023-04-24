@@ -82,6 +82,7 @@ vector_retriever = vector_index.as_retriever()
 vector_retriever = TransformRetriever(
     retriever, 
     query_transform=decompose_transform
+    transform_extra_info={'index_summary': vector_index.index_struct.summary}
 )
 custom_retrievers = {
     vector_index.index_id: vector_retriever
@@ -97,7 +98,7 @@ query_engine = graph.as_query_engine(
     )
     custom_retrivers=custom_retrievers
 )
-response_chatgpt = graph.query(query_str)
+response_chatgpt = query_engine.query(query_str)
 ```
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) for a full walkthrough.
