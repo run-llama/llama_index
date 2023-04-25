@@ -2,17 +2,21 @@
 
 from typing import Any, Callable, Dict, Optional, Sequence, Type
 
+from requests.adapters import Retry
+
 from gpt_index.data_structs.data_structs_v2 import (
     ChatGPTRetrievalPluginIndexDict,
     ChromaIndexDict,
     FaissIndexDict,
     IndexDict,
     MilvusIndexDict,
+    MyScaleIndexDict,
     OpensearchIndexDict,
     PineconeIndexDict,
     QdrantIndexDict,
     SimpleIndexDict,
     WeaviateIndexDict,
+    DeepLakeIndexDict,
 )
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
@@ -24,6 +28,7 @@ from gpt_index.vector_stores import (
     DeepLakeVectorStore,
     FaissVectorStore,
     MilvusVectorStore,
+    MyScaleVectorStore,
     PineconeVectorStore,
     QdrantVectorStore,
     SimpleVectorStore,
@@ -33,7 +38,6 @@ from gpt_index.vector_stores.opensearch import (
     OpensearchVectorClient,
     OpensearchVectorStore,
 )
-from requests.adapters import Retry
 
 
 class GPTSimpleVectorIndex(GPTVectorStoreIndex):
@@ -137,7 +141,7 @@ class GPTFaissIndex(GPTVectorStoreIndex):
 
         Args:
             save_path (str): The save_path of the file.
-           faiss_index_save_path (Optional[str]): The save_path of the
+            faiss_index_save_path (Optional[str]): The save_path of the
                 Faiss index file. If not specified, the Faiss index
                 will not be saved to disk.
             **kwargs: Additional kwargs to pass to the index constructor.
@@ -472,6 +476,8 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
         DeepLakeVectorstore: Vectorstore that supports add, delete, and query.
     """
 
+    index_struct_cls: Type[IndexDict] = DeepLakeIndexDict
+
     def __init__(
         self,
         nodes: Optional[Sequence[Node]] = None,
@@ -495,6 +501,81 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
             token=token,
         )
         super(GPTDeepLakeIndex, self).__init__(
+            nodes=nodes,
+            index_struct=index_struct,
+            service_context=service_context,
+            vector_store=vector_store,
+            **kwargs,
+        )
+
+
+class GPTMyScaleIndex(GPTVectorStoreIndex):
+    """GPT MyScale Index.
+
+    In this GPT index we store the text, its embedding and
+    a few pieces of its metadata in a MyScale table. There will be
+    a vector index build for the embedding column.
+    This implementation allows the use of an already existing
+    table if it is one that was created this vector store.
+    It also supports creating a new table if the table doesn't exist
+
+    Args:
+        myscale_client (httpclient): clickhouse-connect httpclient of
+            an existing MyScale cluster.
+        table_name (str, optional): The name of the MyScale table
+            where data will be stored. Defaults to "llama_index".
+        database_name (str, optional): The name of the MyScale database
+            where data will be stored. Defaults to "default".
+        index_type (str, optional): The type of the MyScale vector index.
+            Defaults to "IVFFLAT".
+        metric (str, optional): The metric type of the MyScale vector index.
+            Defaults to "cosine".
+        batch_size (int, optional): the size of documents to insert.
+            Defaults to 32.
+        index_params (dict, optional): The index parameters for MyScale.
+            Defaults to None.
+        search_params (dict, optional): The search parameters for a MyScale query.
+            Defaults to None.
+
+    Returns:
+        MyScaleVectorStore: Vectorstore that supports add, delete, and query.
+    """
+
+    index_struct_cls: Type[IndexDict] = MyScaleIndexDict
+
+    def __init__(
+        self,
+        myscale_client: Optional[Any] = None,
+        table_name: str = "llama_index",
+        database_name: str = "default",
+        index_type: str = "IVFFLAT",
+        metric: str = "cosine",
+        batch_size: int = 32,
+        index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
+        nodes: Optional[Sequence[Node]] = None,
+        service_context: Optional[ServiceContext] = None,
+        index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[MyScaleVectorStore] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Init params."""
+
+        if vector_store is None:
+            vector_store = MyScaleVectorStore(
+                myscale_client=myscale_client,
+                table=table_name,
+                database=database_name,
+                index_type=index_type,
+                metric=metric,
+                batch_size=batch_size,
+                index_params=index_params,
+                search_params=search_params,
+                service_context=service_context,
+            )
+        assert vector_store is not None
+
+        super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
