@@ -17,7 +17,7 @@ from gpt_index.vector_stores.types import (
 )
 
 DEFAULT_PERSIST_DIR = "./storage"
-DEFAULT_PERSIST_FNAME = "vector_store.json"
+DEFAULT_PERSIST_FNAME = "faiss.index"
 
 
 class FaissVectorStore(VectorStore):
