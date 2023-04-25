@@ -63,7 +63,8 @@ def test_overall_workflow(documents: List[Document]) -> None:
         GPTMyScaleIndex,
         GPTMyScaleIndex.from_documents(documents, myscale_client=client),
     )
-    response = index.query("What is?")
+    query_engine = index.as_query_engine()
+    response = query_engine.query("What is?")
     assert str(response).strip() == ("What is what?")
 
     with pytest.raises(NotImplementedError):
@@ -95,7 +96,8 @@ def test_init_without_documents(
     )
     for doc in documents:
         index.insert(document=doc)
-    response = index.query("What is?")
+    query_engine = index.as_query_engine()
+    response = query_engine.query("What is?")
     assert str(response).strip() == ("What is what?")
 
     cast(MyScaleVectorStore, index._vector_store).drop()
