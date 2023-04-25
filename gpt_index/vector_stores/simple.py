@@ -1,6 +1,8 @@
 """Simple vector store index."""
 
 from dataclasses import dataclass, field
+import json
+import os
 from typing import Any, Dict, List, Optional, cast
 
 from dataclasses_json import DataClassJsonMixin
@@ -17,11 +19,18 @@ from gpt_index.vector_stores.types import (
     VectorStoreQueryMode,
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 LEARNER_MODES = {
     VectorStoreQueryMode.SVM,
     VectorStoreQueryMode.LINEAR_REGRESSION,
     VectorStoreQueryMode.LOGISTIC_REGRESSION,
 }
+
+DEFAULT_PERSIST_DIR = "./storage"
+DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 
 @dataclass
@@ -53,14 +62,19 @@ class SimpleVectorStore(VectorStore):
 
     def __init__(
         self,
-        simple_vector_store_data_dict: Optional[dict] = None,
+        persist_path: str,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        if simple_vector_store_data_dict is None:
-            self._data = SimpleVectorStoreData()
-        else:
-            self._data = SimpleVectorStoreData.from_dict(simple_vector_store_data_dict)
+        self._data = SimpleVectorStoreData()
+        self._persist_path = persist_path
+
+        self.load()
+
+    @classmethod
+    def from_persist_dir(cls, persist_dir: str = DEFAULT_PERSIST_DIR):
+        persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        return cls(persist_path)
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "SimpleVectorStore":
@@ -134,3 +148,21 @@ class SimpleVectorStore(VectorStore):
             raise ValueError(f"Invalid query mode: {query.mode}")
 
         return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
+
+    def persist(self) -> None:
+        dirpath = os.path.dirname(self._persist_path)
+        if not os.path.exists(dirpath):
+            os.makedirs(dirpath)
+
+        with open(self._persist_path, "w+") as f:
+            json.dump(self._data.to_dict(), f)
+
+    def load(self) -> None:
+        if os.path.exists(self._persist_path):
+            logger.info(f"Loading {__name__} from {self._persist_path}.")
+            with open(self._persist_path, "r+") as f:
+                self._data = json.load(f)
+        else:
+            logger.info(
+                f"No existing {__name__} found at {self._persist_path}, skipping load."
+            )

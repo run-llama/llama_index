@@ -1,18 +1,17 @@
 """Document store."""
 
-from collections import defaultdict
-from dataclasses import dataclass
-from typing import Any, Dict, Optional, Sequence
+from typing import Dict, Optional, Sequence
 
-from gpt_index.docstore.types import BaseDocumentStore
-from gpt_index.docstore.utils import doc_to_json, json_to_doc
+from gpt_index.storage.docstore.types import BaseDocumentStore
+from gpt_index.storage.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument
-from gpt_index.storage.keyval_store.in_memory import InMemoryKeyValStore
-from gpt_index.storage.keyval_store.types import BaseKeyValStore
+from gpt_index.storage.keyval_store.types import (
+    BaseInMemoryKeyValStore,
+    BaseKeyValStore,
+)
 
 
-@dataclass
-class SimpleDocumentStore(BaseDocumentStore):
+class KeyValDocumentStore(BaseDocumentStore):
     """Document (Node) store.
 
     NOTE: at the moment, this store is primarily used to store Node objects.
@@ -41,24 +40,14 @@ class SimpleDocumentStore(BaseDocumentStore):
 
     def __init__(
         self,
-        keyval_store: Optional[BaseKeyValStore] = None,
+        keyval_store: BaseKeyValStore,
     ):
-        self._keyval_store = keyval_store or InMemoryKeyValStore()
+        self._keyval_store = keyval_store
 
     @property
     def docs(self) -> Dict[str, BaseDocument]:
         jsons = self._keyval_store.get_all()
         return [json_to_doc(json) for json in jsons]
-
-    def update_docstore(self, other: "BaseDocumentStore") -> None:
-        """Update docstore.
-
-        Args:
-            other (SimpleDocumentStore): docstore to update from
-
-        """
-        assert isinstance(other, SimpleDocumentStore)
-        self.docs.update(other.docs)
 
     def add_documents(
         self, docs: Sequence[BaseDocument], allow_update: bool = True
@@ -127,7 +116,3 @@ class SimpleDocumentStore(BaseDocumentStore):
             return metadata.get("doc_hash", None)
         else:
             return None
-
-
-# alias for backwards compatibility
-DocumentStore = SimpleDocumentStore

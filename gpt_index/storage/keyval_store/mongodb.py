@@ -77,7 +77,7 @@ class MongoDBKeyValStore(BaseKeyValStore):
     def collection(self) -> Any:
         return self._client[self._db_name][self._collection_name]
 
-    def add(self, key: str, val: dict) -> None:
+    def put(self, key: str, val: dict) -> None:
         from pymongo.collection import Collection
 
         assert isinstance(self.collection, Collection)

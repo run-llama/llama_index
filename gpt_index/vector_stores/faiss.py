@@ -4,6 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
+import os
 from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
@@ -14,6 +15,9 @@ from gpt_index.vector_stores.types import (
     VectorStoreQueryResult,
     VectorStoreQuery,
 )
+
+DEFAULT_PERSIST_DIR = "./storage"
+DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 
 class FaissVectorStore(VectorStore):
@@ -31,7 +35,7 @@ class FaissVectorStore(VectorStore):
 
     stores_text: bool = False
 
-    def __init__(self, faiss_index: Any, save_path: Optional[str] = None) -> None:
+    def __init__(self, faiss_index: Any, persist_path: str) -> None:
         """Initialize params."""
         import_err_msg = """
             `faiss` package not found. For instructions on
@@ -44,7 +48,14 @@ class FaissVectorStore(VectorStore):
             raise ImportError(import_err_msg)
 
         self._faiss_index = cast(faiss.Index, faiss_index)
-        self._save_path = save_path or "./faiss.json"
+        self._persist_path = persist_path
+
+        self.load()
+
+    @classmethod
+    def from_persist_dir(cls, persist_dir: str = DEFAULT_PERSIST_DIR):
+        persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        return cls(persist_path)
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "FaissVectorStore":
@@ -89,8 +100,7 @@ class FaissVectorStore(VectorStore):
         """Return the faiss index."""
         return self._faiss_index
 
-    @classmethod
-    def load(cls, save_path: str) -> "FaissVectorStore":
+    def load(self) -> "FaissVectorStore":
         """Load vector store from disk.
 
         Args:
@@ -102,12 +112,10 @@ class FaissVectorStore(VectorStore):
         """
         import faiss
 
-        faiss_index = faiss.read_index(save_path)
-        return cls(faiss_index)
+        self._faiss_index = faiss.read_index(self._persist_path)
 
-    def save(
+    def persist(
         self,
-        save_path: str,
     ) -> None:
         """Save to file.
 
@@ -119,7 +127,11 @@ class FaissVectorStore(VectorStore):
         """
         import faiss
 
-        faiss.write_index(self._faiss_index, save_path)
+        dirpath = os.path.dirname(self._persist_path)
+        if not os.path.exists(dirpath):
+            os.makedirs(dirpath)
+
+        faiss.write_index(self._faiss_index, self._persist_path)
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document.

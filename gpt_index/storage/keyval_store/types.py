@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 class BaseKeyValStore(ABC):
     @abstractmethod
-    def add(self, key: str, val: dict) -> None:
+    def put(self, key: str, val: dict) -> None:
         pass
 
     @abstractmethod
@@ -16,4 +16,14 @@ class BaseKeyValStore(ABC):
 
     @abstractmethod
     def delete(self, key: str) -> None:
+        pass
+
+
+class BaseInMemoryKeyValStore(BaseKeyValStore):
+    @abstractmethod
+    def persist(self) -> None:
+        pass
+
+    @abstractmethod
+    def load(self) -> None:
         pass

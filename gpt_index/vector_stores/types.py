@@ -107,3 +107,6 @@ class VectorStore(Protocol):
     ) -> VectorStoreQueryResult:
         """Query vector store."""
         ...
+
+    def persist(self):
+        pass

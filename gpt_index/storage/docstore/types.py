@@ -7,17 +7,8 @@ from gpt_index.schema import BaseDocument
 
 class BaseDocumentStore(ABC):
     # ===== Save/load =====
-    @classmethod
-    @abstractmethod
-    def from_dict(
-        cls,
-        docs_dict: Dict[str, Any],
-    ) -> "BaseDocumentStore":
-        ...
-
-    @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
-        ...
+    def persist(self):
+        pass
 
     # ===== Main interface =====
     @property
@@ -44,11 +35,6 @@ class BaseDocumentStore(ABC):
 
     @abstractmethod
     def document_exists(self, doc_id: str) -> bool:
-        ...
-
-    @abstractmethod
-    def update_docstore(self, other: "BaseDocumentStore") -> None:
-        """Update docstore."""
         ...
 
     # ===== Hash =====
