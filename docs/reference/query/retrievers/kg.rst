@@ -1,5 +1,5 @@
 Knowledge Graph Retriever
-=======================
+==========================
 
 .. automodule:: gpt_index.indices.knowledge_graph.retrievers
    :members:
