@@ -1,12 +1,13 @@
 from typing import Any, Dict, List, Optional
 from unittest.mock import Mock, patch
 
-from gpt_index.indices.vector_store.vector_indices import GPTWeaviateIndex
-from gpt_index.vector_stores.types import NodeEmbeddingResult
+from gpt_index.indices.vector_store import GPTVectorStoreIndex
+from gpt_index.storage.storage_context import StorageContext
+from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
 from tests.mock_utils.mock_decorator import patch_common
 
 
-class MockWeaviateVectorStore:
+class MockWeaviateVectorStore(VectorStore):
     stores_text: bool = True
 
     def __init__(
@@ -36,19 +37,7 @@ class MockWeaviateVectorStore:
 
 
 @patch_common
-@patch(
-    "gpt_index.indices.vector_store.vector_indices.WeaviateVectorStore",
-    MockWeaviateVectorStore,
-)
-@patch(
-    "gpt_index.vector_stores.registry.VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE",
-    {MockWeaviateVectorStore: "mock_type"},
-)
-@patch(
-    "gpt_index.vector_stores.registry.VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS",
-    {"mock_type": MockWeaviateVectorStore},
-)
-def test_save_load(
+def test_basic(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
@@ -57,12 +46,6 @@ def test_save_load(
 ) -> None:
     """Test we can save and load."""
     weaviate_client = Mock()
-    index = GPTWeaviateIndex.from_documents(
-        documents=[], weaviate_client=weaviate_client
-    )
-    save_dict = index.save_to_dict()
-    loaded_index = GPTWeaviateIndex.load_from_dict(
-        save_dict,
-        weaviate_client=weaviate_client,
-    )
-    assert isinstance(loaded_index, GPTWeaviateIndex)
+    vector_store = MockWeaviateVectorStore(weaviate_client=weaviate_client)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    GPTVectorStoreIndex.from_documents(documents=[], storage_context=storage_context)

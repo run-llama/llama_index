@@ -18,8 +18,8 @@ class SimpleDocumentStore(KVDocumentStore):
         cls, persist_dir: str = DEFAULT_PERSIST_DIR, namespace: Optional[str] = None
     ):
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
-        simple_kvstore = SimpleKVStore(persist_path, namespace)
-        return cls(simple_kvstore)
+        simple_kvstore = SimpleKVStore(persist_path)
+        return cls(simple_kvstore, namespace)
 
     def persist(self):
         if isinstance(self._kvstore, BaseInMemoryKVStore):

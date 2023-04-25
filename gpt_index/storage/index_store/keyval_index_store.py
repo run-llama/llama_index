@@ -15,7 +15,7 @@ class KeyValIndexStore(BaseIndexStore):
     def add_index_struct(self, index_struct: V2IndexStruct) -> None:
         key = index_struct.index_id
         data = index_struct_to_json(index_struct)
-        self._kvstore.add(key, data)
+        self._kvstore.put(key, data)
 
     def get_index_struct(
         self, struct_id: Optional[str] = None

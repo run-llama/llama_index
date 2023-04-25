@@ -25,30 +25,3 @@ DOCSTORE_CLASS_TO_TYPE: Dict[Type[BaseDocumentStore], DocumentStoreType] = {
 
 def get_default_docstore() -> BaseDocumentStore:
     return SimpleDocumentStore()
-
-
-def load_docstore_from_dict(
-    docstore_dict: Dict[str, Any],
-    type_to_cls: Optional[Dict[DocumentStoreType, Type[BaseDocumentStore]]] = None,
-    **kwargs: Any,
-) -> BaseDocumentStore:
-    type_to_cls = type_to_cls or DOCSTORE_TYPE_TO_CLASS
-    type = docstore_dict[TYPE_KEY]
-    config_dict: Dict[str, Any] = docstore_dict[DATA_KEY]
-
-    # Inject kwargs into data dict.
-    # This allows us to explicitly pass in unserializable objects
-    # like the data storage (e.g. MongoDB) client.
-    config_dict.update(kwargs)
-
-    cls = type_to_cls[type]
-    return cls.from_dict(config_dict)
-
-
-def save_docstore_to_dict(
-    docstore: BaseDocumentStore,
-    cls_to_type: Optional[Dict[Type[BaseDocumentStore], DocumentStoreType]] = None,
-) -> Dict[str, Any]:
-    cls_to_type = cls_to_type or DOCSTORE_CLASS_TO_TYPE
-    type_ = cls_to_type[type(docstore)]
-    return {TYPE_KEY: type_, DATA_KEY: docstore.to_dict()}

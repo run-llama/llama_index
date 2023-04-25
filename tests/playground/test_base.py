@@ -79,7 +79,7 @@ def test_get_set_compare(
     assert len(results) > 0
     assert len(results) <= 3 * len(DEFAULT_MODES)
 
-    playground.indices = [GPTSimpleVectorIndex.from_documents(documents=documents)]
+    playground.indices = [GPTVectorStoreIndex.from_documents(documents=documents)]
     playground.modes = ["default", "summarize"]
 
     assert len(playground.indices) == 1

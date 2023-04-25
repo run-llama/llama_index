@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Optional
 from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from gpt_index.storage.docstore.types import BaseDocumentStore
@@ -9,6 +10,7 @@ from gpt_index.vector_stores.types import VectorStore
 DEFAULT_PERSIST_DIR = "./storage"
 
 
+@dataclass
 class StorageContext:
     docstore: BaseDocumentStore
     index_store: BaseIndexStore

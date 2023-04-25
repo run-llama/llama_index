@@ -1,30 +1,21 @@
 """Test pinecone indexes."""
 
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, List
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.vector_store.vector_indices import GPTPineconeIndex
+from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 
 from gpt_index.readers.schema.base import Document
+from gpt_index.storage.storage_context import StorageContext
+from gpt_index.vector_stores.pinecone import PineconeVectorStore
 from tests.indices.vector_store.utils import MockPineconeIndex
 from tests.mock_utils.mock_decorator import patch_common
 
 from tests.mock_utils.mock_utils import mock_tokenizer
-
-
-@pytest.fixture
-def struct_kwargs() -> Tuple[Dict, Dict]:
-    """Index kwargs."""
-    index_kwargs: Dict[str, Any] = {}
-    retrieval_kwargs: Dict[str, Any] = {
-        "similarity_top_k": 1,
-    }
-    return index_kwargs, retrieval_kwargs
 
 
 @pytest.fixture
@@ -92,7 +83,6 @@ def test_build_pinecone(
     _mock_split_text_overlap: Any,
     _mock_split_text: Any,
     documents: List[Document],
-    struct_kwargs: Dict,
 ) -> None:
     """Test build GPTPineconeIndex."""
     # NOTE: mock pinecone import
@@ -100,16 +90,15 @@ def test_build_pinecone(
     # NOTE: mock pinecone index
     pinecone_index = MockPineconeIndex()
 
-    index_kwargs, retrieval_kwargs = struct_kwargs
-
-    index = GPTPineconeIndex.from_documents(
+    vector_store = PineconeVectorStore(pinecone_index=pinecone_index)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = GPTVectorStoreIndex.from_documents(
         documents=documents,
-        pinecone_index=pinecone_index,
+        storage_context=storage_context,
         tokenizer=mock_tokenizer,
-        **index_kwargs
     )
 
-    retriever = index.as_retriever(**retrieval_kwargs)
-    nodes = retriever.retrieve(QueryBundle("What is?"))
+    retriever = index.as_retriever()
+    nodes = retriever.retrieve("What is?")
     assert len(nodes) == 1
     assert nodes[0].node.get_text() == "This is another test."
