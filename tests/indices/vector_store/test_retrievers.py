@@ -4,12 +4,11 @@ from unittest.mock import MagicMock, patch
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.readers.schema.base import Document
 from gpt_index.vector_stores.simple import SimpleVectorStore
-from tests.indices.vector_store.test_base import MockFaissIndex
+from tests.indices.vector_store.mock_faiss import MockFaissIndex
 from tests.mock_utils.mock_decorator import patch_common
-from tests.indices.vector_store.test_base import (
+from tests.indices.vector_store.test_simple import (
     mock_get_query_embedding,
     mock_get_text_embedding,
     mock_get_text_embeddings,

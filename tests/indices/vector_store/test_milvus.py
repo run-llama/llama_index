@@ -3,7 +3,8 @@
 
 from typing import Any, Dict, List, Optional
 from unittest.mock import patch
-from gpt_index.indices.vector_store.vector_indices import GPTMilvusIndex
+from gpt_index.indices.vector_store import GPTVectorStoreIndex
+from gpt_index.storage.storage_context import StorageContext
 
 from gpt_index.vector_stores.types import NodeEmbeddingResult
 from tests.mock_utils.mock_decorator import patch_common
@@ -66,19 +67,7 @@ class MockMilvusVectorStore:
 
 
 @patch_common
-@patch(
-    "gpt_index.indices.vector_store.vector_indices.MilvusVectorStore",
-    MockMilvusVectorStore,
-)
-@patch(
-    "gpt_index.vector_stores.registry.VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE",
-    {MockMilvusVectorStore: "mock_type"},
-)
-@patch(
-    "gpt_index.vector_stores.registry.VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS",
-    {"mock_type": MockMilvusVectorStore},
-)
-def test_save_load(
+def test_basic(
     _mock_init: Any,
     _mock_predict: Any,
     _mock_total_tokens_used: Any,
@@ -86,9 +75,6 @@ def test_save_load(
     _mock_split_text: Any,
 ) -> None:
     """Test we can save and load."""
-    index = GPTMilvusIndex.from_documents(documents=[])
-    save_dict = index.save_to_dict()
-    loaded_index = GPTMilvusIndex.load_from_dict(
-        save_dict,
-    )
-    assert isinstance(loaded_index, GPTMilvusIndex)
+    vector_store = MockMilvusVectorStore()
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    GPTVectorStoreIndex.from_documents(documents=[], storage_context=storage_context)

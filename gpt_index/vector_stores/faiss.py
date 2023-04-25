@@ -16,6 +16,10 @@ from gpt_index.vector_stores.types import (
     VectorStoreQuery,
 )
 
+import logging
+
+logger = logging.getLogger()
+
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "faiss.index"
 
@@ -112,7 +116,13 @@ class FaissVectorStore(VectorStore):
         """
         import faiss
 
-        self._faiss_index = faiss.read_index(self._persist_path)
+        if os.path.exists(self._persist_path):
+            logger.info(f"Loading {__name__} from {self._persist_path}.")
+            self._faiss_index = faiss.read_index(self._persist_path)
+        else:
+            logger.info(
+                f"No existing {__name__} found at {self._persist_path}, skipping load."
+            )
 
     def persist(
         self,

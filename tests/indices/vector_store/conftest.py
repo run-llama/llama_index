@@ -1,17 +1,7 @@
-from typing import Any, Dict, List, Tuple
+from typing import List
 import pytest
 
 from gpt_index.readers.schema.base import Document
-
-
-@pytest.fixture
-def struct_kwargs() -> Tuple[Dict, Dict]:
-    """Index kwargs."""
-    index_kwargs: Dict[str, Any] = {}
-    retrieval_kwargs: Dict[str, Any] = {
-        "similarity_top_k": 1,
-    }
-    return index_kwargs, retrieval_kwargs
 
 
 @pytest.fixture

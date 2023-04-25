@@ -26,16 +26,18 @@ class SimpleKVStore(BaseInMemoryKVStore):
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
         if collection not in self._data:
             self._data[collection] = {}
-        self._data[collection][key] = val
+        self._data[collection][key] = val.copy()
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         collection = self._data.get(collection, None)
         if not collection:
             return None
-        return collection.get(key, None)
+        if key not in collection:
+            return None
+        return collection[key].copy()
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        return self._data.get(collection, {})
+        return self._data.get(collection, {}).copy()
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         try:
