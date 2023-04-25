@@ -3,7 +3,22 @@
 Query Engines
 =================
 
-.. automodule:: gpt_index.query_engine
-   :members:
-   :inherited-members:
-..    :exclude-members: index_struct, query, set_llm_predictor, set_prompt_helper
+Below we show some general query engine classes.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: General Query Engines
+
+   query_engines/graph_query_engine.rst
+   query_engines/multistep_query_engine.rst
+   query_engines/retriever_query_engine.rst
+   query_engines/transform_query_engine.rst
+
+
+We also show query engine classes specific to our structured indices.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Structured Indices Query Engines
+
+   query_engines/structured_query_engine.rst
