@@ -8,11 +8,11 @@ DEFAULT_PERSIST_FNAME = "index_store.json"
 
 
 class SimpleIndexStore(KeyValIndexStore):
-    def __init__(self, simple_keyval_store: SimpleKVStore):
-        super().__init__(simple_keyval_store)
+    def __init__(self, simple_kvstore: SimpleKVStore):
+        super().__init__(simple_kvstore)
 
     @classmethod
     def from_persist_dir(cls, persist_dir: str = DEFAULT_PERSIST_DIR):
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
-        simple_keyval_store = SimpleKVStore(persist_path)
-        return cls(simple_keyval_store)
+        simple_kvstore = SimpleKVStore(persist_path)
+        return cls(simple_kvstore)

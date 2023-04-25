@@ -96,5 +96,5 @@ class MongoDBKVStore(BaseKVStore):
         return output
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        result = self._db[collection].delete_one({"key": key})
+        result = self._db[collection].delete_one({"_id": key})
         return result.deleted_count > 0

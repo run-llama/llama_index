@@ -6,6 +6,8 @@ from gpt_index.storage.docstore.mongo_docstore import MongoDocumentStore
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
 from gpt_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
+from tests.storage.kvstore.mock_mongodb import MockMongoClient
+from tests.storage.kvstore.test_mongodb_kvstore import kvstore
 
 
 @pytest.fixture
@@ -16,9 +18,20 @@ def documents() -> List[Document]:
     ]
 
 
-def test_mongo_docstore(documents: List[Document]) -> None:
-    keyval_store = MongoDBKVStore(mongo_client=MockMongoClient())  # type: ignore
-    ds = MongoDocumentStore(keyval_store)
+@pytest.fixture()
+def mongo_client() -> MockMongoClient:
+    return MockMongoClient()
+
+
+@pytest.fixture()
+def mongodb_docstore(kvstore: MongoDBKVStore) -> MongoDocumentStore:
+    return MongoDocumentStore(mongo_kvstore=kvstore)
+
+
+def test_mongo_docstore(
+    mongodb_docstore: MongoDocumentStore, documents: List[Document]
+) -> None:
+    ds = mongodb_docstore
     assert len(ds.docs) == 0
 
     # test adding documents
@@ -41,9 +54,10 @@ def test_mongo_docstore(documents: List[Document]) -> None:
     assert len(ds.docs) == 1
 
 
-def test_mongo_docstore_hash(documents: List[Document]) -> None:
-    keyval_store = MongoDBKVStore(mongo_client=MockMongoClient())  # type: ignore
-    ds = MongoDocumentStore(keyval_store)
+def test_mongo_docstore_hash(
+    mongodb_docstore: MongoDocumentStore, documents: List[Document]
+) -> None:
+    ds = mongodb_docstore
 
     # Test setting hash
     ds.set_document_hash("test_doc_id", "test_doc_hash")
