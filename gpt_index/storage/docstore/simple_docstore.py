@@ -19,7 +19,7 @@ class SimpleDocumentStore(KeyValDocumentStore):
         return cls(simple_keyval_store)
 
     def persist(self):
-        assert isinstance(self._keyval_store, BaseInMemoryKeyValStore):
+        assert isinstance(self._keyval_store, BaseInMemoryKeyValStore)
         self._keyval_store.persist()
 
 

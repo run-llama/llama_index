@@ -35,19 +35,6 @@ from gpt_index.indices.struct_store.pandas import GPTPandasIndex
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.indices.vector_store.vector_indices import (
-    ChatGPTRetrievalPluginIndex,
-    GPTChromaIndex,
-    GPTDeepLakeIndex,
-    GPTFaissIndex,
-    GPTMilvusIndex,
-    GPTMyScaleIndex,
-    GPTOpensearchIndex,
-    GPTPineconeIndex,
-    GPTQdrantIndex,
-    GPTSimpleVectorIndex,
-    GPTWeaviateIndex,
-)
 
 INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruct]] = {
     IndexStructType.TREE: IndexGraph,
@@ -77,22 +64,11 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.TREE: GPTTreeIndex,
     IndexStructType.LIST: GPTListIndex,
     IndexStructType.KEYWORD_TABLE: GPTKeywordTableIndex,
-    IndexStructType.SIMPLE_DICT: GPTSimpleVectorIndex,
-    IndexStructType.DICT: GPTFaissIndex,
-    IndexStructType.WEAVIATE: GPTWeaviateIndex,
-    IndexStructType.PINECONE: GPTPineconeIndex,
-    IndexStructType.QDRANT: GPTQdrantIndex,
-    IndexStructType.MILVUS: GPTMilvusIndex,
-    IndexStructType.CHROMA: GPTChromaIndex,
     IndexStructType.VECTOR_STORE: GPTVectorStoreIndex,
     IndexStructType.SQL: GPTSQLStructStoreIndex,
     IndexStructType.PANDAS: GPTPandasIndex,
     IndexStructType.KG: GPTKnowledgeGraphIndex,
     IndexStructType.EMPTY: GPTEmptyIndex,
-    IndexStructType.CHATGPT_RETRIEVAL_PLUGIN: ChatGPTRetrievalPluginIndex,
-    IndexStructType.OPENSEARCH: GPTOpensearchIndex,
-    IndexStructType.DEEPLAKE: GPTDeepLakeIndex,
-    IndexStructType.MYSCALE: GPTMyScaleIndex,
 }
 
 

@@ -52,7 +52,7 @@ from gpt_index.data_structs.node_v2 import ImageNode as V2ImageNode
 from gpt_index.data_structs.node_v2 import Node as V2Node
 from gpt_index.data_structs.struct_type import IndexStructType
 from gpt_index.old_docstore import V1DocumentStore
-from gpt_index.docstore import SimpleDocumentStore as V2DocumentStore
+from gpt_index.storage.docstore import SimpleDocumentStore as V2DocumentStore
 from gpt_index.tools.file_utils import add_prefix_suffix_to_file_path
 
 INDEX_STRUCT_TYPE_TO_V1_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[IndexStruct]] = {

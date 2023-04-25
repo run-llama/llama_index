@@ -6,7 +6,6 @@ from gpt_index.storage.docstore.types import BaseDocumentStore
 from gpt_index.storage.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument
 from gpt_index.storage.keyval_store.types import (
-    BaseInMemoryKeyValStore,
     BaseKeyValStore,
 )
 

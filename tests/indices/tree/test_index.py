@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore import BaseDocumentStore
+from gpt_index.storage.docstore import BaseDocumentStore
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMChain,

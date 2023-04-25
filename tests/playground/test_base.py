@@ -8,7 +8,7 @@ import pytest
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.indices.vector_store import GPTSimpleVectorIndex
+from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.llm_predictor.base import LLMPredictor
 from gpt_index.playground import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
 from gpt_index.readers.schema.base import Document
@@ -65,7 +65,7 @@ def test_get_set_compare(
     documents = [Document("They're taking the Hobbits to Isengard!")]
 
     indices = [
-        GPTSimpleVectorIndex.from_documents(documents=documents),
+        GPTVectorStoreIndex.from_documents(documents=documents),
         GPTListIndex.from_documents(documents),
         GPTTreeIndex.from_documents(documents=documents),
     ]
@@ -127,7 +127,7 @@ def test_validation() -> None:
 
     with pytest.raises(ValueError):
         _ = Playground(
-            indices=[GPTSimpleVectorIndex, GPTListIndex, GPTTreeIndex]  # type: ignore
+            indices=[GPTVectorStoreIndex, GPTListIndex, GPTTreeIndex]  # type: ignore
         )
 
     with pytest.raises(ValueError):

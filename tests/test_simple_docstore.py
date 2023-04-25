@@ -3,7 +3,7 @@
 
 from gpt_index.constants import TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node, NodeType
-from gpt_index.docstore import SimpleDocumentStore
+from gpt_index.storage.docstore import SimpleDocumentStore
 from gpt_index.readers.schema.base import Document
 
 

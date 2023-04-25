@@ -1,9 +1,6 @@
 from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
-from gpt_index.data_structs.node_v2 import ImageNode, IndexNode, Node
-from gpt_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS
-from gpt_index.readers.schema.base import Document
-from gpt_index.schema import BaseDocument
+from gpt_index.data_structs.registry import INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS
 
 
 def index_struct_to_json(index_struct: V2IndexStruct) -> dict:

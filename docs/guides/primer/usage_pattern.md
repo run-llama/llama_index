@@ -97,7 +97,7 @@ define a DocumentStore object, add the Node objects to the DocumentStore,
 and pass the DocumentStore around.
 
 ```python
-from gpt_index.docstore import SimpleDocumentStore
+from gpt_index.storage.docstore import SimpleDocumentStore
 
 docstore = SimpleDocumentStore()
 docstore.add_documents(nodes)

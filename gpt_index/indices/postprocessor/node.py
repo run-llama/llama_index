@@ -11,7 +11,7 @@ from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.docstore import BaseDocumentStore
+from gpt_index.storage.docstore import BaseDocumentStore
 from gpt_index.data_structs.node_v2 import DocumentRelationship, NodeWithScore
 from gpt_index.indices.postprocessor.base import BasePostprocessor
 from gpt_index.indices.response.response_builder import get_response_builder

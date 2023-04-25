@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from gpt_index.docstore.mongo_docstore import MongoDocumentStore
+from gpt_index.storage.docstore.mongo_docstore import MongoDocumentStore
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
 

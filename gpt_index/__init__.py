@@ -35,18 +35,7 @@ from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
-from gpt_index.indices.vector_store import (
-    GPTChromaIndex,
-    GPTDeepLakeIndex,
-    GPTFaissIndex,
-    GPTMilvusIndex,
-    GPTMyScaleIndex,
-    GPTPineconeIndex,
-    GPTQdrantIndex,
-    GPTSimpleVectorIndex,
-    GPTVectorStoreIndex,
-    GPTWeaviateIndex,
-)
+from gpt_index.indices.vector_store import GPTVectorStoreIndex
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
