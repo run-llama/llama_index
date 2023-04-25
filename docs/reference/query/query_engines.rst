@@ -21,4 +21,5 @@ We also show query engine classes specific to our structured indices.
    :maxdepth: 1
    :caption: Structured Indices Query Engines
 
-   query_engines/structured_query_engine.rst
+   query_engines/sql_query_engine.rst
+   query_engines/pandas_query_engine.rst

@@ -1,5 +1,5 @@
 Keyword Table Retrievers
-=======================
+=========================
 
 .. automodule:: gpt_index.indices.keyword_table.retrievers
    :members:
