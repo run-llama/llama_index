@@ -19,6 +19,21 @@ from gpt_index.response.schema import RESPONSE_TYPE
 
 
 class ComposableGraphQueryEngine(BaseQueryEngine):
+    """Composable graph query engine.
+
+    This query engine can operate over a ComposableGraph.
+    It can take in a custom response synthesizer and custom retrievers.
+
+    Args:
+        graph (ComposableGraph): A ComposableGraph object.
+        response_synthesizer (Optional[ResponseSynthesizer]): A ResponseSynthesizer
+            object.
+        custom_retrievers (Optional[Dict[str, BaseRetriever]]): A dictionary of
+            custom retrievers.
+        recursive (bool): Whether to recursively query the graph.
+
+    """
+
     def __init__(
         self,
         graph: ComposableGraph,
@@ -26,6 +41,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         custom_retrievers: Optional[Dict[str, BaseRetriever]] = None,
         recursive: bool = True,
     ) -> None:
+        """Init params."""
         self._graph = graph
         self._response_synthesizer = (
             response_synthesizer or ResponseSynthesizer.from_args()
@@ -55,6 +71,27 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         # class-specific args
         **kwargs: Any,
     ) -> "ComposableGraphQueryEngine":
+        """Initialize query engine from args.
+
+        Args:
+            graph (ComposableGraph): A ComposableGraph object.
+            custom_retrievers (Optional[Dict[str, BaseRetriever]]): A dictionary of
+                custom retrievers.
+            service_context (Optional[ServiceContext]): A ServiceContext object.
+            text_qa_template (Optional[QuestionAnswerPrompt]): A QuestionAnswerPrompt
+            refine_template (Optional[RefinePrompt]): A RefinePrompt object.
+            simple_template (Optional[SimpleInputPrompt]): A SimpleInputPrompt object.
+            response_mode (ResponseMode): A response mode (e.g.
+                "default", "compact", "tree_summarize").
+            response_kwargs (Optional[Dict]): A dictionary of response kwargs.
+            use_async (bool): Whether to use async.
+            streaming (bool): Whether to stream.
+            optimizer (Optional[BaseTokenUsageOptimizer]): A BaseTokenUsageOptimizer
+            node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
+                BaseNodePostprocessor objects.
+            verbose (bool): Whether to print debug info.
+
+        """
         response_synthesizer = ResponseSynthesizer.from_args(
             service_context=service_context,
             text_qa_template=text_qa_template,
@@ -86,6 +123,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         index_id: Optional[str] = None,
         level: int = 0,
     ) -> RESPONSE_TYPE:
+        """Query a single index."""
         index_id = index_id or self._graph.root_id
 
         # get retriever

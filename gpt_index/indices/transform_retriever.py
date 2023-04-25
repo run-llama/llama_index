@@ -6,6 +6,13 @@ from gpt_index.indices.query.schema import QueryBundle
 
 
 class TransformRetriever(BaseRetriever):
+    """Transform Retriever.
+
+    Takes in an existing retriever and a query transform and runs the query transform
+    before running the retriever.
+
+    """
+
     def __init__(
         self,
         retriever: BaseRetriever,
