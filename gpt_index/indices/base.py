@@ -60,6 +60,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         self._service_context = service_context or ServiceContext.from_defaults()
         self._storage_context = storage_context or StorageContext.from_defaults()
         self._docstore = self._storage_context.docstore
+        self._vector_store = self._storage_context.vector_store
 
         if index_struct is None:
             assert nodes is not None

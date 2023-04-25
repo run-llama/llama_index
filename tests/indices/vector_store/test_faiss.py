@@ -1,47 +1,18 @@
 """Test vector store indexes."""
 
-import pathlib
-import sys
 from typing import Any, List
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 
 from gpt_index.readers.schema.base import Document
 from gpt_index.storage.storage_context import StorageContext
-from gpt_index.vector_stores.faiss import FaissVectorStore
-from tests.indices.vector_store.mock_faiss import MockFaissIndex
 from tests.indices.vector_store.test_simple import (
     mock_get_text_embedding,
     mock_get_text_embeddings,
 )
 from tests.mock_utils.mock_decorator import patch_common
-
-
-@pytest.fixture()
-def faiss_vector_store(tmp_path: pathlib) -> FaissVectorStore:
-    # NOTE: use temp file
-    file_path = tmp_path / "test_file.txt"
-
-    # NOTE: mock faiss import
-    sys.modules["faiss"] = MagicMock()
-
-    # NOTE: mock faiss index
-    faiss_index = MockFaissIndex()
-
-    return FaissVectorStore(faiss_index=faiss_index, persist_path=file_path)
-
-
-@pytest.fixture()
-def faiss_storage_context(
-    faiss_vector_store: FaissVectorStore, tmp_path: pathlib.Path
-) -> StorageContext:
-    return StorageContext.from_defaults(
-        vector_store=faiss_vector_store, persist_dir=tmp_path
-    )
 
 
 @patch_common

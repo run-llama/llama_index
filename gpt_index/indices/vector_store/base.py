@@ -37,7 +37,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._vector_store = storage_context.vector_store
         self._use_async = use_async
         super().__init__(
             nodes=nodes,
