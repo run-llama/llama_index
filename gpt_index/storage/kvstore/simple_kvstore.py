@@ -3,26 +3,30 @@ import os
 from typing import Dict, Optional
 import logging
 
-from gpt_index.storage.keyval_store.types import BaseInMemoryKeyValStore
-
-
-DEFAULT_COLLECTION = "data"
+from gpt_index.storage.kvstore.types import (
+    DEFAULT_COLLECTION,
+    BaseInMemoryKVStore,
+)
 
 
 logger = logging.getLogger(__name__)
 
 
-class SimpleKeyValStore(BaseInMemoryKeyValStore):
+class SimpleKVStore(BaseInMemoryKVStore):
     def __init__(self, persist_path: str) -> None:
         self._data: Dict[str, Dict[str, dict]] = {}
         self._persist_path = persist_path
 
         self.load()
 
+    @property
+    def persist_path(self) -> str:
+        return self._persist_path
+
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
         if collection not in self._data:
             self._data[collection] = {}
-        self._data[key] = val
+        self._data[collection][key] = val
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         collection = self._data.get(collection, None)

@@ -5,11 +5,11 @@ from gpt_index.storage.index_store.utils import (
     index_struct_to_json,
     json_to_index_struct,
 )
-from gpt_index.storage.keyval_store.types import BaseKeyValStore
+from gpt_index.storage.kvstore.types import BaseKVStore
 
 
 class KeyValIndexStore(BaseIndexStore):
-    def __init__(self, keyval_store: BaseKeyValStore) -> None:
+    def __init__(self, keyval_store: BaseKVStore) -> None:
         self._keyval_store = keyval_store
 
     def add_index_struct(self, index_struct: V2IndexStruct) -> None:

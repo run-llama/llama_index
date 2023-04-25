@@ -1,12 +1,13 @@
 """Document store."""
 
 from typing import Dict, Optional, Sequence
+import uuid
 
 from gpt_index.storage.docstore.types import BaseDocumentStore
 from gpt_index.storage.docstore.utils import doc_to_json, json_to_doc
 from gpt_index.schema import BaseDocument
-from gpt_index.storage.keyval_store.types import (
-    BaseKeyValStore,
+from gpt_index.storage.kvstore.types import (
+    BaseKVStore,
 )
 
 
@@ -39,14 +40,18 @@ class KeyValDocumentStore(BaseDocumentStore):
 
     def __init__(
         self,
-        keyval_store: BaseKeyValStore,
+        keyval_store: BaseKVStore,
+        namespace: Optional[str] = None,
     ):
         self._keyval_store = keyval_store
+        namespace = namespace or str(uuid.uuid4())
+        self._collection = f"{namespace}/data"
+        self._metadata_collection = f"{namespace}/metadata"
 
     @property
     def docs(self) -> Dict[str, BaseDocument]:
-        jsons = self._keyval_store.get_all()
-        return [json_to_doc(json) for json in jsons]
+        json_dict = self._keyval_store.get_all(collection=self._collection)
+        return {key: json_to_doc(json) for key, json in json_dict.items()}
 
     def add_documents(
         self, docs: Sequence[BaseDocument], allow_update: bool = True
@@ -71,8 +76,8 @@ class KeyValDocumentStore(BaseDocumentStore):
             key = doc.get_doc_id()
             data = doc_to_json(doc)
             metadata = {"doc_hash": doc.get_doc_hash()}
-            self._keyval_store.add(key, data)
-            self._keyval_store.add(key, metadata, collection="metadata")
+            self._keyval_store.put(key, data, collection=self._collection)
+            self._keyval_store.put(key, metadata, collection=self._metadata_collection)
 
     def get_document(
         self, doc_id: str, raise_error: bool = True
@@ -84,7 +89,7 @@ class KeyValDocumentStore(BaseDocumentStore):
             raise_error (bool): raise error if doc_id not found
 
         """
-        json = self._keyval_store.get(doc_id)
+        json = self._keyval_store.get(doc_id, collection=self._collection)
         if json is None:
             if raise_error:
                 raise ValueError(f"doc_id {doc_id} not found.")
@@ -94,23 +99,23 @@ class KeyValDocumentStore(BaseDocumentStore):
 
     def document_exists(self, doc_id: str) -> bool:
         """Check if document exists."""
-        return self._keyval_store.get(doc_id) is not None
+        return self._keyval_store.get(doc_id, self._collection) is not None
 
     def delete_document(self, doc_id: str, raise_error: bool = True) -> None:
         """Delete a document from the store."""
-        delete_success = self._keyval_store.delete(doc_id)
-        _ = self._keyval_store.delete(doc_id, collection="metadata")
+        delete_success = self._keyval_store.delete(doc_id, collection=self._collection)
+        _ = self._keyval_store.delete(doc_id, collection=self._metadata_collection)
         if not delete_success and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
 
     def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
         """Set the hash for a given doc_id."""
         metadata = {"doc_hash": doc_hash}
-        self._keyval_store.add(doc_id, metadata, collection="metadata")
+        self._keyval_store.put(doc_id, metadata, collection=self._metadata_collection)
 
     def get_document_hash(self, doc_id: str) -> Optional[str]:
         """Get the stored hash for a document, if it exists."""
-        metadata = self._keyval_store.get(doc_id, collection="metadata")
+        metadata = self._keyval_store.get(doc_id, collection=self._metadata_collection)
         if metadata is not None:
             return metadata.get("doc_hash", None)
         else:
