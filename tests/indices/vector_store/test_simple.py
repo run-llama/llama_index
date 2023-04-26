@@ -1,16 +1,13 @@
 """Test vector store indexes."""
 
-from typing import Any, List, cast
-from unittest.mock import patch
+from typing import List, cast
 
 
-from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 
 from gpt_index.readers.schema.base import Document
 from gpt_index.vector_stores.simple import SimpleVectorStore
-from tests.mock_utils.mock_decorator import patch_common
 
 
 def test_build_simple(

@@ -166,8 +166,12 @@ def _get_embeddings(
 
 
 def test_as_retriever(
-    list_index: GPTListIndex,
+    documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
+    list_index = GPTListIndex.from_documents(
+        documents, service_context=mock_service_context
+    )
     default_retriever = list_index.as_retriever(mode=QueryMode.DEFAULT)
     assert isinstance(default_retriever, BaseRetriever)
 
