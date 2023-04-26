@@ -1,12 +1,7 @@
 """Composability graphs."""
 
-import json
 from typing import Any, Dict, List, Optional, Sequence, Type, cast
 
-from gpt_index.constants import (
-    ALL_INDICES_KEY,
-    ROOT_INDEX_ID_KEY,
-)
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import IndexNode, DocumentRelationship
 from gpt_index.indices.base import BaseGPTIndex
@@ -116,83 +111,3 @@ class ComposableGraph:
         )
 
         return ComposableGraphQueryEngine.from_args(self, **kwargs)
-
-    @classmethod
-    def load_from_string(cls, index_string: str, **kwargs: Any) -> "ComposableGraph":
-        """Load index from string (in JSON-format).
-
-        This method loads the index from a JSON string. The index data
-        structure itself is preserved completely. If the index is defined over
-        subindices, those subindices will also be preserved (and subindices of
-        those subindices, etc.).
-
-        Args:
-            save_path (str): The save_path of the file.
-
-        Returns:
-            BaseGPTIndex: The loaded index.
-
-        """
-        # lazy load registry
-        from gpt_index.indices.registry import load_index_from_dict
-
-        result_dict: Dict[str, Any] = json.loads(index_string)
-        all_indices_dict: Dict[str, dict] = result_dict[ALL_INDICES_KEY]
-        root_id = result_dict[ROOT_INDEX_ID_KEY]
-        index_kwargs = kwargs.get("index_kwargs", {})
-        all_indices = {
-            index_id: load_index_from_dict(index_dict, **index_kwargs.get(index_id, {}))
-            for index_id, index_dict in all_indices_dict.items()
-        }
-        return cls(all_indices, root_id)
-
-    @classmethod
-    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "ComposableGraph":
-        """Load index from disk.
-
-        This method loads the index from a JSON file stored on disk. The index data
-        structure itself is preserved completely. If the index is defined over
-        subindices, those subindices will also be preserved (and subindices of
-        those subindices, etc.).
-
-        Args:
-            save_path (str): The save_path of the file.
-
-        Returns:
-            BaseGPTIndex: The loaded index.
-
-        """
-        with open(save_path, "r") as f:
-            file_contents = f.read()
-            return cls.load_from_string(file_contents, **kwargs)
-
-    def save_to_string(self, **save_kwargs: Any) -> str:
-        """Save to string.
-
-        This method stores the index into a JSON file stored on disk.
-
-        Args:
-            save_path (str): The save_path of the file.
-
-        """
-        out_dict: Dict[str, Any] = {
-            ALL_INDICES_KEY: {
-                index_id: save_index_to_dict(index)
-                for index_id, index in self._all_indices.items()
-            },
-            ROOT_INDEX_ID_KEY: self._root_id,
-        }
-        return json.dumps(out_dict)
-
-    def save_to_disk(self, save_path: str, **save_kwargs: Any) -> None:
-        """Save to file.
-
-        This method stores the index into a JSON file stored on disk.
-
-        Args:
-            save_path (str): The save_path of the file.
-
-        """
-        index_string = self.save_to_string(**save_kwargs)
-        with open(save_path, "w") as f:
-            f.write(index_string)
