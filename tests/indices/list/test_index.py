@@ -1,28 +1,22 @@
 """Test list index."""
 
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, Dict, List, Tuple
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
-from tests.mock_utils.mock_decorator import patch_common
 
 
-@patch_common
 def test_build_list(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    documents: List[Document],
+    documents: List[Document], mock_service_context: ServiceContext
 ) -> None:
     """Test build list."""
-    list_index = GPTListIndex.from_documents(documents)
+    list_index = GPTListIndex.from_documents(
+        documents, service_context=mock_service_context
+    )
     assert len(list_index.index_struct.nodes) == 4
     # check contents of nodes
     node_ids = list_index.index_struct.nodes
@@ -33,14 +27,9 @@ def test_build_list(
     assert nodes[3].text == "This is a test v2."
 
 
-@patch_common
 def test_refresh_list(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test build list."""
     # add extra document
@@ -51,7 +40,9 @@ def test_refresh_list(
         more_documents[i].doc_id = str(i)
 
     # create index
-    list_index = GPTListIndex.from_documents(more_documents)
+    list_index = GPTListIndex.from_documents(
+        more_documents, service_context=mock_service_context
+    )
 
     # check that no documents are refreshed
     refreshed_docs = list_index.refresh(more_documents)
@@ -72,20 +63,15 @@ def test_refresh_list(
     assert test_node.text == "Test document 2, now with changes!"
 
 
-@patch_common
-def test_build_list_multiple(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-) -> None:
+def test_build_list_multiple(mock_service_context: ServiceContext) -> None:
     """Test build list multiple."""
     documents = [
         Document("Hello world.\nThis is a test."),
         Document("This is another test.\nThis is a test v2."),
     ]
-    list_index = GPTListIndex.from_documents(documents)
+    list_index = GPTListIndex.from_documents(
+        documents, service_context=mock_service_context
+    )
     assert len(list_index.index_struct.nodes) == 4
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     # check contents of nodes
@@ -95,17 +81,12 @@ def test_build_list_multiple(
     assert nodes[3].text == "This is a test v2."
 
 
-@patch_common
 def test_list_insert(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test insert to list."""
-    list_index = GPTListIndex([])
+    list_index = GPTListIndex([], service_context=mock_service_context)
     assert len(list_index.index_struct.nodes) == 0
     list_index.insert(documents[0])
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
@@ -127,14 +108,9 @@ def test_list_insert(
         assert node.ref_doc_id == "test_id"
 
 
-@patch_common
 def test_list_delete(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test insert to list and then delete."""
     new_documents = [
@@ -144,7 +120,9 @@ def test_list_delete(
     ]
 
     # delete from documents
-    list_index = GPTListIndex.from_documents(new_documents)
+    list_index = GPTListIndex.from_documents(
+        new_documents, service_context=mock_service_context
+    )
     list_index.delete("test_id_1")
     assert len(list_index.index_struct.nodes) == 2
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
@@ -156,7 +134,9 @@ def test_list_delete(
     source_doc = list_index.docstore.get_document("test_id_1", raise_error=False)
     assert source_doc is None
 
-    list_index = GPTListIndex.from_documents(new_documents)
+    list_index = GPTListIndex.from_documents(
+        new_documents, service_context=mock_service_context
+    )
     list_index.delete("test_id_2")
     assert len(list_index.index_struct.nodes) == 3
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
