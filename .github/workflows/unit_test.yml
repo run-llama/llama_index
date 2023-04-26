@@ -26,5 +26,7 @@ jobs:
           pip install -r requirements.txt
           pip install -r data_requirements.txt
       - name: Run testing
+        env:
+          CI: true
         run: pytest tests
         

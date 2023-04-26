@@ -5,7 +5,7 @@ An index that that is built on top of an existing vector store.
 """
 
 import os
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, cast
 
 import numpy as np
 
@@ -39,7 +39,7 @@ class FaissVectorStore(VectorStore):
 
     stores_text: bool = False
 
-    def __init__(self, faiss_index: Any, persist_path: str) -> None:
+    def __init__(self, faiss_index: Any, persist_dir: str) -> None:
         """Initialize params."""
         import_err_msg = """
             `faiss` package not found. For instructions on
@@ -52,14 +52,23 @@ class FaissVectorStore(VectorStore):
             raise ImportError(import_err_msg)
 
         self._faiss_index = cast(faiss.Index, faiss_index)
-        self._persist_path = persist_path
-
-        self.load()
+        self._persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
 
     @classmethod
-    def from_persist_dir(cls, persist_dir: str = DEFAULT_PERSIST_DIR):
+    def from_persist_dir(
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+    ):
+        import faiss
+
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
-        return cls(persist_path)
+
+        if not os.path.exists(persist_path):
+            raise ValueError(f"No existing {__name__} found at {persist_path}.")
+
+        logger.info(f"Loading {__name__} from {persist_path}.")
+        faiss_index = faiss.read_index(persist_path)
+        return cls(faiss_index=faiss_index, persist_dir=persist_dir)
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "FaissVectorStore":

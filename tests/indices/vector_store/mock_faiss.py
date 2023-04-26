@@ -17,8 +17,6 @@ class MockFaissIndex:
 
     def add(self, vecs: np.ndarray) -> None:
         """Add vectors to index."""
-        print("adding")
-        print(vecs)
         for vec in vecs:
             new_id = len(self._index)
             self._index[new_id] = vec

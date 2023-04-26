@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import List
 import pytest
@@ -7,7 +8,10 @@ from gpt_index.indices.loading import load_index_from_storage, load_indices_from
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.readers.schema.base import Document
+from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
+from gpt_index.storage.index_store.simple_index_store import SimpleIndexStore
 from gpt_index.storage.storage_context import StorageContext
+from gpt_index.vector_stores.faiss import FaissVectorStore
 
 
 def test_load_index_from_storage_simple(
@@ -112,6 +116,52 @@ def test_load_index_from_storage_retrieval_result_identical(
 
     # load storage context
     new_storage_context = StorageContext.from_defaults(persist_dir=tmp_path)
+
+    # load index
+    new_index = load_index_from_storage(
+        new_storage_context, service_context=mock_service_context
+    )
+
+    new_nodes = new_index.as_retriever().retrieve("test query str")
+
+    assert nodes == new_nodes
+
+
+@pytest.mark.skipif("CI" in os.environ, reason="no FAISS in CI")
+def test_load_index_from_storage_faiss_vector_store(
+    documents: List[Document],
+    tmp_path: Path,
+    mock_service_context: ServiceContext,
+):
+    import faiss
+
+    # construct custom storage context
+    storage_context = StorageContext.from_defaults(
+        docstore=SimpleDocumentStore.from_persist_dir(tmp_path),
+        index_store=SimpleIndexStore.from_persist_dir(tmp_path),
+        vector_store=FaissVectorStore(
+            faiss_index=faiss.IndexFlatL2(5), persist_dir=tmp_path
+        ),
+    )
+
+    # construct index
+    index = GPTVectorStoreIndex.from_documents(
+        documents=documents,
+        storage_context=storage_context,
+        service_context=mock_service_context,
+    )
+
+    nodes = index.as_retriever().retrieve("test query str")
+
+    # persist storage to disk
+    storage_context.persist()
+
+    # load storage context
+    new_storage_context = StorageContext.from_defaults(
+        docstore=SimpleDocumentStore.from_persist_dir(tmp_path),
+        index_store=SimpleIndexStore.from_persist_dir(tmp_path),
+        vector_store=FaissVectorStore.from_persist_dir(tmp_path),
+    )
 
     # load index
     new_index = load_index_from_storage(
