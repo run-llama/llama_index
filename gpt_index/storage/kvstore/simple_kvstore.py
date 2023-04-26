@@ -51,6 +51,8 @@ class SimpleKVStore(BaseInMemoryKVStore):
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)
 
+        print("persists")
+        print(self._data)
         with open(self._persist_path, "w+") as f:
             json.dump(self._data, f)
 
@@ -59,6 +61,8 @@ class SimpleKVStore(BaseInMemoryKVStore):
             logger.info(f"Loading {__name__} from {self._persist_path}.")
             with open(self._persist_path, "r+") as f:
                 self._data = json.load(f)
+            print("load")
+            print(self._data)
         else:
             logger.info(
                 f"No existing {__name__} found at {self._persist_path}, skipping load."

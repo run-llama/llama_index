@@ -32,3 +32,21 @@ def test_docstore(simple_docstore: SimpleDocumentStore) -> None:
     assert gd1 == doc
     gd2 = docstore.get_document("d2")
     assert gd2 == node
+
+
+def test_docstore_persist(tmp_path: Path) -> None:
+    """Test docstore."""
+    doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
+    node = Node("my node", doc_id="d2", node_info={"node": "info"})
+
+    # add documents and then persist to dir
+    docstore = SimpleDocumentStore.from_persist_dir(tmp_path)
+    docstore.add_documents([doc, node])
+    docstore.persist()
+
+    # load from persist dir and get documents
+    new_docstore = SimpleDocumentStore.from_persist_dir(tmp_path)
+    gd1 = new_docstore.get_document("d1")
+    assert gd1 == doc
+    gd2 = new_docstore.get_document("d2")
+    assert gd2 == node

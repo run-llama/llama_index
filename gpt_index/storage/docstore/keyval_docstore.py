@@ -1,7 +1,6 @@
 """Document store."""
 
 from typing import Dict, Optional, Sequence
-import uuid
 
 from gpt_index.storage.docstore.types import BaseDocumentStore
 from gpt_index.storage.docstore.utils import doc_to_json, json_to_doc
@@ -9,6 +8,8 @@ from gpt_index.schema import BaseDocument
 from gpt_index.storage.kvstore.types import (
     BaseKVStore,
 )
+
+DEFAULT_NAMESPACE = "docstore"
 
 
 class KVDocumentStore(BaseDocumentStore):
@@ -41,10 +42,10 @@ class KVDocumentStore(BaseDocumentStore):
     def __init__(
         self,
         kvstore: BaseKVStore,
-        namespace: Optional[str] = None,
+        namespace: str = DEFAULT_NAMESPACE,
     ):
         self._kvstore = kvstore
-        namespace = namespace or str(uuid.uuid4())
+        namespace = namespace or DEFAULT_NAMESPACE
         self._collection = f"{namespace}/data"
         self._metadata_collection = f"{namespace}/metadata"
 

@@ -161,7 +161,8 @@ class SimpleVectorStore(VectorStore):
         if os.path.exists(self._persist_path):
             logger.info(f"Loading {__name__} from {self._persist_path}.")
             with open(self._persist_path, "r+") as f:
-                self._data = json.load(f)
+                data_dict = json.load(f)
+                self._data = SimpleVectorStoreData.from_dict(data_dict)
         else:
             logger.info(
                 f"No existing {__name__} found at {self._persist_path}, skipping load."
