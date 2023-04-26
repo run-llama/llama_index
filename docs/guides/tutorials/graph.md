@@ -2,7 +2,7 @@
 
 LlamaIndex offers a variety of different [query use cases](/docs/use_cases/queries.md). 
 
-For simple queries, we may want to use a single index data structure, such as a `GPTSimpleVectorIndex` for semantic search, or `GPTListIndex` for summarization.
+For simple queries, we may want to use a single index data structure, such as a `GPTVectorStoreIndex` for semantic search, or `GPTListIndex` for summarization.
 
 For more complex queries, we may want to use a composable graph. 
 
@@ -66,7 +66,7 @@ that solves a distinct use case.
 We will first define a vector index over the documents of each city.
 
 ```python
-from gpt_index import GPTSimpleVectorIndex, ServiceContext
+from gpt_index import GPTVectorStoreIndex, ServiceContext
 from langchain.llms.openai import OpenAIChat
 
 # set service context
@@ -79,7 +79,7 @@ service_context = ServiceContext.from_defaults(
 vector_indices = {}
 for wiki_title in wiki_titles:
     # build vector index
-    vector_indices[wiki_title] = GPTSimpleVectorIndex.from_documents(
+    vector_indices[wiki_title] = GPTVectorStoreIndex.from_documents(
         city_docs[wiki_title], service_context=service_context
     )
     # set id for vector index

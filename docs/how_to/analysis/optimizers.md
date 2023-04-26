@@ -8,10 +8,10 @@ exploring ways to expand optimization capabilities to other areas, such as perfo
 Here is a sample code snippet on comparing the outputs without optimization and with.
 
 ```python
-from llama_index import GPTSimpleVectorIndex
+from llama_index import GPTVectorStoreIndex
 from llama_index.optimization.optimizer import SentenceEmbeddingOptimizer
 # load from disk
-index = GPTSimpleVectorIndex.load_from_disk('simple_vector_index.json')
+index = GPTVectorStoreIndex.load_from_disk('simple_vector_index.json')
 
 print("Without optimization")
 start_time = time.time()

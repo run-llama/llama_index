@@ -7,7 +7,7 @@ from langchain.schema import BaseLanguageModel
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index import (
-    GPTSimpleVectorIndex,
+    GPTVectorStoreIndex,
     GPTSimpleKeywordTableIndex,
     ServiceContext,
     LLMPredictor,
@@ -47,7 +47,7 @@ def load_index(root: str = ".") -> BaseGPTIndex[Any]:
     # Index type
     index_type: Type
     if config["index"]["type"] == "default" or config["index"]["type"] == "vector":
-        index_type = GPTSimpleVectorIndex
+        index_type = GPTVectorStoreIndex
     elif config["index"]["type"] == "keyword":
         index_type = GPTSimpleKeywordTableIndex
     else:
