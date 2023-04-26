@@ -7,6 +7,7 @@ from gpt_index.indices.vector_store.vector_indices import (
     GPTChromaIndex,
     GPTDeepLakeIndex,
     GPTFaissIndex,
+    GPTLanceDBIndex,
     GPTMilvusIndex,
     GPTMyScaleIndex,
     GPTOpensearchIndex,
@@ -30,4 +31,5 @@ __all__ = [
     "ChatGPTRetrievalPluginIndex",
     "GPTVectorStoreIndexQuery",
     "GPTDeepLakeIndex",
+    "GPTLanceDBIndex",
 ]

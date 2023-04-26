@@ -9,6 +9,7 @@ from gpt_index.data_structs.data_structs_v2 import (
     ChromaIndexDict,
     FaissIndexDict,
     IndexDict,
+    LanceDBIndexDict,
     MilvusIndexDict,
     MyScaleIndexDict,
     OpensearchIndexDict,
@@ -27,6 +28,7 @@ from gpt_index.vector_stores import (
     ChromaVectorStore,
     DeepLakeVectorStore,
     FaissVectorStore,
+    LanceDBVectorStore,
     MilvusVectorStore,
     MyScaleVectorStore,
     PineconeVectorStore,
@@ -343,6 +345,67 @@ class GPTQdrantIndex(GPTVectorStoreIndex):
                 raise ValueError("collection_name is required.")
             vector_store = QdrantVectorStore(
                 client=client, collection_name=collection_name
+            )
+        assert vector_store is not None
+
+        super().__init__(
+            nodes=nodes,
+            index_struct=index_struct,
+            service_context=service_context,
+            vector_store=vector_store,
+            **kwargs,
+        )
+
+
+class GPTLanceDBIndex(GPTVectorStoreIndex):
+    """GPT LanceDB Index.
+
+    Stores text and embeddings in LanceDB. The vector store will open an existing LanceDB dataset or create
+    the dataset if it does not exist.
+
+    Args:
+        uri (str, required): Location where LanceDB will store its files.
+        table_name (str, optional): The table name where the embeddings will be stored. Defaults to "vectors".
+        nprobes (int, optional): The number of probes used. A higher number makes search more accurate but also slower.
+            Defaults to 20.
+        refine_factor: (int, optional): Refine the results by reading extra elements and re-ranking them in memory.
+            Defaults to None
+        service_context (ServiceContext): Service context container (contains
+            components like LLMPredictor, PromptHelper, etc.).
+
+    Raises:
+        ImportError: Unable to import `lancedb`.
+
+    Returns:
+        GPTLanceDBIndex: VectorStore that supports creating LanceDB datasets and querying it.
+
+    """
+
+    index_struct_cls: Type[IndexDict] = LanceDBIndexDict
+
+    def __init__(
+        self,
+        nodes: Optional[Sequence[Node]] = None,
+        uri: Optional[str] = None,
+        table_name: str = "vectors",
+        id_column_name: str = "id",
+        nprobes: int = 20,
+        refine_factor: Optional[int] = None,
+        service_context: Optional[ServiceContext] = None,
+        index_struct: Optional[IndexDict] = None,
+        vector_store: Optional[LanceDBVectorStore] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Init params."""
+        if vector_store is None:
+            if uri is None:
+                raise ValueError("uri is required.")
+            vector_store = LanceDBVectorStore(
+                uri=uri,
+                table_name=table_name,
+                id_column_name=id_column_name,
+                nprobes=nprobes,
+                refine_factor=refine_factor,
             )
         assert vector_store is not None
 
