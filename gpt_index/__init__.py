@@ -37,6 +37,9 @@ from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 
+# storage
+from gpt_index.storage.storage_context import StorageContext
+
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.langchain_helpers.memory_wrapper import GPTIndexMemory
@@ -92,12 +95,20 @@ from gpt_index.response.schema import Response
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from gpt_index.token_counter.mock_embed_model import MockEmbedding
 
+# loading
+from gpt_index.indices.loading import (
+    load_graph_from_storage,
+    load_index_from_storage,
+    load_indices_from_storage,
+)
+
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
 
 
 __all__ = [
+    "StorageContext",
     "ServiceContext",
     "ComposableGraph",
     "GPTKeywordTableIndex",

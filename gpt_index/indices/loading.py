@@ -10,8 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 def load_index_from_storage(
-    storage_context: StorageContext, index_id: Optional[str] = None, **kwargs: Any
+    storage_context: Optional[StorageContext] = None,
+    index_id: Optional[str] = None,
+    **kwargs: Any,
 ) -> BaseGPTIndex:
+    storage_context = StorageContext.from_defaults()
+
     index_ids: Optional[Sequence[str]]
     if index_id is None:
         index_ids = None
@@ -30,10 +34,12 @@ def load_index_from_storage(
 
 
 def load_indices_from_storage(
-    storage_context: StorageContext,
+    storage_context: Optional[StorageContext] = None,
     index_ids: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> List[BaseGPTIndex]:
+    storage_context = StorageContext.from_defaults()
+
     if index_ids is None:
         logger.info("Loading all indices.")
         index_structs = storage_context.index_store.index_structs()
@@ -56,10 +62,12 @@ def load_indices_from_storage(
 
 
 def load_graph_from_storage(
-    storage_context: StorageContext,
     root_id: str,
+    storage_context: Optional[StorageContext] = None,
     **kwargs: Any,
 ) -> ComposableGraph:
+    storage_context = storage_context or StorageContext.from_defaults()
+
     indices = load_indices_from_storage(storage_context, index_ids=None, **kwargs)
     all_indices = {index.index_id: index for index in indices}
     graph = ComposableGraph(all_indices=all_indices, root_id=root_id)

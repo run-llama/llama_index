@@ -67,13 +67,16 @@ You can set the level to `DEBUG` for verbose output, or use `level=logging.INFO`
 
 ### Saving and Loading
 
-To save to disk and load from disk, do
+By default, data is stored in-memory.
+To persist to disk (under `./storage`):
 
 ```python
-# save to disk
-index.save_to_disk('index.json')
-# load from disk
-index = GPTVectorStoreIndex.load_from_disk('index.json')
+index.storage_context.persist()
+```
+
+To reload from disk:
+```python
+index = load_index_from_storage()
 ```
 
 ### Next Steps

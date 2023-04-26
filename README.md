@@ -83,13 +83,18 @@ query_engine.query("<question_text>?")
 ```
 
 
-To save to and load from disk:
+By default, data is stored in-memory.
+To persist to disk (under `./storage`):
+
 ```python
-# save to disk
-index.save_to_disk('index.json')
-# load from disk
-index = GPTVectorStoreIndex.load_from_disk('index.json')
+index.storage_context.persist()
 ```
+
+To reload from disk:
+```python
+index = load_index_from_storage()
+```
+
 
 ## 🔧 Dependencies
 

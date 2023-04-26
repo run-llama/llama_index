@@ -195,30 +195,68 @@ See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
 
 ### [Optional] Save the index for future use
 
-To save to disk and load from disk, do
+By default, data is stored in-memory.
+To persist to disk (under `./storage`):
 
 ```python
-# save to disk
-index.save_to_disk('index.json')
-# load from disk
-index = GPTVectorStoreIndex.load_from_disk('index.json')
+index.storage_context.persist()
+```
+
+To reload from disk:
+```python
+index = load_index_from_storage()
+```
+
+To configure the persist path, you need to explicitly configure the storage context and pass it into the index:
+```python
+from llama_index import GPTVectorStoreIndex, StorageContext
+
+# customize storage context
+storage_context = StorageContext.from_defaults(
+    persist_dir="<persist_dir>"
+)
+
+# build index with custom storage context
+index = GPTVectorStoreIndex.from_documents(
+    documents=documents,
+    storage_context=storage_context,
+)
+
+# persist data
+storage_context.persist()
+```
+
+To reload from disk, use the same storage context configuration:
+```python
+from llama_index import load_index_from_storage
+
+# rebuild same custom storage context as above
+storage_context = StorageContext.from_defaults(
+    persist_dir="<persist_dir>"
+
+# load index from custom storage context
+index = load_index_from_storage(storage_context=storage_context)
 ```
 
 **NOTE**: If you had initialized the index with a custom 
 `ServiceContext` object, you will also need to pass in the same
-ServiceContext during `load_from_disk`.
+ServiceContext during `load_index_from_storage`.
 
 ```python
 
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # when first building the index
-index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)
+index = GPTVectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
 
 ...
 
 # when loading the index from disk
-index = GPTVectorStoreIndex.load_from_disk("index.json", service_context=service_context)
+index = load_index_from_storage(
+    service_context=service_context,    
+)
 
 ```
 

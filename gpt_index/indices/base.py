@@ -118,6 +118,10 @@ class BaseGPTIndex(Generic[IS], ABC):
     def service_context(self) -> ServiceContext:
         return self._service_context
 
+    @property
+    def storage_context(self) -> StorageContext:
+        return self._storage_context
+
     @abstractmethod
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""
