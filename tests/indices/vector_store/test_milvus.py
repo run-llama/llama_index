@@ -2,13 +2,11 @@
 
 
 from typing import Any, Dict, List, Optional
-from unittest.mock import patch
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.storage.storage_context import StorageContext
 
 from gpt_index.vector_stores.types import NodeEmbeddingResult
-from tests.mock_utils.mock_decorator import patch_common
 
 
 class MockMilvusVectorStore:
