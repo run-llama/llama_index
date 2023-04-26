@@ -3,6 +3,7 @@ from typing import Dict, Optional
 
 from gpt_index.readers.file.base_parser import BaseParser, ImageParserOutput
 
+
 class ImageCaptionParser(BaseParser):
     """Image parser.
 
@@ -14,7 +15,7 @@ class ImageCaptionParser(BaseParser):
         self,
         parser_config: Optional[Dict] = None,
         keep_image: bool = False,
-        prompt: str = None,
+        prompt: Optional[str] = None,
     ):
         """Init params."""
         self._parser_config = parser_config
@@ -53,10 +54,19 @@ class ImageCaptionParser(BaseParser):
         device = "cuda" if torch.cuda.is_available() else "cpu"
         dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
-        processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
-        model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large", torch_dtype=dtype)
+        processor = BlipProcessor.from_pretrained(
+            "Salesforce/blip-image-captioning-large"
+        )
+        model = BlipForConditionalGeneration.from_pretrained(
+            "Salesforce/blip-image-captioning-large", torch_dtype=dtype
+        )
 
-        return {"processor": processor, "model": model, "device": device, "dtype": dtype}
+        return {
+            "processor": processor,
+            "model": model,
+            "device": device,
+            "dtype": dtype,
+        }
 
     def parse_file(self, file: Path, errors: str = "ignore") -> ImageParserOutput:
         """Parse file."""
@@ -83,7 +93,7 @@ class ImageCaptionParser(BaseParser):
         model.to(device)
 
         # unconditional image captioning
-        
+
         inputs = processor(image, self._prompt, return_tensors="pt").to(device, dtype)
 
         out = model.generate(**inputs)

@@ -3,6 +3,7 @@ from typing import Dict, Optional
 
 from gpt_index.readers.file.base_parser import BaseParser, ImageParserOutput
 
+
 class ImageVisionLLMParser(BaseParser):
     """Image parser.
 
@@ -56,7 +57,12 @@ class ImageVisionLLMParser(BaseParser):
         model = Blip2ForConditionalGeneration.from_pretrained(
             "Salesforce/blip2-opt-2.7b", torch_dtype=dtype
         )
-        return {"processor": processor, "model": model, "device": device, "dtype": dtype}
+        return {
+            "processor": processor,
+            "model": model,
+            "device": device,
+            "dtype": dtype,
+        }
 
     def parse_file(self, file: Path, errors: str = "ignore") -> ImageParserOutput:
         """Parse file."""
@@ -83,7 +89,7 @@ class ImageVisionLLMParser(BaseParser):
         model.to(device)
 
         # unconditional image captioning
-        
+
         inputs = processor(image, self._prompt, return_tensors="pt").to(device, dtype)
 
         out = model.generate(**inputs)

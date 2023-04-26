@@ -14,8 +14,6 @@ from gpt_index.readers.file.mbox_parser import MboxParser
 from gpt_index.readers.file.slides_parser import PptxParser
 from gpt_index.readers.file.tabular_parser import PandasCSVParser
 from gpt_index.readers.file.video_audio import VideoAudioParser
-from gpt_index.readers.file.image_caption_parser import ImageCaptionParser
-from gpt_index.readers.file.image_vision_llm_parser import ImageVisionLLMParser
 from gpt_index.readers.file.ipynb_parser import IPYNBParser
 from gpt_index.readers.schema.base import Document, ImageDocument
 
