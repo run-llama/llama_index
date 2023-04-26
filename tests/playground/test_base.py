@@ -98,7 +98,7 @@ def test_from_docs(
 def test_validation() -> None:
     """Test validation of indices and modes."""
     with pytest.raises(ValueError):
-        _ = Playground(indices=["GPTSimpleVectorIndex"])  # type: ignore
+        _ = Playground(indices=["GPTVectorStoreIndex"])  # type: ignore
 
     with pytest.raises(ValueError):
         _ = Playground(

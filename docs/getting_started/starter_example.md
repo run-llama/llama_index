@@ -35,10 +35,10 @@ This contains LlamaIndex examples around Paul Graham's essay, ["What I Worked On
 Create a new `.py` file with the following:
 
 ```python
-from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTSimpleVectorIndex.from_documents(documents)
+index = GPTVectorStoreIndex.from_documents(documents)
 ```
 
 This builds an index over the documents in the `data` folder (which in this case just consists of the essay text). We then run the following
@@ -73,7 +73,7 @@ To save to disk and load from disk, do
 # save to disk
 index.save_to_disk('index.json')
 # load from disk
-index = GPTSimpleVectorIndex.load_from_disk('index.json')
+index = GPTVectorStoreIndex.load_from_disk('index.json')
 ```
 
 ### Next Steps

@@ -110,7 +110,7 @@ __all__ = [
     "GPTPineconeIndex",
     "GPTQdrantIndex",
     "GPTMilvusIndex",
-    "GPTSimpleVectorIndex",
+    "GPTVectorStoreIndex",
     "GPTVectorStoreIndex",
     "GPTWeaviateIndex",
     "GPTChromaIndex",
