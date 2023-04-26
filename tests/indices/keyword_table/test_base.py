@@ -7,10 +7,7 @@ import pytest
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.readers.schema.base import Document
-from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_predict import mock_llmpredictor_predict
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
@@ -27,24 +24,20 @@ def documents() -> List[Document]:
     return [Document(doc_text)]
 
 
-@patch_common
 @patch(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_build_table(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    documents: List[Document],
+    documents: List[Document], mock_service_context: ServiceContext
 ) -> None:
     """Test build table."""
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex.from_documents(documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(
+        documents, service_context=mock_service_context
+    )
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 4
