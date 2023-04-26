@@ -3,6 +3,7 @@ from typing import Any, Dict, Tuple
 from unittest.mock import patch
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.base import default_output_parser
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.struct_store.sql_query import (
@@ -16,13 +17,8 @@ from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_predict import mock_llmpredictor_apredict
 
 
-@patch_common
 def test_sql_index_query(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test GPTSQLStructStoreIndex."""
@@ -42,7 +38,11 @@ def test_sql_index_query(
     sql_database = SQLDatabase(engine)
     # NOTE: we can use the default output parser for this
     index = GPTSQLStructStoreIndex.from_documents(
-        docs, sql_database=sql_database, table_name=table_name, **index_kwargs
+        docs,
+        sql_database=sql_database,
+        table_name=table_name,
+        service_context=mock_service_context,
+        **index_kwargs
     )
 
     # query the index with SQL
@@ -56,15 +56,9 @@ def test_sql_index_query(
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
 
-@patch_common
-@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_apredict)
 def test_sql_index_async_query(
-    _mock_async_predict: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    allow_networking,
+    mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test GPTSQLStructStoreIndex."""
@@ -84,7 +78,11 @@ def test_sql_index_async_query(
     sql_database = SQLDatabase(engine)
     # NOTE: we can use the default output parser for this
     index = GPTSQLStructStoreIndex.from_documents(
-        docs, sql_database=sql_database, table_name=table_name, **index_kwargs
+        docs,
+        sql_database=sql_database,
+        table_name=table_name,
+        service_context=mock_service_context,
+        **index_kwargs
     )
 
     # query the index with SQL

@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.readers.schema.base import Document
 from tests.mock_utils.mock_decorator import patch_common
@@ -67,26 +68,22 @@ def test_build_table(
     }
 
 
-@patch_common
-@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_predict)
 @patch(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_build_table_async(
-    _mock_extract: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    allow_networking: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test build table."""
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex.from_documents(documents, use_async=True)
+    table = GPTSimpleKeywordTableIndex.from_documents(
+        documents, use_async=True, service_context=mock_service_context
+    )
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     table_chunks = {n.get_text() for n in nodes}
     assert len(table_chunks) == 4
@@ -110,21 +107,16 @@ def test_build_table_async(
     }
 
 
-@patch_common
 @patch(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_insert(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test insert."""
-    table = GPTSimpleKeywordTableIndex([])
+    table = GPTSimpleKeywordTableIndex([], service_context=mock_service_context)
     assert len(table.index_struct.table.keys()) == 0
     table.insert(documents[0])
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
@@ -166,18 +158,12 @@ def test_insert(
     assert nodes[3].ref_doc_id == "test_id2"
 
 
-@patch_common
 @patch(
     "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_delete(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test insert."""
     new_documents = [
@@ -187,7 +173,9 @@ def test_delete(
     ]
 
     # test delete
-    table = GPTSimpleKeywordTableIndex.from_documents(new_documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(
+        new_documents, service_context=mock_service_context
+    )
     table.delete("test_id_1")
     assert len(table.index_struct.table.keys()) == 6
     print(table.index_struct.table.keys())
@@ -196,7 +184,9 @@ def test_delete(
     node_texts = {n.get_text() for n in nodes}
     assert node_texts == {"This is another test.", "This is a test v2."}
 
-    table = GPTSimpleKeywordTableIndex.from_documents(new_documents)
+    table = GPTSimpleKeywordTableIndex.from_documents(
+        new_documents, service_context=mock_service_context
+    )
     table.delete("test_id_2")
     assert len(table.index_struct.table.keys()) == 7
     assert len(table.index_struct.table["this"]) == 2

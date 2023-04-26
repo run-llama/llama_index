@@ -70,5 +70,9 @@ class MockMilvusVectorStore:
 def test_basic(mock_service_context: ServiceContext) -> None:
     """Test we can save and load."""
     vector_store = MockMilvusVectorStore()
-    storage_context = StorageContext.from_defaults(vector_store=vector_store, service_context=mock_service_context)
-    GPTVectorStoreIndex.from_documents(documents=[], storage_context=storage_context)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    GPTVectorStoreIndex.from_documents(
+        documents=[],
+        storage_context=storage_context,
+        service_context=mock_service_context,
+    )

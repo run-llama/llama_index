@@ -1,6 +1,7 @@
 from typing import List
 from gpt_index.embeddings.base import BaseEmbedding
 
+
 class MockEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         del query  # Unused

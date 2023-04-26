@@ -1,9 +1,16 @@
 import socket
 
-
-class block_network(socket.socket):
-    def __init__(self, *args, **kwargs):
-        raise Exception("Network call blocked")
+import pytest
 
 
-socket.socket = block_network
+@pytest.fixture(autouse=True)
+def no_networking(monkeypatch: pytest.MonkeyPatch):
+    def deny_network(*args, **kwargs):
+        raise RuntimeError("Network access denied for test")
+
+    monkeypatch.setattr(socket, "socket", deny_network)
+
+
+@pytest.fixture
+def allow_networking(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.undo()

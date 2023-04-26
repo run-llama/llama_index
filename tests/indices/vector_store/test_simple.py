@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 
 from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 
 from gpt_index.readers.schema.base import Document
@@ -12,85 +13,15 @@ from gpt_index.vector_stores.simple import SimpleVectorStore
 from tests.mock_utils.mock_decorator import patch_common
 
 
-def mock_get_text_embedding(text: str) -> List[float]:
-    """Mock get text embedding."""
-    # assume dimensions are 5
-    if text == "Hello world.":
-        return [1, 0, 0, 0, 0]
-    elif text == "This is a test.":
-        return [0, 1, 0, 0, 0]
-    elif text == "This is another test.":
-        return [0, 0, 1, 0, 0]
-    elif text == "This is a test v2.":
-        return [0, 0, 0, 1, 0]
-    elif text == "This is a test v3.":
-        return [0, 0, 0, 0, 1]
-    elif text == "This is bar test.":
-        return [0, 0, 1, 0, 0]
-    elif text == "Hello world backup.":
-        # this is used when "Hello world." is deleted.
-        return [1, 0, 0, 0, 0]
-    else:
-        raise ValueError("Invalid text for `mock_get_text_embedding`.")
-
-
-def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
-    """Mock get text embeddings."""
-    return [mock_get_text_embedding(text) for text in texts]
-
-
-async def mock_aget_text_embedding(text: str) -> List[float]:
-    """Mock async get text embedding."""
-    # assume dimensions are 5
-    if text == "Hello world.":
-        return [1, 0, 0, 0, 0]
-    elif text == "This is a test.":
-        return [0, 1, 0, 0, 0]
-    elif text == "This is another test.":
-        return [0, 0, 1, 0, 0]
-    elif text == "This is a test v2.":
-        return [0, 0, 0, 1, 0]
-    elif text == "This is a test v3.":
-        return [0, 0, 0, 0, 1]
-    elif text == "This is bar test.":
-        return [0, 0, 1, 0, 0]
-    elif text == "Hello world backup.":
-        # this is used when "Hello world." is deleted.
-        return [1, 0, 0, 0, 0]
-    else:
-        raise ValueError("Invalid text for `mock_aget_text_embedding`.")
-
-
-async def mock_aget_text_embeddings(texts: List[str]) -> List[List[float]]:
-    """Mock async get text embeddings."""
-    return [await mock_aget_text_embedding(text) for text in texts]
-
-
-def mock_get_query_embedding(query: str) -> List[float]:
-    """Mock get query embedding."""
-    return [0, 0, 1, 0, 0]
-
-
-@patch_common
-@patch.object(
-    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
-)
-@patch.object(
-    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
-)
 def test_build_simple(
-    _mock_embeds: Any,
-    _mock_embed: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    mock_service_context: ServiceContext,
     documents: List[Document],
 ) -> None:
     """Test build GPTVectorStoreIndex."""
 
-    index = GPTVectorStoreIndex.from_documents(documents=documents)
+    index = GPTVectorStoreIndex.from_documents(
+        documents=documents, service_context=mock_service_context
+    )
     assert isinstance(index, GPTVectorStoreIndex)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
@@ -109,25 +40,14 @@ def test_build_simple(
         assert (node.text, embedding) in actual_node_tups
 
 
-@patch_common
-@patch.object(
-    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
-)
-@patch.object(
-    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
-)
 def test_simple_insert(
-    _mock_embeds: Any,
-    _mock_embed: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test insert GPTVectorStoreIndex."""
-    index = GPTVectorStoreIndex.from_documents(documents=documents)
+    index = GPTVectorStoreIndex.from_documents(
+        documents=documents, service_context=mock_service_context
+    )
     assert isinstance(index, GPTVectorStoreIndex)
     # insert into index
     index.insert(Document(text="This is a test v3."))
@@ -149,22 +69,8 @@ def test_simple_insert(
         assert (node.text, embedding) in actual_node_tups
 
 
-@patch_common
-@patch.object(
-    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
-)
-@patch.object(
-    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
-)
 def test_simple_delete(
-    _mock_embeds: Any,
-    _mock_embed: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_splitter_overlap: Any,
-    _mock_splitter: Any,
-    documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test delete GPTVectorStoreIndex."""
     new_documents = [
@@ -173,7 +79,9 @@ def test_simple_delete(
         Document("This is another test.", doc_id="test_id_2"),
         Document("This is a test v2.", doc_id="test_id_3"),
     ]
-    index = GPTVectorStoreIndex.from_documents(documents=new_documents)
+    index = GPTVectorStoreIndex.from_documents(
+        documents=new_documents, service_context=mock_service_context
+    )
     assert isinstance(index, GPTVectorStoreIndex)
 
     # test delete
@@ -211,26 +119,16 @@ def test_simple_delete(
         assert (node.text, embedding, node.ref_doc_id) in actual_node_tups
 
 
-@patch_common
-@patch.object(
-    OpenAIEmbedding, "_aget_text_embedding", side_effect=mock_aget_text_embedding
-)
-@patch.object(
-    OpenAIEmbedding, "_aget_text_embeddings", side_effect=mock_aget_text_embeddings
-)
 def test_simple_async(
-    _mock_embeds: Any,
-    _mock_embed: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    allow_networking,
     documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test simple vector index with use_async."""
 
-    index = GPTVectorStoreIndex.from_documents(documents=documents, use_async=True)
+    index = GPTVectorStoreIndex.from_documents(
+        documents=documents, use_async=True, service_context=mock_service_context
+    )
     assert isinstance(index, GPTVectorStoreIndex)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
