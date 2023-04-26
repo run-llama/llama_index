@@ -1,10 +1,10 @@
 from typing import Any, Dict, List, Optional
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from gpt_index.indices.service_context import ServiceContext
 
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.storage.storage_context import StorageContext
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
-from tests.mock_utils.mock_decorator import patch_common
 
 
 class MockWeaviateVectorStore(VectorStore):
@@ -36,16 +36,13 @@ class MockWeaviateVectorStore(VectorStore):
         return []
 
 
-@patch_common
-def test_basic(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-) -> None:
+def test_basic(mock_service_context: ServiceContext) -> None:
     """Test we can save and load."""
     weaviate_client = Mock()
     vector_store = MockWeaviateVectorStore(weaviate_client=weaviate_client)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    GPTVectorStoreIndex.from_documents(documents=[], storage_context=storage_context)
+    GPTVectorStoreIndex.from_documents(
+        documents=[],
+        storage_context=storage_context,
+        service_context=mock_service_context,
+    )

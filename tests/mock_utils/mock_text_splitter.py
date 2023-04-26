@@ -6,7 +6,7 @@ from gpt_index.langchain_helpers.text_splitter import TextSplit
 
 
 def mock_token_splitter_newline(
-    text: str, extra_info_str: Optional[str] = None
+    self, text: str, extra_info_str: Optional[str] = None
 ) -> List[str]:
     """Mock token splitter by newline."""
     if text == "":
@@ -15,7 +15,7 @@ def mock_token_splitter_newline(
 
 
 def mock_token_splitter_newline_with_overlaps(
-    text: str, extra_info_str: Optional[str]
+    self, text: str, extra_info_str: Optional[str]
 ) -> List[TextSplit]:
     """Mock token splitter by newline."""
     if text == "":

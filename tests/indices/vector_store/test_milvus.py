@@ -3,6 +3,7 @@
 
 from typing import Any, Dict, List, Optional
 from unittest.mock import patch
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.storage.storage_context import StorageContext
 
@@ -66,15 +67,8 @@ class MockMilvusVectorStore:
         return []
 
 
-@patch_common
-def test_basic(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-) -> None:
+def test_basic(mock_service_context: ServiceContext) -> None:
     """Test we can save and load."""
     vector_store = MockMilvusVectorStore()
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store, service_context=mock_service_context)
     GPTVectorStoreIndex.from_documents(documents=[], storage_context=storage_context)
