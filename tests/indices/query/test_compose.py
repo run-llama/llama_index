@@ -1,7 +1,5 @@
 """Test composing indices."""
 
-from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any, Dict, List
 from unittest.mock import patch
 
@@ -156,14 +154,6 @@ def test_recursive_query_table_list(
     response = query_engine.query(query_str)
     assert str(response) == ("Test?:Test?:This is a test.:Test?:This is a test.")
 
-    # test serialize and then back
-    with TemporaryDirectory() as tmpdir:
-        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
-        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        query_engine = graph.as_query_engine()
-        response = query_engine.query(query_str)
-        assert str(response) == ("Test?:Test?:This is a test.:Test?:This is a test.")
-
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
@@ -211,15 +201,6 @@ def test_recursive_query_list_table(
     query_str = "Cat?"
     response = query_engine.query(query_str)
     assert str(response) == ("Cat?:Cat?:This is another test.:This is a test v2.")
-
-    # test serialize and then back
-    # use composable graph struct
-    with TemporaryDirectory() as tmpdir:
-        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
-        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        query_engine = graph.as_query_engine()
-        response = query_engine.query(query_str)
-        assert str(response) == ("Cat?:Cat?:This is another test.:This is a test v2.")
 
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)

@@ -1,5 +1,6 @@
 """Node postprocessor tests."""
 
+from pathlib import Path
 import pytest
 from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
@@ -54,7 +55,7 @@ def mock_get_query_embedding(query: str) -> List[float]:
     return mock_get_text_embedding(query)
 
 
-def test_forward_back_processor() -> None:
+def test_forward_back_processor(tmp_path: Path) -> None:
     """Test forward-back processor."""
 
     nodes = [
@@ -74,7 +75,8 @@ def test_forward_back_processor() -> None:
                 {DocumentRelationship.NEXT: nodes[i + 1].get_doc_id()},
             )
 
-    docstore = SimpleDocumentStore()
+    file_path = tmp_path / "test_file.txt"
+    docstore = SimpleDocumentStore.from_persist_dir(file_path)
     docstore.add_documents(nodes)
 
     # check for a single node

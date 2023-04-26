@@ -1,9 +1,7 @@
 """Test recursive queries."""
 
 import asyncio
-from pathlib import Path
 import sys
-from tempfile import TemporaryDirectory
 from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 
@@ -11,15 +9,14 @@ from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
-from gpt_index.indices.vector_store.vector_indices import (
-    GPTPineconeIndex,
-    GPTSimpleVectorIndex,
-)
+from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
     LLMPredictor,
 )
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
+from gpt_index.storage.storage_context import StorageContext
+from gpt_index.vector_stores.pinecone import PineconeVectorStore
 from tests.indices.vector_store.utils import MockPineconeIndex
 from tests.mock_utils.mock_predict import (
     mock_llmpredictor_predict,
@@ -101,10 +98,10 @@ def test_recursive_query_vector_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    vector1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
-    vector2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
-    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **vector_kwargs)
-    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **vector_kwargs)
+    vector1 = GPTVectorStoreIndex.from_documents(documents[0:2], **vector_kwargs)
+    vector2 = GPTVectorStoreIndex.from_documents(documents[2:4], **vector_kwargs)
+    list3 = GPTVectorStoreIndex.from_documents(documents[4:6], **vector_kwargs)
+    list4 = GPTVectorStoreIndex.from_documents(documents[6:8], **vector_kwargs)
 
     summaries = [
         "foo bar",
@@ -130,15 +127,6 @@ def test_recursive_query_vector_table(
     query_str = "Cat?"
     response = query_engine.query(query_str)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
-
-    # test serialize and then back
-    # use composable graph struct
-    with TemporaryDirectory() as tmpdir:
-        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
-        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        query_engine = graph.as_query_engine()
-        response = query_engine.query(query_str)
-        assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -176,8 +164,8 @@ def test_recursive_query_vector_table_query_configs(
     # try building a tre for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    vector1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
-    vector2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
+    vector1 = GPTVectorStoreIndex.from_documents(documents[0:2], **vector_kwargs)
+    vector2 = GPTVectorStoreIndex.from_documents(documents[2:4], **vector_kwargs)
     assert isinstance(vector1.index_struct, V2IndexStruct)
     assert isinstance(vector2.index_struct, V2IndexStruct)
     vector1.index_struct.index_id = "vector1"
@@ -210,16 +198,6 @@ def test_recursive_query_vector_table_query_configs(
     response = query_engine.query("Orange?")  # type: ignore
     assert str(response) == ("Orange?:Orange?:This is a test.:Hello world.")
 
-    # test serialize and then back
-    # use composable graph struct
-    with TemporaryDirectory() as tmpdir:
-        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
-        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        # cast to Any to avoid mypy error
-        query_engine = graph.as_query_engine(custom_retrievers=custom_retrievers)
-        response = query_engine.query("Orange?")
-        assert str(response) == ("Orange?:Orange?:This is a test.:Hello world.")
-
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
 @patch.object(LLMPredictor, "predict", side_effect=mock_llmpredictor_predict)
@@ -251,10 +229,10 @@ def test_recursive_query_vector_table_async(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    vector1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
-    vector2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
-    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **vector_kwargs)
-    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **vector_kwargs)
+    vector1 = GPTVectorStoreIndex.from_documents(documents[0:2], **vector_kwargs)
+    vector2 = GPTVectorStoreIndex.from_documents(documents[2:4], **vector_kwargs)
+    list3 = GPTVectorStoreIndex.from_documents(documents[4:6], **vector_kwargs)
+    list4 = GPTVectorStoreIndex.from_documents(documents[6:8], **vector_kwargs)
 
     summaries = [
         "foo bar",
@@ -306,10 +284,10 @@ def test_recursive_query_vector_vector(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    vector1 = GPTSimpleVectorIndex.from_documents(documents[0:2], **vector_kwargs)
-    vector2 = GPTSimpleVectorIndex.from_documents(documents[2:4], **vector_kwargs)
-    list3 = GPTSimpleVectorIndex.from_documents(documents[4:6], **vector_kwargs)
-    list4 = GPTSimpleVectorIndex.from_documents(documents[6:8], **vector_kwargs)
+    vector1 = GPTVectorStoreIndex.from_documents(documents[0:2], **vector_kwargs)
+    vector2 = GPTVectorStoreIndex.from_documents(documents[2:4], **vector_kwargs)
+    list3 = GPTVectorStoreIndex.from_documents(documents[4:6], **vector_kwargs)
+    list4 = GPTVectorStoreIndex.from_documents(documents[6:8], **vector_kwargs)
 
     summary1 = "foo bar"
     summary2 = "apple orange"
@@ -318,7 +296,7 @@ def test_recursive_query_vector_vector(
     summaries = [summary1, summary2, summary3, summary4]
 
     graph = ComposableGraph.from_indices(
-        GPTSimpleVectorIndex,
+        GPTVectorStoreIndex,
         [vector1, vector2, list3, list4],
         index_summaries=summaries,
         **vector_kwargs
@@ -334,14 +312,13 @@ def test_recursive_query_vector_vector(
     response = query_engine.query(query_str)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
-    # test serialize and then back
-    # use composable graph struct
-    with TemporaryDirectory() as tmpdir:
-        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
-        graph = ComposableGraph.load_from_disk(str(Path(tmpdir) / "tmp.json"))
-        query_engine = graph.as_query_engine()
-        response = query_engine.query(query_str)
-        assert str(response) == ("Cat?:Cat?:This is a test v2.")
+
+def get_pinecone_storage_context() -> StorageContext:
+    # NOTE: mock pinecone import
+    sys.modules["pinecone"] = MagicMock()
+    return StorageContext.from_defaults(
+        vector_store=PineconeVectorStore(pinecone_index=MockPineconeIndex())
+    )
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -369,41 +346,31 @@ def test_recursive_query_pinecone_pinecone(
     index_kwargs: Dict,
 ) -> None:
     """Test composing pinecone index on top of pinecone index."""
-    # NOTE: mock pinecone import
-    sys.modules["pinecone"] = MagicMock()
-    # NOTE: mock pinecone index, use separate instances
-    #       to make testing easier
-    pinecone_index1 = MockPineconeIndex()
-    pinecone_index2 = MockPineconeIndex()
-    pinecone_index3 = MockPineconeIndex()
-    pinecone_index4 = MockPineconeIndex()
-    pinecone_index5 = MockPineconeIndex()
-
     pinecone_kwargs = index_kwargs["pinecone"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    pinecone1 = GPTPineconeIndex.from_documents(
+    pinecone1 = GPTVectorStoreIndex.from_documents(
         documents[0:2],
-        pinecone_index=pinecone_index1,
+        storage_context=get_pinecone_storage_context(),
         tokenizer=mock_tokenizer,
         **pinecone_kwargs
     )
-    pinecone2 = GPTPineconeIndex.from_documents(
+    pinecone2 = GPTVectorStoreIndex.from_documents(
         documents[2:4],
-        pinecone_index=pinecone_index2,
+        storage_context=get_pinecone_storage_context(),
         tokenizer=mock_tokenizer,
         **pinecone_kwargs
     )
-    pinecone3 = GPTPineconeIndex.from_documents(
+    pinecone3 = GPTVectorStoreIndex.from_documents(
         documents[4:6],
-        pinecone_index=pinecone_index3,
+        storage_context=get_pinecone_storage_context(),
         tokenizer=mock_tokenizer,
         **pinecone_kwargs
     )
-    pinecone4 = GPTPineconeIndex.from_documents(
+    pinecone4 = GPTVectorStoreIndex.from_documents(
         documents[6:8],
-        pinecone_index=pinecone_index4,
+        storage_context=get_pinecone_storage_context(),
         tokenizer=mock_tokenizer,
         **pinecone_kwargs
     )
@@ -415,10 +382,10 @@ def test_recursive_query_pinecone_pinecone(
     summaries = [summary1, summary2, summary3, summary4]
 
     graph = ComposableGraph.from_indices(
-        GPTPineconeIndex,
+        GPTVectorStoreIndex,
         [pinecone1, pinecone2, pinecone3, pinecone4],
         index_summaries=summaries,
-        pinecone_index=pinecone_index5,
+        storage_context=get_pinecone_storage_context(),
         tokenizer=mock_tokenizer,
         **pinecone_kwargs
     )
@@ -432,36 +399,3 @@ def test_recursive_query_pinecone_pinecone(
     query_str = "Cat?"
     response = query_engine.query(query_str)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
-
-    # test serialize and then back
-    # use composable graph struct
-    with TemporaryDirectory() as tmpdir:
-        graph.save_to_disk(str(Path(tmpdir) / "tmp.json"))
-        index_kwargs = {
-            index_id: {
-                "pinecone_index": pinecone_index,
-                "tokenizer": mock_tokenizer,
-            }
-            for index_id, pinecone_index in zip(
-                [
-                    pinecone1.index_struct.index_id,
-                    pinecone2.index_struct.index_id,
-                    pinecone3.index_struct.index_id,
-                    pinecone4.index_struct.index_id,
-                    graph.root_id,
-                ],
-                [
-                    pinecone_index1,
-                    pinecone_index2,
-                    pinecone_index3,
-                    pinecone_index4,
-                    pinecone_index5,
-                ],
-            )
-        }
-        graph = ComposableGraph.load_from_disk(
-            str(Path(tmpdir) / "tmp.json"), index_kwargs=index_kwargs
-        )
-        query_engine = graph.as_query_engine()
-        response = query_engine.query(query_str)
-        assert str(response) == ("Cat?:Cat?:This is a test v2.")

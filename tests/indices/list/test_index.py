@@ -185,55 +185,6 @@ def _get_embeddings(
     return [1.0, 0, 0, 0, 0], node_embeddings
 
 
-@patch_common
-def test_to_from_disk(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    documents: List[Document],
-) -> None:
-    """Test saving to disk and from disk."""
-    list_index = GPTListIndex.from_documents(documents)
-    with TemporaryDirectory() as tmp_dir:
-        list_index.save_to_disk(str(Path(tmp_dir) / "tmp.json"))
-        new_list_index = cast(
-            GPTListIndex, GPTListIndex.load_from_disk(str(Path(tmp_dir) / "tmp.json"))
-        )
-        assert len(new_list_index.index_struct.nodes) == 4
-        nodes = new_list_index.docstore.get_nodes(new_list_index.index_struct.nodes)
-        # check contents of nodes
-        assert nodes[0].text == "Hello world."
-        assert nodes[1].text == "This is a test."
-        assert nodes[2].text == "This is another test."
-        assert nodes[3].text == "This is a test v2."
-
-
-@patch_common
-def test_to_from_string(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    documents: List[Document],
-) -> None:
-    """Test saving to disk and from disk."""
-    list_index = GPTListIndex.from_documents(documents)
-    new_list_index = cast(
-        GPTListIndex, GPTListIndex.load_from_string(list_index.save_to_string())
-    )
-    assert len(new_list_index.index_struct.nodes) == 4
-    nodes = new_list_index.docstore.get_nodes(new_list_index.index_struct.nodes)
-
-    # check contents of nodes
-    assert nodes[0].text == "Hello world."
-    assert nodes[1].text == "This is a test."
-    assert nodes[2].text == "This is another test."
-    assert nodes[3].text == "This is a test v2."
-
-
 def test_as_retriever(
     list_index: GPTListIndex,
 ) -> None:

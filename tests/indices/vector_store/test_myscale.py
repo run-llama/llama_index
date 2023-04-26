@@ -4,6 +4,9 @@ from typing import List, cast
 
 import pytest
 
+from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
+from gpt_index.storage.storage_context import StorageContext
+
 try:
     import clickhouse_connect
 except ImportError:
@@ -11,7 +14,6 @@ except ImportError:
 
 from gpt_index.data_structs.data_structs_v2 import MyScaleIndexDict
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.vector_store import GPTMyScaleIndex
 from gpt_index.readers.schema.base import Document
 from gpt_index.vector_stores import MyScaleVectorStore
 from gpt_index.vector_stores.types import VectorStoreQuery
@@ -59,9 +61,10 @@ def test_overall_workflow(documents: List[Document]) -> None:
         username=MYSCALE_USERNAME,
         password=MYSCALE_CLUSTER_PASSWORD,
     )
-    index = cast(
-        GPTMyScaleIndex,
-        GPTMyScaleIndex.from_documents(documents, myscale_client=client),
+    vector_store = MyScaleVectorStore(myscale_client=client)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = GPTVectorStoreIndex.from_documents(
+        documents, storage_context=storage_context
     )
     query_engine = index.as_query_engine()
     response = query_engine.query("What is?")
@@ -90,9 +93,10 @@ def test_init_without_documents(
         username=MYSCALE_USERNAME,
         password=MYSCALE_CLUSTER_PASSWORD,
     )
-    index = cast(
-        GPTMyScaleIndex,
-        GPTMyScaleIndex.from_documents(documents, myscale_client=client),
+    vector_store = MyScaleVectorStore(myscale_client=client)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = GPTVectorStoreIndex.from_documents(
+        documents, storage_context=storage_context
     )
     for doc in documents:
         index.insert(document=doc)
@@ -119,9 +123,10 @@ def test_myscale_combine_search(
         username=MYSCALE_USERNAME,
         password=MYSCALE_CLUSTER_PASSWORD,
     )
-    index = cast(
-        GPTMyScaleIndex,
-        GPTMyScaleIndex.from_documents(documents, myscale_client=client),
+    vector_store = MyScaleVectorStore(myscale_client=client)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = GPTVectorStoreIndex.from_documents(
+        documents, storage_context=storage_context
     )
     query.query_embedding = index.service_context.embed_model.get_query_embedding(
         cast(str, query.query_str)
