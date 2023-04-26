@@ -16,6 +16,15 @@ from gpt_index.response.schema import RESPONSE_TYPE
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
+    """Retriever query engine.
+
+    Args:
+        retriever (BaseRetriever): A retriever object.
+        response_synthesizer (Optional[ResponseSynthesizer]): A ResponseSynthesizer
+            object.
+
+    """
+
     def __init__(
         self,
         retriever: BaseRetriever,
@@ -45,6 +54,26 @@ class RetrieverQueryEngine(BaseQueryEngine):
         # class-specific args
         **kwargs: Any,
     ) -> "RetrieverQueryEngine":
+        """Initialize a RetrieverQueryEngine object."
+
+        Args:
+            retriever (BaseRetriever): A retriever object.
+            service_context (Optional[ServiceContext]): A ServiceContext object.
+            node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
+                node postprocessors.
+            verbose (bool): Whether to print out debug info.
+            response_mode (ResponseMode): A ResponseMode object.
+            text_qa_template (Optional[QuestionAnswerPrompt]): A QuestionAnswerPrompt
+                object.
+            refine_template (Optional[RefinePrompt]): A RefinePrompt object.
+            simple_template (Optional[SimpleInputPrompt]): A SimpleInputPrompt object.
+            response_kwargs (Optional[Dict]): A dict of response kwargs.
+            use_async (bool): Whether to use async.
+            streaming (bool): Whether to use streaming.
+            optimizer (Optional[BaseTokenUsageOptimizer]): A BaseTokenUsageOptimizer
+                object.
+
+        """
         response_synthesizer = ResponseSynthesizer.from_args(
             service_context=service_context,
             text_qa_template=text_qa_template,

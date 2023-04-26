@@ -14,7 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class ListIndexRetriever(BaseRetriever):
-    """Simple retriever for ListIndex that returns all nodes."""
+    """Simple retriever for ListIndex that returns all nodes.
+
+    Args:
+        index (GPTListIndex): The index to retrieve from.
+
+    """
 
     def __init__(self, index: GPTListIndex, **kwargs: Any) -> None:
         self._index = index
@@ -32,7 +37,16 @@ class ListIndexRetriever(BaseRetriever):
 
 
 class ListIndexEmbeddingRetriever(BaseRetriever):
-    """Embedding based retriever for ListIndex."""
+    """Embedding based retriever for ListIndex.
+
+    Generates embeddings in a lazy fashion for all
+    nodes that are traversed.
+
+    Args:
+        index (GPTListIndex): The index to retrieve from.
+        similarity_top_k (Optional[int]): The number of top nodes to return.
+
+    """
 
     def __init__(
         self,

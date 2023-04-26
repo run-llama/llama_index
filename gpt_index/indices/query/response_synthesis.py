@@ -34,6 +34,22 @@ logger = logging.getLogger(__name__)
 
 
 class ResponseSynthesizer:
+    """Response synthesize class.
+
+    This class is responsible for synthesizing a response given a list of nodes.
+    The way in which the response is synthesized depends on the response mode.
+
+    Args:
+        response_builder (Optional[BaseResponseBuilder]): A response builder object.
+        response_mode (ResponseMode): A response mode.
+        response_kwargs (Optional[Dict]): A dictionary of response kwargs.
+        optimizer (Optional[BaseTokenUsageOptimizer]): A token usage optimizer.
+        node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of node
+            postprocessors.
+        verbose (bool): Whether to print debug statements.
+
+    """
+
     def __init__(
         self,
         response_builder: Optional[BaseResponseBuilder],
@@ -65,6 +81,23 @@ class ResponseSynthesizer:
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         verbose: bool = False,
     ) -> "ResponseSynthesizer":
+        """Initialize response synthesizer from args.
+
+        Args:
+            service_context (Optional[ServiceContext]): A service context.
+            streaming (bool): Whether to stream the response.
+            use_async (bool): Whether to use async.
+            text_qa_template (Optional[QuestionAnswerPrompt]): A text QA template.
+            refine_template (Optional[RefinePrompt]): A refine template.
+            simple_template (Optional[SimpleInputPrompt]): A simple template.
+            response_mode (ResponseMode): A response mode.
+            response_kwargs (Optional[Dict]): A dictionary of response kwargs.
+            node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of node
+                postprocessors.
+            optimizer (Optional[BaseTokenUsageOptimizer]): A token usage optimizer.
+            verbose (bool): Whether to print debug statements.
+
+        """
         service_context = service_context or ServiceContext.from_defaults()
         response_builder: Optional[BaseResponseBuilder] = None
         if response_mode != ResponseMode.NO_TEXT:

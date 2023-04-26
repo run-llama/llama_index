@@ -1,6 +1,6 @@
 # A Guide to Creating a Unified Query Framework over your Indexes
 
-LlamaIndex offers a variety of different [query use cases](/docs/use_cases/queries.md). 
+LlamaIndex offers a variety of different [query use cases](/use_cases/queries.md). 
 
 For simple queries, we may want to use a single index data structure, such as a `GPTSimpleVectorIndex` for semantic search, or `GPTListIndex` for summarization.
 
@@ -102,7 +102,7 @@ The sports teams in Toronto are the Toronto Maple Leafs (NHL), Toronto Blue Jays
 
 ### Defining a Graph for Compare/Contrast Queries
 
-We will now define a composed graph in order to run **compare/contrast** queries (see [use cases doc](/docs/use_cases/queries.md)).
+We will now define a composed graph in order to run **compare/contrast** queries (see [use cases doc](/use_cases/queries.md)).
 This graph contains a keyword table composed on top of existing vector indexes. 
 
 To do this, we first want to set the "summary text" for each vector index.

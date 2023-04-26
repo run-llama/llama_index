@@ -20,6 +20,25 @@ def default_stop_fn(stop_dict: Dict) -> bool:
 
 
 class MultiStepQueryEngine(BaseQueryEngine):
+    """Multi-step query engine.
+
+    This query engine can operate over an existing base query engine,
+    along with the multi-step query transform.
+
+    Args:
+        query_engine (BaseQueryEngine): A BaseQueryEngine object.
+        query_transform (StepDecomposeQueryTransform): A StepDecomposeQueryTransform
+            object.
+        response_synthesizer (Optional[ResponseSynthesizer]): A ResponseSynthesizer
+            object.
+        num_steps (Optional[int]): Number of steps to run the multi-step query.
+        early_stopping (bool): Whether to stop early if the stop function returns True.
+        index_summary (str): A string summary of the index.
+        stop_fn (Optional[Callable[[Dict], bool]]): A stop function that takes in a
+            dictionary of information and returns a boolean.
+
+    """
+
     def __init__(
         self,
         query_engine: BaseQueryEngine,
