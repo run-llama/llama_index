@@ -17,6 +17,7 @@ from sqlalchemy import (
 
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.sql import (
     GPTSQLStructStoreIndex,
     SQLContextContainerBuilder,
@@ -25,19 +26,13 @@ from gpt_index.indices.struct_store.sql_query import GPTNLStructStoreQueryEngine
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
-from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import (
     MOCK_TABLE_CONTEXT_PROMPT,
 )
 
 
-@patch_common
 def test_sql_index(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test GPTSQLStructStoreIndex."""
@@ -56,7 +51,11 @@ def test_sql_index(
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     sql_database = SQLDatabase(engine)
     index = GPTSQLStructStoreIndex.from_documents(
-        docs, sql_database=sql_database, table_name=table_name, **index_kwargs
+        docs,
+        sql_database=sql_database,
+        table_name=table_name,
+        service_context=mock_service_context,
+        **index_kwargs
     )
     assert isinstance(index, GPTSQLStructStoreIndex)
 
@@ -91,13 +90,8 @@ def _delete_table_items(engine: Any, table: Table) -> None:
         connection.execute(delete_stmt)
 
 
-@patch_common
 def test_sql_index_with_context(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test GPTSQLStructStoreIndex."""
@@ -128,6 +122,7 @@ def test_sql_index_with_context(
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
+        service_context=mock_service_context,
         **index_kwargs
     )
     assert isinstance(index, GPTSQLStructStoreIndex)
@@ -186,15 +181,7 @@ def test_sql_index_with_context(
     # TODO:
 
 
-@patch_common
-def test_sql_index_with_derive_index(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    struct_kwargs: Tuple[Dict, Dict],
-) -> None:
+def test_sql_index_with_derive_index(mock_service_context: ServiceContext) -> None:
     """Test derive index."""
     # test setting table_context_dict
     engine = create_engine("sqlite:///:memory:")
@@ -224,13 +211,8 @@ def test_sql_index_with_derive_index(
     assert len(context_index_no_ignore.index_struct.nodes) > 1
 
 
-@patch_common
 def test_sql_index_with_index_context(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test GPTSQLStructStoreIndex."""
@@ -279,6 +261,7 @@ def test_sql_index_with_index_context(
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
+        service_context=mock_service_context,
         **index_kwargs
     )
     # just assert this runs

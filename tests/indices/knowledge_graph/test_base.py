@@ -65,7 +65,7 @@ def mock_extract_triplets(text: str) -> List[Tuple[str, str, str]]:
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_build_kg_manual(
-    _mock_extract_triplets: Any,
+    _patch_extract_triplets: Any,
     mock_service_context: ServiceContext,
 ) -> None:
     """Test build knowledge graph."""
@@ -142,6 +142,7 @@ def test_build_kg_manual(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_build_kg_similarity(
+    _patch_extract_triplets: Any,
     documents: List[Document],
     mock_service_context: ServiceContext,
 ) -> None:
@@ -157,14 +158,16 @@ def test_build_kg_similarity(
     # check that all rel_texts were embedded
     assert len(rel_text_embeddings) == 3
     for rel_text, embedding in rel_text_embeddings.items():
-        assert embedding == MockEmbedding.get_text_embedding(rel_text)
+        assert embedding == MockEmbedding().get_text_embedding(rel_text)
 
 
 @patch.object(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_build_kg(
-    documents: List[Document], mock_service_context: ServiceContext
+    _patch_extract_triplets: Any,
+    documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test build knowledge graph."""
     index = GPTKnowledgeGraphIndex.from_documents(

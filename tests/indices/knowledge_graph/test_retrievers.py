@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 from unittest.mock import patch
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from gpt_index.indices.knowledge_graph.retrievers import KGTableRetriever
@@ -16,7 +16,9 @@ from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_as_retriever(
-    documents: List[Document], mock_service_context: ServiceContext
+    _patch_extract_triplets: Any,
+    documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test query."""
     index = GPTKnowledgeGraphIndex.from_documents(
@@ -41,6 +43,7 @@ def test_as_retriever(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_retrievers(
+    _patch_extract_triplets: Any,
     documents: List[Document],
     mock_service_context: ServiceContext,
 ) -> None:
@@ -65,6 +68,7 @@ def test_retrievers(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_retriever_no_text(
+    _patch_extract_triplets: Any,
     documents: List[Document],
     mock_service_context: ServiceContext,
 ) -> None:
@@ -90,7 +94,9 @@ def test_retriever_no_text(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_retrieve_similarity(
-    documents: List[Document], mock_service_context: ServiceContext
+    _patch_extract_triplets: Any,
+    documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test query."""
     mock_service_context.embed_model = MockEmbedding()
