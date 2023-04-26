@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from gpt_index.callbacks.base import CallbackManager
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
@@ -31,7 +32,8 @@ class ServiceContext:
     - prompt_helper: PromptHelper
     - embed_model: BaseEmbedding
     - node_parser: NodeParser
-    - llama_logger: LlamaLogger
+    - llama_logger: LlamaLogger (deprecated?)
+    - callback_manager: CallbackManager
     - chunk_size_limit: chunk size limit
 
     """
@@ -41,6 +43,7 @@ class ServiceContext:
     embed_model: BaseEmbedding
     node_parser: NodeParser
     llama_logger: LlamaLogger
+    callback_manager: CallbackManager
     chunk_size_limit: Optional[int] = None
 
     @classmethod
@@ -51,6 +54,7 @@ class ServiceContext:
         embed_model: Optional[BaseEmbedding] = None,
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
+        callback_manager: Optional[CallbackManager] = None,
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
         """Create a ServiceContext from defaults.
