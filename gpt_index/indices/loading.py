@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence
 from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_CLASS
 from gpt_index.storage.storage_context import StorageContext
 
@@ -52,3 +53,14 @@ def load_indices_from_storage(
         )
         indices.append(index)
     return indices
+
+
+def load_graph_from_storage(
+    storage_context: StorageContext,
+    root_id: str,
+    **kwargs: Any,
+) -> ComposableGraph:
+    indices = load_indices_from_storage(storage_context, index_ids=None, **kwargs)
+    all_indices = {index.index_id: index for index in indices}
+    graph = ComposableGraph(all_indices=all_indices, root_id=root_id)
+    return graph
