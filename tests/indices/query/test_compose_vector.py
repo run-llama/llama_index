@@ -2,7 +2,7 @@
 
 import asyncio
 import sys
-from typing import Any, Dict, List
+from typing import Dict, List
 from unittest.mock import MagicMock
 
 import pytest

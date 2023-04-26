@@ -12,7 +12,11 @@ from gpt_index.llm_predictor.base import LLMPredictor
 
 
 from tests.indices.vector_store.mock_services import MockEmbedding
-from tests.mock_utils.mock_predict import mock_llmpredictor_predict, patch_llmpredictor_apredict, patch_llmpredictor_predict
+from tests.mock_utils.mock_predict import (
+    mock_llmpredictor_predict,
+    patch_llmpredictor_apredict,
+    patch_llmpredictor_predict,
+)
 from tests.mock_utils.mock_text_splitter import (
     patch_token_splitter_newline,
     patch_token_splitter_newline_with_overlaps,
