@@ -18,7 +18,7 @@ class ListIndexRetriever(BaseRetriever):
 
     Args:
         index (GPTListIndex): The index to retrieve from.
-    
+
     """
 
     def __init__(self, index: GPTListIndex, **kwargs: Any) -> None:
