@@ -1,25 +1,20 @@
 """Evaporate wrapper."""
 
-from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.langchain_helpers.text_splitter import TextSplitter
 from gpt_index.prompts.prompts import (
-    TableContextPrompt,
-    RefineTableContextPrompt,
     QuestionAnswerPrompt,
 )
 from gpt_index.data_structs.node_v2 import Node
 from typing import Optional, List, Dict, Tuple
-from gpt_index.schema import BaseDocument
-from gpt_index.indices.common.struct_store.evaporate.prompts import (
+from gpt_index.experimental.evaporate.prompts import (
     SchemaIDPrompt,
     FnGeneratePrompt,
     SCHEMA_ID_PROMPT,
     FN_GENERATION_PROMPT,
 )
 from gpt_index.indices.list.base import GPTListIndex
-from collections import defaultdict, Counter
-from typing import Set
+from collections import defaultdict
+from typing import Set, Any
 from contextlib import contextmanager
 import signal
 
@@ -32,14 +27,14 @@ class TimeoutException(Exception):
 
 
 @contextmanager
-def time_limit(seconds):
+def time_limit(seconds: int) -> Any:
     """Time limit context manager.
 
     NOTE: copied from https://github.com/HazyResearch/evaporate.
 
     """
 
-    def signal_handler(signum, frame):
+    def signal_handler(signum: Any, frame: Any) -> Any:
         raise TimeoutException("Timed out!")
 
     signal.signal(signal.SIGALRM, signal_handler)
@@ -50,7 +45,7 @@ def time_limit(seconds):
         signal.alarm(0)
 
 
-def get_function_field_from_attribute(attribute):
+def get_function_field_from_attribute(attribute: str) -> str:
     """Get function field from attribute.
 
     NOTE: copied from https://github.com/HazyResearch/evaporate.
@@ -59,13 +54,9 @@ def get_function_field_from_attribute(attribute):
     return re.sub(r"[^A-Za-z0-9]", "_", attribute)
 
 
-def extract_field_dicts(
-    result: str, text_chunk: str, existing_fields: Optional[Set] = None
-) -> Dict:
+def extract_field_dicts(result: str, text_chunk: str) -> Set:
     """Extract field dictionaries."""
-    # field2value = defaultdict(list)
-    # field2count = Counter()
-    existing_fields = existing_fields or set()
+    existing_fields = set()
     result = result.split("---")[0].strip("\n")
     results = result.split("\n")
     results = [r.strip("-").strip() for r in results]
@@ -74,7 +65,7 @@ def extract_field_dicts(
         try:
             field = result.split(": ")[0].strip(":")
             value = ": ".join(result.split(": ")[1:])
-        except:
+        except Exception:
             print(f"Skipped: {result}")
             continue
         field_versions = [
@@ -92,11 +83,12 @@ def extract_field_dicts(
             continue
         existing_fields.add(field)
 
-    # print(f"EXISTING FIELDS: {existing_fields}")
-
     return existing_fields
 
 
+node_text: str
+result: List
+# since we define globals below
 class EvaporateExtractor:
     """Wrapper around Evaporate.
 
@@ -123,22 +115,29 @@ class EvaporateExtractor:
         self._schema_id_prompt = schema_id_prompt or SCHEMA_ID_PROMPT
         self._fn_generate_prompt = fn_generate_prompt or FN_GENERATION_PROMPT
 
-    def identify_fields(self, nodes: List[Node], topic: str) -> Dict:
-        existing_fields = set()
+    def identify_fields(
+        self, nodes: List[Node], topic: str, fields_top_k: int = 5
+    ) -> List:
+        """Identify fields from nodes."""
+        field2count: dict = defaultdict(int)
         for node in nodes:
             llm_predictor = self._service_context.llm_predictor
-            result, fmt_prompt = llm_predictor.predict(
+            result, _ = llm_predictor.predict(
                 self._schema_id_prompt, topic=topic, chunk=node.get_text()
             )
 
-            existing_fields = extract_field_dicts(
-                result, node.get_text(), existing_fields
-            )
-            # print(result)
-            # print(fmt_prompt)
-            # raise Exception
+            existing_fields = extract_field_dicts(result, node.get_text())
 
-        return existing_fields
+            for field in existing_fields:
+                field2count[field] += 1
+
+        sorted_tups: List[Tuple[str, int]] = sorted(
+            list(field2count.items()), key=lambda x: x[1], reverse=True
+        )
+        sorted_fields = [f[0] for f in sorted_tups]
+        sorted_fields = sorted_fields[:fields_top_k]
+
+        return sorted_fields
 
     def extract_fn_from_nodes(self, nodes: List[Node], field: str) -> str:
         """Extract function from nodes."""
@@ -164,11 +163,11 @@ class EvaporateExtractor:
 """
 
         # format fn_str
-        return_idx = [i for i, s in enumerate(fn_str.split("\n")) if "return" in s]
-        if not return_idx:
+        return_idx_list = [i for i, s in enumerate(fn_str.split("\n")) if "return" in s]
+        if not return_idx_list:
             return ""
 
-        return_idx = return_idx[0]
+        return_idx = return_idx_list[0]
         fn_str = "\n".join(fn_str.split("\n")[: return_idx + 1])
         fn_str = "\n".join([s for s in fn_str.split("\n") if "print(" not in s])
         fn_str = "\n".join(
@@ -194,27 +193,32 @@ class EvaporateExtractor:
         results = []
         for node in nodes:
             global result
-            global text
-            text = node.get_text()
+            global node_text
+            node_text = node.get_text()
+            # this is temporary
+            result = []
             try:
                 with time_limit(1):
                     exec(fn_str, globals())
-                    exec(f"result = get_{function_field}_field(text)", globals())
+                    exec(f"result = get_{function_field}_field(node_text)", globals())
             except TimeoutException as e:
                 raise e
             results.append(result)
         return results
 
     def extract_datapoints_with_fn(
-        self, nodes: List[Node], topic: str, k: int = 5
+        self, nodes: List[Node], topic: str, sample_k: int = 5, fields_top_k: int = 5
     ) -> List[Dict]:
         """Extract datapoints from a list of nodes, given a topic."""
-        idxs = list(range(nodes))
-        subset_idxs = random.sample(idxs)
-        subset_nodes = nodes[subset_idxs]
+        idxs = list(range(len(nodes)))
+        sample_k = min(sample_k, len(nodes))
+        subset_idxs = random.sample(idxs, sample_k)
+        subset_nodes = [nodes[si] for si in subset_idxs]
 
         # get existing fields
-        existing_fields = self.identify_fields(subset_nodes, topic)
+        existing_fields = self.identify_fields(
+            subset_nodes, topic, fields_top_k=fields_top_k
+        )
 
         # then, for each existing field, generate function
         function_dict = {}
@@ -227,3 +231,12 @@ class EvaporateExtractor:
         for field in existing_fields:
             result_list = self.run_fn_on_nodes(nodes, function_dict[field], field)
             result_dict[field] = result_list
+
+        # convert into list of dictionaries
+        result_list = []
+        for i in range(len(nodes)):
+            result_dict_i = {}
+            for field in existing_fields:
+                result_dict_i[field] = result_dict[field][i]
+            result_list.append(result_dict_i)
+        return result_list

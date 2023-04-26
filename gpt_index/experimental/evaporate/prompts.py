@@ -93,7 +93,7 @@ Sample text:
 {{chunk:}}
 
 Question: List all relevant attributes about '{{topic:}}' that are exactly mentioned in this sample text if any. 
-Answer:"""
+Answer:"""  # noqa: E501, F541
 
 SCHEMA_ID_PROMPT = SchemaIDPrompt(SCHEMA_ID_PROMPT_TMPL)
 
@@ -115,80 +115,6 @@ def get_{{function_field:}}_field(text: str):
     \"""
     Function to extract the "{{attribute:}} field".
     \"""
-    """
+    """  # noqa: E501, F541
 
 FN_GENERATION_PROMPT = FnGeneratePrompt(FN_GENERATION_PROMPT_TMPL)
-
-# METADATA_GENERATION_PROMPT_TMPL = f"""Here is a sample of text:
-
-# {{chunk:}}
-
-
-# Question: Write a python function to extract the entire "{{attribute:}}" field from text, but not any other metadata. Return the result as a list.
-
-
-# import re
-
-# def get_{{function_field:}}_field(text: str):
-#     \"""
-#     Function to extract the "{{attribute:}} field".
-#     \"""
-# """
-
-# METADATA_GENERATION_PROMPT_TMPL2 = f"""Here is a file sample:
-
-# DESCRIPTION: This file answers the question, "How do I sort a dictionary by value?"
-# DATES MODIFIED: The file was modified on the following dates:
-# 2009-03-05T00:49:05
-# 2019-04-07T00:22:14
-# 2011-11-20T04:21:49
-# USERS: The users who modified the file are:
-# Jeff Jacobs
-# Richard Smith
-# Julia D'Angelo
-# Rebecca Matthews
-# FILE TYPE: This is a text file.
-
-# Question: Write a python function called "get_dates_modified_field" to extract the "DATES MODIFIED" field from the text. Include any imports.
-
-# import re
-
-# def get_dates_modified_field(text: str):
-#     \"""
-#     Function to extract the dates modified.
-#     \"""
-#     parts= text.split("USERS")[0].split("DATES MODIFIED")[-1]
-#     pattern = r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}'
-#     return re.findall(pattern, text)
-
-# ----
-
-# Here is a file sample:
-
-# <title>U.S. GDP Rose 2.9% in the Fourth Quarter After a Year of High Inflation - WSJ</title>
-# <meta property="og:url" content="https://www.wsj.com/articles/us-gdp-economic-growth-fourth-quarter-2022-11674683034"/>
-# <meta name="article.published" content="2023-01-26T10:30:00Z"/><meta itemProp="datePublished" content="2023-01-26T10:30:00Z"/>
-# <meta name="article.created" content="2023-01-26T10:30:00Z"/><meta itemProp="dateCreated" content="2023-01-26T10:30:00Z"/>
-# <meta name="dateLastPubbed" content="2023-01-31T19:17:00Z"/><meta name="author" content="Sarah Chaney Cambon"/>
-
-# Question: Write a python function called "get_date_published_field" to extract the "datePublished" field from the text. Include any imports.
-
-# from bs4 import BeautifulSoup
-
-# def get_date_published_field(text: str):
-#     \"""
-#     Function to extract the date published.
-#     \"""
-#     soup = BeautifulSoup(text, parser="html.parser")
-#     date_published_field = soup.find('meta', itemprop="datePublished")
-#     date_published_field = date_published_field['content']
-#     return date_published_field
-
-# ----
-
-# Here is a sample of text:
-
-# {{chunk:}}
-
-# Question: Write a python function called "get_{{function_field:}}_field" to extract the "{{attribute:}}" field from the text. Include any imports."""
-# ]
