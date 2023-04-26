@@ -3,7 +3,8 @@
 from dataclasses import dataclass, field
 import json
 import os
-from typing import Any, Dict, List, cast
+from pathlib import Path
+from typing import Any, Dict, List, Union, cast
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -72,7 +73,7 @@ class SimpleVectorStore(VectorStore):
         self.load()
 
     @classmethod
-    def from_persist_dir(cls, persist_dir: str = DEFAULT_PERSIST_DIR):
+    def from_persist_dir(cls, persist_dir: Union[str, Path] = DEFAULT_PERSIST_DIR):
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         return cls(persist_path)
 

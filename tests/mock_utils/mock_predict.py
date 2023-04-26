@@ -134,7 +134,7 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
 
 
 def patch_llmpredictor_predict(
-    self, prompt: Prompt, **prompt_args: Any
+    self: Any, prompt: Prompt, **prompt_args: Any
 ) -> Tuple[str, str]:
     """Mock predict method of LLMPredictor.
 
@@ -178,12 +178,12 @@ def patch_llmpredictor_predict(
     return response, formatted_prompt
 
 
-
 async def patch_llmpredictor_apredict(
-    self, prompt: Prompt, **prompt_args: Any
+    self: Any, prompt: Prompt, **prompt_args: Any
 ) -> Tuple[str, str]:
     """Mock apredict method of LLMPredictor."""
     return patch_llmpredictor_predict(self, prompt, **prompt_args)
+
 
 async def mock_llmpredictor_apredict(
     prompt: Prompt, **prompt_args: Any

@@ -5,39 +5,35 @@ from unittest.mock import patch
 
 import pytest
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.embeddings.openai import OpenAIEmbedding
+from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
-from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_prompts import (
     MOCK_KG_TRIPLET_EXTRACT_PROMPT,
     MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
 )
 
 
-def mock_get_text_embedding(text: str) -> List[float]:
-    """Mock get text embedding."""
-    # assume dimensions are 4
-    if text == "('foo', 'is', 'bar')":
-        return [1, 0, 0, 0]
-    elif text == "('hello', 'is not', 'world')":
-        return [0, 1, 0, 0]
-    elif text == "('Jane', 'is mother of', 'Bob')":
-        return [0, 0, 1, 0]
-    elif text == "foo":
-        return [0, 0, 0, 1]
-    else:
-        raise ValueError("Invalid text for `mock_get_text_embedding`.")
+class MockEmbedding(BaseEmbedding):
+    def _get_text_embedding(self, text: str) -> List[float]:
+        """Mock get text embedding."""
+        # assume dimensions are 4
+        if text == "('foo', 'is', 'bar')":
+            return [1, 0, 0, 0]
+        elif text == "('hello', 'is not', 'world')":
+            return [0, 1, 0, 0]
+        elif text == "('Jane', 'is mother of', 'Bob')":
+            return [0, 0, 1, 0]
+        elif text == "foo":
+            return [0, 0, 0, 1]
+        else:
+            raise ValueError("Invalid text for `mock_get_text_embedding`.")
 
-
-def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
-    """Mock get text embeddings."""
-    return [mock_get_text_embedding(text) for text in texts]
-
-
-def mock_get_query_embedding(query: str) -> List[float]:
-    """Mock get query embedding."""
-    return [0, 0, 1, 0, 0]
+    def _get_query_embedding(self, query: str) -> List[float]:
+        """Mock get query embedding."""
+        del query
+        return [0, 0, 1, 0, 0]
 
 
 @pytest.fixture
@@ -65,21 +61,15 @@ def mock_extract_triplets(text: str) -> List[Tuple[str, str, str]]:
     return triplets
 
 
-@patch_common
 @patch.object(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_build_kg_manual(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    struct_kwargs: Any,
-    documents: List[Document],
+    _mock_extract_triplets: Any,
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test build knowledge graph."""
-    index = GPTKnowledgeGraphIndex([])
+    index = GPTKnowledgeGraphIndex([], service_context=mock_service_context)
     tuples = [
         ("foo", "is", "bar"),
         ("hello", "is not", "world"),
@@ -112,7 +102,7 @@ def test_build_kg_manual(
     }
 
     # test upsert_triplet_and_node
-    index = GPTKnowledgeGraphIndex([])
+    index = GPTKnowledgeGraphIndex([], service_context=mock_service_context)
     tuples = [
         ("foo", "is", "bar"),
         ("hello", "is not", "world"),
@@ -142,59 +132,44 @@ def test_build_kg_manual(
     }
 
     # try inserting same node twice
-    index = GPTKnowledgeGraphIndex([])
+    index = GPTKnowledgeGraphIndex([], service_context=mock_service_context)
     node = Node(str(("foo", "is", "bar")), doc_id="test_node")
     index.upsert_triplet_and_node(tup, node)
     index.upsert_triplet_and_node(tup, node)
 
 
-@patch_common
 @patch.object(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
-@patch.object(
-    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
-)
-@patch.object(
-    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
-)
 def test_build_kg_similarity(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    _mock_get_text_embeddings: Any,
-    _mock_get_text_embedding: Any,
-    struct_kwargs: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test build knowledge graph."""
-    index = GPTKnowledgeGraphIndex.from_documents(documents, include_embeddings=True)
+    mock_service_context.embed_model = MockEmbedding()
+
+    index = GPTKnowledgeGraphIndex.from_documents(
+        documents, include_embeddings=True, service_context=mock_service_context
+    )
     # get embedding dict from KG index struct
     rel_text_embeddings = index.index_struct.embedding_dict
 
     # check that all rel_texts were embedded
     assert len(rel_text_embeddings) == 3
     for rel_text, embedding in rel_text_embeddings.items():
-        assert embedding == mock_get_text_embedding(rel_text)
+        assert embedding == MockEmbedding.get_text_embedding(rel_text)
 
 
-@patch_common
 @patch.object(
     GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_build_kg(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    struct_kwargs: Any,
-    documents: List[Document],
+    documents: List[Document], mock_service_context: ServiceContext
 ) -> None:
     """Test build knowledge graph."""
-    index = GPTKnowledgeGraphIndex.from_documents(documents)
+    index = GPTKnowledgeGraphIndex.from_documents(
+        documents, service_context=mock_service_context
+    )
     # NOTE: in these unit tests, document text == triplets
     nodes = index.docstore.get_nodes(list(index.index_struct.node_ids))
     table_chunks = {n.get_text() for n in nodes}

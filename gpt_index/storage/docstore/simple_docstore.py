@@ -1,5 +1,6 @@
 import os
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 from gpt_index.storage.docstore.keyval_docstore import KVDocumentStore
 from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
 from gpt_index.storage.kvstore.types import BaseInMemoryKVStore
@@ -15,7 +16,9 @@ class SimpleDocumentStore(KVDocumentStore):
 
     @classmethod
     def from_persist_dir(
-        cls, persist_dir: str = DEFAULT_PERSIST_DIR, namespace: Optional[str] = None
+        cls,
+        persist_dir: Union[str, Path] = DEFAULT_PERSIST_DIR,
+        namespace: Optional[str] = None,
     ):
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         simple_kvstore = SimpleKVStore(persist_path)

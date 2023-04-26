@@ -1,6 +1,5 @@
 import asyncio
-from typing import Any, Dict, Tuple
-from unittest.mock import patch
+from typing import Dict, Tuple
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
 from gpt_index.indices.service_context import ServiceContext
@@ -11,10 +10,7 @@ from gpt_index.indices.struct_store.sql_query import (
     GPTSQLStructStoreQueryEngine,
 )
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.llm_predictor.base import LLMPredictor
 from gpt_index.readers.schema.base import Document
-from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_predict import mock_llmpredictor_apredict
 
 
 def test_sql_index_query(

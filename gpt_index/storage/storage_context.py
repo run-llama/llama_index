@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Optional
+import pathlib
+from typing import Optional, Union
 from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from gpt_index.storage.docstore.types import BaseDocumentStore
 from gpt_index.storage.index_store.simple_index_store import SimpleIndexStore
@@ -22,7 +23,7 @@ class StorageContext:
         docstore: Optional[BaseDocumentStore] = None,
         index_store: Optional[BaseIndexStore] = None,
         vector_store: Optional[VectorStore] = None,
-        persist_dir: str = DEFAULT_PERSIST_DIR,
+        persist_dir: Union[str, pathlib.Path] = DEFAULT_PERSIST_DIR,
     ) -> "StorageContext":
         docstore = docstore or SimpleDocumentStore.from_persist_dir(persist_dir)
         index_store = index_store or SimpleIndexStore.from_persist_dir(persist_dir)

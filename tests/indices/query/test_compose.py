@@ -1,30 +1,13 @@
 """Test composing indices."""
 
-from typing import Any, Dict, List
-from unittest.mock import patch
+from typing import Dict, List
 
 from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.chain_wrapper import (
-    LLMChain,
-    LLMMetadata,
-    LLMPredictor,
-)
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
-from tests.mock_utils.mock_predict import (
-    mock_llmchain_predict,
-    mock_llmpredictor_predict,
-)
-from tests.mock_utils.mock_prompts import (
-    MOCK_QUERY_PROMPT,
-    MOCK_REFINE_PROMPT,
-    MOCK_TEXT_QA_PROMPT,
-)
-from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
 def test_recursive_query_list_tree(
