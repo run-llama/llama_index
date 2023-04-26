@@ -21,24 +21,28 @@ index = GPTVectorStoreIndex.from_documents(documents)
 ```
 we use a lower-level API that gives more granular control:
 ```python
-from llama_index.docstore import SimpleDocumentStore
+from llama_index.storage.docstore import SimpleDocumentStore
 from llama_index.node_parser import SimpleNodeParser
 
 # create parser and parse document into nodes 
 parser = SimpleNodeParser()
 nodes = parser.get_nodes_from_documents(documents)
 
-# create document store and add nodes
-docstore = SimpleDocumentStore()
+# create (or load) docstore and add nodes
+docstore = SimpleDocumentStore.from_persist_dir(persist_dir="<persist_dir>")
 docstore.add_documents(nodes)
 
+# create storage context
+storage_context = StorageContext.from_defaults(docstore=docstore)
+
 # build index
-index = GPTVectorStoreIndex(nodes, docstore=docstore)
+index = GPTVectorStoreIndex(nodes, storage_context=storage_context)
 ```
 You can customize the underlying storage with a one-line change to instantiate a different document store.
 
 ### Simple Document Store
-By default, the `SimpleDocumentStore` stores `Node` objects in-memory. They can be persisted to (and loaded from) disk by calling `index.save_to_disk(...)` (and `Index.load_from_disk(...)` respectively).
+By default, the `SimpleDocumentStore` stores `Node` objects in-memory. 
+They can be persisted to (and loaded from) disk by calling `docstore.persist()` (and `SimpleDocumentStore.from_persist_dir(...)` respectively).
 
 ### MongoDB Document Store
 We support MongoDB as an alternative document store backend that persists data as `Node` objects are ingested.
@@ -50,20 +54,24 @@ from llama_index.node_parser import SimpleNodeParser
 parser = SimpleNodeParser()
 nodes = parser.get_nodes_from_documents(documents)
 
-# create document store and add nodes
+# create (or load) docstore and add nodes
 docstore = MongoDocumentStore.from_uri(uri="<mongodb+srv://...>")
 docstore.add_documents(nodes)
+
+# create storage context
+storage_context = StorageContext.from_defaults(docstore=docstore)
 
 # build index
 index = GPTVectorStoreIndex(nodes, docstore=docstore)
 ```
 
-Under the hood, `MongoDocumentStore` connects to a fixed MongoDB database and initializes a new collection for your nodes.
-> Note: You can configure the `db_name` and `collection_name` when instantiating `MongoDocumentStore`, otherwise they default to `db_name=db_docstore` and `collection_name=collection_<uuid>`.
+Under the hood, `MongoDocumentStore` connects to a fixed MongoDB database and initializes new collections (or loads existing collections) for your nodes.
+> Note: You can configure the `db_name` and `namespace` when instantiating `MongoDocumentStore`, otherwise they default to `db_name="db_docstore"` and `namespace="docstore"`.
 
-When using `MongoDocumentStore`, calling `index.save_to_disk(...)` only saves the MongoDB connection config to disk (instead of the `Node` objects).
+Note that it's not necessary to call `service_context.persist()` (or `docstore.persist()`) when using an `MongoDocumentStore`
+since data is persisted by default. 
 
-You can easily reconnect to your MongoDB collection and reload the index by calling `Index.load_from_disk(...)` (or by explicitly initializing a `MongoDocumentStore` with an exiting `db_name` and `collection_name`).
+You can easily reconnect to your MongoDB collection and reload the index by re-initializing a `MongoDocumentStore` with an existing `db_name` and `collection_name`.
 
 
 

@@ -63,12 +63,6 @@ graph = ComposableGraph.from_indices(
     index_summaries=[index1_summary, index2_summary, index3_summary],
 )
 
-# [Optional] save to disk
-graph.save_to_disk("save_path.json")
-
-# [Optional] load from disk
-graph = ComposableGraph.load_from_disk("save_path.json")
-
 ```
 
 ![](/_static/composability/diagram.png)

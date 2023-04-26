@@ -30,10 +30,6 @@ from gpt_index import GPTKeywordTableIndex, SimpleDirectoryReader
 # build index
 documents = SimpleDirectoryReader('data').load_data()
 index = GPTKeywordTableIndex.from_documents(documents)
-# save index
-index.save_to_disk('index_table.json')
-# load index from disk
-index = GPTKeywordTableIndex.load_from_disk('index_table.json')
 # query
 query_engine = index.as_query_engine()
 response = query_engine.query("<question text>")
