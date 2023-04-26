@@ -1,32 +1,27 @@
 from abc import ABC, abstractmethod
-from collections import defaultdict
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
-from gpt_index.callback_manager.schema import CBEvent, CBEventType
+from gpt_index.callbacks.schema import CBEvent, CBEventType
 
 
 class BaseCallbackHandler(ABC):
     """Base callback handler that can be used to track event starts and ends."""
-    
-    @property
-    def event_starts_to_ignore(self) -> Tuple[CBEventType]:
-        return Tuple()
-    
-    @property
-    def event_ends_to_ignore(self) -> Tuple[CBEventType]:
-        return Tuple()
+    def __init__(self, event_starts_to_ignore: List[CBEventType], event_ends_to_ignore: List[CBEventType]) -> None:
+        """Initialize the base callback handler."""
+        self.event_starts_to_ignore = Tuple(event_starts_to_ignore)
+        self.event_ends_to_ignore = Tuple(event_ends_to_ignore)
 
     @abstractmethod
-    def on_event_start(self, event_type: CBEventType, event: CBEvent, **kwargs: Any):
+    def on_event_start(self, event_type: CBEventType, event: CBEvent, **kwargs: Any) -> None:
         """Run when an event starts."""
     
     @abstractmethod
-    def on_event_end(self, event_type: CBEventType, event: CBEvent, **kwargs: Any):
+    def on_event_end(self, event_type: CBEventType, event: CBEvent, **kwargs: Any) -> None:
         """Run when an event ends."""
 
 
 class BaseCallbackManager(BaseCallbackHandler, ABC):
-    """Base callback manager that handles callbacks for events within LlamaIndex"""
+    """Base callback manager that handles callbacks for events within LlamaIndex."""
 
     @abstractmethod
     def add_handler(self, callback: BaseCallbackHandler) -> None:
@@ -52,13 +47,13 @@ class CallbackManager(BaseCallbackManager):
         """Initialize the manager with a list of handlers."""
         self.handlers = handlers
     
-    def on_event_start(self, event_type: CBEventType, event: CBEvent, **kwargs: Any):
+    def on_event_start(self, event_type: CBEventType, event: CBEvent, **kwargs: Any) -> None:
         """Run handlers when an event starts."""
         for handler in self.handlers:
             if event_type not in handler.event_starts_to_ignore:
                 handler.on_event_start(event_type, event, **kwargs)
 
-    def on_event_end(self, event_type: CBEventType, event: CBEvent, **kwargs: Any):
+    def on_event_end(self, event_type: CBEventType, event: CBEvent, **kwargs: Any) -> None:
         """Run handlers when an event ends."""
         for handler in self.handlers:
             if event_type not in handler.event_ends_to_ignore:
