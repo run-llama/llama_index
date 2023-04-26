@@ -51,6 +51,9 @@ def test_load_index_from_storage_multiple(
     # construct simple (i.e. in memory) storage context
     storage_context = StorageContext.from_defaults(persist_dir=tmp_path)
 
+    # add nodes to docstore
+    storage_context.docstore.add_documents(nodes)
+
     # construct multiple indices
     vector_index = GPTVectorStoreIndex(
         nodes=nodes,
