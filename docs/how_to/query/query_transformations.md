@@ -25,13 +25,13 @@ Query transformations have multiple use cases:
 To use HyDE, an example code snippet is shown below.
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 from llama_index.indices.query.query_transform.base import HyDEQueryTransform
 from llama_index.indices.query import TransformQueryEngine
 
 # load documents, build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex(documents)
+index = GPTSimpleVectorIndex(documents)
 
 # run query with HyDE query transform
 query_str = "what did paul graham do after going to RISD"

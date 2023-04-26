@@ -4,10 +4,10 @@ LlamaIndex provides a high-level interface for ingesting, indexing, and querying
 
 By default, LlamaIndex hides away the complexities and let you query your data in under 5 lines of code:
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 query_engine = index.as_query_engine()
 response = query_engine.query("Summarize the documents.")
 ```
@@ -17,7 +17,7 @@ Under the hood, LlamaIndex also supports a swappable **storage layer** that allo
 To do this, instead of the high-level API,
 
 ```python
-index = GPTVectorStoreIndex.from_documents(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 ```
 we use a lower-level API that gives more granular control:
 ```python
@@ -33,7 +33,7 @@ docstore = SimpleDocumentStore()
 docstore.add_documents(nodes)
 
 # build index
-index = GPTVectorStoreIndex(nodes, docstore=docstore)
+index = GPTSimpleVectorIndex(nodes, docstore=docstore)
 ```
 You can customize the underlying storage with a one-line change to instantiate a different document store.
 
@@ -55,7 +55,7 @@ docstore = MongoDocumentStore.from_uri(uri="<mongodb+srv://...>")
 docstore.add_documents(nodes)
 
 # build index
-index = GPTVectorStoreIndex(nodes, docstore=docstore)
+index = GPTSimpleVectorIndex(nodes, docstore=docstore)
 ```
 
 Under the hood, `MongoDocumentStore` connects to a fixed MongoDB database and initializes a new collection for your nodes.

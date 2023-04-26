@@ -71,7 +71,7 @@ def test_query_and_similarity_scores(
 def test_simple_check_ids(
     mock_service_context: ServiceContext,
 ) -> None:
-    """Test build GPTVectorStoreIndex."""
+    """Test build GPTSimpleVectorIndex."""
     ref_doc_id = "ref_doc_id_test"
     source_rel = {DocumentRelationship.SOURCE: ref_doc_id}
     all_nodes = [

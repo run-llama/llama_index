@@ -67,7 +67,7 @@ For instance, this is an example usage of the Pinecone data loader `PineconeRead
 
 LlamaIndex also supports using a vector store itself as an index.
 These are found in the following classes:
-- `GPTVectorStoreIndex`
+- `GPTSimpleVectorIndex`
 - `GPTFaissIndex`
 - `GPTWeaviateIndex`
 - `GPTPineconeIndex`
@@ -87,11 +87,11 @@ Once constructed, the index can be used for querying.
 
 **Simple Index Construction/Querying**
 ```python
-from gpt_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from gpt_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 
-# Load documents, build the GPTVectorStoreIndex
+# Load documents, build the GPTSimpleVectorIndex
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 
 # Query index
 query_engine = index.as_query_engine()

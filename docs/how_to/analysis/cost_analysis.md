@@ -92,7 +92,7 @@ You can use it in tandem with `MockLLMPredictor`.
 
 ```python
 from llama_index import (
-    GPTVectorStoreIndex, 
+    GPTSimpleVectorIndex, 
     MockLLMPredictor, 
     MockEmbedding, 
     SimpleDirectoryReader,
@@ -100,7 +100,7 @@ from llama_index import (
 )
 
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex.load_from_disk('../paul_graham_essay/index_simple_vec.json')
+index = GPTSimpleVectorIndex.load_from_disk('../paul_graham_essay/index_simple_vec.json')
 
 # specify both a MockLLMPredictor as wel as MockEmbedding
 llm_predictor = MockLLMPredictor(max_tokens=256)

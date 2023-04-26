@@ -70,25 +70,23 @@ To build a simple vector store index:
 import os
 os.environ["OPENAI_API_KEY"] = 'YOUR_OPENAI_API_KEY'
 
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 ```
-
-
-To query:
-```python
-query_engine = index.as_query_engine()
-query_engine.query("<question_text>?")
-```
-
 
 To save to and load from disk:
 ```python
 # save to disk
 index.save_to_disk('index.json')
 # load from disk
-index = GPTVectorStoreIndex.load_from_disk('index.json')
+index = GPTSimpleVectorIndex.load_from_disk('index.json')
+```
+
+To query:
+```python
+query_engine = index.as_query_engine()
+query_engine.query("<question_text>?")
 ```
 
 ## 🔧 Dependencies

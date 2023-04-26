@@ -230,14 +230,14 @@ stores the context on the generated context container.
 You can then build the context container, and pass it to the index during query-time!
 
 ```python
-from gpt_index import GPTSQLStructStoreIndex, SQLDatabase, GPTVectorStoreIndex
+from gpt_index import GPTSQLStructStoreIndex, SQLDatabase, GPTSimpleVectorIndex
 from gpt_index.indices.struct_store import SQLContextContainerBuilder
 
 sql_database = SQLDatabase(engine)
 # build a vector index from the table schema information
 context_builder = SQLContextContainerBuilder(sql_database)
 table_schema_index = context_builder.derive_index_from_context(
-    GPTVectorStoreIndex,
+    GPTSimpleVectorIndex,
     store_index=True
 )
 

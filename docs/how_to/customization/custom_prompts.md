@@ -32,7 +32,7 @@ requires both a `context_str` and `query_str` field. The prompt is passed in dur
 
 ```python
 
-from llama_index import QuestionAnswerPrompt, GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import QuestionAnswerPrompt, GPTSimpleVectorIndex, SimpleDirectoryReader
 
 # load documents
 documents = SimpleDirectoryReader('data').load_data()
@@ -47,8 +47,8 @@ QA_PROMPT_TMPL = (
     "Given this information, please answer the question: {query_str}\n"
 )
 QA_PROMPT = QuestionAnswerPrompt(QA_PROMPT_TMPL)
-# Build GPTVectorStoreIndex
-index = GPTVectorStoreIndex.from_documents(documents)
+# Build GPTSimpleVectorIndex
+index = GPTSimpleVectorIndex.from_documents(documents)
 
 query_engine = index.as_query_engine(
     text_qa_template=QA_PROMPT

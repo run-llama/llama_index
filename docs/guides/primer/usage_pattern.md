@@ -72,18 +72,18 @@ node2.relationships[DocumentRelationship.PREVIOUS] = node1.get_doc_id()
 We can now build an index over these Document objects. The simplest high-level abstraction is to load-in the Document objects during index initialization (this is relevant if you came directly from step 1 and skipped step 2).
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import GPTSimpleVectorIndex
 
-index = GPTVectorStoreIndex.from_documents(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 
 ```
 
 You can also choose to build an index over a set of Node objects directly (this is a continuation of step 2).
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import GPTSimpleVectorIndex
 
-index = GPTVectorStoreIndex(nodes)
+index = GPTSimpleVectorIndex(nodes)
 
 ```
 
@@ -102,7 +102,7 @@ from gpt_index.storage.docstore import SimpleDocumentStore
 docstore = SimpleDocumentStore()
 docstore.add_documents(nodes)
 
-index1 = GPTVectorStoreIndex(nodes, docstore=docstore)
+index1 = GPTSimpleVectorIndex(nodes, docstore=docstore)
 index2 = GPTListIndex(nodes, docstore=docstore)
 ```
 
@@ -117,9 +117,9 @@ You can also take advantage of the `insert` capability of indices to insert Docu
 one at a time instead of during index construction. 
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import GPTSimpleVectorIndex
 
-index = GPTVectorStoreIndex([])
+index = GPTSimpleVectorIndex([])
 for doc in documents:
     index.insert(doc)
 
@@ -129,10 +129,10 @@ If you want to insert nodes on directly you can use `insert_nodes` function
 instead.
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import GPTSimpleVectorIndex
 
 # nodes: Sequence[Node]
-index = GPTVectorStoreIndex([])
+index = GPTSimpleVectorIndex([])
 index.insert_nodes(nodes)
 
 ```
@@ -145,7 +145,7 @@ By default, we use OpenAI's `text-davinci-003` model. You may choose to use anot
 an index.
 
 ```python
-from llama_index import LLMPredictor, GPTVectorStoreIndex, PromptHelper, ServiceContext
+from llama_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper, ServiceContext
 from langchain import OpenAI
 
 ...
@@ -164,7 +164,7 @@ prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
 
-index = GPTVectorStoreIndex.from_documents(
+index = GPTSimpleVectorIndex.from_documents(
     documents, service_context=service_context
 )
 ```
@@ -201,7 +201,7 @@ To save to disk and load from disk, do
 # save to disk
 index.save_to_disk('index.json')
 # load from disk
-index = GPTVectorStoreIndex.load_from_disk('index.json')
+index = GPTSimpleVectorIndex.load_from_disk('index.json')
 ```
 
 **NOTE**: If you had initialized the index with a custom 
@@ -213,12 +213,12 @@ ServiceContext during `load_from_disk`.
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # when first building the index
-index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)
+index = GPTSimpleVectorIndex.from_documents(documents, service_context=service_context)
 
 ...
 
 # when loading the index from disk
-index = GPTVectorStoreIndex.load_from_disk("index.json", service_context=service_context)
+index = GPTSimpleVectorIndex.load_from_disk("index.json", service_context=service_context)
 
 ```
 
@@ -227,10 +227,10 @@ index = GPTVectorStoreIndex.load_from_disk("index.json", service_context=service
 You can build indices on top of other indices! 
 
 ```python
-from llama_index import GPTVectorStoreIndex, GPTListIndex
+from llama_index import GPTSimpleVectorIndex, GPTListIndex
 
-index1 = GPTVectorStoreIndex.from_documents(documents1)
-index2 = GPTVectorStoreIndex.from_documents(documents2)
+index1 = GPTSimpleVectorIndex.from_documents(documents1)
+index2 = GPTSimpleVectorIndex.from_documents(documents2)
 
 # Set summary text
 # you can set the summary manually, or you can
@@ -267,14 +267,14 @@ We also support a low-level composition API that gives you more granular control
 Below we highlight a few of the possible customizations.
 ```python
 from llama_index import (
-    GPTVectorStoreIndex,
+    GPTSimpleVectorIndex,
     VectorIndexRetriever,
     ResponseSynthesizer,
     RetrieverQueryEngine,
 )
 
 # build index
-index = GPTVectorStoreIndex.from_documents(documents)
+index = GPTSimpleVectorIndex.from_documents(documents)
 
 # configure retriever
 retriever = VectorIndexRetriever(

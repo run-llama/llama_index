@@ -28,7 +28,7 @@ We have a direct integration with Unstructured through [LlamaHub](https://llamah
 
 ```python
 
-from llama_index import download_loader, GPTVectorStoreIndex, ServiceContext
+from llama_index import download_loader, GPTSimpleVectorIndex, ServiceContext
 from pathlib import Path
 
 years = [2022, 2021, 2020, 2019]
@@ -58,7 +58,7 @@ We build each index and save it to disk.
 service_context = ServiceContext.from_defaults(chunk_size_limit=512)
 index_set = {}
 for year in years:
-    cur_index = GPTVectorStoreIndex.from_documents(doc_set[year], service_context=service_context)
+    cur_index = GPTSimpleVectorIndex.from_documents(doc_set[year], service_context=service_context)
     index_set[year] = cur_index
     cur_index.save_to_disk(f'index_{year}.json')
 
@@ -69,7 +69,7 @@ To load an index from disk, do the following
 # Load indices from disk
 index_set = {}
 for year in years:
-    cur_index = GPTVectorStoreIndex.load_from_disk(f'index_{year}.json')
+    cur_index = GPTSimpleVectorIndex.load_from_disk(f'index_{year}.json')
     index_set[year] = cur_index
 ```
 
