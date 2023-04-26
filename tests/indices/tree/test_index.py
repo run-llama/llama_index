@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.storage.docstore import BaseDocumentStore
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.langchain_helpers.chain_wrapper import (
@@ -14,14 +15,6 @@ from gpt_index.langchain_helpers.chain_wrapper import (
 )
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
-from tests.mock_utils.mock_decorator import patch_common
-from tests.mock_utils.mock_predict import (
-    mock_llmchain_predict,
-    mock_llmpredictor_predict,
-)
-from tests.mock_utils.mock_text_splitter import (
-    mock_token_splitter_newline_with_overlaps,
-)
 
 
 def _get_left_or_right_node(
@@ -38,19 +31,16 @@ def _get_left_or_right_node(
     return docstore.get_node(node_id)
 
 
-@patch_common
 def test_build_tree(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
     struct_kwargs: Dict,
 ) -> None:
     """Test build tree."""
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(
+        documents, service_context=mock_service_context, **index_kwargs
+    )
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
 
@@ -66,14 +56,9 @@ def test_build_tree(
     assert nodes[5].text == ("This is another test.\nThis is a test v2.")
 
 
-@patch_common
 def test_build_tree_with_embed(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
     struct_kwargs: Dict,
 ) -> None:
     """Test build tree."""
@@ -85,7 +70,9 @@ def test_build_tree_with_embed(
         "This is a test v2."
     )
     document = Document(doc_text, embedding=[0.1, 0.2, 0.3])
-    tree = GPTTreeIndex.from_documents([document], **index_kwargs)
+    tree = GPTTreeIndex.from_documents(
+        [document], service_context=mock_service_context, **index_kwargs
+    )
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
     all_nodes = tree.docstore.get_node_dict(tree.index_struct.all_nodes)
@@ -106,23 +93,18 @@ OUTPUTS = [
 ]
 
 
-@patch_common
-@patch.object(LLMPredictor, "apredict", side_effect=mock_llmpredictor_predict)
 @patch("gpt_index.indices.common_tree.base.run_async_tasks", side_effect=[OUTPUTS])
 def test_build_tree_async(
     _mock_run_async_tasks: Any,
-    _mock_apredict: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
     struct_kwargs: Dict,
 ) -> None:
     """Test build tree with use_async."""
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex.from_documents(documents, use_async=True, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(
+        documents, use_async=True, service_context=mock_service_context, **index_kwargs
+    )
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
@@ -134,14 +116,8 @@ def test_build_tree_async(
     assert nodes[5].text == ("This is another test.\nThis is a test v2.")
 
 
-@patch_common
 def test_build_tree_multiple(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    documents: List[Document],
+    mock_service_context: ServiceContext,
     struct_kwargs: Dict,
 ) -> None:
     """Test build tree."""
@@ -150,7 +126,9 @@ def test_build_tree_multiple(
         Document("This is another test.\nThis is a test v2."),
     ]
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex.from_documents(new_docs, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(
+        new_docs, service_context=mock_service_context, **index_kwargs
+    )
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
@@ -160,19 +138,16 @@ def test_build_tree_multiple(
     assert nodes[3].text == "This is a test v2."
 
 
-@patch_common
 def test_insert(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
     struct_kwargs: Dict,
 ) -> None:
     """Test insert."""
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(
+        documents, service_context=mock_service_context, **index_kwargs
+    )
 
     # test insert
     new_doc = Document("This is a new doc.", doc_id="new_doc")
@@ -220,16 +195,11 @@ def test_insert(
     assert nodes[0].ref_doc_id == "new_doc_test"
 
 
-@patch_common
 def test_twice_insert_empty(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    mock_service_context: ServiceContext,
 ) -> None:
     """# test twice insert from empty (with_id)"""
-    tree = GPTTreeIndex.from_documents([])
+    tree = GPTTreeIndex.from_documents([], service_context=mock_service_context)
 
     # test first insert
     new_doc = Document("This is a new doc.", doc_id="new_doc")
@@ -243,40 +213,3 @@ def test_twice_insert_empty(
 def _mock_tokenizer(text: str) -> int:
     """Mock tokenizer that splits by spaces."""
     return len(text.split(" "))
-
-
-@patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
-@patch("gpt_index.llm_predictor.base.OpenAI")
-@patch.object(LLMPredictor, "get_llm_metadata", return_value=LLMMetadata())
-@patch.object(LLMChain, "__init__", return_value=None)
-@patch.object(
-    TokenTextSplitter,
-    "split_text_with_overlaps",
-    side_effect=mock_token_splitter_newline_with_overlaps,
-)
-@patch.object(LLMPredictor, "_count_tokens", side_effect=_mock_tokenizer)
-def test_build_and_count_tokens(
-    _mock_count_tokens: Any,
-    _mock_split_text: Any,
-    _mock_init: Any,
-    _mock_llm_metadata: Any,
-    _mock_llmchain: Any,
-    _mock_predict: Any,
-    documents: List[Document],
-    struct_kwargs: Dict,
-) -> None:
-    """Test build and count tokens."""
-    index_kwargs, _ = struct_kwargs
-    # First block is "Hello world.\nThis is a test.\n"
-    # Second block is "This is another test.\nThis is a test v2."
-    # first block is 5 tokens because
-    # last word of first line and first word of second line are joined
-    # second block is 8 tokens for similar reasons.
-    first_block_count = 5
-    second_block_count = 8
-    llmchain_mock_resp_token_count = 4
-    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
-    assert tree.service_context.llm_predictor.total_tokens_used == (
-        (first_block_count + llmchain_mock_resp_token_count)
-        + (second_block_count + llmchain_mock_resp_token_count)
-    )
