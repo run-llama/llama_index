@@ -9,6 +9,7 @@ from langchain.input import get_color_mapping, print_text
 
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.list.base import GPTListIndex
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.readers.schema.base import Document
@@ -47,6 +48,7 @@ class Playground:
         cls,
         documents: List[Document],
         index_classes: List[Type[BaseGPTIndex]] = DEFAULT_INDEX_CLASSES,
+        modes: List[str] = DEFAULT_MODES,
         **kwargs: Any,
     ) -> Playground:
         """Initialize with Documents using the default list of indices.
@@ -60,9 +62,10 @@ class Playground:
             )
 
         indices = [
-            index_class.from_documents(documents) for index_class in index_classes
+            index_class.from_documents(documents, **kwargs)
+            for index_class in index_classes
         ]
-        return cls(indices, **kwargs)
+        return cls(indices, modes)
 
     def _validate_indices(self, indices: List[BaseGPTIndex]) -> None:
         """Validate a list of indices."""

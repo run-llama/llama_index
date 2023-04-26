@@ -8,6 +8,7 @@ import pytest
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.tree.select_leaf_embedding_retriever import (
     TreeSelectLeafEmbeddingRetriever,
 )
@@ -19,7 +20,6 @@ from gpt_index.langchain_helpers.chain_wrapper import (
 )
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
-from tests.mock_utils.mock_decorator import patch_common
 from tests.mock_utils.mock_predict import mock_llmchain_predict
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
@@ -70,24 +70,21 @@ def _get_node_text_embedding_similarities(
     return similarities
 
 
-@patch_common
 @patch.object(
     TreeSelectLeafEmbeddingRetriever,
     "_get_query_text_embedding_similarities",
     side_effect=_get_node_text_embedding_similarities,
 )
 def test_embedding_query(
-    _mock_similarity: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    _patch_similarity: Any,
     index_kwargs: Dict,
     documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test embedding query."""
-    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
+    tree = GPTTreeIndex.from_documents(
+        documents, service_context=mock_service_context, **index_kwargs
+    )
 
     # test embedding query
     query_str = "What is?"

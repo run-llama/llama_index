@@ -2,22 +2,16 @@ from typing import Any, List
 from unittest.mock import patch
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.list.retrievers import ListIndexEmbeddingRetriever
+from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
 from tests.indices.list.test_index import _get_embeddings
-from tests.mock_utils.mock_decorator import patch_common
 
 
-@patch_common
 def test_retrieve_default(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-    documents: List[Document],
+    documents: List[Document], mock_service_context: ServiceContext
 ) -> None:
     """Test list query."""
-    index = GPTListIndex.from_documents(documents)
+    index = GPTListIndex.from_documents(documents, service_context=mock_service_context)
 
     query_str = "What is?"
     retriever = index.as_retriever(mode="default")
@@ -27,23 +21,18 @@ def test_retrieve_default(
         assert node_with_score.node.text == line
 
 
-@patch_common
 @patch.object(
     ListIndexEmbeddingRetriever,
     "_get_embeddings",
     side_effect=_get_embeddings,
 )
 def test_embedding_query(
-    _mock_similarity: Any,
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
+    _patch_get_embeddings: Any,
     documents: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test embedding query."""
-    index = GPTListIndex.from_documents(documents)
+    index = GPTListIndex.from_documents(documents, service_context=mock_service_context)
 
     # test embedding query
     query_str = "What is?"
