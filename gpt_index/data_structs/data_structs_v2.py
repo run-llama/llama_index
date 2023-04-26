@@ -35,13 +35,6 @@ class V2IndexStruct(DataClassJsonMixin):
     def get_type(cls) -> IndexStructType:
         """Get index struct type."""
 
-    def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
-        out_dict = {
-            TYPE_KEY: self.get_type(),
-            DATA_KEY: super().to_dict(encode_json),
-        }
-        return out_dict
-
 
 @dataclass
 class IndexGraph(V2IndexStruct):

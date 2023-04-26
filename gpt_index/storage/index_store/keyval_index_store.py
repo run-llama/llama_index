@@ -32,4 +32,4 @@ class KeyValIndexStore(BaseIndexStore):
 
     def index_structs(self) -> List[V2IndexStruct]:
         jsons = self._kvstore.get_all()
-        return [json_to_index_struct(json) for json in jsons]
+        return [json_to_index_struct(json) for json in jsons.values()]

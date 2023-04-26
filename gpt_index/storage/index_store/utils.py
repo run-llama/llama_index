@@ -16,4 +16,3 @@ def json_to_index_struct(struct_dict: dict) -> V2IndexStruct:
     data_dict = struct_dict[DATA_KEY]
     cls = INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS[type]
     return cls.from_dict(data_dict)
-

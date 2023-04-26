@@ -1,5 +1,6 @@
 from typing import List
 import pytest
+from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 
 from gpt_index.readers.schema.base import Document
 
@@ -13,7 +14,6 @@ from gpt_index.llm_predictor.base import LLMPredictor
 
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_predict import (
-    mock_llmpredictor_predict,
     patch_llmpredictor_apredict,
     patch_llmpredictor_predict,
 )
@@ -34,6 +34,26 @@ def documents() -> List[Document]:
         "This is a test v2."
     )
     return [Document(doc_text)]
+
+
+@pytest.fixture
+def nodes() -> List[Node]:
+    """Get documents."""
+    # NOTE: one document for now
+    return [
+        Node("Hello world.", relationships={DocumentRelationship.SOURCE: "test doc"}),
+        Node(
+            "This is a test.", relationships={DocumentRelationship.SOURCE: "test doc"}
+        ),
+        Node(
+            "This is another test.",
+            relationships={DocumentRelationship.SOURCE: "test doc"},
+        ),
+        Node(
+            "This is a test v2.",
+            relationships={DocumentRelationship.SOURCE: "test doc"},
+        ),
+    ]
 
 
 @pytest.fixture
