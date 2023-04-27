@@ -11,6 +11,7 @@ from abc import ABC, abstractmethod
 import logging
 from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, cast
 
+from gpt_index.callbacks.schema import CBEvent, CBEventType
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.docstore.registry import get_default_docstore
@@ -68,6 +69,21 @@ class BaseResponseBuilder(ABC):
         self._service_context.llama_logger.add_log(
             {f"{log_prefix.lower()}_response": response or "Empty Response"}
         )
+
+    def _callback_llm_on_start(self) -> str:
+        """Call the callback manager on_start and return event id."""
+        event_id = self._service_context.callback_manager.on_event_start(CBEvent(CBEventType.LLM))
+        return event_id
+    
+    def _callback_llm_on_end(self, formatted_prompt: str, response: RESPONSE_TEXT_TYPE, event_id: str, stage: Optional[str] = "") -> None:
+        self._service_context.callback_manager.on_event_end(CBEvent(CBEventType.LLM, payload={"stage": stage, "response": response, "formatted_prompt": formatted_prompt}), event_id=event_id)
+
+    def _callback_chunking_on_start(self, text: str) -> str:
+        event_id = self._service_context.callback_manager.on_event_start(CBEvent(CBEventType.CHUNKING, payload={"node_text": text}))
+        return event_id
+
+    def _callback_chunking_on_end(self, text_chunks: Sequence[str], event_id: str) -> None:
+        self._service_context.callback_manager.on_event_end(CBEvent(CBEventType.CHUNKING, payload={"chunks": text_chunks}), event_id=event_id)
 
     @abstractmethod
     @llm_token_counter("get_response")
@@ -159,11 +175,15 @@ class Refine(BaseResponseBuilder):
                 text_qa_template, 1
             )
         )
+        event_id = self._callback_chunking_on_start(text_chunk)
         text_chunks = qa_text_splitter.split_text(text_chunk)
+        self._callback_chunking_on_end(text_chunk, event_id)
+
         response: Optional[RESPONSE_TEXT_TYPE] = None
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
             if response is None and not self._streaming:
+                event_id = self._callback_llm_on_start()
                 (
                     response,
                     formatted_prompt,
@@ -174,7 +194,9 @@ class Refine(BaseResponseBuilder):
                 self._log_prompt_and_response(
                     formatted_prompt, response, log_prefix="Initial"
                 )
+                self._callback_llm_on_end(formatted_prompt, response, event_id, stage="Initial")
             elif response is None and self._streaming:
+                event_id = self._callback_llm_on_start()
                 response, formatted_prompt = self._service_context.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
@@ -182,6 +204,7 @@ class Refine(BaseResponseBuilder):
                 self._log_prompt_and_response(
                     formatted_prompt, response, log_prefix="Initial"
                 )
+                self._callback_llm_on_end(formatted_prompt, response, event_id, stage="Initial")
             else:
                 response = self._refine_response_single(
                     cast(RESPONSE_TEXT_TYPE, response),
@@ -217,8 +240,13 @@ class Refine(BaseResponseBuilder):
                 refine_template, 1
             )
         )
+
+        event_id = self._callback_chunking_on_start(text_chunk)
         text_chunks = refine_text_splitter.split_text(text_chunk)
+        self._callback_chunking_on_end(text_chunks, event_id)
+
         for cur_text_chunk in text_chunks:
+            event_id = self._callback_llm_on_start()
             if not self._streaming:
                 (
                     response,
@@ -239,6 +267,7 @@ class Refine(BaseResponseBuilder):
             self._log_prompt_and_response(
                 formatted_prompt, response, log_prefix="Refined"
             )
+            self._callback_llm_on_end(formatted_prompt, response, event_id, stage="Refined")
         return response
 
 
@@ -393,7 +422,10 @@ class TreeSummarize(Refine):
                 summary_template, num_children
             )
         )
+        event_id = self._callback_chunking_on_start(all_text)
         text_chunks = text_splitter.split_text(all_text)
+        self._callback_chunking_on_end(text_chunks, event_id)
+
         new_nodes = [Node(text=t) for t in text_chunks]
 
         docstore = get_default_docstore()
@@ -454,6 +486,7 @@ class SimpleSummarize(BaseResponseBuilder):
         )
 
         response: RESPONSE_TEXT_TYPE
+        event_id = self._callback_llm_on_start()
         if not self._streaming:
             (
                 response,
@@ -462,13 +495,14 @@ class SimpleSummarize(BaseResponseBuilder):
                 text_qa_template,
                 context_str=node_text,
             )
-            self._log_prompt_and_response(formatted_prompt, response)
         else:
+            event_id = self._callback_llm_on_start()
             response, formatted_prompt = self._service_context.llm_predictor.stream(
                 text_qa_template,
                 context_str=node_text,
             )
-            self._log_prompt_and_response(formatted_prompt, response)
+        self._log_prompt_and_response(formatted_prompt, response)
+        self._callback_llm_on_end(formatted_prompt, response, event_id, stage="summarize")
         if isinstance(response, str):
             response = response or "Empty Response"
         else:
@@ -490,18 +524,19 @@ class SimpleSummarize(BaseResponseBuilder):
         )
 
         response: RESPONSE_TEXT_TYPE
+        event_id = self._callback_llm_on_start()
         if not self._streaming:
             (response, formatted_prompt,) = self._service_context.llm_predictor.predict(
                 text_qa_template,
                 context_str=node_text,
             )
-            self._log_prompt_and_response(formatted_prompt, response)
         else:
             response, formatted_prompt = self._service_context.llm_predictor.stream(
                 text_qa_template,
                 context_str=node_text,
             )
-            self._log_prompt_and_response(formatted_prompt, response)
+        self._log_prompt_and_response(formatted_prompt, response)
+        self._callback_llm_on_end(formatted_prompt, response, event_id, stage="summarize")
         if isinstance(response, str):
             response = response or "Empty Response"
         else:

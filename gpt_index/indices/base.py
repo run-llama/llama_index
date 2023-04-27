@@ -4,6 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
+from gpt_index.callbacks.schema import CBEvent, CBEventType
 from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node
@@ -95,7 +96,9 @@ class BaseGPTIndex(Generic[IS], ABC):
         for doc in documents:
             docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
 
+        event_id = service_context.callback_manager.on_event_start(CBEvent(CBEventType.CHUNKING, payload={'documents': documents}))
         nodes = service_context.node_parser.get_nodes_from_documents(documents)
+        service_context.callback_manager.on_event_end(CBEvent(CBEventType.CHUNKING, payload={'nodes': nodes}), event_id=event_id)
 
         return cls(
             nodes=nodes,
@@ -145,7 +148,9 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
+        event_id = self.service_context.callback_manager.on_event_start(CBEvent(CBEventType.CHUNKING, payload={'documents': [document]}))
         nodes = self.service_context.node_parser.get_nodes_from_documents([document])
+        self.service_context.callback_manager.on_event_end(CBEvent(CBEventType.CHUNKING, payload={'nodes': nodes}), event_id=event_id)
         self.insert_nodes(nodes, **insert_kwargs)
 
     @abstractmethod
