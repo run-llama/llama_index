@@ -16,5 +16,6 @@ These are described in their respective guides below.
    customization/custom_llms.md
    customization/custom_prompts.md
    customization/embeddings.md
+   storage/customization.md
 
 

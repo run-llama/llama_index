@@ -89,15 +89,6 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    how_to/integrations.rst
    how_to/storage.rst
 
-   .. evaluation
-   .. integrations
-
-   .. how_to/composability.md
-   .. how_to/update.md
-   .. how_to/cost_analysis.md
-   .. how_to/vector_stores.md
-   .. how_to/using_with_langchain.md
-
 
 .. toctree::
    :maxdepth: 1

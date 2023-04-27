@@ -66,7 +66,7 @@ For instance, this is an example usage of the Pinecone data loader `PineconeRead
 ## Using a Vector Store as an Index
 
 LlamaIndex also supports different vector stores
-as the backend for `GPTVectorStoreIndex`.
+as the storage backend for `GPTVectorStoreIndex`.
 
 Detailed API reference is [found here](/reference/indices/vector_store.rst).
 

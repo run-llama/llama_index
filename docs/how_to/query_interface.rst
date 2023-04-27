@@ -19,4 +19,3 @@ allows you to both retrieve the set of relevant documents, as well as synthesize
    /how_to/index_structs/composability.rst
    /how_to/query/query_transformations.md
    /how_to/query/node_postprocessor.md
-   .. provide query transformations guide
