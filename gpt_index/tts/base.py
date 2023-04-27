@@ -51,7 +51,7 @@ class BarkTTS(BaseTTS):
         # text to be chunked into 10 words each to avoid hallicunation
         words = text.split()
         chunks = [words[i : i + 10] for i in range(0, len(words), 10)]
-        chunks = [" ".join(chunk) for chunk in chunks]
+        chunks = [" ".join(chunk) for chunk in chunks]  # type: ignore
 
         full_generation = None
         history_prompt = self.lang_speaker_voice
