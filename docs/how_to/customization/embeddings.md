@@ -44,7 +44,7 @@ For the list index (`GPTListIndex`):
 
 For the tree index (`GPTTreeIndex`):
 - We start with the root nodes, and traverse down the tree by picking the child node through embedding similarity.
-- See the [Tree Query API](/reference/indices/tree_query.rst) for more details.
+- See the [Tree Query API](/reference/query/retrievers/tree.rst) for more details.
 
 **Example Notebook**
 

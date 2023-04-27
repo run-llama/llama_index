@@ -6,6 +6,19 @@ from gpt_index.response.schema import RESPONSE_TYPE
 
 
 class TransformQueryEngine(BaseQueryEngine):
+    """Transform query engine.
+
+    Applies a query transform to a query bundle before passing
+        it to a query engine.
+
+    Args:
+        query_engine (BaseQueryEngine): A query engine object.
+        query_transform (BaseQueryTransform): A query transform object.
+        transform_extra_info (Optional[dict]): Extra info to pass to the
+            query transform.
+
+    """
+
     def __init__(
         self,
         query_engine: BaseQueryEngine,

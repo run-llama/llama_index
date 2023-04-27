@@ -43,6 +43,7 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
     """Recency post-processor.
 
     This post-processor does the following steps:
+
     - Decides if we need to use the post-processor given the query
       (is it temporal-related?)
     - If yes, sorts nodes by date.
@@ -103,6 +104,7 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     """Recency post-processor.
 
     This post-processor does the following steps:
+
     - Decides if we need to use the post-processor given the query
       (is it temporal-related?)
     - If yes, sorts nodes by date.
