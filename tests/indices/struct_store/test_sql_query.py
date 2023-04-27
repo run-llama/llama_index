@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
 from gpt_index.indices.service_context import ServiceContext
@@ -53,7 +53,7 @@ def test_sql_index_query(
 
 
 def test_sql_index_async_query(
-    allow_networking,
+    allow_networking: Any,
     mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
