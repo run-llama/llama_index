@@ -19,7 +19,7 @@ CONFIG_FILE_NAME = "config.ini"
 JSON_INDEX_FILE_NAME = "index.json"
 DEFAULT_CONFIG = {
     "store": {"type": "json"},
-    "index": {"type": "default"},
+    "index": {"type": "default"}
     "embed_model": {"type": "default"},
     "llm_predictor": {"type": "default"},
 }
