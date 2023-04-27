@@ -65,31 +65,25 @@ For instance, this is an example usage of the Pinecone data loader `PineconeRead
 
 ## Using a Vector Store as an Index
 
-LlamaIndex also supports using a vector store itself as an index.
-These are found in the following classes:
-- `GPTVectorStoreIndex`
-- `GPTFaissIndex`
-- `GPTWeaviateIndex`
-- `GPTPineconeIndex`
-- `GPTQdrantIndex`
-- `GPTChromaIndex`
-- `GPTMilvusIndex`
-- `GPTDeepLakeIndex`
-- `GPTMyScaleIndex`
+LlamaIndex also supports different vector stores
+as the backend for `GPTVectorStoreIndex`.
 
+Detailed API reference is [found here](/reference/indices/vector_store.rst).
 
-An API reference of each vector index is [found here](/reference/indices/vector_store.rst).
-
-Similar to any other index within LlamaIndex (tree, keyword table, list), this index can be constructed upon any collection
-of documents. We use the vector store within the index to store embeddings for the input text chunks.
+Similar to any other index within LlamaIndex (tree, keyword table, list), `GPTVectorStoreIndex` can be constructed upon any collection
+of documents. 
+We use the vector store within the index to store embeddings for the input text chunks.
 
 Once constructed, the index can be used for querying.
 
-**Simple Index Construction/Querying**
+**Default Vector Store Index Construction/Querying**
+
+By default, `GPTVectorStoreIndex` uses a in-memory `SimpleVectorStore`
+that's initialized as part of the default storage context. 
 ```python
 from gpt_index import GPTVectorStoreIndex, SimpleDirectoryReader
 
-# Load documents, build the GPTVectorStoreIndex
+# Load documents and build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 index = GPTVectorStoreIndex.from_documents(documents)
 
@@ -99,53 +93,66 @@ response = query_engine.query("What did the author do growing up?")
 
 ```
 
-**DeepLake Index Construction/Querying**
+We can query over custom vector store as follows:
+```python
+from gpt_index import GPTVectorStoreIndex, SimpleDirectoryReader, StorageContext
+from gpt_index.vector_stores import DeepLakeVectorStore
+
+# construct vector store and customize storage context
+storage_context = StorageContext.from_defaults(
+    vector_store = DeepLakeVectorStore(dataset_path="<dataset_path>")
+)
+
+# Load documents and build index
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+index = GPTVectorStoreIndex.from_documents(documents, storage_context=storage_context)
+
+# Query index
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
+```
+
+Below we show more examples of how to construct various vector stores we support.
+
+**DeepLake**
 ```python
 import os
 import getpath
-
-from gpt_index import GPTDeepLakeIndex, SimpleDirectoryReader
-
+from gpt_index.vector_stores import DeepLakeVectorStore
 
 os.environ["OPENAI_API_KEY"] = getpath.getpath("OPENAI_API_KEY: ")
 os.environ["ACTIVELOOP_TOKEN"] = getpath.getpath("ACTIVELOOP_TOKEN: ")
+dataset_path = "hub://adilkhan/paul_graham_essay"
 
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-deeplake_dataset_path = "hub://adilkhan/paul_graham_essay"
-
-# Create an index over the documnts
-index = GPTDeepLakeIndex.from_documents(documents, dataset_path=dataset_path, overwrite=True)
-
-# Query index
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
+# construct vector store
+vector_store = DeepLakeVectorStore(dataset_path=dataset_path, overwrite=True)
 ```
 
-**Faiss Index Construction/Querying**
+**Faiss**
 ```python
-from gpt_index import GPTFaissIndex, SimpleDirectoryReader
 import faiss
+from gpt_index.vector_stores import FaissVectorStore
 
-# Creating a faiss index
+# create faiss index
 d = 1536
 faiss_index = faiss.IndexFlatL2(d)
 
-# Load documents, build the GPTFaissIndex
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTFaissIndex.from_documents(documents, faiss_index=faiss_index)
+# construct vector store
+vector_store = FaissVectorStore(faiss_index, persist_dir='./storage')
 
-# Query index
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
+...
 
+# NOTE: since faiss index is in-memory, we need to explicitly call
+#       vector_store.persist() or storage_context.persist() to save it to disk
+storage_context.persist()
 ```
 
-**Weaviate Index Construction/Querying**
+**Weaviate**
 ```python
-from gpt_index import GPTWeaviateIndex, SimpleDirectoryReader
 import weaviate
+from gpt_index.vector_stores import WeaviateVectorStore
 
-# Creating a Weaviate vector store
+# creating a Weaviate client
 resource_owner_config = weaviate.AuthClientPassword(
     username="<username>",
     password="<password>",
@@ -154,20 +161,14 @@ client = weaviate.Client(
     "https://<cluster-id>.semi.network/", auth_client_secret=resource_owner_config
 )
 
-# Load documents, build the GPTWeaviateIndex
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTWeaviateIndex.from_documents(documents, weaviate_client=client)
-
-# Query index
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
-
+# construct vector store
+vector_store = WeaviateVectorStore(weaviate_client=client)
 ```
 
-**Pinecone Index Construction/Querying**
+**Pinecone**
 ```python
-from gpt_index import GPTPineconeIndex, SimpleDirectoryReader
 import pinecone
+from gpt_index.vector_stores import PineconeVectorStore
 
 # Creating a Pinecone index
 api_key = "api_key"
@@ -184,22 +185,17 @@ index = pinecone.Index("quickstart")
 # reuse pinecone indexes)
 metadata_filters = {"title": "paul_graham_essay"}
 
-
-# Load documents, build the GPTPineconeIndex
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTPineconeIndex.from_documents(
-    documents, pinecone_index=index, metadata_filters=metadata_filters
+# construct vector store
+vector_store = PineconeVectorStore(
+    pinecone_index=index, 
+    metadata_filters=metadata_filters
 )
-
-# Query index
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
 ```
 
-**Qdrant Index Construction/Querying**
+**Qdrant**
 ```python
 import qdrant_client
-from gpt_index import GPTQdrantIndex, SimpleDirectoryReader
+from gpt_index.vector_stores import QdrantVectorStore
 
 # Creating a Qdrant vector store
 client = qdrant_client.QdrantClient(
@@ -209,51 +205,43 @@ client = qdrant_client.QdrantClient(
 )
 collection_name = "paul_graham"
 
-# Load documents, build the GPTQdrantIndex
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTQdrantIndex.from_documents(documents, collection_name=collection_name, client=client)
-
-# Query index
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
+# construct vector store
+vector_store = QdrantVectorStore(
+    client=client,
+    collection_name=collection_name, 
+)
 ```
 
-**Chroma Index Construction/Querying**
+**Chroma**
 
 ```python
 import chromadb
-from gpt_index import GPTChromaIndex, SimpleDirectoryReader
+from gpt_index.vector_stores import ChromaVectorStore
 
-# Creating a Chroma vector store
+# Creating a Chroma client
 # By default, Chroma will operate purely in-memory.
 chroma_client = chromadb.Client()
 chroma_collection = chroma_client.create_collection("quickstart")
 
-# Load documents, build the GPTChromaIndex
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTChromaIndex.from_documents(documents, chroma_collection=chroma_collection)
-
-# Query index
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
-
+# construct vector store
+vector_store = ChromaVectorStore(
+    chroma_collection=chroma_collection,
+)
 ```
 
-**Milvus Index Construction/Querying**
+**Milvus**
 - Milvus Index offers the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and does not include extra_info.
 
 ```python
 import pymilvus
-from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
+from gpt_index.vector_stores import MilvusVectorStore
 
-
-# Load documents, build the GPTMilvusStore
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTMilvusIndex.from_documents(documents, host='localhost', port=19530, overwrite='True')
-
-# Query index
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
+# construct vector store
+vector_store = MilvusVectorStore(
+    host='localhost', 
+    port=19530, 
+    overwrite='True'
+)
 
 ```
 
@@ -264,18 +252,16 @@ If you get stuck at building wheel for `grpcio`, check if you are using python 3
 and try downgrading.
 
 
-**Zilliz Index Construction/Querying**
+**Zilliz**
 - Zilliz Cloud (hosted version of Milvus) uses the Milvus Index with some extra arguments.
 
 ```python
 import pymilvus
-from gpt_index import GPTMilvusIndex, SimpleDirectoryReader
+from gpt_index.vector_stores import MilvusVectorStore
 
 
-# Load documents, build the GPTMilvusStore
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTMilvusIndex.from_documents(
-    documents, 
+# construct vector store
+vector_store = MilvusVectorStore(
     host='foo.vectordb.zillizcloud.com', 
     port=403, 
     user="db_admin", 
@@ -283,11 +269,6 @@ index = GPTMilvusIndex.from_documents(
     use_secure=True, 
     overwrite='True'
 )
-
-# Query index
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
-
 ```
 
 **Note**: `GPTMilvusIndex` depends on the `pymilvus` library.
@@ -296,14 +277,13 @@ If you get stuck at building wheel for `grpcio`, check if you are using python 3
 (there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
 and try downgrading.
 
-**MyScale Index Construction/Querying**
+**MyScale**
 
 ```python
 import clickhouse_connect
-from gpt_index import GPTMyScaleIndex, SimpleDirectoryReader
+from gpt_index.vector_stores import MyScaleVectorStore
 
 # Creating a MyScale client
-
 client = clickhouse_connect.get_client(
     host='YOUR_CLUSTER_HOST', 
     port=8443, 
@@ -311,12 +291,11 @@ client = clickhouse_connect.get_client(
     password='YOUR_CLUSTER_PASSWORD'
 )
 
-# Load documents, build the GPTMyScaleIndex
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTMyScaleIndex.from_documents(documents, myscale_client=client)
 
-# Query index
-response = index.query("What did the author do growing up?")
+# construct vector store
+vector_store = MyScaleVectorStore(
+    myscale_client=client
+)
 ```
 
 
