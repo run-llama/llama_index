@@ -1,6 +1,6 @@
 """Test list index."""
 
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base_retriever import BaseRetriever

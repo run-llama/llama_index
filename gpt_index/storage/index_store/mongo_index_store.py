@@ -1,5 +1,4 @@
 from typing import Optional
-from gpt_index.storage.docstore.keyval_docstore import KVDocumentStore
 from gpt_index.storage.index_store.keyval_index_store import KVIndexStore
 from gpt_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 

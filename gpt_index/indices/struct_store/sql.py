@@ -1,10 +1,8 @@
 """SQL Structured Store."""
-import json
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
-from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.common.struct_store.sql import SQLStructDatapointExtractor

@@ -2,7 +2,6 @@ import socket
 from typing import Any
 
 import pytest
-import pytest
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.llm_predictor.base import LLMPredictor

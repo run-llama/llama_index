@@ -3,8 +3,7 @@
 from dataclasses import dataclass, field
 import json
 import os
-from pathlib import Path
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Dict, List, cast
 
 from dataclasses_json import DataClassJsonMixin
 

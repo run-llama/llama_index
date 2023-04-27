@@ -6,8 +6,6 @@ from gpt_index.storage.docstore.mongo_docstore import MongoDocumentStore
 from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
 from gpt_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
-from tests.storage.kvstore.mock_mongodb import MockMongoClient
-from tests.storage.kvstore.test_mongodb_kvstore import kvstore
 
 
 @pytest.fixture
@@ -19,13 +17,8 @@ def documents() -> List[Document]:
 
 
 @pytest.fixture()
-def mongo_client() -> MockMongoClient:
-    return MockMongoClient()
-
-
-@pytest.fixture()
-def mongodb_docstore(kvstore: MongoDBKVStore) -> MongoDocumentStore:
-    return MongoDocumentStore(mongo_kvstore=kvstore)
+def mongodb_docstore(mongo_kvstore: MongoDBKVStore) -> MongoDocumentStore:
+    return MongoDocumentStore(mongo_kvstore=mongo_kvstore)
 
 
 def test_mongo_docstore(

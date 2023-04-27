@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-import pathlib
-from typing import Optional, Union
+from typing import Optional
 from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from gpt_index.storage.docstore.types import BaseDocumentStore
 from gpt_index.storage.index_store.simple_index_store import SimpleIndexStore

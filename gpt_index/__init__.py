@@ -117,15 +117,7 @@ __all__ = [
     "GPTListIndex",
     "GPTEmptyIndex",
     "GPTTreeIndex",
-    "GPTFaissIndex",
-    "GPTPineconeIndex",
-    "GPTQdrantIndex",
-    "GPTMilvusIndex",
     "GPTVectorStoreIndex",
-    "GPTVectorStoreIndex",
-    "GPTWeaviateIndex",
-    "GPTChromaIndex",
-    "GPTMyScaleIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",
     "LangchainEmbedding",
@@ -175,7 +167,9 @@ __all__ = [
     "TwitterTweetReader",
     "download_loader",
     "GithubRepositoryReader",
-    "GPTDeepLakeIndex",
+    "load_graph_from_storage",
+    "load_index_from_storage",
+    "load_indices_from_storage",
 ]
 
 # NOTE: keep for backwards compatibility

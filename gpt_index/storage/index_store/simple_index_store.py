@@ -1,6 +1,4 @@
 import os
-from pathlib import Path
-from typing import Union
 from gpt_index.storage.index_store.keyval_index_store import KVIndexStore
 from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
 from gpt_index.storage.kvstore.types import BaseInMemoryKVStore

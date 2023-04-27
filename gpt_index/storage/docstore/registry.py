@@ -1,7 +1,6 @@
 from enum import Enum
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Dict, Type
 
-from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from gpt_index.storage.docstore.mongo_docstore import MongoDocumentStore
 from gpt_index.storage.docstore.types import BaseDocumentStore

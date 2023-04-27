@@ -10,9 +10,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
-from pydantic import Json
 
-from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
 

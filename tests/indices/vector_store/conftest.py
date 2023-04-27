@@ -4,8 +4,6 @@ import pathlib
 import sys
 from unittest.mock import MagicMock
 
-import pytest
-
 
 from gpt_index.storage.storage_context import StorageContext
 from gpt_index.vector_stores.faiss import FaissVectorStore

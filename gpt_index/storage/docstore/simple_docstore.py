@@ -1,6 +1,5 @@
 import os
-from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 from gpt_index.storage.docstore.keyval_docstore import KVDocumentStore
 from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
 from gpt_index.storage.kvstore.types import BaseInMemoryKVStore

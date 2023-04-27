@@ -1,10 +1,8 @@
 """Base index classes."""
-import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
+from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
 
-from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base_retriever import BaseRetriever

@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import List
 from unittest.mock import patch
 from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from gpt_index.indices.query.schema import QueryBundle

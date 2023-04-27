@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 from gpt_index.data_structs.node_v2 import Node
 
 from gpt_index.schema import BaseDocument

@@ -9,7 +9,6 @@ from langchain.input import get_color_mapping, print_text
 
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.readers.schema.base import Document

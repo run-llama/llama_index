@@ -1,7 +1,6 @@
 from enum import Enum
-from typing import Any, Dict, Optional, Type
+from typing import Dict, Type
 
-from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from gpt_index.vector_stores.chroma import ChromaVectorStore
 from gpt_index.vector_stores.deeplake import DeepLakeVectorStore
