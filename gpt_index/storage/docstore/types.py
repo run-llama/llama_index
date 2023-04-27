@@ -7,7 +7,7 @@ from gpt_index.schema import BaseDocument
 
 class BaseDocumentStore(ABC):
     # ===== Save/load =====
-    def persist(self):
+    def persist(self) -> None:
         pass
 
     # ===== Main interface =====

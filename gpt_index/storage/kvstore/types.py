@@ -5,6 +5,8 @@ DEFAULT_COLLECTION = "data"
 
 
 class BaseKVStore(ABC):
+    """Base key-value store."""
+
     @abstractmethod
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
         pass
@@ -23,6 +25,8 @@ class BaseKVStore(ABC):
 
 
 class BaseInMemoryKVStore(BaseKVStore):
+    """Base in-memory key-value store."""
+
     @abstractmethod
     def persist(self) -> None:
         pass

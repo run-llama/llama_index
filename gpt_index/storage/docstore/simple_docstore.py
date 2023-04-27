@@ -11,7 +11,20 @@ DEFAULT_PERSIST_FNAME = "docstore.json"
 
 
 class SimpleDocumentStore(KVDocumentStore):
-    def __init__(self, simple_kvstore: SimpleKVStore, name_space: Optional[str] = None):
+    """Simple Document (Node) store.
+
+    An in-memory store for Document and Node objects.
+
+    Args:
+        simple_kvstore (SimpleKVStore): simple key-value store
+        name_space (str): namespace for the docstore
+
+    """
+
+    def __init__(
+        self, simple_kvstore: SimpleKVStore, name_space: Optional[str] = None
+    ) -> None:
+        """Init a SimpleDocumentStore."""
         super().__init__(simple_kvstore, name_space)
 
     @classmethod
@@ -19,12 +32,21 @@ class SimpleDocumentStore(KVDocumentStore):
         cls,
         persist_dir: Union[str, Path] = DEFAULT_PERSIST_DIR,
         namespace: Optional[str] = None,
-    ):
+    ) -> "SimpleDocumentStore":
+        """Create a SimpleDocumentStore from a persist directory.
+
+        Args:
+            persist_dir (Union[str, Path]): directory to persist the store
+            namespace (Optional[str]): namespace for the docstore
+
+        """
+
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         simple_kvstore = SimpleKVStore(persist_path)
         return cls(simple_kvstore, namespace)
 
-    def persist(self):
+    def persist(self) -> None:
+        """Persist the store."""
         if isinstance(self._kvstore, BaseInMemoryKVStore):
             self._kvstore.persist()
 
