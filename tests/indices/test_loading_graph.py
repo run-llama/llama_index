@@ -14,9 +14,9 @@ def test_load_graph_from_storage_simple(
     documents: List[Document],
     tmp_path: Path,
     mock_service_context: ServiceContext,
-):
+) -> None:
     # construct simple (i.e. in memory) storage context
-    storage_context = StorageContext.from_defaults(persist_dir=tmp_path)
+    storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
 
     # construct index
     vector_index = GPTVectorStoreIndex.from_documents(
@@ -42,13 +42,13 @@ def test_load_graph_from_storage_simple(
     )
 
     query_engine = graph.as_query_engine()
-    response_str = query_engine.query("test query").response
+    response = query_engine.query("test query")
 
     # persist storage to disk
     storage_context.persist()
 
     # load storage context
-    new_storage_context = StorageContext.from_defaults(persist_dir=tmp_path)
+    new_storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
 
     # load index
     new_graph = load_graph_from_storage(
@@ -56,6 +56,6 @@ def test_load_graph_from_storage_simple(
     )
 
     new_query_engine = new_graph.as_query_engine()
-    new_response_str = new_query_engine.query("test query").response
+    new_response = new_query_engine.query("test query")
 
-    assert response_str == new_response_str
+    assert str(response) == str(new_response)

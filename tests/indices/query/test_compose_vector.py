@@ -2,7 +2,7 @@
 
 import asyncio
 import sys
-from typing import Dict, List
+from typing import Any, Dict, List
 from unittest.mock import MagicMock
 
 import pytest
@@ -60,7 +60,7 @@ class MockEmbedding(BaseEmbedding):
 
 @pytest.fixture()
 def mock_service_context(
-    patch_token_text_splitter, patch_llm_predictor
+    patch_token_text_splitter: Any, patch_llm_predictor: Any
 ) -> ServiceContext:
     return ServiceContext.from_defaults(embed_model=MockEmbedding())
 
@@ -173,7 +173,7 @@ def test_recursive_query_vector_table_query_configs(
 
 
 def test_recursive_query_vector_table_async(
-    allow_networking,
+    allow_networking: Any,
     documents: List[Document],
     mock_service_context: ServiceContext,
     index_kwargs: Dict,

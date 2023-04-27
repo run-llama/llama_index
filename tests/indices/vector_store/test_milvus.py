@@ -6,10 +6,15 @@ from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.storage.storage_context import StorageContext
 
-from gpt_index.vector_stores.types import NodeEmbeddingResult
+from gpt_index.vector_stores.types import (
+    NodeEmbeddingResult,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 
-class MockMilvusVectorStore:
+class MockMilvusVectorStore(VectorStore):
     stores_text: bool = True
 
     def __init__(
@@ -58,11 +63,21 @@ class MockMilvusVectorStore:
     def from_dict(cls, config_dict: Dict[str, Any]) -> "MockMilvusVectorStore":
         return cls(**config_dict)
 
+    @property
+    def client(self) -> Any:
+        return None
+
     def add(
         self,
         embedding_results: List[NodeEmbeddingResult],
     ) -> List[str]:
         return []
+
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+        return None
+
+    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        return VectorStoreQueryResult()
 
 
 def test_basic(mock_service_context: ServiceContext) -> None:

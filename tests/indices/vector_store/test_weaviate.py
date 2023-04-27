@@ -4,7 +4,12 @@ from gpt_index.indices.service_context import ServiceContext
 
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.storage.storage_context import StorageContext
-from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
+from gpt_index.vector_stores.types import (
+    NodeEmbeddingResult,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 
 class MockWeaviateVectorStore(VectorStore):
@@ -29,11 +34,21 @@ class MockWeaviateVectorStore(VectorStore):
             raise ValueError("Missing Weaviate client!")
         return cls(**config_dict)
 
+    @property
+    def client(self) -> Any:
+        return None
+
     def add(
         self,
         embedding_results: List[NodeEmbeddingResult],
     ) -> List[str]:
         return []
+
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+        return None
+
+    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        return VectorStoreQueryResult()
 
 
 def test_basic(mock_service_context: ServiceContext) -> None:

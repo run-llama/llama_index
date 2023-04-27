@@ -1,12 +1,12 @@
 """Mock text splitter."""
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from gpt_index.langchain_helpers.text_splitter import TextSplit
 
 
 def patch_token_splitter_newline(
-    self, text: str, extra_info_str: Optional[str] = None
+    self: Any, text: str, extra_info_str: Optional[str] = None
 ) -> List[str]:
     """Mock token splitter by newline."""
     if text == "":
@@ -15,7 +15,7 @@ def patch_token_splitter_newline(
 
 
 def patch_token_splitter_newline_with_overlaps(
-    self, text: str, extra_info_str: Optional[str]
+    self: Any, text: str, extra_info_str: Optional[str]
 ) -> List[TextSplit]:
     """Mock token splitter by newline."""
     if text == "":

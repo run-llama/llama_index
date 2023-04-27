@@ -20,7 +20,7 @@ class BaseKVStore(ABC):
         pass
 
     @abstractmethod
-    def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> None:
+    def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         pass
 
 

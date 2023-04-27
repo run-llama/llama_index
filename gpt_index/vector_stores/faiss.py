@@ -5,7 +5,7 @@ An index that that is built on top of an existing vector store.
 """
 
 import os
-from typing import Any, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
 
@@ -39,7 +39,12 @@ class FaissVectorStore(VectorStore):
 
     stores_text: bool = False
 
-    def __init__(self, faiss_index: Any, persist_dir: str) -> None:
+    def __init__(
+        self,
+        faiss_index: Any,
+        persist_path: Optional[str] = None,
+        persist_dir: Optional[str] = None,
+    ) -> None:
         """Initialize params."""
         import_err_msg = """
             `faiss` package not found. For instructions on
@@ -52,23 +57,52 @@ class FaissVectorStore(VectorStore):
             raise ImportError(import_err_msg)
 
         self._faiss_index = cast(faiss.Index, faiss_index)
-        self._persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+
+        if persist_path is not None:
+            self._persist_path = persist_path
+        else:
+            if persist_dir is None:
+                raise ValueError("Must specify persist_dir or persist_path")
+            self._persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
 
     @classmethod
     def from_persist_dir(
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
-    ):
-        import faiss
-
+    ) -> "FaissVectorStore":
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        return cls.from_persist_path(persist_path=persist_path)
+
+    @classmethod
+    def from_persist_path(
+        cls,
+        persist_path: str,
+    ) -> "FaissVectorStore":
+        import faiss
 
         if not os.path.exists(persist_path):
             raise ValueError(f"No existing {__name__} found at {persist_path}.")
 
         logger.info(f"Loading {__name__} from {persist_path}.")
         faiss_index = faiss.read_index(persist_path)
-        return cls(faiss_index=faiss_index, persist_dir=persist_dir)
+        return cls(faiss_index=faiss_index, persist_path=persist_path)
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "FaissVectorStore":
+        if "faiss_index" in config_dict:
+            return cls(**config_dict)
+        else:
+            persist_path = config_dict.get("persist_path", None)
+            if persist_path is not None:
+                return cls.from_persist_path(persist_path=persist_path)
+            else:
+                raise ValueError("Missing both faiss index and persist path!")
+
+    @property
+    def config_dict(self) -> dict:
+        """Return config dict."""
+        self.persist()
+        return {"persist_path": self._persist_path}
 
     def add(
         self,

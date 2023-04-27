@@ -33,7 +33,7 @@ class StorageContext:
         docstore: Optional[BaseDocumentStore] = None,
         index_store: Optional[BaseIndexStore] = None,
         vector_store: Optional[VectorStore] = None,
-        persist_dir: Union[str, pathlib.Path] = DEFAULT_PERSIST_DIR,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
     ) -> "StorageContext":
         """Create a StorageContext from defaults.
 

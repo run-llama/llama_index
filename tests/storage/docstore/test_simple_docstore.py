@@ -11,7 +11,7 @@ from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
 
 @pytest.fixture()
 def simple_kvstore(tmp_path: Path) -> SimpleKVStore:
-    file_path = tmp_path / "test_file.txt"
+    file_path = str(tmp_path / "test_file.txt")
     return SimpleKVStore(persist_path=file_path)
 
 
@@ -40,12 +40,12 @@ def test_docstore_persist(tmp_path: Path) -> None:
     node = Node("my node", doc_id="d2", node_info={"node": "info"})
 
     # add documents and then persist to dir
-    docstore = SimpleDocumentStore.from_persist_dir(tmp_path)
+    docstore = SimpleDocumentStore.from_persist_dir(str(tmp_path))
     docstore.add_documents([doc, node])
     docstore.persist()
 
     # load from persist dir and get documents
-    new_docstore = SimpleDocumentStore.from_persist_dir(tmp_path)
+    new_docstore = SimpleDocumentStore.from_persist_dir(str(tmp_path))
     gd1 = new_docstore.get_document("d1")
     assert gd1 == doc
     gd2 = new_docstore.get_document("d2")

@@ -30,7 +30,7 @@ class SimpleDocumentStore(KVDocumentStore):
     @classmethod
     def from_persist_dir(
         cls,
-        persist_dir: Union[str, Path] = DEFAULT_PERSIST_DIR,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
         namespace: Optional[str] = None,
     ) -> "SimpleDocumentStore":
         """Create a SimpleDocumentStore from a persist directory.

@@ -14,8 +14,10 @@ class BaseIndexStore(ABC):
         pass
 
     @abstractmethod
-    def get_index_struct(self, struct_id: Optional[str] = None) -> V2IndexStruct:
+    def get_index_struct(
+        self, struct_id: Optional[str] = None
+    ) -> Optional[V2IndexStruct]:
         pass
 
-    def persist(self):
+    def persist(self) -> None:
         pass

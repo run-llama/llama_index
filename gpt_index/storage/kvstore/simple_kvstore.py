@@ -40,12 +40,12 @@ class SimpleKVStore(BaseInMemoryKVStore):
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a value from the store."""
-        collection = self._data.get(collection, None)
-        if not collection:
+        collection_data = self._data.get(collection, None)
+        if not collection_data:
             return None
-        if key not in collection:
+        if key not in collection_data:
             return None
-        return collection[key].copy()
+        return collection_data[key].copy()
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store."""

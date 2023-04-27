@@ -104,5 +104,5 @@ class VectorStore(Protocol):
         """Query vector store."""
         ...
 
-    def persist(self):
-        pass
+    def persist(self) -> None:
+        return None

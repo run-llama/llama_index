@@ -5,7 +5,7 @@ from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
 
 @pytest.fixture()
 def kvstore(tmp_path: Path) -> SimpleKVStore:
-    file_path = tmp_path / "test_file.txt"
+    file_path = str(tmp_path / "test_file.txt")
     return SimpleKVStore(file_path)
 
 

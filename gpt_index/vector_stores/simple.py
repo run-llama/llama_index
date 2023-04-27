@@ -73,7 +73,9 @@ class SimpleVectorStore(VectorStore):
         self.load()
 
     @classmethod
-    def from_persist_dir(cls, persist_dir: Union[str, Path] = DEFAULT_PERSIST_DIR):
+    def from_persist_dir(
+        cls, persist_dir: str = DEFAULT_PERSIST_DIR
+    ) -> "SimpleVectorStore":
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         return cls(persist_path)
 

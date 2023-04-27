@@ -64,10 +64,12 @@ def load_indices_from_storage(
         index_structs = storage_context.index_store.index_structs()
     else:
         logger.info(f"Loading indices with ids: {index_ids}")
-        index_structs = [
-            storage_context.index_store.get_index_struct(index_id)
-            for index_id in index_ids
-        ]
+        index_structs = []
+        for index_id in index_ids:
+            index_struct = storage_context.index_store.get_index_struct(index_id)
+            if index_struct is None:
+                raise ValueError(f"Failed to load index with ID {index_id}")
+            index_structs.append(index_struct)
 
     indices = []
     for index_struct in index_structs:

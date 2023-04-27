@@ -50,15 +50,10 @@ def test_faiss_insert(
         service_context=mock_service_context,
     )
 
-    node_ids = index.index_struct.nodes_dict
-    print(node_ids)
-
     # insert into index
     index.insert(Document(text="This is a test v3."))
 
     # check contents of nodes
-    node_ids = index.index_struct.nodes_dict
-
     node_ids = list(index.index_struct.nodes_dict.values())
     nodes = index.docstore.get_nodes(node_ids)
     node_texts = [node.text for node in nodes]

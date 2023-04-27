@@ -19,11 +19,10 @@ class KVIndexStore(BaseIndexStore):
 
     """
 
-    def __init__(
-        self, kvstore: BaseKVStore, namespace: str = DEFAULT_NAMESPACE
-    ) -> None:
+    def __init__(self, kvstore: BaseKVStore, namespace: Optional[str] = None) -> None:
         """Init a KVIndexStore."""
         self._kvstore = kvstore
+        namespace = namespace or DEFAULT_NAMESPACE
         self._collection = f"{namespace}/data"
 
     def add_index_struct(self, index_struct: V2IndexStruct) -> None:

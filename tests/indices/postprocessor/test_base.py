@@ -75,7 +75,7 @@ def test_forward_back_processor(tmp_path: Path) -> None:
                 {DocumentRelationship.NEXT: nodes[i + 1].get_doc_id()},
             )
 
-    file_path = tmp_path / "test_file.txt"
+    file_path = str(tmp_path / "test_file.txt")
     docstore = SimpleDocumentStore.from_persist_dir(file_path)
     docstore.add_documents(nodes)
 

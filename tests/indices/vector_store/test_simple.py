@@ -1,6 +1,6 @@
 """Test vector store indexes."""
 
-from typing import List, cast
+from typing import Any, List, cast
 
 
 from gpt_index.indices.service_context import ServiceContext
@@ -117,7 +117,7 @@ def test_simple_delete(
 
 
 def test_simple_async(
-    allow_networking,
+    allow_networking: Any,
     documents: List[Document],
     mock_service_context: ServiceContext,
 ) -> None:

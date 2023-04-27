@@ -1,4 +1,5 @@
 import socket
+from typing import Any
 
 import pytest
 import pytest
@@ -19,20 +20,20 @@ from tests.mock_utils.mock_text_splitter import (
 
 
 @pytest.fixture(autouse=True)
-def no_networking(monkeypatch: pytest.MonkeyPatch):
-    def deny_network(*args, **kwargs):
+def no_networking(monkeypatch: pytest.MonkeyPatch) -> None:
+    def deny_network(*args: Any, **kwargs: Any) -> None:
         raise RuntimeError("Network access denied for test")
 
     monkeypatch.setattr(socket, "socket", deny_network)
 
 
 @pytest.fixture
-def allow_networking(monkeypatch: pytest.MonkeyPatch):
+def allow_networking(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.undo()
 
 
 @pytest.fixture
-def patch_token_text_splitter(monkeypatch: pytest.MonkeyPatch) -> TokenTextSplitter:
+def patch_token_text_splitter(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(TokenTextSplitter, "split_text", patch_token_splitter_newline)
     monkeypatch.setattr(
         TokenTextSplitter,
@@ -42,7 +43,7 @@ def patch_token_text_splitter(monkeypatch: pytest.MonkeyPatch) -> TokenTextSplit
 
 
 @pytest.fixture
-def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> TokenTextSplitter:
+def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         LLMPredictor,
         "total_tokens_used",
@@ -67,6 +68,6 @@ def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> TokenTextSplitter:
 
 @pytest.fixture()
 def mock_service_context(
-    patch_token_text_splitter, patch_llm_predictor
+    patch_token_text_splitter: Any, patch_llm_predictor: Any
 ) -> ServiceContext:
     return ServiceContext.from_defaults(embed_model=MockEmbedding())

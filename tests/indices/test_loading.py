@@ -18,9 +18,9 @@ def test_load_index_from_storage_simple(
     documents: List[Document],
     tmp_path: Path,
     mock_service_context: ServiceContext,
-):
+) -> None:
     # construct simple (i.e. in memory) storage context
-    storage_context = StorageContext.from_defaults(persist_dir=tmp_path)
+    storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
 
     # construct index
     index = GPTVectorStoreIndex.from_documents(
@@ -33,7 +33,7 @@ def test_load_index_from_storage_simple(
     storage_context.persist()
 
     # load storage context
-    new_storage_context = StorageContext.from_defaults(persist_dir=tmp_path)
+    new_storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
 
     # load index
     new_index = load_index_from_storage(
@@ -47,9 +47,9 @@ def test_load_index_from_storage_multiple(
     nodes: List[Node],
     tmp_path: Path,
     mock_service_context: ServiceContext,
-):
+) -> None:
     # construct simple (i.e. in memory) storage context
-    storage_context = StorageContext.from_defaults(persist_dir=tmp_path)
+    storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
 
     # add nodes to docstore
     storage_context.docstore.add_documents(nodes)
@@ -74,7 +74,7 @@ def test_load_index_from_storage_multiple(
     storage_context.persist()
 
     # load storage context
-    new_storage_context = StorageContext.from_defaults(persist_dir=tmp_path)
+    new_storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
 
     # load single index should fail since there are multiple indices in index store
     with pytest.raises(ValueError):
@@ -101,9 +101,9 @@ def test_load_index_from_storage_retrieval_result_identical(
     documents: List[Document],
     tmp_path: Path,
     mock_service_context: ServiceContext,
-):
+) -> None:
     # construct simple (i.e. in memory) storage context
-    storage_context = StorageContext.from_defaults(persist_dir=tmp_path)
+    storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
 
     # construct index
     index = GPTVectorStoreIndex.from_documents(
@@ -118,7 +118,7 @@ def test_load_index_from_storage_retrieval_result_identical(
     storage_context.persist()
 
     # load storage context
-    new_storage_context = StorageContext.from_defaults(persist_dir=tmp_path)
+    new_storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
 
     # load index
     new_index = load_index_from_storage(
@@ -135,15 +135,15 @@ def test_load_index_from_storage_faiss_vector_store(
     documents: List[Document],
     tmp_path: Path,
     mock_service_context: ServiceContext,
-):
+) -> None:
     import faiss
 
     # construct custom storage context
     storage_context = StorageContext.from_defaults(
-        docstore=SimpleDocumentStore.from_persist_dir(tmp_path),
-        index_store=SimpleIndexStore.from_persist_dir(tmp_path),
+        docstore=SimpleDocumentStore.from_persist_dir(str(tmp_path)),
+        index_store=SimpleIndexStore.from_persist_dir(str(tmp_path)),
         vector_store=FaissVectorStore(
-            faiss_index=faiss.IndexFlatL2(5), persist_dir=tmp_path
+            faiss_index=faiss.IndexFlatL2(5), persist_dir=str(tmp_path)
         ),
     )
 
@@ -161,9 +161,9 @@ def test_load_index_from_storage_faiss_vector_store(
 
     # load storage context
     new_storage_context = StorageContext.from_defaults(
-        docstore=SimpleDocumentStore.from_persist_dir(tmp_path),
-        index_store=SimpleIndexStore.from_persist_dir(tmp_path),
-        vector_store=FaissVectorStore.from_persist_dir(tmp_path),
+        docstore=SimpleDocumentStore.from_persist_dir(str(tmp_path)),
+        index_store=SimpleIndexStore.from_persist_dir(str(tmp_path)),
+        vector_store=FaissVectorStore.from_persist_dir(str(tmp_path)),
     )
 
     # load index

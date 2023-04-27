@@ -23,7 +23,7 @@ class SimpleIndexStore(KVIndexStore):
 
     @classmethod
     def from_persist_dir(
-        cls, persist_dir: Union[str, Path] = DEFAULT_PERSIST_DIR
+        cls, persist_dir: str = DEFAULT_PERSIST_DIR
     ) -> "SimpleIndexStore":
         """Create a SimpleIndexStore from a persist directory."""
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)

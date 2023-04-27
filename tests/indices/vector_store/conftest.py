@@ -13,7 +13,7 @@ from tests.indices.vector_store.mock_faiss import MockFaissIndex
 
 
 @pytest.fixture()
-def faiss_vector_store(tmp_path: pathlib) -> FaissVectorStore:
+def faiss_vector_store(tmp_path: pathlib.Path) -> FaissVectorStore:
     # NOTE: mock faiss import for CI
     if "CI" in os.environ:
         sys.modules["faiss"] = MagicMock()
@@ -21,7 +21,7 @@ def faiss_vector_store(tmp_path: pathlib) -> FaissVectorStore:
     # NOTE: mock faiss index
     faiss_index = MockFaissIndex()
 
-    return FaissVectorStore(faiss_index=faiss_index, persist_dir=tmp_path)
+    return FaissVectorStore(faiss_index=faiss_index, persist_dir=str(tmp_path))
 
 
 @pytest.fixture()
@@ -29,5 +29,5 @@ def faiss_storage_context(
     faiss_vector_store: FaissVectorStore, tmp_path: pathlib.Path
 ) -> StorageContext:
     return StorageContext.from_defaults(
-        vector_store=faiss_vector_store, persist_dir=tmp_path
+        vector_store=faiss_vector_store, persist_dir=str(tmp_path)
     )
