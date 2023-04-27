@@ -7,15 +7,20 @@ from gpt_index.storage.index_store.utils import (
 )
 from gpt_index.storage.kvstore.types import BaseKVStore
 
+DEFAULT_NAMESPACE = "index_store"
 
-class KeyValIndexStore(BaseIndexStore):
-    def __init__(self, kvstore: BaseKVStore) -> None:
+
+class KVIndexStore(BaseIndexStore):
+    def __init__(
+        self, kvstore: BaseKVStore, namespace: str = DEFAULT_NAMESPACE
+    ) -> None:
         self._kvstore = kvstore
+        self._collection = f"{namespace}/data"
 
     def add_index_struct(self, index_struct: V2IndexStruct) -> None:
         key = index_struct.index_id
         data = index_struct_to_json(index_struct)
-        self._kvstore.put(key, data)
+        self._kvstore.put(key, data, collection=self._collection)
 
     def get_index_struct(
         self, struct_id: Optional[str] = None
@@ -25,11 +30,11 @@ class KeyValIndexStore(BaseIndexStore):
             assert len(structs) == 1
             return structs[0]
         else:
-            json = self._kvstore.get(struct_id)
+            json = self._kvstore.get(struct_id, collection=self._collection)
             if json is None:
                 return None
             return json_to_index_struct(json)
 
     def index_structs(self) -> List[V2IndexStruct]:
-        jsons = self._kvstore.get_all()
+        jsons = self._kvstore.get_all(collection=self._collection)
         return [json_to_index_struct(json) for json in jsons.values()]

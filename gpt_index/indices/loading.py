@@ -42,7 +42,7 @@ def load_indices_from_storage(
     index_ids: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> List[BaseGPTIndex]:
-    storage_context = StorageContext.from_defaults()
+    storage_context = storage_context or StorageContext.from_defaults()
 
     if index_ids is None:
         logger.info("Loading all indices.")

@@ -8,7 +8,7 @@ from gpt_index.indices.service_context import ServiceContext
 from gpt_index.composability import ComposableGraph
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.indices.vector_store.vector_indices import GPTVectorStoreIndex
+from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.readers.schema.base import Document
 from gpt_index.storage.docstore import BaseDocumentStore
 

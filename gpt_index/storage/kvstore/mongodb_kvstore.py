@@ -26,7 +26,7 @@ class MongoDBKVStore(BaseKVStore):
         self._port = port
 
         self._db_name = db_name or "db_docstore"
-        self._db = self._client[db_name]
+        self._db = self._client[self._db_name]
 
     @classmethod
     def from_uri(

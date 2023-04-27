@@ -42,7 +42,7 @@ class KVDocumentStore(BaseDocumentStore):
     def __init__(
         self,
         kvstore: BaseKVStore,
-        namespace: str = DEFAULT_NAMESPACE,
+        namespace: Optional[str] = None,
     ):
         self._kvstore = kvstore
         namespace = namespace or DEFAULT_NAMESPACE

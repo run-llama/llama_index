@@ -4,4 +4,4 @@ from gpt_index.storage.docstore import (
     BaseDocumentStore,
 )
 from gpt_index.storage.kvstore import SimpleKVStore, MongoDBKVStore
-from gpt_index.storage.index_store import SimpleIndexStore, KeyValIndexStore
+from gpt_index.storage.index_store import SimpleIndexStore, KVIndexStore
