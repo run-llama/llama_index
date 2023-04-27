@@ -204,7 +204,12 @@ index.storage_context.persist()
 
 To reload from disk:
 ```python
-index = load_index_from_storage()
+from llama_index import StorageContext, load_index_from_storage
+
+# rebuild storage context
+storage_context = StorageContext.from_defaults()
+# load index
+index = load_index_from_storage(storage_context)
 ```
 
 To configure the persist path, you need to explicitly configure the storage context and pass it into the index:

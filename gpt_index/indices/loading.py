@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.composability.graph import ComposableGraph
 from gpt_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_CLASS
@@ -10,12 +10,20 @@ logger = logging.getLogger(__name__)
 
 
 def load_index_from_storage(
-    storage_context: Optional[StorageContext] = None,
+    storage_context: StorageContext,
     index_id: Optional[str] = None,
     **kwargs: Any,
 ) -> BaseGPTIndex:
-    storage_context = StorageContext.from_defaults()
+    """Load index from storage context.
 
+    Args:
+        storage_context (StorageContext): storage context containing
+            docstore, index store and vector store.
+        index_id (Optional[str]): ID of the index to load.
+            Defaults to None, which assumes there's only a single index
+            in the index store and load it.
+        **kwargs: Additional keyword args to pass to the index constructors.
+    """
     index_ids: Optional[Sequence[str]]
     if index_id is None:
         index_ids = None
@@ -38,12 +46,19 @@ def load_index_from_storage(
 
 
 def load_indices_from_storage(
-    storage_context: Optional[StorageContext] = None,
+    storage_context: StorageContext,
     index_ids: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> List[BaseGPTIndex]:
-    storage_context = storage_context or StorageContext.from_defaults()
+    """Load multiple indices from storage context
 
+    Args:
+        storage_context (StorageContext): storage context containing
+            docstore, index store and vector store.
+        index_id (Optional[Sequence[str]]): IDs of the indices to load.
+            Defaults to None, which loads all indices in the index store.
+        **kwargs: Additional keyword args to pass to the index constructors.
+    """
     if index_ids is None:
         logger.info("Loading all indices.")
         index_structs = storage_context.index_store.index_structs()
@@ -66,12 +81,18 @@ def load_indices_from_storage(
 
 
 def load_graph_from_storage(
+    storage_context: StorageContext,
     root_id: str,
-    storage_context: Optional[StorageContext] = None,
     **kwargs: Any,
 ) -> ComposableGraph:
-    storage_context = storage_context or StorageContext.from_defaults()
+    """Load composable graph from storage context.
 
+    Args:
+        storage_context (StorageContext): storage context containing
+            docstore, index store and vector store.
+        root_id (str): ID of the root index of the graph.
+        **kwargs: Additional keyword args to pass to the index constructors.
+    """
     indices = load_indices_from_storage(storage_context, index_ids=None, **kwargs)
     all_indices = {index.index_id: index for index in indices}
     graph = ComposableGraph(all_indices=all_indices, root_id=root_id)
