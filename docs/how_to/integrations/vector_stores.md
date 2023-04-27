@@ -245,7 +245,7 @@ vector_store = MilvusVectorStore(
 
 ```
 
-**Note**: `GPTMilvusIndex` depends on the `pymilvus` library.
+**Note**: `MilvusVectorStore` depends on the `pymilvus` library.
 Use `pip install pymilvus` if not already installed.
 If you get stuck at building wheel for `grpcio`, check if you are using python 3.11
 (there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
@@ -271,7 +271,7 @@ vector_store = MilvusVectorStore(
 )
 ```
 
-**Note**: `GPTMilvusIndex` depends on the `pymilvus` library.
+**Note**: `MilvusVectorStore` depends on the `pymilvus` library.
 Use `pip install pymilvus` if not already installed.
 If you get stuck at building wheel for `grpcio`, check if you are using python 3.11
 (there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
