@@ -8,7 +8,9 @@ LlamaIndex offers core abstractions around storage of Nodes, indices, and vector
 A key abstraction is the `StorageContext` - this contains the underlying
 `BaseDocumentStore` (for nodes), `BaseIndexStore` (for indices), and `VectorStore` (for vectors).
 
-See below pages for more details.
+The Document/Node and index stores rely on a common `KVStore` abstraction, which is also detailed below.
+
+We show the API references for the Storage Classes, saving/loading indices from the Storage Context, and the Storage Context class itself below.
 
 .. toctree::
    :maxdepth: 1
@@ -17,6 +19,14 @@ See below pages for more details.
    storage/docstore.rst
    storage/index_store.rst
    storage/vector_store.rst
+   storage/kv_store.rst
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Saving/Loading Indices
+
+   storage/indices_save_load.rst
+
 
 .. automodule:: gpt_index.storage.storage_context
    :members:
