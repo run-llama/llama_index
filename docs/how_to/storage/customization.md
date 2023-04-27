@@ -1,4 +1,3 @@
-
 # Customizing Storage
 
 By default, LlamaIndex hides away the complexities and let you query your data in under 5 lines of code:
