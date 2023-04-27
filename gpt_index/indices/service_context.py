@@ -32,7 +32,7 @@ class ServiceContext:
     - prompt_helper: PromptHelper
     - embed_model: BaseEmbedding
     - node_parser: NodeParser
-    - llama_logger: LlamaLogger (deprecated?)
+    - llama_logger: LlamaLogger (deprecated)
     - callback_manager: CallbackManager
     - chunk_size_limit: chunk size limit
 
@@ -66,10 +66,11 @@ class ServiceContext:
             prompt_helper (Optional[PromptHelper]): PromptHelper
             embed_model (Optional[BaseEmbedding]): BaseEmbedding
             node_parser (Optional[NodeParser]): NodeParser
-            llama_logger (Optional[LlamaLogger]): LlamaLogger
+            llama_logger (Optional[LlamaLogger]): LlamaLogger (deprecated)
             chunk_size_limit (Optional[int]): chunk_size_limit
 
         """
+        callback_manager = callback_manager or CallbackManager([])
         llm_predictor = llm_predictor or LLMPredictor()
         # NOTE: the embed_model isn't used in all indices
         embed_model = embed_model or OpenAIEmbedding()
@@ -86,6 +87,7 @@ class ServiceContext:
             embed_model=embed_model,
             prompt_helper=prompt_helper,
             node_parser=node_parser,
-            llama_logger=llama_logger,
+            llama_logger=llama_logger,  # deprecated
+            callback_manager=callback_manager,
             chunk_size_limit=chunk_size_limit,
         )

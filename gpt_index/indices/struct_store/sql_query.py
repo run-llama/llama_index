@@ -2,6 +2,7 @@
 import logging
 from typing import Any, Optional
 
+from gpt_index.callbacks.schema import CBEvent, CBEventType
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle, QueryMode
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
@@ -109,12 +110,14 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
+        event_id = self._service_context.callback_manager.on_event_start(CBEvent(CBEventType.LLM, payload={"template": self._text_to_sql_prompt, "text": query_bundle.query_str}))
         response_str, _ = self._service_context.llm_predictor.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
             dialect=self._sql_database.dialect,
         )
+        self._service_context.callback_manager.on_event_end(CBEvent(CBEventType.LLM, payload={"response": response_str}), event_id=event_id)
 
         sql_query_str = self._parse_response_to_sql(response_str)
         # assume that it's a valid SQL query
@@ -130,12 +133,14 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
+        event_id = self._service_context.callback_manager.on_event_start(CBEvent(CBEventType.LLM, payload={"template": self._text_to_sql_prompt, "text": query_bundle.query_str}))
         response_str, _ = await self._service_context.llm_predictor.apredict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
             dialect=self._sql_database.dialect,
         )
+        self._service_context.callback_manager.on_event_end(CBEvent(CBEventType.LLM, payload={"response": response_str}), event_id=event_id)
 
         sql_query_str = self._parse_response_to_sql(response_str)
         # assume that it's a valid SQL query
