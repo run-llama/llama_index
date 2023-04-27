@@ -13,6 +13,16 @@ DEFAULT_PERSIST_DIR = "./storage"
 
 @dataclass
 class StorageContext:
+    """Storage context.
+
+    The storage context container is a utility container for storing nodes,
+    indices, and vectors. It contains the following:
+    - docstore: BaseDocumentStore
+    - index_store: BaseIndexStore
+    - vector_store: VectorStore
+
+    """
+
     docstore: BaseDocumentStore
     index_store: BaseIndexStore
     vector_store: VectorStore
@@ -25,6 +35,14 @@ class StorageContext:
         vector_store: Optional[VectorStore] = None,
         persist_dir: Union[str, pathlib.Path] = DEFAULT_PERSIST_DIR,
     ) -> "StorageContext":
+        """Create a StorageContext from defaults.
+
+        Args:
+            docstore (Optional[BaseDocumentStore]): document store
+            index_store (Optional[BaseIndexStore]): index store
+            vector_store (Optional[VectorStore]): vector store
+
+        """
         docstore = docstore or SimpleDocumentStore.from_persist_dir(persist_dir)
         index_store = index_store or SimpleIndexStore.from_persist_dir(persist_dir)
         vector_store = vector_store or SimpleVectorStore.from_persist_dir(persist_dir)

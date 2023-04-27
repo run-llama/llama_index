@@ -34,8 +34,8 @@ class KVDocumentStore(BaseDocumentStore):
     This will use the same docstore for multiple index structures.
 
     Args:
-        docs (Dict[str, BaseDocument]): documents
-        ref_doc_info (Dict[str, Dict[str, Any]]): reference document info
+        kvstore (BaseKVStore): key-value store
+        namespace (str): namespace for the docstore
 
     """
 
@@ -43,7 +43,8 @@ class KVDocumentStore(BaseDocumentStore):
         self,
         kvstore: BaseKVStore,
         namespace: Optional[str] = None,
-    ):
+    ) -> None:
+        """Init a KVDocumentStore."""
         self._kvstore = kvstore
         namespace = namespace or DEFAULT_NAMESPACE
         self._collection = f"{namespace}/data"
@@ -51,6 +52,12 @@ class KVDocumentStore(BaseDocumentStore):
 
     @property
     def docs(self) -> Dict[str, BaseDocument]:
+        """Get all documents.
+
+        Returns:
+            Dict[str, BaseDocument]: documents
+
+        """
         json_dict = self._kvstore.get_all(collection=self._collection)
         return {key: json_to_doc(json) for key, json in json_dict.items()}
 
