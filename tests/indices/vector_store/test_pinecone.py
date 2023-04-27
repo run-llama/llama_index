@@ -33,7 +33,7 @@ def test_build_pinecone(
     documents: List[Document],
     mock_service_context: ServiceContext,
 ) -> None:
-    """Test build GPTPineconeIndex."""
+    """Test build GPTVectorStoreIndex with PineconeVectorStore."""
     # NOTE: mock pinecone import
     sys.modules["pinecone"] = MagicMock()
     # NOTE: mock pinecone index
