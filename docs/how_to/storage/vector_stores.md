@@ -22,6 +22,7 @@ They mainly differ in 2 aspects:
 * Weaviate
 * Milvus/Zilliz
 * Qdrant
+* Chroma
 * Opensearch
 * DeepLake
 * MyScale
