@@ -70,23 +70,6 @@ class FaissVectorStore(VectorStore):
         faiss_index = faiss.read_index(persist_path)
         return cls(faiss_index=faiss_index, persist_dir=persist_dir)
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "FaissVectorStore":
-        if "faiss_index" in config_dict:
-            return cls(**config_dict)
-        else:
-            save_path = config_dict.get("save_path", None)
-            if save_path is not None:
-                return cls.load(save_path=save_path)
-            else:
-                raise ValueError("Missing both faiss index and save path!")
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        self.save(self._save_path)
-        return {"save_path": self._save_path}
-
     def add(
         self,
         embedding_results: List[NodeEmbeddingResult],
@@ -112,26 +95,6 @@ class FaissVectorStore(VectorStore):
     def client(self) -> Any:
         """Return the faiss index."""
         return self._faiss_index
-
-    def load(self) -> "FaissVectorStore":
-        """Load vector store from disk.
-
-        Args:
-            save_path (str): The save_path of the file.
-
-        Returns:
-            FaissVectorStore: The loaded vector store.
-
-        """
-        import faiss
-
-        if os.path.exists(self._persist_path):
-            logger.info(f"Loading {__name__} from {self._persist_path}.")
-            self._faiss_index = faiss.read_index(self._persist_path)
-        else:
-            logger.info(
-                f"No existing {__name__} found at {self._persist_path}, skipping load."
-            )
 
     def persist(
         self,

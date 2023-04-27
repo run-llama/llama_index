@@ -24,9 +24,13 @@ def load_index_from_storage(
 
     indices = load_indices_from_storage(storage_context, index_ids=index_ids, **kwargs)
 
-    if len(indices) != 1:
+    if len(indices) == 0:
         raise ValueError(
-            f"Expected to load a single index, but got {len(indices)} instead."
+            "No index in storage context, check if you specified the right persist_dir."
+        )
+    elif len(indices) > 1:
+        raise ValueError(
+            f"Expected to load a single index, but got {len(indices)} instead. "
             "Please specify index_id."
         )
 
