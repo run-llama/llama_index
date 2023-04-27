@@ -5,7 +5,6 @@ from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.readers.schema.base import Document
 
 
-
 @pytest.fixture
 def documents() -> List[Document]:
     """Get documents."""
