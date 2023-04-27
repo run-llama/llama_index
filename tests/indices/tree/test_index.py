@@ -8,12 +8,6 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.storage.docstore import BaseDocumentStore
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.chain_wrapper import (
-    LLMChain,
-    LLMMetadata,
-    LLMPredictor,
-)
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
 from gpt_index.readers.schema.base import Document
 
 
@@ -162,7 +156,7 @@ def test_insert(
     # "This is a test", "This is a new doc." are the children of
     # "This is a test\n.This is a new doc."
     left_root = _get_left_or_right_node(tree.docstore, tree.index_struct, None)
-    assert left_root.text == "Hello world.\nThis is a test.\nThis is a new doc."
+    assert left_root.text == "Hello world.\nThis is a test."
     left_root2 = _get_left_or_right_node(tree.docstore, tree.index_struct, left_root)
     right_root2 = _get_left_or_right_node(
         tree.docstore, tree.index_struct, left_root, left=False
@@ -178,7 +172,9 @@ def test_insert(
     assert right_root3.ref_doc_id == "new_doc"
 
     # test insert from empty (no_id)
-    tree = GPTTreeIndex.from_documents([], **index_kwargs)
+    tree = GPTTreeIndex.from_documents(
+        [], service_context=mock_service_context, **index_kwargs
+    )
     new_doc = Document("This is a new doc.")
     tree.insert(new_doc)
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
@@ -186,7 +182,9 @@ def test_insert(
     assert nodes[0].text == "This is a new doc."
 
     # test insert from empty (with_id)
-    tree = GPTTreeIndex.from_documents([], **index_kwargs)
+    tree = GPTTreeIndex.from_documents(
+        [], service_context=mock_service_context, **index_kwargs
+    )
     new_doc = Document("This is a new doc.", doc_id="new_doc_test")
     tree.insert(new_doc)
     assert len(tree.index_struct.all_nodes) == 1

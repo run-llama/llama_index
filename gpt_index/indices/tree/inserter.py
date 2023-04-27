@@ -156,5 +156,7 @@ class GPTTreeIndexInserter:
 
     def insert(self, nodes: Sequence[Node]) -> None:
         """Insert into index_graph."""
+        print("calling insert")
+        print(nodes)
         for node in nodes:
             self._insert_node(node)
