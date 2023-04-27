@@ -1,3 +1,4 @@
+import os
 import pytest
 import pathlib
 import sys
@@ -13,8 +14,9 @@ from tests.indices.vector_store.mock_faiss import MockFaissIndex
 
 @pytest.fixture()
 def faiss_vector_store(tmp_path: pathlib) -> FaissVectorStore:
-    # NOTE: mock faiss import
-    sys.modules["faiss"] = MagicMock()
+    # NOTE: mock faiss import for CI
+    if "CI" in os.environ:
+        sys.modules["faiss"] = MagicMock()
 
     # NOTE: mock faiss index
     faiss_index = MockFaissIndex()

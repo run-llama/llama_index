@@ -12,7 +12,6 @@ try:
 except ImportError:
     clickhouse_connect = None  # type: ignore
 
-from gpt_index.data_structs.data_structs_v2 import MyScaleIndexDict
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.readers.schema.base import Document
 from gpt_index.vector_stores import MyScaleVectorStore
@@ -35,11 +34,6 @@ def documents() -> List[Document]:
         "This is a test v2."
     )
     return [Document(doc_id="1", text=doc_text)]
-
-
-@pytest.fixture
-def indexDict() -> MyScaleIndexDict:
-    return MyScaleIndexDict()
 
 
 @pytest.fixture
@@ -84,9 +78,7 @@ def test_overall_workflow(documents: List[Document]) -> None:
     or MYSCALE_CLUSTER_PASSWORD is None,
     reason="myscale-client not configured",
 )
-def test_init_without_documents(
-    indexDict: MyScaleIndexDict, documents: List[Document]
-) -> None:
+def test_init_without_documents(documents: List[Document]) -> None:
     client = clickhouse_connect.get_client(
         host=MYSCALE_CLUSTER_URL,
         port=8443,

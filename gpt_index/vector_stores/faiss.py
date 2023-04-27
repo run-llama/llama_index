@@ -5,7 +5,7 @@ An index that that is built on top of an existing vector store.
 """
 
 import os
-from typing import Any, Dict, List, cast
+from typing import Any, List, cast
 
 import numpy as np
 
