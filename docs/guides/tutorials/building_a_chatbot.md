@@ -139,7 +139,7 @@ decompose_transform = DecomposeQueryTransform(
 )
 
 # define custom retrievers
-from gpt_index.indices.transform_retriever import TransformRetriever
+from gpt_index.retrievers.transform_retriever import TransformRetriever
 custom_retrievers = {}
 for index in index_set.values():
     retriever = index.as_retriever()
