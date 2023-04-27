@@ -12,7 +12,7 @@ For more detail, see
 By default, LlamaIndex uses a simple in-memory vector store that's great for quick experimentation.
 They can be persisted to (and loaded from) disk by calling `vector_store.persist()` (and `SimpleVectorStore.from_persist_dir(...)` respectively).
 
-## Integrations
+## Third-Party Vector Store Integrations
 For more details, see [Vector Store Integrations](/how_to/integrations/vector_stores.md).
 ### In-Memory Vector Stores
 * Faiss
