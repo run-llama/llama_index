@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from gpt_index.callbacks.base import CallbackManager
+from gpt_index.callbacks.base import CallbackManager
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from gpt_index.indices.prompt_helper import PromptHelper
