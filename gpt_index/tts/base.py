@@ -10,8 +10,14 @@ class BaseTTS:
     def __init__(self) -> None:
         pass
 
+
 class BarkTTS(BaseTTS):
-    def __init__(self, text_temp: float = 0.7, waveform_temp: float = 0.7, lang_speaker_voice: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        text_temp: float = 0.7,
+        waveform_temp: float = 0.7,
+        lang_speaker_voice: Optional[str] = None,
+    ) -> None:
         """
         Args:
             text_temp: generation temperature (1.0 more diverse, \
