@@ -47,7 +47,7 @@ Now, let's write some code to initialize our index:
 
 ```python
 import os
-from llama_index import SimpleDirectoryReader, GPTVectorStoreIndex
+from llama_index import SimpleDirectoryReader, GPTVectorStoreIndex, StorageContext
 
 # NOTE: for local testing only, do NOT deploy with your key hardcoded
 os.environ['OPENAI_API_KEY'] = "your key here"
@@ -55,13 +55,14 @@ os.environ['OPENAI_API_KEY'] = "your key here"
 index = None
 
 def initialize_index():
-  global index
-   if os.path.exists(index_name):
-      index = GPTVectorStoreIndex.load_from_disk(index_name)
-  else:
-      documents = SimpleDirectoryReader("./documents").load_data()
-      index = GPTVectorStoreIndex.from_documents(documents)
-      index.save_to_disk(index_name)
+    global index
+    storage_context = StorageContext.from_defaults(persist_dir=index_dir)
+    if os.path.exists(index_dir):
+        index = load_index_from_storage(storage_context)
+    else:
+        documents = SimpleDirectoryReader("./documents").load_data()
+        index = GPTVectorStoreIndex.from_documents(documents, storage_context=storage_context)
+        storage_context.persist()
 ```
 
 This function will initialize our index. If we call this just before starting the flask server in the `main` function, then our index will be ready for user queries!
@@ -237,7 +238,7 @@ def insert_into_index(doc_text, doc_id=None):
 
     with lock:
         index.insert(document)
-        index.save_to_disk(index_name)
+        index.storage_context.persist()
 
 ...
 manager.register('insert_into_index', insert_into_index)

@@ -28,7 +28,7 @@ We have a direct integration with Unstructured through [LlamaHub](https://llamah
 
 ```python
 
-from llama_index import download_loader, GPTVectorStoreIndex, ServiceContext
+from llama_index import download_loader, GPTVectorStoreIndex, ServiceContext, StorageContext, load_index_from_storage
 from pathlib import Path
 
 years = [2022, 2021, 2020, 2019]
@@ -58,9 +58,14 @@ We build each index and save it to disk.
 service_context = ServiceContext.from_defaults(chunk_size_limit=512)
 index_set = {}
 for year in years:
-    cur_index = GPTVectorStoreIndex.from_documents(doc_set[year], service_context=service_context)
+    storage_context = StorageContext.from_defaults(persist_dir=f'./storage/{year}')
+    cur_index = GPTVectorStoreIndex.from_documents(
+        doc_set[year], 
+        service_context=service_context,
+        storage_context=storage_context,
+    )
     index_set[year] = cur_index
-    cur_index.save_to_disk(f'index_{year}.json')
+    storage_context.persist() 
 
 ```
 
@@ -69,7 +74,8 @@ To load an index from disk, do the following
 # Load indices from disk
 index_set = {}
 for year in years:
-    cur_index = GPTVectorStoreIndex.load_from_disk(f'index_{year}.json')
+    storage_context = StorageContext.from_defaults(persist_dir=f'./storage/{year}')
+    cur_index = load_index_from_storage(storage_context=storage_context)
     index_set[year] = cur_index
 ```
 
@@ -91,6 +97,7 @@ index_summaries = [f"UBER 10-k Filing for {year} fiscal year" for year in years]
 # define an LLMPredictor set number of output tokens
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, max_tokens=512))
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+storage_context = StorageContext.from_defaults(persist_dir=f'./storage/root')
 
 # define a list index over the vector indices
 # allows us to synthesize information across each index
@@ -99,14 +106,18 @@ graph = ComposableGraph.from_indices(
     [index_set[y] for y in years], 
     index_summaries=index_summaries,
     service_context=service_context,
+    storage_context = storage_context,
 )
+root_id = graph.root_id
 
 # [optional] save to disk
-graph.save_to_disk('10k_graph.json')
+storage_context.persist()
+
 # [optional] load from disk, so you don't need to build graph from scratch
-graph = ComposableGraph.load_from_disk(
-    '10k_graph.json', 
+graph = load_graph_from_storage(
+    root_id=root_id, 
     service_context=service_context,
+    storage_context = storage_context,
 )
 
 ```
