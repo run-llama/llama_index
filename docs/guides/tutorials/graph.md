@@ -66,7 +66,7 @@ that solves a distinct use case.
 We will first define a vector index over the documents of each city.
 
 ```python
-from gpt_index import GPTVectorStoreIndex, ServiceContext
+from gpt_index import GPTVectorStoreIndex, ServiceContext, StorageContext
 from langchain.llms.openai import OpenAIChat
 
 # set service context
@@ -78,13 +78,17 @@ service_context = ServiceContext.from_defaults(
 # Build city document index
 vector_indices = {}
 for wiki_title in wiki_titles:
+    storage_context = StorageContext.from_defaults(persist_dir=f'./storage/{wiki_title}')
     # build vector index
     vector_indices[wiki_title] = GPTVectorStoreIndex.from_documents(
-        city_docs[wiki_title], service_context=service_context
+        city_docs[wiki_title], 
+        service_context=service_context,
+        storage_context=storage_context,
     )
     # set id for vector index
     vector_indices[wiki_title].index_struct.index_id = wiki_title
-    vector_indices[wiki_title].save_to_disk(f'index_{wiki_title}.json')
+    # persist to disk
+    storage_context.persist()
 ```
 
 Querying a vector index lets us easily perform semantic search over a given city's documents.

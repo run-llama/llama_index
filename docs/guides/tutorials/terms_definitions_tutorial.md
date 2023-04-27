@@ -77,7 +77,7 @@ Now that we are able to define LLM settings and upload text, we can try using Ll
 We can add the following functions to both initialize our LLM, as well as use it to extract terms from the input text.
 
 ```python
-from llama_index import Document, GPTListIndex, LLMPredictor, ServiceContext, PromptHelper
+from llama_index import Document, GPTListIndex, LLMPredictor, ServiceContext, PromptHelper, load_index_from_storage
 
 def get_llm(llm_name, model_temperature, api_key, max_tokens=256):
     os.environ['OPENAI_API_KEY'] = api_key
@@ -261,7 +261,7 @@ def insert_terms(terms_to_definition):
         doc = Document(f"Term: {term}\nDefinition: {definition}")
         st.session_state['llama_index'].insert(doc)
     # TEMPORARY - save to disk
-    st.session_state['llama_index'].save_to_disk("index.json")
+    st.session_state['llama_index'].storage_context.persist()
 ```
 
 Now, we need some document to extract from! The repository for this project used the wikipedia page on New York City, and you can find the text [here](https://github.com/jerryjliu/llama_index/blob/main/examples/test_wiki/data/nyc_text.txt).
@@ -278,9 +278,7 @@ def initialize_index(llm_name, model_temperature, api_key):
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
 
-    index = GPTVectorStoreIndex.load_from_disk(
-        "./index.json", service_context=service_context
-    )
+    index = load_index_from_storage(service_context=service_context)
 
     return index
 ```
