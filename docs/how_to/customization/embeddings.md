@@ -2,7 +2,7 @@
 
 LlamaIndex provides support for embeddings in the following format:
 - Adding embeddings to Document objects
-- Using a Vector Store as an underlying index (e.g. `GPTVectorStoreIndex`, `GPTFaissIndex`)
+- Using a Vector Store as an underlying index (e.g. `GPTVectorStoreIndex`)
 - Querying our list and tree indices with embeddings.
 
 ## Adding embeddings to Document objects

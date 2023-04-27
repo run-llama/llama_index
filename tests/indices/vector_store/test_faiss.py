@@ -21,7 +21,7 @@ def test_build_faiss(
     faiss_storage_context: StorageContext,
     mock_service_context: ServiceContext,
 ) -> None:
-    """Test build GPTFaissIndex."""
+    """Test build GPTVectorStoreIndex with FaissVectoreStore."""
     index = GPTVectorStoreIndex.from_documents(
         documents=documents,
         storage_context=faiss_storage_context,
@@ -43,7 +43,7 @@ def test_faiss_insert(
     faiss_storage_context: StorageContext,
     mock_service_context: ServiceContext,
 ) -> None:
-    """Test build GPTFaissIndex."""
+    """Test insert GPTVectorStoreIndex with FaissVectoreStore."""
     index = GPTVectorStoreIndex.from_documents(
         documents=documents,
         storage_context=faiss_storage_context,
