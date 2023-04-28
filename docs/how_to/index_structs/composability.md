@@ -72,7 +72,7 @@ graph = ComposableGraph.from_indices(
 
 During a query, we would start with the top-level list index. Each node in the list corresponds to an underlying tree index. 
 The query will be executed recursively, starting from the root index, then the sub-indices.
-The default retriever for each index is called under the hood (i.e. `index.as_retriever()`), unless otherwise configured by passing `custom_retrievers` to the `ComposableGraphQueryEngine`.
+The default query engine for each index is called under the hood (i.e. `index.as_query_engine()`), unless otherwise configured by passing `custom_query_engines` to the `ComposableGraphQueryEngine`.
 Below we show an example that configure the tree index retrievers to use `child_branch_factor=2` (instead of the default `child_branch_factor=1`).
 
 
@@ -81,14 +81,14 @@ More detail on how to configure `ComposableGraphQueryEngine` can be found [here]
 
 ```python
 # set custom retrievers. An example is provided below
-custom_retrievers = {
-    index.index_id: index.as_retriever(
+custom_query_engines = {
+    index.index_id: index.as_query_engine(
         child_branch_factor=2
     ) 
     for index in [index1, index2, index3]
 }
 query_engine = graph.as_query_engine(
-    custom_retrievers=custom_retrievers
+    custom_query_engines=custom_query_engines
 )
 response = query_engine.query("Where did the author grow up?")
 ```

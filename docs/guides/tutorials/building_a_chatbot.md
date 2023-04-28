@@ -150,19 +150,18 @@ decompose_transform = DecomposeQueryTransform(
 )
 
 # define custom retrievers
-from gpt_index.retrievers.transform_retriever import TransformRetriever
-custom_retrievers = {}
+from gpt_index.query_engine.transform_query_engine import TransformQueryEngine
+
+custom_query_engines = {}
 for index in index_set.values():
-    retriever = index.as_retriever()
-    retriever = TransformRetriever(
-        retriever,
+    query_engine = index.as_query_engine()
+    query_engine = TransformQueryEngine(
+        query_engine,
         query_transform=decompose_transform,
         transform_extra_info={'index_summary': index.index_struct.summary},
     )
-    custom_retrievers[index.index_id] = retriever
-
-# construct query engine
-query_engine = graph.as_query_engine(
+    custom_query_engines[index.index_id] = query_engine
+custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
     response_mode='tree_summarize',
     verbose=True,
 )

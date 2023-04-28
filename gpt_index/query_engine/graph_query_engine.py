@@ -1,20 +1,9 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from gpt_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
-from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.composability.graph import ComposableGraph
-from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.query.response_synthesis import ResponseSynthesizer
-from gpt_index.indices.response.type import ResponseMode
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.optimization.optimizer import BaseTokenUsageOptimizer
-from gpt_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    SimpleInputPrompt,
-)
 from gpt_index.response.schema import RESPONSE_TYPE
 
 
@@ -22,14 +11,12 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
     """Composable graph query engine.
 
     This query engine can operate over a ComposableGraph.
-    It can take in a custom response synthesizer and custom retrievers.
+    It can take in custom query engines for its sub-indices.
 
     Args:
         graph (ComposableGraph): A ComposableGraph object.
-        response_synthesizer (Optional[ResponseSynthesizer]): A ResponseSynthesizer
-            object.
-        custom_retrievers (Optional[Dict[str, BaseRetriever]]): A dictionary of
-            custom retrievers.
+        custom_query_engines (Optional[Dict[str, BaseQueryEngine]]): A dictionary of
+            custom query engines.
         recursive (bool): Whether to recursively query the graph.
 
     """
