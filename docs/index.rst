@@ -99,7 +99,6 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    reference/node.rst
    reference/node_postprocessor.rst
    reference/storage.rst
-   reference/docstore.rst
    reference/composability.rst
    reference/readers.rst
    reference/prompts.rst

@@ -46,18 +46,77 @@ display(Markdown(f"<b>{response}</b>"))
 
 Qdrant also stores both documents and vectors. This is an example of how to use Qdrant:
 
-![](/_static/vector_stores/qdrant_reader.png)
+```python
+
+from gpt_index.readers.qdrant import QdrantReader
+
+reader = QdrantReader(host="localhost")
+
+# the query_vector is an embedding representation of your query_vector
+# Example query_vector
+# query_vector = [0.3, 0.3, 0.3, 0.3, ...]
+
+query_vector = [n1, n2, n3, ...]
+
+# NOTE: Required args are collection_name, query_vector.
+# See the Python client: https;//github.com/qdrant/qdrant_client
+# for more details
+
+documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
+
+```
 
 NOTE: Since Weaviate can store a hybrid of document and vector objects, the user may either choose to explicitly specify `class_name` and `properties` in order to query documents, or they may choose to specify a raw GraphQL query. See below for usage.
 
-![](/_static/vector_stores/weaviate_reader_0.png)
-![](/_static/vector_stores/weaviate_reader_1.png)
+```python
+# option 1: specify class_name and properties
+
+# 1) load data using class_name and properties
+documents = reader.load_data(
+    class_name="<class_name>",
+    properties=["property1", "property2", "..."],
+    separate_documents=True
+)
+
+# 2) example GraphQL query
+query = """
+{
+    Get {
+        <class_name> {
+            <property1>
+            <property2>
+        }
+    }
+}
+"""
+
+documents = reader.load_data(graphql_query=query, separate_documents=True)
+```
 
 NOTE: Both Pinecone and Faiss data loaders assume that the respective data sources only store vectors; text content is stored elsewhere. Therefore, both data loaders require that the user specifies an `id_to_text_map` in the load_data call.
 
 For instance, this is an example usage of the Pinecone data loader `PineconeReader`:
 
-![](/_static/vector_stores/pinecone_reader.png)
+
+```python
+
+from gpt_index.readers.pinecone import PineconeReader
+
+reader = PineconeReader(api_key=api_key, environment="us-west1-gcp")
+
+id_to_text_map = {
+    "id1": "text blob 1",
+    "id2": "text blob 2",
+}
+
+query_vector=[n1, n2, n3, ..]
+
+documents = reader.load_data(
+    index_name="quickstart", id_to_text_map=id_to_text_map, top_k=3, vector=query_vector, separate_documents=True
+)
+
+```
+
 
 [Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/data_connectors).
 
@@ -68,7 +127,7 @@ For instance, this is an example usage of the Pinecone data loader `PineconeRead
 LlamaIndex also supports different vector stores
 as the storage backend for `GPTVectorStoreIndex`.
 
-Detailed API reference is [found here](/reference/indices/vector_store.rst).
+A detailed API reference is [found here](/reference/indices/vector_store.rst).
 
 Similar to any other index within LlamaIndex (tree, keyword table, list), `GPTVectorStoreIndex` can be constructed upon any collection
 of documents. 
@@ -93,7 +152,9 @@ response = query_engine.query("What did the author do growing up?")
 
 ```
 
-We can query over custom vector store as follows:
+**Custom Vector Store Index Construction/Querying**
+
+We can query over a custom vector store as follows:
 ```python
 from gpt_index import GPTVectorStoreIndex, SimpleDirectoryReader, StorageContext
 from gpt_index.vector_stores import DeepLakeVectorStore
