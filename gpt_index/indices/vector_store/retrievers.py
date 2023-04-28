@@ -55,7 +55,7 @@ class VectorIndexRetriever(BaseRetriever):
         if self._vector_store.is_embedding_query:
             if query_bundle.embedding is None:
                 event_id = self._service_context.callback_manager.on_event_start(
-                    CBEventType.EMBEDDING, payload={"num_texts": 1}
+                    CBEventType.EMBEDDING
                 )
                 query_bundle.embedding = (
                     self._service_context.embed_model.get_agg_embedding_from_queries(
@@ -63,7 +63,7 @@ class VectorIndexRetriever(BaseRetriever):
                     )
                 )
                 self._service_context.callback_manager.on_event_end(
-                    CBEventType.EMBEDDING, event_id=event_id
+                    CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
                 )
 
         query = VectorStoreQuery(

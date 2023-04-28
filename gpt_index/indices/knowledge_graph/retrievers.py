@@ -98,10 +98,11 @@ class KGTableRetriever(BaseRetriever):
             CBEventType.LLM,
             payload={
                 "template": self.query_keyword_extract_template,
-                "text": query_str,
+                "question": query_str,
+                "max_keywords": self.max_keywords_per_query,
             },
         )
-        response, _ = self._service_context.llm_predictor.predict(
+        response, formatted_prompt = self._service_context.llm_predictor.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,
@@ -110,7 +111,9 @@ class KGTableRetriever(BaseRetriever):
             response, start_token="KEYWORDS:", lowercase=False
         )
         self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM, payload={"keywords": keywords}, event_id=event_id
+            CBEventType.LLM,
+            payload={"keywords": keywords, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
         )
         return list(keywords)
 
@@ -149,13 +152,13 @@ class KGTableRetriever(BaseRetriever):
             and len(self._index_struct.embedding_dict) > 0
         ):
             event_id = self._service_context.callback_manager.on_event_start(
-                CBEventType.EMBEDDING, payload={"num_texts": 1}
+                CBEventType.EMBEDDING
             )
             query_embedding = self._service_context.embed_model.get_text_embedding(
                 query_bundle.query_str
             )
             self._service_context.callback_manager.on_event_end(
-                CBEventType.EMBEDDING, event_id=event_id
+                CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
             )
             all_rel_texts = list(self._index_struct.embedding_dict.keys())
 

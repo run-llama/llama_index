@@ -128,17 +128,20 @@ class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
             CBEventType.LLM,
             payload={
                 "template": self.query_keyword_extract_template,
-                "text": query_str,
+                "question": query_str,
+                "max_keywords": self.max_keywords_per_query,
             },
         )
-        response, _ = self._service_context.llm_predictor.predict(
+        response, formatted_prompt = self._service_context.llm_predictor.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,
         )
         keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
         self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM, payload={"keywords": keywords}, event_id=event_id
+            CBEventType.LLM,
+            payload={"keywords": keywords, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
         )
         return list(keywords)
 
