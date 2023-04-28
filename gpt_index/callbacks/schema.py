@@ -1,9 +1,9 @@
 """Base schema for callback managers."""
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 TIMESTAMP_FORMAT = "%m/%d/%Y, %H:%M:%S"
 
@@ -26,7 +26,7 @@ class CBEvent:
     """Generic class to store event information."""
 
     event_type: CBEventType
-    payload: Dict[str, Any] = field(default_factory=dict)
+    payload: Optional[Dict[str, Any]] = None
     time: str = ""
     id: str = ""
 

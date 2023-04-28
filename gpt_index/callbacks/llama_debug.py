@@ -1,6 +1,5 @@
 from collections import defaultdict
 from datetime import datetime
-from dataclasses import field
 from typing import Dict, List, Any, Optional
 
 from gpt_index.callbacks.base import BaseCallbackHandler
@@ -39,7 +38,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
     def on_event_start(
         self,
         event_type: CBEventType,
-        payload: Dict[str, Any] = field(default_factory=dict),
+        payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
         **kwargs: Any
     ) -> str:
@@ -52,7 +51,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
     def on_event_end(
         self,
         event_type: CBEventType,
-        payload: Dict[str, Any] = field(default_factory=dict),
+        payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
         **kwargs: Any
     ) -> None:
