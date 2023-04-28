@@ -300,9 +300,9 @@ For convienience, you can also use the following shorthand:
 
 ```python
     # ListIndexRetriever
-    retriever = index.as_retriever(mode='default')
+    retriever = index.as_retriever(retriever_mode='default')
     # ListIndexEmbeddingRetriever
-    retriever = index.as_retriever(mode='embedding')
+    retriever = index.as_retriever(retriever_mode='embedding')
 ```
 
 After choosing your desired retriever, you can construct your query engine:

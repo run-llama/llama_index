@@ -5,14 +5,19 @@ in sequence in order to answer a given query.
 
 """
 
+from enum import Enum
 from typing import Any, Optional, Sequence, Union
 
 from gpt_index.data_structs.data_structs_v2 import IndexList
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.base_retriever import BaseRetriever
-from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
+
+
+class ListRetrieverMode(str, Enum):
+    DEFAULT = "default"
+    EMBEDDING = "embedding"
 
 
 class GPTListIndex(BaseGPTIndex[IndexList]):
@@ -51,19 +56,21 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         )
 
     def as_retriever(
-        self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
+        self,
+        retriever_mode: Union[str, ListRetrieverMode] = ListRetrieverMode.DEFAULT,
+        **kwargs: Any,
     ) -> BaseRetriever:
         from gpt_index.indices.list.retrievers import (
             ListIndexEmbeddingRetriever,
             ListIndexRetriever,
         )
 
-        if mode == QueryMode.DEFAULT:
+        if retriever_mode == ListRetrieverMode.DEFAULT:
             return ListIndexRetriever(self, **kwargs)
-        elif mode == QueryMode.EMBEDDING:
+        elif retriever_mode == ListRetrieverMode.EMBEDDING:
             return ListIndexEmbeddingRetriever(self, **kwargs)
         else:
-            raise ValueError(f"Unknown mode: {mode}")
+            raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexList:
         """Build the index from documents.

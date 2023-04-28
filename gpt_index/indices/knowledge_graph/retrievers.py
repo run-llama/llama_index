@@ -23,7 +23,7 @@ DEFAULT_NODE_SCORE = 1000.0
 logger = logging.getLogger(__name__)
 
 
-class KGQueryMode(str, Enum):
+class KGRetrieverMode(str, Enum):
     """Query mode enum for Knowledge Graphs.
 
     Can be passed as the enum struct, or as the underlying string.
@@ -58,7 +58,7 @@ class KGTableRetriever(BaseRetriever):
         num_chunks_per_query (int): Maximum number of text chunks to query.
         include_text (bool): Use the document text source from each relevant triplet
             during queries.
-        embedding_mode (KGQueryMode): Specifies whether to use keyowrds,
+        retriever_mode (KGRetrieverMode): Specifies whether to use keyowrds,
             embeddings, or both to find relevant triplets. Should be one of "keyword",
             "embedding", or "hybrid".
         similarity_top_k (int): The number of top embeddings to use
@@ -72,7 +72,7 @@ class KGTableRetriever(BaseRetriever):
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         include_text: bool = True,
-        embedding_mode: Optional[KGQueryMode] = KGQueryMode.KEYWORD,
+        retriever_mode: Optional[KGRetrieverMode] = KGRetrieverMode.KEYWORD,
         similarity_top_k: int = 2,
         **kwargs: Any,
     ) -> None:
@@ -89,7 +89,7 @@ class KGTableRetriever(BaseRetriever):
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
         self.similarity_top_k = similarity_top_k
         self._include_text = include_text
-        self._embedding_mode = KGQueryMode(embedding_mode)
+        self._retriever_mode = KGRetrieverMode(retriever_mode)
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -124,7 +124,7 @@ class KGTableRetriever(BaseRetriever):
         cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
 
-        if self._embedding_mode != KGQueryMode.EMBEDDING:
+        if self._retriever_mode != KGRetrieverMode.EMBEDDING:
             for keyword in keywords:
                 cur_rel_texts = self._index_struct.get_rel_map_texts(keyword)
                 rel_texts.extend(cur_rel_texts)
@@ -134,7 +134,7 @@ class KGTableRetriever(BaseRetriever):
                         chunk_indices_count[node_id] += 1
 
         if (
-            self._embedding_mode != KGQueryMode.KEYWORD
+            self._retriever_mode != KGRetrieverMode.KEYWORD
             and len(self._index_struct.embedding_dict) > 0
         ):
             query_embedding = self._service_context.embed_model.get_text_embedding(
@@ -171,7 +171,7 @@ class KGTableRetriever(BaseRetriever):
             )
 
         # remove any duplicates from keyword + embedding queries
-        if self._embedding_mode == KGQueryMode.HYBRID:
+        if self._retriever_mode == KGRetrieverMode.HYBRID:
             rel_texts = list(set(rel_texts))
 
         sorted_chunk_indices = sorted(

@@ -9,6 +9,7 @@ existing keywords in the table.
 """
 
 from abc import abstractmethod
+from enum import Enum
 from typing import Any, Optional, Sequence, Set, Union
 
 from gpt_index.async_utils import run_async_tasks
@@ -17,7 +18,6 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
@@ -26,6 +26,12 @@ from gpt_index.prompts.default_prompts import (
 from gpt_index.prompts.prompts import KeywordExtractPrompt
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
+
+
+class KeywordTableRetrieverMode(str, Enum):
+    DEFAULT = "default"
+    SIMPLE = "simple"
+    RAKE = "rake"
 
 
 class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
@@ -79,7 +85,11 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         )
 
     def as_retriever(
-        self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
+        self,
+        retriever_mode: Union[
+            str, KeywordTableRetrieverMode
+        ] = KeywordTableRetrieverMode.DEFAULT,
+        **kwargs: Any,
     ) -> BaseRetriever:
         # NOTE: lazy import
         from gpt_index.indices.keyword_table.retrievers import (
@@ -88,14 +98,14 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             KeywordTableSimpleRetriever,
         )
 
-        if mode == QueryMode.DEFAULT:
+        if retriever_mode == KeywordTableRetrieverMode.DEFAULT:
             return KeywordTableGPTRetriever(self, **kwargs)
-        elif mode == QueryMode.SIMPLE:
+        elif retriever_mode == KeywordTableRetrieverMode.SIMPLE:
             return KeywordTableSimpleRetriever(self, **kwargs)
-        elif mode == QueryMode.RAKE:
+        elif retriever_mode == KeywordTableRetrieverMode.RAKE:
             return KeywordTableRAKERetriever(self, **kwargs)
         else:
-            raise ValueError(f"Unknown mode: {mode}")
+            raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
     @abstractmethod
     def _extract_keywords(self, text: str) -> Set[str]:
