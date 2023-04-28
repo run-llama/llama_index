@@ -26,6 +26,11 @@ class SimpleIndexStore(KVIndexStore):
     ) -> "SimpleIndexStore":
         """Create a SimpleIndexStore from a persist directory."""
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        return cls.from_persist_path(persist_path)
+
+    @classmethod
+    def from_persist_path(cls, persist_path: str) -> "SimpleIndexStore":
+        """Create a SimpleIndexStore from a persist path."""
         simple_kvstore = SimpleKVStore.from_persist_path(persist_path)
         return cls(simple_kvstore)
 

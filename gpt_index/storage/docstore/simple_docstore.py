@@ -42,8 +42,7 @@ class SimpleDocumentStore(KVDocumentStore):
         """
 
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
-        simple_kvstore = SimpleKVStore.from_persist_path(persist_path)
-        return cls(simple_kvstore, namespace)
+        return cls.from_persist_path(persist_path, namespace=namespace)
 
     @classmethod
     def from_persist_path(
