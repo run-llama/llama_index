@@ -36,6 +36,15 @@ class KVIndexStore(BaseIndexStore):
         data = index_struct_to_json(index_struct)
         self._kvstore.put(key, data, collection=self._collection)
 
+    def delete_index_struct(self, key: str) -> None:
+        """Delete an index struct.
+
+        Args:
+            key (str): index struct key
+
+        """
+        self._kvstore.delete(key, collection=self._collection)
+
     def get_index_struct(
         self, struct_id: Optional[str] = None
     ) -> Optional[V2IndexStruct]:

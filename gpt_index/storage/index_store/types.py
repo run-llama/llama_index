@@ -19,6 +19,10 @@ class BaseIndexStore(ABC):
         pass
 
     @abstractmethod
+    def delete_index_struct(self, key: str) -> None:
+        pass
+
+    @abstractmethod
     def get_index_struct(
         self, struct_id: Optional[str] = None
     ) -> Optional[V2IndexStruct]:
