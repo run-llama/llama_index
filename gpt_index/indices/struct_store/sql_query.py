@@ -114,17 +114,21 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
             CBEventType.LLM,
             payload={
                 "template": self._text_to_sql_prompt,
-                "text": query_bundle.query_str,
+                "query_str": query_bundle.query_str,
+                "schema": table_desc_str,
+                "dialect": self._sql_database.dialect,
             },
         )
-        response_str, _ = self._service_context.llm_predictor.predict(
+        response_str, formatted_prompt = self._service_context.llm_predictor.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
             dialect=self._sql_database.dialect,
         )
         self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM, payload={"response": response_str}, event_id=event_id
+            CBEventType.LLM,
+            payload={"response": response_str, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
         )
 
         sql_query_str = self._parse_response_to_sql(response_str)
@@ -145,17 +149,24 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
             CBEventType.LLM,
             payload={
                 "template": self._text_to_sql_prompt,
-                "text": query_bundle.query_str,
+                "query_str": query_bundle.query_str,
+                "schema": table_desc_str,
+                "dialect": self._sql_database.dialect,
             },
         )
-        response_str, _ = await self._service_context.llm_predictor.apredict(
+        (
+            response_str,
+            formatted_prompt,
+        ) = await self._service_context.llm_predictor.apredict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
             dialect=self._sql_database.dialect,
         )
         self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM, payload={"response": response_str}, event_id=event_id
+            CBEventType.LLM,
+            payload={"response": response_str, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
         )
 
         sql_query_str = self._parse_response_to_sql(response_str)

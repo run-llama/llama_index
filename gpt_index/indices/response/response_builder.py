@@ -96,7 +96,7 @@ class BaseResponseBuilder(ABC):
 
     def _callback_chunking_on_start(self, text: str) -> str:
         event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"node_text": text}
+            CBEventType.CHUNKING, payload={"node": text}
         )
         return event_id
 

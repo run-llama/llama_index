@@ -87,12 +87,14 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             CBEventType.LLM,
             payload={"template": self.kg_triple_extract_template, "text": text},
         )
-        response, _ = self._service_context.llm_predictor.predict(
+        response, formatted_prompt = self._service_context.llm_predictor.predict(
             self.kg_triple_extract_template,
             text=text,
         )
         self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM, payload={"response": response}, event_id=event_id
+            CBEventType.LLM,
+            payload={"response": response, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
         )
         return self._parse_triplet_response(response)
 
@@ -122,7 +124,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
             if self.include_embeddings:
                 event_id = self._service_context.callback_manager.on_event_start(
-                    CBEventType.EMBEDDING, payload={"num_texts": len(triplets)}
+                    CBEventType.EMBEDDING
                 )
                 for i, triplet in enumerate(triplets):
                     self._service_context.embed_model.queue_text_for_embedding(
@@ -133,7 +135,9 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                     self._service_context.embed_model.get_queued_text_embeddings()
                 )
                 self._service_context.callback_manager.on_event_end(
-                    CBEventType.EMBEDDING, event_id=event_id
+                    CBEventType.EMBEDDING,
+                    payload={"num_nodes": len(triplets)},
+                    event_id=event_id,
                 )
                 for rel_text, rel_embed in zip(*embed_outputs):
                     index_struct.add_to_embedding_dict(rel_text, rel_embed)
@@ -155,7 +159,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                     and triplet_str not in self._index_struct.embedding_dict
                 ):
                     event_id = self._service_context.callback_manager.on_event_start(
-                        CBEventType.EMBEDDING, payload={"num_texts": 1}
+                        CBEventType.EMBEDDING
                     )
                     rel_embedding = (
                         self._service_context.embed_model.get_text_embedding(
@@ -163,7 +167,9 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                         )
                     )
                     self._service_context.callback_manager.on_event_end(
-                        CBEventType.EMBEDDING, event_id=event_id
+                        CBEventType.EMBEDDING,
+                        payload={"num_nodes": 1},
+                        event_id=event_id,
                     )
                     self.index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
 

@@ -113,9 +113,17 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
 
         event_id = self._service_context.callback_manager.on_event_start(
             CBEventType.LLM,
-            payload={"template": self._pandas_prompt, "text": query_bundle.query_str},
+            payload={
+                "template": self._pandas_prompt,
+                "df_str": context,
+                "query_str": query_bundle.query_str,
+                "instruction_str": self._instruction_str,
+            },
         )
-        pandas_response_str, _ = self._service_context.llm_predictor.predict(
+        (
+            pandas_response_str,
+            formatted_prompt,
+        ) = self._service_context.llm_predictor.predict(
             self._pandas_prompt,
             df_str=context,
             query_str=query_bundle.query_str,
@@ -123,7 +131,10 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
         )
         self._service_context.callback_manager.on_event_end(
             CBEventType.LLM,
-            payload={"response": pandas_response_str},
+            payload={
+                "response": pandas_response_str,
+                "formatted_prompt": formatted_prompt,
+            },
             event_id=event_id,
         )
         if self._verbose:
