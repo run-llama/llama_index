@@ -1,8 +1,8 @@
 """PII postprocessor."""
 
 from gpt_index.indices.postprocessor.node import BaseNodePostprocessor
-from gpt_index.data_structs.node_v2 import Node
-from typing import List, Optional, Dict, Tuple
+from gpt_index.data_structs.node_v2 import NodeWithScore
+from typing import List, Optional, Dict, Tuple, Callable
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from copy import deepcopy
@@ -40,6 +40,8 @@ DEFAULT_PII_TMPL = (
 class PIINodePostprocessor(BaseNodePostprocessor):
     """PII Node processor.
 
+    NOTE: the ServiceContext should contain a LOCAL model, not an external API.
+
     NOTE: this is a beta feature, the API might change.
 
     Args:
@@ -70,17 +72,60 @@ class PIINodePostprocessor(BaseNodePostprocessor):
         return text_output, json_dict
 
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         # swap out text from nodes, with the original node mappings
         new_nodes = []
-        for node in nodes:
+        for node_with_score in nodes:
+            node = node_with_score.node
             new_text, mapping_info = self.mask_pii(node.get_text())
             new_node = deepcopy(node)
             new_node.node_info = new_node.node_info or {}
             new_node.node_info[self.pii_node_info_key] = mapping_info
             new_node.text = new_text
-            new_nodes.append(new_node)
+            new_nodes.append(NodeWithScore(new_node, node_with_score.score))
+
+        return new_nodes
+
+
+class NERPIINodePostprocessor(BaseNodePostprocessor):
+    """NER PII Node processor.
+
+    Uses a HF transformers model.
+
+    """
+
+    pii_node_info_key: str = "__pii_node_info__"
+
+    def mask_pii(self, ner: Callable, text: str) -> Tuple[str, Dict]:
+        """Mask PII in text."""
+        new_text = text
+        response = ner(text)
+        mapping = {}
+        for entry in response:
+            entity_group_tag = f"[{entry['entity_group']}_{entry['start']}]"
+            new_text = new_text.replace(entry["word"], entity_group_tag).strip()
+            mapping[entity_group_tag] = entry["word"]
+        return new_text, mapping
+
+    def postprocess_nodes(
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes."""
+        from transformers import pipeline
+
+        ner = pipeline("ner", grouped_entities=True)
+
+        # swap out text from nodes, with the original node mappings
+        new_nodes = []
+        for node_with_score in nodes:
+            node = node_with_score.node
+            new_text, mapping_info = self.mask_pii(ner, node.get_text())
+            new_node = deepcopy(node)
+            new_node.node_info = new_node.node_info or {}
+            new_node.node_info[self.pii_node_info_key] = mapping_info
+            new_node.text = new_text
+            new_nodes.append(NodeWithScore(new_node, node_with_score.score))
 
         return new_nodes

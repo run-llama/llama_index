@@ -1,5 +1,5 @@
 🔍 Query Interface
-==================
+===============
 
 
 Querying an index or a graph involves a three main components:

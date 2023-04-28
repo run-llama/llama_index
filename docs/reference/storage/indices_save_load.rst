@@ -1,6 +1,6 @@
 .. _Ref-Indices-SaveLoad:
 
-Save / Load Indices
+Loading Indices
 =====================
 
 .. automodule:: gpt_index.indices.loading

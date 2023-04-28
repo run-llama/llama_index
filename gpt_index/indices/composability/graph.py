@@ -77,9 +77,7 @@ class ComposableGraph:
             index_node = IndexNode(
                 text=summary,
                 index_id=index.index_id,
-                relationships={
-                    DocumentRelationship.SOURCE: index.index_id
-                },
+                relationships={DocumentRelationship.SOURCE: index.index_id},
             )
             index_nodes.append(index_node)
 

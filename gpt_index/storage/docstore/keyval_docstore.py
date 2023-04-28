@@ -30,7 +30,10 @@ class KVDocumentStore(BaseDocumentStore):
 
         list_index = GPTListIndex(nodes, storage_context=storage_context)
         vector_index = GPTVectorStoreIndex(nodes, storage_context=storage_context)
-        keyword_table_index = GPTSimpleKeywordTableIndex(nodes, storage_context=storage_context)
+        keyword_table_index = GPTSimpleKeywordTableIndex(
+            nodes,
+            storage_context=storage_context
+        )
 
     This will use the same docstore for multiple index structures.
 
