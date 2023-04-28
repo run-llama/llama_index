@@ -2,7 +2,7 @@
 
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, List, Optional, Protocol, runtime_checkable
 
 from enum import Enum
 from gpt_index.data_structs.node_v2 import Node

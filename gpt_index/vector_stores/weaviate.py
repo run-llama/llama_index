@@ -4,7 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, List, Optional, cast
 
 from gpt_index.readers.weaviate.client import (
     add_nodes,
