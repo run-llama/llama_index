@@ -107,6 +107,24 @@ class BaseGPTIndex(Generic[IS], ABC):
         """Get the index struct."""
         return self._index_struct.index_id
 
+    def set_index_id(self, index_id: str) -> None:
+        """Set the index id.
+
+        NOTE: if you decide to set the index_id on the index_struct manually,
+        you will need to explicitly call `add_index_struct` on the `index_store`
+        to update the index store.
+
+        .. code-block:: python
+            index.index_struct.index_id = index_id
+            index.storage_context.index_store.add_index_struct(index.index_struct)
+
+        Args:
+            index_id (str): Index id to set.
+
+        """
+        self._index_struct.index_id = index_id
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+
     @property
     def docstore(self) -> BaseDocumentStore:
         """Get the docstore corresponding to the index."""
