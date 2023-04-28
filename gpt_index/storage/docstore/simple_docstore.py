@@ -22,9 +22,12 @@ class SimpleDocumentStore(KVDocumentStore):
     """
 
     def __init__(
-        self, simple_kvstore: SimpleKVStore, name_space: Optional[str] = None
+        self,
+        simple_kvstore: Optional[SimpleKVStore] = None,
+        name_space: Optional[str] = None,
     ) -> None:
         """Init a SimpleDocumentStore."""
+        simple_kvstore = simple_kvstore or SimpleKVStore()
         super().__init__(simple_kvstore, name_space)
 
     @classmethod
@@ -50,7 +53,7 @@ class SimpleDocumentStore(KVDocumentStore):
         persist_path: str,
         namespace: Optional[str] = None,
     ) -> "SimpleDocumentStore":
-        """Create a SimpleDocumentStore from a persist directory.
+        """Create a SimpleDocumentStore from a persist path.
 
         Args:
             persist_path (str): Path to persist the store

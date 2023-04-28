@@ -16,7 +16,7 @@ def test_load_graph_from_storage_simple(
     mock_service_context: ServiceContext,
 ) -> None:
     # construct simple (i.e. in memory) storage context
-    storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
+    storage_context = StorageContext.from_defaults()
 
     # construct index
     vector_index = GPTVectorStoreIndex.from_documents(

@@ -23,9 +23,5 @@ def faiss_vector_store(tmp_path: pathlib.Path) -> FaissVectorStore:
 
 
 @pytest.fixture()
-def faiss_storage_context(
-    faiss_vector_store: FaissVectorStore, tmp_path: pathlib.Path
-) -> StorageContext:
-    return StorageContext.from_defaults(
-        vector_store=faiss_vector_store, persist_dir=str(tmp_path)
-    )
+def faiss_storage_context(faiss_vector_store: FaissVectorStore) -> StorageContext:
+    return StorageContext.from_defaults(vector_store=faiss_vector_store)

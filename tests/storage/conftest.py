@@ -1,4 +1,3 @@
-from pathlib import Path
 import pytest
 from gpt_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
@@ -16,6 +15,5 @@ def mongo_kvstore(mongo_client: MockMongoClient) -> MongoDBKVStore:
 
 
 @pytest.fixture()
-def simple_kvstore(tmp_path: Path) -> SimpleKVStore:
-    file_path = str(tmp_path / "test_file.txt")
-    return SimpleKVStore.from_persist_path(file_path)
+def simple_kvstore() -> SimpleKVStore:
+    return SimpleKVStore()

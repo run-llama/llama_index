@@ -35,7 +35,7 @@ def test_docstore_persist(tmp_path: Path) -> None:
     node = Node("my node", doc_id="d2", node_info={"node": "info"})
 
     # add documents and then persist to dir
-    docstore = SimpleDocumentStore.from_persist_dir()
+    docstore = SimpleDocumentStore()
     docstore.add_documents([doc, node])
     docstore.persist(persist_path)
 

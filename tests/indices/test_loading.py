@@ -20,7 +20,7 @@ def test_load_index_from_storage_simple(
     mock_service_context: ServiceContext,
 ) -> None:
     # construct simple (i.e. in memory) storage context
-    storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
+    storage_context = StorageContext.from_defaults()
 
     # construct index
     index = GPTVectorStoreIndex.from_documents(
@@ -49,7 +49,7 @@ def test_load_index_from_storage_multiple(
     mock_service_context: ServiceContext,
 ) -> None:
     # construct simple (i.e. in memory) storage context
-    storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
+    storage_context = StorageContext.from_defaults()
 
     # add nodes to docstore
     storage_context.docstore.add_documents(nodes)
@@ -103,7 +103,7 @@ def test_load_index_from_storage_retrieval_result_identical(
     mock_service_context: ServiceContext,
 ) -> None:
     # construct simple (i.e. in memory) storage context
-    storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
+    storage_context = StorageContext.from_defaults()
 
     # construct index
     index = GPTVectorStoreIndex.from_documents(
@@ -140,8 +140,8 @@ def test_load_index_from_storage_faiss_vector_store(
 
     # construct custom storage context
     storage_context = StorageContext.from_defaults(
-        docstore=SimpleDocumentStore.from_persist_dir(str(tmp_path)),
-        index_store=SimpleIndexStore.from_persist_dir(str(tmp_path)),
+        docstore=SimpleDocumentStore(),
+        index_store=SimpleIndexStore(),
         vector_store=FaissVectorStore(faiss_index=faiss.IndexFlatL2(5)),
     )
 

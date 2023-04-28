@@ -159,14 +159,13 @@ class SimpleVectorStore(VectorStore):
     @classmethod
     def from_persist_path(cls, persist_path: str) -> "SimpleVectorStore":
         """Create a SimpleKVStore from a persist directory."""
-        data = SimpleVectorStoreData()
-        if os.path.exists(persist_path):
-            logger.info(f"Loading {__name__} from {persist_path}.")
-            with open(persist_path, "r+") as f:
-                data_dict = json.load(f)
-                data = SimpleVectorStoreData.from_dict(data_dict)
-        else:
-            logger.info(
+        if not os.path.exists(persist_path):
+            raise ValueError(
                 f"No existing {__name__} found at {persist_path}, skipping load."
             )
+
+        logger.debug(f"Loading {__name__} from {persist_path}.")
+        with open(persist_path, "r+") as f:
+            data_dict = json.load(f)
+            data = SimpleVectorStoreData.from_dict(data_dict)
         return cls(data)
