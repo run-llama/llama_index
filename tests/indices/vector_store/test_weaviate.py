@@ -25,16 +25,6 @@ class MockWeaviateVectorStore(VectorStore):
         self._class_prefix = class_prefix
 
     @property
-    def config_dict(self) -> dict:
-        return {"class_prefix": "test_class_prefix"}
-
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "MockWeaviateVectorStore":
-        if "weaviate_client" not in config_dict:
-            raise ValueError("Missing Weaviate client!")
-        return cls(**config_dict)
-
-    @property
     def client(self) -> Any:
         return None
 

@@ -55,19 +55,6 @@ class QdrantVectorStore(VectorStore):
 
         self._batch_size = kwargs.get("batch_size", 100)
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        if "client" not in config_dict:
-            raise ValueError("Missing Qdrant client!")
-        return cls(**config_dict)
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {
-            "collection_name": self._collection_name,
-        }
-
     def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
         """Add embedding results to index.
 

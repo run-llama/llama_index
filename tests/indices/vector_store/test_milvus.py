@@ -43,27 +43,6 @@ class MockMilvusVectorStore(VectorStore):
         self.overwrite = overwrite
 
     @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {
-            "collection_name": self.collection_name,
-            "index_params": self.index_params,
-            "search_params": self.search_params,
-            "dim": self.dim,
-            "host": self.host,
-            "port": self.port,
-            "user": self.user,
-            "password": self.password,
-            "use_secure": self.use_secure,
-            # # Set to false, dont want subsequent object to rewrite store
-            # "overwrite": False,
-        }
-
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "MockMilvusVectorStore":
-        return cls(**config_dict)
-
-    @property
     def client(self) -> Any:
         return None
 

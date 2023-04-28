@@ -134,29 +134,6 @@ class DeepLakeVectorStore(VectorStore):
                     chunk_compression="lz4",
                 )
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        """Initialize a VectorStore from a dictionary
-
-        Args:
-            config_dict (Dict[str, Any]): dictionary of configuration
-
-        Returns:
-            VectorStore: loaded DeepLakeVectorStore
-        """
-        return cls(**config_dict)
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {
-            "dataset_path": self.dataset_path,
-            "token": self.token,
-            "read_only": self.read_only,
-            "ingestion_batch_size": self.ingestion_batch_size,
-            "ingestion_num_workers": self.num_workers,
-        }
-
     @property
     def client(self) -> None:
         """Get client."""

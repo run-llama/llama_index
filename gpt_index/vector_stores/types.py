@@ -72,18 +72,9 @@ class VectorStore(Protocol):
     stores_text: bool
     is_embedding_query: bool = True
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        ...
-
     @property
     def client(self) -> Any:
         """Get client."""
-        ...
-
-    @property
-    def config_dict(self) -> dict:
-        """Get config dict."""
         ...
 
     def add(

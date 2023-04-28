@@ -44,17 +44,6 @@ class ChromaVectorStore(VectorStore):
 
         self._collection = cast(Collection, chroma_collection)
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        if "chroma_collection" not in config_dict:
-            raise ValueError("Missing chroma collection!")
-        return cls(**config_dict)
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {}
-
     def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
         """Add embedding results to index.
 
