@@ -44,13 +44,19 @@ class SimpleMongoReader(BaseReader):
         self.max_docs = max_docs
 
     def load_data(
-        self, db_name: str, collection_name: str, query_dict: Optional[Dict] = None
+        self,
+        db_name: str,
+        collection_name: str,
+        field_names: List[str] = ["text"],
+        query_dict: Optional[Dict] = None,
     ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
             db_name (str): name of the database.
             collection_name (str): name of the collection.
+            field_names(List[str]): names of the fields to be concatenated.
+                Defaults to ["text"]
             query_dict (Optional[Dict]): query to filter documents.
                 Defaults to None
 
@@ -66,7 +72,14 @@ class SimpleMongoReader(BaseReader):
             cursor = db[collection_name].find(query_dict)
 
         for item in cursor:
-            if "text" not in item:
-                raise ValueError("`text` field not found in Mongo document.")
-            documents.append(Document(item["text"]))
+            text = ""
+            for field_name in field_names:
+                if field_name not in item:
+                    raise ValueError(
+                        f"`{field_name}` field not found in Mongo document."
+                    )
+                text += item[field_name]
+
+            documents.append(Document(text))
+
         return documents

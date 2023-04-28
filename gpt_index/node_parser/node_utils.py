@@ -24,7 +24,6 @@ def get_text_splits_from_document(
 ) -> List[TextSplit]:
     """Break the document into chunks with additional info."""
     # TODO: clean up since this only exists due to the diff w LangChain's TextSplitter
-    text_splits = []
     if isinstance(text_splitter, TokenTextSplitter):
         # use this to extract extra information about the chunks
         text_splits = text_splitter.split_text_with_overlaps(

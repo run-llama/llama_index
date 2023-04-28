@@ -37,20 +37,17 @@ class ChromaReader(BaseReader):
             raise ValueError("Please provide a collection name.")
         from chromadb.config import Settings
 
-        if persist_directory:
-            self._client = chromadb.Client(
-                Settings(
-                    chroma_db_impl="duckdb+parquet", persist_directory=persist_directory
-                )
+        self._client = chromadb.Client(
+            Settings(
+                chroma_api_impl="rest",
+                chroma_server_host=host,
+                chroma_server_http_port=port,
+                persist_directory=persist_directory
+                if persist_directory
+                else "./chroma",
             )
-        else:
-            self._client = chromadb.Client(
-                Settings(
-                    chroma_api_impl="rest",
-                    chroma_server_host=host,
-                    chroma_server_http_port=port,
-                )
-            )
+        )
+
         self._collection = self._client.get_collection(collection_name)
 
     def create_documents(self, results: Any) -> List[Document]:

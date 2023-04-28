@@ -14,6 +14,7 @@ from gpt_index.readers.file.mbox_parser import MboxParser
 from gpt_index.readers.file.slides_parser import PptxParser
 from gpt_index.readers.file.tabular_parser import PandasCSVParser
 from gpt_index.readers.file.video_audio import VideoAudioParser
+from gpt_index.readers.file.ipynb_parser import IPYNBParser
 from gpt_index.readers.schema.base import Document, ImageDocument
 
 DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
@@ -29,6 +30,7 @@ DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
     ".epub": EpubParser(),
     ".md": MarkdownParser(),
     ".mbox": MboxParser(),
+    ".ipynb": IPYNBParser(),
 }
 
 logger = logging.getLogger(__name__)

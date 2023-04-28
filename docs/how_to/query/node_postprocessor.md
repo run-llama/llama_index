@@ -131,14 +131,18 @@ Imagine that you have three versions of a document, with slight changes between 
 
 We support recency filtering through the following modules.
 
-`FixedRecencyPostProcessor` sorts retrieved nodes by date in reverse order, and takes a fixed top-k set of nodes.
+**`FixedRecencyPostProcessor`**: sorts retrieved nodes by date in reverse order, and takes a fixed top-k set of nodes.
 
-`EmbeddingRecencyPostprocessor` sorts retrieved nodes by date in reverse order, and then
+![](/_static/node_postprocessors/recency.png)
+
+**`EmbeddingRecencyPostprocessor`**: sorts retrieved nodes by date in reverse order, and then
 looks at subsequent nodes and filters out nodes that have high embedding 
 similarity with the current node. This allows us to maintain recent Nodes
 that have "distinct" context, but filter out overlapping Nodes that
 are outdated and overlap with more recent context.
 
 
-![](/_static/node_postprocessors/recency.png)
+**`TimeWeightedPostprocessor`**: adds time-weighting to retrieved nodes, using the formula `(1-time_decay) ** hours_passed`.
+The recency score is added to any score that the node already contains.
+
 

@@ -40,7 +40,7 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
                         percentile_cutoff=0.5
                         this means that the top 50% of sentences will be used.
                         Alternatively, you can set the cutoff using a threshold
-                        on the similarity score. In this case only setences with a
+                        on the similarity score. In this case only sentences with a
                         similarity score higher than the threshold will be used.
                         threshold_cutoff=0.7
                         these cutoffs can also be used together.

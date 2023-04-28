@@ -11,7 +11,9 @@ from gpt_index.indices.postprocessor.node import (
 from gpt_index.indices.postprocessor.node_recency import (
     FixedRecencyPostprocessor,
     EmbeddingRecencyPostprocessor,
+    TimeWeightedPostprocessor,
 )
+from gpt_index.indices.postprocessor.pii import PIINodePostprocessor
 
 __all__ = [
     "BasePostprocessor",
@@ -21,4 +23,6 @@ __all__ = [
     "AutoPrevNextNodePostprocessor",
     "FixedRecencyPostprocessor",
     "EmbeddingRecencyPostprocessor",
+    "TimeWeightedPostprocessor",
+    "PIINodePostprocessor",
 ]
