@@ -6,7 +6,9 @@ PyPi:
 - LlamaIndex: https://pypi.org/project/llama-index/.
 - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
 
-Documentation: https://gpt-index.readthedocs.io/en/latest/.
+Documentation:
+- v0.6 (pre-release): https://gpt-index.readthedocs.io/en/latest/.
+- v0.5 (stable): https://gpt-index.readthedocs.io/en/v0.5.27/.
 
 Twitter: https://twitter.com/gpt_index.
 
@@ -15,7 +17,7 @@ Discord: https://discord.gg/dGcwcsnxhU.
 ### Ecosystem
 
 - LlamaHub (community library of data loaders): https://llamahub.ai
-- Llama Lab (cutting-edge AGI projects using LlamaIndex): https://github.com/run-llama/llama-lab
+- LlamaLab (cutting-edge AGI projects using LlamaIndex): https://github.com/run-llama/llama-lab
 
 
 ## 🚀 Overview
