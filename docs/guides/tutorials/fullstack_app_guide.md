@@ -56,13 +56,13 @@ index = None
 
 def initialize_index():
     global index
-    storage_context = StorageContext.from_defaults(persist_dir=index_dir)
+    storage_context = StorageContext.from_defaults()
     if os.path.exists(index_dir):
         index = load_index_from_storage(storage_context)
     else:
         documents = SimpleDirectoryReader("./documents").load_data()
         index = GPTVectorStoreIndex.from_documents(documents, storage_context=storage_context)
-        storage_context.persist()
+        storage_context.persist(index_dir)
 ```
 
 This function will initialize our index. If we call this just before starting the flask server in the `main` function, then our index will be ready for user queries!

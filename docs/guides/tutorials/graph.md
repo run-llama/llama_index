@@ -78,7 +78,7 @@ service_context = ServiceContext.from_defaults(
 # Build city document index
 vector_indices = {}
 for wiki_title in wiki_titles:
-    storage_context = StorageContext.from_defaults(persist_dir=f'./storage/{wiki_title}')
+    storage_context = StorageContext.from_defaults()
     # build vector index
     vector_indices[wiki_title] = GPTVectorStoreIndex.from_documents(
         city_docs[wiki_title], 
@@ -88,7 +88,7 @@ for wiki_title in wiki_titles:
     # set id for vector index
     vector_indices[wiki_title].index_struct.index_id = wiki_title
     # persist to disk
-    storage_context.persist()
+    storage_context.persist(persist_dir=f'./storage/{wiki_title}')
 ```
 
 Querying a vector index lets us easily perform semantic search over a given city's documents.
