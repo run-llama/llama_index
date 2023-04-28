@@ -26,10 +26,11 @@ class KVDocumentStore(BaseDocumentStore):
         nodes = SimpleNodeParser.get_nodes_from_documents()
         docstore = SimpleDocumentStore()
         docstore.add_documents(nodes)
+        storage_context = StorageContext.from_defaults(docstore=docstore)
 
-        list_index = GPTListIndex(nodes, docstore=docstore)
-        vector_index = GPTVectorStoreIndex(nodes, docstore=docstore)
-        keyword_table_index = GPTSimpleKeywordTableIndex(nodes, docstore=docstore)
+        list_index = GPTListIndex(nodes, storage_context=storage_context)
+        vector_index = GPTVectorStoreIndex(nodes, storage_context=storage_context)
+        keyword_table_index = GPTSimpleKeywordTableIndex(nodes, storage_context=storage_context)
 
     This will use the same docstore for multiple index structures.
 
