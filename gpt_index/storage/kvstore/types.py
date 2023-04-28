@@ -28,9 +28,10 @@ class BaseInMemoryKVStore(BaseKVStore):
     """Base in-memory key-value store."""
 
     @abstractmethod
-    def persist(self) -> None:
+    def persist(self, persist_path: str) -> None:
         pass
 
+    @classmethod
     @abstractmethod
-    def load(self) -> None:
-        pass
+    def from_persist_path(cls, persist_path: str) -> "BaseInMemoryKVStore":
+        """Create a BaseInMemoryKVStore from a persist directory."""

@@ -65,9 +65,7 @@ def test_faiss_insert(
 def test_persist(tmp_path: Path) -> None:
     import faiss
 
-    vector_store = FaissVectorStore(
-        faiss_index=faiss.IndexFlatL2(5), persist_dir=str(tmp_path)
-    )
+    vector_store = FaissVectorStore(faiss_index=faiss.IndexFlatL2(5))
 
     vector_store.add(
         [
@@ -82,9 +80,9 @@ def test_persist(tmp_path: Path) -> None:
 
     result = vector_store.query(VectorStoreQuery(query_embedding=[0, 0, 0, 1, 1]))
 
-    vector_store.persist()
-
-    new_vector_store = FaissVectorStore.from_persist_dir(str(tmp_path))
+    persist_path = str(tmp_path / "faiss.index")
+    vector_store.persist(persist_path)
+    new_vector_store = FaissVectorStore.from_persist_path(persist_path)
     new_result = new_vector_store.query(
         VectorStoreQuery(query_embedding=[0, 0, 0, 1, 1])
     )

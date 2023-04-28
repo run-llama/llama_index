@@ -1,5 +1,6 @@
 import pytest
 from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
+from pathlib import Path
 
 
 @pytest.fixture()
@@ -21,9 +22,9 @@ def test_kvstore_basic(simple_kvstore: SimpleKVStore) -> None:
     assert blob is None
 
 
-def test_kvstore_persist(kvstore_with_data: SimpleKVStore) -> None:
-    persist_path = kvstore_with_data.persist_path
-    kvstore_with_data.persist()
-
-    loaded_kvstore = SimpleKVStore(persist_path)
+def test_kvstore_persist(tmp_path: Path, kvstore_with_data: SimpleKVStore) -> None:
+    """Test kvstore persist."""
+    testpath = str(Path(tmp_path) / "kvstore.json")
+    kvstore_with_data.persist(testpath)
+    loaded_kvstore = SimpleKVStore.from_persist_path(testpath)
     assert len(loaded_kvstore.get_all()) == 1

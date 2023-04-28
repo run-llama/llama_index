@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 import json
 import os
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, cast, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -12,6 +12,8 @@ from gpt_index.indices.query.embedding_utils import (
     get_top_k_embeddings_learner,
 )
 from gpt_index.vector_stores.types import (
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
@@ -28,9 +30,6 @@ LEARNER_MODES = {
     VectorStoreQueryMode.LINEAR_REGRESSION,
     VectorStoreQueryMode.LOGISTIC_REGRESSION,
 }
-
-DEFAULT_PERSIST_DIR = "./storage"
-DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 
 @dataclass
@@ -62,21 +61,18 @@ class SimpleVectorStore(VectorStore):
 
     def __init__(
         self,
-        persist_path: str,
+        data: Optional[SimpleVectorStoreData] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._data = SimpleVectorStoreData()
-        self._persist_path = persist_path
-
-        self.load()
+        self._data = data or SimpleVectorStoreData()
 
     @classmethod
     def from_persist_dir(
         cls, persist_dir: str = DEFAULT_PERSIST_DIR
     ) -> "SimpleVectorStore":
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
-        return cls(persist_path)
+        return cls.from_persist_path(persist_path)
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "SimpleVectorStore":
@@ -151,21 +147,25 @@ class SimpleVectorStore(VectorStore):
 
         return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
 
-    def persist(self) -> None:
-        dirpath = os.path.dirname(self._persist_path)
+    def persist(self, persist_path: str) -> None:
+        """Persist the SimpleVectorStore to a directory."""
+        dirpath = os.path.dirname(persist_path)
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)
 
-        with open(self._persist_path, "w+") as f:
+        with open(persist_path, "w+") as f:
             json.dump(self._data.to_dict(), f)
 
-    def load(self) -> None:
-        if os.path.exists(self._persist_path):
-            logger.info(f"Loading {__name__} from {self._persist_path}.")
-            with open(self._persist_path, "r+") as f:
-                data_dict = json.load(f)
-                self._data = SimpleVectorStoreData.from_dict(data_dict)
-        else:
-            logger.info(
-                f"No existing {__name__} found at {self._persist_path}, skipping load."
+    @classmethod
+    def from_persist_path(cls, persist_path: str) -> "SimpleVectorStore":
+        """Create a SimpleKVStore from a persist directory."""
+        if not os.path.exists(persist_path):
+            raise ValueError(
+                f"No existing {__name__} found at {persist_path}, skipping load."
             )
+
+        logger.debug(f"Loading {__name__} from {persist_path}.")
+        with open(persist_path, "r+") as f:
+            data_dict = json.load(f)
+            data = SimpleVectorStoreData.from_dict(data_dict)
+        return cls(data)
