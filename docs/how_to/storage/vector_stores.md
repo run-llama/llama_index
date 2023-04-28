@@ -5,7 +5,7 @@ Vector stores contain embedding vectors of ingested document chunks
 
 ## Simple Vector Store
 By default, LlamaIndex uses a simple in-memory vector store that's great for quick experimentation.
-They can be persisted to (and loaded from) disk by calling `vector_store.persist()` (and `SimpleVectorStore.from_persist_dir(...)` respectively).
+They can be persisted to (and loaded from) disk by calling `vector_store.persist()` (and `SimpleVectorStore.from_persist_path(...)` respectively).
 
 ## Third-Party Vector Store Integrations
 We also integrate with a wide range of vector store implementations. 

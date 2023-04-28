@@ -6,7 +6,7 @@ See the [API Reference](/reference/storage/docstore.rst) for more details.
 
 ### Simple Document Store
 By default, the `SimpleDocumentStore` stores `Node` objects in-memory. 
-They can be persisted to (and loaded from) disk by calling `docstore.persist()` (and `SimpleDocumentStore.from_persist_dir(...)` respectively).
+They can be persisted to (and loaded from) disk by calling `docstore.persist()` (and `SimpleDocumentStore.from_persist_path(...)` respectively).
 
 ### MongoDB Document Store
 We support MongoDB as an alternative document store backend that persists data as `Node` objects are ingested.
