@@ -3,7 +3,7 @@
 ## Persisting Data
 By default, LlamaIndex stores data in-memory, and this data can be explicitly persisted if desired:
 ```python
-storage_context.persist()
+storage_context.persist(persist_dir="<persist_dir>")
 ```
 This will persist data to disk, under the specified `persist_dir` (or `./storage` by default).
 

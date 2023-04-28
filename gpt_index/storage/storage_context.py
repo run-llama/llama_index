@@ -39,7 +39,7 @@ class StorageContext:
         docstore: Optional[BaseDocumentStore] = None,
         index_store: Optional[BaseIndexStore] = None,
         vector_store: Optional[VectorStore] = None,
-        persist_dir: str = DEFAULT_PERSIST_DIR,
+        persist_dir: Optional[str] = None,
     ) -> "StorageContext":
         """Create a StorageContext from defaults.
 
@@ -49,9 +49,17 @@ class StorageContext:
             vector_store (Optional[VectorStore]): vector store
 
         """
-        docstore = docstore or SimpleDocumentStore.from_persist_dir(persist_dir)
-        index_store = index_store or SimpleIndexStore.from_persist_dir(persist_dir)
-        vector_store = vector_store or SimpleVectorStore.from_persist_dir(persist_dir)
+        if persist_dir is None:
+            docstore = docstore or SimpleDocumentStore()
+            index_store = index_store or SimpleIndexStore()
+            vector_store = vector_store or SimpleVectorStore()
+        else:
+            docstore = docstore or SimpleDocumentStore.from_persist_dir(persist_dir)
+            index_store = index_store or SimpleIndexStore.from_persist_dir(persist_dir)
+            vector_store = vector_store or SimpleVectorStore.from_persist_dir(
+                persist_dir
+            )
+
         return cls(docstore, index_store, vector_store)
 
     def persist(

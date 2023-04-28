@@ -58,14 +58,14 @@ We build each index and save it to disk.
 service_context = ServiceContext.from_defaults(chunk_size_limit=512)
 index_set = {}
 for year in years:
-    storage_context = StorageContext.from_defaults(persist_dir=f'./storage/{year}')
+    storage_context = StorageContext.from_defaults()
     cur_index = GPTVectorStoreIndex.from_documents(
         doc_set[year], 
         service_context=service_context,
         storage_context=storage_context,
     )
     index_set[year] = cur_index
-    storage_context.persist() 
+    storage_context.persist(persist_dir=f'./storage/{year}')
 
 ```
 
@@ -97,7 +97,7 @@ index_summaries = [f"UBER 10-k Filing for {year} fiscal year" for year in years]
 # define an LLMPredictor set number of output tokens
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, max_tokens=512))
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
-storage_context = StorageContext.from_defaults(persist_dir=f'./storage/root')
+storage_context = StorageContext.from_defaults()
 
 # define a list index over the vector indices
 # allows us to synthesize information across each index
@@ -111,13 +111,13 @@ graph = ComposableGraph.from_indices(
 root_id = graph.root_id
 
 # [optional] save to disk
-storage_context.persist()
+storage_context.persist(persist_dir=f'./storage/root')
 
 # [optional] load from disk, so you don't need to build graph from scratch
 graph = load_graph_from_storage(
     root_id=root_id, 
     service_context=service_context,
-    storage_context = storage_context,
+    storage_context=storage_context,
 )
 
 ```
@@ -150,19 +150,18 @@ decompose_transform = DecomposeQueryTransform(
 )
 
 # define custom retrievers
-from gpt_index.retrievers.transform_retriever import TransformRetriever
-custom_retrievers = {}
+from gpt_index.query_engine.transform_query_engine import TransformQueryEngine
+
+custom_query_engines = {}
 for index in index_set.values():
-    retriever = index.as_retriever()
-    retriever = TransformRetriever(
-        retriever,
+    query_engine = index.as_query_engine()
+    query_engine = TransformQueryEngine(
+        query_engine,
         query_transform=decompose_transform,
         transform_extra_info={'index_summary': index.index_struct.summary},
     )
-    custom_retrievers[index.index_id] = retriever
-
-# construct query engine
-query_engine = graph.as_query_engine(
+    custom_query_engines[index.index_id] = query_engine
+custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
     response_mode='tree_summarize',
     verbose=True,
 )

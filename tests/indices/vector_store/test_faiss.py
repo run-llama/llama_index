@@ -81,8 +81,9 @@ def test_persist(tmp_path: Path) -> None:
 
     result = vector_store.query(VectorStoreQuery(query_embedding=[0, 0, 0, 1, 1]))
 
-    vector_store.persist(str(tmp_path))
-    new_vector_store = FaissVectorStore.from_persist_dir(str(tmp_path))
+    persist_path = str(tmp_path / "faiss.index")
+    vector_store.persist(persist_path)
+    new_vector_store = FaissVectorStore.from_persist_path(persist_path)
     new_result = new_vector_store.query(
         VectorStoreQuery(query_embedding=[0, 0, 0, 1, 1])
     )

@@ -78,7 +78,7 @@ service_context = ServiceContext.from_defaults(
 # Build city document index
 vector_indices = {}
 for wiki_title in wiki_titles:
-    storage_context = StorageContext.from_defaults(persist_dir=f'./storage/{wiki_title}')
+    storage_context = StorageContext.from_defaults()
     # build vector index
     vector_indices[wiki_title] = GPTVectorStoreIndex.from_documents(
         city_docs[wiki_title], 
@@ -88,7 +88,7 @@ for wiki_title in wiki_titles:
     # set id for vector index
     vector_indices[wiki_title].index_struct.index_id = wiki_title
     # persist to disk
-    storage_context.persist()
+    storage_context.persist(persist_dir=f'./storage/{wiki_title}')
 ```
 
 Querying a vector index lets us easily perform semantic search over a given city's documents.
@@ -156,24 +156,25 @@ decompose_transform = DecomposeQueryTransform(
     llm_predictor_chatgpt, verbose=True
 )
 
-# define custom retrievers
-custom_retrievers = {}
+# define custom query engines
+from gpt_index.query_engine.transform_query_engine import TransformQueryEngine
+custom_query_engines = {}
 for index in vector_indices.values():
-    retriever = index.as_retriever()
-    retriever = TransformRetriever(
-        retriever,
+    query_engine = index.as_query_engine(service_context=service_context)
+    query_engine = TransformQueryEngine(
+        query_engine,
         query_transform=decompose_transform,
         transform_extra_info={'index_summary': index.index_struct.summary},
     )
-    custom_retrievers[index.index_id] = retriever
-custom_retrievers[graph.root_id] = graph.root_index.as_retriever(mode='simple')
-
-# define query engine
-query_engine = graph.as_query_engine(
-    custom_retrievers=custom_retrievers,
+    custom_query_engines[index.index_id] = query_engine
+custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
+    mode='simple',
     response_mode='tree_summarize',
     service_context=service_context,
 )
+
+# define query engine
+query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
 
 # query the graph
 query_str = (
@@ -226,23 +227,28 @@ and also compare/contrast different cities.
 
 
 ```python
-# define custom retrievers
-custom_retrievers = {}
+# define custom query engines
+custom_query_engines = {}
 for index in vector_indices.values():
-    retriever = index.as_retriever()
-    retriever = TransformRetriever(
-        retriever,
+    query_engine = index.as_query_engine(service_context=service_context)
+    query_engine = TransformQueryEngine(
+        query_engine,
         query_transform=decompose_transform,
         transform_extra_info={'index_summary': index.index_struct.summary},
     )
-    custom_retrievers[index.index_id] = retriever
-custom_retrievers[graph.root_id] = graph.root_index.as_retriever(mode='simple')
+    custom_query_engines[index.index_id] = query_engine
+custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
+    mode='simple',
+    response_mode='tree_summarize',
+    service_context=service_context,
+)
+custom_query_engines[outer_graph.root_id] = outer_graph.root_index.as_query_engine(
+    response_mode='tree_summarize',
+    service_context=service_context,
+)
 
 # define query engine
-outer_query_engine = outer_graph.as_query_engine(
-    service_context=service_context,
-    custom_retrievers=custom_retrievers,
-)
+outer_query_engine = outer_graph.as_query_engine(custom_query_engines=custom_query_engines)
 
 ```
 

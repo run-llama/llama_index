@@ -78,27 +78,22 @@ decompose_transform = DecomposeQueryTransform(
 
 
 # configure retrievers
-vector_retriever = vector_index.as_retriever()
-vector_retriever = TransformRetriever(
-    retriever, 
+vector_query_engine = vector_index.as_query_engine()
+vector_query_engine = TransformQueryEngine(
+    vector_query_engine, 
     query_transform=decompose_transform
     transform_extra_info={'index_summary': vector_index.index_struct.summary}
 )
-custom_retrievers = {
-    vector_index.index_id: vector_retriever
+custom_query_engines = {
+    vector_index.index_id: vector_query_engine
 } 
 
 # query
 query_str = (
     "Compare and contrast the airports in Seattle, Houston, and Toronto. "
 )
-query_engine = graph.as_query_engine(
-    service_context=ServiceContext.from_defaults(
-        llm_predictor=llm_predictor_chatgpt
-    )
-    custom_retrivers=custom_retrievers
-)
-response_chatgpt = query_engine.query(query_str)
+query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
+response = query_engine.query(query_str)
 ```
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) for a full walkthrough.

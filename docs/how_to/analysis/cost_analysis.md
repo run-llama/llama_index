@@ -100,7 +100,7 @@ from llama_index import (
 )
 
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex.load_from_disk('../paul_graham_essay/index_simple_vec.json')
+index = GPTVectorStoreIndex.from_documents(documents)
 
 # specify both a MockLLMPredictor as wel as MockEmbedding
 llm_predictor = MockLLMPredictor(max_tokens=256)

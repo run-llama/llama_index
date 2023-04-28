@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from gpt_index.storage.index_store.keyval_index_store import KVIndexStore
 from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
 from gpt_index.storage.kvstore.types import BaseInMemoryKVStore
@@ -17,7 +18,8 @@ class SimpleIndexStore(KVIndexStore):
 
     """
 
-    def __init__(self, simple_kvstore: SimpleKVStore) -> None:
+    def __init__(self, simple_kvstore: Optional[SimpleKVStore] = None) -> None:
+        simple_kvstore = simple_kvstore or SimpleKVStore()
         super().__init__(simple_kvstore)
 
     @classmethod
@@ -26,6 +28,11 @@ class SimpleIndexStore(KVIndexStore):
     ) -> "SimpleIndexStore":
         """Create a SimpleIndexStore from a persist directory."""
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        return cls.from_persist_path(persist_path)
+
+    @classmethod
+    def from_persist_path(cls, persist_path: str) -> "SimpleIndexStore":
+        """Create a SimpleIndexStore from a persist path."""
         simple_kvstore = SimpleKVStore.from_persist_path(persist_path)
         return cls(simple_kvstore)
 

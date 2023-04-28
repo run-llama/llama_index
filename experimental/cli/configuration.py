@@ -45,7 +45,6 @@ def load_index(root: str = ".") -> BaseGPTIndex[Any]:
     """Load existing index file"""
     config = load_config(root)
     service_context = _load_service_context(config)
-    storage_context = _load_storage_context(config)
 
     # Index type
     index_type: Type
@@ -58,9 +57,11 @@ def load_index(root: str = ".") -> BaseGPTIndex[Any]:
 
     try:
         # try loading index
+        storage_context = _load_storage_context(config)
         index = load_index_from_storage(storage_context)
     except ValueError:
         # build index
+        storage_context = StorageContext.from_defaults()
         index = index_type(
             nodes=[], service_context=service_context, storage_context=storage_context
         )
@@ -69,7 +70,9 @@ def load_index(root: str = ".") -> BaseGPTIndex[Any]:
 
 def save_index(index: BaseGPTIndex[Any], root: str = ".") -> None:
     """Save index to file"""
-    index.storage_context.persist()
+    config = load_config(root)
+    persist_dir = config["store"]["persist_dir"]
+    index.storage_context.persist(persist_dir=persist_dir)
 
 
 def _load_service_context(config: ConfigParser) -> ServiceContext:

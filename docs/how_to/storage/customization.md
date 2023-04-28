@@ -31,9 +31,9 @@ nodes = parser.get_nodes_from_documents(documents)
 
 # create storage context
 storage_context = StorageContext.from_defaults(
-    docstore=SimpleDocumentStore.from_persist_dir(persist_dir="<persist_dir>"),
-    vector_store=SimpleVectorStore.from_persist_dir(persist_dir="<persist_dir>"),
-    index_store=SimpleIndexStore.from_persist_dir(persist_dir="<persist_dir>"),
+    docstore=SimpleDocumentStore(),
+    vector_store=SimpleVectorStore(),
+    index_store=SimpleIndexStore(),
 )
 
 # create (or load) docstore and add nodes

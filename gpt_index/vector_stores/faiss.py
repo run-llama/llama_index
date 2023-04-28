@@ -5,11 +5,13 @@ An index that that is built on top of an existing vector store.
 """
 
 import os
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, cast
 
 import numpy as np
 
 from gpt_index.vector_stores.types import (
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
@@ -19,9 +21,6 @@ from gpt_index.vector_stores.types import (
 import logging
 
 logger = logging.getLogger()
-
-DEFAULT_PERSIST_DIR = "./storage"
-DEFAULT_PERSIST_FNAME = "faiss.index"
 
 
 class FaissVectorStore(VectorStore):
@@ -106,7 +105,7 @@ class FaissVectorStore(VectorStore):
 
     def persist(
         self,
-        persist_dir: str,
+        persist_path: str,
     ) -> None:
         """Save to file.
 
@@ -118,11 +117,11 @@ class FaissVectorStore(VectorStore):
         """
         import faiss
 
-        dirpath = os.path.dirname(persist_dir)
+        dirpath = os.path.dirname(persist_path)
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)
 
-        faiss.write_index(self._faiss_index, persist_dir)
+        faiss.write_index(self._faiss_index, persist_path)
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document.
