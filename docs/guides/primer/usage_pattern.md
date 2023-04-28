@@ -17,7 +17,6 @@ through the `load_data` function, e.g.:
 from llama_index import SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
-
 ```
 
 You can also choose to construct documents manually. LlamaIndex exposes the `Document` struct.
@@ -50,7 +49,6 @@ from llama_index.node_parser import SimpleNodeParser
 parser = SimpleNodeParser()
 
 nodes = parser.get_nodes_from_documents(documents)
-
 ```
 
 You can also choose to construct Node objects manually and skip the first section. For instance,
@@ -63,7 +61,6 @@ node2 = Node(text="<text_chunk>", doc_id="<node_id>")
 # set relationships
 node1.relationships[DocumentRelationship.NEXT] = node2.get_doc_id()
 node2.relationships[DocumentRelationship.PREVIOUS] = node1.get_doc_id()
-
 ```
 
 
@@ -75,7 +72,6 @@ We can now build an index over these Document objects. The simplest high-level a
 from llama_index import GPTVectorStoreIndex
 
 index = GPTVectorStoreIndex.from_documents(documents)
-
 ```
 
 You can also choose to build an index over a set of Node objects directly (this is a continuation of step 2).
@@ -84,7 +80,6 @@ You can also choose to build an index over a set of Node objects directly (this 
 from llama_index import GPTVectorStoreIndex
 
 index = GPTVectorStoreIndex(nodes)
-
 ```
 
 Depending on which index you use, LlamaIndex may make LLM calls in order to build the index.
@@ -123,7 +118,6 @@ from llama_index import GPTVectorStoreIndex
 index = GPTVectorStoreIndex([])
 for doc in documents:
     index.insert(doc)
-
 ```
 
 If you want to insert nodes on directly you can use `insert_nodes` function
@@ -135,7 +129,6 @@ from llama_index import GPTVectorStoreIndex
 # nodes: Sequence[Node]
 index = GPTVectorStoreIndex([])
 index.insert_nodes(nodes)
-
 ```
 
 See the [Update Index How-To](/how_to/index_structs/update.md) for details and an example notebook.
@@ -269,23 +262,6 @@ index = load_index_from_storage(
 ## 4. [Optional, Advanced] Building indices on top of other indices
 
 You can build indices on top of other indices! 
-
-```python
-from llama_index import GPTVectorStoreIndex, GPTListIndex
-
-index1 = GPTVectorStoreIndex.from_documents(documents1)
-index2 = GPTVectorStoreIndex.from_documents(documents2)
-
-# Set summary text
-# you can set the summary manually, or you can
-# generate the summary itself using LlamaIndex
-index1.set_text("summary1")
-index2.set_text("summary2")
-
-index3 = GPTListIndex([index1, index2])
-
-```
-
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
 see our [Query Use Cases](/use_cases/queries.md). For technical details and examples, see our [Composability How-To](/how_to/index_structs/composability.md).
 
