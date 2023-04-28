@@ -74,12 +74,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         id_to_node_map: Dict[str, Node] = {}
         id_to_embed_map: Dict[str, List[float]] = {}
 
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.EMBEDDING, payload={"num_texts": len(nodes)}
-        )
+        nodes_embedded = 0
         for n in nodes:
             new_id = n.get_doc_id()
             if n.embedding is None:
+                nodes_embedded += 1
                 self._service_context.embed_model.queue_text_for_embedding(
                     new_id, n.get_text()
                 )
@@ -87,6 +86,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
                 id_to_embed_map[new_id] = n.embedding
 
             id_to_node_map[new_id] = n
+        event_id = self._service_context.callback_manager.on_event_start(
+            CBEventType.EMBEDDING
+        )
 
         # call embedding model to get embeddings
         (
@@ -94,7 +96,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             result_embeddings,
         ) = self._service_context.embed_model.get_queued_text_embeddings()
         self._service_context.callback_manager.on_event_end(
-            CBEventType.EMBEDDING, event_id=event_id
+            CBEventType.EMBEDDING,
+            payload={"num_nodes": nodes_embedded},
+            event_id=event_id,
         )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
@@ -134,7 +138,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             id_to_node_map[new_id] = n
 
         event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.EMBEDDING, payload={"num_texts": len(text_queue)}
+            CBEventType.EMBEDDING
         )
         # call embedding model to get embeddings
         (
@@ -145,7 +149,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         )
 
         self._service_context.callback_manager.on_event_end(
-            CBEventType.EMBEDDING, event_id=event_id
+            CBEventType.EMBEDDING,
+            payload={"num_nodes": len(text_queue)},
+            event_id=event_id,
         )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding

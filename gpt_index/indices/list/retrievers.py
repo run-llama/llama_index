@@ -92,7 +92,7 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
         """Get top nodes by similarity to the query."""
         if query_bundle.embedding is None:
             event_id = self._index._service_context.callback_manager.on_event_start(
-                CBEventType.EMBEDDING, payload={"num_texts": 1}
+                CBEventType.EMBEDDING
             )
             query_bundle.embedding = (
                 self._index._service_context.embed_model.get_agg_embedding_from_queries(
@@ -100,15 +100,17 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
                 )
             )
             self._index._service_context.callback_manager.on_event_end(
-                CBEventType.EMBEDDING, event_id=event_id
+                CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
             )
         node_embeddings: List[List[float]] = []
 
         event_id = self._index._service_context.callback_manager.on_event_start(
-            CBEventType.EMBEDDING, payload={"num_texts": len(nodes)}
+            CBEventType.EMBEDDING
         )
+        nodes_embedded = 0
         for node in nodes:
             if node.embedding is None:
+                nodes_embedded += 1
                 node.embedding = (
                     self._index.service_context.embed_model.get_text_embedding(
                         node.get_text()
@@ -117,6 +119,8 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
 
             node_embeddings.append(node.embedding)
         self._index._service_context.callback_manager.on_event_end(
-            CBEventType.EMBEDDING, event_id=event_id
+            CBEventType.EMBEDDING,
+            payload={"num_nodes": nodes_embedded},
+            event_id=event_id,
         )
         return query_bundle.embedding, node_embeddings
