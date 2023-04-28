@@ -1,6 +1,5 @@
 import pytest
 from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
-from tempfile import TemporaryDirectory
 from pathlib import Path
 
 
@@ -23,10 +22,9 @@ def test_kvstore_basic(simple_kvstore: SimpleKVStore) -> None:
     assert blob is None
 
 
-def test_kvstore_persist(kvstore_with_data: SimpleKVStore) -> None:
+def test_kvstore_persist(tmp_path: Path, kvstore_with_data: SimpleKVStore) -> None:
     """Test kvstore persist."""
-    with TemporaryDirectory() as tmpdir:
-        testpath = str(Path(tmpdir) / "kvstore")
-        kvstore_with_data.persist(testpath)
-        loaded_kvstore = SimpleKVStore.from_persist_path(testpath)
-        assert len(loaded_kvstore.get_all()) == 1
+    testpath = str(Path(tmp_path) / "kvstore.json")
+    kvstore_with_data.persist(testpath)
+    loaded_kvstore = SimpleKVStore.from_persist_path(testpath)
+    assert len(loaded_kvstore.get_all()) == 1

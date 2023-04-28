@@ -12,6 +12,8 @@ from gpt_index.indices.query.embedding_utils import (
     get_top_k_embeddings_learner,
 )
 from gpt_index.vector_stores.types import (
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
@@ -28,9 +30,6 @@ LEARNER_MODES = {
     VectorStoreQueryMode.LINEAR_REGRESSION,
     VectorStoreQueryMode.LOGISTIC_REGRESSION,
 }
-
-DEFAULT_PERSIST_DIR = "./storage"
-DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 
 @dataclass

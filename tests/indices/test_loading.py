@@ -155,7 +155,7 @@ def test_load_index_from_storage_faiss_vector_store(
     nodes = index.as_retriever().retrieve("test query str")
 
     # persist storage to disk
-    storage_context.persist()
+    storage_context.persist(persist_dir=str(tmp_path))
 
     # load storage context
     new_storage_context = StorageContext.from_defaults(

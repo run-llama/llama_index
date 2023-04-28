@@ -45,7 +45,27 @@ class SimpleDocumentStore(KVDocumentStore):
         simple_kvstore = SimpleKVStore.from_persist_path(persist_path)
         return cls(simple_kvstore, namespace)
 
-    def persist(self, persist_path: str = DEFAULT_PERSIST_PATH) -> None:
+    @classmethod
+    def from_persist_path(
+        cls,
+        persist_path: str,
+        namespace: Optional[str] = None,
+    ) -> "SimpleDocumentStore":
+        """Create a SimpleDocumentStore from a persist directory.
+
+        Args:
+            persist_dir (Union[str, Path]): directory to persist the store
+            namespace (Optional[str]): namespace for the docstore
+
+        """
+
+        simple_kvstore = SimpleKVStore.from_persist_path(persist_path)
+        return cls(simple_kvstore, namespace)
+
+    def persist(
+        self,
+        persist_path: str = DEFAULT_PERSIST_PATH,
+    ) -> None:
         """Persist the store."""
         if isinstance(self._kvstore, BaseInMemoryKVStore):
             self._kvstore.persist(persist_path)
