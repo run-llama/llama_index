@@ -19,13 +19,13 @@ from tests.mock_utils.mock_text_splitter import (
 )
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="not working in CI")
-@pytest.fixture(autouse=True)
-def no_networking(monkeypatch: pytest.MonkeyPatch) -> None:
-    def deny_network(*args: Any, **kwargs: Any) -> None:
-        raise RuntimeError("Network access denied for test")
+# @pytest.mark.skipif("CI" in os.environ, reason="not working in CI")
+# @pytest.fixture(autouse=True)
+# def no_networking(monkeypatch: pytest.MonkeyPatch) -> None:
+#     def deny_network(*args: Any, **kwargs: Any) -> None:
+#         raise RuntimeError("Network access denied for test")
 
-    monkeypatch.setattr(socket, "socket", deny_network)
+#     monkeypatch.setattr(socket, "socket", deny_network)
 
 
 @pytest.fixture
