@@ -64,14 +64,11 @@ class SimpleKVStore(BaseInMemoryKVStore):
 
     @classmethod
     def from_persist_path(cls, persist_path: str) -> "SimpleKVStore":
-        """Create a SimpleKVStore from a persist directory."""
-        data = {}
-        if os.path.exists(persist_path):
-            logger.info(f"Loading {__name__} from {persist_path}.")
-            with open(persist_path, "r+") as f:
-                data = json.load(f)
-        else:
-            logger.info(
-                f"No existing {__name__} found at {persist_path}, skipping load."
-            )
+        """Load a SimpleKVStore from a persist path."""
+        if not os.path.exists(persist_path):
+            raise ValueError(f"No existing {__name__} found at {persist_path}.")
+
+        logger.debug(f"Loading {__name__} from {persist_path}.")
+        with open(persist_path, "r+") as f:
+            data = json.load(f)
         return cls(data)

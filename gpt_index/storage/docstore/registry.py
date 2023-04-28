@@ -23,4 +23,4 @@ DOCSTORE_CLASS_TO_TYPE: Dict[Type[BaseDocumentStore], DocumentStoreType] = {
 
 
 def get_default_docstore() -> BaseDocumentStore:
-    return SimpleDocumentStore.from_persist_dir()
+    return SimpleDocumentStore()

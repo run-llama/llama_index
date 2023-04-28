@@ -22,9 +22,12 @@ class SimpleDocumentStore(KVDocumentStore):
     """
 
     def __init__(
-        self, simple_kvstore: SimpleKVStore, name_space: Optional[str] = None
+        self,
+        simple_kvstore: Optional[SimpleKVStore] = None,
+        name_space: Optional[str] = None,
     ) -> None:
         """Init a SimpleDocumentStore."""
+        simple_kvstore = simple_kvstore or SimpleKVStore()
         super().__init__(simple_kvstore, name_space)
 
     @classmethod
@@ -36,16 +39,35 @@ class SimpleDocumentStore(KVDocumentStore):
         """Create a SimpleDocumentStore from a persist directory.
 
         Args:
-            persist_dir (Union[str, Path]): directory to persist the store
+            persist_dir (str): directory to persist the store
             namespace (Optional[str]): namespace for the docstore
 
         """
 
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        return cls.from_persist_path(persist_path, namespace=namespace)
+
+    @classmethod
+    def from_persist_path(
+        cls,
+        persist_path: str,
+        namespace: Optional[str] = None,
+    ) -> "SimpleDocumentStore":
+        """Create a SimpleDocumentStore from a persist path.
+
+        Args:
+            persist_path (str): Path to persist the store
+            namespace (Optional[str]): namespace for the docstore
+
+        """
+
         simple_kvstore = SimpleKVStore.from_persist_path(persist_path)
         return cls(simple_kvstore, namespace)
 
-    def persist(self, persist_path: str = DEFAULT_PERSIST_PATH) -> None:
+    def persist(
+        self,
+        persist_path: str = DEFAULT_PERSIST_PATH,
+    ) -> None:
         """Persist the store."""
         if isinstance(self._kvstore, BaseInMemoryKVStore):
             self._kvstore.persist(persist_path)

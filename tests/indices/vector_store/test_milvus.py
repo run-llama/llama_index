@@ -1,7 +1,7 @@
 """Test milvus index."""
 
 
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.storage.storage_context import StorageContext

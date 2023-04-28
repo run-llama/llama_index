@@ -12,6 +12,8 @@ from gpt_index.indices.query.embedding_utils import (
     get_top_k_embeddings_learner,
 )
 from gpt_index.vector_stores.types import (
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
@@ -28,9 +30,6 @@ LEARNER_MODES = {
     VectorStoreQueryMode.LINEAR_REGRESSION,
     VectorStoreQueryMode.LOGISTIC_REGRESSION,
 }
-
-DEFAULT_PERSIST_DIR = "./storage"
-DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 
 @dataclass
@@ -149,14 +148,13 @@ class SimpleVectorStore(VectorStore):
     @classmethod
     def from_persist_path(cls, persist_path: str) -> "SimpleVectorStore":
         """Create a SimpleKVStore from a persist directory."""
-        data = SimpleVectorStoreData()
-        if os.path.exists(persist_path):
-            logger.info(f"Loading {__name__} from {persist_path}.")
-            with open(persist_path, "r+") as f:
-                data_dict = json.load(f)
-                data = SimpleVectorStoreData.from_dict(data_dict)
-        else:
-            logger.info(
+        if not os.path.exists(persist_path):
+            raise ValueError(
                 f"No existing {__name__} found at {persist_path}, skipping load."
             )
+
+        logger.debug(f"Loading {__name__} from {persist_path}.")
+        with open(persist_path, "r+") as f:
+            data_dict = json.load(f)
+            data = SimpleVectorStoreData.from_dict(data_dict)
         return cls(data)

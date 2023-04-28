@@ -4,7 +4,7 @@ An index that is built on top of an existing Qdrant collection.
 
 """
 import logging
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, List, Optional, cast
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
 from gpt_index.utils import iter_batch

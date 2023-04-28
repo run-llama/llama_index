@@ -10,9 +10,6 @@ Here is a sample code snippet on comparing the outputs without optimization and 
 ```python
 from llama_index import GPTVectorStoreIndex
 from llama_index.optimization.optimizer import SentenceEmbeddingOptimizer
-# load from disk
-index = GPTVectorStoreIndex.load_from_disk('simple_vector_index.json')
-
 print("Without optimization")
 start_time = time.time()
 query_engine = index.as_query_engine()

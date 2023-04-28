@@ -73,8 +73,9 @@ from llama_index import LangchainEmbedding, ServiceContext
 embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
 service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
-# load index
-new_index = GPTListIndex.load_from_disk('index_list_emb.json')
+# build index
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+new_index = GPTListIndex.from_documents(documents)
 
 # query with embed_model specified
 query_engine = new_index.as_query_engine(
@@ -98,9 +99,10 @@ embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
 service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # load index
-new_index = GPTVectorStoreIndex.load_from_disk(
-    'index_simple_vector.json', 
-    service_context=service_context
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+new_index = GPTVectorStoreIndex.from_documents(
+    documents, 
+    service_context=service_context,
 )
 
 # query will use the same embed_model
