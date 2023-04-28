@@ -38,7 +38,7 @@ NOTE: Our [vector-store based indices](/how_to/integrations/vector_stores.md) ge
 #### Embedding Lookups
 For the list index (`GPTListIndex`):
 - We iterate through every node in the list, and identify the top k nodes through embedding similarity. We use these nodes to synthesize an answer.
-- See the [List Query API](/reference/indices/list_query.rst) for more details.
+- See the [List Retriever API](/reference/query/retrievers/list.rst) for more details.
 - NOTE: the embedding-mode usage of the list index is roughly equivalent with the usage of our `GPTVectorStoreIndex`; the main
     difference is when embeddings are generated (during query-time for the list index vs. index construction for the simple vector index).
 

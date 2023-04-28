@@ -43,4 +43,4 @@ storage_context.docstore.add_documents(nodes)
 index = GPTVectorStoreIndex(nodes, storage_context=storage_context)
 ```
 You can customize the underlying storage with a one-line change to instantiate different document stores, index stores, and vector stores.
-See [Document Stores](/docs/how_to/storage/docstores.md), [Vector Stores](/docs/how_to/storage/vector_stores.md), [Index Stores](/docs/how_to/storage/index_stores.md) guides for more details.
+See [Document Stores](/how_to/storage/docstores.md), [Vector Stores](/how_to/storage/vector_stores.md), [Index Stores](/how_to/storage/index_stores.md) guides for more details.
