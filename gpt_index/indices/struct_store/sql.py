@@ -1,20 +1,14 @@
 """SQL Structured Store."""
-import json
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
-from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
-from gpt_index.indices.struct_store.sql_query import (
-    GPTNLStructStoreIndexQuery,
-    GPTSQLStructStoreIndexQuery,
-)
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
 
@@ -90,6 +84,10 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             sql_context_container = container_builder.build_context_container()
         self.sql_context_container = sql_context_container
 
+    @property
+    def ref_doc_id_column(self) -> Optional[str]:
+        return self._ref_doc_id_column
+
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> SQLStructTable:
         """Build index from nodes."""
         index_struct = self.index_struct_cls()
@@ -122,78 +120,5 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         )
         data_extractor.insert_datapoint_from_nodes(nodes)
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTNLStructStoreIndexQuery,
-            QueryMode.SQL: GPTSQLStructStoreIndexQuery,
-        }
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Preprocess query.
-
-        This allows subclasses to pass in additional query kwargs
-        to query, for instance arguments that are shared between the
-        index and the query class. By default, this does nothing.
-        This also allows subclasses to do validation.
-
-        """
-        super()._preprocess_query(mode, query_kwargs)
-        # pass along sql_database, table_name
-        query_kwargs["sql_database"] = self.sql_database
-        if "sql_context_container" not in query_kwargs:
-            query_kwargs["sql_context_container"] = self.sql_context_container
-        if mode == QueryMode.DEFAULT:
-            query_kwargs["ref_doc_id_column"] = self._ref_doc_id_column
-
-    @classmethod
-    def load_from_string(cls, index_string: str, **kwargs: Any) -> "BaseGPTIndex":
-        """Load index from string (in JSON-format).
-
-        This method loads the index from a JSON string. The index data
-        structure itself is preserved completely. If the index is defined over
-        subindices, those subindices will also be preserved (and subindices of
-        those subindices, etc.).
-
-        NOTE: load_from_string should not be used for indices composed on top
-        of other indices. Please define a `ComposableGraph` and use
-        `save_to_string` and `load_from_string` on that instead.
-
-        Args:
-            index_string (str): The index string (in JSON-format).
-
-        Returns:
-            BaseGPTIndex: The loaded index.
-
-        """
-        # NOTE: also getting deserialized in parent class,
-        # figure out how to deal with later
-        result_dict = json.loads(index_string)
-        sql_context_container = SQLContextContainer.from_dict(
-            result_dict["sql_context_container"]
-        )
-        result_obj = super().load_from_string(
-            index_string, sql_context_container=sql_context_container, **kwargs
-        )
-        return result_obj
-
-    def save_to_string(self, **save_kwargs: Any) -> str:
-        """Save to string.
-
-        This method stores the index into a JSON string.
-
-        NOTE: save_to_string should not be used for indices composed on top
-        of other indices. Please define a `ComposableGraph` and use
-        `save_to_string` and `load_from_string` on that instead.
-
-        Returns:
-            str: The JSON string of the index.
-
-        """
-        out_dict: Dict[str, Any] = {
-            "index_id": self.index_struct.index_id,
-            "docstore": self.docstore.to_dict(),
-            "sql_context_container": self.sql_context_container.to_dict(),
-        }
-        return json.dumps(out_dict, **save_kwargs)
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        raise NotImplementedError("Not supported")

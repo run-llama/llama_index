@@ -1,4 +1,4 @@
-# Output Parsing
+# 🔢 Output Parsing
 
 LLM output/validation capabilities are crucial to LlamaIndex in the following areas:
 - **Document retrieval**: Many data structures within LlamaIndex rely on LLM calls with a specific schema for Document retrieval. For instance, the tree index expects LLM calls to be in the format "ANSWER: (number)".
@@ -16,7 +16,7 @@ Guardrails is an open-source Python package for specification/validation/correct
 
 
 ```python
-from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 from llama_index.output_parsers import GuardrailsOutputParser
 from llama_index.llm_predictor import StructuredLLMPredictor
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
@@ -25,7 +25,7 @@ from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT_TMPL, DEF
 
 # load documents, build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTSimpleVectorIndex(documents, chunk_size_limit=512)
+index = GPTVectorStoreIndex(documents, chunk_size_limit=512)
 llm_predictor = StructuredLLMPredictor()
 
 
@@ -70,11 +70,15 @@ qa_prompt = QuestionAnswerPrompt(fmt_qa_tmpl, output_parser=output_parser)
 refine_prompt = RefinePrompt(fmt_refine_tmpl, output_parser=output_parser)
 
 # obtain a structured response
-response = index.query(
-    "What are the three items the author did growing up?", 
-    text_qa_template=qa_prompt, 
+query_engine = index.as_query_engine(
+    service_context=ServiceContext.from_defaults(
+        llm_predictor=llm_predictor
+    ),
+    text_qa_temjlate=qa_prompt, 
     refine_template=refine_prompt, 
-    llm_predictor=llm_predictor
+)
+response = query_engine.query(
+    "What are the three items the author did growing up?", 
 )
 print(response)
 
@@ -91,7 +95,7 @@ Output:
 Langchain also offers output parsing modules that you can use within LlamaIndex.
 
 ```python
-from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 from llama_index.output_parsers import LangchainOutputParser
 from llama_index.llm_predictor import StructuredLLMPredictor
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
@@ -101,7 +105,7 @@ from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
 # load documents, build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTSimpleVectorIndex(documents, chunk_size_limit=512)
+index = GPTVectorStoreIndex(documents, chunk_size_limit=512)
 llm_predictor = StructuredLLMPredictor()
 
 # define output schema
@@ -121,11 +125,15 @@ qa_prompt = QuestionAnswerPrompt(fmt_qa_tmpl, output_parser=output_parser)
 refine_prompt = RefinePrompt(fmt_refine_tmpl, output_parser=output_parser)
 
 # query index
-response = index.query(
-    "What are a few things the author did growing up?", 
-    text_qa_template=qa_prompt, 
+query_engine = index.as_query_engine(
+    service_context=ServiceContext.from_defaults(
+        llm_predictor=llm_predictor
+    ),
+    text_qa_temjlate=qa_prompt, 
     refine_template=refine_prompt, 
-    llm_predictor=llm_predictor
+)
+response = query_engine.query(
+    "What are a few things the author did growing up?", 
 )
 print(str(response))
 ```

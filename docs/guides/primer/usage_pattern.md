@@ -17,7 +17,6 @@ through the `load_data` function, e.g.:
 from llama_index import SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
-
 ```
 
 You can also choose to construct documents manually. LlamaIndex exposes the `Document` struct.
@@ -50,7 +49,6 @@ from llama_index.node_parser import SimpleNodeParser
 parser = SimpleNodeParser()
 
 nodes = parser.get_nodes_from_documents(documents)
-
 ```
 
 You can also choose to construct Node objects manually and skip the first section. For instance,
@@ -63,7 +61,6 @@ node2 = Node(text="<text_chunk>", doc_id="<node_id>")
 # set relationships
 node1.relationships[DocumentRelationship.NEXT] = node2.get_doc_id()
 node2.relationships[DocumentRelationship.PREVIOUS] = node1.get_doc_id()
-
 ```
 
 
@@ -72,19 +69,17 @@ node2.relationships[DocumentRelationship.PREVIOUS] = node1.get_doc_id()
 We can now build an index over these Document objects. The simplest high-level abstraction is to load-in the Document objects during index initialization (this is relevant if you came directly from step 1 and skipped step 2).
 
 ```python
-from llama_index import GPTSimpleVectorIndex
+from llama_index import GPTVectorStoreIndex
 
-index = GPTSimpleVectorIndex.from_documents(documents)
-
+index = GPTVectorStoreIndex.from_documents(documents)
 ```
 
 You can also choose to build an index over a set of Node objects directly (this is a continuation of step 2).
 
 ```python
-from llama_index import GPTSimpleVectorIndex
+from llama_index import GPTVectorStoreIndex
 
-index = GPTSimpleVectorIndex(nodes)
-
+index = GPTVectorStoreIndex(nodes)
 ```
 
 Depending on which index you use, LlamaIndex may make LLM calls in order to build the index.
@@ -92,23 +87,24 @@ Depending on which index you use, LlamaIndex may make LLM calls in order to buil
 ### Reusing Nodes across Index Structures
 
 If you have multiple Node objects defined, and wish to share these Node
-objects across multiple index structures, you can do that. Simply 
-define a DocumentStore object, add the Node objects to the DocumentStore,
-and pass the DocumentStore around.
+objects across multiple index structures, you can do that. 
+Simply instantiate a StorageContext object, 
+add the Node objects to the underlying DocumentStore,
+and pass the StorageContext around.
 
 ```python
-from gpt_index.docstore import SimpleDocumentStore
+from llama_index import StorageContext
 
-docstore = SimpleDocumentStore()
-docstore.add_documents(nodes)
+storage_context = StorageContext.from_defaults()
+storage_context.docstore.add_documents(nodes)
 
-index1 = GPTSimpleVectorIndex(nodes, docstore=docstore)
-index2 = GPTListIndex(nodes, docstore=docstore)
+index1 = GPTVectorStoreIndex(nodes, storage_context=storage_context)
+index2 = GPTListIndex(nodes, storage_context=storage_context)
 ```
 
-**NOTE**: If the `docstore` argument isn't specified, then it is implicitly
+**NOTE**: If the `storage_context` argument isn't specified, then it is implicitly
 created for each index during index construction. You can access the docstore
-associated with a given index through `index.docstore`.
+associated with a given index through `index.storage_context`.
 
 
 ### Inserting Documents or Nodes
@@ -117,24 +113,22 @@ You can also take advantage of the `insert` capability of indices to insert Docu
 one at a time instead of during index construction. 
 
 ```python
-from llama_index import GPTSimpleVectorIndex
+from llama_index import GPTVectorStoreIndex
 
-index = GPTSimpleVectorIndex([])
+index = GPTVectorStoreIndex([])
 for doc in documents:
     index.insert(doc)
-
 ```
 
 If you want to insert nodes on directly you can use `insert_nodes` function
 instead.
 
 ```python
-from llama_index import GPTSimpleVectorIndex
+from llama_index import GPTVectorStoreIndex
 
 # nodes: Sequence[Node]
-index = GPTSimpleVectorIndex([])
+index = GPTVectorStoreIndex([])
 index.insert_nodes(nodes)
-
 ```
 
 See the [Update Index How-To](/how_to/index_structs/update.md) for details and an example notebook.
@@ -145,7 +139,7 @@ By default, we use OpenAI's `text-davinci-003` model. You may choose to use anot
 an index.
 
 ```python
-from llama_index import LLMPredictor, GPTSimpleVectorIndex, PromptHelper, ServiceContext
+from llama_index import LLMPredictor, GPTVectorStoreIndex, PromptHelper, ServiceContext
 from langchain import OpenAI
 
 ...
@@ -164,7 +158,7 @@ prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
 
-index = GPTSimpleVectorIndex.from_documents(
+index = GPTVectorStoreIndex.from_documents(
     documents, service_context=service_context
 )
 ```
@@ -195,130 +189,192 @@ See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
 
 ### [Optional] Save the index for future use
 
-To save to disk and load from disk, do
+By default, data is stored in-memory.
+To persist to disk:
 
 ```python
-# save to disk
-index.save_to_disk('index.json')
-# load from disk
-index = GPTSimpleVectorIndex.load_from_disk('index.json')
+index.storage_context.persist(persist_dir="<persist_dir>")
+```
+You may omit persist_dir to persist to `./storage` by default.
+
+To reload from disk:
+```python
+from llama_index import StorageContext, load_index_from_storage
+
+# rebuild storage context
+storage_context = StorageContext.from_defaults(persist_dir="<persist_dir>")
+
+# load index
+index = load_index_from_storage(storage_context)
 ```
 
 **NOTE**: If you had initialized the index with a custom 
 `ServiceContext` object, you will also need to pass in the same
-ServiceContext during `load_from_disk`.
+ServiceContext during `load_index_from_storage`.
 
 ```python
 
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # when first building the index
-index = GPTSimpleVectorIndex.from_documents(documents, service_context=service_context)
+index = GPTVectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
 
 ...
 
 # when loading the index from disk
-index = GPTSimpleVectorIndex.load_from_disk("index.json", service_context=service_context)
+index = load_index_from_storage(
+    service_context=service_context,    
+)
 
 ```
 
 ## 4. [Optional, Advanced] Building indices on top of other indices
 
 You can build indices on top of other indices! 
-
-```python
-from llama_index import GPTSimpleVectorIndex, GPTListIndex
-
-index1 = GPTSimpleVectorIndex.from_documents(documents1)
-index2 = GPTSimpleVectorIndex.from_documents(documents2)
-
-# Set summary text
-# you can set the summary manually, or you can
-# generate the summary itself using LlamaIndex
-index1.set_text("summary1")
-index2.set_text("summary2")
-
-index3 = GPTListIndex([index1, index2])
-
-```
-
 Composability gives you greater power in indexing your heterogeneous sources of data. For a discussion on relevant use cases,
 see our [Query Use Cases](/use_cases/queries.md). For technical details and examples, see our [Composability How-To](/how_to/index_structs/composability.md).
 
 ## 5. Query the index.
 
-After building the index, you can now query it. Note that a "query" is simply an input to an LLM - 
+After building the index, you can now query it with a `QueryEngine`. Note that a "query" is simply an input to an LLM - 
 this means that you can use the index for question-answering, but you can also do more than that! 
 
-To start, you can query an index without specifying any additional keyword arguments, as follows:
+### High-level API
+To start, you can query an index with the default `QueryEngine` (i.e., using default configs), as follows:
 
 ```python
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 print(response)
 
-response = index.query("Write an email to the user given their background information.")
+response = query_engine.query("Write an email to the user given their background information.")
 print(response)
 ```
 
-However, you also have a variety of keyword arguments at your disposal, depending on the type of
-index being used. A full treatment of all the index-dependent query keyword arguments can be 
-found [here](/reference/query.rst).
+### Low-level API
+We also support a low-level composition API that gives you more granular control over the query logic.
+Below we highlight a few of the possible customizations.
+```python
+from llama_index import (
+    GPTVectorStoreIndex,
+    VectorIndexRetriever,
+    ResponseSynthesizer,
+    RetrieverQueryEngine,
+)
 
-### Setting `mode`
+# build index
+index = GPTVectorStoreIndex.from_documents(documents)
 
-An index can have a variety of query modes. For instance, you can choose to specify
-`mode="default"` or `mode="embedding"` for a list index. `mode="default"` will a
-create and refine an answer sequentially through the nodes of the list. 
-`mode="embedding"` will synthesize an answer by fetching the top-k
-nodes by embedding similarity.
+# configure retriever
+retriever = VectorIndexRetriever(
+    index=index, 
+    similarity_top_k=2,
+)
+
+# configure response synthesizer
+response_synthesizer = ResponseSynthesizer.from_args(
+    node_postprocessors=[
+        SimilarityPostprocessor(required_keywords=['hello'])
+    ]
+)
+
+# assemble query engine
+query_engine = RetrieverQueryEngine(
+    retriever=retriever,
+    response_synthesizer=response_synthesizer,
+)
+```
+You may also add your own retrieval, response synthesis, and overall query logic, by implementing the corresponding interfaces.
+
+For a full list of implemented components and the supported configurations, please see the detailed [reference docs](/reference/query.rst).
+
+In the following, we discuss some commonly used configurations in detail.
+### Configuring retriever
+An index can have a variety of index-specific retrieval modes.
+For instance, a list index supports the default `ListIndexRetriever` that retrieves all nodes, and
+`ListIndexEmbeddingRetriever` that retrieves the top-k nodes by embedding similarity.
+
+For convienience, you can also use the following shorthand:
 
 ```python
-index = GPTListIndex.from_documents(documents)
-# mode="default"
-response = index.query("What did the author do growing up?", mode="default")
-# mode="embedding"
-response = index.query("What did the author do growing up?", mode="embedding")
-
+    # ListIndexRetriever
+    retriever = index.as_retriever(mode='default')
+    # ListIndexEmbeddingRetriever
+    retriever = index.as_retriever(mode='embedding')
 ```
 
-The full set of modes per index are documented in the [Query Reference](/reference/query.rst).
+After choosing your desired retriever, you can construct your query engine:
+
+```python
+query_engine = RetrieverQueryEngine(retriever)
+response = query_engine.query("What did the author do growing up?")
+```
+
+The full list of retrievers for each index (and their shorthand) is documented in the [Query Reference](/reference/query.rst).
 
 (setting-response-mode)=
-### Setting `response_mode`
+### Configuring response synthesis
+After a retriever fetches relevant nodes, a `ResponseSynthesizer` synthesizes the final response by combining the information.
 
-Note: This option is not available/utilized in `GPTTreeIndex`.
+You can configure it via
+```python
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode=<response_mode>)
+```
 
-An index can also have the following response modes through `response_mode`:
-- `default`: For the given index, "create and refine" an answer by sequentially going through each Node; 
-    make a separate LLM call per Node. Good for more detailed answers.
-- `compact`: For the given index, "compact" the prompt during each LLM call by stuffing as 
-    many Node text chunks that can fit within the maximum prompt size. If there are 
+Right now, we support the following options:
+- `default`: "create and refine" an answer by sequentially going through each retrieved `Node`; 
+    This make a separate LLM call per Node. Good for more detailed answers.
+- `compact`: "compact" the prompt during each LLM call by stuffing as 
+    many `Node` text chunks that can fit within the maximum prompt size. If there are 
     too many chunks to stuff in one prompt, "create and refine" an answer by going through
     multiple prompts.
-- `tree_summarize`: Given a set of Nodes and the query, recursively construct a tree 
+- `tree_summarize`: Given a set of `Node` objects and the query, recursively construct a tree 
     and return the root node as the response. Good for summarization purposes.
 
 ```python
 index = GPTListIndex.from_documents(documents)
-# mode="default"
-response = index.query("What did the author do growing up?", response_mode="default")
-# mode="compact"
-response = index.query("What did the author do growing up?", response_mode="compact")
-# mode="tree_summarize"
-response = index.query("What did the author do growing up?", response_mode="tree_summarize")
+retriever = index.as_retriever()
+
+# default
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='default')
+response = query_engine.query("What did the author do growing up?")
+
+# compact
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='compact')
+response = query_engine.query("What did the author do growing up?")
+
+# tree summarize
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='tree_summarize')
+response = query_engine.query("What did the author do growing up?")
 ```
 
 
-### Setting `required_keywords` and `exclude_keywords`
+### Configuring node postprocessors (i.e. filtering and augmentation)
+We also support advanced `Node` filtering and augmentation that can further improve the relevancy of the retrieved `Node` objects.
+This can help reduce the time/number of LLM calls/cost or improve response quality.
 
-You can set `required_keywords` and `exclude_keywords` on most of our indices (the only exclusion is the GPTTreeIndex). This will preemptively filter out nodes that do not contain `required_keywords` or contain `exclude_keywords`, reducing the search space
-and hence time/number of LLM calls/cost.
+For example:
+* `KeywordNodePostprocessor`: filters nodes by `required_keywords` and `exclude_keywords`.
+* `SimilarityPostprocessor`: filters nodes by setting a threshold on the similarity score (thus only supported by embedding-based retrievers)
+* `PrevNextNodePostprocessor`: augments retrieved `Node` objects with additional relevant context based on `Node` relationships.
+
+The full list of node postprocessors is documented in the [Node Postprocessor Reference](/reference/node_postprocessor.rst).
+
+To configure the desired node postprocessors:
 
 ```python
-index.query(
-    "What did the author do after Y Combinator?", required_keywords=["Combinator"], 
-    exclude_keywords=["Italy"]
+node_postprocessors = [
+    KeywordNodePostprocessor(
+        required_keywords=["Combinator"], 
+        exclude_keywords=["Italy"]
+    )
+]
+query_engine = RetrieverQueryEngine.from_args(
+    retriever, node_postprocessors=node_postprocessors
 )
+response = query_engine.query("What did the author do growing up?")
 ```
 
 
@@ -329,7 +385,7 @@ The object returned is a [`Response` object](/reference/response.rst).
 The object contains both the response text as well as the "sources" of the response:
 
 ```python
-response = index.query("<query_str>")
+response = query_engine.query("<query_str>")
 
 # get response
 # response.response

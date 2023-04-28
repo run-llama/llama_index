@@ -1,8 +1,8 @@
 # A Guide to Creating a Unified Query Framework over your Indexes
 
-LlamaIndex offers a variety of different [query use cases](/docs/use_cases/queries.md). 
+LlamaIndex offers a variety of different [query use cases](/use_cases/queries.md). 
 
-For simple queries, we may want to use a single index data structure, such as a `GPTSimpleVectorIndex` for semantic search, or `GPTListIndex` for summarization.
+For simple queries, we may want to use a single index data structure, such as a `GPTVectorStoreIndex` for semantic search, or `GPTListIndex` for summarization.
 
 For more complex queries, we may want to use a composable graph. 
 
@@ -66,7 +66,7 @@ that solves a distinct use case.
 We will first define a vector index over the documents of each city.
 
 ```python
-from gpt_index import GPTSimpleVectorIndex, ServiceContext
+from gpt_index import GPTVectorStoreIndex, ServiceContext, StorageContext
 from langchain.llms.openai import OpenAIChat
 
 # set service context
@@ -78,13 +78,17 @@ service_context = ServiceContext.from_defaults(
 # Build city document index
 vector_indices = {}
 for wiki_title in wiki_titles:
+    storage_context = StorageContext.from_defaults()
     # build vector index
-    vector_indices[wiki_title] = GPTSimpleVectorIndex.from_documents(
-        city_docs[wiki_title], service_context=service_context
+    vector_indices[wiki_title] = GPTVectorStoreIndex.from_documents(
+        city_docs[wiki_title], 
+        service_context=service_context,
+        storage_context=storage_context,
     )
     # set id for vector index
     vector_indices[wiki_title].index_struct.index_id = wiki_title
-    vector_indices[wiki_title].save_to_disk(f'index_{wiki_title}.json')
+    # persist to disk
+    storage_context.persist(persist_dir=f'./storage/{wiki_title}')
 ```
 
 Querying a vector index lets us easily perform semantic search over a given city's documents.
@@ -102,7 +106,7 @@ The sports teams in Toronto are the Toronto Maple Leafs (NHL), Toronto Blue Jays
 
 ### Defining a Graph for Compare/Contrast Queries
 
-We will now define a composed graph in order to run **compare/contrast** queries (see [use cases doc](/docs/use_cases/queries.md)).
+We will now define a composed graph in order to run **compare/contrast** queries (see [use cases doc](/use_cases/queries.md)).
 This graph contains a keyword table composed on top of existing vector indexes. 
 
 To do this, we first want to set the "summary text" for each vector index.
@@ -134,7 +138,7 @@ graph = ComposableGraph.from_indices(
 # get root index
 root_index = graph.get_index(graph.index_struct.root_id, GPTSimpleKeywordTableIndex)
 # set id of root index
-root_index.index_struct.index_id = "compare_contrast"
+root_index.set_index_id("compare_contrast")
 root_summary = (
     "This index contains Wikipedia articles about multiple cities. "
     "Use this index if you want to compare multiple cities. "
@@ -142,8 +146,8 @@ root_summary = (
 
 ```
 
-Querying this graph (with a query transform module), allows us to easily compare/contrast between different cities. An example
-is shown below - we define query_configs and send a query through this graph.
+Querying this graph (with a query transform module), allows us to easily compare/contrast between different cities. 
+An example is shown below.
 
 ```python
 # define decompose_transform
@@ -151,36 +155,32 @@ from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
     llm_predictor_chatgpt, verbose=True
 )
-# set query config
-query_configs = [
-    {
-        "index_struct_type": "simple_dict",
-        "query_mode": "default",
-        "query_kwargs": {
-            "similarity_top_k": 1
-        },
-        # NOTE: set query transform for subindices
-        "query_transform": decompose_transform
-    },
-    {
-        "index_struct_type": "keyword_table",
-        "query_mode": "simple",
-        "query_kwargs": {
-            "response_mode": "tree_summarize",
-            "verbose": True
-        },
-    },
-]
+
+# define custom query engines
+from gpt_index.query_engine.transform_query_engine import TransformQueryEngine
+custom_query_engines = {}
+for index in vector_indices.values():
+    query_engine = index.as_query_engine(service_context=service_context)
+    query_engine = TransformQueryEngine(
+        query_engine,
+        query_transform=decompose_transform,
+        transform_extra_info={'index_summary': index.index_struct.summary},
+    )
+    custom_query_engines[index.index_id] = query_engine
+custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
+    mode='simple',
+    response_mode='tree_summarize',
+    service_context=service_context,
+)
+
+# define query engine
+query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
 
 # query the graph
 query_str = (
     "Compare and contrast the arts and culture of Houston and Boston. "
 )
-response_chatgpt = graph.query(
-    query_str, 
-    query_configs=query_configs, 
-    service_context=service_context,
-)
+response_chatgpt = query_engine.query(query_str)
 ```
 
 
@@ -227,34 +227,28 @@ and also compare/contrast different cities.
 
 
 ```python
-# set query config
-query_configs = [
-    {
-        "index_struct_type": "keyword_table",
-        "query_mode": "simple",
-        "query_kwargs": {
-            "response_mode": "tree_summarize",
-            "verbose": True
-        },
-    },
-    {
-        "index_struct_type": "tree",
-        "query_mode": "default",
-        
-    }
-]
-for wiki_title in wiki_titles:
-    query_config = {
-        "index_struct_id": wiki_title,
-        "index_struct_type": "simple_dict",
-        "query_mode": "default",
-        "query_kwargs": {
-            "similarity_top_k": 1
-        },
-        # NOTE: set query transform for subindices
-        "query_transform": decompose_transform
-    }
-    query_configs.append(query_config)
+# define custom query engines
+custom_query_engines = {}
+for index in vector_indices.values():
+    query_engine = index.as_query_engine(service_context=service_context)
+    query_engine = TransformQueryEngine(
+        query_engine,
+        query_transform=decompose_transform,
+        transform_extra_info={'index_summary': index.index_struct.summary},
+    )
+    custom_query_engines[index.index_id] = query_engine
+custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
+    mode='simple',
+    response_mode='tree_summarize',
+    service_context=service_context,
+)
+custom_query_engines[outer_graph.root_id] = outer_graph.root_index.as_query_engine(
+    response_mode='tree_summarize',
+    service_context=service_context,
+)
+
+# define query engine
+outer_query_engine = outer_graph.as_query_engine(custom_query_engines=custom_query_engines)
 
 ```
 
@@ -264,10 +258,8 @@ Let's take a look at a few examples!
 
 ```python
 # ask a compare/contrast question 
-response = outer_graph.query(
+response = outer_query_engine.query(
     "Compare and contrast the arts and culture of Houston and Boston.",
-    query_configs=query_configs,
-    service_context=service_context
 )
 print(str(response)
 ```
@@ -277,7 +269,7 @@ print(str(response)
 
 ```python
 
-response = outer_graph.query("What are the sports teams in Toronto?")
+response = outer_query_engine.query("What are the sports teams in Toronto?")
 print(str(response))
 
 ```

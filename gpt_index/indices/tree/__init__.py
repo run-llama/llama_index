@@ -2,13 +2,17 @@
 
 # indices
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
-from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
-from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
+from gpt_index.indices.tree.select_leaf_embedding_retriever import (
+    TreeSelectLeafEmbeddingRetriever,
+)
+from gpt_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
+from gpt_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
+from gpt_index.indices.tree.tree_root_retriever import TreeRootRetriever
 
 __all__ = [
     "GPTTreeIndex",
-    "GPTTreeIndexLeafQuery",
-    "GPTTreeIndexRetQuery",
-    "GPTTreeIndexEmbeddingQuery",
+    "TreeSelectLeafEmbeddingRetriever",
+    "TreeSelectLeafRetriever",
+    "TreeAllLeafRetriever",
+    "TreeRootRetriever",
 ]

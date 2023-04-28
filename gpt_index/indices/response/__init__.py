@@ -10,7 +10,6 @@ from gpt_index.indices.response.response_builder import (
     CompactAndRefine,
 )
 
-from gpt_index.indices.response.response_synthesis import ResponseSynthesizer
 
 __all__ = [
     "ResponseMode",
@@ -20,5 +19,4 @@ __all__ = [
     "Generation",
     "CompactAndRefine",
     "get_response_builder",
-    "ResponseSynthesizer",
 ]

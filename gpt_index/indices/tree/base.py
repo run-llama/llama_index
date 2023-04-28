@@ -1,17 +1,14 @@
 """Tree-based index."""
 
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Union
 
 # from gpt_index.data_structs.data_structs import IndexGraph
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
+from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.common_tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.query.schema import QueryMode
-from gpt_index.indices.tree.embedding_query import GPTTreeIndexEmbeddingQuery
-from gpt_index.indices.tree.leaf_query import GPTTreeIndexLeafQuery
-from gpt_index.indices.tree.retrieve_query import GPTTreeIndexRetQuery
-from gpt_index.indices.tree.summarize_query import GPTTreeIndexSummarizeQuery
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.tree.inserter import GPTTreeIndexInserter
 from gpt_index.prompts.default_prompts import (
@@ -76,15 +73,27 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
             **kwargs,
         )
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTTreeIndexLeafQuery,
-            QueryMode.EMBEDDING: GPTTreeIndexEmbeddingQuery,
-            QueryMode.RETRIEVE: GPTTreeIndexRetQuery,
-            QueryMode.SUMMARIZE: GPTTreeIndexSummarizeQuery,
-        }
+    def as_retriever(
+        self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
+    ) -> BaseRetriever:
+        # NOTE: lazy import
+        from gpt_index.indices.tree.select_leaf_embedding_retriever import (
+            TreeSelectLeafEmbeddingRetriever,
+        )
+        from gpt_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
+        from gpt_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
+        from gpt_index.indices.tree.tree_root_retriever import TreeRootRetriever
+
+        if mode == QueryMode.DEFAULT:
+            return TreeSelectLeafRetriever(self, **kwargs)
+        elif mode == QueryMode.EMBEDDING:
+            return TreeSelectLeafEmbeddingRetriever(self, **kwargs)
+        elif mode == QueryMode.RETRIEVE:
+            return TreeRootRetriever(self, **kwargs)
+        elif mode == QueryMode.SUMMARIZE:
+            return TreeAllLeafRetriever(self, **kwargs)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
 
     def _validate_build_tree_required(self, mode: QueryMode) -> None:
         """Check if index supports modes that require trees."""
@@ -93,11 +102,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
                 "Index was constructed without building trees, "
                 f"but mode {mode} requires trees."
             )
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Any) -> None:
-        """Query mode to class."""
-        super()._preprocess_query(mode, query_kwargs)
-        self._validate_build_tree_required(mode)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexGraph:
         """Build the index from nodes."""

@@ -10,11 +10,11 @@ from langchain.input import get_color_mapping, print_text
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.list.base import GPTListIndex
 from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.indices.vector_store import GPTSimpleVectorIndex
+from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.readers.schema.base import Document
 
 DEFAULT_INDEX_CLASSES: List[Type[BaseGPTIndex]] = [
-    GPTSimpleVectorIndex,
+    GPTVectorStoreIndex,
     GPTTreeIndex,
     GPTListIndex,
 ]
@@ -47,6 +47,7 @@ class Playground:
         cls,
         documents: List[Document],
         index_classes: List[Type[BaseGPTIndex]] = DEFAULT_INDEX_CLASSES,
+        modes: List[str] = DEFAULT_MODES,
         **kwargs: Any,
     ) -> Playground:
         """Initialize with Documents using the default list of indices.
@@ -60,9 +61,10 @@ class Playground:
             )
 
         indices = [
-            index_class.from_documents(documents) for index_class in index_classes
+            index_class.from_documents(documents, **kwargs)
+            for index_class in index_classes
         ]
-        return cls(indices, **kwargs)
+        return cls(indices, modes)
 
     def _validate_indices(self, indices: List[BaseGPTIndex]) -> None:
         """Validate a list of indices."""
@@ -123,13 +125,17 @@ class Playground:
         result = []
         for i, index in enumerate(self._indices):
             for mode in self._modes:
-                if mode not in index.get_query_map():
-                    continue
                 start_time = time.time()
 
                 index_name = type(index).__name__
                 print_text(f"\033[1m{index_name}\033[0m, mode = {mode}", end="\n")
-                output = index.query(query_text, mode=mode)
+                # TODO: refactor query mode
+                try:
+                    query_engine = index.as_query_engine(mode=mode)
+                except ValueError:
+                    continue
+
+                output = query_engine.query(query_text)
                 print_text(str(output), color=self.index_colors[str(i)], end="\n\n")
 
                 duration = time.time() - start_time

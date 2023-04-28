@@ -70,23 +70,36 @@ To build a simple vector store index:
 import os
 os.environ["OPENAI_API_KEY"] = 'YOUR_OPENAI_API_KEY'
 
-from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTSimpleVectorIndex.from_documents(documents)
+index = GPTVectorStoreIndex.from_documents(documents)
 ```
 
-To save to and load from disk:
-```python
-# save to disk
-index.save_to_disk('index.json')
-# load from disk
-index = GPTSimpleVectorIndex.load_from_disk('index.json')
-```
 
 To query:
 ```python
-index.query("<question_text>?")
+query_engine = index.as_query_engine()
+query_engine.query("<question_text>?")
 ```
+
+
+By default, data is stored in-memory.
+To persist to disk (under `./storage`):
+
+```python
+index.storage_context.persist()
+```
+
+To reload from disk:
+```python
+from llama_index import StorageContext, load_index_from_storage
+
+# rebuild storage context
+storage_context = StorageContext.from_defaults(persist_dir='./storage')
+# load index
+index = load_index_from_storage(storage_context)
+```
+
 
 ## 🔧 Dependencies
 

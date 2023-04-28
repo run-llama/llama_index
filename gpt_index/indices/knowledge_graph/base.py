@@ -9,13 +9,12 @@ existing keywords in the table.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 from gpt_index.data_structs.data_structs_v2 import KG
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
-from gpt_index.indices.knowledge_graph.query import GPTKGTableQuery, KGQueryMode
-from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
@@ -70,12 +69,16 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             **kwargs,
         )
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTKGTableQuery,
-        }
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        from gpt_index.indices.knowledge_graph.retrievers import (
+            KGQueryMode,
+            KGTableRetriever,
+        )
+
+        if len(self.index_struct.embedding_dict) > 0 and "embedding_mode" not in kwargs:
+            kwargs["embedding_mode"] = KGQueryMode.HYBRID
+
+        return KGTableRetriever(self, **kwargs)
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
@@ -191,14 +194,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         raise NotImplementedError("Delete is not supported for KG index yet.")
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
-        """Set the default embedding mode during query based on current index."""
-        if (
-            len(self.index_struct.embedding_dict) > 0
-            and "embedding_mode" not in query_kwargs
-        ):
-            query_kwargs["embedding_mode"] = KGQueryMode.HYBRID
 
     def get_networkx_graph(self) -> Any:
         """Get networkx representation of the graph structure.

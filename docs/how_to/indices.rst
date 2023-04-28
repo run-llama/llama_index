@@ -1,4 +1,4 @@
-Index Structures
+🗃️ Index Structures
 ================
 
 At the core of LlamaIndex is a set of index data structures. You can choose to use them on their own, 

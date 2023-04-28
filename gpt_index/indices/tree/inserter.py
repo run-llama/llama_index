@@ -4,8 +4,8 @@ from typing import Optional, Sequence
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore import BaseDocumentStore
-from gpt_index.docstore.registry import get_default_docstore
+from gpt_index.storage.docstore import BaseDocumentStore
+from gpt_index.storage.docstore.registry import get_default_docstore
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.utils import extract_numbers_given_response, get_sorted_node_list
 from gpt_index.prompts.base import Prompt
@@ -156,5 +156,7 @@ class GPTTreeIndexInserter:
 
     def insert(self, nodes: Sequence[Node]) -> None:
         """Insert into index_graph."""
+        print("calling insert")
+        print(nodes)
         for node in nodes:
             self._insert_node(node)

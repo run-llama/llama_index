@@ -1,34 +1,22 @@
 """Base index classes."""
-import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
 
-from gpt_index.constants import DOCSTORE_KEY, INDEX_STRUCT_KEY
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore import BaseDocumentStore
-from gpt_index.docstore.registry import (
-    get_default_docstore,
-    load_docstore_from_dict,
-    save_docstore_to_dict,
-)
-from gpt_index.indices.query.base import BaseGPTIndexQuery
-from gpt_index.indices.query.query_runner import QueryRunner
-from gpt_index.indices.query.query_transform.base import BaseQueryTransform
-from gpt_index.indices.query.schema import QueryBundle, QueryConfig, QueryMode
+from gpt_index.indices.base_retriever import BaseRetriever
+from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
-from gpt_index.response.schema import RESPONSE_TYPE
+from gpt_index.storage.docstore.types import BaseDocumentStore
+from gpt_index.storage.storage_context import StorageContext
 from gpt_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=V2IndexStruct)
+IndexType = TypeVar("IndexType", bound="BaseGPTIndex")
 
 logger = logging.getLogger(__name__)
-
-
-# map from mode to query class
-QueryMap = Dict[str, Type[BaseGPTIndexQuery]]
 
 
 class BaseGPTIndex(Generic[IS], ABC):
@@ -47,8 +35,9 @@ class BaseGPTIndex(Generic[IS], ABC):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IS] = None,
-        docstore: Optional[BaseDocumentStore] = None,
+        storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and nodes is None:
@@ -67,26 +56,24 @@ class BaseGPTIndex(Generic[IS], ABC):
                 raise ValueError("nodes must be a list of Node objects.")
 
         self._service_context = service_context or ServiceContext.from_defaults()
-        self._docstore = docstore or get_default_docstore()
+        self._storage_context = storage_context or StorageContext.from_defaults()
+        self._docstore = self._storage_context.docstore
+        self._vector_store = self._storage_context.vector_store
 
         if index_struct is None:
             assert nodes is not None
             index_struct = self.build_index_from_nodes(nodes)
-            # if not isinstance(index_struct, self.index_struct_cls):
-            #     raise ValueError(
-            #         f"index_struct must be of type {self.index_struct_cls} "
-            #         f"but got {type(index_struct)}"
-            #     )
         self._index_struct = index_struct
+        self._storage_context.index_store.add_index_struct(self._index_struct)
 
     @classmethod
     def from_documents(
-        cls,
+        cls: Type[IndexType],
         documents: Sequence[Document],
-        docstore: Optional[BaseDocumentStore] = None,
+        storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
-    ) -> "BaseGPTIndex":
+    ) -> IndexType:
         """Create index from documents.
 
         Args:
@@ -94,8 +81,9 @@ class BaseGPTIndex(Generic[IS], ABC):
                 build the index from.
 
         """
+        storage_context = storage_context or StorageContext.from_defaults()
         service_context = service_context or ServiceContext.from_defaults()
-        docstore = docstore or get_default_docstore()
+        docstore = storage_context.docstore
 
         for doc in documents:
             docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
@@ -104,7 +92,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         return cls(
             nodes=nodes,
-            docstore=docstore,
+            storage_context=storage_context,
             service_context=service_context,
             **kwargs,
         )
@@ -115,6 +103,33 @@ class BaseGPTIndex(Generic[IS], ABC):
         return self._index_struct
 
     @property
+    def index_id(self) -> str:
+        """Get the index struct."""
+        return self._index_struct.index_id
+
+    def set_index_id(self, index_id: str) -> None:
+        """Set the index id.
+
+        NOTE: if you decide to set the index_id on the index_struct manually,
+        you will need to explicitly call `add_index_struct` on the `index_store`
+        to update the index store.
+
+        .. code-block:: python
+            index.index_struct.index_id = index_id
+            index.storage_context.index_store.add_index_struct(index.index_struct)
+
+        Args:
+            index_id (str): Index id to set.
+
+        """
+        # delete the old index struct
+        old_id = self._index_struct.index_id
+        self._storage_context.index_store.delete_index_struct(old_id)
+        # add the new index struct
+        self._index_struct.index_id = index_id
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+
+    @property
     def docstore(self) -> BaseDocumentStore:
         """Get the docstore corresponding to the index."""
         return self._docstore
@@ -122,6 +137,10 @@ class BaseGPTIndex(Generic[IS], ABC):
     @property
     def service_context(self) -> ServiceContext:
         return self._service_context
+
+    @property
+    def storage_context(self) -> StorageContext:
+        return self._storage_context
 
     @abstractmethod
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
@@ -142,6 +161,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         """Insert nodes."""
         self.docstore.add_documents(nodes, allow_update=True)
         self._insert(nodes, **insert_kwargs)
+        self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
@@ -163,6 +183,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         """
         logger.debug(f"> Deleting document: {doc_id}")
         self._delete(doc_id, **delete_kwargs)
+        self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def update(self, document: Document, **update_kwargs: Any) -> None:
         """Update a document.
@@ -199,215 +220,17 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         return refreshed_documents
 
-    @property
-    def query_context(self) -> Dict[str, Any]:
-        """Additional context necessary for making a query.
-
-        This should capture any index-specific clients, services, etc,
-        that's not captured by index struct, docstore, and service context.
-        For example, a vector store index would pass vector store.
-        """
-        return {}
-
-    def _preprocess_query(self, mode: QueryMode, query_kwargs: Dict) -> None:
-        """Preprocess query.
-
-        This allows subclasses to pass in additional query kwargs
-        to query, for instance arguments that are shared between the
-        index and the query class. By default, this does nothing.
-        This also allows subclasses to do validation.
-
-        """
+    @abstractmethod
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         pass
 
-    def query(
-        self,
-        query_str: Union[str, QueryBundle],
-        mode: str = QueryMode.DEFAULT,
-        query_transform: Optional[BaseQueryTransform] = None,
-        use_async: bool = False,
-        **query_kwargs: Any,
-    ) -> RESPONSE_TYPE:
-        """Answer a query.
+    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        # NOTE: lazy import
+        from gpt_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
-        When `query` is called, we query the index with the given `mode` and
-        `query_kwargs`. The `mode` determines the type of query to run, and
-        `query_kwargs` are parameters that are specific to the query type.
+        retriever = self.as_retriever(**kwargs)
 
-        For a comprehensive documentation of available `mode` and `query_kwargs` to
-        query a given index, please visit :ref:`Ref-Query`.
-
-
-        """
-        mode_enum = QueryMode(mode)
-        self._preprocess_query(mode_enum, query_kwargs)
-        # TODO: pass in query config directly
-        query_config = QueryConfig(
-            index_struct_type=self._index_struct.get_type(),
-            query_mode=mode_enum,
-            query_kwargs=query_kwargs,
-        )
-        query_runner = QueryRunner(
-            index_struct=self._index_struct,
-            service_context=self._service_context,
-            query_context={self._index_struct.index_id: self.query_context},
-            docstore=self._docstore,
-            query_configs=[query_config],
-            query_transform=query_transform,
-            recursive=False,
-            use_async=use_async,
-        )
-        return query_runner.query(query_str)
-
-    async def aquery(
-        self,
-        query_str: Union[str, QueryBundle],
-        mode: str = QueryMode.DEFAULT,
-        query_transform: Optional[BaseQueryTransform] = None,
-        **query_kwargs: Any,
-    ) -> RESPONSE_TYPE:
-        """Asynchronously answer a query.
-
-        When `query` is called, we query the index with the given `mode` and
-        `query_kwargs`. The `mode` determines the type of query to run, and
-        `query_kwargs` are parameters that are specific to the query type.
-
-        For a comprehensive documentation of available `mode` and `query_kwargs` to
-        query a given index, please visit :ref:`Ref-Query`.
-
-
-        """
-        # TODO: currently we don't have async versions of all
-        # underlying functions. Setting use_async=True
-        # will cause async nesting errors because we assume
-        # it's called in a synchronous setting.
-        use_async = False
-
-        mode_enum = QueryMode(mode)
-        self._preprocess_query(mode_enum, query_kwargs)
-        # TODO: pass in query config directly
-        query_config = QueryConfig(
-            index_struct_type=self._index_struct.get_type(),
-            query_mode=mode_enum,
-            query_kwargs=query_kwargs,
-        )
-        query_runner = QueryRunner(
-            index_struct=self._index_struct,
-            service_context=self._service_context,
-            query_context={self._index_struct.index_id: self.query_context},
-            docstore=self._docstore,
-            query_configs=[query_config],
-            query_transform=query_transform,
-            recursive=False,
-            use_async=use_async,
-        )
-        return await query_runner.aquery(query_str)
-
-    @classmethod
-    @abstractmethod
-    def get_query_map(cls) -> QueryMap:
-        """Get query map."""
-
-    @classmethod
-    def load_from_dict(
-        cls, result_dict: Dict[str, Any], **kwargs: Any
-    ) -> "BaseGPTIndex":
-        """Load index from dict."""
-        # NOTE: lazy load registry
-        from gpt_index.indices.registry import load_index_struct_from_dict
-
-        index_struct = load_index_struct_from_dict(result_dict[INDEX_STRUCT_KEY])
-        assert isinstance(index_struct, cls.index_struct_cls)
-        docstore = load_docstore_from_dict(result_dict[DOCSTORE_KEY], **kwargs)
-        return cls(index_struct=index_struct, docstore=docstore, **kwargs)
-
-    @classmethod
-    def load_from_string(cls, index_string: str, **kwargs: Any) -> "BaseGPTIndex":
-        """Load index from string (in JSON-format).
-
-        This method loads the index from a JSON string. The index data
-        structure itself is preserved completely. If the index is defined over
-        subindices, those subindices will also be preserved (and subindices of
-        those subindices, etc.).
-
-        NOTE: load_from_string should not be used for indices composed on top
-        of other indices. Please define a `ComposableGraph` and use
-        `save_to_string` and `load_from_string` on that instead.
-
-        Args:
-            index_string (str): The index string (in JSON-format).
-
-        Returns:
-            BaseGPTIndex: The loaded index.
-
-        """
-        result_dict = json.loads(index_string)
-        return cls.load_from_dict(result_dict, **kwargs)
-
-    @classmethod
-    def load_from_disk(cls, save_path: str, **kwargs: Any) -> "BaseGPTIndex":
-        """Load index from disk.
-
-        This method loads the index from a JSON file stored on disk. The index data
-        structure itself is preserved completely. If the index is defined over
-        subindices, those subindices will also be preserved (and subindices of
-        those subindices, etc.).
-
-        NOTE: load_from_disk should not be used for indices composed on top
-        of other indices. Please define a `ComposableGraph` and use
-        `save_to_disk` and `load_from_disk` on that instead.
-
-        Args:
-            save_path (str): The save_path of the file.
-
-        Returns:
-            BaseGPTIndex: The loaded index.
-
-        """
-        with open(save_path, "r") as f:
-            file_contents = f.read()
-            return cls.load_from_string(file_contents, **kwargs)
-
-    def save_to_dict(self, **save_kwargs: Any) -> dict:
-        """Save to dict."""
-        out_dict: Dict[str, Any] = {
-            INDEX_STRUCT_KEY: self.index_struct.to_dict(),
-            DOCSTORE_KEY: save_docstore_to_dict(self.docstore),
-        }
-        return out_dict
-
-    def save_to_string(self, **save_kwargs: Any) -> str:
-        """Save to string.
-
-        This method stores the index into a JSON string.
-
-        NOTE: save_to_string should not be used for indices composed on top
-        of other indices. Please define a `ComposableGraph` and use
-        `save_to_string` and `load_from_string` on that instead.
-
-        Returns:
-            str: The JSON string of the index.
-
-        """
-        out_dict = self.save_to_dict(**save_kwargs)
-        return json.dumps(out_dict, **save_kwargs)
-
-    def save_to_disk(
-        self, save_path: str, encoding: str = "ascii", **save_kwargs: Any
-    ) -> None:
-        """Save to file.
-
-        This method stores the index into a JSON file stored on disk.
-
-        NOTE: save_to_disk should not be used for indices composed on top
-        of other indices. Please define a `ComposableGraph` and use
-        `save_to_disk` and `load_from_disk` on that instead.
-
-        Args:
-            save_path (str): The save_path of the file.
-            encoding (str): The encoding of the file.
-
-        """
-        index_string = self.save_to_string(**save_kwargs)
-        with open(save_path, "wt", encoding=encoding) as f:
-            f.write(index_string)
+        kwargs["retriever"] = retriever
+        if "service_context" not in kwargs:
+            kwargs["service_context"] = self._service_context
+        return RetrieverQueryEngine.from_args(**kwargs)

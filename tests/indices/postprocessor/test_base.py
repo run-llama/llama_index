@@ -1,12 +1,13 @@
 """Node postprocessor tests."""
 
+from pathlib import Path
 import pytest
-from gpt_index.docstore.simple_docstore import SimpleDocumentStore
+from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.prompts.prompts import Prompt, SimpleInputPrompt
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
+from gpt_index.data_structs.node_v2 import Node, DocumentRelationship, NodeWithScore
 from gpt_index.indices.postprocessor.node import (
     PrevNextNodePostprocessor,
     KeywordNodePostprocessor,
@@ -16,7 +17,6 @@ from gpt_index.indices.postprocessor.node_recency import (
     EmbeddingRecencyPostprocessor,
     TimeWeightedPostprocessor,
 )
-from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.llm_predictor import LLMPredictor
 from unittest.mock import patch
 from gpt_index.embeddings.openai import OpenAIEmbedding
@@ -55,7 +55,7 @@ def mock_get_query_embedding(query: str) -> List[float]:
     return mock_get_text_embedding(query)
 
 
-def test_forward_back_processor() -> None:
+def test_forward_back_processor(tmp_path: Path) -> None:
     """Test forward-back processor."""
 
     nodes = [
@@ -64,6 +64,7 @@ def test_forward_back_processor() -> None:
         Node("This is another test.", doc_id="3"),
         Node("This is a test v2.", doc_id="4"),
     ]
+    nodes_with_scores = [NodeWithScore(node) for node in nodes]
     for i, node in enumerate(nodes):
         if i > 0:
             node.relationships.update(
@@ -81,54 +82,58 @@ def test_forward_back_processor() -> None:
     node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=2, mode="next"
     )
-    processed_nodes = node_postprocessor.postprocess_nodes([nodes[0]])
+    processed_nodes = node_postprocessor.postprocess_nodes([nodes_with_scores[0]])
     assert len(processed_nodes) == 3
-    assert processed_nodes[0].get_doc_id() == "1"
-    assert processed_nodes[1].get_doc_id() == "2"
-    assert processed_nodes[2].get_doc_id() == "3"
+    assert processed_nodes[0].node.get_doc_id() == "1"
+    assert processed_nodes[1].node.get_doc_id() == "2"
+    assert processed_nodes[2].node.get_doc_id() == "3"
 
     # check for multiple nodes (nodes should not be duped)
     node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=1, mode="next"
     )
-    processed_nodes = node_postprocessor.postprocess_nodes([nodes[1], nodes[2]])
+    processed_nodes = node_postprocessor.postprocess_nodes(
+        [nodes_with_scores[1], nodes_with_scores[2]]
+    )
     assert len(processed_nodes) == 3
-    assert processed_nodes[0].get_doc_id() == "2"
-    assert processed_nodes[1].get_doc_id() == "3"
-    assert processed_nodes[2].get_doc_id() == "4"
+    assert processed_nodes[0].node.get_doc_id() == "2"
+    assert processed_nodes[1].node.get_doc_id() == "3"
+    assert processed_nodes[2].node.get_doc_id() == "4"
 
     # check for previous
     node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=1, mode="previous"
     )
-    processed_nodes = node_postprocessor.postprocess_nodes([nodes[1], nodes[2]])
+    processed_nodes = node_postprocessor.postprocess_nodes(
+        [nodes_with_scores[1], nodes_with_scores[2]]
+    )
     assert len(processed_nodes) == 3
-    assert processed_nodes[0].get_doc_id() == "1"
-    assert processed_nodes[1].get_doc_id() == "2"
-    assert processed_nodes[2].get_doc_id() == "3"
+    assert processed_nodes[0].node.get_doc_id() == "1"
+    assert processed_nodes[1].node.get_doc_id() == "2"
+    assert processed_nodes[2].node.get_doc_id() == "3"
 
     # check that both works
     node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=1, mode="both"
     )
-    processed_nodes = node_postprocessor.postprocess_nodes([nodes[2]])
+    processed_nodes = node_postprocessor.postprocess_nodes([nodes_with_scores[2]])
     assert len(processed_nodes) == 3
     # nodes are sorted
-    assert processed_nodes[0].get_doc_id() == "2"
-    assert processed_nodes[1].get_doc_id() == "3"
-    assert processed_nodes[2].get_doc_id() == "4"
+    assert processed_nodes[0].node.get_doc_id() == "2"
+    assert processed_nodes[1].node.get_doc_id() == "3"
+    assert processed_nodes[2].node.get_doc_id() == "4"
 
     # check that num_nodes too high still works
     node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=4, mode="both"
     )
-    processed_nodes = node_postprocessor.postprocess_nodes([nodes[2]])
+    processed_nodes = node_postprocessor.postprocess_nodes([nodes_with_scores[2]])
     assert len(processed_nodes) == 4
     # nodes are sorted
-    assert processed_nodes[0].get_doc_id() == "1"
-    assert processed_nodes[1].get_doc_id() == "2"
-    assert processed_nodes[2].get_doc_id() == "3"
-    assert processed_nodes[3].get_doc_id() == "4"
+    assert processed_nodes[0].node.get_doc_id() == "1"
+    assert processed_nodes[1].node.get_doc_id() == "2"
+    assert processed_nodes[2].node.get_doc_id() == "3"
+    assert processed_nodes[3].node.get_doc_id() == "4"
 
     # check that raises value error for invalid mode
     with pytest.raises(ValueError):
@@ -163,16 +168,17 @@ def test_fixed_recency_postprocessor(
         Node("This is another test.", doc_id="3", extra_info={"date": "2020-01-03"}),
         Node("This is a test v2.", doc_id="4", extra_info={"date": "2020-01-04"}),
     ]
+    node_with_scores = [NodeWithScore(node) for node in nodes]
 
     service_context = ServiceContext.from_defaults()
 
     postprocessor = FixedRecencyPostprocessor(top_k=1, service_context=service_context)
     query_bundle: QueryBundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        nodes, extra_info={"query_bundle": query_bundle}
+        node_with_scores, extra_info={"query_bundle": query_bundle}
     )
     assert len(result_nodes) == 1
-    assert result_nodes[0].get_text() == "date: 2020-01-04\n\nThis is a test v2."
+    assert result_nodes[0].node.get_text() == "date: 2020-01-04\n\nThis is a test v2."
 
     # try in node info
     nodes = [
@@ -181,6 +187,7 @@ def test_fixed_recency_postprocessor(
         Node("This is another test.", doc_id="3", node_info={"date": "2020-01-03"}),
         Node("This is a test v2.", doc_id="4", node_info={"date": "2020-01-04"}),
     ]
+    node_with_scores = [NodeWithScore(node) for node in nodes]
     service_context = ServiceContext.from_defaults()
 
     postprocessor = FixedRecencyPostprocessor(
@@ -188,10 +195,10 @@ def test_fixed_recency_postprocessor(
     )
     query_bundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        nodes, extra_info={"query_bundle": query_bundle}
+        node_with_scores, extra_info={"query_bundle": query_bundle}
     )
     assert len(result_nodes) == 1
-    assert result_nodes[0].get_text() == "This is a test v2."
+    assert result_nodes[0].node.get_text() == "This is a test v2."
 
 
 @patch.object(LLMPredictor, "predict", side_effect=mock_recency_predict)
@@ -222,6 +229,7 @@ def test_embedding_recency_postprocessor(
         Node("This is another test.", doc_id="3v2", node_info={"date": "2020-01-03"}),
         Node("This is a test v2.", doc_id="4", node_info={"date": "2020-01-04"}),
     ]
+    nodes_with_scores = [NodeWithScore(node) for node in nodes]
     service_context = ServiceContext.from_defaults()
 
     postprocessor = EmbeddingRecencyPostprocessor(
@@ -232,15 +240,15 @@ def test_embedding_recency_postprocessor(
     )
     query_bundle: QueryBundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        nodes, extra_info={"query_bundle": query_bundle}
+        nodes_with_scores, extra_info={"query_bundle": query_bundle}
     )
     assert len(result_nodes) == 4
-    assert result_nodes[0].get_text() == "This is a test v2."
+    assert result_nodes[0].node.get_text() == "This is a test v2."
     assert cast(Dict, result_nodes[0].node_info)["date"] == "2020-01-04"
-    assert result_nodes[1].get_text() == "This is another test."
-    assert result_nodes[1].get_doc_id() == "3v2"
+    assert result_nodes[1].node.get_text() == "This is another test."
+    assert result_nodes[1].node.get_doc_id() == "3v2"
     assert cast(Dict, result_nodes[1].node_info)["date"] == "2020-01-03"
-    assert result_nodes[2].get_text() == "This is a test."
+    assert result_nodes[2].node.get_text() == "This is a test."
     assert cast(Dict, result_nodes[2].node_info)["date"] == "2020-01-02"
 
 
@@ -272,17 +280,14 @@ def test_time_weighted_postprocessor(
         Node("This is another test.", doc_id="3", node_info={key: 2}),
         Node("This is a test v2.", doc_id="4", node_info={key: 3}),
     ]
+    node_with_scores = [NodeWithScore(node) for node in nodes]
 
     # high time decay
-    similarity_tracker = SimilarityTracker()
     postprocessor = TimeWeightedPostprocessor(
         top_k=1, time_decay=0.99999, time_access_refresh=True, now=4.0
     )
-    result_nodes = postprocessor.postprocess_nodes(
-        nodes, extra_info={"similarity_tracker": similarity_tracker}
-    )
+    result_nodes_with_score = postprocessor.postprocess_nodes(node_with_scores)
 
-    result_nodes_with_score = similarity_tracker.get_zipped_nodes(result_nodes)
     assert len(result_nodes_with_score) == 1
     assert result_nodes_with_score[0].node.get_text() == "This is a test v2."
     assert cast(Dict, nodes[0].node_info)[key] == 0
@@ -297,16 +302,13 @@ def test_time_weighted_postprocessor(
         Node("This is another test.", doc_id="3", node_info={key: 2}),
         Node("This is a test v2.", doc_id="4", node_info={key: 3}),
     ]
-    similarity_tracker = SimilarityTracker()
-    for idx, node in enumerate(nodes):
-        similarity_tracker.add(node, -float(idx))
+    node_with_scores = [
+        NodeWithScore(node, -float(idx)) for idx, node in enumerate(nodes)
+    ]
     postprocessor = TimeWeightedPostprocessor(
         top_k=1, time_decay=0.000000000002, time_access_refresh=True, now=4.0
     )
-    result_nodes = postprocessor.postprocess_nodes(
-        nodes, extra_info={"similarity_tracker": similarity_tracker}
-    )
-    result_nodes_with_score = similarity_tracker.get_zipped_nodes(result_nodes)
+    result_nodes_with_score = postprocessor.postprocess_nodes(node_with_scores)
     assert len(result_nodes_with_score) == 1
     assert result_nodes_with_score[0].node.get_text() == "Hello world."
     assert cast(Dict, nodes[0].node_info)[key] != 0
@@ -324,26 +326,27 @@ def test_keyword_postprocessor() -> None:
         Node("This is another test.", doc_id="3", node_info={key: 2}),
         Node("This is a test v2.", doc_id="4", node_info={key: 3}),
     ]
+    node_with_scores = [NodeWithScore(node) for node in nodes]
 
     postprocessor = KeywordNodePostprocessor(required_keywords=["This"])
-    new_nodes = postprocessor.postprocess_nodes(nodes)
-    assert new_nodes[0].get_text() == "This is a test."
-    assert new_nodes[1].get_text() == "This is another test."
-    assert new_nodes[2].get_text() == "This is a test v2."
+    new_nodes = postprocessor.postprocess_nodes(node_with_scores)
+    assert new_nodes[0].node.get_text() == "This is a test."
+    assert new_nodes[1].node.get_text() == "This is another test."
+    assert new_nodes[2].node.get_text() == "This is a test v2."
 
     postprocessor = KeywordNodePostprocessor(required_keywords=["Hello"])
-    new_nodes = postprocessor.postprocess_nodes(nodes)
-    assert new_nodes[0].get_text() == "Hello world."
+    new_nodes = postprocessor.postprocess_nodes(node_with_scores)
+    assert new_nodes[0].node.get_text() == "Hello world."
     assert len(new_nodes) == 1
 
     postprocessor = KeywordNodePostprocessor(required_keywords=["is another"])
-    new_nodes = postprocessor.postprocess_nodes(nodes)
-    assert new_nodes[0].get_text() == "This is another test."
+    new_nodes = postprocessor.postprocess_nodes(node_with_scores)
+    assert new_nodes[0].node.get_text() == "This is another test."
     assert len(new_nodes) == 1
 
     # test exclude keywords
     postprocessor = KeywordNodePostprocessor(exclude_keywords=["is another"])
-    new_nodes = postprocessor.postprocess_nodes(nodes)
-    assert new_nodes[1].get_text() == "This is a test."
-    assert new_nodes[2].get_text() == "This is a test v2."
+    new_nodes = postprocessor.postprocess_nodes(node_with_scores)
+    assert new_nodes[1].node.get_text() == "This is a test."
+    assert new_nodes[2].node.get_text() == "This is a test v2."
     assert len(new_nodes) == 3

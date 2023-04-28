@@ -21,7 +21,7 @@ class SQLContextContainerBuilder:
     """SQLContextContainerBuilder.
 
     Build a SQLContextContainer that can be passed to the SQL index
-    during index construction or during queryt-time.
+    during index construction or during query-time.
 
     NOTE: if context_str is specified, that will be used as context
     instead of context_dict
@@ -138,7 +138,8 @@ class SQLContextContainerBuilder:
             context_query_str = query_str
         else:
             context_query_str = query_tmpl.format(orig_query_str=query_str)
-        response = index.query(context_query_str, **index_kwargs)
+        query_engine = index.as_query_engine()
+        response = query_engine.query(context_query_str)
         context_str = str(response)
         if store_context_str:
             self.context_str = context_str

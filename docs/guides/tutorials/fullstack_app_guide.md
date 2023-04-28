@@ -47,7 +47,7 @@ Now, let's write some code to initialize our index:
 
 ```python
 import os
-from llama_index import SimpleDirectoryReader, GPTSimpleVectorIndex
+from llama_index import SimpleDirectoryReader, GPTVectorStoreIndex, StorageContext
 
 # NOTE: for local testing only, do NOT deploy with your key hardcoded
 os.environ['OPENAI_API_KEY'] = "your key here"
@@ -55,13 +55,14 @@ os.environ['OPENAI_API_KEY'] = "your key here"
 index = None
 
 def initialize_index():
-  global index
-   if os.path.exists(index_name):
-      index = GPTSimpleVectorIndex.load_from_disk(index_name)
-  else:
-      documents = SimpleDirectoryReader("./documents").load_data()
-      index = GPTSimpleVectorIndex.from_documents(documents)
-      index.save_to_disk(index_name)
+    global index
+    storage_context = StorageContext.from_defaults()
+    if os.path.exists(index_dir):
+        index = load_index_from_storage(storage_context)
+    else:
+        documents = SimpleDirectoryReader("./documents").load_data()
+        index = GPTVectorStoreIndex.from_documents(documents, storage_context=storage_context)
+        storage_context.persist(index_dir)
 ```
 
 This function will initialize our index. If we call this just before starting the flask server in the `main` function, then our index will be ready for user queries!
@@ -77,7 +78,8 @@ def query_index():
   query_text = request.args.get("text", None)
   if query_text is None:
     return "No text found, please include a ?text=blah parameter in the URL", 400
-  response = index.query(query_text)
+  query_engine = index.as_query_engine()
+  response = query_engine.query(query_text)
   return str(response), 200
 ```
 
@@ -108,7 +110,7 @@ Here's a basic example of what our `index_server.py` will look like after we've 
 import os
 from multiprocessing import Lock
 from multiprocessing.managers import BaseManager
-from llama_index import SimpleDirectoryReader, GPTSimpleVectorIndex, Document
+from llama_index import SimpleDirectoryReader, GPTVectorStoreIndex, Document
 
 # NOTE: for local testing only, do NOT deploy with your key hardcoded
 os.environ['OPENAI_API_KEY'] = "your key here"
@@ -125,7 +127,8 @@ def initialize_index():
 
 def query_index(query_text):
   global index
-  response = index.query(query_text)
+  query_engine = index.as_query_engine()
+  response = query_engine.query(query_text)
   return str(response)
 
 if __name__ == "__main__":
@@ -235,7 +238,7 @@ def insert_into_index(doc_text, doc_id=None):
 
     with lock:
         index.insert(document)
-        index.save_to_disk(index_name)
+        index.storage_context.persist()
 
 ...
 manager.register('insert_into_index', insert_into_index)

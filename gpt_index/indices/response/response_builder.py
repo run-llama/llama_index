@@ -13,7 +13,7 @@ from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, cast
 
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.docstore.registry import get_default_docstore
+from gpt_index.storage.docstore.registry import get_default_docstore
 from gpt_index.indices.common_tree.base import GPTTreeIndexBuilder
 from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
@@ -30,6 +30,7 @@ from gpt_index.prompts.prompts import (
     SummaryPrompt,
 )
 from gpt_index.response.utils import get_response_text
+from gpt_index.token_counter.token_counter import llm_token_counter
 from gpt_index.types import RESPONSE_TEXT_TYPE
 from gpt_index.utils import temp_set_attrs
 
@@ -48,6 +49,10 @@ class BaseResponseBuilder(ABC):
         self._service_context = service_context
         self._streaming = streaming
 
+    @property
+    def service_context(self) -> ServiceContext:
+        return self._service_context
+
     def _log_prompt_and_response(
         self,
         formatted_prompt: str,
@@ -65,6 +70,7 @@ class BaseResponseBuilder(ABC):
         )
 
     @abstractmethod
+    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
@@ -76,6 +82,7 @@ class BaseResponseBuilder(ABC):
         ...
 
     @abstractmethod
+    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -99,6 +106,7 @@ class Refine(BaseResponseBuilder):
         self.text_qa_template = text_qa_template
         self._refine_template = refine_template
 
+    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -108,6 +116,7 @@ class Refine(BaseResponseBuilder):
     ) -> RESPONSE_TEXT_TYPE:
         return self.get_response(query_str, text_chunks, prev_response)
 
+    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
@@ -248,6 +257,7 @@ class CompactAndRefine(Refine):
             streaming=streaming,
         )
 
+    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -257,6 +267,7 @@ class CompactAndRefine(Refine):
     ) -> RESPONSE_TEXT_TYPE:
         return self.get_response(query_str, text_chunks, prev_response)
 
+    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
@@ -303,6 +314,7 @@ class TreeSummarize(Refine):
         )
         self._use_async = use_async
 
+    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -333,6 +345,7 @@ class TreeSummarize(Refine):
             query_str, prev_response, root_nodes, text_qa_template
         )
 
+    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
@@ -427,6 +440,7 @@ class SimpleSummarize(BaseResponseBuilder):
         super().__init__(service_context, streaming)
         self._text_qa_template = text_qa_template
 
+    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -462,6 +476,7 @@ class SimpleSummarize(BaseResponseBuilder):
 
         return response
 
+    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
@@ -505,6 +520,7 @@ class Generation(BaseResponseBuilder):
         super().__init__(service_context, streaming)
         self._input_prompt = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
 
+    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -529,6 +545,7 @@ class Generation(BaseResponseBuilder):
             )
             return stream_response
 
+    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,

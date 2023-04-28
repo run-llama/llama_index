@@ -35,11 +35,10 @@ call the LLM {math}`N` times.
 
 Here are some notes regarding each of the indices:
 - `GPTListIndex`: by default requires {math}`N` LLM calls, where N is the number of nodes.
-    - However, can do `index.query(..., keyword="<keyword>")` to filter out nodes that don't contain the keyword
 - `GPTTreeIndex`: by default requires {math}`\log (N)` LLM calls, where N is the number of leaf nodes. 
     - Setting `child_branch_factor=2` will be more expensive than the default `child_branch_factor=1` (polynomial vs logarithmic), because we traverse 2 children instead of just 1 for each parent node.
 - `GPTKeywordTableIndex`: by default requires an LLM call to extract query keywords.
-    - Can do `index.query(..., mode="simple")` or `index.query(..., mode="rake")` to also use regex/RAKE keyword extractors on your query text.
+    - Can do `index.as_retriever(mode="simple")` or `index.as_retriever(mode="rake")` to also use regex/RAKE keyword extractors on your query text.
 
 
 ### Token Predictor Usage
@@ -77,7 +76,10 @@ print(llm_predictor.last_token_usage)
 **Index Querying**
 
 ```python
-response = index.query("What did the author do growing up?", service_context=service_context)
+query_engine = index.as_query_engine(
+    service_context=service_context
+)
+response = query_engine.query("What did the author do growing up?")
 
 # get number of tokens used
 print(llm_predictor.last_token_usage)
@@ -90,7 +92,7 @@ You can use it in tandem with `MockLLMPredictor`.
 
 ```python
 from llama_index import (
-    GPTSimpleVectorIndex, 
+    GPTVectorStoreIndex, 
     MockLLMPredictor, 
     MockEmbedding, 
     SimpleDirectoryReader,
@@ -98,16 +100,18 @@ from llama_index import (
 )
 
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTSimpleVectorIndex.load_from_disk('../paul_graham_essay/index_simple_vec.json')
+index = GPTVectorStoreIndex.from_documents(documents)
 
 # specify both a MockLLMPredictor as wel as MockEmbedding
 llm_predictor = MockLLMPredictor(max_tokens=256)
 embed_model = MockEmbedding(embed_dim=1536)
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, embed_model=embed_model)
 
-response = index.query(
-    "What did the author do after his time at Y Combinator?",
+query_engine = index.as_query_engine(
     service_context=service_context
+)
+response = query_engine.query(
+    "What did the author do after his time at Y Combinator?",
 )
 ```
 

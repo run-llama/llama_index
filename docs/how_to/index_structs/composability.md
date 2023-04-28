@@ -63,12 +63,6 @@ graph = ComposableGraph.from_indices(
     index_summaries=[index1_summary, index2_summary, index3_summary],
 )
 
-# [Optional] save to disk
-graph.save_to_disk("save_path.json")
-
-# [Optional] load from disk
-graph = ComposableGraph.load_from_disk("save_path.json")
-
 ```
 
 ![](/_static/composability/diagram.png)
@@ -77,35 +71,29 @@ graph = ComposableGraph.load_from_disk("save_path.json")
 ### Querying the Graph
 
 During a query, we would start with the top-level list index. Each node in the list corresponds to an underlying tree index. 
-We want to make sure that we define a **recursive** query, as well as a **query config** list. If the query config list is not
-provided, a default set will be used.
-Information on how to specify query configs (either as a list of JSON dicts or `QueryConfig` objects) can be found 
-[here](/reference/indices/composability_query.rst).
+The query will be executed recursively, starting from the root index, then the sub-indices.
+The default query engine for each index is called under the hood (i.e. `index.as_query_engine()`), unless otherwise configured by passing `custom_query_engines` to the `ComposableGraphQueryEngine`.
+Below we show an example that configure the tree index retrievers to use `child_branch_factor=2` (instead of the default `child_branch_factor=1`).
+
+
+More detail on how to configure `ComposableGraphQueryEngine` can be found [here](/reference/query/query_engines/graph_query_engine.rst).
 
 
 ```python
-# set query config. An example is provided below
-query_configs = [
-    {
-        # NOTE: index_struct_id is optional
-        "index_struct_id": "<index_id_1>",
-        "index_struct_type": "tree",
-        "query_mode": "default",
-        "query_kwargs": {
-            "child_branch_factor": 2
-        }
-    },
-    {
-        "index_struct_type": "keyword_table",
-        "query_mode": "simple",
-        "query_kwargs": {}
-    },
-    ...
-]
-response = graph.query("Where did the author grow up?", query_configs=query_configs)
+# set custom retrievers. An example is provided below
+custom_query_engines = {
+    index.index_id: index.as_query_engine(
+        child_branch_factor=2
+    ) 
+    for index in [index1, index2, index3]
+}
+query_engine = graph.as_query_engine(
+    custom_query_engines=custom_query_engines
+)
+response = query_engine.query("Where did the author grow up?")
 ```
 
-> Note that specifying query config for index struct by id
+> Note that specifying custom retriever for index by id
 > might require you to inspect e.g., `index1.index_struct.index_id`.
 > Alternatively, you can explicitly set it as follows:
 ```python

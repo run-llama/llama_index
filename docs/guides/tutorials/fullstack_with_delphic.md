@@ -299,7 +299,8 @@ async def receive(self, text_data):
     if self.index is not None:
         query_str = text_data_json["query"]
         modified_query_str = f"Please return a nicely formatted markdown string to this request:\n\n{query_str}"
-        response = self.index.query(modified_query_str)
+        query_engine = self.index.as_query_engine()
+        response = query_engine.query(modified_query_str)
 
         markdown_response = f"## Response\n\n{response}\n\n"
         if response.source_nodes:
@@ -318,10 +319,10 @@ To load the collection model, the `load_collection_model` function is used, whic
 in [`delphic/utils/collections.py`](https://github.com/JSv4/Delphic/blob/main/delphic/utils/collections.py). This
 function retrieves the collection object with the given collection ID, checks if a JSON file for the collection model
 exists, and if not, creates one. Then, it sets up the `LLMPredictor` and `ServiceContext` before loading
-the `GPTSimpleVectorIndex` using the cache file.
+the `GPTVectorStoreIndex` using the cache file.
 
 ```python
-async def load_collection_model(collection_id: str | int) -> GPTSimpleVectorIndex:
+async def load_collection_model(collection_id: str | int) -> GPTVectorStoreIndex:
     """
     Load the Collection model from cache or the database, and return the index.
 
@@ -329,14 +330,14 @@ async def load_collection_model(collection_id: str | int) -> GPTSimpleVectorInde
         collection_id (Union[str, int]): The ID of the Collection model instance.
 
     Returns:
-        GPTSimpleVectorIndex: The loaded index.
+        GPTVectorStoreIndex: The loaded index.
 
     This function performs the following steps:
     1. Retrieve the Collection object with the given collection_id.
     2. Check if a JSON file with the name '/cache/model_{collection_id}.json' exists.
     3. If the JSON file doesn't exist, load the JSON from the Collection.model FileField and save it to
        '/cache/model_{collection_id}.json'.
-    4. Call GPTSimpleVectorIndex.load_from_disk with the cache_file_path.
+    4. Call GPTVectorStoreIndex.load_from_disk with the cache_file_path.
     """
     # Retrieve the Collection object
     collection = await Collection.objects.aget(id=collection_id)
@@ -365,9 +366,9 @@ async def load_collection_model(collection_id: str | int) -> GPTSimpleVectorInde
         )
         service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
-        # Call GPTSimpleVectorIndex.load_from_disk
+        # Call GPTVectorStoreIndex.load_from_disk
         logger.info("load_collection_model() - Load llama index")
-        index = GPTSimpleVectorIndex.load_from_disk(
+        index = GPTVectorStoreIndex.load_from_disk(
             cache_file_path, service_context=service_context
         )
         logger.info(

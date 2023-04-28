@@ -13,10 +13,11 @@ a simple in-memory vector store for you to get started, but you can also choose
 to use any one of our [vector store integrations](/how_to/integrations/vector_stores.md):
 
 ```python
-from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTSimpleVectorIndex.from_documents(documents)
-response = index.query("What did the author do growing up?")
+index = GPTVectorStoreIndex.from_documents(documents)
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 print(response)
 
 ```
@@ -40,7 +41,10 @@ Empirically, setting `response_mode="tree_summarize"` also leads to better summa
 ```python
 index = GPTListIndex.from_documents(documents)
 
-response = index.query("<summarization_query>", response_mode="tree_summarize")
+query_engine = index.as_query_engine(
+    response_mode="tree_summarize"
+)
+response = query_engine.query("<summarization_query>")
 ```
 
 ### Queries over Structured Data
@@ -62,14 +66,15 @@ Specifically, compose a list index over your subindices. A list index inherently
 it can synthesize information across your heterogeneous data sources.
 
 ```python
-from llama_index import GPTSimpleVectorIndex, GPTListIndex
+from llama_index import GPTVectorStoreIndex, GPTListIndex
 from llama_index.indices.composability import ComposableGraph
 
-index1 = GPTSimpleVectorIndex.from_documents(notion_docs)
-index2 = GPTSimpleVectorIndex.from_documents(slack_docs)
+index1 = GPTVectorStoreIndex.from_documents(notion_docs)
+index2 = GPTVectorStoreIndex.from_documents(slack_docs)
 
 graph = ComposableGraph.from_indices(GPTListIndex, [index1, index2], index_summaries=["summary1", "summary2"])
-response = graph.query("<query_str>", mode="recursive", query_configs=...)
+query_engine = graph.as_query_engine()
+response = query_engine.query("<query_str>")
 
 ```
 
@@ -91,26 +96,25 @@ A `GPTKeywordTableIndex` uses keyword matching, and a `GPTVectorStoreIndex` uses
 embedding cosine similarity.
 
 ```python
-from llama_index import GPTTreeIndex, GPTSimpleVectorIndex
+from llama_index import GPTTreeIndex, GPTVectorStoreIndex
 from llama_index.indices.composability import ComposableGraph
 
 ...
 
 # subindices
-index1 = GPTSimpleVectorIndex.from_documents(notion_docs)
-index2 = GPTSimpleVectorIndex.from_documents(slack_docs)
+index1 = GPTVectorStoreIndex.from_documents(notion_docs)
+index2 = GPTVectorStoreIndex.from_documents(slack_docs)
 
 # tree index for routing
-tree_index = ComposableGraph.from_indices(
+graph = ComposableGraph.from_indices(
     GPTTreeIndex, 
     [index1, index2],
     index_summaries=["summary1", "summary2"]
 )
 
-response = tree_index.query(
-    "In Notion, give me a summary of the product roadmap.",
-    mode="recursive",
-    query_configs=...
+query_engine = graph.as_query_engine()
+response = query_engine.query(
+    "In Notion, give me a summary of the product roadmap."
 )
 
 ```

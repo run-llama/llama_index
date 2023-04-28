@@ -7,19 +7,14 @@ An index that that is built on top of an existing vector store.
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from gpt_index.async_utils import run_async_tasks
-from gpt_index.constants import VECTOR_STORE_KEY
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.data_structs.node_v2 import ImageNode, IndexNode, Node
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
+from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.vector_store.base_query import GPTVectorStoreIndexQuery
+from gpt_index.storage.storage_context import StorageContext
 from gpt_index.token_counter.token_counter import llm_token_counter
-from gpt_index.vector_stores.registry import (
-    load_vector_store_from_dict,
-    save_vector_store_to_dict,
-)
-from gpt_index.vector_stores.simple import SimpleVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStore
 
 
@@ -27,13 +22,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     """Base GPT Vector Store Index.
 
     Args:
-        embed_model (Optional[BaseEmbedding]): Embedding model to use for
-            embedding similarity.
-        vector_store (Optional[VectorStore]): Vector store to use for
-            embedding similarity. See :ref:`Ref-Indices-VectorStore-Stores`
-            for more details.
         use_async (bool): Whether to use asynchronous calls. Defaults to False.
-
     """
 
     index_struct_cls = IndexDict
@@ -43,28 +32,34 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
-        vector_store: Optional[VectorStore] = None,
+        storage_context: Optional[StorageContext] = None,
         use_async: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._vector_store = vector_store or SimpleVectorStore()
-
         self._use_async = use_async
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
+            storage_context=storage_context,
             **kwargs,
         )
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTVectorStoreIndexQuery,
-            QueryMode.EMBEDDING: GPTVectorStoreIndexQuery,
-        }
+    @property
+    def vector_store(self) -> VectorStore:
+        return self._vector_store
+
+    def as_retriever(
+        self, mode: QueryMode = QueryMode.DEFAULT, **kwargs: Any
+    ) -> BaseRetriever:
+        # NOTE: lazy import
+        from gpt_index.indices.vector_store.retrievers import VectorIndexRetriever
+
+        if mode in [QueryMode.DEFAULT, QueryMode.EMBEDDING]:
+            return VectorIndexRetriever(self, **kwargs)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
 
     def _get_node_embedding_results(
         self, nodes: Sequence[Node], existing_node_ids: Set
@@ -234,51 +229,3 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         """Delete a document."""
         self._index_struct.delete(doc_id)
         self._vector_store.delete(doc_id)
-
-    @classmethod
-    def load_from_dict(
-        cls, result_dict: Dict[str, Any], **kwargs: Any
-    ) -> "BaseGPTIndex":
-        """Load index from string (in JSON-format).
-
-        This method loads the index from a JSON string. The index data
-        structure itself is preserved completely. If the index is defined over
-        subindices, those subindices will also be preserved (and subindices of
-        those subindices, etc.).
-
-        NOTE: load_from_string should not be used for indices composed on top
-        of other indices. Please define a `ComposableGraph` and use
-        `save_to_string` and `load_from_string` on that instead.
-
-        Args:
-            index_string (str): The index string (in JSON-format).
-
-        Returns:
-            BaseGPTIndex: The loaded index.
-
-        """
-        vector_store = load_vector_store_from_dict(
-            result_dict[VECTOR_STORE_KEY], **kwargs
-        )
-        return super().load_from_dict(result_dict, vector_store=vector_store, **kwargs)
-
-    def save_to_dict(self, **save_kwargs: Any) -> dict:
-        """Save to string.
-
-        This method stores the index into a JSON string.
-
-        NOTE: save_to_string should not be used for indices composed on top
-        of other indices. Please define a `ComposableGraph` and use
-        `save_to_string` and `load_from_string` on that instead.
-
-        Returns:
-            dict: The JSON dict of the index.
-
-        """
-        out_dict = super().save_to_dict()
-        out_dict[VECTOR_STORE_KEY] = save_vector_store_to_dict(self._vector_store)
-        return out_dict
-
-    @property
-    def query_context(self) -> Dict[str, Any]:
-        return {"vector_store": self._vector_store}

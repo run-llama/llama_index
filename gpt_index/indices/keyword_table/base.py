@@ -9,18 +9,14 @@ existing keywords in the table.
 """
 
 from abc import abstractmethod
-from typing import Any, Optional, Sequence, Set
+from typing import Any, Optional, Sequence, Set, Union
 
 from gpt_index.async_utils import run_async_tasks
 from gpt_index.data_structs.data_structs_v2 import KeywordTable
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
+from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
-from gpt_index.indices.keyword_table.query import (
-    GPTKeywordTableGPTQuery,
-    GPTKeywordTableRAKEQuery,
-    GPTKeywordTableSimpleQuery,
-)
 from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.default_prompts import (
@@ -82,14 +78,24 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             **kwargs,
         )
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTKeywordTableGPTQuery,
-            QueryMode.SIMPLE: GPTKeywordTableSimpleQuery,
-            QueryMode.RAKE: GPTKeywordTableRAKEQuery,
-        }
+    def as_retriever(
+        self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
+    ) -> BaseRetriever:
+        # NOTE: lazy import
+        from gpt_index.indices.keyword_table.retrievers import (
+            KeywordTableGPTRetriever,
+            KeywordTableRAKERetriever,
+            KeywordTableSimpleRetriever,
+        )
+
+        if mode == QueryMode.DEFAULT:
+            return KeywordTableGPTRetriever(self, **kwargs)
+        elif mode == QueryMode.SIMPLE:
+            return KeywordTableSimpleRetriever(self, **kwargs)
+        elif mode == QueryMode.RAKE:
+            return KeywordTableRAKERetriever(self, **kwargs)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
 
     @abstractmethod
     def _extract_keywords(self, text: str) -> Set[str]:
