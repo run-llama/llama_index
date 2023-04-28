@@ -1,7 +1,14 @@
 from dataclasses import dataclass
 from typing import Optional
+from pathlib import Path
 from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from gpt_index.storage.docstore.types import BaseDocumentStore
+from gpt_index.storage.docstore.types import DEFAULT_PERSIST_FNAME as DOCSTORE_FNAME
+from gpt_index.storage.index_store.types import (
+    DEFAULT_PERSIST_FNAME as INDEX_STORE_FNAME,
+)
+from gpt_index.vector_stores.simple import DEFAULT_PERSIST_FNAME as VECTOR_STORE_FNAME
+
 from gpt_index.storage.index_store.simple_index_store import SimpleIndexStore
 from gpt_index.storage.index_store.types import BaseIndexStore
 from gpt_index.vector_stores.simple import SimpleVectorStore
@@ -47,7 +54,22 @@ class StorageContext:
         vector_store = vector_store or SimpleVectorStore.from_persist_dir(persist_dir)
         return cls(docstore, index_store, vector_store)
 
-    def persist(self) -> None:
-        self.docstore.persist()
-        self.index_store.persist()
-        self.vector_store.persist()
+    def persist(
+        self,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        docstore_fname: str = DOCSTORE_FNAME,
+        index_store_fname: str = INDEX_STORE_FNAME,
+        vector_store_fname: str = VECTOR_STORE_FNAME,
+    ) -> None:
+        """Persist the storage context.
+
+        Args:
+            persist_dir (str): directory to persist the storage context
+
+        """
+        docstore_path = str(Path(persist_dir) / docstore_fname)
+        index_store_path = str(Path(persist_dir) / index_store_fname)
+        vector_store_path = str(Path(persist_dir) / vector_store_fname)
+        self.docstore.persist(persist_path=docstore_path)
+        self.index_store.persist(persist_path=index_store_path)
+        self.vector_store.persist(persist_path=vector_store_path)

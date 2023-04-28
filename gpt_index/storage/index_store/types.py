@@ -2,6 +2,11 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
+import os
+
+DEFAULT_PERSIST_DIR = "./storage"
+DEFAULT_PERSIST_FNAME = "index_store.json"
+DEFAULT_PERSIST_PATH = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
 
 
 class BaseIndexStore(ABC):
@@ -19,5 +24,6 @@ class BaseIndexStore(ABC):
     ) -> Optional[V2IndexStruct]:
         pass
 
-    def persist(self) -> None:
-        pass
+    def persist(self, persist_path: str = DEFAULT_PERSIST_PATH) -> None:
+        """Persist the index store to disk."""
+        raise NotImplementedError("persist is not implemented.")

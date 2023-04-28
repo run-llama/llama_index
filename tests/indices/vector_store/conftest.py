@@ -19,7 +19,7 @@ def faiss_vector_store(tmp_path: pathlib.Path) -> FaissVectorStore:
     # NOTE: mock faiss index
     faiss_index = MockFaissIndex()
 
-    return FaissVectorStore(faiss_index=faiss_index, persist_dir=str(tmp_path))
+    return FaissVectorStore(faiss_index=faiss_index)
 
 
 @pytest.fixture()

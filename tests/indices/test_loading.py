@@ -30,7 +30,7 @@ def test_load_index_from_storage_simple(
     )
 
     # persist storage to disk
-    storage_context.persist()
+    storage_context.persist(str(tmp_path))
 
     # load storage context
     new_storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
@@ -71,7 +71,7 @@ def test_load_index_from_storage_multiple(
     list_id = list_index.index_id
 
     # persist storage to disk
-    storage_context.persist()
+    storage_context.persist(str(tmp_path))
 
     # load storage context
     new_storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
@@ -115,7 +115,7 @@ def test_load_index_from_storage_retrieval_result_identical(
     nodes = index.as_retriever().retrieve("test query str")
 
     # persist storage to disk
-    storage_context.persist()
+    storage_context.persist(str(tmp_path))
 
     # load storage context
     new_storage_context = StorageContext.from_defaults(persist_dir=str(tmp_path))
@@ -142,9 +142,7 @@ def test_load_index_from_storage_faiss_vector_store(
     storage_context = StorageContext.from_defaults(
         docstore=SimpleDocumentStore.from_persist_dir(str(tmp_path)),
         index_store=SimpleIndexStore.from_persist_dir(str(tmp_path)),
-        vector_store=FaissVectorStore(
-            faiss_index=faiss.IndexFlatL2(5), persist_dir=str(tmp_path)
-        ),
+        vector_store=FaissVectorStore(faiss_index=faiss.IndexFlatL2(5)),
     )
 
     # construct index

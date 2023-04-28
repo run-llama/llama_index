@@ -3,10 +3,11 @@ from typing import Optional
 from gpt_index.storage.docstore.keyval_docstore import KVDocumentStore
 from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
 from gpt_index.storage.kvstore.types import BaseInMemoryKVStore
-
-
-DEFAULT_PERSIST_DIR = "./storage"
-DEFAULT_PERSIST_FNAME = "docstore.json"
+from gpt_index.storage.docstore.types import (
+    DEFAULT_PERSIST_PATH,
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
+)
 
 
 class SimpleDocumentStore(KVDocumentStore):
@@ -41,13 +42,13 @@ class SimpleDocumentStore(KVDocumentStore):
         """
 
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
-        simple_kvstore = SimpleKVStore(persist_path)
+        simple_kvstore = SimpleKVStore.from_persist_path(persist_path)
         return cls(simple_kvstore, namespace)
 
-    def persist(self) -> None:
+    def persist(self, persist_path: str = DEFAULT_PERSIST_PATH) -> None:
         """Persist the store."""
         if isinstance(self._kvstore, BaseInMemoryKVStore):
-            self._kvstore.persist()
+            self._kvstore.persist(persist_path)
 
 
 # alias for backwards compatibility

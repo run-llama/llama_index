@@ -3,12 +3,18 @@ from typing import Dict, List, Optional, Sequence
 from gpt_index.data_structs.node_v2 import Node
 
 from gpt_index.schema import BaseDocument
+import os
+
+
+DEFAULT_PERSIST_FNAME = "docstore.json"
+DEFAULT_PERSIST_DIR = "./storage"
+DEFAULT_PERSIST_PATH = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
 
 
 class BaseDocumentStore(ABC):
     # ===== Save/load =====
-    def persist(self) -> None:
-        pass
+    def persist(self, persist_path: str = DEFAULT_PERSIST_PATH) -> None:
+        raise NotImplementedError("persist is not implemented.")
 
     # ===== Main interface =====
     @property

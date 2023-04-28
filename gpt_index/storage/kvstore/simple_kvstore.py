@@ -11,6 +11,8 @@ from gpt_index.storage.kvstore.types import (
 
 logger = logging.getLogger(__name__)
 
+DATA_TYPE = Dict[str, Dict[str, dict]]
+
 
 class SimpleKVStore(BaseInMemoryKVStore):
     """Simple in-memory Key-Value store.
@@ -20,17 +22,9 @@ class SimpleKVStore(BaseInMemoryKVStore):
 
     """
 
-    def __init__(self, persist_path: str) -> None:
+    def __init__(self, data: Optional[DATA_TYPE] = None) -> None:
         """Init a SimpleKVStore."""
-        self._data: Dict[str, Dict[str, dict]] = {}
-        self._persist_path = persist_path
-
-        self.load()
-
-    @property
-    def persist_path(self) -> str:
-        """Return the path to persist the store."""
-        return self._persist_path
+        self._data: DATA_TYPE = data or {}
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
         """Put a key-value pair into the store."""
@@ -59,22 +53,25 @@ class SimpleKVStore(BaseInMemoryKVStore):
         except KeyError:
             return False
 
-    def persist(self) -> None:
+    def persist(self, persist_path: str) -> None:
         """Persist the store."""
-        dirpath = os.path.dirname(self._persist_path)
+        dirpath = os.path.dirname(persist_path)
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)
 
-        with open(self._persist_path, "w+") as f:
+        with open(persist_path, "w+") as f:
             json.dump(self._data, f)
 
-    def load(self) -> None:
-        """Load the store."""
-        if os.path.exists(self._persist_path):
-            logger.info(f"Loading {__name__} from {self._persist_path}.")
-            with open(self._persist_path, "r+") as f:
-                self._data = json.load(f)
+    @classmethod
+    def from_persist_path(cls, persist_path: str) -> "SimpleKVStore":
+        """Create a SimpleKVStore from a persist directory."""
+        data = {}
+        if os.path.exists(persist_path):
+            logger.info(f"Loading {__name__} from {persist_path}.")
+            with open(persist_path, "r+") as f:
+                data = json.load(f)
         else:
             logger.info(
-                f"No existing {__name__} found at {self._persist_path}, skipping load."
+                f"No existing {__name__} found at {persist_path}, skipping load."
             )
+        return cls(data)

@@ -18,4 +18,4 @@ def mongo_kvstore(mongo_client: MockMongoClient) -> MongoDBKVStore:
 @pytest.fixture()
 def simple_kvstore(tmp_path: Path) -> SimpleKVStore:
     file_path = str(tmp_path / "test_file.txt")
-    return SimpleKVStore(file_path)
+    return SimpleKVStore.from_persist_path(file_path)

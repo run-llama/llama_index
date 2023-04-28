@@ -14,6 +14,7 @@ from gpt_index.readers.schema.base import Document
 from gpt_index.storage.storage_context import StorageContext
 from gpt_index.vector_stores.faiss import FaissVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStoreQuery
+from tempfile import TemporaryDirectory
 
 
 def test_build_faiss(
@@ -65,9 +66,7 @@ def test_faiss_insert(
 def test_persist(tmp_path: Path) -> None:
     import faiss
 
-    vector_store = FaissVectorStore(
-        faiss_index=faiss.IndexFlatL2(5), persist_dir=str(tmp_path)
-    )
+    vector_store = FaissVectorStore(faiss_index=faiss.IndexFlatL2(5))
 
     vector_store.add(
         [
@@ -82,8 +81,7 @@ def test_persist(tmp_path: Path) -> None:
 
     result = vector_store.query(VectorStoreQuery(query_embedding=[0, 0, 0, 1, 1]))
 
-    vector_store.persist()
-
+    vector_store.persist(str(tmp_path))
     new_vector_store = FaissVectorStore.from_persist_dir(str(tmp_path))
     new_result = new_vector_store.query(
         VectorStoreQuery(query_embedding=[0, 0, 0, 1, 1])
