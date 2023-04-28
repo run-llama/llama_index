@@ -76,9 +76,9 @@ class ComposableGraph:
             assert isinstance(index.index_struct, V2IndexStruct)
             index_node = IndexNode(
                 text=summary,
-                index_id=index.index_struct.index_id,
+                index_id=index.index_id,
                 relationships={
-                    DocumentRelationship.SOURCE: index.index_struct.index_id
+                    DocumentRelationship.SOURCE: index.index_id
                 },
             )
             index_nodes.append(index_node)
@@ -94,8 +94,8 @@ class ComposableGraph:
         ]
 
         return cls(
-            all_indices={index.index_struct.index_id: index for index in all_indices},
-            root_id=root_index.index_struct.index_id,
+            all_indices={index.index_id: index for index in all_indices},
+            root_id=root_index.index_id,
         )
 
     def get_index(self, index_struct_id: Optional[str] = None) -> BaseGPTIndex:

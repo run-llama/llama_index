@@ -138,7 +138,7 @@ graph = ComposableGraph.from_indices(
 # get root index
 root_index = graph.get_index(graph.index_struct.root_id, GPTSimpleKeywordTableIndex)
 # set id of root index
-root_index.index_struct.index_id = "compare_contrast"
+root_index.set_index_id("compare_contrast")
 root_summary = (
     "This index contains Wikipedia articles about multiple cities. "
     "Use this index if you want to compare multiple cities. "
