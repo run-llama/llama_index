@@ -13,8 +13,7 @@ Querying an index involves a three main components:
 
 - **Retrievers**: A retriever class retrieves a set of Nodes from an index given a query.
 - **Response Synthesizer**: This class takes in a set of Nodes and synthesizes an answer given a query.
-- **Query Engine**: This class takes in a query and returns a Response object. It can make use
-   of Retrievers and Response Synthesizer modules under the hood.
+- **Query Engine**: This class takes in a query and returns a Response object. It can make use of Retrievers and Response Synthesizer modules under the hood.
 - **Query Bundle**: This is the input to the query classes 
 
 
