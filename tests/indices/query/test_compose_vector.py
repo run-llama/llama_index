@@ -156,15 +156,15 @@ def test_recursive_query_vector_table_query_configs(
     )
     assert isinstance(graph, ComposableGraph)
 
-    custom_retrievers = {
-        "keyword_table": graph.root_index.as_retriever(
+    custom_query_engines = {
+        "keyword_table": graph.root_index.as_query_engine(
             query_keyword_extract_template=MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
         ),
-        "vector1": vector1.as_retriever(similarity_top_k=2),
-        "vector2": vector2.as_retriever(similarity_top_k=2),
+        "vector1": vector1.as_query_engine(similarity_top_k=2),
+        "vector2": vector2.as_query_engine(similarity_top_k=2),
     }
 
-    query_engine = graph.as_query_engine(custom_retrievers=custom_retrievers)
+    query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
     response = query_engine.query("Foo?")  # type: ignore
     assert str(response) == ("Foo?:Foo?:This is another test.:This is a test v2.")
 
