@@ -6,7 +6,7 @@ from typing import Any, Callable, Optional
 import pandas as pd
 from langchain.input import print_text
 
-from gpt_index.callbacks.schema import CBEvent, CBEventType
+from gpt_index.callbacks.schema import CBEventType
 from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.struct_store.pandas import GPTPandasIndex
@@ -111,14 +111,21 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
         """Answer a query."""
         context = self._get_table_context()
 
-        event_id = self._service_context.callback_manager.on_event_start(CBEvent(CBEventType.LLM, payload={"template": self._pandas_prompt, "text": query_str}))
+        event_id = self._service_context.callback_manager.on_event_start(
+            CBEventType.LLM,
+            payload={"template": self._pandas_prompt, "text": query_bundle.query_str},
+        )
         pandas_response_str, _ = self._service_context.llm_predictor.predict(
             self._pandas_prompt,
             df_str=context,
             query_str=query_bundle.query_str,
             instruction_str=self._instruction_str,
         )
-        self._service_context.callback_manager.on_event_end(CBEvent(CBEventType.LLM, payload={"response": pandas_response_str}), event_id=event_id)
+        self._service_context.callback_manager.on_event_end(
+            CBEventType.LLM,
+            payload={"response": pandas_response_str},
+            event_id=event_id,
+        )
         if self._verbose:
             print_text(f"> Pandas Instructions:\n" f"```\n{pandas_response_str}\n```\n")
         pandas_output = self._output_processor(
