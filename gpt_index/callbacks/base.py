@@ -1,7 +1,6 @@
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from gpt_index.callbacks.schema import CBEventType
 
@@ -22,7 +21,7 @@ class BaseCallbackHandler(ABC):
     def on_event_start(
         self,
         event_type: CBEventType,
-        payload: Dict[str, Any] = field(default_factory=dict),
+        payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
         **kwargs: Any
     ) -> str:
@@ -32,7 +31,7 @@ class BaseCallbackHandler(ABC):
     def on_event_end(
         self,
         event_type: CBEventType,
-        payload: Dict[str, Any] = field(default_factory=dict),
+        payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
         **kwargs: Any
     ) -> None:
@@ -49,7 +48,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
     def on_event_start(
         self,
         event_type: CBEventType,
-        payload: Dict[str, Any] = field(default_factory=dict),
+        payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
         **kwargs: Any
     ) -> str:
@@ -63,7 +62,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
     def on_event_end(
         self,
         event_type: CBEventType,
-        payload: Dict[str, Any] = field(default_factory=dict),
+        payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
         **kwargs: Any
     ) -> None:
