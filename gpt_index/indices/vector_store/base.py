@@ -140,6 +140,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         event_id = self._service_context.callback_manager.on_event_start(
             CBEventType.EMBEDDING
         )
+
         # call embedding model to get embeddings
         (
             result_ids,
