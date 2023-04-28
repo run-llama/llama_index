@@ -36,7 +36,7 @@ class SimpleDocumentStore(KVDocumentStore):
         """Create a SimpleDocumentStore from a persist directory.
 
         Args:
-            persist_dir (Union[str, Path]): directory to persist the store
+            persist_dir (str): directory to persist the store
             namespace (Optional[str]): namespace for the docstore
 
         """
@@ -53,7 +53,7 @@ class SimpleDocumentStore(KVDocumentStore):
         """Create a SimpleDocumentStore from a persist directory.
 
         Args:
-            persist_dir (Union[str, Path]): directory to persist the store
+            persist_path (str): Path to persist the store
             namespace (Optional[str]): namespace for the docstore
 
         """
