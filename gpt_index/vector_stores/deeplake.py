@@ -4,6 +4,7 @@ An index that is built within DeepLake.
 
 """
 import logging
+from functools import partial
 from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
@@ -66,6 +67,7 @@ class DeepLakeVectorStore(VectorStore):
     def __init__(
         self,
         dataset_path: str = "llama_index",
+        deeplake_dataset=None,
         token: Optional[str] = None,
         read_only: Optional[bool] = False,
         ingestion_batch_size: int = 1024,
@@ -87,9 +89,16 @@ class DeepLakeVectorStore(VectorStore):
                 "Could not import deeplake python package. "
                 "Please install it with `pip install deeplake`."
             )
+        self.deeplake_dataset = deeplake_dataset
         self._deeplake = deeplake
 
-        if deeplake.exists(dataset_path, token=token) and not overwrite:
+        if deeplake_dataset:
+            self.ds = self.deeplake_dataset
+        elif (
+            deeplake.exists(dataset_path, token=token)
+            and not overwrite
+            and not deeplake_dataset
+        ):
             self.ds = deeplake.load(dataset_path, token=token, read_only=read_only)
             logger.warning(
                 f"Deep Lake Dataset in {dataset_path} already exists, "
@@ -240,13 +249,24 @@ class DeepLakeVectorStore(VectorStore):
             self.ds.commit(f"deleted {len(ids)} samples", allow_empty=True)
             self.ds.summary()
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(
+        self, query: VectorStoreQuery, filter: Optional[str] = None
+    ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
             similarity_top_k (int): top k most similar nodes
         """
+        if filter:
+            if isinstance(filter, dict):
+                filter = partial(dp_filter, filter=filter)
+
+            view = self.ds.filter(filter)
+            return DeepLakeVectorStore(
+                deeplake_dataset=view, token=self.token, read_only=self.read_only
+            )
+
         query_embedding = cast(List[float], query.query_embedding)
         embeddings = self.ds.embedding.numpy(fetch_chunks=True)
         embedding_ids = self.ds.ids.numpy(fetch_chunks=True)

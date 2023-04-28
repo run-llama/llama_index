@@ -1,10 +1,13 @@
 """Deprecated vector store indices."""
 
+import uuid
+from dataclasses import field
 from typing import Any, Callable, Dict, Optional, Sequence, Type
 
 from gpt_index.data_structs.data_structs_v2 import (
     ChatGPTRetrievalPluginIndexDict,
     ChromaIndexDict,
+    DeepLakeIndexDict,
     FaissIndexDict,
     IndexDict,
     MilvusIndexDict,
@@ -14,7 +17,8 @@ from gpt_index.data_structs.data_structs_v2 import (
     SimpleIndexDict,
     WeaviateIndexDict,
 )
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import ImageNode, IndexNode, Node
+from gpt_index.docstore.registry import get_default_docstore
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
@@ -472,6 +476,8 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
         DeepLakeVectorstore: Vectorstore that supports add, delete, and query.
     """
 
+    index_struct_cls: Type[IndexDict] = DeepLakeIndexDict
+
     def __init__(
         self,
         nodes: Optional[Sequence[Node]] = None,
@@ -486,7 +492,7 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
         token: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        vector_store = DeepLakeVectorStore(
+        self.vector_store = vector_store or DeepLakeVectorStore(
             dataset_path=dataset_path,
             overwrite=overwrite,
             read_only=read_only,
@@ -498,9 +504,39 @@ class GPTDeepLakeIndex(GPTVectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
-            vector_store=vector_store,
+            vector_store=self.vector_store,
             **kwargs,
         )
+        self.nodes = nodes
+
+    def filter(self, filter_dict):
+        vector_store = self.vector_store.query(query=None, filter=filter_dict)
+        docstore = get_default_docstore()
+        doc_ids = vector_store.ds.ids.numpy(fetch_chunks=True)[:, 0].tolist()
+
+        index_struct = self._construc_index_struct(doc_ids, docstore)
+        return GPTDeepLakeIndex(
+            index_struct=index_struct,
+            service_context=self.service_context,
+            docstore=docstore,
+            vector_store=vector_store,
+            read_only=True,
+        )
+
+    def _construc_index_struct(self, doc_ids, docstore):
+        nodes = []
+
+        for node in self.nodes:
+            if node.doc_id in doc_ids:
+                nodes.append(node)
+
+        index_struct = DeepLakeIndexDict()
+
+        for node, id in zip(nodes, doc_ids):
+            index_struct.add_node(node, text_id=id)
+            docstore.add_documents([node], allow_update=True)
+
+        return index_struct
 
 
 class GPTChromaIndex(GPTVectorStoreIndex):

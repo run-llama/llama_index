@@ -99,9 +99,12 @@ class DeepLakeReader(BaseReader):
         except Exception:
             raise TensorDoesNotExistError("embedding")
 
-        indices = vector_search(
-            query_vector, embeddings, distance_metric=distance_metric, limit=limit
-        )
+        if query_vector:
+            indices = vector_search(
+                query_vector, embeddings, distance_metric=distance_metric, limit=limit
+            )
+        else:
+            indices = range(len(dataset))
 
         documents = []
         for idx in indices:
