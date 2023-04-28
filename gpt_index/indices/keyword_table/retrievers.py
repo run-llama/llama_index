@@ -106,9 +106,6 @@ class BaseKeywordTableRetriever(BaseRetriever):
                     f"{truncate_text(node.get_text(), 50)}"
                 )
         sorted_nodes_with_scores = [NodeWithScore(node) for node in sorted_nodes]
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.RETRIEVE, payload={"nodes": sorted_nodes}
-        )
 
         return sorted_nodes_with_scores
 
