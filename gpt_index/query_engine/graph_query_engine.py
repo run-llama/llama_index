@@ -37,79 +37,15 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         graph: ComposableGraph,
-        response_synthesizer: Optional[ResponseSynthesizer] = None,
-        custom_retrievers: Optional[Dict[str, BaseRetriever]] = None,
+        custom_query_engines: Optional[Dict[str, BaseQueryEngine]] = None,
         recursive: bool = True,
     ) -> None:
         """Init params."""
         self._graph = graph
-        self._response_synthesizer = (
-            response_synthesizer or ResponseSynthesizer.from_args()
-        )
-        self._custom_retrievers = custom_retrievers or {}
+        self._custom_query_engines = custom_query_engines or {}
 
         # additional configs
         self._recursive = recursive
-
-    @classmethod
-    def from_args(
-        cls,
-        graph: ComposableGraph,
-        custom_retrievers: Optional[Dict[str, BaseRetriever]] = None,
-        # response synthesizer args
-        service_context: Optional[ServiceContext] = None,
-        text_qa_template: Optional[QuestionAnswerPrompt] = None,
-        refine_template: Optional[RefinePrompt] = None,
-        simple_template: Optional[SimpleInputPrompt] = None,
-        response_mode: ResponseMode = ResponseMode.DEFAULT,
-        response_kwargs: Optional[Dict] = None,
-        use_async: bool = False,
-        streaming: bool = False,
-        optimizer: Optional[BaseTokenUsageOptimizer] = None,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        verbose: bool = False,
-        # class-specific args
-        **kwargs: Any,
-    ) -> "ComposableGraphQueryEngine":
-        """Initialize query engine from args.
-
-        Args:
-            graph (ComposableGraph): A ComposableGraph object.
-            custom_retrievers (Optional[Dict[str, BaseRetriever]]): A dictionary of
-                custom retrievers.
-            service_context (Optional[ServiceContext]): A ServiceContext object.
-            text_qa_template (Optional[QuestionAnswerPrompt]): A QuestionAnswerPrompt
-            refine_template (Optional[RefinePrompt]): A RefinePrompt object.
-            simple_template (Optional[SimpleInputPrompt]): A SimpleInputPrompt object.
-            response_mode (ResponseMode): A response mode (e.g.
-                "default", "compact", "tree_summarize").
-            response_kwargs (Optional[Dict]): A dictionary of response kwargs.
-            use_async (bool): Whether to use async.
-            streaming (bool): Whether to stream.
-            optimizer (Optional[BaseTokenUsageOptimizer]): A BaseTokenUsageOptimizer
-            node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
-                BaseNodePostprocessor objects.
-            verbose (bool): Whether to print debug info.
-
-        """
-        response_synthesizer = ResponseSynthesizer.from_args(
-            service_context=service_context,
-            text_qa_template=text_qa_template,
-            refine_template=refine_template,
-            simple_template=simple_template,
-            response_mode=response_mode,
-            response_kwargs=response_kwargs,
-            use_async=use_async,
-            streaming=streaming,
-            optimizer=optimizer,
-            node_postprocessors=node_postprocessors,
-            verbose=verbose,
-        )
-        return cls(
-            graph=graph,
-            custom_retrievers=custom_retrievers,
-            response_synthesizer=response_synthesizer,
-        )
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self._query_index(query_bundle, index_id=None, level=0)
@@ -126,12 +62,12 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         """Query a single index."""
         index_id = index_id or self._graph.root_id
 
-        # get retriever
-        if index_id in self._custom_retrievers:
-            retriever = self._custom_retrievers[index_id]
+        # get query engine
+        if index_id in self._custom_query_engines:
+            query_engine = self._custom_query_engines[index_id]
         else:
-            retriever = self._graph.get_index(index_id).as_retriever()
-        nodes = retriever.retrieve(query_bundle)
+            query_engine = self._graph.get_index(index_id).as_query_engine()
+        nodes = query_engine.retrieve(query_bundle)
 
         if self._recursive:
             # do recursion here
@@ -143,11 +79,11 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
                 )
                 nodes_for_synthesis.append(node_with_score)
                 additional_source_nodes.extend(source_nodes)
-            response = self._response_synthesizer.synthesize(
+            response = query_engine.synthesize(
                 query_bundle, nodes_for_synthesis, additional_source_nodes
             )
         else:
-            response = self._response_synthesizer.synthesize(query_bundle, nodes)
+            response = query_engine.synthesize(query_bundle, nodes)
 
         return response
 
