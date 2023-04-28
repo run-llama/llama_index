@@ -2,7 +2,7 @@
 import logging
 from typing import Any, List, Optional, Tuple
 
-from gpt_index.callbacks.schema import CBEvent, CBEventType
+from gpt_index.callbacks.schema import CBEventType
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.query.embedding_utils import (
@@ -91,16 +91,22 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
     ) -> Tuple[List[float], List[List[float]]]:
         """Get top nodes by similarity to the query."""
         if query_bundle.embedding is None:
-            event_id = self._index._service_context.callback_manager.on_event_start(CBEvent(CBEventType.EMBEDDING, payload={"num_texts": 1}))
+            event_id = self._index._service_context.callback_manager.on_event_start(
+                CBEventType.EMBEDDING, payload={"num_texts": 1}
+            )
             query_bundle.embedding = (
                 self._index._service_context.embed_model.get_agg_embedding_from_queries(
                     query_bundle.embedding_strs
                 )
             )
-            self._index._service_context.callback_manager.on_event_end(CBEvent(CBEventType.EMBEDDING), event_id=event_id)
+            self._index._service_context.callback_manager.on_event_end(
+                CBEventType.EMBEDDING, event_id=event_id
+            )
         node_embeddings: List[List[float]] = []
 
-        event_id = self._index._service_context.callback_manager.on_event_start(CBEvent(CBEventType.EMBEDDING, payload={"num_texts": len(nodes)}))
+        event_id = self._index._service_context.callback_manager.on_event_start(
+            CBEventType.EMBEDDING, payload={"num_texts": len(nodes)}
+        )
         for node in nodes:
             if node.embedding is None:
                 node.embedding = (
@@ -110,5 +116,7 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
                 )
 
             node_embeddings.append(node.embedding)
-        self._index._service_context.callback_manager.on_event_end(CBEvent(CBEventType.EMBEDDING), event_id=event_id)
+        self._index._service_context.callback_manager.on_event_end(
+            CBEventType.EMBEDDING, event_id=event_id
+        )
         return query_bundle.embedding, node_embeddings
