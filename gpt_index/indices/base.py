@@ -122,6 +122,10 @@ class BaseGPTIndex(Generic[IS], ABC):
             index_id (str): Index id to set.
 
         """
+        # delete the old index struct
+        old_id = self._index_struct.index_id
+        self._storage_context.index_store.delete_index_struct(old_id)
+        # add the new index struct
         self._index_struct.index_id = index_id
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
