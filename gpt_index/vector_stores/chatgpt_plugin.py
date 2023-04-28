@@ -82,23 +82,10 @@ class ChatGPTRetrievalPluginClient(VectorStore):
         self._s = requests.Session()
         self._s.mount("http://", HTTPAdapter(max_retries=self._retries))
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        return cls(**config_dict)
-
     @property
     def client(self) -> None:
         """Get client."""
         return None
-
-    @property
-    def config_dict(self) -> dict:
-        """Get config dict."""
-        return {
-            "endpoint_url": self._endpoint_url,
-            "batch_size": self._batch_size,
-            "retries": self._retries,
-        }
 
     def add(
         self,

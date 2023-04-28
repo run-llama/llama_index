@@ -1,7 +1,7 @@
 """Test milvus index."""
 
 
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.storage.storage_context import StorageContext
@@ -41,27 +41,6 @@ class MockMilvusVectorStore(VectorStore):
         self.password = password
         self.use_secure = use_secure
         self.overwrite = overwrite
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {
-            "collection_name": self.collection_name,
-            "index_params": self.index_params,
-            "search_params": self.search_params,
-            "dim": self.dim,
-            "host": self.host,
-            "port": self.port,
-            "user": self.user,
-            "password": self.password,
-            "use_secure": self.use_secure,
-            # # Set to false, dont want subsequent object to rewrite store
-            # "overwrite": False,
-        }
-
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "MockMilvusVectorStore":
-        return cls(**config_dict)
 
     @property
     def client(self) -> Any:

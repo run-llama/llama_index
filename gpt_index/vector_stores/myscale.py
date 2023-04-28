@@ -121,19 +121,10 @@ class MyScaleVectorStore(VectorStore):
             )
             self._create_index(dimension)
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        return cls(**config_dict)
-
     @property
     def client(self) -> Any:
         """Get client."""
         return self._client
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return self.config.__dict__
 
     def _create_index(self, dimension: int) -> None:
         index_params = (

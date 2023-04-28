@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 from unittest.mock import Mock
 from gpt_index.indices.service_context import ServiceContext
 
@@ -23,16 +23,6 @@ class MockWeaviateVectorStore(VectorStore):
     ) -> None:
         self.weaviate_client = weaviate_client
         self._class_prefix = class_prefix
-
-    @property
-    def config_dict(self) -> dict:
-        return {"class_prefix": "test_class_prefix"}
-
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "MockWeaviateVectorStore":
-        if "weaviate_client" not in config_dict:
-            raise ValueError("Missing Weaviate client!")
-        return cls(**config_dict)
 
     @property
     def client(self) -> Any:

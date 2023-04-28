@@ -74,21 +74,10 @@ class SimpleVectorStore(VectorStore):
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         return cls.from_persist_path(persist_path)
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "SimpleVectorStore":
-        return cls(**config_dict)
-
     @property
     def client(self) -> None:
         """Get client."""
         return None
-
-    @property
-    def config_dict(self) -> dict:
-        """Get config dict."""
-        return {
-            "simple_vector_store_data_dict": self._data.to_dict(),
-        }
 
     def get(self, text_id: str) -> List[float]:
         """Get embedding."""

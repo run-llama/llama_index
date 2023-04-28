@@ -17,14 +17,6 @@ class MockVectorStore(VectorStore):
             "attr2": "attr2_val",
         }
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "MockVectorStore":
-        return cls(config_dict)
-
-    @property
-    def config_dict(self) -> Dict[str, Any]:
-        return self._config_dict
-
     @property
     def client(self) -> Any:
         """Get client."""

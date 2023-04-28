@@ -4,7 +4,7 @@ An index that is built within Milvus.
 
 """
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 from uuid import uuid4
 
 from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
@@ -282,31 +282,10 @@ class MilvusVectorStore(VectorStore):
         self.search_params = self.default_search_params[index["index_type"]]
         self.search_params["metric_type"] = index["metric_type"]
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        return cls(**config_dict)
-
     @property
     def client(self) -> Any:
         """Get client."""
         return self.collection
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {
-            "collection_name": self.collection_name,
-            "index_params": self.index_params,
-            "search_params": self.search_params,
-            "dim": self.dim,
-            "host": self.host,
-            "port": self.port,
-            "user": self.user,
-            "password": self.password,
-            "use_secure": self.use_secure,
-            # Set to false, dont want subsequent object to rewrite store
-            # "overwrite": False,
-        }
 
     def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
         """Add the embeddings and their nodes into Milvus.

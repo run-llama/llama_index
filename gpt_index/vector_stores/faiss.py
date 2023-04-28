@@ -5,7 +5,7 @@ An index that that is built on top of an existing vector store.
 """
 
 import os
-from typing import Any, Dict, List, cast
+from typing import Any, List, cast
 
 import numpy as np
 
@@ -76,22 +76,6 @@ class FaissVectorStore(VectorStore):
         logger.info(f"Loading {__name__} from {persist_path}.")
         faiss_index = faiss.read_index(persist_path)
         return cls(faiss_index=faiss_index)
-
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "FaissVectorStore":
-        if "faiss_index" in config_dict:
-            return cls(**config_dict)
-        else:
-            persist_path = config_dict.get("persist_path", None)
-            if persist_path is not None:
-                return cls.from_persist_path(persist_path=persist_path)
-            else:
-                raise ValueError("Missing both faiss index and persist path!")
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {}
 
     def add(
         self,
