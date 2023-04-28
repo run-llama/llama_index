@@ -26,4 +26,4 @@ class BaseIndexStore(ABC):
 
     def persist(self, persist_path: str = DEFAULT_PERSIST_PATH) -> None:
         """Persist the index store to disk."""
-        raise NotImplementedError("persist is not implemented.")
+        pass
