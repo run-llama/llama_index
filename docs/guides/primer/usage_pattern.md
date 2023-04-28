@@ -190,51 +190,22 @@ See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
 ### [Optional] Save the index for future use
 
 By default, data is stored in-memory.
-To persist to disk (under `./storage`):
+To persist to disk:
 
 ```python
-index.storage_context.persist()
+index.storage_context.persist(persist_dir="<persist_dir>")
 ```
+You may omit persist_dir to persist to `./storage` by default.
 
 To reload from disk:
 ```python
 from llama_index import StorageContext, load_index_from_storage
 
 # rebuild storage context
-storage_context = StorageContext.from_defaults(persist_dir='./storage')
+storage_context = StorageContext.from_defaults(persist_dir="<persist_dir>")
+
 # load index
 index = load_index_from_storage(storage_context)
-```
-
-To configure the persist path, you need to explicitly configure the storage context and pass it into the index:
-```python
-from llama_index import GPTVectorStoreIndex, StorageContext
-
-# customize storage context
-storage_context = StorageContext.from_defaults(
-    persist_dir="<persist_dir>"
-)
-
-# build index with custom storage context
-index = GPTVectorStoreIndex.from_documents(
-    documents=documents,
-    storage_context=storage_context,
-)
-
-# persist data
-storage_context.persist()
-```
-
-To reload from disk, use the same storage context configuration:
-```python
-from llama_index import load_index_from_storage
-
-# rebuild same custom storage context as above
-storage_context = StorageContext.from_defaults(
-    persist_dir="<persist_dir>"
-
-# load index from custom storage context
-index = load_index_from_storage(storage_context=storage_context)
 ```
 
 **NOTE**: If you had initialized the index with a custom 
