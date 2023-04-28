@@ -78,6 +78,7 @@ class DeepLakeReader(BaseReader):
         dataset_path: str,
         limit: int = 4,
         distance_metric: str = "l2",
+        read_only: bool = False,
     ) -> List[Document]:
         """Load data from DeepLake.
 
@@ -92,7 +93,7 @@ class DeepLakeReader(BaseReader):
         import deeplake
         from deeplake.util.exceptions import TensorDoesNotExistError
 
-        dataset = deeplake.load(dataset_path, token=self.token)
+        dataset = deeplake.load(dataset_path, token=self.token, read_only=read_only)
 
         try:
             embeddings = dataset.embedding.numpy(fetch_chunks=True)
