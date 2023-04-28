@@ -2,6 +2,8 @@
 
 Index stores contains lightweight index metadata (i.e. additional state information created when building an index).
 
+See the [API Reference](/reference/storage/index_store.rst) for more details.
+
 ### Simple Index Store
 By default, LlamaIndex uses a simple index store backed by an in-memory key-value store.
 They can be persisted to (and loaded from) disk by calling `index_store.persist()` (and `SimpleIndexStore.from_persist_dir(...)` respectively).

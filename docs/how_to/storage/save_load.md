@@ -1,7 +1,7 @@
 # Persisting & Loading Data
 
 ## Persisting Data
-By default, LlamaIndex stores data in-memory, and need to be explicitly persisted if desired:
+By default, LlamaIndex stores data in-memory, and this data can be explicitly persisted if desired:
 ```python
 storage_context.persist()
 ```
@@ -21,7 +21,9 @@ storage_context = StorageContext.from_defaults(
 )
 ```
 
-To load the previously constructed indices:
+We can then load specific indices from the `StorageContext` through some convenience functions below.
+
+
 ```python
 from llama_index import load_index_from_storage, load_indices_from_storage, load_graph_from_storage
 
@@ -30,13 +32,15 @@ index = load_index_from_storage(storage_context, index_id="<index_id>") # need t
 index = load_index_from_storage(storage_context) # don't need to specify index_id if there's only one index in storage context
 
 # load multiple indices
-indices = load_indice_from_storage(storage_context) # loads all indices
-indices = load_indice_from_storage(storage_context, index_ids=<index_ids>) # loads specific indices
+indices = load_indices_from_storage(storage_context) # loads all indices
+indices = load_indices_from_storage(storage_context, index_ids=<index_ids>) # loads specific indices
 
 # load composable graph
 graph = load_graph_from_storage(storage_context, root_id="<root_id>") # loads graph with the specified root_id
 
 ```
+
+Here's the full [API Reference on saving and loading](/reference/storage/indices_save_load.rst).
 
 
 
