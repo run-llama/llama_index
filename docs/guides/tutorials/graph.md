@@ -168,7 +168,7 @@ for index in vector_indices.values():
     )
     custom_query_engines[index.index_id] = query_engine
 custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
-    mode='simple',
+    retriever_mode='simple',
     response_mode='tree_summarize',
     service_context=service_context,
 )
@@ -238,7 +238,7 @@ for index in vector_indices.values():
     )
     custom_query_engines[index.index_id] = query_engine
 custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
-    mode='simple',
+    retriever_mode='simple',
     response_mode='tree_summarize',
     service_context=service_context,
 )
