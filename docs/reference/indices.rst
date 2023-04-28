@@ -1,6 +1,6 @@
 .. _Ref-Indices:
 
-🗃️ Indices
+Indices
 =======
 
 This doc shows both the overarching class used to represent an index. These
