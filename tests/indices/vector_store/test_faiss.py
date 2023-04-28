@@ -14,7 +14,6 @@ from gpt_index.readers.schema.base import Document
 from gpt_index.storage.storage_context import StorageContext
 from gpt_index.vector_stores.faiss import FaissVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStoreQuery
-from tempfile import TemporaryDirectory
 
 
 def test_build_faiss(
