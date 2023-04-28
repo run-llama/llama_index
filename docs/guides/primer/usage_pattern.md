@@ -92,23 +92,24 @@ Depending on which index you use, LlamaIndex may make LLM calls in order to buil
 ### Reusing Nodes across Index Structures
 
 If you have multiple Node objects defined, and wish to share these Node
-objects across multiple index structures, you can do that. Simply 
-define a DocumentStore object, add the Node objects to the DocumentStore,
-and pass the DocumentStore around.
+objects across multiple index structures, you can do that. 
+Simply instantiate a StorageContext object, 
+add the Node objects to the underlying DocumentStore,
+and pass the StorageContext around.
 
 ```python
-from gpt_index.storage.docstore import SimpleDocumentStore
+from llama_index import StorageContext
 
-docstore = SimpleDocumentStore()
-docstore.add_documents(nodes)
+storage_context = StorageContext.from_defaults()
+storage_context.docstore.add_documents(nodes)
 
-index1 = GPTVectorStoreIndex(nodes, docstore=docstore)
-index2 = GPTListIndex(nodes, docstore=docstore)
+index1 = GPTVectorStoreIndex(nodes, storage_context=storage_context)
+index2 = GPTListIndex(nodes, storage_context=storage_context)
 ```
 
-**NOTE**: If the `docstore` argument isn't specified, then it is implicitly
+**NOTE**: If the `storage_context` argument isn't specified, then it is implicitly
 created for each index during index construction. You can access the docstore
-associated with a given index through `index.docstore`.
+associated with a given index through `index.storage_context`.
 
 
 ### Inserting Documents or Nodes
