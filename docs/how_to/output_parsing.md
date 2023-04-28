@@ -1,4 +1,4 @@
-# Output Parsing
+# 🔢 Output Parsing
 
 LLM output/validation capabilities are crucial to LlamaIndex in the following areas:
 - **Document retrieval**: Many data structures within LlamaIndex rely on LLM calls with a specific schema for Document retrieval. For instance, the tree index expects LLM calls to be in the format "ANSWER: (number)".

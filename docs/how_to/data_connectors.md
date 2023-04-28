@@ -1,4 +1,4 @@
-# Data Connectors (LlamaHub 🦙)
+# 🔌 Data Connectors (LlamaHub)
 
 Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙. 
 LlamaHub is an open-source repository containing data loaders that you can easily plug and play into any LlamaIndex application.

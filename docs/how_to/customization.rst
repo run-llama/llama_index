@@ -1,4 +1,4 @@
-Customization
+🛠️ Customization
 =============
 
 LlamaIndex provides the ability to customize the following components:

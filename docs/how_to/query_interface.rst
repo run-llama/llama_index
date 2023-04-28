@@ -1,4 +1,4 @@
-Query Interface
+🔍 Query Interface
 ===============
 
 LlamaIndex provides a *query interface* over your index or graph structure. This query interface
