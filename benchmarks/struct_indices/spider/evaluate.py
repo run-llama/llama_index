@@ -97,7 +97,7 @@ def _get_answers(
             result["sql_result"] = "ERROR"
             result["answer"] = "ERROR"
         try:
-            query_engine = indexes[db_name].as_query_engine(mode="sql")
+            query_engine = indexes[db_name].as_query_engine()
             resp = query_engine.query(sql_query)
             assert isinstance(resp, Response)
             result["sql_result"] = resp.response

@@ -14,7 +14,7 @@ def test_retrieve_default(
     index = GPTListIndex.from_documents(documents, service_context=mock_service_context)
 
     query_str = "What is?"
-    retriever = index.as_retriever(mode="default")
+    retriever = index.as_retriever(retriever_mode="default")
     nodes = retriever.retrieve(query_str)
 
     for node_with_score, line in zip(nodes, documents[0].get_text().split("\n")):
@@ -36,7 +36,7 @@ def test_embedding_query(
 
     # test embedding query
     query_str = "What is?"
-    retriever = index.as_retriever(mode="embedding", similarity_top_k=1)
+    retriever = index.as_retriever(retriever_mode="embedding", similarity_top_k=1)
     nodes = retriever.retrieve(query_str)
     assert len(nodes) == 1
 

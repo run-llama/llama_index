@@ -94,7 +94,7 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         from gpt_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
         from gpt_index.indices.tree.tree_root_retriever import TreeRootRetriever
 
-        self._validate_build_tree_required(self, retriever_mode)
+        self._validate_build_tree_required(retriever_mode)
 
         if retriever_mode == TreeRetrieverMode.SELECT_LEAF:
             return TreeSelectLeafRetriever(self, **kwargs)

@@ -75,8 +75,8 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             KGTableRetriever,
         )
 
-        if len(self.index_struct.embedding_dict) > 0 and "embedding_mode" not in kwargs:
-            kwargs["embedding_mode"] = KGRetrieverMode.HYBRID
+        if len(self.index_struct.embedding_dict) > 0 and "retriever_mode" not in kwargs:
+            kwargs["retriever_mode"] = KGRetrieverMode.HYBRID
 
         return KGTableRetriever(self, **kwargs)
 
