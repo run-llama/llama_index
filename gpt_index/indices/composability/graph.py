@@ -110,4 +110,4 @@ class ComposableGraph:
             ComposableGraphQueryEngine,
         )
 
-        return ComposableGraphQueryEngine.from_args(self, **kwargs)
+        return ComposableGraphQueryEngine(self, **kwargs)

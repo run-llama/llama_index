@@ -2,7 +2,8 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import List, Optional, Sequence, Union
+from gpt_index.data_structs.node_v2 import NodeWithScore
 
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.response.schema import (
@@ -24,6 +25,31 @@ class BaseQueryEngine(ABC):
         if isinstance(str_or_query_bundle, str):
             str_or_query_bundle = QueryBundle(str_or_query_bundle)
         return await self._aquery(str_or_query_bundle)
+
+    def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        raise NotImplementedError(
+            "This query engine does not support retrieve, use query directly"
+        )
+
+    def synthesize(
+        self,
+        query_bundle: QueryBundle,
+        nodes: List[NodeWithScore],
+        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+    ) -> RESPONSE_TYPE:
+        raise NotImplementedError(
+            "This query engine does not support synthesize, use query directly"
+        )
+
+    async def asynthesize(
+        self,
+        query_bundle: QueryBundle,
+        nodes: List[NodeWithScore],
+        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+    ) -> RESPONSE_TYPE:
+        raise NotImplementedError(
+            "This query engine does not support asynthesize, use aquery directly"
+        )
 
     @abstractmethod
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
