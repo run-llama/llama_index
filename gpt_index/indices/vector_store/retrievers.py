@@ -3,7 +3,7 @@
 
 from typing import Any, List, Optional
 
-from gpt_index.callbacks.schema import CBEvent, CBEventType
+from gpt_index.callbacks.schema import CBEventType
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.base_retriever import BaseRetriever
@@ -54,13 +54,17 @@ class VectorIndexRetriever(BaseRetriever):
     ) -> List[NodeWithScore]:
         if self._vector_store.is_embedding_query:
             if query_bundle.embedding is None:
-                event_id = self._service_context.callback_manager.on_event_start(CBEvent(CBEventType.EMBEDDING, payload={"num_texts": 1}))
+                event_id = self._service_context.callback_manager.on_event_start(
+                    CBEventType.EMBEDDING, payload={"num_texts": 1}
+                )
                 query_bundle.embedding = (
                     self._service_context.embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
                     )
                 )
-                self._service_context.callback_manager.on_event_end(CBEvent(CBEventType.EMBEDDING), event_id=event_id)
+                self._service_context.callback_manager.on_event_end(
+                    CBEventType.EMBEDDING, event_id=event_id
+                )
 
         query = VectorStoreQuery(
             query_embedding=query_bundle.embedding,

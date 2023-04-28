@@ -4,7 +4,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from gpt_index.callbacks.schema import CBEvent, CBEventType
+from gpt_index.callbacks.schema import CBEventType
 from gpt_index.data_structs.node_v2 import NodeWithScore
 from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.base import (
@@ -106,7 +106,9 @@ class BaseKeywordTableRetriever(BaseRetriever):
                     f"{truncate_text(node.get_text(), 50)}"
                 )
         sorted_nodes_with_scores = [NodeWithScore(node) for node in sorted_nodes]
-        self._service_context.callback_manager.on_event_end(CBEvent(CBEventType.RETRIEVE, payload={"nodes": sorted_nodes}))
+        self._service_context.callback_manager.on_event_end(
+            CBEventType.RETRIEVE, payload={"nodes": sorted_nodes}
+        )
 
         return sorted_nodes_with_scores
 
@@ -123,14 +125,22 @@ class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        event_id = self._service_context.callback_manager.on_event_start(CBEvent(CBEventType.LLM, payload={"template": self.query_keyword_extract_template, "text": query_str}))
+        event_id = self._service_context.callback_manager.on_event_start(
+            CBEventType.LLM,
+            payload={
+                "template": self.query_keyword_extract_template,
+                "text": query_str,
+            },
+        )
         response, _ = self._service_context.llm_predictor.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,
         )
         keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
-        self._service_context.callback_manager.on_event_end(CBEvent(CBEventType.LLM, payload={"keywords": keywords}), event_id=event_id)
+        self._service_context.callback_manager.on_event_end(
+            CBEventType.LLM, payload={"keywords": keywords}, event_id=event_id
+        )
         return list(keywords)
 
 

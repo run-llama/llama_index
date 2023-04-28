@@ -4,7 +4,7 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from gpt_index.callbacks.schema import CBEvent, CBEventType
+from gpt_index.callbacks.schema import CBEventType
 from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
@@ -94,7 +94,13 @@ class KGTableRetriever(BaseRetriever):
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        event_id = self._service_context.callback_manager.on_event_start(CBEvent(CBEventType.LLM, payload={"template": self.query_keyword_extract_template, "text": query_str}))
+        event_id = self._service_context.callback_manager.on_event_start(
+            CBEventType.LLM,
+            payload={
+                "template": self.query_keyword_extract_template,
+                "text": query_str,
+            },
+        )
         response, _ = self._service_context.llm_predictor.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
@@ -103,7 +109,9 @@ class KGTableRetriever(BaseRetriever):
         keywords = extract_keywords_given_response(
             response, start_token="KEYWORDS:", lowercase=False
         )
-        self._service_context.callback_manager.on_event_end(CBEvent(CBEventType.LLM, payload={"keywords": keywords}), event_id=event_id)
+        self._service_context.callback_manager.on_event_end(
+            CBEventType.LLM, payload={"keywords": keywords}, event_id=event_id
+        )
         return list(keywords)
 
     def _extract_rel_text_keywords(self, rel_texts: List[str]) -> List[str]:
@@ -140,11 +148,15 @@ class KGTableRetriever(BaseRetriever):
             self._embedding_mode != KGQueryMode.KEYWORD
             and len(self._index_struct.embedding_dict) > 0
         ):
-            event_id = self._service_context.callback_manager.on_event_start(CBEvent(CBEventType.EMBEDDING, payload={"num_texts": 1}))
+            event_id = self._service_context.callback_manager.on_event_start(
+                CBEventType.EMBEDDING, payload={"num_texts": 1}
+            )
             query_embedding = self._service_context.embed_model.get_text_embedding(
                 query_bundle.query_str
             )
-            self._service_context.callback_manager.on_event_end(CBEvent(CBEventType.EMBEDDING), event_id=event_id)
+            self._service_context.callback_manager.on_event_end(
+                CBEventType.EMBEDDING, event_id=event_id
+            )
             all_rel_texts = list(self._index_struct.embedding_dict.keys())
 
             rel_text_embeddings = [
