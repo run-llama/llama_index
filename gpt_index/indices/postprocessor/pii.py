@@ -6,7 +6,6 @@ from typing import List, Optional, Dict, Tuple
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.prompts import QuestionAnswerPrompt
 from copy import deepcopy
-import re
 import json
 
 
@@ -22,7 +21,7 @@ DEFAULT_PII_TMPL = (
     "LLC credit card account 1111-0000-1111-0008 "
     "has a minimum payment of $24.53 that is due "
     "by July 31st. Based on your autopay settings, we will withdraw your payment. "
-    "Task: Mask out the PII, replace each PII with a tag, and return the text. Return the mapping in JSON. \n"
+    "Task: Mask out the PII, replace each PII with a tag, and return the text. Return the mapping in JSON. \n"  # noqa: E501
     "Output: \n"
     "Hello [NAME1], I am [NAME2]. "
     "Your AnyCompany Financial Services, "
@@ -30,7 +29,7 @@ DEFAULT_PII_TMPL = (
     "has a minimum payment of $24.53 that is due "
     "by [DATE_TIME]. Based on your autopay settings, we will withdraw your payment. "
     "Output Mapping:\n"
-    '{{"NAME1": "Zhang Wei", "NAME2": "John", "CREDIT_CARD_NUMBER": "1111-0000-1111-0008", "DATE_TIME": "July 31st"}}\n'
+    '{{"NAME1": "Zhang Wei", "NAME2": "John", "CREDIT_CARD_NUMBER": "1111-0000-1111-0008", "DATE_TIME": "July 31st"}}\n'  # noqa: E501
     "Context:\n{context_str}\n"
     "Task: {query_str}\n"
     "Output: \n"
@@ -77,7 +76,7 @@ class PIINodePostprocessor(BaseNodePostprocessor):
         # swap out text from nodes, with the original node mappings
         new_nodes = []
         for node in nodes:
-            new_text, mapping_info = self.mask_pii(node.text)
+            new_text, mapping_info = self.mask_pii(node.get_text())
             new_node = deepcopy(node)
             new_node.node_info = new_node.node_info or {}
             new_node.node_info[self.pii_node_info_key] = mapping_info
