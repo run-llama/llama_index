@@ -19,8 +19,9 @@ DEFAULT_INDEX_CLASSES: List[Type[BaseGPTIndex]] = [
     GPTListIndex,
 ]
 
+INDEX_SPECIFIC_QUERY_MODES_TYPE = Dict[Type[BaseGPTIndex], List[str]]
 
-DEFAULT_MODES = {
+DEFAULT_MODES: INDEX_SPECIFIC_QUERY_MODES_TYPE = {
     GPTTreeIndex: [e.value for e in TreeRetrieverMode],
     GPTListIndex: [e.value for e in ListRetrieverMode],
     GPTVectorStoreIndex: ["default"],
@@ -33,15 +34,15 @@ class Playground:
     def __init__(
         self,
         indices: List[BaseGPTIndex],
-        retriever_modes: Dict[Type[BaseGPTIndex], str] = DEFAULT_MODES,
+        retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE = DEFAULT_MODES,
     ):
         """Initialize with indices to experiment with.
 
         Args:
             indices: A list of BaseGPTIndex's to experiment with
-            retriever_modes: A list of retriever_modes that specify which nodes are chosen
-                from the index when a query is made. A full list of retriever_modes
-                available to each index can be found here:
+            retriever_modes: A list of retriever_modes that specify which nodes are
+                chosen from the index when a query is made. A full list of
+                retriever_modes available to each index can be found here:
                 https://gpt-index.readthedocs.io/en/latest/reference/query.html
         """
         self._validate_indices(indices)
@@ -57,7 +58,7 @@ class Playground:
         cls,
         documents: List[Document],
         index_classes: List[Type[BaseGPTIndex]] = DEFAULT_INDEX_CLASSES,
-        retriever_modes: Dict[Type[BaseGPTIndex], str] = DEFAULT_MODES,
+        retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE = DEFAULT_MODES,
         **kwargs: Any,
     ) -> Playground:
         """Initialize with Documents using the default list of indices.
@@ -97,12 +98,13 @@ class Playground:
         self._validate_indices(indices)
         self._indices = indices
 
-    def _validate_modes(self, retriever_modes: Dict[Type[BaseGPTIndex], str]) -> None:
+    def _validate_modes(self, retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE) -> None:
         """Validate a list of retriever_modes."""
         if len(retriever_modes) == 0:
             raise ValueError(
                 "Playground must have a nonzero number of retriever_modes."
-                "Initialize without the `retriever_modes` argument to use the default list."
+                "Initialize without the `retriever_modes` "
+                "argument to use the default list."
             )
 
     @property
@@ -111,7 +113,7 @@ class Playground:
         return self._retriever_modes
 
     @retriever_modes.setter
-    def retriever_modes(self, retriever_modes: Dict[Type[BaseGPTIndex], str]) -> None:
+    def retriever_modes(self, retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE) -> None:
         """Set Playground's indices."""
         self._validate_modes(retriever_modes)
         self._retriever_modes = retriever_modes
