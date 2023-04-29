@@ -73,8 +73,20 @@ Text splitter splits a long text `str` into smaller text `str` chunks with desir
 * [Sentence Splitter](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/langchain_helpers/text_splitter.py#L239)
 
 ---
+
+#### Document/Index/KV Stores
+
+Under the hood, LlamaIndex also supports a swappable **storage layer** that allows you to customize Document Stores (where ingested documents (i.e., `Node` objects) are stored), and Index Stores (where index metadata are stored)
+
+We have an underlying key-value abstraction backing the document/index stores.
+Currently we support in-memory and MongoDB storage for these stores. Open to contributions!
+
+See [Storage guide](https://gpt-index.readthedocs.io/en/latest/how_to/storage.html) for details.
+
+----
+
 #### Vector Stores
-Our vector store classes store embeddings and support lookup via similiarty search.
+Our vector store classes store embeddings and support lookup via similiarity search.
 These serve as the main data store and retrieval engine for our vector index.
 
 **Interface**:
@@ -93,6 +105,47 @@ These serve as the main data store and retrieval engine for our vector index.
 See [reference](https://gpt-index.readthedocs.io/en/latest/reference/indices/vector_stores/stores.html) for full details.
 
 ---
+#### Retrievers
+
+Our retriever classes are lightweight classes that implement a `retrieve` method.
+They may take in an index class as input - by default, each of our indices
+(list, vector, keyword) have an associated retriever. The output is a set of 
+`NodeWithScore` objects (a `Node` object with an extra `score` field).
+
+You may also choose to implement your own retriever classes on top of your own
+data if you wish.
+
+**Interface**:
+- `retrieve` takes in a `str` or `QueryBundle` as input, and outputs a list of `NodeWithScore` objects
+
+**Examples**:
+* [Vector Index Retriever](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/vector_store/retrievers.py)
+* [List Index Retriever](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/list/retrievers.py)
+* [Transform Retriever](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/retrievers/transform_retriever.py)
+
+**Ideas**:
+* Besides the "default" retrievers built on top of each index, what about fancier retrievers? E.g. retrievers that take in other retrivers as input? Or other
+types of data?
+
+---
+
+#### Query Engines
+
+Our query engine classes are lightweight classes that implement a `query` method; the query returns a response type.
+For instance, they may take in a retriever class as input; our `RetrieverQueryEngine` 
+takes in a `retriever` as input as well as a `ResponseSynthesizer` class, and
+the `query` method performs retrieval and synthesis before returning the final result.
+They may take in other query engine classes in as input too.
+
+**Interface**:
+- `query` takes in a `str` or `QueryBundle` as input, and outputs a `Response` object.
+
+**Examples**:
+- [Retriever Query Engine](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/query_engine/retriever_query_engine.py)
+- [Transform Query Engine](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/query_engine/transform_query_engine.py)
+
+---
+
 #### Query Transforms
 A query transform augments a raw query string with associated transformations to improve index querying.
 This can interpreted as a pre-processing stage, before the core index query logic is executed.
