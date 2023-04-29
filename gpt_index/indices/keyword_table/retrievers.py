@@ -113,8 +113,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
 class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
     """Keyword Table Index GPT Retriever.
 
-    Extracts keywords using GPT. Set when `mode="default"` in `query` method of
-    `GPTKeywordTableIndex`.
+    Extracts keywords using GPT. Set when using `retriever_mode="default"`.
 
     See BaseGPTKeywordTableQuery for arguments.
 
@@ -148,7 +147,7 @@ class KeywordTableSimpleRetriever(BaseKeywordTableRetriever):
     """Keyword Table Index Simple Retriever.
 
     Extracts keywords using simple regex-based keyword extractor.
-    Set when `mode="simple"` in `query` method of `GPTKeywordTableIndex`.
+    Set when `retriever_mode="simple"`.
 
     See BaseGPTKeywordTableQuery for arguments.
 
@@ -165,7 +164,7 @@ class KeywordTableRAKERetriever(BaseKeywordTableRetriever):
     """Keyword Table Index RAKE Retriever.
 
     Extracts keywords using RAKE keyword extractor.
-    Set when `mode="rake"` in `query` method of `GPTKeywordTableIndex`.
+    Set when `retriever_mode="rake"`.
 
     See BaseGPTKeywordTableQuery for arguments.
 

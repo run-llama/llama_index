@@ -26,7 +26,7 @@ def test_retrieve(
         documents, service_context=mock_service_context
     )
 
-    retriever = table.as_retriever(mode="simple")
+    retriever = table.as_retriever(retriever_mode="simple")
     nodes = retriever.retrieve(QueryBundle("Hello"))
     assert len(nodes) == 1
     assert nodes[0].node.text == "Hello world."

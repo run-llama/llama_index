@@ -138,7 +138,7 @@ A simple example is shown here:
 ```python
 # set Logging to DEBUG for more detailed outputs
 query_engine = index.as_query_engine()
-response = query_engine.query("Which city has the highest population?", mode="default")
+response = query_engine.query("Which city has the highest population?")
 print(response)
 
 ```

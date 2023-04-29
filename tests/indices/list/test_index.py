@@ -4,8 +4,7 @@ from typing import Dict, List, Tuple
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base_retriever import BaseRetriever
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.list.base import GPTListIndex, ListRetrieverMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.readers.schema.base import Document
 
@@ -172,8 +171,12 @@ def test_as_retriever(
     list_index = GPTListIndex.from_documents(
         documents, service_context=mock_service_context
     )
-    default_retriever = list_index.as_retriever(mode=QueryMode.DEFAULT)
+    default_retriever = list_index.as_retriever(
+        retriever_mode=ListRetrieverMode.DEFAULT
+    )
     assert isinstance(default_retriever, BaseRetriever)
 
-    embedding_retriever = list_index.as_retriever(mode=QueryMode.EMBEDDING)
+    embedding_retriever = list_index.as_retriever(
+        retriever_mode=ListRetrieverMode.EMBEDDING
+    )
     assert isinstance(embedding_retriever, BaseRetriever)
