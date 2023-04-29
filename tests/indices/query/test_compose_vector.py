@@ -88,6 +88,7 @@ def test_recursive_query_vector_table(
     list4 = GPTVectorStoreIndex.from_documents(
         documents[6:8], service_context=mock_service_context, **vector_kwargs
     )
+    indices = [vector1, vector2, list3, list4]
 
     summaries = [
         "foo bar",
@@ -98,14 +99,21 @@ def test_recursive_query_vector_table(
 
     graph = ComposableGraph.from_indices(
         GPTSimpleKeywordTableIndex,
-        [vector1, vector2, list3, list4],
+        indices,
         index_summaries=summaries,
         service_context=mock_service_context,
         **table_kwargs
     )
-    assert isinstance(graph, ComposableGraph)
+
+    custom_query_engines = {
+        index.index_id: index.as_query_engine(similarity_top_k=1) for index in indices
+    }
+    custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
+        similarity_top_k=1
+    )
+
     query_str = "Foo?"
-    query_engine = graph.as_query_engine()
+    query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
     response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
@@ -196,6 +204,7 @@ def test_recursive_query_vector_table_async(
     list4 = GPTVectorStoreIndex.from_documents(
         documents[6:8], service_context=mock_service_context, **vector_kwargs
     )
+    indices = [vector1, vector2, list3, list4]
 
     summaries = [
         "foo bar",
@@ -206,14 +215,20 @@ def test_recursive_query_vector_table_async(
 
     graph = ComposableGraph.from_indices(
         GPTSimpleKeywordTableIndex,
-        [vector1, vector2, list3, list4],
+        children_indices=indices,
         index_summaries=summaries,
         service_context=mock_service_context,
         **table_kwargs
     )
-    assert isinstance(graph, ComposableGraph)
 
-    query_engine = graph.as_query_engine()
+    custom_query_engines = {
+        index.index_id: index.as_query_engine(similarity_top_k=1) for index in indices
+    }
+    custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
+        similarity_top_k=1
+    )
+
+    query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
     task = query_engine.aquery("Cat?")
     response = asyncio.run(task)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
@@ -242,6 +257,8 @@ def test_recursive_query_vector_vector(
         documents[6:8], service_context=mock_service_context, **vector_kwargs
     )
 
+    indices = [vector1, vector2, list3, list4]
+
     summary1 = "foo bar"
     summary2 = "apple orange"
     summary3 = "toronto london"
@@ -250,13 +267,20 @@ def test_recursive_query_vector_vector(
 
     graph = ComposableGraph.from_indices(
         GPTVectorStoreIndex,
-        [vector1, vector2, list3, list4],
+        children_indices=indices,
         index_summaries=summaries,
         service_context=mock_service_context,
         **vector_kwargs
     )
+    custom_query_engines = {
+        index.index_id: index.as_query_engine(similarity_top_k=1) for index in indices
+    }
+    custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
+        similarity_top_k=1
+    )
+
     query_str = "Foo?"
-    query_engine = graph.as_query_engine()
+    query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
     response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
@@ -311,6 +335,7 @@ def test_recursive_query_pinecone_pinecone(
         service_context=mock_service_context,
         **pinecone_kwargs
     )
+    indices = [pinecone1, pinecone2, pinecone3, pinecone4]
 
     summary1 = "foo bar"
     summary2 = "apple orange"
@@ -320,14 +345,20 @@ def test_recursive_query_pinecone_pinecone(
 
     graph = ComposableGraph.from_indices(
         GPTVectorStoreIndex,
-        [pinecone1, pinecone2, pinecone3, pinecone4],
+        children_indices=indices,
         index_summaries=summaries,
         storage_context=get_pinecone_storage_context(),
         service_context=mock_service_context,
         **pinecone_kwargs
     )
     query_str = "Foo?"
-    query_engine = graph.as_query_engine()
+    custom_query_engines = {
+        index.index_id: index.as_query_engine(similarity_top_k=1) for index in indices
+    }
+    custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
+        similarity_top_k=1
+    )
+    query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
     response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"
