@@ -1,5 +1,6 @@
 """Tree-based index."""
 
+from enum import Enum
 from typing import Any, Optional, Sequence, Union
 
 # from gpt_index.data_structs.data_structs import IndexGraph
@@ -8,7 +9,6 @@ from gpt_index.data_structs.node_v2 import Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.common_tree.base import GPTTreeIndexBuilder
-from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.tree.inserter import GPTTreeIndexInserter
 from gpt_index.prompts.default_prompts import (
@@ -17,10 +17,18 @@ from gpt_index.prompts.default_prompts import (
 )
 from gpt_index.prompts.prompts import SummaryPrompt, TreeInsertPrompt
 
+
+class TreeRetrieverMode(str, Enum):
+    SELECT_LEAF = "select_leaf"
+    SELECT_LEAF_EMBEDDING = "select_leaf_embedding"
+    ALL_LEAF = "all_leaf"
+    ROOT = "root"
+
+
 REQUIRE_TREE_MODES = {
-    QueryMode.DEFAULT,
-    QueryMode.EMBEDDING,
-    QueryMode.RETRIEVE,
+    TreeRetrieverMode.SELECT_LEAF,
+    TreeRetrieverMode.SELECT_LEAF_EMBEDDING,
+    TreeRetrieverMode.ROOT,
 }
 
 
@@ -74,7 +82,9 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         )
 
     def as_retriever(
-        self, mode: Union[str, QueryMode] = QueryMode.DEFAULT, **kwargs: Any
+        self,
+        retriever_mode: Union[str, TreeRetrieverMode] = TreeRetrieverMode.SELECT_LEAF,
+        **kwargs: Any,
     ) -> BaseRetriever:
         # NOTE: lazy import
         from gpt_index.indices.tree.select_leaf_embedding_retriever import (
@@ -84,23 +94,25 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         from gpt_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
         from gpt_index.indices.tree.tree_root_retriever import TreeRootRetriever
 
-        if mode == QueryMode.DEFAULT:
+        self._validate_build_tree_required(TreeRetrieverMode(retriever_mode))
+
+        if retriever_mode == TreeRetrieverMode.SELECT_LEAF:
             return TreeSelectLeafRetriever(self, **kwargs)
-        elif mode == QueryMode.EMBEDDING:
+        elif retriever_mode == TreeRetrieverMode.SELECT_LEAF_EMBEDDING:
             return TreeSelectLeafEmbeddingRetriever(self, **kwargs)
-        elif mode == QueryMode.RETRIEVE:
+        elif retriever_mode == TreeRetrieverMode.ROOT:
             return TreeRootRetriever(self, **kwargs)
-        elif mode == QueryMode.SUMMARIZE:
+        elif retriever_mode == TreeRetrieverMode.ALL_LEAF:
             return TreeAllLeafRetriever(self, **kwargs)
         else:
-            raise ValueError(f"Unknown mode: {mode}")
+            raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
-    def _validate_build_tree_required(self, mode: QueryMode) -> None:
+    def _validate_build_tree_required(self, retriever_mode: TreeRetrieverMode) -> None:
         """Check if index supports modes that require trees."""
-        if mode in REQUIRE_TREE_MODES and not self.build_tree:
+        if retriever_mode in REQUIRE_TREE_MODES and not self.build_tree:
             raise ValueError(
                 "Index was constructed without building trees, "
-                f"but mode {mode} requires trees."
+                f"but retriever mode {retriever_mode} requires trees."
             )
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexGraph:

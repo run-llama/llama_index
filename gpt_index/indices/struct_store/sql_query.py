@@ -3,7 +3,7 @@ import logging
 from typing import Any, Optional
 
 from gpt_index.indices.query.base import BaseQueryEngine
-from gpt_index.indices.query.schema import QueryBundle, QueryMode
+from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
@@ -61,7 +61,6 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
         self,
         index: GPTSQLStructStoreIndex,
         text_to_sql_prompt: Optional[TextToSQLPrompt] = None,
-        context_query_mode: QueryMode = QueryMode.DEFAULT,
         context_query_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
@@ -73,7 +72,6 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
         self._ref_doc_id_column = index.ref_doc_id_column
 
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
-        self._context_query_mode = context_query_mode
         self._context_query_kwargs = context_query_kwargs or {}
 
     def _parse_response_to_sql(self, response: str) -> str:

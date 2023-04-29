@@ -18,7 +18,7 @@ def test_query(
 
     # test default query
     query_str = "What is?"
-    retriever = tree.as_retriever(mode="default")
+    retriever = tree.as_retriever()
     nodes = retriever.retrieve(query_str)
     assert len(nodes) == 1
 
@@ -37,8 +37,8 @@ def test_summarize_query(
         documents, service_context=mock_service_context, **index_kwargs
     )
 
-    # test summarize query
+    # test retrieve all leaf
     query_str = "What is?"
-    retriever = tree.as_retriever(mode="summarize")
+    retriever = tree.as_retriever(retriever_mode="all_leaf")
     nodes = retriever.retrieve(query_str)
     assert len(nodes) == 4

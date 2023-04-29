@@ -1,16 +1,23 @@
 """SQL Structured Store."""
-from typing import Any, Optional, Sequence
+from enum import Enum
+from typing import Any, Optional, Sequence, Union
 
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
 from gpt_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
+from gpt_index.indices.query.base import BaseQueryEngine
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.base import BaseGPTStructStoreIndex
 from gpt_index.indices.struct_store.container_builder import SQLContextContainerBuilder
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
+
+
+class SQLQueryMode(str, Enum):
+    SQL = "sql"
+    NL = "nl"
 
 
 class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
@@ -122,3 +129,19 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         raise NotImplementedError("Not supported")
+
+    def as_query_engine(
+        self, query_mode: Union[str, SQLQueryMode] = SQLQueryMode.NL, **kwargs: Any
+    ) -> BaseQueryEngine:
+        # NOTE: lazy import
+        from gpt_index.indices.struct_store.sql_query import (
+            GPTNLStructStoreQueryEngine,
+            GPTSQLStructStoreQueryEngine,
+        )
+
+        if query_mode == SQLQueryMode.NL:
+            return GPTNLStructStoreQueryEngine(self, **kwargs)
+        elif query_mode == SQLQueryMode.SQL:
+            return GPTSQLStructStoreQueryEngine(self, **kwargs)
+        else:
+            raise ValueError(f"Unknown query mode: {query_mode}")

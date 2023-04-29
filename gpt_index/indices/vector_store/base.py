@@ -11,7 +11,6 @@ from gpt_index.data_structs.data_structs_v2 import IndexDict
 from gpt_index.data_structs.node_v2 import ImageNode, IndexNode, Node
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.base_retriever import BaseRetriever
-from gpt_index.indices.query.schema import QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.storage.storage_context import StorageContext
 from gpt_index.token_counter.token_counter import llm_token_counter
@@ -50,16 +49,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     def vector_store(self) -> VectorStore:
         return self._vector_store
 
-    def as_retriever(
-        self, mode: QueryMode = QueryMode.DEFAULT, **kwargs: Any
-    ) -> BaseRetriever:
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         # NOTE: lazy import
         from gpt_index.indices.vector_store.retrievers import VectorIndexRetriever
 
-        if mode in [QueryMode.DEFAULT, QueryMode.EMBEDDING]:
-            return VectorIndexRetriever(self, **kwargs)
-        else:
-            raise ValueError(f"Unknown mode: {mode}")
+        return VectorIndexRetriever(self, **kwargs)
 
     def _get_node_embedding_results(
         self, nodes: Sequence[Node], existing_node_ids: Set

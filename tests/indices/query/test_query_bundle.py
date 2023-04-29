@@ -64,7 +64,7 @@ def test_embedding_query(
             "The meaning of life",
         ],
     )
-    retriever = index.as_retriever(mode="embedding", similarity_top_k=1)
+    retriever = index.as_retriever(retriever_mode="embedding", similarity_top_k=1)
     nodes = retriever.retrieve(query_bundle)
     assert len(nodes) == 1
     assert nodes[0].node.text == "Correct."

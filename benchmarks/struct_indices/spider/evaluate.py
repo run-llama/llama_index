@@ -12,7 +12,7 @@ from gpt_index.response.schema import Response
 from spider_utils import create_indexes, load_examples
 from tqdm import tqdm
 
-from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
+from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex, SQLQueryMode
 
 logging.getLogger("root").setLevel(logging.WARNING)
 
@@ -97,7 +97,7 @@ def _get_answers(
             result["sql_result"] = "ERROR"
             result["answer"] = "ERROR"
         try:
-            query_engine = indexes[db_name].as_query_engine(mode="sql")
+            query_engine = indexes[db_name].as_query_engine(query_mode=SQLQueryMode.SQL)
             resp = query_engine.query(sql_query)
             assert isinstance(resp, Response)
             result["sql_result"] = resp.response

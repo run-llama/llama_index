@@ -52,7 +52,6 @@ def test_get_set_compare(
     playground = Playground(indices=indices)  # type: ignore
 
     assert len(playground.indices) == 3
-    assert len(playground.modes) == len(DEFAULT_MODES)
 
     results = playground.compare("Who is?", to_pandas=False)
     assert len(results) > 0
@@ -63,13 +62,8 @@ def test_get_set_compare(
             documents=documents, service_context=mock_service_context
         )
     ]
-    playground.modes = ["default", "summarize"]
 
     assert len(playground.indices) == 1
-    assert len(playground.modes) == 2
-
-    with pytest.raises(ValueError):
-        playground.modes = []
 
 
 def test_from_docs(
@@ -87,11 +81,13 @@ def test_from_docs(
     )
 
     assert len(playground.indices) == len(DEFAULT_INDEX_CLASSES)
-    assert len(playground.modes) == len(DEFAULT_MODES)
+    assert len(playground.retriever_modes) == len(DEFAULT_MODES)
 
     with pytest.raises(ValueError):
         playground = Playground.from_docs(
-            documents=documents, modes=[], service_context=mock_service_context
+            documents=documents,
+            retriever_modes={},
+            service_context=mock_service_context,
         )
 
 
@@ -109,4 +105,4 @@ def test_validation() -> None:
         _ = Playground(indices=[])  # type: ignore
 
     with pytest.raises(TypeError):
-        _ = Playground(modes=["default"])  # type: ignore
+        _ = Playground(retriever_modes={})  # type: ignore
