@@ -87,7 +87,7 @@ Since we have access to documents of 4 years, we may not only want to ask questi
 To address this, we compose a "graph" which consists of a list index defined over the 4 vector indices. Querying this graph would first retrieve information from each vector index, and combine information together via the list index.
 
 ```python
-from llama_index import GPTListIndex, LLMPredictor, ServiceContext
+from llama_index import GPTListIndex, LLMPredictor, ServiceContext, load_graph_from_storage
 from langchain import OpenAI
 from llama_index.indices.composability import ComposableGraph
 
