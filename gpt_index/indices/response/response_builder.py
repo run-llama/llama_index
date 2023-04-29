@@ -600,10 +600,15 @@ class Generation(BaseResponseBuilder):
         del prev_response
 
         if not self._streaming:
-            response, _ = await self._service_context.llm_predictor.apredict(
+            event_id = self._callback_llm_on_start()
+            (
+                response,
+                formatted_prompt,
+            ) = await self._service_context.llm_predictor.apredict(
                 self._input_prompt,
                 query_str=query_str,
             )
+            self._callback_llm_on_end(formatted_prompt, response, event_id)
             return response
         else:
             stream_response, _ = self._service_context.llm_predictor.stream(
@@ -625,10 +630,12 @@ class Generation(BaseResponseBuilder):
         del prev_response
 
         if not self._streaming:
-            response, _ = self._service_context.llm_predictor.predict(
+            event_id = self._callback_llm_on_start()
+            response, formatted_prompt = self._service_context.llm_predictor.predict(
                 self._input_prompt,
                 query_str=query_str,
             )
+            self._callback_llm_on_end(formatted_prompt, response, event_id)
             return response
         else:
             stream_response, _ = self._service_context.llm_predictor.stream(
