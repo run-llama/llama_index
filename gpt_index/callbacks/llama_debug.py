@@ -67,19 +67,21 @@ class LlamaDebugHandler(BaseCallbackHandler):
 
         return self.sequential_events
 
-    def _get_event_pairs(self, events: List[CBEvent]) -> Dict[str, List[CBEvent]]:
+    def _get_event_pairs(self, events: List[CBEvent]) -> List[List[CBEvent]]:
         """Helper function to pair events according to their ID."""
         event_pairs: Dict[str, List[CBEvent]] = defaultdict(list)
         for event in events:
             event_pairs[event.id].append(event)
-        return event_pairs
+        
+        sorted_events = sorted(event_pairs.values(), key=lambda x: datetime.strptime(x[0].time, TIMESTAMP_FORMAT))
+        return sorted_events
 
     def _get_time_stats_from_event_pairs(
-        self, event_pairs: Dict[str, List[CBEvent]]
+        self, event_pairs: List[List[CBEvent]]
     ) -> EventStats:
         """Calculate time-based stats for a set of event pairs"""
         total_secs = 0.0
-        for event_pair in event_pairs.values():
+        for event_pair in event_pairs:
             start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
             end_time = datetime.strptime(event_pair[-1].time, TIMESTAMP_FORMAT)
             total_secs += (end_time - start_time).total_seconds()
@@ -93,14 +95,14 @@ class LlamaDebugHandler(BaseCallbackHandler):
 
     def get_event_pairs(
         self, event_type: Optional[CBEventType] = None
-    ) -> Dict[str, List[CBEvent]]:
+    ) -> List[List[CBEvent]]:
         """Pair events by ID, either all events or a sepcific type."""
         if event_type is not None:
             return self._get_event_pairs(self.events[event_type])
 
         return self._get_event_pairs(self.sequential_events)
 
-    def get_llm_inputs_outputs(self) -> Dict[str, List[CBEvent]]:
+    def get_llm_inputs_outputs(self) -> List[List[CBEvent]]:
         """Get the exact LLM inputs and outputs."""
         return self._get_event_pairs(self.events[CBEventType.LLM])
 
