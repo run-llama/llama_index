@@ -12,6 +12,8 @@ from gpt_index.indices.tree.select_leaf_embedding_retriever import (
 from gpt_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
 from gpt_index.indices.tree.tree_root_retriever import TreeRootRetriever
 from gpt_index.retrievers.transform_retriever import TransformRetriever
+from gpt_index.indices.base_retriever import BaseRetriever
+from gpt_index.indices.keyword_table.retrievers import KeywordTableSimpleRetriever
 
 __all__ = [
     "VectorIndexRetriever",
@@ -24,4 +26,6 @@ __all__ = [
     "TreeSelectLeafRetriever",
     "TreeRootRetriever",
     "TransformRetriever",
+    "KeywordTableSimpleRetriever",
+    "BaseRetriever",
 ]
