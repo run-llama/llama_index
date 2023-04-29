@@ -4,7 +4,7 @@ from enum import Enum
 class ResponseMode(str, Enum):
     """Response modes."""
 
-    DEFAULT = "default"
+    REFINE = "refine"
     COMPACT = "compact"
     SIMPLE_SUMMARIZE = "simple_summarize"
     TREE_SUMMARIZE = "tree_summarize"
