@@ -118,9 +118,11 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
                 )
 
             node_embeddings.append(node.embedding)
+        
         self._index._service_context.callback_manager.on_event_end(
             CBEventType.EMBEDDING,
             payload={"num_nodes": nodes_embedded},
             event_id=event_id,
         )
+
         return query_bundle.embedding, node_embeddings
