@@ -75,3 +75,38 @@ class BarkTTS(BaseTTS):
         audio_array = np.concatenate(audio_chunks)
 
         return audio_array
+
+
+class ElevenLabsTTS(BaseTTS):
+    def __init__(self, api_key: Optional[str] = None) -> None:
+        """
+        Args:
+            voice: voice in which audio is generated.
+        """
+
+        super().__init__()
+
+        import_err_msg = "`elevenlabs` package not found, \
+            please run `pip install elevenlabs`"
+        try:
+            import elevenlabs
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        if api_key:
+            elevenlabs.set_api_key(api_key)
+
+        self.generate_fn = elevenlabs.generate
+
+    def generate_elevenlabs_audio(self, text: str, voice: Optional[str] = None) -> None:
+        """
+        Args:
+            text: text to be turned into audio.
+        """
+
+        if voice:
+            audio = self.generate_fn(text, voice=voice)
+        else:
+            audio = self.generate_fn(text)
+
+        return audio

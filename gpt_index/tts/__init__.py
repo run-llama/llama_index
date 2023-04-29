@@ -1,5 +1,5 @@
 """TTS modules."""
 
-from gpt_index.tts.base import BarkTTS
+from gpt_index.tts.base import BarkTTS, ElevenLabsTTS
 
-__all__ = ["BarkTTS"]
+__all__ = ["BarkTTS", "ElevenLabsTTS"]
