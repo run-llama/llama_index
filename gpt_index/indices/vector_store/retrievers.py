@@ -2,6 +2,7 @@
 
 
 from typing import Any, List, Optional
+from gpt_index.constants import DEFAULT_SIMILARITY_TOP_K
 
 from gpt_index.data_structs.data_structs_v2 import IndexDict
 
@@ -30,7 +31,7 @@ class VectorIndexRetriever(BaseRetriever):
     def __init__(
         self,
         index: GPTVectorStoreIndex,
-        similarity_top_k: int = 1,
+        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         vector_store_query_mode: str = VectorStoreQueryMode.DEFAULT,
         alpha: Optional[float] = None,
         doc_ids: Optional[List[str]] = None,

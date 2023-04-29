@@ -48,7 +48,7 @@ def test_build_pinecone(
         tokenizer=mock_tokenizer,
     )
 
-    retriever = index.as_retriever()
+    retriever = index.as_retriever(similarity_top_k=1)
     nodes = retriever.retrieve("What is?")
     assert len(nodes) == 1
     assert nodes[0].node.get_text() == "This is another test."

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from langchain.text_splitter import TextSplitter
+from gpt_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 
 from gpt_index.utils import globals_helper
 
@@ -26,8 +27,8 @@ class TokenTextSplitter(TextSplitter):
     def __init__(
         self,
         separator: str = " ",
-        chunk_size: int = 3900,
-        chunk_overlap: int = 200,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
         tokenizer: Optional[Callable] = None,
         backup_separators: Optional[List[str]] = ["\n"],
     ):
@@ -247,7 +248,7 @@ class SentenceSplitter(TextSplitter):
     def __init__(
         self,
         separator: str = " ",
-        chunk_size: int = 4000,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = 200,
         tokenizer: Optional[Callable] = None,
         backup_separators: Optional[List[str]] = ["\n"],
