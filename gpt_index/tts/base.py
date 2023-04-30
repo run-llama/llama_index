@@ -1,6 +1,6 @@
 """Text to speech module."""
 
-from typing import Optional, List
+from typing import Optional
 import tempfile
 import os
 import numpy as np
