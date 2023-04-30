@@ -142,7 +142,6 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
     elif prompt.prompt_type == PromptType.PANDAS:
         response = _mock_pandas(full_prompt_args)
     else:
-        print(prompt.prompt_type)
         raise ValueError("Invalid prompt to use with mocks.")
 
     return response, formatted_prompt
