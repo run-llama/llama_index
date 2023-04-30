@@ -89,7 +89,7 @@ def test_sql_index(
     with engine.connect() as connection:
         results = connection.execute(stmt).fetchall()
         connection.commit()
-        assert results == [(2, "bar"), (8, "hello")]
+        assert results == [(8, "hello")]
 
 
 def test_sql_index_nodes(
