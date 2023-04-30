@@ -119,11 +119,11 @@ class LlamaDebugHandler(BaseCallbackHandler):
         """Clear all events from memory."""
         self._events = defaultdict(list)
         self._sequential_events = []
-    
+
     @property
     def events(self) -> Dict[CBEventType, List[CBEvent]]:
         return self._events
-    
+
     @property
     def sequential_events(self) -> List[CBEvent]:
         return self._sequential_events
