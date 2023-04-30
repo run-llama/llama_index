@@ -8,10 +8,11 @@ import re
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.schema import BaseLanguageModel
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from tqdm import tqdm
 
 from gpt_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
+from typing import Any, cast
 
 logging.getLogger("root").setLevel(logging.WARNING)
 
@@ -115,15 +116,19 @@ if __name__ == "__main__":
         # Get the name of the first table in the database.
         # This is a hack to get a table name for the index, which can use any
         # table in the database.
-        table_name = engine.execute(
-            "select name from sqlite_master where type = 'table'"
-        ).fetchone()[0]
-        llm_indexes[db_name] = GPTSQLStructStoreIndex.from_documents(
-            documents=[],
-            llm_predictor=llm_predictor,
-            sql_database=db,
-            table_name=table_name,
-        )
+        with engine.connect() as connection:
+            table_name = cast(
+                Any,
+                connection.execute(
+                    text("select name from sqlite_master where type = 'table'")
+                ).fetchone(),
+            )[0]
+            llm_indexes[db_name] = GPTSQLStructStoreIndex.from_documents(
+                documents=[],
+                llm_predictor=llm_predictor,
+                sql_database=db,
+                table_name=table_name,
+            )
 
     # Generate SQL queries.
     generate_sql(
