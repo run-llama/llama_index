@@ -75,7 +75,7 @@ class ResponseSynthesizer:
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         simple_template: Optional[SimpleInputPrompt] = None,
-        response_mode: ResponseMode = ResponseMode.DEFAULT,
+        response_mode: ResponseMode = ResponseMode.COMPACT,
         response_kwargs: Optional[Dict] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,

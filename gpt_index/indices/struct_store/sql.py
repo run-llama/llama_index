@@ -2,6 +2,7 @@
 from enum import Enum
 from typing import Any, Optional, Sequence, Union
 
+from collections import defaultdict
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table_v2 import SQLStructTable
 from gpt_index.indices.base_retriever import BaseRetriever
@@ -110,8 +111,13 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
                 table=self._table,
                 ref_doc_id_column=self._ref_doc_id_column,
             )
+            # group nodes by ids
+            source_to_node = defaultdict(list)
             for node in nodes:
-                data_extractor.insert_datapoint_from_nodes([node])
+                source_to_node[node.ref_doc_id].append(node)
+
+            for _, node_set in source_to_node.items():
+                data_extractor.insert_datapoint_from_nodes(node_set)
         return index_struct
 
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:

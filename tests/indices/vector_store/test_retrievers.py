@@ -22,7 +22,7 @@ def test_faiss_query(
 
     # test embedding query
     query_str = "What is?"
-    retriever = index.as_retriever()
+    retriever = index.as_retriever(similarity_top_k=1)
     nodes = retriever.retrieve(QueryBundle(query_str))
     assert len(nodes) == 1
     assert nodes[0].node.text == "This is another test."
@@ -39,7 +39,7 @@ def test_simple_query(
 
     # test embedding query
     query_str = "What is?"
-    retriever = index.as_retriever()
+    retriever = index.as_retriever(similarity_top_k=1)
     nodes = retriever.retrieve(QueryBundle(query_str))
     assert len(nodes) == 1
     assert nodes[0].node.text == "This is another test."
