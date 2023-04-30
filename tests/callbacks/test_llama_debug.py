@@ -73,9 +73,13 @@ def test_flush_events() -> None:
     assert len(handler.events) == 0
     assert len(handler.sequential_events) == 0
 
+
 def test_ignore_events() -> None:
     """Test ignore event starts and ends."""
-    handler = LlamaDebugHandler(event_starts_to_ignore=[CBEventType.CHUNKING], event_ends_to_ignore=[CBEventType.LLM])
+    handler = LlamaDebugHandler(
+        event_starts_to_ignore=[CBEventType.CHUNKING],
+        event_ends_to_ignore=[CBEventType.LLM],
+    )
     manager = CallbackManager([handler])
 
     event_id = manager.on_event_start(CBEventType.CHUNKING, payload=TEST_PAYLOAD)
