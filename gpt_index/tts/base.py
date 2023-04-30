@@ -1,14 +1,23 @@
 """Text to speech module."""
 
-from typing import Optional
+from typing import Optional, List
 import tempfile
 import os
 import numpy as np
+
+# text to be chunked into chunks of 10 words
+# to avoid hallicunation for bark
+DEFAULT_CHUNK_SIZE = 10
 
 
 class BaseTTS:
     def __init__(self) -> None:
         pass
+
+    def generate_audio(self, text: str) -> None:
+        raise NotImplementedError(
+            "generate_audio method should be implemented by subclasses"
+        )
 
 
 class BarkTTS(BaseTTS):
@@ -29,6 +38,16 @@ class BarkTTS(BaseTTS):
 
         super().__init__()
 
+        self.text_temp = text_temp
+        self.waveform_temp = waveform_temp
+        self.lang_speaker_voice = lang_speaker_voice
+
+    def generate_audio(self, text: str) -> None:
+        """
+        Args:
+            text: text to be turned into audio.
+        """
+
         import_err_msg = "`bark` package not found, \
             please run `pip install git+https://github.com/suno-ai/bark.git`"
         try:
@@ -36,21 +55,11 @@ class BarkTTS(BaseTTS):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        self.generate_audio_fn = bark.generate_audio
-        self.save_as_prompt = bark.save_as_prompt
-        self.text_temp = text_temp
-        self.waveform_temp = waveform_temp
-        self.lang_speaker_voice = lang_speaker_voice
-
-    def generate_bark_audio(self, text: str) -> None:
-        """
-        Args:
-            text: text to be turned into audio.
-        """
-
-        # text to be chunked into 10 words each to avoid hallicunation
         words = text.split()
-        chunks = [words[i : i + 10] for i in range(0, len(words), 10)]
+        chunks = [
+            words[i : i + DEFAULT_CHUNK_SIZE]
+            for i in range(0, len(words), DEFAULT_CHUNK_SIZE)
+        ]
         chunks = [" ".join(chunk) for chunk in chunks]  # type: ignore
 
         full_generation = None
@@ -61,9 +70,9 @@ class BarkTTS(BaseTTS):
             with tempfile.TemporaryDirectory() as d:
                 if full_generation:
                     f = os.path.join(d, "history_prompt.npz")
-                    self.save_as_prompt(f, full_generation)
+                    bark.save_as_prompt(f, full_generation)
                     history_prompt = f
-                full_generation, audio_array = self.generate_audio_fn(
+                full_generation, audio_array = bark.generate_audio(
                     chunk,
                     history_prompt=history_prompt,
                     text_temp=self.text_temp,
@@ -86,27 +95,28 @@ class ElevenLabsTTS(BaseTTS):
 
         super().__init__()
 
-        import_err_msg = "`elevenlabs` package not found, \
-            please run `pip install elevenlabs`"
-        try:
-            import elevenlabs
-        except ImportError:
-            raise ImportError(import_err_msg)
+        self.api_key = api_key
 
-        if api_key:
-            elevenlabs.set_api_key(api_key)
-
-        self.generate_fn = elevenlabs.generate
-
-    def generate_elevenlabs_audio(self, text: str, voice: Optional[str] = None) -> None:
+    def generate_audio(self, text: str, voice: Optional[str] = None) -> None:
         """
         Args:
             text: text to be turned into audio.
         """
 
+        import_err_msg = "`elevenlabs` package not found, \
+            please run `pip install elevenlabs`"
+
+        try:
+            import elevenlabs
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        if self.api_key:
+            elevenlabs.set_api_key(self.api_key)
+
         if voice:
-            audio = self.generate_fn(text, voice=voice)
+            audio = elevenlabs.generate(text, voice=voice)
         else:
-            audio = self.generate_fn(text)
+            audio = elevenlabs.generate(text)
 
         return audio
