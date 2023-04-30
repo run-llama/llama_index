@@ -1,14 +1,10 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Union
+from typing import List, Sequence, Union
 
 from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.query_engine.types import Metadata
 
-
-@dataclass
-class Metadata:
-    description: str
-    name: Optional[str] = None
 
 
 @dataclass
