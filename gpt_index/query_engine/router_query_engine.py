@@ -16,13 +16,16 @@ class RouterQueryEngine(BaseQueryEngine):
         self._query_engines = query_engines
         self._metadatas = metadatas
 
+        if len(self._query_engines) != len(self._metadatas):
+            raise ValueError("Length of query engines and metadatas must match.")
+
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         result = self._selector.select(self._metadatas, query_bundle)
         try:
             ind = result.selection_ind
             selected_query_engine = self._query_engines[ind]
         except ValueError as e:
-            raise ValueError("Failed to select a specific query engine") from e
+            raise ValueError("Failed to select query engine") from e
 
         return selected_query_engine.query(query_bundle)
 
@@ -32,6 +35,6 @@ class RouterQueryEngine(BaseQueryEngine):
             ind = result.selection_ind
             selected_query_engine = self._query_engines[ind]
         except ValueError as e:
-            raise ValueError("Failed to select a specific query engine") from e
+            raise ValueError("Failed to select query engine") from e
 
         return await selected_query_engine.aquery(query_bundle)
