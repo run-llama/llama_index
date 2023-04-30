@@ -176,7 +176,7 @@ class SimpleDirectoryReader(BaseReader):
         metadata_list: List[Optional[dict]] = []
         image_docs: List[ImageDocument] = []
         for input_file in self.input_files:
-            if input_file.suffix in self.file_extractor:
+            if input_file.suffix.lower() in self.file_extractor:
                 parser = self.file_extractor[input_file.suffix]
                 if not parser.parser_config_set:
                     parser.init_parser()

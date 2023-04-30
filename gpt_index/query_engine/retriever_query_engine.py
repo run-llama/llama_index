@@ -44,7 +44,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
         # response synthesizer args
-        response_mode: ResponseMode = ResponseMode.DEFAULT,
+        response_mode: ResponseMode = ResponseMode.COMPACT,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
         simple_template: Optional[SimpleInputPrompt] = None,

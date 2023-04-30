@@ -51,7 +51,7 @@ The tree index builds a hierarchical tree from a set of Nodes (which become leaf
 Querying a tree index involves traversing from root nodes down 
 to leaf nodes. By default, (`child_branch_factor=1`), a query
 chooses one child node given a parent node. If `child_branch_factor=2`, a query
-chooses two child nodes per parent.
+chooses two child nodes per level.
 
 ![](/_static/indices/tree_query.png)
 

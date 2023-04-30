@@ -9,7 +9,6 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
-    column,
     create_engine,
     delete,
     select,
@@ -29,6 +28,15 @@ from gpt_index.schema import BaseDocument
 from tests.mock_utils.mock_prompts import (
     MOCK_TABLE_CONTEXT_PROMPT,
 )
+from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
+
+
+def _delete_table_items(engine: Any, table: Table) -> None:
+    """Delete items from a table."""
+    delete_stmt = delete(table)
+    with engine.connect() as connection:
+        connection.execute(delete_stmt)
+        connection.commit()
 
 
 def test_sql_index(
@@ -37,7 +45,7 @@ def test_sql_index(
 ) -> None:
     """Test GPTSQLStructStoreIndex."""
     engine = create_engine("sqlite:///:memory:")
-    metadata_obj = MetaData(bind=engine)
+    metadata_obj = MetaData()
     table_name = "test_table"
     test_table = Table(
         table_name,
@@ -45,11 +53,11 @@ def test_sql_index(
         Column("user_id", Integer, primary_key=True),
         Column("foo", String(16), nullable=False),
     )
-    metadata_obj.create_all()
+    metadata_obj.create_all(engine)
     # NOTE: we can use the default output parser for this
     index_kwargs, _ = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
-    sql_database = SQLDatabase(engine)
+    sql_database = SQLDatabase(engine, metadata=metadata_obj)
     index = GPTSQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
@@ -60,34 +68,106 @@ def test_sql_index(
     assert isinstance(index, GPTSQLStructStoreIndex)
 
     # test that the document is inserted
-    stmt = select([column("user_id"), column("foo")]).select_from(test_table)
+    stmt = select(test_table.c["user_id", "foo"])
     engine = index.sql_database.engine
     with engine.connect() as connection:
         results = connection.execute(stmt).fetchall()
+        print(results)
         assert results == [(2, "bar"), (8, "hello")]
 
     # try with documents with more text chunks
-    delete_stmt = delete(test_table)
-    with engine.connect() as connection:
-        connection.execute(delete_stmt)
+    _delete_table_items(engine, test_table)
     docs = [Document(text="user_id:2,foo:bar\nuser_id:8,foo:hello")]
     index = GPTSQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
     assert isinstance(index, GPTSQLStructStoreIndex)
     # test that the document is inserted
-    stmt = select([column("user_id"), column("foo")]).select_from(test_table)
+    stmt = select(test_table.c["user_id", "foo"])
     engine = index.sql_database.engine
     with engine.connect() as connection:
         results = connection.execute(stmt).fetchall()
+        connection.commit()
+        assert results == [(8, "hello")]
+
+
+def test_sql_index_nodes(
+    mock_service_context: ServiceContext,
+    struct_kwargs: Tuple[Dict, Dict],
+) -> None:
+    """Test GPTSQLStructStoreIndex with nodes."""
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj = MetaData()
+    table_name = "test_table"
+    test_table = Table(
+        table_name,
+        metadata_obj,
+        Column("user_id", Integer, primary_key=True),
+        Column("foo", String(16), nullable=False),
+    )
+    metadata_obj.create_all(engine)
+    # NOTE: we can use the default output parser for this
+    index_kwargs, _ = struct_kwargs
+
+    # try with different parent ids
+    nodes = [
+        Node(
+            text="user_id:2,foo:bar",
+            relationships={DocumentRelationship.SOURCE: "test"},
+        ),
+        Node(
+            text="user_id:8,foo:hello",
+            relationships={DocumentRelationship.SOURCE: "test2"},
+        ),
+    ]
+    sql_database = SQLDatabase(engine, metadata=metadata_obj)
+    index = GPTSQLStructStoreIndex(
+        nodes,
+        sql_database=sql_database,
+        table_name=table_name,
+        service_context=mock_service_context,
+        **index_kwargs
+    )
+    assert isinstance(index, GPTSQLStructStoreIndex)
+
+    # test that both nodes are inserted
+    stmt = select(test_table.c["user_id", "foo"])
+    engine = index.sql_database.engine
+    with engine.connect() as connection:
+        results = connection.execute(stmt).fetchall()
+        print(results)
         assert results == [(2, "bar"), (8, "hello")]
 
+    _delete_table_items(engine, test_table)
 
-def _delete_table_items(engine: Any, table: Table) -> None:
-    """Delete items from a table."""
-    delete_stmt = delete(table)
+    # try with same parent ids
+    nodes = [
+        Node(
+            text="user_id:2,foo:bar",
+            relationships={DocumentRelationship.SOURCE: "test"},
+        ),
+        Node(
+            text="user_id:8,foo:hello",
+            relationships={DocumentRelationship.SOURCE: "test"},
+        ),
+    ]
+    sql_database = SQLDatabase(engine, metadata=metadata_obj)
+    index = GPTSQLStructStoreIndex(
+        nodes,
+        sql_database=sql_database,
+        table_name=table_name,
+        service_context=mock_service_context,
+        **index_kwargs
+    )
+    assert isinstance(index, GPTSQLStructStoreIndex)
+
+    # test that only one node (the last one) is inserted
+    stmt = select(test_table.c["user_id", "foo"])
+    engine = index.sql_database.engine
     with engine.connect() as connection:
-        connection.execute(delete_stmt)
+        results = connection.execute(stmt).fetchall()
+        print(results)
+        assert results == [(8, "hello")]
 
 
 def test_sql_index_with_context(
@@ -97,7 +177,7 @@ def test_sql_index_with_context(
     """Test GPTSQLStructStoreIndex."""
     # test setting table_context_dict
     engine = create_engine("sqlite:///:memory:")
-    metadata_obj = MetaData(bind=engine)
+    metadata_obj = MetaData()
     table_name = "test_table"
     test_table = Table(
         table_name,
@@ -105,7 +185,7 @@ def test_sql_index_with_context(
         Column("user_id", Integer, primary_key=True),
         Column("foo", String(16), nullable=False),
     )
-    metadata_obj.create_all()
+    metadata_obj.create_all(engine)
     # NOTE: we can use the default output parser for this
     index_kwargs, _ = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
@@ -185,7 +265,7 @@ def test_sql_index_with_derive_index(mock_service_context: ServiceContext) -> No
     """Test derive index."""
     # test setting table_context_dict
     engine = create_engine("sqlite:///:memory:")
-    metadata_obj = MetaData(bind=engine)
+    metadata_obj = MetaData()
     table_name = "test_table"
     Table(
         table_name,
@@ -193,7 +273,7 @@ def test_sql_index_with_derive_index(mock_service_context: ServiceContext) -> No
         Column("user_id", Integer, primary_key=True),
         Column("foo", String(16), nullable=False),
     )
-    metadata_obj.create_all()
+    metadata_obj.create_all(engine)
     # NOTE: we can use the default output parser for this
     sql_database = SQLDatabase(engine)
     table_context_dict = {"test_table": "test_table_context"}
@@ -218,7 +298,7 @@ def test_sql_index_with_index_context(
     """Test GPTSQLStructStoreIndex."""
     # test setting table_context_dict
     engine = create_engine("sqlite:///:memory:")
-    metadata_obj = MetaData(bind=engine)
+    metadata_obj = MetaData()
     table_name = "test_table"
     Table(
         table_name,
@@ -226,7 +306,7 @@ def test_sql_index_with_index_context(
         Column("user_id", Integer, primary_key=True),
         Column("foo", String(16), nullable=False),
     )
-    metadata_obj.create_all()
+    metadata_obj.create_all(engine)
     # NOTE: we can use the default output parser for this
     index_kwargs, _ = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
