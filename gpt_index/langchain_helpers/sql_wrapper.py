@@ -37,7 +37,7 @@ class SQLDatabase(LangchainSQLDatabase):
         _engine_args = engine_args or {}
         return cls(create_engine(database_uri, **_engine_args), **kwargs)
 
-    def get_table_columns(self, table_name: str) -> List[dict]:
+    def get_table_columns(self, table_name: str) -> List[Any]:
         """Get table columns."""
         return self._inspector.get_columns(table_name)
 

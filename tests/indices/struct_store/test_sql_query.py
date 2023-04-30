@@ -21,7 +21,7 @@ def test_sql_index_query(
     index_kwargs, query_kwargs = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     engine = create_engine("sqlite:///:memory:")
-    metadata_obj = MetaData(bind=engine)
+    metadata_obj = MetaData()
     table_name = "test_table"
     # NOTE: table is created by tying to metadata_obj
     Table(
@@ -30,7 +30,7 @@ def test_sql_index_query(
         Column("user_id", Integer, primary_key=True),
         Column("foo", String(16), nullable=False),
     )
-    metadata_obj.create_all()
+    metadata_obj.create_all(engine)
     sql_database = SQLDatabase(engine)
     # NOTE: we can use the default output parser for this
     index = GPTSQLStructStoreIndex.from_documents(
@@ -61,7 +61,7 @@ def test_sql_index_async_query(
     index_kwargs, query_kwargs = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     engine = create_engine("sqlite:///:memory:")
-    metadata_obj = MetaData(bind=engine)
+    metadata_obj = MetaData()
     table_name = "test_table"
     # NOTE: table is created by tying to metadata_obj
     Table(
@@ -70,7 +70,7 @@ def test_sql_index_async_query(
         Column("user_id", Integer, primary_key=True),
         Column("foo", String(16), nullable=False),
     )
-    metadata_obj.create_all()
+    metadata_obj.create_all(engine)
     sql_database = SQLDatabase(engine)
     # NOTE: we can use the default output parser for this
     index = GPTSQLStructStoreIndex.from_documents(
