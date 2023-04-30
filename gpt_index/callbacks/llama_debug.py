@@ -24,8 +24,8 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
     ) -> None:
         """Initialize the llama debug handler."""
-        self.events: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
-        self.sequential_events: List[CBEvent] = []
+        self._events: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
+        self._sequential_events: List[CBEvent] = []
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )
@@ -43,10 +43,10 @@ class LlamaDebugHandler(BaseCallbackHandler):
         **kwargs: Any
     ) -> str:
         """Store event start data by event type."""
-        event = CBEvent(event_type, payload=payload, id=event_id)
-        self.events[event.event_type].append(event)
-        self.sequential_events.append(event)
-        return event.id
+        event = CBEvent(event_type, payload=payload, id_=event_id)
+        self._events[event.event_type].append(event)
+        self._sequential_events.append(event)
+        return event.id_
 
     def on_event_end(
         self,
@@ -56,22 +56,22 @@ class LlamaDebugHandler(BaseCallbackHandler):
         **kwargs: Any
     ) -> None:
         """Store event end data by event type."""
-        event = CBEvent(event_type, payload=payload, id=event_id)
-        self.events[event.event_type].append(event)
-        self.sequential_events.append(event)
+        event = CBEvent(event_type, payload=payload, id_=event_id)
+        self._events[event.event_type].append(event)
+        self._sequential_events.append(event)
 
     def get_events(self, event_type: Optional[CBEventType] = None) -> List[CBEvent]:
         """Get all events for a specific event type."""
         if event_type is not None:
-            return self.events[event_type]
+            return self._events[event_type]
 
-        return self.sequential_events
+        return self._sequential_events
 
     def _get_event_pairs(self, events: List[CBEvent]) -> List[List[CBEvent]]:
         """Helper function to pair events according to their ID."""
         event_pairs: Dict[str, List[CBEvent]] = defaultdict(list)
         for event in events:
-            event_pairs[event.id].append(event)
+            event_pairs[event.id_].append(event)
 
         sorted_events = sorted(
             event_pairs.values(),
@@ -101,9 +101,9 @@ class LlamaDebugHandler(BaseCallbackHandler):
     ) -> List[List[CBEvent]]:
         """Pair events by ID, either all events or a sepcific type."""
         if event_type is not None:
-            return self._get_event_pairs(self.events[event_type])
+            return self._get_event_pairs(self._events[event_type])
 
-        return self._get_event_pairs(self.sequential_events)
+        return self._get_event_pairs(self._sequential_events)
 
     def get_llm_inputs_outputs(self) -> List[List[CBEvent]]:
         """Get the exact LLM inputs and outputs."""
@@ -117,5 +117,13 @@ class LlamaDebugHandler(BaseCallbackHandler):
 
     def flush_event_logs(self) -> None:
         """Clear all events from memory."""
-        self.events = defaultdict(list)
-        self.sequential_events = []
+        self._events = defaultdict(list)
+        self._sequential_events = []
+    
+    @property
+    def events(self) -> Dict[CBEventType, List[CBEvent]]:
+        return self._events
+    
+    @property
+    def sequential_events(self) -> List[CBEvent]:
+        return self._sequential_events
