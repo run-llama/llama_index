@@ -1,6 +1,6 @@
 """ElevenLabs TTS."""
 
-from typing import Optional
+from typing import Optional, Any
 from gpt_index.tts.base import BaseTTS
 
 
@@ -19,8 +19,12 @@ class ElevenLabsTTS(BaseTTS):
 
         self.api_key = api_key
 
-    def generate_audio(self, text: str, voice: Optional[str] = None) -> None:
+    def generate_audio(self, text: str, voice: Optional[str] = None) -> Any:
         """Generate audio.
+
+        NOTE: return type is Any, but it should be any object that can be fed
+        as `data` into IPython.display.Audio(). This includes numpy array, list,
+        unicode, str or bytes
 
         Args:
             text (str): text to be turned into audio.

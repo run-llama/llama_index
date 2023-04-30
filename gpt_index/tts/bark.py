@@ -1,6 +1,6 @@
 """Bark TTS module."""
 
-from typing import Optional
+from typing import Optional, Any
 import tempfile
 import os
 import numpy as np
@@ -38,8 +38,12 @@ class BarkTTS(BaseTTS):
         self.waveform_temp = waveform_temp
         self.lang_speaker_voice = lang_speaker_voice
 
-    def generate_audio(self, text: str) -> None:
+    def generate_audio(self, text: str) -> Any:
         """Generate audio from text.
+
+        NOTE: return type is Any, but it should be any object that can be fed
+        as `data` into IPython.display.Audio(). This includes numpy array, list,
+        unicode, str or bytes
 
         Args:
             text: text to be turned into audio.
