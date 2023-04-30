@@ -9,7 +9,6 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
-    column,
     create_engine,
     delete,
     select,
