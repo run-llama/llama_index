@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 from langchain import BasePromptTemplate as BaseLangchainPrompt
 from langchain import PromptTemplate as LangchainPrompt
 from langchain.chains.prompt_selector import ConditionalPromptSelector
-from langchain.schema import BaseLanguageModel
+from langchain.base_language import BaseLanguageModel
 
 from gpt_index.output_parsers.base import BaseOutputParser
 from gpt_index.prompts.prompt_type import PromptType

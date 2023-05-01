@@ -3,7 +3,7 @@ from configparser import ConfigParser, SectionProxy
 from typing import Any, Type
 from gpt_index.embeddings.openai import OpenAIEmbedding
 from langchain import OpenAI
-from langchain.schema import BaseLanguageModel
+from langchain.base_language import BaseLanguageModel
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.embeddings.base import BaseEmbedding
 from gpt_index import (
