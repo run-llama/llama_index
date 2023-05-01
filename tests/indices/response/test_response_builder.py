@@ -35,7 +35,7 @@ def test_give_response(
 
     # test single line
     builder = get_response_builder(
-        mode=ResponseMode.DEFAULT,
+        mode=ResponseMode.REFINE,
         service_context=service_context,
         text_qa_template=MOCK_TEXT_QA_PROMPT,
         refine_template=MOCK_REFINE_PROMPT,

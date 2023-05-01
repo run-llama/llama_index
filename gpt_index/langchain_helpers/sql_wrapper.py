@@ -19,16 +19,15 @@ class SQLDatabase(LangchainSQLDatabase):
 
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Init params."""
-        super().__init__(*args, **kwargs)
-        self.metadata_obj = MetaData(bind=self._engine)
-        self.metadata_obj.reflect()
-
     @property
     def engine(self) -> Engine:
         """Return SQL Alchemy engine."""
         return self._engine
+
+    @property
+    def metadata_obj(self) -> MetaData:
+        """Return SQL Alchemy metadata."""
+        return self._metadata
 
     @classmethod
     def from_uri(
@@ -38,7 +37,7 @@ class SQLDatabase(LangchainSQLDatabase):
         _engine_args = engine_args or {}
         return cls(create_engine(database_uri, **_engine_args), **kwargs)
 
-    def get_table_columns(self, table_name: str) -> List[dict]:
+    def get_table_columns(self, table_name: str) -> List[Any]:
         """Get table columns."""
         return self._inspector.get_columns(table_name)
 
@@ -67,9 +66,11 @@ class SQLDatabase(LangchainSQLDatabase):
 
     def insert_into_table(self, table_name: str, data: dict) -> None:
         """Insert data into a table."""
-        table = self.metadata_obj.tables[table_name]
+        table = self._metadata.tables[table_name]
         stmt = insert(table).values(**data)
-        self._engine.execute(stmt)
+        with self._engine.connect() as connection:
+            connection.execute(stmt)
+            connection.commit()
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """Execute a SQL statement and return a string representing the results.

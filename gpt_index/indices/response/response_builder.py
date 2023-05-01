@@ -314,7 +314,6 @@ class CompactAndRefine(Refine):
             streaming=streaming,
         )
 
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -324,7 +323,6 @@ class CompactAndRefine(Refine):
     ) -> RESPONSE_TEXT_TYPE:
         return self.get_response(query_str, text_chunks, prev_response)
 
-    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
@@ -650,14 +648,14 @@ def get_response_builder(
     text_qa_template: Optional[QuestionAnswerPrompt] = None,
     refine_template: Optional[RefinePrompt] = None,
     simple_template: Optional[SimpleInputPrompt] = None,
-    mode: ResponseMode = ResponseMode.DEFAULT,
+    mode: ResponseMode = ResponseMode.COMPACT,
     use_async: bool = False,
     streaming: bool = False,
 ) -> BaseResponseBuilder:
     text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
     refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
     simple_template = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
-    if mode == ResponseMode.DEFAULT:
+    if mode == ResponseMode.REFINE:
         return Refine(
             service_context=service_context,
             text_qa_template=text_qa_template,

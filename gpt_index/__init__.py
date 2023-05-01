@@ -101,6 +101,12 @@ from gpt_index.indices.loading import (
     load_indices_from_storage,
 )
 
+# QueryBundle
+from gpt_index.indices.query.schema import QueryBundle
+
+# Response Synthesizer
+from gpt_index.indices.query.response_synthesis import ResponseSynthesizer
+
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
@@ -168,6 +174,8 @@ __all__ = [
     "load_graph_from_storage",
     "load_index_from_storage",
     "load_indices_from_storage",
+    "QueryBundle",
+    "ResponseSynthesizer",
 ]
 
 # NOTE: keep for backwards compatibility

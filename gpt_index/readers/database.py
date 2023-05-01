@@ -52,8 +52,8 @@ class DatabaseReader(BaseReader):
         user: Optional[str] = None,
         password: Optional[str] = None,
         dbname: Optional[str] = None,
-        *args: Optional[Any],
-        **kwargs: Optional[Any],
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
         if sql_database:

@@ -15,6 +15,10 @@ LlamaIndex (GPT Index) is a project that provides a central interface to connect
 - Twitter: https://twitter.com/gpt_index
 - Discord https://discord.gg/dGcwcsnxhU
 
+**Note**: The current version of LlamaIndex (v0.6) is still in pre-release mode.
+
+- Documentation for stable version (v0.5): https://gpt-index.readthedocs.io/en/v0.5.27/.
+
 Ecosystem
 ^^^^^^^^^
 

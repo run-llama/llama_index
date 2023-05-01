@@ -259,10 +259,10 @@ Below we highlight a few of the possible customizations.
 ```python
 from llama_index import (
     GPTVectorStoreIndex,
-    VectorIndexRetriever,
     ResponseSynthesizer,
-    RetrieverQueryEngine,
 )
+from llama_index.retrievers import VectorIndexRetriever
+from llama_index.query_engine import RetrieverQueryEngine
 
 # build index
 index = GPTVectorStoreIndex.from_documents(documents)

@@ -35,6 +35,7 @@ class SQLStructDatapointExtractor(BaseStructDatapointExtractor):
             raise ValueError("table_name must be specified")
         self._table_name = table_name or cast(Table, table).name
         if table is None:
+            table_name = cast(str, table_name)
             table = self._sql_database.metadata_obj.tables[table_name]
         # if ref_doc_id_column is specified, then we need to check that
         # it is a valid column in the table
