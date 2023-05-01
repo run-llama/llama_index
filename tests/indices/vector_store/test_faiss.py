@@ -16,6 +16,7 @@ from gpt_index.vector_stores.faiss import FaissVectorStore
 from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStoreQuery
 
 
+@pytest.mark.skipif("CI" in os.environ, reason="no FAISS in CI")
 def test_build_faiss(
     documents: List[Document],
     faiss_storage_context: StorageContext,
@@ -38,6 +39,7 @@ def test_build_faiss(
     assert "This is a test v2." in node_texts
 
 
+@pytest.mark.skipif("CI" in os.environ, reason="no FAISS in CI")
 def test_faiss_insert(
     documents: List[Document],
     faiss_storage_context: StorageContext,
