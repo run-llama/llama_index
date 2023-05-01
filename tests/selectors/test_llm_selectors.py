@@ -4,7 +4,7 @@ from gpt_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelecto
 
 def test_llm_single_selector(
     mock_service_context: ServiceContext,
-):
+) -> None:
     selector = LLMSingleSelector.from_defaults(service_context=mock_service_context)
 
     choices = [
@@ -20,7 +20,7 @@ def test_llm_single_selector(
 
 def test_llm_multi_selector(
     mock_service_context: ServiceContext,
-):
+) -> None:
     selector = LLMMultiSelector.from_defaults(service_context=mock_service_context)
 
     choices = [
@@ -36,7 +36,7 @@ def test_llm_multi_selector(
 
 def test_llm_multi_selector_max_choices(
     mock_service_context: ServiceContext,
-):
+) -> None:
     selector = LLMMultiSelector.from_defaults(
         service_context=mock_service_context, max_outputs=2
     )

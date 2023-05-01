@@ -6,7 +6,7 @@ exposed for recursive queries over composable indices.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -37,3 +37,6 @@ class QueryBundle(DataClassJsonMixin):
             return [self.query_str]
         else:
             return self.custom_embedding_strs
+
+
+QueryType = Union[str, QueryBundle]

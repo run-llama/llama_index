@@ -2,7 +2,7 @@
 
 import dataclasses
 from abc import abstractmethod
-from typing import Dict, Optional, Union, cast
+from typing import Dict, Optional, cast
 
 from langchain.input import print_text
 
@@ -14,7 +14,7 @@ from gpt_index.indices.query.query_transform.prompts import (
     ImageOutputQueryTransformPrompt,
     StepDecomposeQueryTransformPrompt,
 )
-from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.query.schema import QueryBundle, QueryType
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
 from gpt_index.prompts.base import Prompt
 from gpt_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
@@ -37,7 +37,7 @@ class BaseQueryTransform:
 
     def run(
         self,
-        query_bundle_or_str: Union[str, QueryBundle],
+        query_bundle_or_str: QueryType,
         extra_info: Optional[Dict] = None,
     ) -> QueryBundle:
         """Run query transform."""
@@ -54,7 +54,7 @@ class BaseQueryTransform:
 
     def __call__(
         self,
-        query_bundle_or_str: Union[str, QueryBundle],
+        query_bundle_or_str: QueryType,
         extra_info: Optional[Dict] = None,
     ) -> QueryBundle:
         """Run query processor."""

@@ -6,13 +6,14 @@ from dataclasses_json import DataClassJsonMixin
 from gpt_index.output_parsers.base import BaseOutputParser, StructuredOutput
 
 
-def escape_curly_braces(input_string: str) -> str:
+def _escape_curly_braces(input_string: str) -> str:
     # Replace '{' with '{{' and '}' with '}}' to escape curly braces
     escaped_string = input_string.replace("{", "{{").replace("}", "}}")
     return escaped_string
 
 
-FORMAT_STR = """The output should be formatted as a JSON instance that conforms to the JSON schema below. 
+FORMAT_STR = """The output should be formatted as a JSON instance that conforms to 
+the JSON schema below. 
 
 Here is the output schema:
 {
@@ -46,12 +47,9 @@ class Answer(DataClassJsonMixin):
 class SelectionOutputParser(BaseOutputParser):
     def parse(self, output: str) -> Any:
         json_list = json.loads(output)
-        answers = []
-        for json_dict in json_list:
-            answers.append(Answer.from_dict(json_dict))
-
+        answers = [Answer.from_dict(json_dict) for json_dict in json_list]
         return StructuredOutput(raw_output=output, parsed_output=answers)
 
     def format(self, prompt_template: str) -> str:
-        fmt = prompt_template + "\n\n" + escape_curly_braces(FORMAT_STR)
+        fmt = prompt_template + "\n\n" + _escape_curly_braces(FORMAT_STR)
         return fmt

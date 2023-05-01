@@ -2,8 +2,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Sequence, Union
 
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.query_engine.types import Metadata
+from gpt_index.indices.query.schema import QueryBundle, QueryType
+from gpt_index.tools.types import ToolMetadata
+
+MetadataType = Union[str, ToolMetadata]
 
 
 @dataclass
@@ -20,15 +22,11 @@ class SelectorResult:
         return self.inds[0]
 
 
-MetadataType = Union[str, Metadata]
-QueryType = Union[str, QueryBundle]
-
-
-def _wrap_choice(choice: MetadataType) -> Metadata:
-    if isinstance(choice, Metadata):
+def _wrap_choice(choice: MetadataType) -> ToolMetadata:
+    if isinstance(choice, ToolMetadata):
         return choice
     elif isinstance(choice, str):
-        return Metadata(description=choice)
+        return ToolMetadata(description=choice)
     else:
         raise ValueError(f"Unexpected type: {type(choice)}")
 
@@ -59,12 +57,12 @@ class BaseSelector(ABC):
 
     @abstractmethod
     def _select(
-        self, choices_metadata: Sequence[MetadataType], query: QueryType
+        self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         pass
 
     @abstractmethod
     async def _aselect(
-        self, choices_metadata: Sequence[MetadataType], query: QueryType
+        self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         pass

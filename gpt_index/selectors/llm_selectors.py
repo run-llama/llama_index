@@ -15,12 +15,13 @@ from gpt_index.selectors.prompts import (
     MultiSelectPrompt,
     SingleSelectPrompt,
 )
-from gpt_index.selectors.types import BaseSelector, Metadata, SelectorResult
+from gpt_index.selectors.types import BaseSelector, SelectorResult
+from gpt_index.tools.types import ToolMetadata
 
 
-def _build_choices_text(choices: Sequence[Metadata]) -> str:
+def _build_choices_text(choices: Sequence[ToolMetadata]) -> str:
     """Convert sequence of metadata to enumeration text."""
-    texts = []
+    texts: List[str] = []
     for ind, choice in enumerate(choices):
         text = " ".join(choice.description.splitlines())
         text = f"({ind + 1}) {text}"  # to one indexing
@@ -70,7 +71,7 @@ class LLMSingleSelector(BaseSelector):
         return cls(service_context.llm_predictor, prompt)
 
     def _select(
-        self, choices: Sequence[Metadata], query: QueryBundle
+        self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         # prepare input
         choices_text = _build_choices_text(choices)
@@ -84,17 +85,18 @@ class LLMSingleSelector(BaseSelector):
         )
 
         # parse output
+        assert self._prompt.output_parser is not None
         parse = self._prompt.output_parser.parse(prediction)
         return _structured_output_to_selector_result(parse)
 
     async def _aselect(
-        self, choices: Sequence[Metadata], query: QueryBundle
+        self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         # prepare input
         choices_text = _build_choices_text(choices)
 
         # predict
-        prediction, _ = self._llm_predictor.apredict(
+        prediction, _ = await self._llm_predictor.apredict(
             prompt=self._prompt,
             num_choices=len(choices),
             context_list=choices_text,
@@ -102,8 +104,8 @@ class LLMSingleSelector(BaseSelector):
         )
 
         # parse output
+        assert self._prompt.output_parser is not None
         parse = self._prompt.output_parser.parse(prediction)
-        assert isinstance(parse, StructuredOutput)
         return _structured_output_to_selector_result(parse)
 
 
@@ -143,7 +145,7 @@ class LLMMultiSelector(BaseSelector):
         return cls(service_context.llm_predictor, prompt, max_outputs)
 
     def _select(
-        self, choices: Sequence[Metadata], query: QueryBundle
+        self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         # prepare input
         context_list = _build_choices_text(choices)
@@ -157,17 +159,18 @@ class LLMMultiSelector(BaseSelector):
             query_str=query.query_str,
         )
 
+        assert self._prompt.output_parser is not None
         parsed = self._prompt.output_parser.parse(prediction)
         return _structured_output_to_selector_result(parsed)
 
     async def _aselect(
-        self, choices: Sequence[Metadata], query: QueryBundle
+        self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         # prepare input
         context_list = _build_choices_text(choices)
         max_outputs = self._max_outputs or len(choices)
 
-        prediction, _ = self._llm_predictor.predict(
+        prediction, _ = await self._llm_predictor.apredict(
             prompt=self._prompt,
             num_choices=len(choices),
             max_outputs=max_outputs,
@@ -175,5 +178,6 @@ class LLMMultiSelector(BaseSelector):
             query_str=query.query_str,
         )
 
+        assert self._prompt.output_parser is not None
         parsed = self._prompt.output_parser.parse(prediction)
         return _structured_output_to_selector_result(parsed)
