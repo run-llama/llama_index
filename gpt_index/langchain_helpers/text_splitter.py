@@ -97,7 +97,7 @@ class TokenTextSplitter(TextSplitter):
                         # split cur_split according to chunk size of the token numbers
                         cur_split_chunks = []
                         end_idx = len(cur_split)
-                        while (len(self.tokenizer(cur_split[0 : end_idx])) > chunk_size):
+                        while len(self.tokenizer(cur_split[0:end_idx])) > chunk_size:
                             for i in range(1, end_idx):
                                 tmp_split = cur_split[0 : end_idx - i]
                                 if len(self.tokenizer(tmp_split)) <= chunk_size:
