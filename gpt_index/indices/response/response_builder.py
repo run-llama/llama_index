@@ -257,7 +257,6 @@ class CompactAndRefine(Refine):
             streaming=streaming,
         )
 
-    @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
@@ -267,7 +266,6 @@ class CompactAndRefine(Refine):
     ) -> RESPONSE_TEXT_TYPE:
         return self.get_response(query_str, text_chunks, prev_response)
 
-    @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
