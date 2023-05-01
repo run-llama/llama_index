@@ -36,8 +36,6 @@ Here is the output schema:
 }
 """
 
-ANSWERS_KEY = "answers"
-
 
 @dataclass
 class Answer(DataClassJsonMixin):
@@ -52,7 +50,7 @@ class SelectionOutputParser(BaseOutputParser):
         for json_dict in json_list:
             answers.append(Answer.from_dict(json_dict))
 
-        return StructuredOutput(raw_output=output, parsed_output={ANSWERS_KEY: answers})
+        return StructuredOutput(raw_output=output, parsed_output=answers)
 
     def format(self, prompt_template: str) -> str:
         fmt = prompt_template + "\n\n" + escape_curly_braces(FORMAT_STR)

@@ -62,7 +62,7 @@ class MultiSelectPrompt(Prompt):
         "num_choices",
         "context_list",
         "query_str",
-        "max_choices",
+        "max_outputs",
     ]
 
 
@@ -75,7 +75,7 @@ DEFAULT_MULTI_SELECT_PROMPT_TMPL = (
     "{context_list}"
     "\n---------------------\n"
     "Using only the choices above and not prior knowledge, return the top choices "
-    "(no more than {max_choices}, ranked by most relevant to least) that "
+    "(no more than {max_outputs}, ranked by most relevant to least) that "
     "are most relevant to the question: '{query_str}'\n"
 )
 
