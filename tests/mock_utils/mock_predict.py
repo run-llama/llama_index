@@ -1,5 +1,6 @@
 """Mock predict."""
 
+import json
 from typing import Any, Dict, Tuple
 
 from gpt_index.indices.query.query_transform.prompts import (
@@ -37,12 +38,34 @@ def _mock_query_select() -> str:
 
 def _mock_single_select() -> str:
     """Mock single select."""
-    return "ANSWER: 1"
+    return json.dumps(
+        [
+            {
+                "choice": 1,
+                "reason": "test",
+            }
+        ]
+    )
 
 
 def _mock_multi_select() -> str:
     """Mock single select."""
-    return "ANSWER: 1, 2, 3"
+    return json.dumps(
+        [
+            {
+                "choice": 1,
+                "reason": "test",
+            },
+            {
+                "choice": 2,
+                "reason": "test",
+            },
+            {
+                "choice": 3,
+                "reason": "test",
+            },
+        ]
+    )
 
 
 def _mock_answer(prompt_args: Dict) -> str:

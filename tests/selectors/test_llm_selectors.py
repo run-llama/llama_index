@@ -15,7 +15,7 @@ def test_llm_single_selector(
     query = "what is the best fruit?"
 
     result = selector.select(choices, query)
-    assert result.selection_ind == 1
+    assert result.ind == 0
 
 
 def test_llm_multi_selector(
@@ -31,4 +31,4 @@ def test_llm_multi_selector(
     query = "what is the best fruit?"
 
     result = selector.select(choices, query)
-    assert result.selection_inds == [1, 2, 3]
+    assert result.inds == [0, 1, 2]
