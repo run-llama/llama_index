@@ -89,7 +89,7 @@ class GithubRepositoryReader(BaseReader):
             if github_token is None:
                 raise ValueError(
                     "Please provide a Github token. "
-                    "You can do so by passing it as an argument or"
+                    "You can do so by passing it as an argument or "
                     + "by setting the GITHUB_TOKEN environment variable."
                 )
 
