@@ -7,7 +7,7 @@ from gpt_index.readers.mongo import SimpleMongoReader
 try:
     from pymongo import MongoClient
 except ImportError:
-    MongoClient = None
+    MongoClient = None  # type: ignore
 
 
 @pytest.mark.skipif(MongoClient is None, reason="pymongo not installed")

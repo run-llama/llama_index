@@ -10,7 +10,7 @@ from gpt_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 try:
     from pymongo import MongoClient
 except ImportError:
-    MongoClient = None
+    MongoClient = None  # type: ignore
 
 
 @pytest.fixture
