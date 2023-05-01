@@ -1,5 +1,6 @@
 """Mock predict."""
 
+import json
 from typing import Any, Dict, Tuple
 
 from gpt_index.indices.query.query_transform.prompts import (
@@ -33,6 +34,40 @@ def _mock_query_select() -> str:
 
     """
     return "ANSWER: 1"
+
+
+def _mock_single_select() -> str:
+    """Mock single select."""
+    return json.dumps(
+        [
+            {
+                "choice": 1,
+                "reason": "test",
+            }
+        ]
+    )
+
+
+def _mock_multi_select(prompt_args: Dict) -> str:
+    """Mock single select."""
+    answers = [
+        {
+            "choice": 1,
+            "reason": "test",
+        },
+        {
+            "choice": 2,
+            "reason": "test",
+        },
+        {
+            "choice": 3,
+            "reason": "test",
+        },
+    ]
+    max_outputs = prompt_args["max_outputs"]
+    answers = answers[:max_outputs]
+
+    return json.dumps(answers)
 
 
 def _mock_answer(prompt_args: Dict) -> str:
@@ -120,6 +155,10 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
         response = _mock_kg_triplet_extract(full_prompt_args)
     elif prompt.prompt_type == PromptType.SIMPLE_INPUT:
         response = _mock_input(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SINGLE_SELECT:
+        response = _mock_single_select()
+    elif prompt.prompt_type == PromptType.MULTI_SELECT:
+        response = _mock_multi_select(full_prompt_args)
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
@@ -149,6 +188,8 @@ def patch_llmpredictor_predict(
         response = _mock_insert_predict()
     elif prompt.prompt_type == PromptType.TREE_SELECT:
         response = _mock_query_select()
+    elif prompt.prompt_type == PromptType.SIMPLE_INPUT:
+        response = _mock_query_select()
     elif prompt.prompt_type == PromptType.REFINE:
         response = _mock_refine(full_prompt_args)
     elif prompt.prompt_type == PromptType.QUESTION_ANSWER:
@@ -165,6 +206,10 @@ def patch_llmpredictor_predict(
         response = _mock_kg_triplet_extract(full_prompt_args)
     elif prompt.prompt_type == PromptType.SIMPLE_INPUT:
         response = _mock_input(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SINGLE_SELECT:
+        response = _mock_single_select()
+    elif prompt.prompt_type == PromptType.MULTI_SELECT:
+        response = _mock_multi_select(full_prompt_args)
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
