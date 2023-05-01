@@ -13,7 +13,7 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BaseLanguageModel, BaseMessage
+from langchain.base_language import BaseLanguageModel, BaseMessage
 
 from gpt_index.llm_predictor.base import LLMPredictor
 from gpt_index.prompts.base import Prompt
