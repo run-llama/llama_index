@@ -1,20 +1,18 @@
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List
 from gpt_index.data_structs.node_v2 import NodeWithScore
 
-from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.query.schema import QueryBundle, QueryType
 
 
 class BaseRetriever(ABC):
     """Base retriever."""
 
-    def retrieve(
-        self, str_or_query_bundle: Union[str, QueryBundle]
-    ) -> List[NodeWithScore]:
+    def retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         """Retrieve nodes given query.
 
         Args:
-            str_or_query_bundle (Union[str, QueryBundle]): Either a query string or
+            str_or_query_bundle (QueryType): Either a query string or
                 a QueryBundle object.
 
         """

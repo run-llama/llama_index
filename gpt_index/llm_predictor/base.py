@@ -10,7 +10,7 @@ import openai
 from langchain import Cohere, LLMChain, OpenAI, BaseCache
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import AI21
-from langchain.base_language import BaseLanguageModel
+from langchain.schema import BaseLanguageModel
 
 from gpt_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
 from gpt_index.prompts.base import Prompt
