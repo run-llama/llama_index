@@ -6,19 +6,18 @@ from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.query_engine.types import Metadata
 
 
-
 @dataclass
 class SelectorResult:
-    selection_inds: List[int]
+    inds: List[int]
+    reasons: List[str]
 
     @property
-    def selection_ind(self) -> int:
-        if len(self.selection_inds) != 1:
+    def ind(self) -> int:
+        if len(self.inds) != 1:
             raise ValueError(
-                f"There are {len(self.selection_inds)} selections, "
-                "please use .selection_inds."
+                f"There are {len(self.inds)} selections, " "please use .selection_inds."
             )
-        return self.selection_inds[0]
+        return self.inds[0]
 
 
 MetadataType = Union[str, Metadata]

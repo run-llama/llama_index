@@ -1,11 +1,15 @@
-from typing import Optional, Sequence
+from typing import List, Optional, Sequence, cast
 from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.service_context import ServiceContext
 
 
 from gpt_index.llm_predictor.base import LLMPredictor
 from gpt_index.output_parsers.base import BaseOutputParser, StructuredOutput
-from gpt_index.output_parsers.selection import INDS_KEY, SelectionOutputParser
+from gpt_index.output_parsers.selection import (
+    ANSWERS_KEY,
+    Answer,
+    SelectionOutputParser,
+)
 from gpt_index.selectors.prompts import (
     DEFAULT_MULTI_SELECT_PROMPT_TMPL,
     DEFAULT_SINGLE_SELECT_PROMPT_TMPL,
@@ -21,6 +25,14 @@ def _build_choices_text(choices: Sequence[Metadata]) -> str:
         text = " ".join(choice.description.splitlines())
         text = f"({ind + 1}) {text}"
     return "\n\n".join(texts)
+
+
+def _structured_output_to_selector_result(output: StructuredOutput) -> SelectorResult:
+    answers = output.parsed_output[ANSWERS_KEY]
+    answers = cast(List[Answer], answers)
+    inds = [answer.choice - 1 for answer in answers]  # for zero indexing
+    reasons = [answer.reason for answer in answers]
+    return SelectorResult(inds=inds, reasons=reasons)
 
 
 class LLMSingleSelector(BaseSelector):
@@ -72,8 +84,7 @@ class LLMSingleSelector(BaseSelector):
         # parse output
         parse = self._prompt.output_parser.parse(prediction)
         assert isinstance(parse, StructuredOutput)
-        inds = parse.parsed_output[INDS_KEY]
-        return SelectorResult(selection_inds=inds)
+        return _structured_output_to_selector_result(parse)
 
     async def _aselect(
         self, choices: Sequence[Metadata], query: QueryBundle
@@ -92,8 +103,7 @@ class LLMSingleSelector(BaseSelector):
         # parse output
         parse = self._prompt.output_parser.parse(prediction)
         assert isinstance(parse, StructuredOutput)
-        inds = parse.parsed_output[INDS_KEY]
-        return SelectorResult(selection_inds=inds)
+        return _structured_output_to_selector_result(parse)
 
 
 class LLMMultiSelector(BaseSelector):
@@ -148,8 +158,7 @@ class LLMMultiSelector(BaseSelector):
 
         parse = self._prompt.output_parser.parse(prediction)
         assert isinstance(parse, StructuredOutput)
-        inds = parse.parsed_output[INDS_KEY]
-        return SelectorResult(selection_inds=inds)
+        return _structured_output_to_selector_result(parse)
 
     async def _aselect(
         self, choices: Sequence[Metadata], query: QueryBundle
@@ -168,5 +177,4 @@ class LLMMultiSelector(BaseSelector):
 
         parse = self._prompt.output_parser.parse(prediction)
         assert isinstance(parse, StructuredOutput)
-        inds = parse.parsed_output[INDS_KEY]
-        return SelectorResult(selection_inds=inds)
+        return _structured_output_to_selector_result(parse)
