@@ -93,10 +93,15 @@ class RetrieverQueryEngine(BaseQueryEngine):
             node_postprocessors=node_postprocessors,
             verbose=verbose,
         )
+
+        callback_manager = (
+            service_context.callback_manager if service_context else CallbackManager([])
+        )
+
         return cls(
             retriever=retriever,
             response_synthesizer=response_synthesizer,
-            callback_manager=service_context.callback_manager
+            callback_manager=service_context.callback_manager,
         )
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
@@ -132,14 +137,18 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         retrieve_id = self._callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = self._retriever.retrieve(query_bundle)
-        self._callback_manager.on_event_end(CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id)
+        self._callback_manager.on_event_end(
+            CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id
+        )
 
         synth_id = self._callback_manager.on_event_start(CBEventType.SYNTHESIZE)
         response = self._response_synthesizer.synthesize(
             query_bundle=query_bundle,
             nodes=nodes,
         )
-        self._callback_manager.on_event_end(CBEventType.SYNTHESIZE, payload={"response": response}, event_id=synth_id)
+        self._callback_manager.on_event_end(
+            CBEventType.SYNTHESIZE, payload={"response": response}, event_id=synth_id
+        )
 
         self._callback_manager.on_event_end(CBEventType.QUERY, event_id=query_id)
         return response
@@ -150,14 +159,18 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         retrieve_id = self._callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = self._retriever.retrieve(query_bundle)
-        self._callback_manager.on_event_end(CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id)
-        
+        self._callback_manager.on_event_end(
+            CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id
+        )
+
         synth_id = self._callback_manager.on_event_start(CBEventType.SYNTHESIZE)
         response = await self._response_synthesizer.asynthesize(
             query_bundle=query_bundle,
             nodes=nodes,
         )
-        self._callback_manager.on_event_end(CBEventType.SYNTHESIZE, payload={"response": response}, event_id=synth_id)
+        self._callback_manager.on_event_end(
+            CBEventType.SYNTHESIZE, payload={"response": response}, event_id=synth_id
+        )
 
         self._callback_manager.on_event_end(CBEventType.QUERY, event_id=query_id)
         return response
