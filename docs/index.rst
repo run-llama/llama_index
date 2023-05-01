@@ -15,6 +15,10 @@ LlamaIndex (GPT Index) is a project that provides a central interface to connect
 - Twitter: https://twitter.com/gpt_index
 - Discord https://discord.gg/dGcwcsnxhU
 
+**Note**: The current version of LlamaIndex (v0.6) is still in pre-release mode.
+
+- Documentation for stable version (v0.5): https://gpt-index.readthedocs.io/en/v0.5.27/.
+
 Ecosystem
 ^^^^^^^^^
 
@@ -87,16 +91,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    how_to/output_parsing.md
    how_to/evaluation/evaluation.md
    how_to/integrations.rst
-   how_to/storage.md 
-
-   .. evaluation
-   .. integrations
-
-   .. how_to/composability.md
-   .. how_to/update.md
-   .. how_to/cost_analysis.md
-   .. how_to/vector_stores.md
-   .. how_to/using_with_langchain.md
+   how_to/storage.rst
 
 
 .. toctree::
@@ -107,7 +102,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    reference/query.rst
    reference/node.rst
    reference/node_postprocessor.rst
-   reference/docstore.rst
+   reference/storage.rst
    reference/composability.rst
    reference/readers.rst
    reference/prompts.rst

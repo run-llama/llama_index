@@ -1,15 +1,20 @@
 """Test milvus index."""
 
 
-from typing import Any, Dict, List, Optional
-from unittest.mock import patch
-from gpt_index.indices.vector_store.vector_indices import GPTMilvusIndex
+from typing import Any, List, Optional
+from gpt_index.indices.service_context import ServiceContext
+from gpt_index.indices.vector_store import GPTVectorStoreIndex
+from gpt_index.storage.storage_context import StorageContext
 
-from gpt_index.vector_stores.types import NodeEmbeddingResult
-from tests.mock_utils.mock_decorator import patch_common
+from gpt_index.vector_stores.types import (
+    NodeEmbeddingResult,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 
-class MockMilvusVectorStore:
+class MockMilvusVectorStore(VectorStore):
     stores_text: bool = True
 
     def __init__(
@@ -38,25 +43,8 @@ class MockMilvusVectorStore:
         self.overwrite = overwrite
 
     @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {
-            "collection_name": self.collection_name,
-            "index_params": self.index_params,
-            "search_params": self.search_params,
-            "dim": self.dim,
-            "host": self.host,
-            "port": self.port,
-            "user": self.user,
-            "password": self.password,
-            "use_secure": self.use_secure,
-            # # Set to false, dont want subsequent object to rewrite store
-            # "overwrite": False,
-        }
-
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "MockMilvusVectorStore":
-        return cls(**config_dict)
+    def client(self) -> Any:
+        return None
 
     def add(
         self,
@@ -64,31 +52,19 @@ class MockMilvusVectorStore:
     ) -> List[str]:
         return []
 
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+        return None
 
-@patch_common
-@patch(
-    "gpt_index.indices.vector_store.vector_indices.MilvusVectorStore",
-    MockMilvusVectorStore,
-)
-@patch(
-    "gpt_index.vector_stores.registry.VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE",
-    {MockMilvusVectorStore: "mock_type"},
-)
-@patch(
-    "gpt_index.vector_stores.registry.VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS",
-    {"mock_type": MockMilvusVectorStore},
-)
-def test_save_load(
-    _mock_init: Any,
-    _mock_predict: Any,
-    _mock_total_tokens_used: Any,
-    _mock_split_text_overlap: Any,
-    _mock_split_text: Any,
-) -> None:
+    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        return VectorStoreQueryResult()
+
+
+def test_basic(mock_service_context: ServiceContext) -> None:
     """Test we can save and load."""
-    index = GPTMilvusIndex.from_documents(documents=[])
-    save_dict = index.save_to_dict()
-    loaded_index = GPTMilvusIndex.load_from_dict(
-        save_dict,
+    vector_store = MockMilvusVectorStore()
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    GPTVectorStoreIndex.from_documents(
+        documents=[],
+        storage_context=storage_context,
+        service_context=mock_service_context,
     )
-    assert isinstance(loaded_index, GPTMilvusIndex)

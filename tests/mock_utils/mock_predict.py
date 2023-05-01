@@ -133,6 +133,58 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
     return response, formatted_prompt
 
 
+def patch_llmpredictor_predict(
+    self: Any, prompt: Prompt, **prompt_args: Any
+) -> Tuple[str, str]:
+    """Mock predict method of LLMPredictor.
+
+    Depending on the prompt, return response.
+
+    """
+    formatted_prompt = prompt.format(**prompt_args)
+    full_prompt_args = prompt.get_full_format_args(prompt_args)
+    if prompt.prompt_type == PromptType.SUMMARY:
+        response = _mock_summary_predict(full_prompt_args)
+    elif prompt.prompt_type == PromptType.TREE_INSERT:
+        response = _mock_insert_predict()
+    elif prompt.prompt_type == PromptType.TREE_SELECT:
+        response = _mock_query_select()
+    elif prompt.prompt_type == PromptType.REFINE:
+        response = _mock_refine(full_prompt_args)
+    elif prompt.prompt_type == PromptType.QUESTION_ANSWER:
+        response = _mock_answer(full_prompt_args)
+    elif prompt.prompt_type == PromptType.KEYWORD_EXTRACT:
+        response = _mock_keyword_extract(full_prompt_args)
+    elif prompt.prompt_type == PromptType.QUERY_KEYWORD_EXTRACT:
+        response = _mock_query_keyword_extract(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SCHEMA_EXTRACT:
+        response = _mock_schema_extract(full_prompt_args)
+    elif prompt.prompt_type == PromptType.TEXT_TO_SQL:
+        response = _mock_text_to_sql(full_prompt_args)
+    elif prompt.prompt_type == PromptType.KNOWLEDGE_TRIPLET_EXTRACT:
+        response = _mock_kg_triplet_extract(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SIMPLE_INPUT:
+        response = _mock_input(full_prompt_args)
+    elif prompt.prompt_type == PromptType.CUSTOM:
+        if isinstance(prompt, DecomposeQueryTransformPrompt):
+            response = _mock_decompose_query(full_prompt_args)
+        else:
+            raise ValueError("Invalid prompt to use with mocks.")
+    elif prompt.prompt_type == PromptType.PANDAS:
+        response = _mock_pandas(full_prompt_args)
+    else:
+        raise ValueError("Invalid prompt to use with mocks.")
+
+    return response, formatted_prompt
+
+
+async def patch_llmpredictor_apredict(
+    self: Any, prompt: Prompt, **prompt_args: Any
+) -> Tuple[str, str]:
+    """Mock apredict method of LLMPredictor."""
+    return patch_llmpredictor_predict(self, prompt, **prompt_args)
+
+
 async def mock_llmpredictor_apredict(
     prompt: Prompt, **prompt_args: Any
 ) -> Tuple[str, str]:

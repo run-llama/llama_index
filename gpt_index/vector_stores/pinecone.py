@@ -152,12 +152,6 @@ class PineconeVectorStore(VectorStore):
         self._namespace = namespace
         if pinecone_index is not None:
             self._pinecone_index = cast(pinecone.Index, pinecone_index)
-            _logger.warn(
-                "If directly passing in client, cannot automatically reconstruct "
-                "connetion after save_to_disk/load_from_disk."
-                "For automatic reload, store PINECONE_API_KEY in env variable and "
-                "pass in index_name and environment instead."
-            )
         else:
             if "PINECONE_API_KEY" not in os.environ:
                 raise ValueError(
@@ -193,25 +187,6 @@ class PineconeVectorStore(VectorStore):
         if tokenizer is None:
             tokenizer = get_default_tokenizer()
         self._tokenizer = tokenizer
-
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        return cls(**config_dict)
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {
-            "index_name": self._index_name,
-            "environment": self._environment,
-            "namespace": self._namespace,
-            "metadata_filters": self._metadata_filters,
-            "pinecone_kwargs": self._pinecone_kwargs,
-            "insert_kwargs": self._insert_kwargs,
-            "query_kwargs": self._query_kwargs,
-            "delete_kwargs": self._delete_kwargs,
-            "add_sparse_vector": self._add_sparse_vector,
-        }
 
     def add(
         self,

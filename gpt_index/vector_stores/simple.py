@@ -1,7 +1,9 @@
 """Simple vector store index."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, cast
+import json
+import os
+from typing import Any, Dict, List, cast, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -10,12 +12,18 @@ from gpt_index.indices.query.embedding_utils import (
     get_top_k_embeddings_learner,
 )
 from gpt_index.vector_stores.types import (
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 LEARNER_MODES = {
     VectorStoreQueryMode.SVM,
@@ -53,30 +61,23 @@ class SimpleVectorStore(VectorStore):
 
     def __init__(
         self,
-        simple_vector_store_data_dict: Optional[dict] = None,
+        data: Optional[SimpleVectorStoreData] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        if simple_vector_store_data_dict is None:
-            self._data = SimpleVectorStoreData()
-        else:
-            self._data = SimpleVectorStoreData.from_dict(simple_vector_store_data_dict)
+        self._data = data or SimpleVectorStoreData()
 
     @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "SimpleVectorStore":
-        return cls(**config_dict)
+    def from_persist_dir(
+        cls, persist_dir: str = DEFAULT_PERSIST_DIR
+    ) -> "SimpleVectorStore":
+        persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        return cls.from_persist_path(persist_path)
 
     @property
     def client(self) -> None:
         """Get client."""
         return None
-
-    @property
-    def config_dict(self) -> dict:
-        """Get config dict."""
-        return {
-            "simple_vector_store_data_dict": self._data.to_dict(),
-        }
 
     def get(self, text_id: str) -> List[float]:
         """Get embedding."""
@@ -134,3 +135,26 @@ class SimpleVectorStore(VectorStore):
             raise ValueError(f"Invalid query mode: {query.mode}")
 
         return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
+
+    def persist(self, persist_path: str) -> None:
+        """Persist the SimpleVectorStore to a directory."""
+        dirpath = os.path.dirname(persist_path)
+        if not os.path.exists(dirpath):
+            os.makedirs(dirpath)
+
+        with open(persist_path, "w+") as f:
+            json.dump(self._data.to_dict(), f)
+
+    @classmethod
+    def from_persist_path(cls, persist_path: str) -> "SimpleVectorStore":
+        """Create a SimpleKVStore from a persist directory."""
+        if not os.path.exists(persist_path):
+            raise ValueError(
+                f"No existing {__name__} found at {persist_path}, skipping load."
+            )
+
+        logger.debug(f"Loading {__name__} from {persist_path}.")
+        with open(persist_path, "r+") as f:
+            data_dict = json.load(f)
+            data = SimpleVectorStoreData.from_dict(data_dict)
+        return cls(data)

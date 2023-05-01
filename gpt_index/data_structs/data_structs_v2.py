@@ -10,9 +10,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
-from pydantic import Json
 
-from gpt_index.constants import DATA_KEY, TYPE_KEY
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.struct_type import IndexStructType
 
@@ -34,13 +32,6 @@ class V2IndexStruct(DataClassJsonMixin):
     @abstractmethod
     def get_type(cls) -> IndexStructType:
         """Get index struct type."""
-
-    def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
-        out_dict = {
-            TYPE_KEY: self.get_type(),
-            DATA_KEY: super().to_dict(encode_json),
-        }
-        return out_dict
 
 
 @dataclass
@@ -289,117 +280,6 @@ class KG(V2IndexStruct):
         return IndexStructType.KG
 
 
-# TODO: remove once we centralize UX around vector index
-
-
-@dataclass
-class SimpleIndexDict(IndexDict):
-    """Index dict for simple vector index."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.SIMPLE_DICT
-
-
-@dataclass
-class FaissIndexDict(IndexDict):
-    """Index dict for Faiss vector index."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.DICT
-
-
-@dataclass
-class WeaviateIndexDict(IndexDict):
-    """Index dict for Weaviate vector index."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.WEAVIATE
-
-
-@dataclass
-class PineconeIndexDict(IndexDict):
-    """Index dict for Pinecone vector index."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.PINECONE
-
-
-@dataclass
-class QdrantIndexDict(IndexDict):
-    """Index dict for Qdrant vector index."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.QDRANT
-
-
-@dataclass
-class MilvusIndexDict(IndexDict):
-    """Index dict for Milvus vector index."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.MILVUS
-
-
-@dataclass
-class ChromaIndexDict(IndexDict):
-    """Index dict for Chroma vector index."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.CHROMA
-
-
-class DeepLakeIndexDict(IndexDict):
-    """Index dict for DeepLake vector index."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.DEEPLAKE
-
-
-@dataclass
-class MyScaleIndexDict(IndexDict):
-    """Index dict for MyScale vector index."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.MYSCALE
-
-
-@dataclass
-class OpensearchIndexDict(IndexDict):
-    """Index dict for Opensearch vector index."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.OPENSEARCH
-
-
-class ChatGPTRetrievalPluginIndexDict(IndexDict):
-    """Index dict for ChatGPT Retrieval Plugin."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.CHATGPT_RETRIEVAL_PLUGIN
-
-
 @dataclass
 class EmptyIndex(IndexDict):
     """Empty index."""
@@ -408,29 +288,3 @@ class EmptyIndex(IndexDict):
     def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.EMPTY
-
-
-@dataclass
-class CompositeIndex(V2IndexStruct):
-    all_index_structs: Dict[str, V2IndexStruct] = field(default_factory=dict)
-    root_id: Optional[str] = None
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get type."""
-        return IndexStructType.COMPOSITE
-
-    def to_dict(self, encode_json: bool = False) -> Dict[str, Json]:
-        data_dict = {
-            "all_index_structs": {
-                id_: struct.to_dict(encode_json=encode_json)
-                for id_, struct in self.all_index_structs.items()
-            },
-            "root_id": self.root_id,
-        }
-
-        out_dict = {
-            TYPE_KEY: self.get_type(),
-            DATA_KEY: data_dict,
-        }
-        return out_dict

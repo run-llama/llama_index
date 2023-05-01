@@ -17,11 +17,14 @@ import sphinx_rtd_theme  # noqa: F401
 
 sys.path.insert(0, os.path.abspath("../"))
 
+with open("../gpt_index/VERSION") as f:
+    version = f.read()
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 
-project = "LlamaIndex"
+project = "LlamaIndex 🦙"
 copyright = "2022, Jerry Liu"
 author = "Jerry Liu"
 
@@ -52,7 +55,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
-html_title = "LlamaIndex"
+html_title = project + " " + version
 html_static_path = ["_static"]
 
 html_css_files = [

@@ -33,16 +33,19 @@ def test_token_predictor(mock_split: Any) -> None:
 
     # test tree index
     index = GPTTreeIndex.from_documents([document], service_context=service_context)
-    index.query("What is?", service_context=service_context)
+    query_engine = index.as_query_engine()
+    query_engine.query("What is?")
 
     # test keyword table index
     index_keyword = GPTKeywordTableIndex.from_documents(
         [document], service_context=service_context
     )
-    index_keyword.query("What is?", service_context=service_context)
+    query_engine = index_keyword.as_query_engine()
+    query_engine.query("What is?")
 
     # test list index
     index_list = GPTListIndex.from_documents(
         [document], service_context=service_context
     )
-    index_list.query("What is?", service_context=service_context)
+    query_engine = index_list.as_query_engine()
+    query_engine.query("What is?")

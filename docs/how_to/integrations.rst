@@ -1,4 +1,4 @@
-Integrations
+⛓️ Integrations
 ============
 
 LlamaIndex provides a diverse range of integrations with other toolsets and storage providers. 

@@ -1,4 +1,4 @@
-# Data Connectors (LlamaHub 🦙)
+# 🔌 Data Connectors (LlamaHub)
 
 Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙. 
 LlamaHub is an open-source repository containing data loaders that you can easily plug and play into any LlamaIndex application.
@@ -20,14 +20,15 @@ downloads the loader file into a module that you can use within your application
 Example usage:
 
 ```python
-from llama_index import GPTSimpleVectorIndex, download_loader
+from llama_index import GPTVectorStoreIndex, download_loader
 
 GoogleDocsReader = download_loader('GoogleDocsReader')
 
 gdoc_ids = ['1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec']
 loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=gdoc_ids)
-index = GPTSimpleVectorIndex.from_documents(documents)
-index.query('Where did the author go to school?')
+index = GPTVectorStoreIndex.from_documents(documents)
+query_engine = index.as_query_engine()
+query_engine.query('Where did the author go to school?')
 ```
 

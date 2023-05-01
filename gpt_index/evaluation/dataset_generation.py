@@ -12,7 +12,7 @@ from gpt_index import (
     LLMPredictor,
 )
 from gpt_index.indices.postprocessor.node import KeywordNodePostprocessor
-from gpt_index.data_structs.node_v2 import Node
+from gpt_index.data_structs.node_v2 import Node, NodeWithScore
 
 from langchain.chat_models import ChatOpenAI
 
@@ -100,7 +100,9 @@ class DatasetGenerator:
             required_keywords=required_keywords,
             exclude_keywords=exclude_keywords,
         )
-        nodes = node_postprocessor.postprocess_nodes(nodes)
+        node_with_scores = [NodeWithScore(node) for node in nodes]
+        node_with_scores = node_postprocessor.postprocess_nodes(node_with_scores)
+        nodes = [node_with_score.node for node_with_score in node_with_scores]
 
         return cls(
             nodes=nodes,
@@ -117,11 +119,13 @@ class DatasetGenerator:
         for node in nodes:
             index = GPTListIndex.from_documents([Document(node.get_text())])
 
-            response = index.query(
-                self.question_gen_query,
+            query_engine = index.as_query_engine(
                 service_context=self.service_context,
                 text_qa_template=self.text_question_template,
                 use_async=True,
+            )
+            response = query_engine.query(
+                self.question_gen_query,
             )
 
             result = str(response).strip().split("\n")

@@ -52,7 +52,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
-response = index.query("What did the author do after his time at Y Combinator?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do after his time at Y Combinator?")
 
 ```
 
@@ -84,7 +85,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
-response = index.query("What did the author do after his time at Y Combinator?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do after his time at Y Combinator?")
 
 ```
 
@@ -127,7 +129,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prom
 index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
-response = index.query("What did the author do after his time at Y Combinator?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do after his time at Y Combinator?")
 
 ```
 
@@ -185,7 +188,8 @@ documents = SimpleDirectoryReader('./data').load_data()
 index = GPTListIndex.from_documents(documents, service_context=service_context)
 
 # Query and print response
-response = index.query("<query_text>")
+query_engine = index.as_query_engine()
+response = query_engine.query("<query_text>")
 print(response)
 ```
 
@@ -193,4 +197,4 @@ Using this method, you can use any LLM. Maybe you have one running locally, or r
 
 Note that you may have to adjust the internal prompts to get good performance. Even then, you should be using a sufficiently large LLM to ensure it's capable of handling the complex queries that LlamaIndex uses internally, so your mileage may vary.
 
-A list of all default internal prompts is available [here](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/prompts/default_prompts.py), and chat-specific prompts are listed [here](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/prompts/chat_prompts.py). You can also implement your own custom prompts, as described [here](https://gpt-index.readthedocs.io/en/latest/how_to/custom_prompts.html).
+A list of all default internal prompts is available [here](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/prompts/default_prompts.py), and chat-specific prompts are listed [here](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/prompts/chat_prompts.py). You can also implement your own custom prompts, as described [here](https://gpt-index.readthedocs.io/en/latest/how_to/customization/custom_prompts.html).

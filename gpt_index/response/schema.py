@@ -11,7 +11,7 @@ from gpt_index.utils import truncate_text
 class Response:
     """Response object.
 
-    Returned if streaming=False during the `index.query()` call.
+    Returned if streaming=False.
 
     Attributes:
         response: The response text.
@@ -41,7 +41,7 @@ class Response:
 class StreamingResponse:
     """StreamingResponse object.
 
-    Returned if streaming=True during the `index.query()` call.
+    Returned if streaming=True.
 
     Attributes:
         response_gen: The response generator.

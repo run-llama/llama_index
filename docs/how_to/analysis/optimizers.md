@@ -8,21 +8,22 @@ exploring ways to expand optimization capabilities to other areas, such as perfo
 Here is a sample code snippet on comparing the outputs without optimization and with.
 
 ```python
-from llama_index import GPTSimpleVectorIndex
+from llama_index import GPTVectorStoreIndex
 from llama_index.optimization.optimizer import SentenceEmbeddingOptimizer
-# load from disk
-index = GPTSimpleVectorIndex.load_from_disk('simple_vector_index.json')
-
 print("Without optimization")
 start_time = time.time()
-res = index.query("What is the population of Berlin?")
+query_engine = index.as_query_engine()
+res = query_engine.query("What is the population of Berlin?")
 end_time = time.time()
 print("Total time elapsed: {}".format(end_time - start_time))
 print("Answer: {}".format(res))
 
 print("With optimization")
 start_time = time.time()
-res = index.query("What is the population of Berlin?", optimizer=SentenceEmbeddingOptimizer(percentile_cutoff=0.5))
+query_engine = index.as_query_engine(
+    optimizer=SentenceEmbeddingOptimizer(percentile_cutoff=0.5)
+)
+res = query_engine.query("What is the population of Berlin?")
 end_time = time.time()
 print("Total time elapsed: {}".format(end_time - start_time))
 print("Answer: {}".format(res))

@@ -9,9 +9,8 @@ from typing import Any, Optional, Sequence
 
 from gpt_index.data_structs.data_structs_v2 import EmptyIndex
 from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.base import BaseGPTIndex, QueryMap
-from gpt_index.indices.empty.query import GPTEmptyIndexQuery
-from gpt_index.indices.query.schema import QueryMode
+from gpt_index.indices.base import BaseGPTIndex
+from gpt_index.indices.base_retriever import BaseRetriever
 from gpt_index.indices.service_context import ServiceContext
 
 
@@ -36,18 +35,17 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
     ) -> None:
         """Initialize params."""
         super().__init__(
-            nodes=[],
-            index_struct=index_struct,
+            nodes=None,
+            index_struct=index_struct or EmptyIndex(),
             service_context=service_context,
             **kwargs,
         )
 
-    @classmethod
-    def get_query_map(self) -> QueryMap:
-        """Get query map."""
-        return {
-            QueryMode.DEFAULT: GPTEmptyIndexQuery,
-        }
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        # NOTE: lazy import
+        from gpt_index.indices.empty.retrievers import EmptyIndexRetriever
+
+        return EmptyIndexRetriever(self)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> EmptyIndex:
         """Build the index from documents.
