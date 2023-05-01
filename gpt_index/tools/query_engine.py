@@ -1,7 +1,6 @@
 from typing import Any, Optional, cast
 from gpt_index.indices.query.base import BaseQueryEngine
-from gpt_index.tools.types import BaseTool
-from tools.types import ToolMetadata
+from gpt_index.tools.types import BaseTool, ToolMetadata
 
 
 DEFAULT_NAME = "Query Engine Tool"
