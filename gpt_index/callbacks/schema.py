@@ -14,10 +14,9 @@ class CBEventType(str, Enum):
     CHUNKING = "chunking"
     EMBEDDING = "embedding"
     LLM = "llm"
-    # TODO: Can we use these anywhere?
-    # QUERY = "query"
-    # RETRIEVE = "retrieve"
-    # SYNTHESIZE = "synthesize"
+    QUERY = "query"
+    RETRIEVE = "retrieve"
+    SYNTHESIZE = "synthesize"
     TREE = "tree"
 
 
