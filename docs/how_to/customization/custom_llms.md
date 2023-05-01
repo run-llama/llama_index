@@ -52,7 +52,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
-response = index.query("What did the author do after his time at Y Combinator?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do after his time at Y Combinator?")
 
 ```
 
@@ -84,7 +85,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
-response = index.query("What did the author do after his time at Y Combinator?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do after his time at Y Combinator?")
 
 ```
 
@@ -127,7 +129,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prom
 index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
-response = index.query("What did the author do after his time at Y Combinator?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do after his time at Y Combinator?")
 
 ```
 
@@ -185,7 +188,8 @@ documents = SimpleDirectoryReader('./data').load_data()
 index = GPTListIndex.from_documents(documents, service_context=service_context)
 
 # Query and print response
-response = index.query("<query_text>")
+query_engine = index.as_query_engine()
+response = query_engine.query("<query_text>")
 print(response)
 ```
 

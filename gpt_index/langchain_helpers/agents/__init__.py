@@ -6,9 +6,7 @@ from gpt_index.langchain_helpers.agents.agents import (
 )
 from gpt_index.langchain_helpers.agents.toolkits import LlamaToolkit
 from gpt_index.langchain_helpers.agents.tools import (
-    GraphToolConfig,
     IndexToolConfig,
-    LlamaGraphTool,
     LlamaIndexTool,
 )
 

@@ -11,10 +11,9 @@ from gpt_index.indices.query.schema import QueryBundle
 from gpt_index.indices.response.type import ResponseMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.docstore import BaseDocumentStore
-from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
+from gpt_index.storage.docstore import BaseDocumentStore
+from gpt_index.data_structs.node_v2 import DocumentRelationship, NodeWithScore
 from gpt_index.indices.postprocessor.base import BasePostprocessor
-from gpt_index.indices.query.embedding_utils import SimilarityTracker
 from gpt_index.indices.response.response_builder import get_response_builder
 
 logger = logging.getLogger(__name__)
@@ -28,8 +27,8 @@ class BaseNodePostprocessor(BasePostprocessor, BaseModel):
 
     @abstractmethod
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
 
@@ -40,11 +39,12 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
     exclude_keywords: List[str] = Field(default_factory=list)
 
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         new_nodes = []
-        for node in nodes:
+        for node_with_score in nodes:
+            node = node_with_score.node
             should_use_node = True
             if self.required_keywords is not None:
                 for keyword in self.required_keywords:
@@ -61,7 +61,7 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
                         should_use_node = False
 
             if should_use_node:
-                new_nodes.append(node)
+                new_nodes.append(node_with_score)
 
         return new_nodes
 
@@ -72,22 +72,17 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
     similarity_cutoff: float = Field(default=None)
 
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         extra_info = extra_info or {}
-        similarity_tracker = extra_info.get("similarity_tracker", None)
-        if similarity_tracker is None:
-            return nodes
-        sim_cutoff_exists = (
-            similarity_tracker is not None and self.similarity_cutoff is not None
-        )
+        sim_cutoff_exists = self.similarity_cutoff is not None
 
         new_nodes = []
         for node in nodes:
             should_use_node = True
             if sim_cutoff_exists:
-                similarity = cast(SimilarityTracker, similarity_tracker).find(node)
+                similarity = node.score
                 if similarity is None:
                     should_use_node = False
                 elif cast(float, similarity) < cast(float, self.similarity_cutoff):
@@ -100,10 +95,11 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
 
 
 def get_forward_nodes(
-    node: Node, num_nodes: int, docstore: BaseDocumentStore
-) -> Dict[str, Node]:
+    node_with_score: NodeWithScore, num_nodes: int, docstore: BaseDocumentStore
+) -> Dict[str, NodeWithScore]:
     """Get forward nodes."""
-    nodes: Dict[str, Node] = {node.get_doc_id(): node}
+    node = node_with_score.node
+    nodes: Dict[str, NodeWithScore] = {node.get_doc_id(): node_with_score}
     cur_count = 0
     # get forward nodes in an iterative manner
     while cur_count < num_nodes:
@@ -113,18 +109,19 @@ def get_forward_nodes(
         next_node = docstore.get_node(next_node_id)
         if next_node is None:
             break
-        nodes[next_node.get_doc_id()] = next_node
+        nodes[next_node.get_doc_id()] = NodeWithScore(next_node)
         node = next_node
         cur_count += 1
     return nodes
 
 
 def get_backward_nodes(
-    node: Node, num_nodes: int, docstore: BaseDocumentStore
-) -> Dict[str, Node]:
+    node_with_score: NodeWithScore, num_nodes: int, docstore: BaseDocumentStore
+) -> Dict[str, NodeWithScore]:
     """Get backward nodes."""
+    node = node_with_score.node
     # get backward nodes in an iterative manner
-    nodes: Dict[str, Node] = {node.get_doc_id(): node}
+    nodes: Dict[str, NodeWithScore] = {node.get_doc_id(): node_with_score}
     cur_count = 0
     while cur_count < num_nodes:
         if DocumentRelationship.PREVIOUS not in node.relationships:
@@ -133,7 +130,7 @@ def get_backward_nodes(
         prev_node = docstore.get_node(prev_node_id)
         if prev_node is None:
             break
-        nodes[prev_node.get_doc_id()] = prev_node
+        nodes[prev_node.get_doc_id()] = NodeWithScore(prev_node)
         node = prev_node
         cur_count += 1
     return nodes
@@ -159,23 +156,6 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
     num_nodes: int = Field(default=1)
     mode: str = Field(default="next")
 
-    def _get_backward_nodes(self, node: Node) -> Dict[str, Node]:
-        """Get backward nodes."""
-        # get backward nodes in an iterative manner
-        nodes: Dict[str, Node] = {node.get_doc_id(): node}
-        cur_count = 0
-        while cur_count < self.num_nodes:
-            if DocumentRelationship.PREVIOUS not in node.relationships:
-                break
-            prev_node_id = node.relationships[DocumentRelationship.PREVIOUS]
-            prev_node = self.docstore.get_node(prev_node_id)
-            if prev_node is None:
-                break
-            nodes[prev_node.get_doc_id()] = prev_node
-            node = prev_node
-            cur_count += 1
-        return nodes
-
     @validator("mode")
     def _validate_mode(cls, v: str) -> str:
         """Validate mode."""
@@ -184,12 +164,12 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
         return v
 
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        all_nodes: Dict[str, Node] = {}
+        all_nodes: Dict[str, NodeWithScore] = {}
         for node in nodes:
-            all_nodes[node.get_doc_id()] = node
+            all_nodes[node.node.get_doc_id()] = node
             if self.mode == "next":
                 all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
             elif self.mode == "previous":
@@ -204,7 +184,7 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
 
-        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.get_doc_id())
+        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.node.get_doc_id())
         return list(sorted_nodes)
 
 
@@ -290,8 +270,8 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
         raise ValueError(f"Invalid prediction: {raw_pred}")
 
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         if extra_info is None or "query_bundle" not in extra_info:
             raise ValueError("Missing query bundle in extra info.")
@@ -303,9 +283,9 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
         )
         refine_infer_prev_next_prompt = RefinePrompt(self.refine_prev_next_tmpl)
 
-        all_nodes: Dict[str, Node] = {}
+        all_nodes: Dict[str, NodeWithScore] = {}
         for node in nodes:
-            all_nodes[node.get_doc_id()] = node
+            all_nodes[node.node.get_doc_id()] = node
             # use response builder instead of llm_predictor directly
             # to be more robust to handling long context
             response_builder = get_response_builder(
@@ -315,7 +295,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
                 mode=ResponseMode.TREE_SUMMARIZE,
             )
             raw_pred = response_builder.get_response(
-                text_chunks=[node.get_text()],
+                text_chunks=[node.node.get_text()],
                 query_str=query_bundle.query_str,
             )
             raw_pred = cast(str, raw_pred)
@@ -336,5 +316,5 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
             else:
                 raise ValueError(f"Invalid mode: {mode}")
 
-        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.get_doc_id())
+        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.node.get_doc_id())
         return list(sorted_nodes)

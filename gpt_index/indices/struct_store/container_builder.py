@@ -1,12 +1,12 @@
 """SQL Container builder."""
 
 
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type
 
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
-from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.query.schema import QueryType
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.base import Document
 from gpt_index.schema import BaseDocument
@@ -21,7 +21,7 @@ class SQLContextContainerBuilder:
     """SQLContextContainerBuilder.
 
     Build a SQLContextContainer that can be passed to the SQL index
-    during index construction or during queryt-time.
+    during index construction or during query-time.
 
     NOTE: if context_str is specified, that will be used as context
     instead of context_dict
@@ -116,7 +116,7 @@ class SQLContextContainerBuilder:
     def query_index_for_context(
         self,
         index: BaseGPTIndex,
-        query_str: Union[str, QueryBundle],
+        query_str: QueryType,
         query_tmpl: Optional[str] = DEFAULT_CONTEXT_QUERY_TMPL,
         store_context_str: bool = True,
         **index_kwargs: Any,
@@ -129,7 +129,7 @@ class SQLContextContainerBuilder:
 
         Args:
             index (BaseGPTIndex): index data structure
-            query_str (Union[str, QueryBundle]): query string
+            query_str (QueryType): query string
             query_tmpl (Optional[str]): query template
             store_context_str (bool): store context_str
 
@@ -138,7 +138,8 @@ class SQLContextContainerBuilder:
             context_query_str = query_str
         else:
             context_query_str = query_tmpl.format(orig_query_str=query_str)
-        response = index.query(context_query_str, **index_kwargs)
+        query_engine = index.as_query_engine()
+        response = query_engine.query(context_query_str)
         context_str = str(response)
         if store_context_str:
             self.context_str = context_str

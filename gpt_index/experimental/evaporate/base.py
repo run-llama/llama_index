@@ -152,9 +152,10 @@ class EvaporateExtractor:
             f'Write a python function to extract the entire "{field}" field from text, '
             "but not any other metadata. Return the result as a list."
         )
-        response = index.query(
-            query_str, response_mode="compact", text_qa_template=qa_prompt
+        query_engine = index.as_query_engine(
+            response_mode="compact", text_qa_template=qa_prompt
         )
+        response = query_engine.query(query_str)
         fn_str = f"""def get_{function_field}_field(text: str):
     \"""
     Function to extract {field}. 

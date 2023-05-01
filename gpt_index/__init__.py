@@ -31,22 +31,13 @@ from gpt_index.indices.list import GPTListIndex
 from gpt_index.indices.prompt_helper import PromptHelper
 
 # for composability
-from gpt_index.indices.query.schema import QueryConfig, QueryMode
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from gpt_index.indices.tree import GPTTreeIndex
-from gpt_index.indices.vector_store import (
-    GPTChromaIndex,
-    GPTDeepLakeIndex,
-    GPTFaissIndex,
-    GPTMilvusIndex,
-    GPTMyScaleIndex,
-    GPTPineconeIndex,
-    GPTQdrantIndex,
-    GPTSimpleVectorIndex,
-    GPTVectorStoreIndex,
-    GPTWeaviateIndex,
-)
+from gpt_index.indices.vector_store import GPTVectorStoreIndex
+
+# storage
+from gpt_index.storage.storage_context import StorageContext
 
 # langchain helper
 from gpt_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -103,12 +94,26 @@ from gpt_index.response.schema import Response
 from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from gpt_index.token_counter.mock_embed_model import MockEmbedding
 
+# loading
+from gpt_index.indices.loading import (
+    load_graph_from_storage,
+    load_index_from_storage,
+    load_indices_from_storage,
+)
+
+# QueryBundle
+from gpt_index.indices.query.schema import QueryBundle
+
+# Response Synthesizer
+from gpt_index.indices.query.response_synthesis import ResponseSynthesizer
+
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
 
 
 __all__ = [
+    "StorageContext",
     "ServiceContext",
     "ComposableGraph",
     "GPTKeywordTableIndex",
@@ -117,15 +122,7 @@ __all__ = [
     "GPTListIndex",
     "GPTEmptyIndex",
     "GPTTreeIndex",
-    "GPTFaissIndex",
-    "GPTPineconeIndex",
-    "GPTQdrantIndex",
-    "GPTMilvusIndex",
-    "GPTSimpleVectorIndex",
     "GPTVectorStoreIndex",
-    "GPTWeaviateIndex",
-    "GPTChromaIndex",
-    "GPTMyScaleIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",
     "LangchainEmbedding",
@@ -170,13 +167,15 @@ __all__ = [
     "SQLDocumentContextBuilder",
     "SQLContextBuilder",
     "PromptHelper",
-    "QueryConfig",
-    "QueryMode",
     "IndexStructType",
     "TwitterTweetReader",
     "download_loader",
     "GithubRepositoryReader",
-    "GPTDeepLakeIndex",
+    "load_graph_from_storage",
+    "load_index_from_storage",
+    "load_indices_from_storage",
+    "QueryBundle",
+    "ResponseSynthesizer",
 ]
 
 # NOTE: keep for backwards compatibility

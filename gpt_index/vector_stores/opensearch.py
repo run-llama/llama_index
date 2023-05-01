@@ -173,21 +173,10 @@ class OpensearchVectorStore(VectorStore):
             raise ImportError(import_err_msg)
         self._client = client
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "VectorStore":
-        if "client" not in config_dict:
-            raise ValueError("Missing Opensearch client!")
-        return cls(**config_dict)
-
     @property
     def client(self) -> Any:
         """Get client."""
         return self._client
-
-    @property
-    def config_dict(self) -> dict:
-        """Get config dict."""
-        return {}
 
     def add(
         self,
