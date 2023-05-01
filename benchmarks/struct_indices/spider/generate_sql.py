@@ -7,7 +7,7 @@ import re
 
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
-from langchain.schema import BaseLanguageModel
+from langchain.base_language import BaseLanguageModel
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
 
