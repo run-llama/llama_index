@@ -167,6 +167,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         """Insert a document."""
         nodes = self.service_context.node_parser.get_nodes_from_documents([document])
         self.insert_nodes(nodes, **insert_kwargs)
+        self.docstore.set_document_hash(document.get_doc_id(), document.get_doc_hash())
 
     @abstractmethod
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
