@@ -7,6 +7,11 @@ from gpt_index.readers.schema.base import Document
 from gpt_index.schema import BaseDocument
 from gpt_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 
+try:
+    from pymongo import MongoClient
+except ImportError:
+    MongoClient = None  # type: ignore
+
 
 @pytest.fixture
 def documents() -> List[Document]:
@@ -21,6 +26,7 @@ def mongodb_docstore(mongo_kvstore: MongoDBKVStore) -> MongoDocumentStore:
     return MongoDocumentStore(mongo_kvstore=mongo_kvstore)
 
 
+@pytest.mark.skipif(MongoClient is None, reason="pymongo not installed")
 def test_mongo_docstore(
     mongodb_docstore: MongoDocumentStore, documents: List[Document]
 ) -> None:
@@ -47,6 +53,7 @@ def test_mongo_docstore(
     assert len(ds.docs) == 1
 
 
+@pytest.mark.skipif(MongoClient is None, reason="pymongo not installed")
 def test_mongo_docstore_hash(
     mongodb_docstore: MongoDocumentStore, documents: List[Document]
 ) -> None:

@@ -41,5 +41,11 @@ class PromptType(str, Enum):
     # Pandas prompt
     PANDAS = "pandas"
 
+    # Single select prompt
+    SINGLE_SELECT = "single_select"
+
+    # Multiple select prompt
+    MULTI_SELECT = "multi_select"
+
     # custom (by default)
     CUSTOM = "custom"

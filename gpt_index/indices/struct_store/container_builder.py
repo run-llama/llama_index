@@ -1,12 +1,12 @@
 """SQL Container builder."""
 
 
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type
 
 from gpt_index.indices.base import BaseGPTIndex
 from gpt_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 from gpt_index.indices.common.struct_store.schema import SQLContextContainer
-from gpt_index.indices.query.schema import QueryBundle
+from gpt_index.indices.query.schema import QueryType
 from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
 from gpt_index.readers.base import Document
 from gpt_index.schema import BaseDocument
@@ -116,7 +116,7 @@ class SQLContextContainerBuilder:
     def query_index_for_context(
         self,
         index: BaseGPTIndex,
-        query_str: Union[str, QueryBundle],
+        query_str: QueryType,
         query_tmpl: Optional[str] = DEFAULT_CONTEXT_QUERY_TMPL,
         store_context_str: bool = True,
         **index_kwargs: Any,
@@ -129,7 +129,7 @@ class SQLContextContainerBuilder:
 
         Args:
             index (BaseGPTIndex): index data structure
-            query_str (Union[str, QueryBundle]): query string
+            query_str (QueryType): query string
             query_tmpl (Optional[str]): query template
             store_context_str (bool): store context_str
 

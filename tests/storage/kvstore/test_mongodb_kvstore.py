@@ -1,6 +1,11 @@
 import pytest
 from gpt_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 
+try:
+    from pymongo import MongoClient
+except ImportError:
+    MongoClient = None  # type: ignore
+
 
 @pytest.fixture()
 def kvstore_with_data(mongo_kvstore: MongoDBKVStore) -> MongoDBKVStore:
@@ -10,6 +15,7 @@ def kvstore_with_data(mongo_kvstore: MongoDBKVStore) -> MongoDBKVStore:
     return mongo_kvstore
 
 
+@pytest.mark.skipif(MongoClient is None, reason="pymongo not installed")
 def test_kvstore_basic(mongo_kvstore: MongoDBKVStore) -> None:
     test_key = "test_key"
     test_blob = {"test_obj_key": "test_obj_val"}

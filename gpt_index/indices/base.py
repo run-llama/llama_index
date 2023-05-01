@@ -180,6 +180,7 @@ class BaseGPTIndex(Generic[IS], ABC):
             CBEventType.CHUNKING, payload={"nodes": nodes}, event_id=event_id
         )
         self.insert_nodes(nodes, **insert_kwargs)
+        self.docstore.set_document_hash(document.get_doc_id(), document.get_doc_hash())
 
     @abstractmethod
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:

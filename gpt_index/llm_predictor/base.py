@@ -5,8 +5,9 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Generator, Optional, Protocol, Tuple
 
+import langchain
 import openai
-from langchain import Cohere, LLMChain, OpenAI
+from langchain import Cohere, LLMChain, OpenAI, BaseCache
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import AI21
 from langchain.base_language import BaseLanguageModel
@@ -155,13 +156,19 @@ class LLMPredictor(BaseLLMPredictor):
         retry_on_throttling (bool): Whether to retry on rate limit errors.
             Defaults to true.
 
+        cache (Optional[langchain.cache.BaseCache]) : use cached result for LLM
     """
 
     def __init__(
-        self, llm: Optional[BaseLanguageModel] = None, retry_on_throttling: bool = True
+        self,
+        llm: Optional[BaseLanguageModel] = None,
+        retry_on_throttling: bool = True,
+        cache: Optional[BaseCache] = None,
     ) -> None:
         """Initialize params."""
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
+        if cache is not None:
+            langchain.llm_cache = cache
         self.retry_on_throttling = retry_on_throttling
         self._total_tokens_used = 0
         self.flag = True
