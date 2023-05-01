@@ -40,4 +40,5 @@ class QueryEngineTool(BaseTool):
 
     def __call__(self, input: Any) -> Any:
         query_str = cast(str, input)
-        return self._query_engine.query(query_str)
+        response = self._query_engine.query(query_str)
+        return str(response)
