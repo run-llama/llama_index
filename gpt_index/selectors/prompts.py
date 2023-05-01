@@ -6,9 +6,8 @@ from gpt_index.prompts.prompt_type import PromptType
 class SingleSelectPrompt(Prompt):
     """Single select prompt.
 
-    Prompt to select a candidate child node out of all child nodes
-    provided in `context_list`, given a query `query_str`. `num_chunks` is
-    the number of child nodes in `context_list`.
+    Prompt to select one out of `num_choices` options provided in `context_list`,
+    given a query `query_str`.
 
     Required template variables: `num_chunks`, `context_list`, `query_str`
 
@@ -43,13 +42,11 @@ DEFAULT_SINGLE_SELECT_PROMPT = SingleSelectPrompt(
 class MultiSelectPrompt(Prompt):
     """Multiple select prompt.
 
-    Prompt to select multiple candidate child nodes out of all
-    child nodes provided in `context_list`, given a query `query_str`.
-    `branching_factor` refers to the number of child nodes to select, and
-    `num_chunks` is the number of child nodes in `context_list`.
+    Prompt to select multiple candidates (up to `max_outputs`) out of `num_choices`
+    options provided in `context_list`, given a query `query_str`.
 
     Required template variables: `num_chunks`, `context_list`, `query_str`,
-        `branching_factor`
+        `max_outputs`
 
     Args:
         template (str): Template for the prompt.

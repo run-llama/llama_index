@@ -11,6 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 class RouterQueryEngine(BaseQueryEngine):
+    """Router query engine.
+
+    Selects one out of several candidate query engines to execute a query.
+
+    Args:
+        selector (BaseSelector): A selector that chooses one out of many options based
+            on each candidate's metadata and query.
+        query_engine_tools (Sequence[QueryEngineTool]): A sequence of candidate
+            query engines. They must be wrapped as tools to expose metadata to
+            the selector.
+
+    """
+
     def __init__(
         self,
         selector: BaseSelector,
