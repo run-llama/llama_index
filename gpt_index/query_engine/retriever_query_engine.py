@@ -101,7 +101,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         return cls(
             retriever=retriever,
             response_synthesizer=response_synthesizer,
-            callback_manager=service_context.callback_manager,
+            callback_manager=callback_manager,
         )
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
