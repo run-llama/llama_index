@@ -1,5 +1,5 @@
 import sys
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.vector_stores.types import NodeEmbeddingResult
 
