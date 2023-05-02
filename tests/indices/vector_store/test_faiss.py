@@ -5,15 +5,15 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from gpt_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node_v2 import Node
 
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 
-from gpt_index.readers.schema.base import Document
-from gpt_index.storage.storage_context import StorageContext
-from gpt_index.vector_stores.faiss import FaissVectorStore
-from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStoreQuery
+from llama_index.readers.schema.base import Document
+from llama_index.storage.storage_context import StorageContext
+from llama_index.vector_stores.faiss import FaissVectorStore
+from llama_index.vector_stores.types import NodeEmbeddingResult, VectorStoreQuery
 
 
 @pytest.mark.skipif("CI" in os.environ, reason="no FAISS in CI")

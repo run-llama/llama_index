@@ -2,15 +2,15 @@ import asyncio
 from typing import Any, Dict, Tuple
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.struct_store.base import default_output_parser
-from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
-from gpt_index.indices.struct_store.sql_query import (
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.struct_store.base import default_output_parser
+from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex
+from llama_index.indices.struct_store.sql_query import (
     GPTNLStructStoreQueryEngine,
     GPTSQLStructStoreQueryEngine,
 )
-from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.readers.schema.base import Document
+from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.readers.schema.base import Document
 
 
 def test_sql_index_query(

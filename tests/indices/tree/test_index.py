@@ -3,12 +3,12 @@
 from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
-from gpt_index.data_structs.data_structs_v2 import IndexGraph
-from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.storage.docstore import BaseDocumentStore
-from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.readers.schema.base import Document
+from llama_index.data_structs.data_structs_v2 import IndexGraph
+from llama_index.data_structs.node_v2 import Node
+from llama_index.indices.service_context import ServiceContext
+from llama_index.storage.docstore import BaseDocumentStore
+from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.readers.schema.base import Document
 
 
 def _get_left_or_right_node(
@@ -87,7 +87,7 @@ OUTPUTS = [
 ]
 
 
-@patch("gpt_index.indices.common_tree.base.run_async_tasks", side_effect=[OUTPUTS])
+@patch("llama_index.indices.common_tree.base.run_async_tasks", side_effect=[OUTPUTS])
 def test_build_tree_async(
     _mock_run_async_tasks: Any,
     documents: List[Document],

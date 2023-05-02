@@ -1,9 +1,9 @@
 """Embeddings."""
 from typing import Any, List
 from unittest.mock import patch
-from gpt_index.embeddings.base import mean_agg
+from llama_index.embeddings.base import mean_agg
 
-from gpt_index.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 
 
 def mock_get_text_embedding(text: str) -> List[float]:

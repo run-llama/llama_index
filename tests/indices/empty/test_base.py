@@ -1,8 +1,8 @@
 """Test empty index."""
 
-from gpt_index.data_structs.data_structs_v2 import EmptyIndex
-from gpt_index.indices.empty.base import GPTEmptyIndex
-from gpt_index.indices.service_context import ServiceContext
+from llama_index.data_structs.data_structs_v2 import EmptyIndex
+from llama_index.indices.empty.base import GPTEmptyIndex
+from llama_index.indices.service_context import ServiceContext
 
 
 def test_empty(

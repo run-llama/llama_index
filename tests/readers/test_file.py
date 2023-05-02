@@ -3,7 +3,7 @@
 from tempfile import TemporaryDirectory
 from typing import Any, Dict
 
-from gpt_index.readers.file.base import SimpleDirectoryReader
+from llama_index.readers.file.base import SimpleDirectoryReader
 
 
 def test_recursive() -> None:

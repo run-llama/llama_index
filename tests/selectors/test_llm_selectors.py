@@ -1,5 +1,5 @@
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
+from llama_index.indices.service_context import ServiceContext
+from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
 
 
 def test_llm_single_selector(

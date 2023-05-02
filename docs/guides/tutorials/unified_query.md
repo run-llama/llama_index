@@ -67,7 +67,7 @@ that solves a distinct use case.
 We will first define a vector index over the documents of each city.
 
 ```python
-from gpt_index import GPTVectorStoreIndex, ServiceContext, StorageContext
+from llama_index import GPTVectorStoreIndex, ServiceContext, StorageContext
 from langchain.llms.openai import OpenAIChat
 
 # set service context
@@ -127,7 +127,7 @@ Next, we compose a keyword table on top of these vector indexes, with these inde
 
 
 ```python
-from gpt_index.indices.composability import ComposableGraph
+from llama_index.indices.composability import ComposableGraph
 
 graph = ComposableGraph.from_indices(
     GPTSimpleKeywordTableIndex,
@@ -152,13 +152,13 @@ An example is shown below.
 
 ```python
 # define decompose_transform
-from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
     llm_predictor_chatgpt, verbose=True
 )
 
 # define custom query engines
-from gpt_index.query_engine.transform_query_engine import TransformQueryEngine
+from llama_index.query_engine.transform_query_engine import TransformQueryEngine
 custom_query_engines = {}
 for index in vector_indices.values():
     query_engine = index.as_query_engine(service_context=service_context)
@@ -204,7 +204,7 @@ First, we define the query engines for the set of indexes/graph that we want to 
 
 
 ```python
-from gpt_index.tools.query_engine import QueryEngineTool
+from llama_index.tools.query_engine import QueryEngineTool
 
 query_engine_tools = []
 
@@ -231,8 +231,8 @@ Now, we can define the routing logic and overall router query engine.
 Here, we use the `LLMSingleSelector`, which uses LLM to choose a underlying query engine to route the query to.
 
 ```python
-from gpt_index.query_engine.router_query_engine import RouterQueryEngine
-from gpt_index.selectors.llm_selectors import LLMSingleSelector
+from llama_index.query_engine.router_query_engine import RouterQueryEngine
+from llama_index.selectors.llm_selectors import LLMSingleSelector
 
 
 router_query_engine = RouterQueryEngine(

@@ -3,6 +3,6 @@
 Vector Store
 =====================
 
-.. automodule:: gpt_index.vector_stores
+.. automodule:: llama_index.vector_stores
    :members:
    :inherited-members:

@@ -4,7 +4,7 @@ from typing import Optional, Type, Union
 
 import pytest
 
-from gpt_index.utils import (
+from llama_index.utils import (
     ErrorToRetry,
     globals_helper,
     retry_on_exceptions_with_backoff,

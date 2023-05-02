@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.readers.mongo import SimpleMongoReader
+from llama_index.readers.mongo import SimpleMongoReader
 
 try:
     from pymongo import MongoClient

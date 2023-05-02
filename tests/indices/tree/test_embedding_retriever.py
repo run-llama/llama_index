@@ -6,20 +6,20 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.tree.select_leaf_embedding_retriever import (
+from llama_index.data_structs.node_v2 import Node
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.tree.select_leaf_embedding_retriever import (
     TreeSelectLeafEmbeddingRetriever,
 )
-from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.chain_wrapper import (
+from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.langchain_helpers.chain_wrapper import (
     LLMChain,
     LLMMetadata,
     LLMPredictor,
 )
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.readers.schema.base import Document
+from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
+from llama_index.readers.schema.base import Document
 from tests.mock_utils.mock_predict import mock_llmchain_predict
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
@@ -99,7 +99,7 @@ def _mock_tokenizer(text: str) -> int:
 
 
 @patch.object(LLMChain, "predict", side_effect=mock_llmchain_predict)
-@patch("gpt_index.llm_predictor.base.OpenAI")
+@patch("llama_index.llm_predictor.base.OpenAI")
 @patch.object(LLMPredictor, "get_llm_metadata", return_value=LLMMetadata())
 @patch.object(LLMChain, "__init__", return_value=None)
 @patch.object(

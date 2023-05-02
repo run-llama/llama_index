@@ -1,20 +1,20 @@
 import os
 from configparser import ConfigParser, SectionProxy
 from typing import Any, Type
-from gpt_index.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from langchain import OpenAI
 from langchain.base_language import BaseLanguageModel
-from gpt_index.indices.base import BaseGPTIndex
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index import (
+from llama_index.indices.base import BaseGPTIndex
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index import (
     GPTVectorStoreIndex,
     GPTSimpleKeywordTableIndex,
     ServiceContext,
     LLMPredictor,
 )
-from gpt_index.indices.loading import load_index_from_storage
-from gpt_index.llm_predictor import StructuredLLMPredictor
-from gpt_index.storage.storage_context import StorageContext
+from llama_index.indices.loading import load_index_from_storage
+from llama_index.llm_predictor import StructuredLLMPredictor
+from llama_index.storage.storage_context import StorageContext
 
 
 CONFIG_FILE_NAME = "config.ini"

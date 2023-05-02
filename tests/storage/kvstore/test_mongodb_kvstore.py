@@ -1,5 +1,5 @@
 import pytest
-from gpt_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
+from llama_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 
 try:
     from pymongo import MongoClient

@@ -1,8 +1,8 @@
 from typing import List
 import pytest
-from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
+from llama_index.data_structs.node_v2 import DocumentRelationship, Node
 
-from gpt_index.readers.schema.base import Document
+from llama_index.readers.schema.base import Document
 
 
 @pytest.fixture

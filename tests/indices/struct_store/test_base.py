@@ -14,21 +14,21 @@ from sqlalchemy import (
     select,
 )
 
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.struct_store.sql import (
+from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.struct_store.sql import (
     GPTSQLStructStoreIndex,
     SQLContextContainerBuilder,
 )
-from gpt_index.indices.struct_store.sql_query import GPTNLStructStoreQueryEngine
-from gpt_index.langchain_helpers.sql_wrapper import SQLDatabase
-from gpt_index.readers.schema.base import Document
-from gpt_index.schema import BaseDocument
+from llama_index.indices.struct_store.sql_query import GPTNLStructStoreQueryEngine
+from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+from llama_index.readers.schema.base import Document
+from llama_index.schema import BaseDocument
 from tests.mock_utils.mock_prompts import (
     MOCK_TABLE_CONTEXT_PROMPT,
 )
-from gpt_index.data_structs.node_v2 import Node, DocumentRelationship
+from llama_index.data_structs.node_v2 import Node, DocumentRelationship
 
 
 def _delete_table_items(engine: Any, table: Table) -> None:

@@ -3,7 +3,7 @@
 PromptHelper
 =================
 
-.. automodule:: gpt_index.indices.prompt_helper
+.. automodule:: llama_index.indices.prompt_helper
    :members:
    :inherited-members:
 

@@ -3,6 +3,6 @@
 Index Store
 =====================
 
-.. automodule:: gpt_index.storage.index_store
+.. automodule:: llama_index.storage.index_store
    :members:
    :inherited-members:

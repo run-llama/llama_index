@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from gpt_index.vector_stores.types import (
+from llama_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,

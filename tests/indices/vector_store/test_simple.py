@@ -3,11 +3,11 @@
 from typing import Any, List, cast
 
 
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 
-from gpt_index.readers.schema.base import Document
-from gpt_index.vector_stores.simple import SimpleVectorStore
+from llama_index.readers.schema.base import Document
+from llama_index.vector_stores.simple import SimpleVectorStore
 
 
 def test_build_simple(
