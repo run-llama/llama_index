@@ -231,7 +231,7 @@ You can then build the context container, and pass it to the index during query-
 
 ```python
 from gpt_index import GPTSQLStructStoreIndex, SQLDatabase, GPTVectorStoreIndex
-from gpt_index.indices.struct_store import SQLContextContainerBuilder
+from llama_index.indices.struct_store import SQLContextContainerBuilder
 
 sql_database = SQLDatabase(engine)
 # build a vector index from the table schema information

@@ -153,7 +153,7 @@ Here are some relevant resources:
 You can also perform compare/contrast queries with a **query transformation** module.
 
 ```python
-from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
     llm_predictor_chatgpt, verbose=True
 )

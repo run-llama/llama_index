@@ -8,7 +8,7 @@ LlamaIndex examples can be found in the `examples` folder of the LlamaIndex repo
 We first want to download this `examples` folder. An easy way to do this is to just clone the repo:
 
 ```bash
-$ git clone https://github.com/jerryjliu/gpt_index.git
+$ git clone https://github.com/jerryjliu/llama_index.git
 ```
 
 Next, navigate to your newly-cloned repository, and verify the contents:

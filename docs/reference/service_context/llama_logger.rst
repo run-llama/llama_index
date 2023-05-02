@@ -3,7 +3,7 @@
 Llama Logger 🪵
 =================
 
-.. automodule:: gpt_index.logger
+.. automodule:: llama_index.logger
    :members:
    :inherited-members:
 

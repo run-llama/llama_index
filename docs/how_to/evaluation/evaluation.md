@@ -27,7 +27,7 @@ This mode of evaluation will return "YES"/"NO" if the synthesized response match
 
 ```python
 from gpt_index import GPTVectorStoreIndex
-from gpt_index.evaluation import ResponseEvaluator
+from llama_index.evaluation import ResponseEvaluator
 
 # build service context
 llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))
@@ -62,7 +62,7 @@ This mode of evaluation will return "YES"/"NO" for every source node.
 
 ```python
 from gpt_index import GPTVectorStoreIndex
-from gpt_index.evaluation import ResponseEvaluator
+from llama_index.evaluation import ResponseEvaluator
 
 # build service context
 llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))
@@ -106,7 +106,7 @@ This mode of evaluation will return "YES"/"NO" if the synthesized response match
 
 ```python
 from gpt_index import GPTVectorStoreIndex
-from gpt_index.evaluation import QueryResponseEvaluator
+from llama_index.evaluation import QueryResponseEvaluator
 
 # build service context
 llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))
@@ -137,7 +137,7 @@ This mode of evaluation will look at each source node, and see if each source no
 
 ```python
 from gpt_index import GPTVectorStoreIndex
-from gpt_index.evaluation import QueryResponseEvaluator
+from llama_index.evaluation import QueryResponseEvaluator
 
 # build service context
 llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))

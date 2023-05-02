@@ -47,7 +47,7 @@ The postprocessor can be used as part of a `ResponseSynthesizer` in a `QueryEngi
 
 ```python
 
-from gpt_index.indices.postprocessor import (
+from llama_index.indices.postprocessor import (
     FixedRecencyPostprocessor,
 )
 node_postprocessor = FixedRecencyPostprocessor(service_context=service_context)
@@ -69,7 +69,7 @@ The module can also be used on its own as part of a broader flow. For instance,
 here's an example where you choose to manually postprocess an initial set of source nodes.
 
 ```python
-from gpt_index.indices.postprocessor import (
+from llama_index.indices.postprocessor import (
     FixedRecencyPostprocessor,
 )
 

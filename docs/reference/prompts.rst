@@ -24,7 +24,7 @@ The list of ChatGPT refine prompts can be
 Prompts
 ^^^^^^^
 
-.. automodule:: gpt_index.prompts.prompts
+.. automodule:: llama_index.prompts.prompts
    :members:
    :inherited-members:
    :exclude-members: get_full_format_args
@@ -33,7 +33,7 @@ Prompts
 Base Prompt Class
 ^^^^^^^^^^^^^^^^^
 
-.. automodule:: gpt_index.prompts
+.. automodule:: llama_index.prompts
    :members:
    :inherited-members:
    :exclude-members: Config, construct, copy, dict, from_examples, from_file, get_full_format_args, output_parser, save, template, template_format, update_forward_refs, validate_variable_names, json, template_is_valid

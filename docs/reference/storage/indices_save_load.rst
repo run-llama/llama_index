@@ -3,6 +3,6 @@
 Loading Indices
 =====================
 
-.. automodule:: gpt_index.indices.loading
+.. automodule:: llama_index.indices.loading
    :members:
    :inherited-members:
