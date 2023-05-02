@@ -230,7 +230,7 @@ stores the context on the generated context container.
 You can then build the context container, and pass it to the index during query-time!
 
 ```python
-from gpt_index import GPTSQLStructStoreIndex, SQLDatabase, GPTVectorStoreIndex
+from llama_index import GPTSQLStructStoreIndex, SQLDatabase, GPTVectorStoreIndex
 from llama_index.indices.struct_store import SQLContextContainerBuilder
 
 sql_database = SQLDatabase(engine)

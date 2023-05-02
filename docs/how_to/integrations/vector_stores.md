@@ -140,7 +140,7 @@ Once constructed, the index can be used for querying.
 By default, `GPTVectorStoreIndex` uses a in-memory `SimpleVectorStore`
 that's initialized as part of the default storage context. 
 ```python
-from gpt_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 
 # Load documents and build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
@@ -156,7 +156,7 @@ response = query_engine.query("What did the author do growing up?")
 
 We can query over a custom vector store as follows:
 ```python
-from gpt_index import GPTVectorStoreIndex, SimpleDirectoryReader, StorageContext
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader, StorageContext
 from llama_index.vector_stores import DeepLakeVectorStore
 
 # construct vector store and customize storage context

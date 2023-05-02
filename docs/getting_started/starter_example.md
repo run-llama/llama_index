@@ -14,7 +14,7 @@ $ git clone https://github.com/jerryjliu/llama_index.git
 Next, navigate to your newly-cloned repository, and verify the contents:
 
 ```bash
-$ cd gpt_index
+$ cd llama_index
 $ ls
 LICENSE                data_requirements.txt  tests/
 MANIFEST.in            examples/              pyproject.toml

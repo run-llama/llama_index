@@ -67,7 +67,7 @@ that solves a distinct use case.
 We will first define a vector index over the documents of each city.
 
 ```python
-from gpt_index import GPTVectorStoreIndex, ServiceContext, StorageContext
+from llama_index import GPTVectorStoreIndex, ServiceContext, StorageContext
 from langchain.llms.openai import OpenAIChat
 
 # set service context
