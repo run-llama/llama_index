@@ -54,7 +54,7 @@ nodes = parser.get_nodes_from_documents(documents)
 You can also choose to construct Node objects manually and skip the first section. For instance,
 
 ```python
-from llama_index.data_structs.node_v2 import Node, DocumentRelationship
+from llama_index.data_structs.node import Node, DocumentRelationship
 
 node1 = Node(text="<text_chunk>", doc_id="<node_id>")
 node2 = Node(text="<text_chunk>", doc_id="<node_id>")
