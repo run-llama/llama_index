@@ -17,7 +17,15 @@ class SelectorResult:
     def ind(self) -> int:
         if len(self.inds) != 1:
             raise ValueError(
-                f"There are {len(self.inds)} selections, " "please use .selection_inds."
+                f"There are {len(self.inds)} selections, " "please use .inds."
+            )
+        return self.inds[0]
+
+    @property
+    def reason(self) -> str:
+        if len(self.reasons) != 1:
+            raise ValueError(
+                f"There are {len(self.reasons)} selections, " "please use .reasons."
             )
         return self.inds[0]
 
