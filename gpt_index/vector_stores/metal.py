@@ -70,8 +70,7 @@ class MetalVectorStore(VectorStore):
         for item in response["results"]:
             node = Node.from_dict(item["metadata"])
             nodes.append(node)
-            distances.append(item["dist"])  # Use 'dist' instead of 'similarity'
+            distances.append(item["dist"])
             ids.append(item["id"])
 
-        # Return distances instead of similarities
         return VectorStoreQueryResult(nodes=nodes, similarities=distances, ids=ids)
