@@ -14,8 +14,18 @@ from gpt_index.callbacks.schema import (
 class LlamaDebugHandler(BaseCallbackHandler):
     """Callback handler that keeps track of debug info.
 
+    NOTE: this is a beta feature. The usage within our codebase, and the interface
+    may change.
+
     This handler simply keeps track of event starts/ends, separated by event types.
     You can use this callback handler to keep track of and debug events.
+
+    Args:
+        event_starts_to_ignore (Optional[List[CBEventType]]): list of event types to
+            ignore when tracking event starts.
+        event_ends_to_ignore (Optional[List[CBEventType]]): list of event types to
+            ignore when tracking event ends.
+
     """
 
     def __init__(
@@ -42,7 +52,14 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_id: str = "",
         **kwargs: Any
     ) -> str:
-        """Store event start data by event type."""
+        """Store event start data by event type.
+
+        Args:
+            event_type (CBEventType): event type to store.
+            payload (Optional[Dict[str, Any]]): payload to store.
+            event_id (str): event id to store.
+
+        """
         event = CBEvent(event_type, payload=payload, id_=event_id)
         self._events[event.event_type].append(event)
         self._sequential_events.append(event)
@@ -55,7 +72,14 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_id: str = "",
         **kwargs: Any
     ) -> None:
-        """Store event end data by event type."""
+        """Store event end data by event type.
+
+        Args:
+            event_type (CBEventType): event type to store.
+            payload (Optional[Dict[str, Any]]): payload to store.
+            event_id (str): event id to store.
+
+        """
         event = CBEvent(event_type, payload=payload, id_=event_id)
         self._events[event.event_type].append(event)
         self._sequential_events.append(event)

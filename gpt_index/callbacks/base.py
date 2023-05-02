@@ -39,7 +39,12 @@ class BaseCallbackHandler(ABC):
 
 
 class CallbackManager(BaseCallbackHandler, ABC):
-    """Callback manager that handles callbacks for events within LlamaIndex"""
+    """Callback manager that handles callbacks for events within LlamaIndex.
+
+    Args:
+        handlers (List[BaseCallbackHandler]): list of handlers to use.
+
+    """
 
     def __init__(self, handlers: List[BaseCallbackHandler]):
         """Initialize the manager with a list of handlers."""
