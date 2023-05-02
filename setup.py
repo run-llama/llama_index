@@ -1,6 +1,10 @@
 """Set up the package."""
 import sys
 from pathlib import Path
+import os
+
+DEFAULT_PACKAGE_NAME = "llama_index"
+PACKAGE_NAME = os.environ.get("PACKAGE_NAME_OVERRIDE", DEFAULT_PACKAGE_NAME)
 
 from setuptools import find_packages, setup
 
@@ -27,7 +31,7 @@ else:
     install_requires.extend(["transformers"])
 
 setup(
-    name="llama_index",
+    name=PACKAGE_NAME,
     version=__version__,
     packages=find_packages(),
     description="Interface between LLMs and your data",
