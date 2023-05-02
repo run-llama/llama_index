@@ -9,13 +9,13 @@ from llama_index.data_structs.data_structs_v2 import (
     IndexGraph,
     IndexList,
     KeywordTable,
-    V2IndexStruct,
+    IndexStruct,
 )
 from llama_index.data_structs.struct_type import IndexStructType
 from llama_index.data_structs.table_v2 import PandasStructTable, SQLStructTable
 
 
-INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[V2IndexStruct]] = {
+INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[IndexStruct]] = {
     IndexStructType.TREE: IndexGraph,
     IndexStructType.LIST: IndexList,
     IndexStructType.KEYWORD_TABLE: KeywordTable,

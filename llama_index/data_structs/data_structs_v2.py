@@ -16,7 +16,7 @@ from llama_index.data_structs.struct_type import IndexStructType
 
 
 @dataclass
-class V2IndexStruct(DataClassJsonMixin):
+class IndexStruct(DataClassJsonMixin):
     """A base data struct for a LlamaIndex."""
 
     index_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -35,7 +35,7 @@ class V2IndexStruct(DataClassJsonMixin):
 
 
 @dataclass
-class IndexGraph(V2IndexStruct):
+class IndexGraph(IndexStruct):
     """A graph representing the tree-structured index."""
 
     # mapping from index in tree to Node doc id.
@@ -109,7 +109,7 @@ class IndexGraph(V2IndexStruct):
 
 
 @dataclass
-class KeywordTable(V2IndexStruct):
+class KeywordTable(IndexStruct):
     """A table of keywords mapping keywords to text chunks."""
 
     table: Dict[str, Set[str]] = field(default_factory=dict)
@@ -143,7 +143,7 @@ class KeywordTable(V2IndexStruct):
 
 
 @dataclass
-class IndexList(V2IndexStruct):
+class IndexList(IndexStruct):
     """A list of documents."""
 
     nodes: List[str] = field(default_factory=list)
@@ -160,7 +160,7 @@ class IndexList(V2IndexStruct):
 
 
 @dataclass
-class IndexDict(V2IndexStruct):
+class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
     # mapping from vector store id to node id
@@ -204,7 +204,7 @@ class IndexDict(V2IndexStruct):
 
 
 @dataclass
-class KG(V2IndexStruct):
+class KG(IndexStruct):
     """A table of keywords mapping keywords to text chunks."""
 
     # Unidirectional
