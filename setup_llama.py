@@ -36,7 +36,7 @@ setup(
     install_requires=install_requires,
     long_description=long_description,
     license="MIT",
-    url="https://github.com/jerryjliu/gpt_index",
+    url="https://github.com/jerryjliu/llama_index",
     include_package_data=True,
     long_description_content_type="text/markdown",
 )

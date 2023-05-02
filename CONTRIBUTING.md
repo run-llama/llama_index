@@ -55,7 +55,7 @@ It is responsible for splitting text (via text splitters) and explicitly modelli
 **Interface**: `get_nodes_from_documents` takes a sequence of `Document` objects as input, and outputs a sequence of `Node` objects.
 
 **Examples**:
-* [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/node_parser/simple.py)
+* [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/simple.py)
 
 See [the API reference](https://gpt-index.readthedocs.io/en/latest/reference/node_parser.html) for full details.
 
@@ -69,8 +69,8 @@ Text splitter splits a long text `str` into smaller text `str` chunks with desir
 **Interface**: `split_text` takes a `str` as input, and outputs a sequence of `str`
 
 **Examples**:
-* [Token Text Splitter](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/langchain_helpers/text_splitter.py#L23)
-* [Sentence Splitter](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/langchain_helpers/text_splitter.py#L239)
+* [Token Text Splitter](https://github.com/jerryjliu/llama_index/blob/main/llama_index/langchain_helpers/text_splitter.py#L23)
+* [Sentence Splitter](https://github.com/jerryjliu/llama_index/blob/main/llama_index/langchain_helpers/text_splitter.py#L239)
 
 ---
 
@@ -95,9 +95,9 @@ These serve as the main data store and retrieval engine for our vector index.
 * `query` retrieves top-k most similar entries given a query embedding.
 
 **Examples**:
-* [Pinecone](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/vector_stores/pinecone.py)
-* [Faiss](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/vector_stores/faiss.py)
-* [Chroma](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/vector_stores/chroma.py)
+* [Pinecone](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/pinecone.py)
+* [Faiss](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/faiss.py)
+* [Chroma](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/chroma.py)
 
 **Ideas**:
 * See a vector database out there that we don't support yet? Make a PR!
@@ -119,9 +119,9 @@ data if you wish.
 - `retrieve` takes in a `str` or `QueryBundle` as input, and outputs a list of `NodeWithScore` objects
 
 **Examples**:
-* [Vector Index Retriever](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/vector_store/retrievers.py)
-* [List Index Retriever](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/list/retrievers.py)
-* [Transform Retriever](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/retrievers/transform_retriever.py)
+* [Vector Index Retriever](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/vector_store/retrievers.py)
+* [List Index Retriever](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/list/retrievers.py)
+* [Transform Retriever](https://github.com/jerryjliu/llama_index/blob/main/llama_index/retrievers/transform_retriever.py)
 
 **Ideas**:
 * Besides the "default" retrievers built on top of each index, what about fancier retrievers? E.g. retrievers that take in other retrivers as input? Or other
@@ -141,8 +141,8 @@ They may take in other query engine classes in as input too.
 - `query` takes in a `str` or `QueryBundle` as input, and outputs a `Response` object.
 
 **Examples**:
-- [Retriever Query Engine](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/query_engine/retriever_query_engine.py)
-- [Transform Query Engine](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/query_engine/transform_query_engine.py)
+- [Retriever Query Engine](https://github.com/jerryjliu/llama_index/blob/main/llama_index/query_engine/retriever_query_engine.py)
+- [Transform Query Engine](https://github.com/jerryjliu/llama_index/blob/main/llama_index/query_engine/transform_query_engine.py)
 
 ---
 
@@ -153,8 +153,8 @@ This can interpreted as a pre-processing stage, before the core index query logi
 **Interface**: `run` takes in a `str` or `Querybundle` as input, and outputs a transformed `QueryBundle`.
 
 **Examples**:
-* [Hypothetical Document Embeddings](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/query/query_transform/base.py#L77)
-* [Query Decompose](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/query/query_transform/base.py#L124)
+* [Hypothetical Document Embeddings](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L77)
+* [Query Decompose](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L124)
 
 See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/query/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
 
@@ -165,7 +165,7 @@ A token usage optimizer refines the retrieved `Nodes` to reduce token usage duri
 **Interface**: `optimize` takes in the `QueryBundle` and a text chunk `str`, and outputs a refined text chunk `str` that yeilds a more optimized response
 
 **Examples**:
-* [Sentence Embedding Optimizer](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/optimization/optimizer.py)
+* [Sentence Embedding Optimizer](https://github.com/jerryjliu/llama_index/blob/main/llama_index/optimization/optimizer.py)
 
 ---
 #### Node Postprocessors
@@ -175,9 +175,9 @@ A node postprocessor refines a list of retrieve nodes given configuration and co
 
 
 **Examples**:
-* [Keyword Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/postprocessor/node.py#L32): filters nodes based on keyword match
-* [Similarity Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/postprocessor/node.py#L62): filers nodes based on similarity threshold
-* [Prev Next Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/indices/postprocessor/node.py#L135): fetchs additional nodes to augment context based on node relationships.
+* [Keyword Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L32): filters nodes based on keyword match
+* [Similarity Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L62): filers nodes based on similarity threshold
+* [Prev Next Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L135): fetchs additional nodes to augment context based on node relationships.
 
 ---
 #### Output Parsers
@@ -188,15 +188,15 @@ A output parser enables us to extract structured output from the plain text outp
 * `parse`: takes a `str` (from LLM response) as input, and gives a parsed tructured output (optionally also validated, error-corrected).
 
 **Examples**:
-* [Guardrails Output Parser](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/output_parsers/guardrails.py)
-* [Langchain Output Parser](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/output_parsers/langchain.py)
+* [Guardrails Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/guardrails.py)
+* [Langchain Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/langchain.py)
 
 See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/output_parsing.html) for more information.
 
 ---
 
 ### 2. 🐛 Fix Bugs
-Most bugs are reported and tracked in the [Github Issues Page](https://github.com/jerryjliu/gpt_index/issues).
+Most bugs are reported and tracked in the [Github Issues Page](https://github.com/jerryjliu/llama_index/issues).
 We try our best in triaging and tagging these issues:
 * Issues tagged as `bug` are confirmed bugs. 
 * New contributors may want to start with issues tagged with `good first issue`. 
@@ -222,7 +222,7 @@ We would love your help in making the project cleaner, more robust, and more und
 LlamaIndex is a Python package. We've tested primarily with Python versions >= 3.8. Here's a quick
 and dirty guide to getting your environment setup.
 
-First, create a fork of LlamaIndex, by clicking the "Fork" button on the [LlamaIndex Github page](https://github.com/jerryjliu/gpt_index).
+First, create a fork of LlamaIndex, by clicking the "Fork" button on the [LlamaIndex Github page](https://github.com/jerryjliu/llama_index).
 Following [these steps](https://docs.github.com/en/get-started/quickstart/fork-a-repo) for more details
 on how to fork the repo and clone the forked repo.
 
@@ -284,7 +284,7 @@ pytest tests
 For changes that involve entirely new features, it may be worth adding an example Jupyter notebook to showcase
 this feature. 
 
-Example notebooks can be found in this folder: https://github.com/jerryjliu/gpt_index/tree/main/examples.
+Example notebooks can be found in this folder: https://github.com/jerryjliu/llama_index/tree/main/examples.
 
 
 ### Creating a pull request

@@ -6,7 +6,7 @@ from langchain import OpenAI
 from langchain.base_language import BaseLanguageModel
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.embeddings.base import BaseEmbedding
-from gpt_index import (
+from llama_index import (
     GPTVectorStoreIndex,
     GPTSimpleKeywordTableIndex,
     ServiceContext,
