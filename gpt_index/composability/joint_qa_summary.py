@@ -4,6 +4,7 @@
 from typing import Sequence, Optional
 from gpt_index.storage.docstore.registry import get_default_docstore
 
+from gpt_index.callbacks.schema import CBEventType
 from gpt_index.indices.service_context import ServiceContext
 from gpt_index.composability import ComposableGraph
 from gpt_index.indices.list.base import GPTListIndex
@@ -55,8 +56,13 @@ class QASummaryGraphBuilder:
         documents: Sequence[Document],
     ) -> "ComposableGraph":
         """Build graph from index."""
-
+        event_id = self._service_context.callback_manager.on_event_start(
+            CBEventType.CHUNKING, payload={"documents": documents}
+        )
         nodes = self._service_context.node_parser.get_nodes_from_documents(documents)
+        self._service_context.callback_manager.on_event_end(
+            CBEventType.CHUNKING, payload={"nodes": nodes}, event_id=event_id
+        )
         self._docstore.add_documents(nodes, allow_update=True)
 
         # used for QA
