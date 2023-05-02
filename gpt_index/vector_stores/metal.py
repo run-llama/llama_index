@@ -7,7 +7,7 @@ class MetalVectorStore(VectorStore):
     def __init__(self, api_key: str, client_id: str, index_id: str):
         """Init params."""
         import_err_msg = (
-            "`chromadb` package not found, please run `pip install metal_sdk`"
+            "`metal_sdk` package not found, please run `pip install metal_sdk`"
         )
         try:
             import metal_sdk  # noqa: F401
