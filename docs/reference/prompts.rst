@@ -14,11 +14,11 @@ derived from `Langchain <https://langchain.readthedocs.io/en/latest/modules/prom
 Default Prompts
 ^^^^^^^^^^^^^^^^^
 
-The list of default prompts can be `found here <https://github.com/jerryjliu/gpt_index/blob/main/gpt_index/prompts/default_prompts.py>`_.
+The list of default prompts can be `found here <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py>`_.
 
 **NOTE**: we've also curated a set of refine prompts for ChatGPT use cases. 
 The list of ChatGPT refine prompts can be 
-`found here <https://github.com/jerryjliu/gpt_index/blob/main/gpt_index/prompts/chat_prompts.py>`_.
+`found here <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py>`_.
 
 
 Prompts

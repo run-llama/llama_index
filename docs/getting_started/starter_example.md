@@ -19,7 +19,7 @@ $ ls
 LICENSE                data_requirements.txt  tests/
 MANIFEST.in            examples/              pyproject.toml
 Makefile               experimental/          requirements.txt
-README.md              gpt_index/             setup.py
+README.md              llama_index/             setup.py
 ```
 
 We now want to navigate to the following folder:

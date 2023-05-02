@@ -57,4 +57,4 @@ We provide another demo notebook showing how you can build a chat agent with the
 - Using LlamaIndex as a generic callable tool with a Langchain agent
 - Using LlamaIndex as a memory module; this allows you to insert arbitrary amounts of conversation history with a Langchain chatbot!
 
-Please see the [notebook here](https://github.com/jerryjliu/gpt_index/blob/main/examples/langchain_demo/LangchainDemo.ipynb).
+Please see the [notebook here](https://github.com/jerryjliu/llama_index/blob/main/examples/langchain_demo/LangchainDemo.ipynb).

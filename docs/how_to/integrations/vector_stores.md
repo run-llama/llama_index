@@ -118,7 +118,7 @@ documents = reader.load_data(
 ```
 
 
-[Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/data_connectors).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/data_connectors).
 
 (vector-store-index)=
 
@@ -360,4 +360,4 @@ vector_store = MyScaleVectorStore(
 ```
 
 
-[Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/vector_indices).
