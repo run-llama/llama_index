@@ -26,6 +26,7 @@ from gpt_index.readers.google_readers.gdocs import GoogleDocsReader
 from gpt_index.readers.json import JSONReader
 from gpt_index.readers.make_com.wrapper import MakeWrapper
 from gpt_index.readers.mbox import MboxReader
+from gpt_index.readers.metal import MetalReader
 from gpt_index.readers.milvus import MilvusReader
 from gpt_index.readers.mongo import SimpleMongoReader
 from gpt_index.readers.notion import NotionPageReader
@@ -57,6 +58,7 @@ __all__ = [
     "GoogleDocsReader",
     "DiscordReader",
     "SlackReader",
+    "MetalReader",
     "WeaviateReader",
     "PineconeReader",
     "QdrantReader",
