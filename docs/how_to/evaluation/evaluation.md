@@ -11,7 +11,7 @@ and combine these with LLM calls.
 
 ## Evaluation of the Response + Context
 
-Each response from an `index.query` calls returns both the synthesized response as well as source documents.
+Each response from an `query_engine.query` calls returns both the synthesized response as well as source documents.
 
 We can evaluate the response against the retrieved sources - without taking into account the query!
 
@@ -26,7 +26,7 @@ and also get a response list across sources to see which sources match.
 This mode of evaluation will return "YES"/"NO" if the synthesized response matches any source context.
 
 ```python
-from gpt_index import GPTSimpleVectorIndex
+from gpt_index import GPTVectorStoreIndex
 from gpt_index.evaluation import ResponseEvaluator
 
 # build service context
@@ -40,7 +40,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 evaluator = ResponseEvaluator(service_context=service_context)
 
 # query index
-response = vector_index.query("What battles took place in New York City in the American Revolution?")
+query_engine = vector_index.as_query_engine()
+response = query_engine.query("What battles took place in New York City in the American Revolution?")
 eval_result = evaluator.evaluate(response)
 print(str(eval_result))
 
@@ -60,7 +61,7 @@ You'll get back either a `YES` or `NO` response.
 This mode of evaluation will return "YES"/"NO" for every source node.
 
 ```python
-from gpt_index import GPTSimpleVectorIndex
+from gpt_index import GPTVectorStoreIndex
 from gpt_index.evaluation import ResponseEvaluator
 
 # build service context
@@ -74,7 +75,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 evaluator = ResponseEvaluator(service_context=service_context)
 
 # query index
-response = vector_index.query("What battles took place in New York City in the American Revolution?")
+query_engine = vector_index.as_query_engine()
+response = query_engine.query("What battles took place in New York City in the American Revolution?")
 eval_result = evaluator.evaluate_source_nodes(response)
 print(str(eval_result))
 
@@ -103,7 +105,7 @@ if it matches the query.
 This mode of evaluation will return "YES"/"NO" if the synthesized response matches the query + any source context.
 
 ```python
-from gpt_index import GPTSimpleVectorIndex
+from gpt_index import GPTVectorStoreIndex
 from gpt_index.evaluation import QueryResponseEvaluator
 
 # build service context
@@ -117,7 +119,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 evaluator = QueryResponseEvaluator(service_context=service_context)
 
 # query index
-response = vector_index.query("What battles took place in New York City in the American Revolution?")
+query_engine = vector_index.as_query_engine()
+response = query_engine.query("What battles took place in New York City in the American Revolution?")
 eval_result = evaluator.evaluate(response)
 print(str(eval_result))
 
@@ -133,7 +136,7 @@ print(str(eval_result))
 This mode of evaluation will look at each source node, and see if each source node contains an answer to the query.
 
 ```python
-from gpt_index import GPTSimpleVectorIndex
+from gpt_index import GPTVectorStoreIndex
 from gpt_index.evaluation import QueryResponseEvaluator
 
 # build service context
@@ -147,7 +150,8 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 evaluator = QueryResponseEvaluator(service_context=service_context)
 
 # query index
-response = vector_index.query("What battles took place in New York City in the American Revolution?")
+query_engine = vector_index.as_query_engine()
+response = query_engine.query("What battles took place in New York City in the American Revolution?")
 eval_result = evaluator.evaluate_source_nodes(response)
 print(str(eval_result))
 

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from langchain.text_splitter import TextSplitter
+from gpt_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 
 from gpt_index.utils import globals_helper
 
@@ -26,8 +27,8 @@ class TokenTextSplitter(TextSplitter):
     def __init__(
         self,
         separator: str = " ",
-        chunk_size: int = 3900,
-        chunk_overlap: int = 200,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
         tokenizer: Optional[Callable] = None,
         backup_separators: Optional[List[str]] = ["\n"],
     ):
@@ -94,10 +95,18 @@ class TokenTextSplitter(TextSplitter):
                     if num_cur_tokens <= chunk_size:
                         cur_splits2.extend([cur_split])
                     else:
-                        cur_split_chunks = [
-                            cur_split[i : i + chunk_size]
-                            for i in range(0, len(cur_split), chunk_size)
-                        ]
+                        # split cur_split according to chunk size of the token numbers
+                        cur_split_chunks = []
+                        end_idx = len(cur_split)
+                        while len(self.tokenizer(cur_split[0:end_idx])) > chunk_size:
+                            for i in range(1, end_idx):
+                                tmp_split = cur_split[0 : end_idx - i]
+                                if len(self.tokenizer(tmp_split)) <= chunk_size:
+                                    cur_split_chunks.append(tmp_split)
+                                    cur_split = cur_split[end_idx - i : end_idx]
+                                    end_idx = len(cur_split)
+                                    break
+                        cur_split_chunks.append(cur_split)
                         cur_splits2.extend(cur_split_chunks)
 
                 new_splits.extend(cur_splits2)
@@ -247,7 +256,7 @@ class SentenceSplitter(TextSplitter):
     def __init__(
         self,
         separator: str = " ",
-        chunk_size: int = 4000,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = 200,
         tokenizer: Optional[Callable] = None,
         backup_separators: Optional[List[str]] = ["\n"],

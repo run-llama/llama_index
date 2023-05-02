@@ -14,8 +14,7 @@ from gpt_index.node_parser.simple import SimpleNodeParser
 def _get_default_node_parser(chunk_size_limit: Optional[int] = None) -> NodeParser:
     """Get default node parser."""
     if chunk_size_limit is None:
-        # use default chunk size (3900)
-        token_text_splitter = TokenTextSplitter()
+        token_text_splitter = TokenTextSplitter()  # use default chunk size
     else:
         token_text_splitter = TokenTextSplitter(chunk_size=chunk_size_limit)
     return SimpleNodeParser(text_splitter=token_text_splitter)

@@ -25,17 +25,20 @@ Query transformations have multiple use cases:
 To use HyDE, an example code snippet is shown below.
 
 ```python
-from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 from llama_index.indices.query.query_transform.base import HyDEQueryTransform
+from llama_index.indices.query import TransformQueryEngine
 
 # load documents, build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTSimpleVectorIndex(documents)
+index = GPTVectorStoreIndex(documents)
 
 # run query with HyDE query transform
 query_str = "what did paul graham do after going to RISD"
 hyde = HyDEQueryTransform(include_original=True)
-response = index.query(query_str, query_transform=hyde)
+query_engine = index.as_query_engine()
+query_engine = TransformQueryEngine(query_engine, query_transform=hyde)
+response = query_engine.query(query_str)
 print(response)
 
 ```
@@ -73,37 +76,24 @@ decompose_transform = DecomposeQueryTransform(
 # initialize indexes and graph
 ...
 
-# set query config
-query_configs = [
-    {
-        "index_struct_type": "simple_dict",
-        "query_mode": "default",
-        "query_kwargs": {
-            "similarity_top_k": 1
-        },
-        # NOTE: set query transform for subindices
-        "query_transform": decompose_transform
-    },
-    {
-        "index_struct_type": "keyword_table",
-        "query_mode": "simple",
-        "query_kwargs": {
-            "response_mode": "tree_summarize",
-            "verbose": True
-        },
-    },
-]
 
+# configure retrievers
+vector_query_engine = vector_index.as_query_engine()
+vector_query_engine = TransformQueryEngine(
+    vector_query_engine, 
+    query_transform=decompose_transform
+    transform_extra_info={'index_summary': vector_index.index_struct.summary}
+)
+custom_query_engines = {
+    vector_index.index_id: vector_query_engine
+} 
+
+# query
 query_str = (
     "Compare and contrast the airports in Seattle, Houston, and Toronto. "
 )
-response_chatgpt = graph.query(
-    query_str, 
-    query_configs=query_configs, 
-    llm_predictor=llm_predictor_chatgpt
-)
-
-
+query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
+response = query_engine.query(query_str)
 ```
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) for a full walkthrough.
@@ -116,8 +106,6 @@ Multi-step query transformations are a generalization on top of existing single-
 
 Given an initial, complex query, the query is transformed and executed against an index. The response is retrieved from the query. 
 Given the response (along with prior responses) and the query, followup questions may be asked against the index as well. This technique allows a query to be run against a single knowledge source until that query has satisfied all questions.
-
-We have an additional `QueryCombiner` class that runs queries against a given index in a sequential fashion, allowing subsequent queries to be "followup" questions. At the moment, the `QueryCombiner` class is not yet exposed to the user. Coming soon!
 
 An example image is shown below.
 
@@ -133,9 +121,11 @@ step_decompose_transform = StepDecomposeQueryTransform(
     llm_predictor, verbose=True
 )
 
-response = index.query(
+query_engine = index.as_query_engine()
+query_engine = MultiStepQueryEngine(query_engine, query_transform=step_decompose_transform)
+
+response = query_engine.query(
     "Who was in the first batch of the accelerator program the author started?",
-    query_transform=step_decompose_transform,
 )
 print(str(response))
 

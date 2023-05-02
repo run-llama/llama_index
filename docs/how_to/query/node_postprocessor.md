@@ -41,7 +41,7 @@ The full API reference can be found [here](/reference/node_postprocessor.rst).
 
 ## Example Usage
 
-The postprocessor can be used as part of an `index.query` call, or on its own.
+The postprocessor can be used as part of a `ResponseSynthesizer` in a `QueryEngine`, or on its own.
 
 #### Index querying
 
@@ -52,10 +52,12 @@ from gpt_index.indices.postprocessor import (
 )
 node_postprocessor = FixedRecencyPostprocessor(service_context=service_context)
 
-response = index.query(
-    "How much did the author raise in seed funding from Idelle's husband (Julian) for Viaweb?", 
+query_engine = index.as_query_engine(
     similarity_top_k=3,
     node_postprocessors=[node_postprocessor]
+)
+response = query_engine.query(
+    "How much did the author raise in seed funding from Idelle's husband (Julian) for Viaweb?", 
 )
 
 ```
@@ -72,11 +74,11 @@ from gpt_index.indices.postprocessor import (
 )
 
 # get initial response from vector index
-init_response = index.query(
-    query_str, 
+query_engine = index.as_query_engine(
     similarity_top_k=3,
     response_mode="no_text"
 )
+init_response = query_engine.query(query_str)
 resp_nodes = [n.node for n in init_response.source_nodes]
 
 # use node postprocessor to filter nodes
@@ -85,7 +87,10 @@ new_nodes = node_postprocessor.postprocess_nodes(resp_nodes)
 
 # use list index to synthesize answers
 list_index = GPTListIndex(new_nodes)
-response = list_index.query(query_str, node_postprocessors=[node_postprocessor])
+query_engine = list_index.as_query_engine(
+    node_postprocessors=[node_postprocessor]
+)
+response = query_engine.query(query_str)
 ```
 
 
@@ -93,8 +98,7 @@ response = list_index.query(query_str, node_postprocessors=[node_postprocessor])
 
 ### Default Postprocessors
 
-These postprocessors are simple modules that are already included by default during
-an `index.query` call
+These postprocessors are simple modules that are already included by default.
 
 #### KeywordNodePostprocessor
 

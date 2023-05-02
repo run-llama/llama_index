@@ -1,4 +1,4 @@
-Analysis and Optimization
+🧠 Analysis and Optimization
 ==============================
 
 LlamaIndex provides a variety of tools for analysis and optimization
