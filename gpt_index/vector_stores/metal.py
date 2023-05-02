@@ -29,12 +29,10 @@ class MetalVectorStore(VectorStore):
             filters=config_dict.get("filters", None)
         )
 
-    # ... (other methods remain the same) ...
-
     def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         payload = {
-            "text": query.query_str,  # Send text for query
-            "filters": self.filters,  # Pass metadata filters
+            "text": query.query_str,  # Query Text
+            "filters": self.filters,  # Metadata Filters
         }
         response = self.metal_client.search(payload, limit=query.similarity_top_k)
 
