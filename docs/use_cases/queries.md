@@ -86,33 +86,44 @@ Here are some relevant resources:
 
 ### Routing over Heterogeneous Data
 
-LlamaIndex also supports routing over heterogeneous data sources - for instance, if you want to "route" a query to an 
-underlying Document or a subindex.
-Here you have three options: `GPTTreeIndex`, `GPTKeywordTableIndex`, or a
-[Vector Store Index](vector-store-index).
+LlamaIndex also supports routing over heterogeneous data sources with `RouterQueryEngine` - for instance, if you want to "route" a query to an 
+underlying Document or a sub-index.
 
-A `GPTTreeIndex` uses the LLM to select the child node(s) to send the query down to.
-A `GPTKeywordTableIndex` uses keyword matching, and a `GPTVectorStoreIndex` uses
-embedding cosine similarity.
+
+To do this, first build the sub-indices over different data sources.
+Then construct the corresponding query engines, and give each query engine a description to obtain a `QueryEngineTool`.
 
 ```python
 from llama_index import GPTTreeIndex, GPTVectorStoreIndex
-from llama_index.indices.composability import ComposableGraph
+from llama_index.tools import QueryEngineTool
 
 ...
 
-# subindices
+# define sub-indices
 index1 = GPTVectorStoreIndex.from_documents(notion_docs)
 index2 = GPTVectorStoreIndex.from_documents(slack_docs)
 
-# tree index for routing
-graph = ComposableGraph.from_indices(
-    GPTTreeIndex, 
-    [index1, index2],
-    index_summaries=["summary1", "summary2"]
+# define query engines and tools
+tool1 = QueryEngineTool.from_defaults(
+    query_engine=index1.as_query_engine(), 
+    description="Use this query engine to do...",
+)
+tool2 = QueryEngineTool.from_defaults(
+    query_engine=index2.as_query_engine(), 
+    description="Use this query engine for something else...",
+)
+```
+
+Then, we define a `RouterQueryEngine` over them.
+By default, this uses a `LLMSingleSelector` as the router, which uses the LLM to choose the best sub-index to router the query to, given the descriptions.
+
+```python
+from llama_index.query_engine import RouterQueryEngine
+
+query_engine = RouterQueryEngine.from_defaults(
+    query_engine_tools=[tool1, tool2]
 )
 
-query_engine = graph.as_query_engine()
 response = query_engine.query(
     "In Notion, give me a summary of the product roadmap."
 )
@@ -120,8 +131,8 @@ response = query_engine.query(
 ```
 
 Here are some relevant resources:
-- [Composability](/how_to/index_structs/composability.md)
-- [Composable Keyword Table Graph](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/ComposableIndices.ipynb).
+- [Router Query Engine Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/query/RouterQueryEngine.ipynb).
+- [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb)
 
 
 

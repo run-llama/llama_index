@@ -2,7 +2,8 @@
 
 LlamaIndex offers a variety of different [query use cases](/use_cases/queries.md). 
 
-For simple queries, we may want to use a single index data structure, such as a `GPTVectorStoreIndex` for semantic search, or `GPTListIndex` for summarization.
+For simple queries, we may want to use a single index data structure, such as a `GPTVectorStoreIndex` for semantic search, or `GPTListIndex` for summarization.  
+
 
 For more complex queries, we may want to use a composable graph. 
 
@@ -191,29 +192,52 @@ to our data structures. This means that during query-time, we can query this out
 will be used for the job. 
 
 There are a few ways to do this, both within our framework as well as outside of it! 
-- Compose a "router" on top of your existing indexes/graphs (basically expanding the graph!)
-    - There are a few different "router" modules we can use, such as our tree index or vector index.
+- Build a **router query engine** on top of your existing indexes/graphs
 - Define each index/graph as a Tool within an agent framework (e.g. LangChain).
-
 
 For the purposes of this tutorial, we follow the former approach. If you want to take a look at how the latter approach works, 
 take a look at [our example tutorial here](/guides/tutorials/building_a_chatbot.md).
 
-We define this graph using a tree index. The tree index serves as a "router". A router is at the core of defining a unified
-query interface. This allows us to "route" any query to the set of indexes/graphs that you have defined under the hood.
+Let's take a look at an example of building a router query engine to automatically "route" any query to the set of indexes/graphs that you have define under the hood.
 
-We compose the tree index over all the vector indexes + the graph (used for compare/contrast queries).
+First, we define the query engines for the set of indexes/graph that we want to route our query to. We also give each a description (about what data it holds and what it's useful for) to help the router choose between them depending on the specific query.
+
 
 ```python
-from gpt_index import GPTTreeIndex
+from gpt_index.tools.query_engine import QueryEngineTool
 
-# num children is num vector indexes + graph
-num_children = len(vector_indices) + 1
-outer_graph = ComposableGraph.from_indices(
-    GPTTreeIndex,
-    [index for _, index in vector_indices.items()] + [root_index], 
-    [summary for _, summary in index_summaries.items()] + [root_summary],
-    num_children=num_children
+query_engine_tools = []
+
+# add vector index tools
+for wiki_title in wiki_titles:
+    index = vector_indices[wiki_title]
+    summary = index_summaries[wiki_title]
+    
+    query_engine = index.as_query_engine(service_context=service_context)
+    vector_tool = QueryEngineTool.from_defaults(query_engine, description=summary)
+    query_engine_tools.append(vector_tool)
+
+
+# add graph tool
+graph_description = (
+    "This tool contains Wikipedia articles about multiple cities. "
+    "Use this tool if you want to compare multiple cities. "
+)
+graph_tool = QueryEngineTool.from_defaults(graph_query_engine, description=graph_description)
+query_engine_tools.append(graph_tool)
+```
+
+Now, we can define the routing logic and overall router query engine.
+Here, we use the `LLMSingleSelector`, which uses LLM to choose a underlying query engine to route the query to.
+
+```python
+from gpt_index.query_engine.router_query_engine import RouterQueryEngine
+from gpt_index.selectors.llm_selectors import LLMSingleSelector
+
+
+router_query_engine = RouterQueryEngine(
+    selector=LLMSingleSelector.from_defaults(service_context=service_context),
+    query_engine_tools=query_engine_tools
 )
 ```
 
@@ -222,35 +246,7 @@ outer_graph = ComposableGraph.from_indices(
 
 The advantage of a unified query interface is that it can now handle different types of queries.
 
-It can now handle queries about specific cities (by routing to the specific city vector index), 
-and also compare/contrast different cities.
-
-
-```python
-# define custom query engines
-custom_query_engines = {}
-for index in vector_indices.values():
-    query_engine = index.as_query_engine(service_context=service_context)
-    query_engine = TransformQueryEngine(
-        query_engine,
-        query_transform=decompose_transform,
-        transform_extra_info={'index_summary': index.index_struct.summary},
-    )
-    custom_query_engines[index.index_id] = query_engine
-custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
-    retriever_mode='simple',
-    response_mode='tree_summarize',
-    service_context=service_context,
-)
-custom_query_engines[outer_graph.root_id] = outer_graph.root_index.as_query_engine(
-    response_mode='tree_summarize',
-    service_context=service_context,
-)
-
-# define query engine
-outer_query_engine = outer_graph.as_query_engine(custom_query_engines=custom_query_engines)
-
-```
+It can now handle queries about specific cities (by routing to the specific city vector index), and also compare/contrast different cities.
 
 Let's take a look at a few examples!
 
@@ -258,7 +254,7 @@ Let's take a look at a few examples!
 
 ```python
 # ask a compare/contrast question 
-response = outer_query_engine.query(
+response = router_query_engine.query(
     "Compare and contrast the arts and culture of Houston and Boston.",
 )
 print(str(response)
@@ -269,7 +265,7 @@ print(str(response)
 
 ```python
 
-response = outer_query_engine.query("What are the sports teams in Toronto?")
+response = router_query_engine.query("What are the sports teams in Toronto?")
 print(str(response))
 
 ```
