@@ -1,4 +1,4 @@
-name: Publish llama-index to PyPI / GitHub
+name: Publish gpt-index to PyPI / GitHub
 
 on:
   push:
@@ -24,13 +24,13 @@ jobs:
       - name: Build source and wheel distributions
         run: |
           python -m pip install --upgrade build twine
-          python -m build
+          PACKAGE_NAME_OVERRIDE=gpt_index python -m build
           twine check --strict dist/*
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
-          password: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
+          password: ${{ secrets.GPT_INDEX_PYPI_TOKEN }}
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
