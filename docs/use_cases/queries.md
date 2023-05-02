@@ -90,8 +90,8 @@ LlamaIndex also supports routing over heterogeneous data sources with `RouterQue
 underlying Document or a sub-index.
 
 
-To do this, first construct the sub-indices.
-We also build the corresponding query engines, and give each a description to obtain a `QueryEngineTool`.
+To do this, first build the sub-indices over different data sources.
+Then construct the corresponding query engines, and give each query engine a description to obtain a `QueryEngineTool`.
 
 ```python
 from llama_index import GPTTreeIndex, GPTVectorStoreIndex
@@ -131,8 +131,8 @@ response = query_engine.query(
 ```
 
 Here are some relevant resources:
-- [Composability](/how_to/index_structs/composability.md)
-- [Router Query Engine](https://github.com/jerryjliu/llama_index/blob/main/examples/query/RouterQueryEngine.ipynb).
+- [Router Query Engine Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/query/RouterQueryEngine.ipynb).
+- [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb)
 
 
 
