@@ -1,4 +1,4 @@
-"""Data structures v2.
+"""Data structures.
 
 Nodes are decoupled from the indices.
 
