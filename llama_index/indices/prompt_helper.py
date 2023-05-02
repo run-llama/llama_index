@@ -8,7 +8,7 @@ structs but keeping token limitations in mind.
 from typing import Callable, List, Optional, Sequence
 
 from llama_index.constants import MAX_CHUNK_OVERLAP
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.prompts.base import Prompt

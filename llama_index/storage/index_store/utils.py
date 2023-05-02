@@ -1,5 +1,5 @@
 from llama_index.constants import DATA_KEY, TYPE_KEY
-from llama_index.data_structs.data_structs_v2 import IndexStruct
+from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.data_structs.registry import INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS
 
 

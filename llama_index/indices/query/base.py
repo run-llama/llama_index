@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence
-from llama_index.data_structs.node_v2 import NodeWithScore
+from llama_index.data_structs.node import NodeWithScore
 
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.response.schema import (

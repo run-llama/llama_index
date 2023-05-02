@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from llama_index.data_structs.data_structs_v2 import IndexStruct
+from llama_index.data_structs.data_structs import IndexStruct
 import os
 
 DEFAULT_PERSIST_DIR = "./storage"

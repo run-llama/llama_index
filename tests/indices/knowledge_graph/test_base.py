@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from llama_index.indices.service_context import ServiceContext

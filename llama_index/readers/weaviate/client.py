@@ -8,8 +8,8 @@ import json
 from dataclasses import field
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.data_structs.data_structs_v2 import Node
-from llama_index.data_structs.node_v2 import DocumentRelationship
+from llama_index.data_structs.data_structs import Node
+from llama_index.data_structs.node import DocumentRelationship
 from llama_index.readers.weaviate.utils import (
     get_by_id,
     parse_get_response,

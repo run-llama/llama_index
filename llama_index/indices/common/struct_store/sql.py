@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, cast
 
 from sqlalchemy import Table
 
-from llama_index.data_structs.table_v2 import StructDatapoint
+from llama_index.data_structs.table import StructDatapoint
 from llama_index.indices.common.struct_store.base import (
     OUTPUT_PARSER_TYPE,
     BaseStructDatapointExtractor,

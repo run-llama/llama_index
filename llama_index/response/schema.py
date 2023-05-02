@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, Generator, List, Optional, Union
 
-from llama_index.data_structs.node_v2 import NodeWithScore
+from llama_index.data_structs.node import NodeWithScore
 from llama_index.utils import truncate_text
 
 

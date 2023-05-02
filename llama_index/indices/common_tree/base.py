@@ -7,8 +7,8 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.schema import CBEventType
-from llama_index.data_structs.data_structs_v2 import IndexGraph
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.data_structs import IndexGraph
+from llama_index.data_structs.node import Node
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.indices.service_context import ServiceContext

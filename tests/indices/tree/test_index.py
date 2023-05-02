@@ -3,8 +3,8 @@
 from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
-from llama_index.data_structs.data_structs_v2 import IndexGraph
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.data_structs import IndexGraph
+from llama_index.data_structs.node import Node
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.indices.tree.base import GPTTreeIndex

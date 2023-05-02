@@ -2,7 +2,7 @@
 from typing import Any, List, Optional
 from llama_index.indices.base_retriever import BaseRetriever
 
-from llama_index.data_structs.node_v2 import NodeWithScore
+from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import SimpleInputPrompt

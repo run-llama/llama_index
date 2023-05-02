@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from llama_index.data_structs.data_structs_v2 import IndexStruct
+from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex

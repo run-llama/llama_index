@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from llama_index.callbacks.schema import CBEventType
 from llama_index.async_utils import run_async_tasks
-from llama_index.data_structs.data_structs_v2 import IndexDict
-from llama_index.data_structs.node_v2 import ImageNode, IndexNode, Node
+from llama_index.data_structs.data_structs import IndexDict
+from llama_index.data_structs.node import ImageNode, IndexNode, Node
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext

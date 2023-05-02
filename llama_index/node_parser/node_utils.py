@@ -4,7 +4,7 @@
 import logging
 from typing import List
 
-from llama_index.data_structs.node_v2 import DocumentRelationship, ImageNode, Node
+from llama_index.data_structs.node import DocumentRelationship, ImageNode, Node
 from llama_index.langchain_helpers.text_splitter import (
     TextSplit,
     TextSplitter,

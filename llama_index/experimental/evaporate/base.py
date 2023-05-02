@@ -4,7 +4,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import (
     QuestionAnswerPrompt,
 )
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from typing import Optional, List, Dict, Tuple
 from llama_index.experimental.evaporate.prompts import (
     SchemaIDPrompt,

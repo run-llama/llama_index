@@ -1,5 +1,5 @@
 from llama_index.constants import DATA_KEY, TYPE_KEY
-from llama_index.data_structs.node_v2 import ImageNode, IndexNode, Node
+from llama_index.data_structs.node import ImageNode, IndexNode, Node
 from llama_index.readers.schema.base import Document
 from llama_index.schema import BaseDocument
 

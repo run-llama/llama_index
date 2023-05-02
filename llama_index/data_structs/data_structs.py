@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from llama_index.data_structs.struct_type import IndexStructType
 
 

@@ -6,7 +6,7 @@ An index that is built on top of an existing Qdrant collection.
 import logging
 from typing import Any, List, Optional, cast
 
-from llama_index.data_structs.node_v2 import DocumentRelationship, Node
+from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     NodeEmbeddingResult,

@@ -7,7 +7,7 @@ from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
 from llama_index.indices.service_context import ServiceContext
-from llama_index.data_structs.node_v2 import Node, DocumentRelationship, NodeWithScore
+from llama_index.data_structs.node import Node, DocumentRelationship, NodeWithScore
 from llama_index.indices.postprocessor.node import (
     PrevNextNodePostprocessor,
     KeywordNodePostprocessor,

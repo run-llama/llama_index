@@ -7,7 +7,7 @@ import logging
 from typing import Any, List, Optional
 from uuid import uuid4
 
-from llama_index.data_structs.node_v2 import DocumentRelationship, Node
+from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,

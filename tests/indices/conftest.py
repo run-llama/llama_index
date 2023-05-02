@@ -1,6 +1,6 @@
 from typing import List
 import pytest
-from llama_index.data_structs.node_v2 import DocumentRelationship, Node
+from llama_index.data_structs.node import DocumentRelationship, Node
 
 from llama_index.readers.schema.base import Document
 

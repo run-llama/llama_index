@@ -12,7 +12,7 @@ try:
 except ImportError:
     clickhouse_connect = None  # type: ignore
 
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from llama_index.readers.schema.base import Document
 from llama_index.vector_stores import MyScaleVectorStore
 from llama_index.vector_stores.types import VectorStoreQuery

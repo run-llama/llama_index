@@ -3,8 +3,8 @@ from enum import Enum
 from typing import Any, Optional, Sequence, Union
 
 from collections import defaultdict
-from llama_index.data_structs.node_v2 import Node
-from llama_index.data_structs.table_v2 import SQLStructTable
+from llama_index.data_structs.node import Node
+from llama_index.data_structs.table import SQLStructTable
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.common.struct_store.schema import SQLContextContainer
 from llama_index.indices.common.struct_store.sql import SQLStructDatapointExtractor

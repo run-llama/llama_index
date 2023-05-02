@@ -10,7 +10,7 @@ from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.data_structs.node_v2 import DocumentRelationship, Node
+from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,

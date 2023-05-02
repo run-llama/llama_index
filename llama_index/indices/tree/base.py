@@ -4,8 +4,8 @@ from enum import Enum
 from typing import Any, Optional, Sequence, Union
 
 # from llama_index.data_structs.data_structs import IndexGraph
-from llama_index.data_structs.data_structs_v2 import IndexGraph
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.data_structs import IndexGraph
+from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.common_tree.base import GPTTreeIndexBuilder

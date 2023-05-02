@@ -2,7 +2,7 @@
 import logging
 from typing import Any, List
 
-from llama_index.data_structs.node_v2 import NodeWithScore
+from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import get_sorted_node_list

@@ -2,8 +2,8 @@
 
 from typing import Optional, Sequence
 
-from llama_index.data_structs.data_structs_v2 import IndexGraph
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.data_structs import IndexGraph
+from llama_index.data_structs.node import Node
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.indices.service_context import ServiceContext
