@@ -1,9 +1,10 @@
 """Qdrant reader."""
 
-from typing import List, Optional, cast
+from typing import List, Optional, cast, Dict
 
 from gpt_index.readers.base import BaseReader
 from gpt_index.readers.schema.base import Document
+from qdrant_client.http.models import FieldCondition, MatchText, MatchValue, Range, Filter
 
 
 class QdrantReader(BaseReader):
@@ -75,26 +76,61 @@ class QdrantReader(BaseReader):
         )
 
     def load_data(
-        self,
-        collection_name: str,
-        query_vector: List[float],
-        limit: int = 10,
+            self,
+            collection_name: str,
+            query_vector: List[float],
+            should_search_mapping: Optional[Dict[str, str]] = None,
+            must_search_mapping: Optional[Dict[str, str]] = None,
+            must_not_search_mapping: Optional[Dict[str, str]] = None,
+            rang_search_mapping: Optional[Dict[str, Dict[str, float]]] = None,
+            limit: int = 10,
     ) -> List[Document]:
         """Load data from Qdrant.
 
         Args:
             collection_name (str): Name of the Qdrant collection.
             query_vector (List[float]): Query vector.
+            should_search_mapping (Optional[Dict[str, str]]): Mapping from field name to query string.
+            must_search_mapping (Optional[Dict[str, str]]): Mapping from field name to query string.
+            must_not_search_mapping (Optional[Dict[str, str]]): Mapping from field name to query string.
+            rang_search_mapping (Optional[Dict[str, Dict[str, float]]]): Mapping from field name to range query.
             limit (int): Number of results to return.
-
+        Example:
+            reader = QdrantReader()
+            reader.load_data(
+                 collection_name="test_collection",
+                 query_vector=[0.1, 0.2, 0.3],
+                 should_search_mapping={"text_field": "text"},
+                 must_search_mapping={"text_field": "text"},
+                 must_not_search_mapping={"text_field": "text"},
+                 rang_search_mapping={"text_field": {"gte": 0.1, "lte": 0.2}}, # gte, lte, gt, lt supported
+                 limit=10
+             )
         Returns:
             List[Document]: A list of documents.
         """
         from qdrant_client.http.models.models import Payload
-
+        should_search_conditions = [FieldCondition(key=key, match=MatchText(text=value)) for key, value in
+                                    should_search_mapping.items() if should_search_mapping]
+        must_search_conditions = [FieldCondition(key=key, match=MatchValue(value=value)) for key, value in
+                                  must_search_mapping.items() if must_search_mapping]
+        must_not_search_conditions = [FieldCondition(key=key, match=MatchValue(value=value)) for key, value in
+                                      must_not_search_mapping.items() if must_not_search_mapping]
+        rang_search_conditions = [FieldCondition(key=key, range=Range(
+                                                    gte=value.get("gte"),
+                                                    lte=value.get("lte"),
+                                                    gt=value.get("gt"),
+                                                    lt=value.get("lt")
+                                                )) for key, value in rang_search_mapping.items() if rang_search_mapping]
+        should_search_conditions.extend(rang_search_conditions)
         response = self._client.search(
             collection_name=collection_name,
             query_vector=query_vector,
+            query_filter=Filter(
+                must=must_search_conditions,
+                must_not=must_not_search_conditions,
+                should=should_search_conditions
+            ),
             with_vectors=True,
             with_payload=True,
             limit=limit,
