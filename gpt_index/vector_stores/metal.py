@@ -1,3 +1,4 @@
+import math
 from typing import Any, Dict, List, Optional
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.vector_stores.types import VectorStore, NodeEmbeddingResult, VectorStoreQuery, VectorStoreQueryResult
@@ -42,16 +43,18 @@ class MetalVectorStore(VectorStore):
         response = self.metal_client.search(payload, limit=query.similarity_top_k)
 
         nodes = []
-        distances = []
         ids = []
+        similarities = []
 
         for item in response["data"]:
             node = Node.from_dict(item["metadata"])
             nodes.append(node)
-            distances.append(item["dist"])
             ids.append(item["id"])
 
-        return VectorStoreQueryResult(nodes=nodes, similarities=distances, ids=ids)
+            similarity_score = 1.0 - math.exp(-item["dist"])
+            similarities.append(similarity_score)
+
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
     @property
     def client(self) -> Any:
