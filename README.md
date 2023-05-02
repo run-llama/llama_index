@@ -6,9 +6,7 @@ PyPi:
 - LlamaIndex: https://pypi.org/project/llama-index/.
 - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
 
-Documentation:
-- v0.6 (pre-release): https://gpt-index.readthedocs.io/en/latest/.
-- v0.5 (stable): https://gpt-index.readthedocs.io/en/v0.5.27/.
+Documentation: https://gpt-index.readthedocs.io/.
 
 Twitter: https://twitter.com/gpt_index.
 
