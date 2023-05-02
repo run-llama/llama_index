@@ -46,7 +46,7 @@ class RouterQueryEngine(BaseQueryEngine):
         result = self._selector.select(self._metadatas, query_bundle)
         try:
             selected_query_engine = self._query_engines[result.ind]
-            logger.info(f"Selecting query engine {result.ind}.")
+            logger.info(f"Selecting query engine {result.ind}: {result.reason}.")
         except ValueError as e:
             raise ValueError("Failed to select query engine") from e
 
@@ -56,7 +56,7 @@ class RouterQueryEngine(BaseQueryEngine):
         result = await self._selector.aselect(self._metadatas, query_bundle)
         try:
             selected_query_engine = self._query_engines[result.ind]
-            logger.info(f"Selecting query engine {result.ind}.")
+            logger.info(f"Selecting query engine {result.ind}: {result.reason}.")
         except ValueError as e:
             raise ValueError("Failed to select query engine") from e
 

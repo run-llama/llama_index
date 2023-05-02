@@ -2,16 +2,17 @@
 
 
 from typing import Sequence, Optional
-from gpt_index.storage.docstore.registry import get_default_docstore
 
 from gpt_index.callbacks.schema import CBEventType
 from gpt_index.indices.service_context import ServiceContext
-from gpt_index.composability import ComposableGraph
 from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.tree.base import GPTTreeIndex
 from gpt_index.indices.vector_store import GPTVectorStoreIndex
 from gpt_index.readers.schema.base import Document
-from gpt_index.storage.docstore import BaseDocumentStore
+from gpt_index.selectors.llm_selectors import LLMSingleSelector
+from gpt_index.storage.storage_context import StorageContext
+
+from gpt_index.query_engine.router_query_engine import RouterQueryEngine
+from gpt_index.tools.query_engine import QueryEngineTool
 
 DEFAULT_SUMMARY_TEXT = "Use this index for summarization queries"
 DEFAULT_QA_TEXT = (
@@ -20,7 +21,7 @@ DEFAULT_QA_TEXT = (
 )
 
 
-class QASummaryGraphBuilder:
+class QASummaryQueryEngineBuilder:
     """Joint QA Summary graph builder.
 
     Can build a graph that provides a unified query interface
@@ -40,22 +41,24 @@ class QASummaryGraphBuilder:
 
     def __init__(
         self,
-        docstore: Optional[BaseDocumentStore] = None,
+        storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
         summary_text: str = DEFAULT_SUMMARY_TEXT,
         qa_text: str = DEFAULT_QA_TEXT,
     ) -> None:
         """Init params."""
-        self._docstore = docstore or get_default_docstore()
+        self._storage_context = storage_context or StorageContext.from_defaults()
         self._service_context = service_context or ServiceContext.from_defaults()
         self._summary_text = summary_text
         self._qa_text = qa_text
 
-    def build_graph_from_documents(
+    def build_from_documents(
         self,
         documents: Sequence[Document],
-    ) -> "ComposableGraph":
-        """Build graph from index."""
+    ) -> RouterQueryEngine:
+        """Build query engine."""
+
+        # parse nodes
         event_id = self._service_context.callback_manager.on_event_start(
             CBEventType.CHUNKING, payload={"documents": documents}
         )
@@ -63,23 +66,40 @@ class QASummaryGraphBuilder:
         self._service_context.callback_manager.on_event_end(
             CBEventType.CHUNKING, payload={"nodes": nodes}, event_id=event_id
         )
-        self._docstore.add_documents(nodes, allow_update=True)
 
-        # used for QA
+        # ingest nodes
+        self._storage_context.docstore.add_documents(nodes, allow_update=True)
+
+        # build indices
         vector_index = GPTVectorStoreIndex(
             nodes,
             service_context=self._service_context,
+            storage_context=self._storage_context,
         )
-        # used for summarization
-        list_index = GPTListIndex(nodes, service_context=self._service_context)
-
-        vector_index.index_struct.summary = self._qa_text
-        list_index.index_struct.summary = self._summary_text
-
-        graph = ComposableGraph.from_indices(
-            GPTTreeIndex,
-            [vector_index, list_index],
+        list_index = GPTListIndex(
+            nodes,
             service_context=self._service_context,
+            storage_context=self._storage_context,
         )
 
-        return graph
+        vector_query_engine = vector_index.as_query_engine(
+            service_context=self._service_context
+        )
+        list_query_engine = list_index.as_query_engine(
+            service_context=self._service_context,
+            response_mode="tree_summarize",
+        )
+
+        # build query engine
+        query_engine = RouterQueryEngine(
+            selector=LLMSingleSelector.from_defaults(self._service_context),
+            query_engine_tools=[
+                QueryEngineTool.from_defaults(
+                    vector_query_engine, description=self._qa_text
+                ),
+                QueryEngineTool.from_defaults(
+                    list_query_engine, description=self._summary_text
+                ),
+            ],
+        )
+        return query_engine
