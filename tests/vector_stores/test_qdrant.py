@@ -7,9 +7,9 @@ try:
 except ImportError:
     qdrant_client = None  # type: ignore
 
-from gpt_index.data_structs import Node
-from gpt_index.vector_stores import QdrantVectorStore
-from gpt_index.vector_stores.types import NodeEmbeddingResult, VectorStoreQuery
+from llama_index.data_structs import Node
+from llama_index.vector_stores import QdrantVectorStore
+from llama_index.vector_stores.types import NodeEmbeddingResult, VectorStoreQuery
 
 
 @pytest.fixture

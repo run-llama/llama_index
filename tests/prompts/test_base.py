@@ -9,7 +9,7 @@ from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.chat_models.base import BaseChatModel
 from langchain.chat_models.openai import ChatOpenAI
 
-from gpt_index.prompts.base import Prompt
+from llama_index.prompts.base import Prompt
 
 
 class TestLanguageModel(ChatOpenAI):

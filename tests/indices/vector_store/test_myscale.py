@@ -4,18 +4,18 @@ from typing import List, cast
 
 import pytest
 
-from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.storage.storage_context import StorageContext
+from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.storage.storage_context import StorageContext
 
 try:
     import clickhouse_connect
 except ImportError:
     clickhouse_connect = None  # type: ignore
 
-from gpt_index.data_structs.node_v2 import Node
-from gpt_index.readers.schema.base import Document
-from gpt_index.vector_stores import MyScaleVectorStore
-from gpt_index.vector_stores.types import VectorStoreQuery
+from llama_index.data_structs.node_v2 import Node
+from llama_index.readers.schema.base import Document
+from llama_index.vector_stores import MyScaleVectorStore
+from llama_index.vector_stores.types import VectorStoreQuery
 
 # local test only, update variable here for test
 MYSCALE_CLUSTER_URL = None

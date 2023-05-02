@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
-from gpt_index.data_structs.node_v2 import Node
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.readers.schema.base import Document
+from llama_index.data_structs.node_v2 import Node
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
+from llama_index.indices.service_context import ServiceContext
+from llama_index.readers.schema.base import Document
 from tests.mock_utils.mock_prompts import (
     MOCK_KG_TRIPLET_EXTRACT_PROMPT,
     MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,

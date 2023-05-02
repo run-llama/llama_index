@@ -1,8 +1,8 @@
 """Test query transform."""
 
 
-from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
-from gpt_index.indices.service_context import ServiceContext
+from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.service_context import ServiceContext
 from tests.indices.query.query_transform.mock_utils import MOCK_DECOMPOSE_PROMPT
 
 

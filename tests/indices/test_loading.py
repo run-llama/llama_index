@@ -2,16 +2,19 @@ import os
 from pathlib import Path
 from typing import List
 import pytest
-from gpt_index.data_structs.node_v2 import Node
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.loading import load_index_from_storage, load_indices_from_storage
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.readers.schema.base import Document
-from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
-from gpt_index.storage.index_store.simple_index_store import SimpleIndexStore
-from gpt_index.storage.storage_context import StorageContext
-from gpt_index.vector_stores.faiss import FaissVectorStore
+from llama_index.data_structs.node_v2 import Node
+from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.loading import (
+    load_index_from_storage,
+    load_indices_from_storage,
+)
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.readers.schema.base import Document
+from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
+from llama_index.storage.index_store.simple_index_store import SimpleIndexStore
+from llama_index.storage.storage_context import StorageContext
+from llama_index.vector_stores.faiss import FaissVectorStore
 
 
 def test_load_index_from_storage_simple(

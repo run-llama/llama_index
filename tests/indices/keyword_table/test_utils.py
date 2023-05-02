@@ -1,6 +1,6 @@
 """Test utils."""
 
-from gpt_index.indices.keyword_table.utils import extract_keywords_given_response
+from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 
 
 def test_expand_tokens_with_subtokens() -> None:

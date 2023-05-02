@@ -1,9 +1,9 @@
 import sys
 from unittest.mock import MagicMock
-from gpt_index.data_structs.node_v2 import Node
-from gpt_index.vector_stores.types import NodeEmbeddingResult
+from llama_index.data_structs.node_v2 import Node
+from llama_index.vector_stores.types import NodeEmbeddingResult
 
-from gpt_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
 
 def test_weaviate_add() -> None:

@@ -1,8 +1,8 @@
 """Embeddings."""
 
-from gpt_index.callbacks.schema import CBEventType
-from gpt_index.callbacks.base import CallbackManager
-from gpt_index.callbacks.llama_debug import LlamaDebugHandler
+from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.llama_debug import LlamaDebugHandler
 
 
 TEST_PAYLOAD = {"one": 1, "two": 2}

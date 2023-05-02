@@ -1,5 +1,5 @@
 import pytest
-from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
+from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
 from pathlib import Path
 
 

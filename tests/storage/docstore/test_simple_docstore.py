@@ -3,10 +3,10 @@
 
 from pathlib import Path
 import pytest
-from gpt_index.data_structs.node_v2 import Node
-from gpt_index.storage.docstore import SimpleDocumentStore
-from gpt_index.readers.schema.base import Document
-from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
+from llama_index.data_structs.node_v2 import Node
+from llama_index.storage.docstore import SimpleDocumentStore
+from llama_index.readers.schema.base import Document
+from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
 
 
 @pytest.fixture()

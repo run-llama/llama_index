@@ -2,24 +2,24 @@
 
 from pathlib import Path
 import pytest
-from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
+from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.prompts.prompts import Prompt, SimpleInputPrompt
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.data_structs.node_v2 import Node, DocumentRelationship, NodeWithScore
-from gpt_index.indices.postprocessor.node import (
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
+from llama_index.indices.service_context import ServiceContext
+from llama_index.data_structs.node_v2 import Node, DocumentRelationship, NodeWithScore
+from llama_index.indices.postprocessor.node import (
     PrevNextNodePostprocessor,
     KeywordNodePostprocessor,
 )
-from gpt_index.indices.postprocessor.node_recency import (
+from llama_index.indices.postprocessor.node_recency import (
     FixedRecencyPostprocessor,
     EmbeddingRecencyPostprocessor,
     TimeWeightedPostprocessor,
 )
-from gpt_index.llm_predictor import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from unittest.mock import patch
-from gpt_index.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from typing import List, Any, Tuple, cast, Dict
 
 
