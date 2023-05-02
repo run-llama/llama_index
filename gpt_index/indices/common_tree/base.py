@@ -6,6 +6,7 @@ import logging
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from gpt_index.async_utils import run_async_tasks
+from gpt_index.callbacks.schema import CBEventType
 from gpt_index.data_structs.data_structs_v2 import IndexGraph
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.storage.docstore import BaseDocumentStore
@@ -136,6 +137,9 @@ class GPTTreeIndexBuilder:
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_node_ids
         )
+        event_id = self._service_context.callback_manager.on_event_start(
+            CBEventType.TREE, payload={"chunks": text_chunks}
+        )
 
         if self._use_async:
             tasks = [
@@ -155,6 +159,11 @@ class GPTTreeIndexBuilder:
             ]
         self._service_context.llama_logger.add_log(
             {"summaries": summaries, "level": level}
+        )
+        self._service_context.callback_manager.on_event_end(
+            CBEventType.TREE,
+            payload={"summaries": summaries, "level": level},
+            event_id=event_id,
         )
 
         new_node_dict = self._construct_parent_nodes(
@@ -186,6 +195,9 @@ class GPTTreeIndexBuilder:
         indices, cur_nodes_chunks, text_chunks = self._prepare_node_and_text_chunks(
             cur_node_ids
         )
+        event_id = self._service_context.callback_manager.on_event_start(
+            CBEventType.TREE, payload={"chunks": text_chunks}
+        )
 
         tasks = [
             self._service_context.llm_predictor.apredict(
@@ -197,6 +209,11 @@ class GPTTreeIndexBuilder:
         summaries = [output[0] for output in outputs]
         self._service_context.llama_logger.add_log(
             {"summaries": summaries, "level": level}
+        )
+        self._service_context.callback_manager.on_event_end(
+            CBEventType.TREE,
+            payload={"summaries": summaries, "level": level},
+            event_id=event_id,
         )
 
         new_node_dict = self._construct_parent_nodes(

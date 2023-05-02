@@ -88,6 +88,8 @@ def extract_field_dicts(result: str, text_chunk: str) -> Set:
 
 node_text: str
 result: List
+
+
 # since we define globals below
 class EvaporateExtractor:
     """Wrapper around Evaporate.

@@ -4,6 +4,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
+from gpt_index.callbacks.schema import CBEventType
 from gpt_index.data_structs.node_v2 import Node
 from gpt_index.data_structs.table import StructDatapoint
 from gpt_index.indices.response.response_builder import get_response_builder
@@ -109,10 +110,16 @@ class SQLDocumentContextBuilder:
             prompt_with_schema,
             refine_prompt_with_schema,
         )
+        event_id = self._service_context.callback_manager.on_event_start(
+            CBEventType.CHUNKING, payload={"documents": documents}
+        )
         text_chunks = []
         for doc in documents:
             chunks = text_splitter.split_text(doc.get_text())
             text_chunks.extend(chunks)
+        self._service_context.callback_manager.on_event_end(
+            CBEventType.CHUNKING, payload={"chunks": text_chunks}, event_id=event_id
+        )
 
         # feed in the "query_str" or the task
         table_context = response_builder.get_response(

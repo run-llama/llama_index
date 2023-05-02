@@ -61,7 +61,6 @@ class DeepLakeReader(BaseReader):
         self,
         token: Optional[str] = None,
     ):
-
         """initializing the deepLake reader"""
         import_err_msg = (
             "`deeplake` package not found, please run `pip install deeplake`"
