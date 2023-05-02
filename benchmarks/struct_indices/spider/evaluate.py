@@ -8,11 +8,11 @@ from typing import Dict, List, Optional
 
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
-from gpt_index.response.schema import Response
+from llama_index.response.schema import Response
 from spider_utils import create_indexes, load_examples
 from tqdm import tqdm
 
-from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex, SQLQueryMode
+from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex, SQLQueryMode
 
 logging.getLogger("root").setLevel(logging.WARNING)
 
