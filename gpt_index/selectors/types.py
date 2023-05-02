@@ -27,7 +27,7 @@ class SelectorResult:
             raise ValueError(
                 f"There are {len(self.reasons)} selections, " "please use .reasons."
             )
-        return self.inds[0]
+        return self.reasons[0]
 
 
 def _wrap_choice(choice: MetadataType) -> ToolMetadata:
