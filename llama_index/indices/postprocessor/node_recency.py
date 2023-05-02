@@ -2,7 +2,7 @@
 
 from llama_index.indices.postprocessor.node import BaseNodePostprocessor
 from llama_index.indices.service_context import ServiceContext
-from llama_index.data_structs.node_v2 import NodeWithScore
+from llama_index.data_structs.node import NodeWithScore
 from pydantic import Field
 from typing import Optional, Dict, List, Set
 import pandas as pd

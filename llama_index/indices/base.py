@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
 
 from llama_index.callbacks.schema import CBEventType
-from llama_index.data_structs.data_structs_v2 import V2IndexStruct
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.data_structs import IndexStruct
+from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
@@ -14,7 +14,7 @@ from llama_index.storage.docstore.types import BaseDocumentStore
 from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.token_counter import llm_token_counter
 
-IS = TypeVar("IS", bound=V2IndexStruct)
+IS = TypeVar("IS", bound=IndexStruct)
 IndexType = TypeVar("IndexType", bound="BaseGPTIndex")
 
 logger = logging.getLogger(__name__)

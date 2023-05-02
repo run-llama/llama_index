@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from llama_index.data_structs.data_structs_v2 import V2IndexStruct
+from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
@@ -146,8 +146,8 @@ def test_recursive_query_vector_table_query_configs(
     vector2 = GPTVectorStoreIndex.from_documents(
         documents[2:4], service_context=mock_service_context, **vector_kwargs
     )
-    assert isinstance(vector1.index_struct, V2IndexStruct)
-    assert isinstance(vector2.index_struct, V2IndexStruct)
+    assert isinstance(vector1.index_struct, IndexStruct)
+    assert isinstance(vector2.index_struct, IndexStruct)
     vector1.index_struct.index_id = "vector1"
     vector2.index_struct.index_id = "vector2"
     summaries = [

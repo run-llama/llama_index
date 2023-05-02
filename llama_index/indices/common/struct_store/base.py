@@ -5,7 +5,7 @@ from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from llama_index.callbacks.schema import CBEventType
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import StructDatapoint
 from llama_index.indices.response.response_builder import get_response_builder
 from llama_index.indices.service_context import ServiceContext

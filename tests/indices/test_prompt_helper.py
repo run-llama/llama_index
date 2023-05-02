@@ -3,7 +3,7 @@ from typing import List, cast
 
 from langchain import PromptTemplate as LangchainPrompt
 
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.prompts.base import Prompt
 from tests.mock_utils.mock_utils import mock_tokenizer

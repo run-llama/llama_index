@@ -5,8 +5,8 @@ from typing import Any, List, Optional
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 
 from llama_index.callbacks.schema import CBEventType
-from llama_index.data_structs.data_structs_v2 import IndexDict
-from llama_index.data_structs.node_v2 import NodeWithScore
+from llama_index.data_structs.data_structs import IndexDict
+from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result

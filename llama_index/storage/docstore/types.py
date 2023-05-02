@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Sequence
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 
 from llama_index.schema import BaseDocument
 import os

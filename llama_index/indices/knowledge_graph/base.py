@@ -12,8 +12,8 @@ import logging
 from typing import Any, List, Optional, Sequence, Tuple
 
 from llama_index.callbacks.schema import CBEventType
-from llama_index.data_structs.data_structs_v2 import KG
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.data_structs import KG
+from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.prompts.default_prompts import (

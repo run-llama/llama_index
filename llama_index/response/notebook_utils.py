@@ -2,7 +2,7 @@
 from typing import Any, Dict, Tuple
 
 from IPython.display import Markdown, display
-from llama_index.data_structs.node_v2 import ImageNode, NodeWithScore
+from llama_index.data_structs.node import ImageNode, NodeWithScore
 
 from llama_index.img_utils import b64_2_img
 from llama_index.response.schema import Response

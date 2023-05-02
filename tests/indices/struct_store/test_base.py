@@ -28,7 +28,7 @@ from llama_index.schema import BaseDocument
 from tests.mock_utils.mock_prompts import (
     MOCK_TABLE_CONTEXT_PROMPT,
 )
-from llama_index.data_structs.node_v2 import Node, DocumentRelationship
+from llama_index.data_structs.node import Node, DocumentRelationship
 
 
 def _delete_table_items(engine: Any, table: Table) -> None:

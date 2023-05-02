@@ -1,5 +1,5 @@
 from typing import List, Optional
-from llama_index.data_structs.data_structs_v2 import V2IndexStruct
+from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.storage.index_store.types import BaseIndexStore
 from llama_index.storage.index_store.utils import (
     index_struct_to_json,
@@ -25,11 +25,11 @@ class KVIndexStore(BaseIndexStore):
         namespace = namespace or DEFAULT_NAMESPACE
         self._collection = f"{namespace}/data"
 
-    def add_index_struct(self, index_struct: V2IndexStruct) -> None:
+    def add_index_struct(self, index_struct: IndexStruct) -> None:
         """Add an index struct.
 
         Args:
-            index_struct (V2IndexStruct): index struct
+            index_struct (IndexStruct): index struct
 
         """
         key = index_struct.index_id
@@ -47,7 +47,7 @@ class KVIndexStore(BaseIndexStore):
 
     def get_index_struct(
         self, struct_id: Optional[str] = None
-    ) -> Optional[V2IndexStruct]:
+    ) -> Optional[IndexStruct]:
         """Get an index struct.
 
         Args:
@@ -64,11 +64,11 @@ class KVIndexStore(BaseIndexStore):
                 return None
             return json_to_index_struct(json)
 
-    def index_structs(self) -> List[V2IndexStruct]:
+    def index_structs(self) -> List[IndexStruct]:
         """Get all index structs.
 
         Returns:
-            List[V2IndexStruct]: index structs
+            List[IndexStruct]: index structs
 
         """
         jsons = self._kvstore.get_all(collection=self._collection)

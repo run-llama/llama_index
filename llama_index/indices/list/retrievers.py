@@ -3,7 +3,7 @@ import logging
 from typing import Any, List, Optional, Tuple
 
 from llama_index.callbacks.schema import CBEventType
-from llama_index.data_structs.node_v2 import Node, NodeWithScore
+from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings,

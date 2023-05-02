@@ -1,6 +1,6 @@
 import sys
 from unittest.mock import MagicMock
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from llama_index.vector_stores.types import NodeEmbeddingResult
 
 from llama_index.vector_stores.weaviate import WeaviateVectorStore

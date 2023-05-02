@@ -1,5 +1,5 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
-from llama_index.data_structs.node_v2 import Node, NodeWithScore
+from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import StepDecomposeQueryTransform
 from llama_index.indices.query.schema import QueryBundle

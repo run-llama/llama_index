@@ -1,5 +1,5 @@
 from typing import List, Optional, Sequence
-from llama_index.data_structs.node_v2 import NodeWithScore
+from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.indices.query.schema import QueryBundle

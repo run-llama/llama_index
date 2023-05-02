@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.schema import CBEventType
-from llama_index.data_structs.node_v2 import Node, NodeWithScore
+from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex

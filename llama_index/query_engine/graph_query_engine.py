@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Tuple
 
-from llama_index.data_structs.node_v2 import IndexNode, Node, NodeWithScore
+from llama_index.data_structs.node import IndexNode, Node, NodeWithScore
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle

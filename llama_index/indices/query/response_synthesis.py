@@ -8,7 +8,7 @@ from typing import (
     Sequence,
 )
 
-from llama_index.data_structs.node_v2 import Node, NodeWithScore
+from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.postprocessor.node import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.response_builder import (

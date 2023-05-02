@@ -2,8 +2,8 @@
 
 from typing import Any, Optional, Sequence
 
-from llama_index.data_structs.node_v2 import Node
-from llama_index.data_structs.table_v2 import PandasStructTable
+from llama_index.data_structs.node import Node
+from llama_index.data_structs.table import PandasStructTable
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.struct_store.base import BaseGPTStructStoreIndex

@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, List, Optional, Sequence, Type, cast
 
-from llama_index.data_structs.data_structs_v2 import V2IndexStruct
-from llama_index.data_structs.node_v2 import IndexNode, DocumentRelationship
+from llama_index.data_structs.data_structs import IndexStruct
+from llama_index.data_structs.node import IndexNode, DocumentRelationship
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
@@ -34,7 +34,7 @@ class ComposableGraph:
         return self._all_indices[self._root_id]
 
     @property
-    def index_struct(self) -> V2IndexStruct:
+    def index_struct(self) -> IndexStruct:
         return self._all_indices[self._root_id].index_struct
 
     @property
@@ -73,7 +73,7 @@ class ComposableGraph:
         # construct index nodes
         index_nodes = []
         for index, summary in zip(children_indices, index_summaries):
-            assert isinstance(index.index_struct, V2IndexStruct)
+            assert isinstance(index.index_struct, IndexStruct)
             index_node = IndexNode(
                 text=summary,
                 index_id=index.index_id,

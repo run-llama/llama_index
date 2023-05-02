@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, List, Optional, Protocol, runtime_checkable
 
 from enum import Enum
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 
 
 DEFAULT_PERSIST_DIR = "./storage"

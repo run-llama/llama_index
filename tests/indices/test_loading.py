@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import List
 import pytest
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from llama_index.indices.list.base import GPTListIndex
 from llama_index.indices.loading import (
     load_index_from_storage,

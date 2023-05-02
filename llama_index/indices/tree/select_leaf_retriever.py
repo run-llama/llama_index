@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, cast
 
 from langchain.input import print_text
 
-from llama_index.data_structs.node_v2 import Node, NodeWithScore
+from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.response_builder import get_response_builder

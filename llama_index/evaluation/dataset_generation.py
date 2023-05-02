@@ -12,7 +12,7 @@ from llama_index import (
     LLMPredictor,
 )
 from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
-from llama_index.data_structs.node_v2 import Node, NodeWithScore
+from llama_index.data_structs.node import Node, NodeWithScore
 
 from langchain.chat_models import ChatOpenAI
 

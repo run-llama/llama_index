@@ -4,7 +4,7 @@ import logging
 from typing import Dict, List, Tuple, cast
 
 
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.tree.select_leaf_retriever import (
     TreeSelectLeafRetriever,

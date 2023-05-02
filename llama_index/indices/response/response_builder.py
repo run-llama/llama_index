@@ -12,8 +12,8 @@ import logging
 from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, cast
 
 from llama_index.callbacks.schema import CBEventType
-from llama_index.data_structs.data_structs_v2 import IndexGraph
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.data_structs import IndexGraph
+from llama_index.data_structs.node import Node
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.indices.common_tree.base import GPTTreeIndexBuilder
 from llama_index.indices.response.type import ResponseMode

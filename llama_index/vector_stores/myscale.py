@@ -7,7 +7,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.data_structs.node_v2 import DocumentRelationship, Node
+from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.myscale import (
     MyScaleSettings,

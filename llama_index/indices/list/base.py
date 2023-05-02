@@ -8,8 +8,8 @@ in sequence in order to answer a given query.
 from enum import Enum
 from typing import Any, Optional, Sequence, Union
 
-from llama_index.data_structs.data_structs_v2 import IndexList
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.data_structs import IndexList
+from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext

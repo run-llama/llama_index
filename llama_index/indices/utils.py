@@ -3,7 +3,7 @@ import logging
 import re
 from typing import Dict, List, Optional, Set
 
-from llama_index.data_structs.node_v2 import Node
+from llama_index.data_structs.node import Node
 from llama_index.utils import globals_helper, truncate_text
 from llama_index.vector_stores.types import VectorStoreQueryResult
 
