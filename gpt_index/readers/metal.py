@@ -60,7 +60,7 @@ class MetalReader(BaseReader):
         response = self.metal_client.search(payload, limit=top_k, **query_kwargs)
 
         documents = []
-        for item in response["results"]:
+        for item in response["data"]:
             if item["id"] not in id_to_text_map:
                 raise ValueError("ID not found in id_to_text_map.")
             text = id_to_text_map[item["id"]]
