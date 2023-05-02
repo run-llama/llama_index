@@ -74,7 +74,7 @@ def _get_answers(
     examples: List[dict],
     output_filename: str,
     use_cache: bool,
-) -> list[dict]:
+) -> List[dict]:
     if use_cache and os.path.exists(output_filename):
         with open(output_filename, "r") as f:
             return json.load(f)
@@ -113,9 +113,9 @@ def _get_answers(
 
 def _match_answers(
     llm: ChatOpenAI,
-    gold_results: list[dict],
-    pred_results: list[dict],
-    examples: list[dict],
+    gold_results: List[dict],
+    pred_results: List[dict],
+    examples: List[dict],
     output_filename: str,
 ) -> float:
     results = []
