@@ -13,7 +13,7 @@ class MetalVectorStore(VectorStore):
             import metal_sdk  # noqa: F401
         except ImportError:
             raise ImportError(import_err_msg)
-        from metal_sdk import Metal
+        from metal_sdk.metal import Metal
 
 
         self.metal_client = Metal(api_key, client_id, index_id)
