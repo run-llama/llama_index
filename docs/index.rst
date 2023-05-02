@@ -108,6 +108,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    reference/prompts.rst
    reference/service_context.rst
    reference/optimizers.rst
+   reference/callbacks.rst
    reference/struct_store.rst
    reference/response.rst
    reference/playground.rst
