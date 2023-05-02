@@ -31,7 +31,7 @@ class MetalReader(BaseReader):
 
     def load_data(
         self,
-        id_to_text_map: Dict[str, str],
+        id_to_text_map: Optional[Dict[str, str]],
         query_str: str,
         top_k: int,
         filters: Optional[Dict[str, Any]] = None,
@@ -61,9 +61,10 @@ class MetalReader(BaseReader):
 
         documents = []
         for item in response["data"]:
-            if item["id"] not in id_to_text_map:
-                raise ValueError("ID not found in id_to_text_map.")
-            text = id_to_text_map[item["id"]]
+            text = item["text"]
+            if id_to_text_map is not None and item["id"] in id_to_text_map:
+                text = id_to_text_map[item["id"]]
+
             documents.append(Document(text=text))
 
         if not separate_documents:
