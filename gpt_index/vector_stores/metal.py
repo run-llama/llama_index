@@ -46,7 +46,7 @@ class MetalVectorStore(VectorStore):
             payload = {
                 "id": result.id,
                 "metadata": result.node.to_dict(),
-                "text": result.node.text,  # Send text instead of embedding
+                "text": result.node.text,
             }
             response = self.metal_client.index(payload)
             ids.append(response["id"])
