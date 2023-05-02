@@ -45,7 +45,7 @@ class MetalVectorStore(VectorStore):
         distances = []
         ids = []
 
-        for item in response["results"]:
+        for item in response["data"]:
             node = Node.from_dict(item["metadata"])
             nodes.append(node)
             distances.append(item["dist"])
