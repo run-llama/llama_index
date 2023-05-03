@@ -10,7 +10,6 @@ from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
@@ -18,29 +17,9 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
-
-
-def get_metadata_from_node_info(
-    node_info: Dict[str, Any], field_prefix: str
-) -> Dict[str, Any]:
-    """Get metadata from node extra info."""
-    metadata = {}
-    for key, value in node_info.items():
-        metadata[field_prefix + "_" + key] = value
-    return metadata
-
-
-def get_node_info_from_metadata(
-    metadata: Dict[str, Any], field_prefix: str
-) -> Dict[str, Any]:
-    """Get node extra info from metadata."""
-    node_extra_info = {}
-    for key, value in metadata.items():
-        if key.startswith(field_prefix + "_"):
-            node_extra_info[key.replace(field_prefix + "_", "")] = value
-    return node_extra_info
 
 
 def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
@@ -200,26 +179,10 @@ class PineconeVectorStore(VectorStore):
         """
         ids = []
         for result in embedding_results:
-            new_id = result.id
             node = result.node
             text_embedding = result.embedding
 
-            metadata = {
-                "text": node.get_text(),
-                # NOTE: this is the reference to source doc
-                "doc_id": result.doc_id,
-                "id": new_id,
-            }
-            if node.extra_info:
-                # TODO: check if overlap with default metadata keys
-                metadata.update(
-                    get_metadata_from_node_info(node.extra_info, "extra_info")
-                )
-            if node.node_info:
-                # TODO: check if overlap with default metadata keys
-                metadata.update(
-                    get_metadata_from_node_info(node.node_info, "node_info")
-                )
+            metadata = node_to_metadata_dict(node)
             # if additional metadata keys overlap with the default keys,
             # then throw an error
             intersecting_keys = set(metadata.keys()).intersection(
@@ -233,7 +196,7 @@ class PineconeVectorStore(VectorStore):
             metadata.update(self._metadata_filters)
 
             entry = {
-                "id": new_id,
+                "id": result.id,
                 "values": text_embedding,
                 "metadata": metadata,
             }
@@ -245,7 +208,7 @@ class PineconeVectorStore(VectorStore):
             self._pinecone_index.upsert(
                 [entry], namespace=self._namespace, **self._pinecone_kwargs
             )
-            ids.append(new_id)
+            ids.append(result.id)
         return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
@@ -309,19 +272,8 @@ class PineconeVectorStore(VectorStore):
         top_k_ids = []
         top_k_scores = []
         for match in response.matches:
-            text = match.metadata["text"]
-            extra_info = get_node_info_from_metadata(match.metadata, "extra_info")
-            node_info = get_node_info_from_metadata(match.metadata, "node_info")
-            doc_id = match.metadata["doc_id"]
-            id = match.metadata["id"]
+            node = metadata_dict_to_node(match.metadata)
 
-            node = Node(
-                text=text,
-                extra_info=extra_info,
-                node_info=node_info,
-                doc_id=id,
-                relationships={DocumentRelationship.SOURCE: doc_id},
-            )
             top_k_ids.append(match.id)
             top_k_nodes.append(node)
             top_k_scores.append(match.score)
