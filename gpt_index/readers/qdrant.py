@@ -79,10 +79,10 @@ class QdrantReader(BaseReader):
             self,
             collection_name: str,
             query_vector: List[float],
-            should_search_mapping: Optional[Dict[str, str]] = None,
-            must_search_mapping: Optional[Dict[str, str]] = None,
-            must_not_search_mapping: Optional[Dict[str, str]] = None,
-            rang_search_mapping: Optional[Dict[str, Dict[str, float]]] = None,
+            should_search_mapping: Optional[Dict[str, str]] = {},
+            must_search_mapping: Optional[Dict[str, str]] = {},
+            must_not_search_mapping: Optional[Dict[str, str]] = {},
+            rang_search_mapping: Optional[Dict[str, Dict[str, float]]] = {},
             limit: int = 10,
     ) -> List[Document]:
         """Load data from Qdrant.
