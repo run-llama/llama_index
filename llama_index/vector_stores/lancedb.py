@@ -94,7 +94,7 @@ class LanceDBVectorStore(VectorStore):
             doc_id (str): document id
 
         """
-        raise NotImplementedError("Delete not yet implemented for Faiss index.")
+        raise NotImplementedError("Delete not yet implemented for LanceDB.")
 
     def query(
         self,
