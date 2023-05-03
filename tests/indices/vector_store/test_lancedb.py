@@ -30,24 +30,10 @@ class MockLanceDBVectorStore(VectorStore):
         self.nprobes = nprobes
         self.refine_factor = refine_factor
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "MockLanceDBVectorStore":
-        return cls(**config_dict)
-
     @property
     def client(self) -> None:
         """Get client."""
         return None
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {
-            "uri": self.uri,
-            "table_name": self.table_name,
-            "nprobes": self.nprobes,
-            "refine_factor": self.refine_factor,
-        }
 
     def add(
         self,
