@@ -28,7 +28,7 @@ class MetalVectorStore(VectorStore):
 
     def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         payload = {
-            "text": query.query_str,  # Query Text
+            "embedding": query.query_embedding,  # Query Embedding
             "filters": self.filters,  # Metadata Filters
         }
         response = self.metal_client.search(payload, limit=query.similarity_top_k)
@@ -69,7 +69,7 @@ class MetalVectorStore(VectorStore):
             ids.append(result.id)
 
             payload = {
-                "text": result.node.get_text(),
+                "embedding": result.embedding,
                 "metadata": result.node.extra_info or {},
             }
 
@@ -78,6 +78,9 @@ class MetalVectorStore(VectorStore):
 
             if result.doc_id:
                 payload["metadata"]["document_id"] = result.doc_id
+
+            if result.node.get_text():
+                payload["metadata"]["text"] = result.node.get_text()
 
             self.metal_client.index(payload)
 
