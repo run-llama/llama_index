@@ -1,7 +1,5 @@
 """LanceDB vector store."""
-from typing import Any, Dict, List, Optional, cast
-
-# import numpy as np
+from typing import Any, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
@@ -15,22 +13,26 @@ from llama_index.vector_stores.types import (
 class LanceDBVectorStore(VectorStore):
     """The LanceDB Vector Store.
 
-    Stores text and embeddings in LanceDB. The vector store will open an existing LanceDB dataset or create
-    the dataset if it does not exist.
+    Stores text and embeddings in LanceDB. The vector store will open an existing
+        LanceDB dataset or create the dataset if it does not exist.
 
     Args:
         uri (str, required): Location where LanceDB will store its files.
-        table_name (str, optional): The table name where the embeddings will be stored. Defaults to "vectors".
-        nprobes (int, optional): The number of probes used. A higher number makes search more accurate but also slower.
+        table_name (str, optional): The table name where the embeddings will be stored.
+            Defaults to "vectors".
+        nprobes (int, optional): The number of probes used.
+            A higher number makes search more accurate but also slower.
             Defaults to 20.
-        refine_factor: (int, optional): Refine the results by reading extra elements and re-ranking them in memory.
+        refine_factor: (int, optional): Refine the results by reading extra elements
+            and re-ranking them in memory.
             Defaults to None
 
     Raises:
         ImportError: Unable to import `lancedb`.
 
     Returns:
-        LanceDBVectorStore: VectorStore that supports creating LanceDB datasets and querying it.
+        LanceDBVectorStore: VectorStore that supports creating LanceDB datasets and
+            querying it.
     """
 
     stores_text = True
