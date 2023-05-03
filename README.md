@@ -2,7 +2,7 @@
 
 LlamaIndex (GPT Index) is a project that provides a central interface to connect your LLM's with external data.
 
-PyPi: 
+PyPI: 
 - LlamaIndex: https://pypi.org/project/llama-index/.
 - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
 
@@ -23,7 +23,7 @@ Discord: https://discord.gg/dGcwcsnxhU.
 **NOTE**: This README is not updated as frequently as the documentation. Please check out the documentation above for the latest updates!
 
 ### Context
-- LLMs are a phenomenonal piece of technology for knowledge generation and reasoning. They are pre-trained on large amounts of publicly available data.
+- LLMs are a phenomenal piece of technology for knowledge generation and reasoning. They are pre-trained on large amounts of publicly available data.
 - How do we best augment LLMs with our own private data?
 - One paradigm that has emerged is *in-context* learning (the other is finetuning), where we insert context into the input prompt. That way,
 we take advantage of the LLM's reasoning capabilities to generate a response.
@@ -48,7 +48,7 @@ These indices help to abstract away common boilerplate and pain points for in-co
 
 ## 💡 Contributing
 
-Interesting in contributing? See our [Contribution Guide](CONTRIBUTING.md) for more details.
+Interested in contributing? See our [Contribution Guide](CONTRIBUTING.md) for more details.
 
 ## 📄 Documentation
 
