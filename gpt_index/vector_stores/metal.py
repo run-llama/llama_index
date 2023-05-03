@@ -77,7 +77,7 @@ class MetalVectorStore(VectorStore):
                 payload["id"] = result.id
 
             if result.doc_id:
-                payload["metadata"]["document_id"] = result.doc_id
+                payload["metadata"]["doc_id"] = result.doc_id
 
             if result.node.get_text():
                 payload["metadata"]["text"] = result.node.get_text()
@@ -86,15 +86,14 @@ class MetalVectorStore(VectorStore):
 
         return ids
 
-    def delete(self, ids: List[str]) -> None:
+    def delete(self, doc_id: str) -> None:
         """Delete nodes from index.
 
         Args:
-            ids (List[str]): list of node ids to delete
+            doc_id (str): document id
 
         """
         if not self.metal_client:
             raise ValueError("metal_client not initialized")
 
-        for id in ids:
-            self.metal_client.deleteOne(id)
+        self.metal_client.deleteOne(doc_id)
