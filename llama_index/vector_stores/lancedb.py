@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional, cast
 
 # import numpy as np
 
-from gpt_index.data_structs.node_v2 import DocumentRelationship, Node
-from gpt_index.vector_stores.types import (
+from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.vector_stores.types import (
     NodeEmbeddingResult,
     VectorStore,
     VectorStoreQueryResult,
