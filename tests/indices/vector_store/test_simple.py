@@ -1,12 +1,14 @@
 """Test vector store indexes."""
 
 from typing import Any, List, cast
+from llama_index.indices.loading import load_index_from_storage
 
 
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 
 from llama_index.readers.schema.base import Document
+from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import SimpleVectorStore
 
 
@@ -141,3 +143,27 @@ def test_simple_async(
         vector_store = cast(SimpleVectorStore, index._vector_store)
         embedding = vector_store.get(text_id)
         assert (node.text, embedding) in actual_node_tups
+
+
+def test_simple_insert_save(
+    documents: List[Document],
+    mock_service_context: ServiceContext,
+) -> None:
+    storage_context = StorageContext.from_defaults()
+    index = GPTVectorStoreIndex.from_documents(
+        documents=documents,
+        service_context=mock_service_context,
+        storage_context=storage_context,
+    )
+    assert isinstance(index, GPTVectorStoreIndex)
+
+    loaded_index = load_index_from_storage(storage_context=storage_context)
+    assert isinstance(loaded_index, GPTVectorStoreIndex)
+    assert index.index_struct == loaded_index.index_struct
+
+    # insert into index
+    index.insert(Document(text="This is a test v3."))
+
+    loaded_index = load_index_from_storage(storage_context=storage_context)
+    assert isinstance(loaded_index, GPTVectorStoreIndex)
+    assert index.index_struct == loaded_index.index_struct

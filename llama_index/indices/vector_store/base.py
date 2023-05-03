@@ -239,6 +239,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             if vector store does not store text
         """
         self._insert(nodes, **insert_kwargs)
+        self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
