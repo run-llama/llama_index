@@ -20,6 +20,7 @@ install_requires = [
     "tenacity>=8.2.0,<9.0.0",
     "openai>=0.26.4",
     "pandas",
+    "requests<2.30.0",
 ]
 
 # NOTE: if python version >= 3.9, install tiktoken
