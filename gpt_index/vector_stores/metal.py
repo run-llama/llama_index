@@ -26,15 +26,6 @@ class MetalVectorStore(VectorStore):
         self.stores_text = True
         self.is_embedding_query = True
 
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "MetalVectorStore":
-        return cls(
-            api_key=config_dict["api_key"],
-            client_id=config_dict["client_id"],
-            index_id=config_dict["index_id"],
-            filters=config_dict.get("filters", None)
-        )
-
     def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         payload = {
             "text": query.query_str,  # Query Text
@@ -60,16 +51,6 @@ class MetalVectorStore(VectorStore):
     def client(self) -> Any:
         """Return Metal client."""
         return self.metal_client
-
-    @property
-    def config_dict(self) -> dict:
-        """Return config dict."""
-        return {
-            "api_key": self.api_key,
-            "client_id": self.client_id,
-            "index_id": self.index_id,
-            "filters": self.filters
-        }
 
 
     def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
