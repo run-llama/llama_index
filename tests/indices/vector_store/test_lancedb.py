@@ -1,5 +1,5 @@
 """Test LanceDB index."""
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional
 
 from llama_index.indices.vector_store import GPTVectorStoreIndex
 from llama_index.indices.service_context import ServiceContext
