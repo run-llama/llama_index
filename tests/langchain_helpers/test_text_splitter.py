@@ -1,5 +1,5 @@
 """Test text splitter."""
-from gpt_index.langchain_helpers.text_splitter import (
+from llama_index.langchain_helpers.text_splitter import (
     SentenceSplitter,
     TokenTextSplitter,
 )

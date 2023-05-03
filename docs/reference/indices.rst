@@ -27,6 +27,6 @@ parameters and methods common to all indices.
 Base Index Class
 ^^^^^^^^^^^^^^^^
 
-.. automodule:: gpt_index.indices.base
+.. automodule:: llama_index.indices.base
    :members:
    :inherited-members:

@@ -8,7 +8,7 @@ from langchain import OpenAI
 from langchain.chat_models import ChatOpenAI
 from sqlalchemy import create_engine, text
 
-from gpt_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
+from llama_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
 
 
 def load_examples(spider_dir: str) -> Tuple[list, list]:

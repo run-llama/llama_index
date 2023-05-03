@@ -1,6 +1,6 @@
 Optimizers
 ==========
 
-.. automodule:: gpt_index.optimization
+.. automodule:: llama_index.optimization
    :members:
    :inherited-members:

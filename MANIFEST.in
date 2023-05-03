@@ -1,3 +1,3 @@
-include gpt_index/py.typed
-include gpt_index/VERSION
+include llama_index/py.typed
+include llama_index/VERSION
 include LICENSE

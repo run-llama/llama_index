@@ -5,9 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
-from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.readers.schema.base import Document
+from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from llama_index.indices.service_context import ServiceContext
+from llama_index.readers.schema.base import Document
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
@@ -25,7 +25,7 @@ def documents() -> List[Document]:
 
 
 @patch(
-    "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
+    "llama_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_build_table(
@@ -62,7 +62,7 @@ def test_build_table(
 
 
 @patch(
-    "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
+    "llama_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_build_table_async(
@@ -101,7 +101,7 @@ def test_build_table_async(
 
 
 @patch(
-    "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
+    "llama_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_insert(
@@ -152,7 +152,7 @@ def test_insert(
 
 
 @patch(
-    "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
+    "llama_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_delete(

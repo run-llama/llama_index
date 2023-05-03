@@ -5,13 +5,13 @@ from unittest.mock import MagicMock, patch
 
 from langchain.llms.base import BaseLLM
 
-from gpt_index.indices.keyword_table.base import GPTKeywordTableIndex
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.langchain_helpers.text_splitter import TokenTextSplitter
-from gpt_index.readers.schema.base import Document
-from gpt_index.token_counter.mock_chain_wrapper import MockLLMPredictor
+from llama_index.indices.keyword_table.base import GPTKeywordTableIndex
+from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
+from llama_index.readers.schema.base import Document
+from llama_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 

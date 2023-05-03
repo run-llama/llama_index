@@ -1,5 +1,5 @@
 from typing import List
-from gpt_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.base import BaseEmbedding
 
 
 class MockEmbedding(BaseEmbedding):

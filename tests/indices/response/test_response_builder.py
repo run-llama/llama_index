@@ -2,15 +2,15 @@
 
 from typing import List
 
-from gpt_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
-from gpt_index.indices.prompt_helper import PromptHelper
-from gpt_index.indices.response.response_builder import (
+from llama_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
+from llama_index.indices.prompt_helper import PromptHelper
+from llama_index.indices.response.response_builder import (
     ResponseMode,
     get_response_builder,
 )
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
-from gpt_index.readers.schema.base import Document
+from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.readers.schema.base import Document
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 

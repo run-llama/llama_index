@@ -1,13 +1,13 @@
 from pathlib import Path
 from typing import List
-from gpt_index.indices.composability.graph import ComposableGraph
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.loading import load_graph_from_storage
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.composability.graph import ComposableGraph
+from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.loading import load_graph_from_storage
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 
-from gpt_index.readers.schema.base import Document
-from gpt_index.storage.storage_context import StorageContext
+from llama_index.readers.schema.base import Document
+from llama_index.storage.storage_context import StorageContext
 
 
 def test_load_graph_from_storage_simple(

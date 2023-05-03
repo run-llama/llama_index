@@ -9,7 +9,7 @@ Users have a few options to choose from when it comes to embeddings.
 - :code:`LangchainEmbedding`: a wrapper around Langchain's embedding models.
 
 
-.. automodule:: gpt_index.embeddings.openai
+.. automodule:: llama_index.embeddings.openai
    :members:
    :inherited-members:
    :exclude-members: OAEM, OpenAIEmbeddingMode
@@ -18,7 +18,7 @@ Users have a few options to choose from when it comes to embeddings.
 We also introduce a :code:`LangchainEmbedding` class, which is a wrapper around Langchain's embedding models.
 A full list of embeddings can be found `here <https://langchain.readthedocs.io/en/latest/reference/modules/embeddings.html>`_.
 
-.. automodule:: gpt_index.embeddings.langchain
+.. automodule:: llama_index.embeddings.langchain
    :members:
    :inherited-members:
 

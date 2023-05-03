@@ -150,7 +150,7 @@ decompose_transform = DecomposeQueryTransform(
 )
 
 # define custom retrievers
-from gpt_index.query_engine.transform_query_engine import TransformQueryEngine
+from llama_index.query_engine.transform_query_engine import TransformQueryEngine
 
 custom_query_engines = {}
 for index in index_set.values():

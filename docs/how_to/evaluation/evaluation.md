@@ -26,8 +26,8 @@ and also get a response list across sources to see which sources match.
 This mode of evaluation will return "YES"/"NO" if the synthesized response matches any source context.
 
 ```python
-from gpt_index import GPTVectorStoreIndex
-from gpt_index.evaluation import ResponseEvaluator
+from llama_index import GPTVectorStoreIndex
+from llama_index.evaluation import ResponseEvaluator
 
 # build service context
 llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))
@@ -61,8 +61,8 @@ You'll get back either a `YES` or `NO` response.
 This mode of evaluation will return "YES"/"NO" for every source node.
 
 ```python
-from gpt_index import GPTVectorStoreIndex
-from gpt_index.evaluation import ResponseEvaluator
+from llama_index import GPTVectorStoreIndex
+from llama_index.evaluation import ResponseEvaluator
 
 # build service context
 llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))
@@ -105,8 +105,8 @@ if it matches the query.
 This mode of evaluation will return "YES"/"NO" if the synthesized response matches the query + any source context.
 
 ```python
-from gpt_index import GPTVectorStoreIndex
-from gpt_index.evaluation import QueryResponseEvaluator
+from llama_index import GPTVectorStoreIndex
+from llama_index.evaluation import QueryResponseEvaluator
 
 # build service context
 llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))
@@ -136,8 +136,8 @@ print(str(eval_result))
 This mode of evaluation will look at each source node, and see if each source node contains an answer to the query.
 
 ```python
-from gpt_index import GPTVectorStoreIndex
-from gpt_index.evaluation import QueryResponseEvaluator
+from llama_index import GPTVectorStoreIndex
+from llama_index.evaluation import QueryResponseEvaluator
 
 # build service context
 llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-4"))

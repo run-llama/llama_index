@@ -1,9 +1,9 @@
 from typing import Any, List
 from unittest.mock import patch
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.list.retrievers import ListIndexEmbeddingRetriever
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.readers.schema.base import Document
+from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.list.retrievers import ListIndexEmbeddingRetriever
+from llama_index.indices.service_context import ServiceContext
+from llama_index.readers.schema.base import Document
 from tests.indices.list.test_index import _get_embeddings
 
 

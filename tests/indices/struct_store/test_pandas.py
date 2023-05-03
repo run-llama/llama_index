@@ -3,11 +3,11 @@
 from typing import Any, Dict, cast
 
 import pandas as pd
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.service_context import ServiceContext
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 
-from gpt_index.indices.struct_store.pandas import GPTPandasIndex
-from gpt_index.indices.struct_store.pandas_query import GPTNLPandasQueryEngine
+from llama_index.indices.struct_store.pandas import GPTPandasIndex
+from llama_index.indices.struct_store.pandas_query import GPTNLPandasQueryEngine
 
 
 def test_pandas_index(mock_service_context: ServiceContext) -> None:
