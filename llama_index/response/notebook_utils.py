@@ -39,7 +39,12 @@ def display_extra_info(extra_info: Dict[str, Any]) -> None:
     display(extra_info)
 
 
-def display_response(response: Response, source_length: int = 100) -> None:
+def display_response(
+    response: Response,
+    source_length: int = 100,
+    show_source: bool = False,
+    show_extra_info: bool = False,
+) -> None:
     """Display response for jupyter notebook."""
     if response.response is None:
         response_text = "None"
@@ -47,9 +52,13 @@ def display_response(response: Response, source_length: int = 100) -> None:
         response_text = response.response.strip()
 
     display(Markdown(f"**`Final Response:`** {response_text}"))
-    for ind, source_node in enumerate(response.source_nodes):
-        display(Markdown("---"))
-        display(Markdown(f"**`Source Node {ind + 1}/{len(response.source_nodes)}`**"))
-        display_source_node(source_node, source_length=source_length)
-    if response.extra_info is not None:
-        display_extra_info(response.extra_info)
+    if show_source:
+        for ind, source_node in enumerate(response.source_nodes):
+            display(Markdown("---"))
+            display(
+                Markdown(f"**`Source Node {ind + 1}/{len(response.source_nodes)}`**")
+            )
+            display_source_node(source_node, source_length=source_length)
+    if show_extra_info:
+        if response.extra_info is not None:
+            display_extra_info(response.extra_info)
