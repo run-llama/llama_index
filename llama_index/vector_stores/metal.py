@@ -1,7 +1,7 @@
 import math
 from typing import Any, Dict, List, Optional
-from gpt_index.data_structs.node_v2 import Node
-from gpt_index.vector_stores.types import VectorStore, NodeEmbeddingResult, VectorStoreQuery, VectorStoreQueryResult
+from llama_index.data_structs.node import Node, DocumentRelationship
+from llama_index.vector_stores.types import VectorStore, NodeEmbeddingResult, VectorStoreQuery, VectorStoreQueryResult
 
 
 class MetalVectorStore(VectorStore):
@@ -42,7 +42,7 @@ class MetalVectorStore(VectorStore):
             extra_info = item["metadata"]
             doc_id = item["metadata"]["doc_id"]
             id = item["id"]
-            node = Node(text=text, extra_info=extra_info, doc_id=doc_id, id=id)
+            node = Node(text=text, extra_info=extra_info, doc_id=id, relationships={DocumentRelationship.SOURCE: doc_id})
             nodes.append(node)
             ids.append(item["id"])
 
