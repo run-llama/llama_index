@@ -14,7 +14,7 @@ DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 @dataclass
 class NodeWithEmbedding:
-    """Node embedding result.
+    """Node with embedding.
 
     Args:
         node (Node): Node
