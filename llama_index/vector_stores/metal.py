@@ -1,11 +1,22 @@
 import math
 from typing import Any, Dict, List, Optional
 from llama_index.data_structs.node import Node, DocumentRelationship
-from llama_index.vector_stores.types import VectorStore, NodeEmbeddingResult, VectorStoreQuery, VectorStoreQueryResult
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 
 class MetalVectorStore(VectorStore):
-    def __init__(self, api_key: str, client_id: str, index_id: str, filters: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        api_key: str,
+        client_id: str,
+        index_id: str,
+        filters: Optional[Dict[str, Any]] = None,
+    ):
         """Init params."""
         import_err_msg = (
             "`metal_sdk` package not found, please run `pip install metal_sdk`"
@@ -14,8 +25,7 @@ class MetalVectorStore(VectorStore):
             import metal_sdk  # noqa: F401
         except ImportError:
             raise ImportError(import_err_msg)
-        from metal_sdk.metal import Metal   # noqa: F401
-
+        from metal_sdk.metal import Metal  # noqa: F401
 
         self.api_key = api_key
         self.client_id = client_id
@@ -40,9 +50,14 @@ class MetalVectorStore(VectorStore):
         for item in response["data"]:
             text = item["text"]
             extra_info = item["metadata"]
-            doc_id = item["metadata"]["doc_id"]
+            ref_doc_id = item["metadata"]["doc_id"]
             id = item["id"]
-            node = Node(text=text, extra_info=extra_info, doc_id=id, relationships={DocumentRelationship.SOURCE: doc_id})
+            node = Node(
+                text=text,
+                extra_info=extra_info,
+                doc_id=id,
+                relationships={DocumentRelationship.SOURCE: ref_doc_id},
+            )
             nodes.append(node)
             ids.append(item["id"])
 
@@ -56,8 +71,7 @@ class MetalVectorStore(VectorStore):
         """Return Metal client."""
         return self.metal_client
 
-
-    def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Add embedding results to index.
 
         Args
@@ -66,7 +80,6 @@ class MetalVectorStore(VectorStore):
         """
         if not self.metal_client:
             raise ValueError("metal_client not initialized")
-
 
         ids = []
         for result in embedding_results:
@@ -78,7 +91,7 @@ class MetalVectorStore(VectorStore):
                 "id": result.id,
             }
 
-            payload["metadata"]["doc_id"] = result.doc_id
+            payload["metadata"]["doc_id"] = result.ref_doc_id
 
             if result.node.get_text():
                 payload["metadata"]["text"] = result.node.get_text()
