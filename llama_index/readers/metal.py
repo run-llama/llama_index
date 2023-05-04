@@ -61,12 +61,12 @@ class MetalReader(BaseReader):
 
         documents = []
         for item in response["data"]:
-            text = item["text"]
-            if not text and item["metadata"] and item["metadata"]["text"]:
-                text = item["metadata"]["text"]
+            text = None
 
-            if not text and id_to_text_map is not None and item["id"] in id_to_text_map:
+            if id_to_text_map is not None and item["id"] in id_to_text_map:
                 text = id_to_text_map[item["id"]]
+            else:
+                text = item["text"] or (item["metadata"] and item["metadata"]["text"])
 
             documents.append(Document(text=text))
 
