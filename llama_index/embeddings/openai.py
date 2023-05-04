@@ -103,7 +103,7 @@ def get_embedding(
 
     """
     text = text.replace("\n", " ")
-    return openai.Embedding.create(input=[text], engine=engine)["data"][0]["embedding"]
+    return openai.Embedding.create(input=[text], model=engine)["data"][0]["embedding"]
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
@@ -120,7 +120,7 @@ async def aget_embedding(text: str, engine: Optional[str] = None) -> List[float]
     # replace newlines, which can negatively affect performance.
     text = text.replace("\n", " ")
 
-    return (await openai.Embedding.acreate(input=[text], engine=engine))["data"][0][
+    return (await openai.Embedding.acreate(input=[text], model=engine))["data"][0][
         "embedding"
     ]
 
@@ -144,8 +144,7 @@ def get_embeddings(
     # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    data = openai.Embedding.create(input=list_of_text, engine=engine).data
-    data = sorted(data, key=lambda x: x["index"])  # maintain the same order as input.
+    data = openai.Embedding.create(input=list_of_text, model=engine).data
     return [d["embedding"] for d in data]
 
 
@@ -167,8 +166,7 @@ async def aget_embeddings(
     # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    data = (await openai.Embedding.acreate(input=list_of_text, engine=engine)).data
-    data = sorted(data, key=lambda x: x["index"])  # maintain the same order as input.
+    data = (await openai.Embedding.acreate(input=list_of_text, model=engine)).data
     return [d["embedding"] for d in data]
 
 
