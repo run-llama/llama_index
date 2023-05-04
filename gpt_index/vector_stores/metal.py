@@ -75,13 +75,10 @@ class MetalVectorStore(VectorStore):
             payload = {
                 "embedding": result.embedding,
                 "metadata": result.node.extra_info or {},
+                "id": result.id,
             }
 
-            if result.id:
-                payload["id"] = result.id
-
-            if result.doc_id:
-                payload["metadata"]["doc_id"] = result.doc_id
+            payload["metadata"]["doc_id"] = result.doc_id
 
             if result.node.get_text():
                 payload["metadata"]["text"] = result.node.get_text()
