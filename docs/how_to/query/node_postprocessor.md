@@ -29,8 +29,8 @@ class BaseNodePostprocessor(BaseModel):
 
     @abstractmethod
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 ```
 

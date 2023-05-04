@@ -3,6 +3,7 @@
 from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
 from llama_index.data_structs.node import NodeWithScore
 from typing import List, Optional, Dict, Tuple, Callable
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 from copy import deepcopy
@@ -72,7 +73,7 @@ class PIINodePostprocessor(BasePydanticNodePostprocessor):
         return text_output, json_dict
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         # swap out text from nodes, with the original node mappings
@@ -110,7 +111,7 @@ class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
         return new_text, mapping
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         from transformers import pipeline

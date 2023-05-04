@@ -1,6 +1,7 @@
 """Node recency post-processor."""
 
 from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.data_structs.node import NodeWithScore
 from pydantic import Field
@@ -59,11 +60,11 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
     in_extra_info: bool = True
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
-        if extra_info is None or "query_bundle" not in extra_info:
+        if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
         # query_bundle = cast(QueryBundle, extra_info["query_bundle"])
@@ -123,11 +124,11 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
-        if extra_info is None or "query_bundle" not in extra_info:
+        if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
         # query_bundle = cast(QueryBundle, extra_info["query_bundle"])
@@ -202,10 +203,9 @@ class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
     top_k: int = 1
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        extra_info = extra_info or {}
         now = self.now or datetime.now().timestamp()
         # TODO: refactor with get_top_k_embeddings
 

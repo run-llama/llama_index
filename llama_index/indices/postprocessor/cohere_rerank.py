@@ -31,14 +31,10 @@ class CohereRerank(BaseNodePostprocessor):
         self._model = model
 
     def postprocess_nodes(
-        self,
-        nodes: List[NodeWithScore],
-        extra_info: Optional[Dict],
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
-        if extra_info is None or "query_bundle" not in extra_info:
+        if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
-
-        query_bundle = cast(QueryBundle, extra_info["query_bundle"])
 
         texts = [node.node.get_text() for node in nodes]
         results = self._client.rerank(

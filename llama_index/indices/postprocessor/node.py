@@ -27,7 +27,7 @@ class BasePydanticNodePostprocessor(BaseModel, BaseNodePostprocessor):
 
     @abstractmethod
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
@@ -39,7 +39,7 @@ class KeywordNodePostprocessor(BasePydanticNodePostprocessor):
     exclude_keywords: List[str] = Field(default_factory=list)
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         new_nodes = []
@@ -72,10 +72,9 @@ class SimilarityPostprocessor(BasePydanticNodePostprocessor):
     similarity_cutoff: float = Field(default=None)
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        extra_info = extra_info or {}
         sim_cutoff_exists = self.similarity_cutoff is not None
 
         new_nodes = []
@@ -164,7 +163,7 @@ class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
         return v
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         all_nodes: Dict[str, NodeWithScore] = {}
@@ -270,13 +269,11 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
         raise ValueError(f"Invalid prediction: {raw_pred}")
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        if extra_info is None or "query_bundle" not in extra_info:
-            raise ValueError("Missing query bundle in extra info.")
-
-        query_bundle = cast(QueryBundle, extra_info["query_bundle"])
+        if query_bundle is None:
+            raise ValueError("Missing query bundle.")
 
         infer_prev_next_prompt = QuestionAnswerPrompt(
             self.infer_prev_next_tmpl,
