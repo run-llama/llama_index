@@ -11,16 +11,24 @@ existing keywords in the table.
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from llama_index.constants import GRAPH_STORE_KEY
 from llama_index.data_structs.data_structs import KG
 from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
+from llama_index.graph_stores.simple import SimpleGraphStore
+from llama_index.graph_stores.types import GraphStore
 from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.prompts.prompts import KnowledgeGraphPrompt
 from llama_index.storage.docstore.types import RefDocInfo
+from llama_index.storage.storage_context import StorageContext
+
+# import registery functions
+
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -36,6 +44,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         kg_triple_extract_template (KnowledgeGraphPrompt): The prompt to use for
             extracting triplets.
         max_triplets_per_chunk (int): The maximum number of triplets to extract.
+        graph_store (Optional[GraphStore]): The graph store to use.
 
     """
 
@@ -45,8 +54,11 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[KG] = None,
+        service_context: Optional[ServiceContext] = None,
+        storage_context: Optional[StorageContext] = None,
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
+        graph_store: Optional[GraphStore] = None,
         include_embeddings: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -63,12 +75,19 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                 max_knowledge_triplets=self.max_triplets_per_chunk
             )
         )
+        self._graph_store = graph_store or SimpleGraphStore()
 
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
+            service_context=service_context,
+            storage_context=storage_context,
             **kwargs,
         )
+
+    @property
+    def graph_store(self) -> GraphStore:
+        return self._graph_store
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         from llama_index.indices.knowledge_graph.retrievers import (
@@ -78,6 +97,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
         if len(self.index_struct.embedding_dict) > 0 and "retriever_mode" not in kwargs:
             kwargs["retriever_mode"] = KGRetrieverMode.HYBRID
+        if "graph_store" not in kwargs:
+            kwargs["graph_store"] = self._graph_store
 
         return KGTableRetriever(self, **kwargs)
 
@@ -104,13 +125,13 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> KG:
         """Build the index from nodes."""
         # do simple concatenation
-        index_struct = KG(table={})
+        index_struct = self.index_struct_cls(table={})
         for n in nodes:
             triplets = self._extract_triplets(n.get_text())
             logger.debug(f"> Extracted triplets: {triplets}")
             for triplet in triplets:
                 subj, _, obj = triplet
-                index_struct.upsert_triplet(triplet)
+                self.upsert_triplet(triplet)
                 index_struct.add_node([subj, obj], n)
 
             if self.include_embeddings:
@@ -135,7 +156,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             for triplet in triplets:
                 subj, _, obj = triplet
                 triplet_str = str(triplet)
-                self._index_struct.upsert_triplet(triplet)
+                self.upsert_triplet(triplet)
                 self._index_struct.add_node([subj, obj], n)
                 if (
                     self.include_embeddings
@@ -146,7 +167,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                             triplet_str
                         )
                     )
-                    self.index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
+                    self._index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
 
     def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:
         """Insert triplets.
@@ -158,7 +179,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             triplet (str): Knowledge triplet
 
         """
-        self._index_struct.upsert_triplet(triplet)
+        self._graph_store.upsert_triplet(*triplet)
 
     def add_node(self, keywords: List[str], node: Node) -> None:
         """Add node.
@@ -188,9 +209,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
         """
         subj, _, obj = triplet
-        self._index_struct.add_node([subj, obj], node)
-        self._index_struct.upsert_triplet(triplet)
-        self._docstore.add_documents([node], allow_update=True)
+        self.upsert_triplet(triplet)
+        self.add_node([subj, obj], node)
 
     def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
@@ -232,16 +252,22 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
         g = nx.Graph()
         # add nodes
+        # TBD: for simple triplets, nodes could be omitted
         for node_name in self.index_struct.table.keys():
             g.add_node(node_name)
 
         # add edges
-        rel_map = self.index_struct.rel_map
+        # TBD: limit for full graph scan could be added
+        rel_map = self._graph_store.get_rel_map(None, 1)
         for keyword in rel_map.keys():
             for obj, rel in rel_map[keyword]:
                 g.add_edge(keyword, obj, title=rel)
 
         return g
+
+    @property
+    def query_context(self) -> Dict[str, Any]:
+        return {GRAPH_STORE_KEY: self._graph_store}
 
 
 # legacy
