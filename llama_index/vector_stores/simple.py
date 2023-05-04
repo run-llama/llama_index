@@ -14,7 +14,7 @@ from llama_index.indices.query.embedding_utils import (
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
@@ -85,13 +85,12 @@ class SimpleVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding_results to index."""
         for result in embedding_results:
-            text_id = result.id
-            self._data.embedding_dict[text_id] = result.embedding
-            self._data.text_id_to_doc_id[text_id] = result.doc_id
+            self._data.embedding_dict[result.id] = result.embedding
+            self._data.text_id_to_doc_id[result.id] = result.ref_doc_id
         return [result.id for result in embedding_results]
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:

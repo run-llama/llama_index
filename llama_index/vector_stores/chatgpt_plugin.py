@@ -9,14 +9,14 @@ from tqdm.auto import tqdm
 
 from llama_index.data_structs.node import Node, DocumentRelationship
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
 )
 
 
-def convert_docs_to_json(embedding_results: List[NodeEmbeddingResult]) -> List[Dict]:
+def convert_docs_to_json(embedding_results: List[NodeWithEmbedding]) -> List[Dict]:
     """Convert docs to JSON."""
     docs = []
     for embedding_result in embedding_results:
@@ -26,9 +26,8 @@ def convert_docs_to_json(embedding_results: List[NodeEmbeddingResult]) -> List[D
         doc_dict = {
             "id": embedding_result.id,
             "text": embedding_result.node.get_text(),
-            # "source": embedding_result.node.source,
             # NOTE: this is the doc_id to reference document
-            "source_id": embedding_result.doc_id,
+            "source_id": embedding_result.ref_doc_id,
             # "url": "...",
             # "created_at": ...,
             # "author": "..."",
@@ -89,7 +88,7 @@ class ChatGPTRetrievalPluginClient(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding_results to index."""
         headers = {"Authorization": f"Bearer {self._bearer_token}"}

@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -190,25 +190,24 @@ class PineconeVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding results to index.
 
         Args
-            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
         ids = []
         for result in embedding_results:
-            new_id = result.id
+            node_id = result.id
             node = result.node
-            text_embedding = result.embedding
 
             metadata = {
                 "text": node.get_text(),
                 # NOTE: this is the reference to source doc
-                "doc_id": result.doc_id,
-                "id": new_id,
+                "doc_id": node.ref_doc_id,
+                "id": node_id,
             }
             if node.extra_info:
                 # TODO: check if overlap with default metadata keys
@@ -233,8 +232,8 @@ class PineconeVectorStore(VectorStore):
             metadata.update(self._metadata_filters)
 
             entry = {
-                "id": new_id,
-                "values": text_embedding,
+                "id": node_id,
+                "values": result.embedding,
                 "metadata": metadata,
             }
             if self._add_sparse_vector:
@@ -245,7 +244,7 @@ class PineconeVectorStore(VectorStore):
             self._pinecone_index.upsert(
                 [entry], namespace=self._namespace, **self._pinecone_kwargs
             )
-            ids.append(new_id)
+            ids.append(node_id)
         return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:

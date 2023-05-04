@@ -16,7 +16,7 @@ from llama_index.readers.myscale import (
 )
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -99,10 +99,10 @@ class MyScaleVectorStore(VectorStore):
         # schema column name, type, and construct format method
         self.column_config: Dict = {
             "id": {"type": "String", "extract_func": lambda x: x.id},
-            "doc_id": {"type": "String", "extract_func": lambda x: x.doc_id},
+            "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
                 "type": "String",
-                "extract_func": lambda x: escape_str(x.node.text),
+                "extract_func": lambda x: escape_str(x.node.get_text()),
             },
             "vector": {
                 "type": "Array(Float32)",
@@ -151,7 +151,7 @@ class MyScaleVectorStore(VectorStore):
 
     def _build_insert_statement(
         self,
-        values: List[NodeEmbeddingResult],
+        values: List[NodeWithEmbedding],
     ) -> str:
         _data = []
         for item in values:
@@ -173,12 +173,12 @@ class MyScaleVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding results to index.
 
         Args
-            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
 
