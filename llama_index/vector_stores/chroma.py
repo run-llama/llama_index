@@ -61,7 +61,7 @@ class ChromaVectorStore(VectorStore):
         for result in embedding_results:
             embeddings.append(result.embedding)
             extra_info = result.node.extra_info or {}
-            metadatas.append({**extra_info, **{"document_id": result.doc_id}})
+            metadatas.append({**extra_info, **{"document_id": result.ref_doc_id}})
             ids.append(result.id)
             documents.append(result.node.get_text())
 

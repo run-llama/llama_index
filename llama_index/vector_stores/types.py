@@ -25,6 +25,14 @@ class NodeWithEmbedding:
     node: Node
     embedding: List[float]
 
+    @property
+    def id(self) -> str:
+        return self.node.get_doc_id()
+
+    @property
+    def ref_doc_id(self) -> Optional[str]:
+        return self.node.ref_doc_id
+
 
 @dataclass
 class VectorStoreQueryResult:

@@ -99,10 +99,10 @@ class MyScaleVectorStore(VectorStore):
         # schema column name, type, and construct format method
         self.column_config: Dict = {
             "id": {"type": "String", "extract_func": lambda x: x.id},
-            "doc_id": {"type": "String", "extract_func": lambda x: x.doc_id},
+            "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
                 "type": "String",
-                "extract_func": lambda x: escape_str(x.node.text),
+                "extract_func": lambda x: escape_str(x.node.get_text()),
             },
             "vector": {
                 "type": "Array(Float32)",

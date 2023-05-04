@@ -162,7 +162,7 @@ class DeepLakeVectorStore(VectorStore):
         for result in embedding_results:
             embedding = result.embedding
             extra_info = result.node.extra_info or {}
-            metadata = {**extra_info, **{"document_id": result.doc_id}}
+            metadata = {**extra_info, **{"document_id": result.ref_doc_id}}
             id = result.id
             text = result.node.get_text()
 

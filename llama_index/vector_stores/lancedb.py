@@ -73,7 +73,7 @@ class LanceDBVectorStore(VectorStore):
             data.append(
                 {
                     "id": result.id,
-                    "doc_id": result.doc_id,
+                    "doc_id": result.ref_doc_id,
                     "vector": result.embedding,
                     "text": result.node.get_text(),
                 }

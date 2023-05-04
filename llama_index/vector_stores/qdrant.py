@@ -72,16 +72,16 @@ class QdrantVectorStore(VectorStore):
 
         ids = []
         for result_batch in iter_batch(embedding_results, self._batch_size):
-            new_ids = []
+            node_ids = []
             vectors = []
             payloads = []
             for result in result_batch:
-                new_ids.append(result.id)
+                node_ids.append(result.id)
                 vectors.append(result.embedding)
                 node = result.node
                 payloads.append(
                     {
-                        "doc_id": result.doc_id,
+                        "doc_id": result.ref_doc_id,
                         "text": node.get_text(),
                         "extra_info": node.extra_info,
                     }
@@ -90,12 +90,12 @@ class QdrantVectorStore(VectorStore):
             self._client.upsert(
                 collection_name=self._collection_name,
                 points=rest.Batch.construct(
-                    ids=new_ids,
+                    ids=node_ids,
                     vectors=vectors,
                     payloads=payloads,
                 ),
             )
-            ids.extend(new_ids)
+            ids.extend(node_ids)
         return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:

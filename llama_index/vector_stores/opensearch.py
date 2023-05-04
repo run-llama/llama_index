@@ -103,7 +103,7 @@ class OpensearchVectorClient:
             bulk_req.append({"index": {"_index": self._index, "_id": result.id}})
             bulk_req.append(
                 {
-                    self._text_field: result.node.text,
+                    self._text_field: result.node.get_text(),
                     self._embedding_field: result.embedding,
                 }
             )

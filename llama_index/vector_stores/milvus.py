@@ -318,7 +318,7 @@ class MilvusVectorStore(VectorStore):
         # Process that data we are going to insert
         for result in embedding_results:
             ids.append(result.id)
-            doc_ids.append(result.doc_id)
+            doc_ids.append(result.ref_doc_id)
             texts.append(result.node.get_text())
             embeddings.append(result.embedding)
 
