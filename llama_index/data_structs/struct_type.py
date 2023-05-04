@@ -30,6 +30,9 @@ class IndexStructType(str, Enum):
         QDRANT ("qdrant"): Qdrant Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Qdrant vector store index.
+        LANCEDB ("lancedb"): LanceDB Vector Store Index
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the LanceDB vector store index.
         MILVUS ("milvus"): Milvus Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Milvus vector store index.
@@ -66,6 +69,7 @@ class IndexStructType(str, Enum):
     WEAVIATE = "weaviate"
     PINECONE = "pinecone"
     QDRANT = "qdrant"
+    LANCEDB = "lancedb"
     MILVUS = "milvus"
     CHROMA = "chroma"
     MYSCALE = "myscale"
