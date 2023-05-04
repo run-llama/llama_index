@@ -197,6 +197,10 @@ class BaseGPTIndex(Generic[IS], ABC):
         """
         logger.debug(f"> Deleting document: {doc_id}")
         self._delete(doc_id, **delete_kwargs)
+        if hasattr(self.docstore, "delete_document"):
+            self.docstore.delete_document(doc_id, raise_error=False)
+        if hasattr(self.index_struct, "delete"):
+            self.index_struct.delete(doc_id)
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def update(self, document: Document, **update_kwargs: Any) -> None:
