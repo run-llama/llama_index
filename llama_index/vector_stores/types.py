@@ -30,8 +30,8 @@ class NodeWithEmbedding:
         return self.node.get_doc_id()
 
     @property
-    def ref_doc_id(self) -> Optional[str]:
-        return self.node.ref_doc_id
+    def ref_doc_id(self) -> str:
+        return self.node.ref_doc_id or "None"
 
 
 @dataclass

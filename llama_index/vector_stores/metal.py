@@ -1,3 +1,4 @@
+import json
 import math
 from typing import Any, Dict, List, Optional
 from llama_index.data_structs.node import Node, DocumentRelationship
@@ -49,8 +50,10 @@ class MetalVectorStore(VectorStore):
 
         for item in response["data"]:
             text = item["text"]
-            extra_info = item["metadata"]
-            ref_doc_id = item["metadata"]["doc_id"]
+            metadata = item["metadata"]
+            ref_doc_id = metadata["doc_id"]
+            if "extra_info" in metadata:
+                extra_info = json.loads(metadata["extra_info"])
             id = item["id"]
             node = Node(
                 text=text,
@@ -85,22 +88,23 @@ class MetalVectorStore(VectorStore):
         for result in embedding_results:
             ids.append(result.id)
 
+            metadata = {}
+            metadata["doc_id"] = result.ref_doc_id
+            metadata["text"] = result.node.get_text()
+            if result.node.extra_info is not None:
+                metadata["extra_info"] = json.dumps(result.node.extra_info)
+
             payload = {
                 "embedding": result.embedding,
-                "metadata": result.node.extra_info or {},
+                "metadata": metadata,
                 "id": result.id,
             }
-
-            payload["metadata"]["doc_id"] = result.ref_doc_id
-
-            if result.node.get_text():
-                payload["metadata"]["text"] = result.node.get_text()
 
             self.metal_client.index(payload)
 
         return ids
 
-    def delete(self, doc_id: str) -> None:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete nodes from index.
 
         Args:
