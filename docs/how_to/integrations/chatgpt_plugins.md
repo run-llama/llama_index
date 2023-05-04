@@ -78,12 +78,14 @@ reader = ChatGPTRetrievalPluginReader(
 documents = reader.load_data("What did the author do growing up?")
 
 # build and query index
-from gpt_index import GPTListIndex
+from llama_index import GPTListIndex
 index = GPTListIndex(documents)
 # set Logging to DEBUG for more detailed outputs
-response = index.query(
-    "Summarize the retrieved content and describe what the author did growing up",
+query_engine = vector_index.as_query_engine(
     response_mode="compact"
+)
+response = query_engine.query(
+    "Summarize the retrieved content and describe what the author did growing up",
 ) 
 
 ```
@@ -116,7 +118,11 @@ index = ChatGPTRetrievalPluginIndex(
 )
 
 # query index
-response = index.query("What did the author do growing up?", similarity_top_k=3)
+query_engine = vector_index.as_query_engine(
+    similarity_top_k=3,
+    response_mode="compact",
+)
+response = query_engine.query("What did the author do growing up?")
 
 ```
 

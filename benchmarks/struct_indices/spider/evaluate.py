@@ -8,11 +8,11 @@ from typing import Dict, List, Optional
 
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
-from gpt_index.response.schema import Response
+from llama_index.response.schema import Response
 from spider_utils import create_indexes, load_examples
 from tqdm import tqdm
 
-from gpt_index.indices.struct_store.sql import GPTSQLStructStoreIndex
+from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex, SQLQueryMode
 
 logging.getLogger("root").setLevel(logging.WARNING)
 
@@ -74,7 +74,7 @@ def _get_answers(
     examples: List[dict],
     output_filename: str,
     use_cache: bool,
-) -> list[dict]:
+) -> List[dict]:
     if use_cache and os.path.exists(output_filename):
         with open(output_filename, "r") as f:
             return json.load(f)
@@ -97,7 +97,8 @@ def _get_answers(
             result["sql_result"] = "ERROR"
             result["answer"] = "ERROR"
         try:
-            resp = indexes[db_name].query(sql_query, mode="sql")
+            query_engine = indexes[db_name].as_query_engine(query_mode=SQLQueryMode.SQL)
+            resp = query_engine.query(sql_query)
             assert isinstance(resp, Response)
             result["sql_result"] = resp.response
             if resp.response is None:
@@ -112,9 +113,9 @@ def _get_answers(
 
 def _match_answers(
     llm: ChatOpenAI,
-    gold_results: list[dict],
-    pred_results: list[dict],
-    examples: list[dict],
+    gold_results: List[dict],
+    pred_results: List[dict],
+    examples: List[dict],
     output_filename: str,
 ) -> float:
     results = []

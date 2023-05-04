@@ -2,7 +2,7 @@
 
 LlamaIndex provides support for embeddings in the following format:
 - Adding embeddings to Document objects
-- Using a Vector Store as an underlying index (e.g. `GPTSimpleVectorIndex`, `GPTFaissIndex`)
+- Using a Vector Store as an underlying index (e.g. `GPTVectorStoreIndex`)
 - Querying our list and tree indices with embeddings.
 
 ## Adding embeddings to Document objects
@@ -30,7 +30,7 @@ of using LLMs to traverse nodes.
 #### How are Embeddings Generated?
 
 Since we offer embedding support during *query-time* for our list and tree indices, 
-embeddings are lazily generated and then cached (if `mode="embedding"` is specified during `index.query(...)`), and not during index construction.
+embeddings are lazily generated and then cached (if `retriever_mode="embedding"` is specified during `query(...)`), and not during index construction.
 This design choice prevents the need to generate embeddings for all text chunks during index construction.
 
 NOTE: Our [vector-store based indices](/how_to/integrations/vector_stores.md) generate embeddings during index construction.
@@ -38,17 +38,17 @@ NOTE: Our [vector-store based indices](/how_to/integrations/vector_stores.md) ge
 #### Embedding Lookups
 For the list index (`GPTListIndex`):
 - We iterate through every node in the list, and identify the top k nodes through embedding similarity. We use these nodes to synthesize an answer.
-- See the [List Query API](/reference/indices/list_query.rst) for more details.
-- NOTE: the embedding-mode usage of the list index is roughly equivalent with the usage of our `GPTSimpleVectorIndex`; the main
+- See the [List Retriever API](/reference/query/retrievers/list.rst) for more details.
+- NOTE: the embedding-mode usage of the list index is roughly equivalent with the usage of our `GPTVectorStoreIndex`; the main
     difference is when embeddings are generated (during query-time for the list index vs. index construction for the simple vector index).
 
 For the tree index (`GPTTreeIndex`):
 - We start with the root nodes, and traverse down the tree by picking the child node through embedding similarity.
-- See the [Tree Query API](/reference/indices/tree_query.rst) for more details.
+- See the [Tree Query API](/reference/query/retrievers/tree.rst) for more details.
 
 **Example Notebook**
 
-An example notebook is given [here](https://github.com/jerryjliu/gpt_index/blob/main/examples/test_wiki/TestNYC_Embeddings.ipynb).
+An example notebook is given [here](https://github.com/jerryjliu/llama_index/blob/main/examples/test_wiki/TestNYC_Embeddings.ipynb).
 
 
 
@@ -73,23 +73,24 @@ from llama_index import LangchainEmbedding, ServiceContext
 embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
 service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
-# load index
-new_index = GPTListIndex.load_from_disk('index_list_emb.json')
+# build index
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+new_index = GPTListIndex.from_documents(documents)
 
 # query with embed_model specified
-response = new_index.query(
-    "<query_text>", 
-    mode="embedding", 
+query_engine = new_index.as_query_engine(
+    retriever_mode="embedding", 
     verbose=True, 
     service_context=service_context
 )
+response = query_engine.query("<query_text>")
 print(response)
 ```
 
-Another example snippet is shown for GPTSimpleVectorIndex.
+Another example snippet is shown for GPTVectorStoreIndex.
 
 ```python
-from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import LangchainEmbedding, ServiceContext
 
@@ -98,16 +99,16 @@ embed_model = LangchainEmbedding(HuggingFaceEmbeddings())
 service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # load index
-new_index = GPTSimpleVectorIndex.load_from_disk(
-    'index_simple_vector.json', 
-    service_context=service_context
+documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+new_index = GPTVectorStoreIndex.from_documents(
+    documents, 
+    service_context=service_context,
 )
 
 # query will use the same embed_model
-response = new_index.query(
-    "<query_text>", 
-    mode="default", 
+query_engine = new_index.as_query_engine(
     verbose=True, 
 )
+response = query_engine.query("<query_text>")
 print(response)
 ```

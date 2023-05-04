@@ -36,5 +36,5 @@ jobs:
       - name: Test import
         working-directory: ${{ vars.RUNNER_TEMP }}
         run: |
-          python -c "import gpt_index"
+          python -c "import llama_index"
         

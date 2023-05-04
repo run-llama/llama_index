@@ -137,7 +137,8 @@ A simple example is shown here:
 
 ```python
 # set Logging to DEBUG for more detailed outputs
-response = index.query("Which city has the highest population?", mode="default")
+query_engine = index.as_query_engine()
+response = query_engine.query("Which city has the highest population?")
 print(response)
 
 ```
@@ -223,20 +224,20 @@ that can be fed into the text-to-SQL prompt.
 Here we make use of the `derive_index_from_context` function within `SQLContextContainerBuilder`
 to create a new index. You have flexibility in choosing which index class to specify + 
 which arguments to pass in. We then use a helper method called `query_index_for_context`
-which is a simple wrapper on the `index.query` call that wraps a query template + 
+which is a simple wrapper on the `query` call that wraps a query template + 
 stores the context on the generated context container.
 
 You can then build the context container, and pass it to the index during query-time!
 
 ```python
-from gpt_index import GPTSQLStructStoreIndex, SQLDatabase, GPTSimpleVectorIndex
-from gpt_index.indices.struct_store import SQLContextContainerBuilder
+from llama_index import GPTSQLStructStoreIndex, SQLDatabase, GPTVectorStoreIndex
+from llama_index.indices.struct_store import SQLContextContainerBuilder
 
 sql_database = SQLDatabase(engine)
 # build a vector index from the table schema information
 context_builder = SQLContextContainerBuilder(sql_database)
 table_schema_index = context_builder.derive_index_from_context(
-    GPTSimpleVectorIndex,
+    GPTVectorStoreIndex,
     store_index=True
 )
 
@@ -249,10 +250,10 @@ SQLContextContainerBuilder.query_index_for_context(
     query_str,
     store_context_str=True
 )
-context_container = context_builder.build_context_container()
 
 # query the SQL index with the table context
-response = index.query(query_str, sql_context_container=context_container)
+query_engine = index.as_query_engine()
+response = query_engine.query(query_str, sql_context_container=context_container)
 print(response)
 
 ```

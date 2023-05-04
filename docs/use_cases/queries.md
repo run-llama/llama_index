@@ -13,10 +13,11 @@ a simple in-memory vector store for you to get started, but you can also choose
 to use any one of our [vector store integrations](/how_to/integrations/vector_stores.md):
 
 ```python
-from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTSimpleVectorIndex.from_documents(documents)
-response = index.query("What did the author do growing up?")
+index = GPTVectorStoreIndex.from_documents(documents)
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 print(response)
 
 ```
@@ -40,7 +41,10 @@ Empirically, setting `response_mode="tree_summarize"` also leads to better summa
 ```python
 index = GPTListIndex.from_documents(documents)
 
-response = index.query("<summarization_query>", response_mode="tree_summarize")
+query_engine = index.as_query_engine(
+    response_mode="tree_summarize"
+)
+response = query_engine.query("<summarization_query>")
 ```
 
 ### Queries over Structured Data
@@ -55,21 +59,22 @@ Here are some relevant resources:
 - [Pandas Demo Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/struct_indices/PandasIndexDemo.ipynb).
 
 
-### Synthesis over Heterogenous Data
+### Synthesis over Heterogeneous Data
 
-LlamaIndex supports synthesizing across heterogenous data sources. This can be done by composing a graph over your existing data.
+LlamaIndex supports synthesizing across heterogeneous data sources. This can be done by composing a graph over your existing data.
 Specifically, compose a list index over your subindices. A list index inherently combines information for each node; therefore
-it can synthesize information across your heteregenous data sources.
+it can synthesize information across your heterogeneous data sources.
 
 ```python
-from llama_index import GPTSimpleVectorIndex, GPTListIndex
+from llama_index import GPTVectorStoreIndex, GPTListIndex
 from llama_index.indices.composability import ComposableGraph
 
-index1 = GPTSimpleVectorIndex.from_documents(notion_docs)
-index2 = GPTSimpleVectorIndex.from_documents(slack_docs)
+index1 = GPTVectorStoreIndex.from_documents(notion_docs)
+index2 = GPTVectorStoreIndex.from_documents(slack_docs)
 
 graph = ComposableGraph.from_indices(GPTListIndex, [index1, index2], index_summaries=["summary1", "summary2"])
-response = graph.query("<query_str>", mode="recursive", query_configs=...)
+query_engine = graph.as_query_engine()
+response = query_engine.query("<query_str>")
 
 ```
 
@@ -79,45 +84,55 @@ Here are some relevant resources:
 
 
 
-### Routing over Heterogenous Data
+### Routing over Heterogeneous Data
 
-LlamaIndex also supports routing over heteregenous data sources - for instance, if you want to "route" a query to an 
-underlying Document or a subindex.
-Here you have three options: `GPTTreeIndex`, `GPTKeywordTableIndex`, or a
-[Vector Store Index](vector-store-index).
+LlamaIndex also supports routing over heterogeneous data sources with `RouterQueryEngine` - for instance, if you want to "route" a query to an 
+underlying Document or a sub-index.
 
-A `GPTTreeIndex` uses the LLM to select the child node(s) to send the query down to.
-A `GPTKeywordTableIndex` uses keyword matching, and a `GPTVectorStoreIndex` uses
-embedding cosine similarity.
+
+To do this, first build the sub-indices over different data sources.
+Then construct the corresponding query engines, and give each query engine a description to obtain a `QueryEngineTool`.
 
 ```python
-from llama_index import GPTTreeIndex, GPTSimpleVectorIndex
-from llama_index.indices.composability import ComposableGraph
+from llama_index import GPTTreeIndex, GPTVectorStoreIndex
+from llama_index.tools import QueryEngineTool
 
 ...
 
-# subindices
-index1 = GPTSimpleVectorIndex.from_documents(notion_docs)
-index2 = GPTSimpleVectorIndex.from_documents(slack_docs)
+# define sub-indices
+index1 = GPTVectorStoreIndex.from_documents(notion_docs)
+index2 = GPTVectorStoreIndex.from_documents(slack_docs)
 
-# tree index for routing
-tree_index = ComposableGraph.from_indices(
-    GPTTreeIndex, 
-    [index1, index2],
-    index_summaries=["summary1", "summary2"]
+# define query engines and tools
+tool1 = QueryEngineTool.from_defaults(
+    query_engine=index1.as_query_engine(), 
+    description="Use this query engine to do...",
+)
+tool2 = QueryEngineTool.from_defaults(
+    query_engine=index2.as_query_engine(), 
+    description="Use this query engine for something else...",
+)
+```
+
+Then, we define a `RouterQueryEngine` over them.
+By default, this uses a `LLMSingleSelector` as the router, which uses the LLM to choose the best sub-index to router the query to, given the descriptions.
+
+```python
+from llama_index.query_engine import RouterQueryEngine
+
+query_engine = RouterQueryEngine.from_defaults(
+    query_engine_tools=[tool1, tool2]
 )
 
-response = tree_index.query(
-    "In Notion, give me a summary of the product roadmap.",
-    mode="recursive",
-    query_configs=...
+response = query_engine.query(
+    "In Notion, give me a summary of the product roadmap."
 )
 
 ```
 
 Here are some relevant resources:
-- [Composability](/how_to/index_structs/composability.md)
-- [Composable Keyword Table Graph](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/ComposableIndices.ipynb).
+- [Router Query Engine Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/query/RouterQueryEngine.ipynb).
+- [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb)
 
 
 
@@ -138,7 +153,7 @@ Here are some relevant resources:
 You can also perform compare/contrast queries with a **query transformation** module.
 
 ```python
-from gpt_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
 decompose_transform = DecomposeQueryTransform(
     llm_predictor_chatgpt, verbose=True
 )

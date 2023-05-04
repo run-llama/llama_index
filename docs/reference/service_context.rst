@@ -10,6 +10,7 @@ query, such as the LLMPredictor (for configuring the LLM),
 the PromptHelper (for configuring input size/chunk size),
 the BaseEmbedding (for configuring the embedding model), and more.
 
+| 
 
 .. toctree::
    :maxdepth: 1
@@ -20,7 +21,8 @@ the BaseEmbedding (for configuring the embedding model), and more.
    service_context/prompt_helper.rst
    service_context/llama_logger.rst
 
+------------
 
-.. automodule:: gpt_index.indices.service_context
+.. automodule:: llama_index.indices.service_context
    :members:
    :inherited-members:

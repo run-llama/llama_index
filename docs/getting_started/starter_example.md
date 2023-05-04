@@ -8,18 +8,18 @@ LlamaIndex examples can be found in the `examples` folder of the LlamaIndex repo
 We first want to download this `examples` folder. An easy way to do this is to just clone the repo:
 
 ```bash
-$ git clone https://github.com/jerryjliu/gpt_index.git
+$ git clone https://github.com/jerryjliu/llama_index.git
 ```
 
 Next, navigate to your newly-cloned repository, and verify the contents:
 
 ```bash
-$ cd gpt_index
+$ cd llama_index
 $ ls
 LICENSE                data_requirements.txt  tests/
 MANIFEST.in            examples/              pyproject.toml
 Makefile               experimental/          requirements.txt
-README.md              gpt_index/             setup.py
+README.md              llama_index/             setup.py
 ```
 
 We now want to navigate to the following folder:
@@ -35,16 +35,17 @@ This contains LlamaIndex examples around Paul Graham's essay, ["What I Worked On
 Create a new `.py` file with the following:
 
 ```python
-from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTSimpleVectorIndex.from_documents(documents)
+index = GPTVectorStoreIndex.from_documents(documents)
 ```
 
 This builds an index over the documents in the `data` folder (which in this case just consists of the essay text). We then run the following
 
 ```python
-response = index.query("What did the author do growing up?")
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
@@ -66,13 +67,21 @@ You can set the level to `DEBUG` for verbose output, or use `level=logging.INFO`
 
 ### Saving and Loading
 
-To save to disk and load from disk, do
+By default, data is stored in-memory.
+To persist to disk (under `./storage`):
 
 ```python
-# save to disk
-index.save_to_disk('index.json')
-# load from disk
-index = GPTSimpleVectorIndex.load_from_disk('index.json')
+index.storage_context.persist()
+```
+
+To reload from disk:
+```python
+from llama_index import StorageContext, load_index_from_storage
+
+# rebuild storage context
+storage_context = StorageContext.from_defaults(persist_dir="./storage")
+# load index
+index = load_index_from_storage(storage_context)
 ```
 
 ### Next Steps

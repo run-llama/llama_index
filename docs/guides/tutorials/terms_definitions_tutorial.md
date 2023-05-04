@@ -77,7 +77,7 @@ Now that we are able to define LLM settings and upload text, we can try using Ll
 We can add the following functions to both initialize our LLM, as well as use it to extract terms from the input text.
 
 ```python
-from llama_index import Document, GPTListIndex, LLMPredictor, ServiceContext, PromptHelper
+from llama_index import Document, GPTListIndex, LLMPredictor, ServiceContext, PromptHelper, load_index_from_storage
 
 def get_llm(llm_name, model_temperature, api_key, max_tokens=256):
     os.environ['OPENAI_API_KEY'] = api_key
@@ -96,7 +96,8 @@ def extract_terms(documents, term_extract_str, llm_name, model_temperature, api_
                                                    chunk_size_limit=1024)
 
     temp_index = GPTListIndex.from_documents(documents, service_context=service_context)
-    terms_definitions = str(temp_index.query(term_extract_str, response_mode="tree_summarize"))
+    query_engine = temp_index.as_query_engine(response_mode="tree_summarize")
+    terms_definitions = str(query_engine.query(term_extract_str))
     terms_definitions = [x for x in terms_definitions.split("\n") if x and 'Term:' in x and 'Definition:' in x]
     # parse the text into a dict
     terms_to_definition = {x.split("Definition:")[0].split("Term:")[-1].strip(): x.split("Definition:")[-1].strip() for x in terms_definitions}
@@ -130,7 +131,7 @@ Lastly, we do some minor post processing. We assume the model followed instructi
 
 ## Saving Extracted Terms
 
-Now that we can extract terms, we need to put them somewhere so that we can query for them later. A `GPTSimpleVectorIndex` should be a perfect choice for now! But in addition, our app should also keep track of which terms are inserted into the index so that we can inspect them later. Using `st.session_state`, we can store the current list of terms in a session dict, unique to each user!
+Now that we can extract terms, we need to put them somewhere so that we can query for them later. A `GPTVectorStoreIndex` should be a perfect choice for now! But in addition, our app should also keep track of which terms are inserted into the index so that we can inspect them later. Using `st.session_state`, we can store the current list of terms in a session dict, unique to each user!
 
 First things first though, let's add a feature to initialize a global vector index and another function to insert the extracted terms.
 
@@ -152,7 +153,7 @@ def initialize_index(llm_name, model_temperature, api_key):
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
 
-    index = GPTSimpleVectorIndex([], service_context=service_context)
+    index = GPTVectorStoreIndex([], service_context=service_context)
 
     return index
 
@@ -260,7 +261,7 @@ def insert_terms(terms_to_definition):
         doc = Document(f"Term: {term}\nDefinition: {definition}")
         st.session_state['llama_index'].insert(doc)
     # TEMPORARY - save to disk
-    st.session_state['llama_index'].save_to_disk("index.json")
+    st.session_state['llama_index'].storage_context.persist()
 ```
 
 Now, we need some document to extract from! The repository for this project used the wikipedia page on New York City, and you can find the text [here](https://github.com/jerryjliu/llama_index/blob/main/examples/test_wiki/data/nyc_text.txt).
@@ -277,9 +278,7 @@ def initialize_index(llm_name, model_temperature, api_key):
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
 
-    index = GPTSimpleVectorIndex.load_from_disk(
-        "./index.json", service_context=service_context
-    )
+    index = load_index_from_storage(service_context=service_context)
 
     return index
 ```
@@ -301,7 +300,7 @@ If you play around with the app a bit now, you might notice that it stopped foll
 
 This is due to the concept of "refining" answers in Llama Index. Since we are querying across the top 5 matching results, sometimes all the results do not fit in a single prompt! OpenAI models typically have a max input size of 4097 tokens. So, Llama Index accounts for this by breaking up the matching results into chunks that will fit into the prompt. After Llama Index gets an initial answer from the first API call, it sends the next chunk to the API, along with the previous answer, and asks the model to refine that answer.
 
-So, the refine process seems to be messing with our results! Rather than appending extra instructions to the `query_str`, remove that, and Llama Index will let us provide our own custom prompts! Let's create those now, using the [default prompts](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/prompts/default_prompts.py) and [chat specific prompts](https://github.com/jerryjliu/llama_index/blob/main/gpt_index/prompts/chat_prompts.py) as a guide. Using a new file `constants.py`, let's create some new query templates:
+So, the refine process seems to be messing with our results! Rather than appending extra instructions to the `query_str`, remove that, and Llama Index will let us provide our own custom prompts! Let's create those now, using the [default prompts](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py) and [chat specific prompts](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py) as a guide. Using a new file `constants.py`, let's create some new query templates:
 
 ```python
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model

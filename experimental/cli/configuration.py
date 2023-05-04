@@ -3,22 +3,24 @@ from configparser import ConfigParser, SectionProxy
 from typing import Any, Type
 from llama_index.embeddings.openai import OpenAIEmbedding
 from langchain import OpenAI
-from langchain.schema import BaseLanguageModel
+from langchain.base_language import BaseLanguageModel
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index import (
-    GPTSimpleVectorIndex,
+    GPTVectorStoreIndex,
     GPTSimpleKeywordTableIndex,
     ServiceContext,
     LLMPredictor,
 )
+from llama_index.indices.loading import load_index_from_storage
 from llama_index.llm_predictor import StructuredLLMPredictor
+from llama_index.storage.storage_context import StorageContext
 
 
 CONFIG_FILE_NAME = "config.ini"
-JSON_INDEX_FILE_NAME = "index.json"
+DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_CONFIG = {
-    "store": {"type": "json"},
+    "store": {"persist_dir": DEFAULT_PERSIST_DIR},
     "index": {"type": "default"},
     "embed_model": {"type": "default"},
     "llm_predictor": {"type": "default"},
@@ -47,35 +49,30 @@ def load_index(root: str = ".") -> BaseGPTIndex[Any]:
     # Index type
     index_type: Type
     if config["index"]["type"] == "default" or config["index"]["type"] == "vector":
-        index_type = GPTSimpleVectorIndex
+        index_type = GPTVectorStoreIndex
     elif config["index"]["type"] == "keyword":
         index_type = GPTSimpleKeywordTableIndex
     else:
         raise KeyError(f"Unknown index.type {config['index']['type']}")
 
-    # store type
-    if config["store"]["type"] == "json":
-        index_file = os.path.join(root, JSON_INDEX_FILE_NAME)
-    else:
-        raise KeyError(f"Unknown index.type {config['store']['type']}")
-
-    # Build index
-    if os.path.exists(index_file):
-        return index_type.load_from_disk(index_file, service_context=service_context)
-    else:
-        return index_type(
-            index_struct=index_type.index_struct_cls(), service_context=service_context
+    try:
+        # try loading index
+        storage_context = _load_storage_context(config)
+        index = load_index_from_storage(storage_context)
+    except ValueError:
+        # build index
+        storage_context = StorageContext.from_defaults()
+        index = index_type(
+            nodes=[], service_context=service_context, storage_context=storage_context
         )
+    return index
 
 
 def save_index(index: BaseGPTIndex[Any], root: str = ".") -> None:
     """Save index to file"""
     config = load_config(root)
-    if config["store"]["type"] == "json":
-        index_file = os.path.join(root, JSON_INDEX_FILE_NAME)
-    else:
-        raise KeyError(f"Unknown index.type {config['index']['type']}")
-    index.save_to_disk(index_file)
+    persist_dir = config["store"]["persist_dir"]
+    index.storage_context.persist(persist_dir=persist_dir)
 
 
 def _load_service_context(config: ConfigParser) -> ServiceContext:
@@ -85,6 +82,11 @@ def _load_service_context(config: ConfigParser) -> ServiceContext:
     return ServiceContext.from_defaults(
         llm_predictor=llm_predictor, embed_model=embed_model
     )
+
+
+def _load_storage_context(config: ConfigParser) -> StorageContext:
+    persist_dir = config["store"]["persist_dir"]
+    return StorageContext.from_defaults(persist_dir=persist_dir)
 
 
 def _load_llm_predictor(config: ConfigParser) -> LLMPredictor:

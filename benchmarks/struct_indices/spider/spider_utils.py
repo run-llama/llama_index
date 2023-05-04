@@ -6,9 +6,9 @@ from typing import Dict, Tuple, Union
 
 from langchain import OpenAI
 from langchain.chat_models import ChatOpenAI
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
-from gpt_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
+from llama_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
 
 
 def load_examples(spider_dir: str) -> Tuple[list, list]:
@@ -35,7 +35,10 @@ def create_indexes(
         engine = create_engine("sqlite:///" + db_path)
         databases[db_name] = SQLDatabase(engine=engine)
         # Test connection.
-        engine.execute("select name from sqlite_master where type = 'table'").fetchone()
+        with engine.connect() as connection:
+            connection.execute(
+                text("select name from sqlite_master where type = 'table'")
+            ).fetchone()
 
     llm_predictor = LLMPredictor(llm=llm)
     llm_indexes = {}
