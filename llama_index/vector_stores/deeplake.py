@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, cast
 import numpy as np
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -139,11 +139,11 @@ class DeepLakeVectorStore(VectorStore):
         """Get client."""
         return self.ds
 
-    def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
 
         Args:
-            embedding_results (List[NodeEmbeddingResult]): The embeddings and their data
+            embedding_results (List[NodeWithEmbedding]): The embeddings and their data
                 to insert.
 
         Raises:

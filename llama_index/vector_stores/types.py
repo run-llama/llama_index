@@ -13,21 +13,17 @@ DEFAULT_PERSIST_FNAME = "vector_store.json"
 
 
 @dataclass
-class NodeEmbeddingResult:
+class NodeWithEmbedding:
     """Node embedding result.
 
     Args:
-        id (str): Node id
         node (Node): Node
         embedding (List[float]): Embedding
-        doc_id (str): Document id
 
     """
 
-    id: str
     node: Node
     embedding: List[float]
-    doc_id: str
 
 
 @dataclass
@@ -83,7 +79,7 @@ class VectorStore(Protocol):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding results to vector store."""
         ...

@@ -6,7 +6,7 @@ from typing import Any, List, cast
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -44,11 +44,11 @@ class ChromaVectorStore(VectorStore):
 
         self._collection = cast(Collection, chroma_collection)
 
-    def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Add embedding results to index.
 
         Args
-            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
         if not self._collection:

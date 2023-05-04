@@ -9,7 +9,7 @@ from typing import Any, List, Optional, cast
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
@@ -55,11 +55,11 @@ class QdrantVectorStore(VectorStore):
 
         self._batch_size = kwargs.get("batch_size", 100)
 
-    def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Add embedding results to index.
 
         Args
-            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
         from qdrant_client.http import models as rest
