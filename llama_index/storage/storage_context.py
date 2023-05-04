@@ -102,8 +102,7 @@ class StorageContext:
     @classmethod
     def from_dict(cls, save_dict: dict) -> "StorageContext":
         """Create a StorageContext from dict."""
-
-        docstore = SimpleDocumentStore.form_dict(save_dict[DOC_STORE_KEY])
+        docstore = SimpleDocumentStore.from_dict(save_dict[DOC_STORE_KEY])
         vector_store = SimpleVectorStore.from_dict(save_dict[VECTOR_STORE_KEY])
         index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
         return cls(docstore=docstore, index_store=index_store, vector_store=vector_store)
