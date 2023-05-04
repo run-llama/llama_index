@@ -1,6 +1,6 @@
 """PII postprocessor."""
 
-from llama_index.indices.postprocessor.node import BaseNodePostprocessor
+from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
 from llama_index.data_structs.node import NodeWithScore
 from typing import List, Optional, Dict, Tuple, Callable
 from llama_index.indices.service_context import ServiceContext
@@ -37,7 +37,7 @@ DEFAULT_PII_TMPL = (
 )
 
 
-class PIINodePostprocessor(BaseNodePostprocessor):
+class PIINodePostprocessor(BasePydanticNodePostprocessor):
     """PII Node processor.
 
     NOTE: the ServiceContext should contain a LOCAL model, not an external API.
@@ -89,7 +89,7 @@ class PIINodePostprocessor(BaseNodePostprocessor):
         return new_nodes
 
 
-class NERPIINodePostprocessor(BaseNodePostprocessor):
+class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
     """NER PII Node processor.
 
     Uses a HF transformers model.

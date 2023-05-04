@@ -1,6 +1,6 @@
 """Node recency post-processor."""
 
-from llama_index.indices.postprocessor.node import BaseNodePostprocessor
+from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
 from llama_index.indices.service_context import ServiceContext
 from llama_index.data_structs.node import NodeWithScore
 from pydantic import Field
@@ -39,7 +39,7 @@ from datetime import datetime
 #         raise ValueError(f"Invalid recency prediction: {pred}.")
 
 
-class FixedRecencyPostprocessor(BaseNodePostprocessor):
+class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
     """Recency post-processor.
 
     This post-processor does the following steps:
@@ -100,7 +100,7 @@ DEFAULT_QUERY_EMBEDDING_TMPL = (
 )
 
 
-class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
+class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
     """Recency post-processor.
 
     This post-processor does the following steps:
@@ -187,7 +187,7 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
         ]
 
 
-class TimeWeightedPostprocessor(BaseNodePostprocessor):
+class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
     """Time-weighted post-processor.
 
     Reranks a set of nodes based on their recency.

@@ -7,19 +7,19 @@ from typing import Dict, List, Optional, cast
 from pydantic import BaseModel, Field, validator
 
 import logging
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.type import ResponseMode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.data_structs.node import DocumentRelationship, NodeWithScore
-from llama_index.indices.postprocessor.base import BasePostprocessor
 from llama_index.indices.response.response_builder import get_response_builder
 
 logger = logging.getLogger(__name__)
 
 
-class BaseNodePostprocessor(BasePostprocessor, BaseModel):
+class BasePydanticNodePostprocessor(BaseModel, BaseNodePostprocessor):
     """Node postprocessor."""
 
     class Config:
@@ -32,7 +32,7 @@ class BaseNodePostprocessor(BasePostprocessor, BaseModel):
         """Postprocess nodes."""
 
 
-class KeywordNodePostprocessor(BaseNodePostprocessor):
+class KeywordNodePostprocessor(BasePydanticNodePostprocessor):
     """Keyword-based Node processor."""
 
     required_keywords: List[str] = Field(default_factory=list)
@@ -66,7 +66,7 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
         return new_nodes
 
 
-class SimilarityPostprocessor(BaseNodePostprocessor):
+class SimilarityPostprocessor(BasePydanticNodePostprocessor):
     """Similarity-based Node processor."""
 
     similarity_cutoff: float = Field(default=None)
@@ -136,7 +136,7 @@ def get_backward_nodes(
     return nodes
 
 
-class PrevNextNodePostprocessor(BaseNodePostprocessor):
+class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
     """Previous/Next Node post-processor.
 
     Allows users to fetch additional nodes from the document store,
@@ -226,7 +226,7 @@ DEFAULT_REFINE_INFER_PREV_NEXT_TMPL = (
 )
 
 
-class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
+class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
     """Previous/Next Node post-processor.
 
     Allows users to fetch additional nodes from the document store,

@@ -1,7 +1,6 @@
 """Node PostProcessor module."""
 
 
-from llama_index.indices.postprocessor.base import BasePostprocessor
 from llama_index.indices.postprocessor.node import (
     SimilarityPostprocessor,
     KeywordNodePostprocessor,
@@ -19,7 +18,6 @@ from llama_index.indices.postprocessor.pii import (
 )
 
 __all__ = [
-    "BasePostprocessor",
     "SimilarityPostprocessor",
     "KeywordNodePostprocessor",
     "PrevNextNodePostprocessor",
