@@ -74,7 +74,10 @@ def default_node_to_metadata_fn(node: Node) -> ToolMetadata:
 
     """
 
-    return ToolMetadata(name=node.extra_info["tool_name"], description=node.text)
+    extra_info = node.extra_info or {}
+    if "tool_name" not in extra_info:
+        raise ValueError("Node must have a tool_name in extra_info.")
+    return ToolMetadata(name=extra_info["tool_name"], description=node.get_text())
 
 
 class RetrieverRouterQueryEngine(BaseQueryEngine):
