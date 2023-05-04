@@ -38,7 +38,11 @@ class MetalVectorStore(VectorStore):
         similarities = []
 
         for item in response["data"]:
-            node = Node.from_dict(item["metadata"])
+            text = item["text"]
+            extra_info = item["metadata"]
+            doc_id = item["metadata"]["doc_id"]
+            id = item["id"]
+            node = Node(text=text, extra_info=extra_info, doc_id=doc_id, id=id)
             nodes.append(node)
             ids.append(item["id"])
 
