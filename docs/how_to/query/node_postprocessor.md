@@ -24,7 +24,7 @@ The base class is `BaseNodePostprocessor`, and the API interface is very simple:
 
 ```python
 
-class BaseNodePostprocessor(BaseModel):
+class BaseNodePostprocessor:
     """Node postprocessor."""
 
     @abstractmethod
