@@ -6,6 +6,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
+from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.vector_stores.myscale import MyScaleVectorStore
 from llama_index.vector_stores.opensearch import OpensearchVectorStore
 from llama_index.vector_stores.pinecone import PineconeVectorStore
@@ -24,6 +25,7 @@ class VectorStoreType(str, Enum):
     FAISS = "faiss"
     CHROMA = "chroma"
     CHATGPT_PLUGIN = "chatgpt_plugin"
+    LANCEDB = "lancedb"
     MILVUS = "milvus"
     DEEPLAKE = "deeplake"
     MYSCALE = "myscale"
@@ -33,6 +35,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.SIMPLE: SimpleVectorStore,
     VectorStoreType.WEAVIATE: WeaviateVectorStore,
     VectorStoreType.QDRANT: QdrantVectorStore,
+    VectorStoreType.LANCEDB: LanceDBVectorStore,
     VectorStoreType.MILVUS: MilvusVectorStore,
     VectorStoreType.PINECONE: PineconeVectorStore,
     VectorStoreType.OPENSEARCH: OpensearchVectorStore,
