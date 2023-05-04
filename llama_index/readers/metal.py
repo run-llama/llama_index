@@ -32,6 +32,7 @@ class MetalReader(BaseReader):
     def load_data(
         self,
         limit: int,
+        id_to_text_map: Optional[Dict[str, str]],
         query_embedding: Optional[List[float]] = None,
         filters: Optional[Dict[str, Any]] = None,
         separate_documents: bool = True,
@@ -40,6 +41,7 @@ class MetalReader(BaseReader):
         """Load data from Metal.
 
         Args:
+            id_to_text_map (Dict[str, str]): A map from ID's to text.
             query_embedding (Optional[List[float]]): Query embedding for search.
             limit (int): Number of results to return.
             filters (Optional[Dict[str, Any]]): Filters to apply to the search.
@@ -60,6 +62,12 @@ class MetalReader(BaseReader):
         documents = []
         for item in response["data"]:
             text = item["text"]
+            if not text and item["metadata"] and item["metadata"]["text"]:
+                text = item["metadata"]["text"]
+
+            if not text and id_to_text_map is not None and item["id"] in id_to_text_map:
+                text = id_to_text_map[item["id"]]
+
             documents.append(Document(text=text))
 
         if not separate_documents:
