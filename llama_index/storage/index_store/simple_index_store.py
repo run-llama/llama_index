@@ -40,3 +40,12 @@ class SimpleIndexStore(KVIndexStore):
         """Persist the store."""
         if isinstance(self._kvstore, BaseInMemoryKVStore):
             self._kvstore.persist(persist_path)
+
+    @classmethod
+    def from_dict(cls, save_dict: dict) -> "SimpleIndexStore":
+        simple_kvstore = SimpleKVStore.from_dict(save_dict)
+        return cls(simple_kvstore)
+
+    def to_dict(self) -> dict:
+        assert isinstance(self._kvstore, SimpleKVStore)
+        return self._kvstore.to_dict()
