@@ -24,7 +24,7 @@ print(response)
 
 Relevant Resources:
 - [Quickstart](/getting_started/starter_example.md)
-- [Example notebook](https://github.com/jerryjliu/llama_index/tree/main/examples/vector_indices)
+- [Example notebook](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores)
 
 
 ### Summarization
