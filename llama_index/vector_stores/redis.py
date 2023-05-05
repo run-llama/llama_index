@@ -14,7 +14,7 @@ from llama_index.readers.redis.utils import (
     get_redis_query,
 )
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -91,15 +91,28 @@ class RedisVectorStore(VectorStore):
         """Return the redis client instance"""
         return self._redis_client
 
-    def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
-        """Add embedding results to the index."""
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+        """Add embedding results to the index.
+
+        Args:
+            embedding_results (List[NodeWithEmbedding]): List of embedding results to add to the index.
+
+        Returns:
+            List[str]: List of ids of the documents added to the index.
+
+        Raises:
+            ValueError: If the index already exists and overwrite is False.
+        """
 
         # check index exists, call once to avoid calling multiple times
         index_exists = self._index_exists()
         if index_exists and self._overwrite:
             self.delete_index()
-            index_exists = False
-        if not index_exists:
+
+        elif index_exists and not self._overwrite:
+            raise ValueError("Index already exists and overwrite is False.")
+
+        else:  # index does not exist, create it
             # get vector dim from embedding results if index does not exist
             # as it will be created from the embedding result attributes.
             self._index_args["dims"] = len(embedding_results[0].embedding)
@@ -117,7 +130,7 @@ class RedisVectorStore(VectorStore):
 
             mapping = {
                 "id": result.id,
-                "doc_id": result.doc_id,
+                "doc_id": result.ref_doc_id,
                 "text": result.node.text,
                 self._vector_key: array_to_buffer(result.embedding),
                 **node_info,
@@ -183,7 +196,7 @@ class RedisVectorStore(VectorStore):
         for doc in results.docs:
             node = Node(
                 text=doc.text,
-                doc_id=doc.doc_id,
+                doc_id=doc.id,
                 embedding=None,
                 relationships={DocumentRelationship.SOURCE: doc.doc_id},
             )
