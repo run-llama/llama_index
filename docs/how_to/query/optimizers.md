@@ -48,8 +48,16 @@ Answer:
 The population of Berlin is around 4.5 million.
 ```
 
-Full [example notebook here](https://github.com/jerryjliu/llama_index/blob/main/examples/optimizer/OptimizerDemo.ipynb).
+Full [example notebook here](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/node_postprocessor/OptimizerDemo.ipynb).
 
 #### API Reference
 
 An API reference can be found [here](/reference/optimizers.rst).
+
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+../../examples/node_postprocessor/OptimizerDemo.ipynb
+```
