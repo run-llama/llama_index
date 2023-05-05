@@ -131,7 +131,7 @@ response = query_engine.query(
 ```
 
 Here are some relevant resources:
-- [Router Query Engine Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/query/RouterQueryEngine.ipynb).
+- [Router Query Engine Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb).
 - [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb)
 
 
