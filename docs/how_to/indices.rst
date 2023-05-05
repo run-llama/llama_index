@@ -17,4 +17,5 @@ capabilities our indices/graphs provide.
    index_structs/composability.md
    ../examples/index_structs/knowledge_graph/KnowledgeGraphDemo.ipynb
    ../examples/index_structs/struct_indices/PandasIndexDemo.ipynb
+   ../examples/index_structs/struct_indices/SQLIndexDemo.ipynb
 
