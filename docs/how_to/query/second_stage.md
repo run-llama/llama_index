@@ -1,17 +1,17 @@
-# Node Postprocessor
+# Second-Stage Processing
 
-By default, when a query is executed on an index or a composed graph, LlamaIndex performs
-the following steps:
-1. **Retrieval step**: Retrieve a set of nodes from the index given the query. For instance, with a vector index, 
-    this would be top-k relevant nodes; with a list index this would be all nodes.
+By default, when a query is executed on an index or a composed graph, 
+LlamaIndex performs the following steps:
+1. **Retrieval step**: Retrieve a set of nodes from the index given the query. 
 2. **Synthesis step**: Synthesize a response over the set of nodes.
 
-LlamaIndex provides a set of "postprocessor" modules that can augment the retrieval process in (1).
-The process is very simple. After the retrieval step, we can analyze the initial set of nodes and add a "processing" step to 
-refine this set of nodes - whether its by filtering out irrelevant nodes, adding more nodes, and more.
+Beyond standard retrieval and synthesis, LlamaIndex also provides a collection of modules
+for advanced **second-stage processing** (i.e. after retrieval and before synthesis).
 
-This is a simple but powerful step. This allows us to perform tasks like keyword filtering, as well as temporal reasoning
-over your data.
+After retrieving the initial candidate nodes, these modules further improve
+the quality and diversity of the nodes used for synthesis by e.g. filtering, re-ranking, or augmenting.
+Examples include keyword filters, LLM-based re-ranking, and temporal-reasoning based augmentation.
+
 
 We first provide the high-level API interface, and provide some example modules, and finally discuss usage.
 
@@ -150,3 +150,14 @@ are outdated and overlap with more recent context.
 The recency score is added to any score that the node already contains.
 
 
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+../../examples/node_postprocessor/NodePostprocessorDemo.ipynb
+../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
+../../examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
+../../examples/node_postprocessor/PII.ipynb
+../../examples/node_postprocessor/CohereRerank.ipynb
+```

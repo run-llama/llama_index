@@ -80,7 +80,7 @@ response = query_engine.query("<query_str>")
 
 Here are some relevant resources:
 - [Composability](/how_to/index_structs/composability.md)
-- [City Analysis Demo](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb).
+- [City Analysis Demo](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb).
 
 
 
@@ -131,8 +131,8 @@ response = query_engine.query(
 ```
 
 Here are some relevant resources:
-- [Router Query Engine Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/query/RouterQueryEngine.ipynb).
-- [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb)
+- [Router Query Engine Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb).
+- [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb)
 
 
 
@@ -163,7 +163,7 @@ This module will help break down a complex query into a simpler one over your ex
 
 Here are some relevant resources:
 - [Query Transformations](/how_to/query/query_transformations.md)
-- [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb)
+- [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb)
 
 
 ### Multi-Step Queries
@@ -176,7 +176,7 @@ query the index, and then ask followup questions.
 
 Here are some relevant resources:
 - [Query Transformations](/how_to/query/query_transformations.md)
-- [Multi-Step Query Decomposition Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/vector_indices/SimpleIndexDemo-multistep.ipynb)
+- [Multi-Step Query Decomposition Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb)
 
 
 
