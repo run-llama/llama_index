@@ -53,10 +53,10 @@ LlamaIndex supports queries over structured data, whether that's a Pandas DataFr
 
 Here are some relevant resources:
 - [Guide on Text-to-SQL](/guides/tutorials/sql_guide.md)
-- [SQL Demo Notebook 1](https://github.com/jerryjliu/llama_index/blob/main/examples/struct_indices/SQLIndexDemo.ipynb)
-- [SQL Demo Notebook 2 (Context)](https://github.com/jerryjliu/llama_index/blob/main/examples/struct_indices/SQLIndexDemo-Context.ipynb)
-- [SQL Demo Notebook 3 (Big tables)](https://github.com/jerryjliu/llama_index/blob/main/examples/struct_indices/SQLIndexDemo-ManyTables.ipynb)
-- [Pandas Demo Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/struct_indices/PandasIndexDemo.ipynb).
+- [SQL Demo Notebook 1](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo.ipynb)
+- [SQL Demo Notebook 2 (Context)](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb)
+- [SQL Demo Notebook 3 (Big tables)](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-ManyTables.ipynb)
+- [Pandas Demo Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/PandasIndexDemo.ipynb).
 
 
 ### Synthesis over Heterogeneous Data
