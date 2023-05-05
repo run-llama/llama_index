@@ -2,7 +2,8 @@
 
 Query engine is a generic interface that takes in a query and returns a response.
 Query engines can be implemented by composing retrievers, response synthesizer modules.
-They can also be built on top of other query engines.
+They can also be built on top of other query engines.  
+
 
 
 ```{toctree}
