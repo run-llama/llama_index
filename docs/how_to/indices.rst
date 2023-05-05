@@ -15,4 +15,7 @@ capabilities our indices/graphs provide.
    /guides/primer/index_guide.md
    index_structs/update.md
    index_structs/composability.md
+   ../examples/index_structs/knowledge_graph/KnowledgeGraphDemo.ipynb
+   ../examples/index_structs/struct_indices/PandasIndexDemo.ipynb
+   ../examples/index_structs/struct_indices/SQLIndexDemo.ipynb
 
