@@ -17,6 +17,8 @@ from llama_index.indices.postprocessor.pii import (
     NERPIINodePostprocessor,
 )
 
+from llama_index.indices.postprocessor.cohere_rerank import CohereRerank
+
 __all__ = [
     "SimilarityPostprocessor",
     "KeywordNodePostprocessor",
@@ -27,4 +29,5 @@ __all__ = [
     "TimeWeightedPostprocessor",
     "PIINodePostprocessor",
     "NERPIINodePostprocessor",
+    "CohereRerank",
 ]
