@@ -54,7 +54,7 @@ nodes = parser.get_nodes_from_documents(documents)
 You can also choose to construct Node objects manually and skip the first section. For instance,
 
 ```python
-from llama_index.data_structs.node_v2 import Node, DocumentRelationship
+from llama_index.data_structs.node import Node, DocumentRelationship
 
 node1 = Node(text="<text_chunk>", doc_id="<node_id>")
 node2 = Node(text="<text_chunk>", doc_id="<node_id>")
@@ -263,6 +263,7 @@ from llama_index import (
 )
 from llama_index.retrievers import VectorIndexRetriever
 from llama_index.query_engine import RetrieverQueryEngine
+from llama_index.indices.postprocessor import SimilarityPostprocessor
 
 # build index
 index = GPTVectorStoreIndex.from_documents(documents)
@@ -276,7 +277,7 @@ retriever = VectorIndexRetriever(
 # configure response synthesizer
 response_synthesizer = ResponseSynthesizer.from_args(
     node_postprocessors=[
-        SimilarityPostprocessor(required_keywords=['hello'])
+        SimilarityPostprocessor(similarity_cutoff=0.7)
     ]
 )
 
@@ -285,6 +286,10 @@ query_engine = RetrieverQueryEngine(
     retriever=retriever,
     response_synthesizer=response_synthesizer,
 )
+
+# query
+response = query_engine.query("What did the author do growing up?")
+print(response)
 ```
 You may also add your own retrieval, response synthesis, and overall query logic, by implementing the corresponding interfaces.
 

@@ -1,6 +1,6 @@
 import pytest
-from gpt_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
-from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
+from llama_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
+from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
 from tests.storage.kvstore.mock_mongodb import MockMongoClient
 
 

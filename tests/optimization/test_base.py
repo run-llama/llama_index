@@ -3,9 +3,9 @@
 from typing import Any, List
 from unittest.mock import patch
 
-from gpt_index.embeddings.openai import OpenAIEmbedding
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.optimization.optimizer import SentenceEmbeddingOptimizer
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.optimization.optimizer import SentenceEmbeddingOptimizer
 
 
 def mock_tokenizer_fn(text: str) -> List[str]:

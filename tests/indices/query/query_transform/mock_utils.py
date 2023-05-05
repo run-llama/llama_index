@@ -1,6 +1,6 @@
 """Mock utils for query transform."""
 
-from gpt_index.indices.query.query_transform.prompts import (
+from llama_index.indices.query.query_transform.prompts import (
     DecomposeQueryTransformPrompt,
 )
 

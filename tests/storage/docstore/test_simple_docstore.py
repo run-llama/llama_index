@@ -3,10 +3,10 @@
 
 from pathlib import Path
 import pytest
-from gpt_index.data_structs.node_v2 import Node
-from gpt_index.storage.docstore import SimpleDocumentStore
-from gpt_index.readers.schema.base import Document
-from gpt_index.storage.kvstore.simple_kvstore import SimpleKVStore
+from llama_index.data_structs.node import Node
+from llama_index.storage.docstore import SimpleDocumentStore
+from llama_index.readers.schema.base import Document
+from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
 
 
 @pytest.fixture()
@@ -41,6 +41,23 @@ def test_docstore_persist(tmp_path: Path) -> None:
 
     # load from persist dir and get documents
     new_docstore = SimpleDocumentStore.from_persist_path(persist_path)
+    gd1 = new_docstore.get_document("d1")
+    assert gd1 == doc
+    gd2 = new_docstore.get_document("d2")
+    assert gd2 == node
+
+
+def test_docstore_dict() -> None:
+    doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
+    node = Node("my node", doc_id="d2", node_info={"node": "info"})
+
+    # add documents and then save to dict
+    docstore = SimpleDocumentStore()
+    docstore.add_documents([doc, node])
+    save_dict = docstore.to_dict()
+
+    # load from dict and get documents
+    new_docstore = SimpleDocumentStore.from_dict(save_dict)
     gd1 = new_docstore.get_document("d1")
     assert gd1 == doc
     gd2 = new_docstore.get_document("d2")

@@ -116,4 +116,4 @@ response = query_engine.query(
 ```
 
 
-[Here is an example notebook](https://github.com/jerryjliu/gpt_index/blob/main/examples/cost_analysis/TokenPredictor.ipynb).
+[Here is an example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/cost_analysis/TokenPredictor.ipynb).
