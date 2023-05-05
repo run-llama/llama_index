@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
@@ -65,7 +65,7 @@ class LanceDBVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         data = []
         ids = []
@@ -73,7 +73,7 @@ class LanceDBVectorStore(VectorStore):
             data.append(
                 {
                     "id": result.id,
-                    "doc_id": result.doc_id,
+                    "doc_id": result.ref_doc_id,
                     "vector": result.embedding,
                     "text": result.node.get_text(),
                 }

@@ -90,7 +90,7 @@ Our vector store classes store embeddings and support lookup via similiarity sea
 These serve as the main data store and retrieval engine for our vector index.
 
 **Interface**:
-* `add` takes in a sequence of `NodeEmbeddingResults` and insert the embeddings (and possibly the node contents & metadata) into the vector store.
+* `add` takes in a sequence of `NodeWithEmbeddings` and insert the embeddings (and possibly the node contents & metadata) into the vector store.
 * `delete` removes entries given document IDs.
 * `query` retrieves top-k most similar entries given a query embedding.
 

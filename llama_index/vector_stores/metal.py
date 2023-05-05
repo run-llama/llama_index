@@ -1,9 +1,10 @@
+import json
 import math
 from typing import Any, Dict, List, Optional
-from llama_index.data_structs.node import Node, DocumentRelationship
+from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
     VectorStore,
-    NodeEmbeddingResult,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -49,14 +50,16 @@ class MetalVectorStore(VectorStore):
 
         for item in response["data"]:
             text = item["text"]
-            extra_info = item["metadata"]
-            doc_id = item["metadata"]["doc_id"]
+            metadata = item["metadata"]
+            ref_doc_id = metadata["doc_id"]
+            if "extra_info" in metadata:
+                extra_info = json.loads(metadata["extra_info"])
             id = item["id"]
             node = Node(
                 text=text,
                 extra_info=extra_info,
                 doc_id=id,
-                relationships={DocumentRelationship.SOURCE: doc_id},
+                relationships={DocumentRelationship.SOURCE: ref_doc_id},
             )
             nodes.append(node)
             ids.append(item["id"])
@@ -71,7 +74,7 @@ class MetalVectorStore(VectorStore):
         """Return Metal client."""
         return self.metal_client
 
-    def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Add embedding results to index.
 
         Args
@@ -85,22 +88,23 @@ class MetalVectorStore(VectorStore):
         for result in embedding_results:
             ids.append(result.id)
 
+            metadata = {}
+            metadata["doc_id"] = result.ref_doc_id
+            metadata["text"] = result.node.get_text()
+            if result.node.extra_info is not None:
+                metadata["extra_info"] = json.dumps(result.node.extra_info)
+
             payload = {
                 "embedding": result.embedding,
-                "metadata": result.node.extra_info or {},
+                "metadata": metadata,
                 "id": result.id,
             }
-
-            payload["metadata"]["doc_id"] = result.doc_id
-
-            if result.node.get_text():
-                payload["metadata"]["text"] = result.node.get_text()
 
             self.metal_client.index(payload)
 
         return ids
 
-    def delete(self, doc_id: str) -> None:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete nodes from index.
 
         Args:

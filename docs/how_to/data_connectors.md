@@ -12,7 +12,7 @@ Some sample data connectors:
 - [Google Docs](https://developers.google.com/docs/api) (`GoogleDocsReader`)
 - [Slack](https://api.slack.com/) (`SlackReader`)
 - [Discord](https://discord.com/developers/docs/intro) (`DiscordReader`)
-
+- [Apify Actors](https://llamahub.ai/l/apify-actor) (`ApifyActor`). Can crawl the web, scrape webpages, extract text content, download files including `.pdf`, `.jpg`, `.png`, `.docx`, etc.
 
 Each data loader contains a "Usage" section showing how that loader can be used. At the core of using each loader is a `download_loader` function, which
 downloads the loader file into a module that you can use within your application.

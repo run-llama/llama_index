@@ -31,7 +31,6 @@ from llama_index.readers.github_readers.utils import (
 )
 from llama_index.readers.schema.base import Document
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

@@ -12,7 +12,7 @@ import numpy as np
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
@@ -79,14 +79,14 @@ class FaissVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding results to index.
 
         NOTE: in the Faiss vector store, we do not store text in Faiss.
 
         Args
-            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
         new_ids = []
