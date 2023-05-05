@@ -72,7 +72,7 @@ class SimpleKVStore(BaseInMemoryKVStore):
         with open(persist_path, "r+") as f:
             data = json.load(f)
         return cls(data)
-    
+
     def to_dict(self) -> dict:
         """Save the store as dict."""
         return self._data

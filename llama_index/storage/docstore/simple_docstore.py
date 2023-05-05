@@ -73,13 +73,16 @@ class SimpleDocumentStore(KVDocumentStore):
             self._kvstore.persist(persist_path)
 
     @classmethod
-    def from_dict(cls, save_dict: dict, namespace: Optional[str] = None) -> "SimpleDocumentStore":
+    def from_dict(
+        cls, save_dict: dict, namespace: Optional[str] = None
+    ) -> "SimpleDocumentStore":
         simple_kvstore = SimpleKVStore.from_dict(save_dict)
         return cls(simple_kvstore, namespace)
 
     def to_dict(self) -> dict:
         assert isinstance(self._kvstore, SimpleKVStore)
         return self._kvstore.to_dict()
+
 
 # alias for backwards compatibility
 DocumentStore = SimpleDocumentStore

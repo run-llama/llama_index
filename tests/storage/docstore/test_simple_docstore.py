@@ -46,15 +46,15 @@ def test_docstore_persist(tmp_path: Path) -> None:
     gd2 = new_docstore.get_document("d2")
     assert gd2 == node
 
+
 def test_docstore_dict() -> None:
     doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
     node = Node("my node", doc_id="d2", node_info={"node": "info"})
 
-    # add documents and then save to dict 
+    # add documents and then save to dict
     docstore = SimpleDocumentStore()
     docstore.add_documents([doc, node])
     save_dict = docstore.to_dict()
-
 
     # load from dict and get documents
     new_docstore = SimpleDocumentStore.from_dict(save_dict)
