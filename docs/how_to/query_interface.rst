@@ -56,3 +56,4 @@ Resources
    /how_to/index_structs/composability.rst
    /how_to/query/query_transformations.md
    /how_to/query/node_postprocessor.md
+   /how_to/query/RouterQueryEngine.ipynb
