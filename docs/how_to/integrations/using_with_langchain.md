@@ -11,7 +11,7 @@ LlamaIndex provides Tool abstractions so that you can use LlamaIndex along with 
 For instance, you can choose to create a "Tool" from an `QueryEngine` directly as follows:
 
 ```python
-from gpt_index.langchain_helpers.agents import IndexToolConfig, LlamaIndexTool
+from llama_index.langchain_helpers.agents import IndexToolConfig, LlamaIndexTool
 
 tool_config = IndexToolConfig(
     query_engine=query_engine, 
@@ -36,7 +36,7 @@ Such a toolkit can be used to create a downstream Langchain-based chat agent thr
 our `create_llama_agent` and `create_llama_chat_agent` commands:
 
 ```python
-from gpt_index.langchain_helpers.agents import create_llama_chat_agent
+from llama_index.langchain_helpers.agents import create_llama_chat_agent
 
 agent_chain = create_llama_chat_agent(
     toolkit,
@@ -57,4 +57,4 @@ We provide another demo notebook showing how you can build a chat agent with the
 - Using LlamaIndex as a generic callable tool with a Langchain agent
 - Using LlamaIndex as a memory module; this allows you to insert arbitrary amounts of conversation history with a Langchain chatbot!
 
-Please see the [notebook here](https://github.com/jerryjliu/gpt_index/blob/main/examples/langchain_demo/LangchainDemo.ipynb).
+Please see the [notebook here](https://github.com/jerryjliu/llama_index/blob/main/examples/langchain_demo/LangchainDemo.ipynb).

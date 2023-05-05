@@ -2,24 +2,24 @@
 
 from pathlib import Path
 import pytest
-from gpt_index.storage.docstore.simple_docstore import SimpleDocumentStore
+from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.prompts.prompts import Prompt, SimpleInputPrompt
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.data_structs.node_v2 import Node, DocumentRelationship, NodeWithScore
-from gpt_index.indices.postprocessor.node import (
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
+from llama_index.indices.service_context import ServiceContext
+from llama_index.data_structs.node import Node, DocumentRelationship, NodeWithScore
+from llama_index.indices.postprocessor.node import (
     PrevNextNodePostprocessor,
     KeywordNodePostprocessor,
 )
-from gpt_index.indices.postprocessor.node_recency import (
+from llama_index.indices.postprocessor.node_recency import (
     FixedRecencyPostprocessor,
     EmbeddingRecencyPostprocessor,
     TimeWeightedPostprocessor,
 )
-from gpt_index.llm_predictor import LLMPredictor
+from llama_index.llm_predictor import LLMPredictor
 from unittest.mock import patch
-from gpt_index.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from typing import List, Any, Tuple, cast, Dict
 
 
@@ -175,7 +175,7 @@ def test_fixed_recency_postprocessor(
     postprocessor = FixedRecencyPostprocessor(top_k=1, service_context=service_context)
     query_bundle: QueryBundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        node_with_scores, extra_info={"query_bundle": query_bundle}
+        node_with_scores, query_bundle=query_bundle
     )
     assert len(result_nodes) == 1
     assert result_nodes[0].node.get_text() == "date: 2020-01-04\n\nThis is a test v2."
@@ -195,7 +195,7 @@ def test_fixed_recency_postprocessor(
     )
     query_bundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        node_with_scores, extra_info={"query_bundle": query_bundle}
+        node_with_scores, query_bundle=query_bundle
     )
     assert len(result_nodes) == 1
     assert result_nodes[0].node.get_text() == "This is a test v2."
@@ -240,7 +240,7 @@ def test_embedding_recency_postprocessor(
     )
     query_bundle: QueryBundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        nodes_with_scores, extra_info={"query_bundle": query_bundle}
+        nodes_with_scores, query_bundle=query_bundle
     )
     assert len(result_nodes) == 4
     assert result_nodes[0].node.get_text() == "This is a test v2."

@@ -1,6 +1,6 @@
 """Mock prompt utils."""
 
-from gpt_index.prompts.prompts import (
+from llama_index.prompts.prompts import (
     KeywordExtractPrompt,
     KnowledgeGraphPrompt,
     PandasPrompt,

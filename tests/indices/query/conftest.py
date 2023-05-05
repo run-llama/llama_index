@@ -1,8 +1,8 @@
 from typing import Dict, List
 
 import pytest
-from gpt_index.data_structs.struct_type import IndexStructType
-from gpt_index.readers.schema.base import Document
+from llama_index.data_structs.struct_type import IndexStructType
+from llama_index.readers.schema.base import Document
 
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,

@@ -17,7 +17,7 @@ import sphinx_rtd_theme  # noqa: F401
 
 sys.path.insert(0, os.path.abspath("../"))
 
-with open("../gpt_index/VERSION") as f:
+with open("../llama_index/VERSION") as f:
     version = f.read()
 
 # -- Project information -----------------------------------------------------

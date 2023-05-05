@@ -1,4 +1,4 @@
-name: Publish ${package_name} to PyPI / GitHub
+name: Publish llama-index to PyPI / GitHub
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
-          password: ${{ secrets.GPT_INDEX_PYPI_TOKEN }}
+          password: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1

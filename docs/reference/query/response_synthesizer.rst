@@ -3,6 +3,6 @@
 Response Synthesizer
 =====================
 
-.. automodule:: gpt_index.indices.query.response_synthesis
+.. automodule:: llama_index.indices.query.response_synthesis
    :members:
    :inherited-members:

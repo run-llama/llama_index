@@ -6,10 +6,10 @@ from unittest.mock import patch
 import pytest
 from langchain.llms.fake import FakeListLLM
 
-from gpt_index.llm_predictor.structured import LLMPredictor, StructuredLLMPredictor
-from gpt_index.output_parsers.base import BaseOutputParser
-from gpt_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
-from gpt_index.prompts.prompts import Prompt, SimpleInputPrompt
+from llama_index.llm_predictor.structured import LLMPredictor, StructuredLLMPredictor
+from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
+from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
 
 try:
     from gptcache import Cache

@@ -1,5 +1,5 @@
 """Test indices/utils.py."""
-from gpt_index.indices.utils import expand_tokens_with_subtokens
+from llama_index.indices.utils import expand_tokens_with_subtokens
 
 
 def test_expand_tokens_with_subtokens() -> None:

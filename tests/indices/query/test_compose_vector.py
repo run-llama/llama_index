@@ -7,15 +7,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from gpt_index.data_structs.data_structs_v2 import V2IndexStruct
-from gpt_index.embeddings.base import BaseEmbedding
-from gpt_index.indices.composability.graph import ComposableGraph
-from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.readers.schema.base import Document
-from gpt_index.storage.storage_context import StorageContext
-from gpt_index.vector_stores.pinecone import PineconeVectorStore
+from llama_index.data_structs.data_structs import IndexStruct
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index.indices.composability.graph import ComposableGraph
+from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.readers.schema.base import Document
+from llama_index.storage.storage_context import StorageContext
+from llama_index.vector_stores.pinecone import PineconeVectorStore
 from tests.indices.vector_store.utils import MockPineconeIndex
 from tests.mock_utils.mock_prompts import (
     MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
@@ -146,8 +146,8 @@ def test_recursive_query_vector_table_query_configs(
     vector2 = GPTVectorStoreIndex.from_documents(
         documents[2:4], service_context=mock_service_context, **vector_kwargs
     )
-    assert isinstance(vector1.index_struct, V2IndexStruct)
-    assert isinstance(vector2.index_struct, V2IndexStruct)
+    assert isinstance(vector1.index_struct, IndexStruct)
+    assert isinstance(vector2.index_struct, IndexStruct)
     vector1.index_struct.index_id = "vector1"
     vector2.index_struct.index_id = "vector2"
     summaries = [

@@ -48,7 +48,7 @@ For the tree index (`GPTTreeIndex`):
 
 **Example Notebook**
 
-An example notebook is given [here](https://github.com/jerryjliu/gpt_index/blob/main/examples/test_wiki/TestNYC_Embeddings.ipynb).
+An example notebook is given [here](https://github.com/jerryjliu/llama_index/blob/main/examples/test_wiki/TestNYC_Embeddings.ipynb).
 
 
 

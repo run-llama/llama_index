@@ -4,7 +4,7 @@
 from langchain.output_parsers import ResponseSchema
 from langchain.schema import BaseOutputParser as LCOutputParser
 
-from gpt_index.output_parsers.langchain import LangchainOutputParser
+from llama_index.output_parsers.langchain import LangchainOutputParser
 
 
 class MockOutputParser(LCOutputParser):

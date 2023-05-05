@@ -3,6 +3,6 @@
 Response
 =================
 
-.. automodule:: gpt_index.response.schema
+.. automodule:: llama_index.response.schema
    :members:
    :inherited-members:

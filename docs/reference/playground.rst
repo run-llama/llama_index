@@ -3,6 +3,6 @@
 Playground
 =================
 
-.. automodule:: gpt_index.playground.base
+.. automodule:: llama_index.playground.base
    :members:
    :inherited-members:

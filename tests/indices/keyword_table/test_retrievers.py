@@ -1,18 +1,18 @@
 from typing import List
 from unittest.mock import patch
-from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.readers.schema.base import Document
+from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
+from llama_index.readers.schema.base import Document
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
 @patch(
-    "gpt_index.indices.keyword_table.simple_base.simple_extract_keywords",
+    "llama_index.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
 @patch(
-    "gpt_index.indices.keyword_table.retrievers.simple_extract_keywords",
+    "llama_index.indices.keyword_table.retrievers.simple_extract_keywords",
     mock_extract_keywords,
 )
 def test_retrieve(

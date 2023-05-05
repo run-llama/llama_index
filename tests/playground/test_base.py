@@ -3,14 +3,14 @@
 from typing import List
 
 import pytest
-from gpt_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.base import BaseEmbedding
 
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.indices.vector_store.base import GPTVectorStoreIndex
-from gpt_index.playground import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
-from gpt_index.readers.schema.base import Document
+from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.playground import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
+from llama_index.readers.schema.base import Document
 
 
 class MockEmbedding(BaseEmbedding):
