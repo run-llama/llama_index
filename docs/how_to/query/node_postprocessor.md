@@ -150,3 +150,13 @@ are outdated and overlap with more recent context.
 The recency score is added to any score that the node already contains.
 
 
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+../../examples/node_postprocessor/NodePostprocessorDemo.ipynb
+../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
+../../examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
+../../examples/node_postprocessor/PII.ipynb
+```
