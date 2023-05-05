@@ -360,4 +360,28 @@ vector_store = MyScaleVectorStore(
 ```
 
 
-[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/vector_indices).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
+
+
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+../../examples/vector_stores/SimpleIndexDemo.ipynb
+../../examples/vector_stores/QdrantIndexDemo.ipynb
+../../examples/vector_stores/FaissIndexDemo.ipynb
+../../examples/vector_stores/DeepLakeIndexDemo.ipynb
+../../examples/vector_stores/MyScaleIndexDemo.ipynb
+../../examples/vector_stores/MetalIndexDemo.ipynb
+../../examples/vector_stores/WeaviateIndexDemo.ipynb
+../../examples/vector_stores/OpensearchDemo.ipynb
+../../examples/vector_stores/PineconeIndexDemo.ipynb
+../../examples/vector_stores/ChromaIndexDemo.ipynb
+../../examples/vector_stores/LanceDBIndexDemo.ipynb
+../../examples/vector_stores/MilvusIndexDemo.ipynb
+../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
+../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
+../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
+```
+
