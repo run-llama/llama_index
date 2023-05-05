@@ -158,9 +158,7 @@ class ResponseSynthesizer:
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         for node_processor in self._node_postprocessors:
-            nodes = node_processor.postprocess_nodes(
-                nodes, {"query_bundle": query_bundle}
-            )
+            nodes = node_processor.postprocess_nodes(nodes, query_bundle)
 
         text_chunks = []
         for node_with_score in nodes:
@@ -191,9 +189,7 @@ class ResponseSynthesizer:
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         for node_processor in self._node_postprocessors:
-            nodes = node_processor.postprocess_nodes(
-                nodes, {"query_bundle": query_bundle}
-            )
+            nodes = node_processor.postprocess_nodes(nodes, query_bundle)
 
         text_chunks = []
         for node_with_score in nodes:

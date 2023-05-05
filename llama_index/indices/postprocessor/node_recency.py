@@ -5,7 +5,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.data_structs.node import NodeWithScore
 from pydantic import Field
-from typing import Optional, Dict, List, Set
+from typing import Optional, List, Set
 import pandas as pd
 import numpy as np
 from datetime import datetime

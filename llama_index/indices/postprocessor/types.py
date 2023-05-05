@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.query.schema import QueryBundle

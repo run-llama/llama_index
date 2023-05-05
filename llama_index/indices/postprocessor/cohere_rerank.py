@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Optional, cast
+from typing import List, Optional
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.postprocessor.node import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
