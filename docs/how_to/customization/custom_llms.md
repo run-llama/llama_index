@@ -206,6 +206,6 @@ maxdepth: 1
 ---
 
 ../../examples/customization/llms/AzureOpenAI.ipynb
-../../examples/customizaton/llms/SimpleIndexDemo-StableLM.ipynb
+../../examples/customization/llms/SimpleIndexDemo-StableLM.ipynb
 ```
 
