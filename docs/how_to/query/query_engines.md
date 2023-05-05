@@ -10,6 +10,8 @@ They can also be built on top of other query engines.
 caption: Examples
 maxdepth: 1
 ---
+../../examples/query_engine/CustomRetrievers.ipynb
 ../../examples/query_engine/RouterQueryEngine.ipynb
+../../examples/query_engine/RetrieverRouterQueryEngine.ipynb
 ../../examples/query_engine/JointQASummary.ipynb
 ```
