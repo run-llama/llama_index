@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 from pathlib import Path
+from llama_index.constants import DOC_STORE_KEY, INDEX_STORE_KEY, VECTOR_STORE_KEY
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.storage.docstore.types import BaseDocumentStore
 from llama_index.storage.docstore.types import DEFAULT_PERSIST_FNAME as DOCSTORE_FNAME
@@ -81,3 +82,34 @@ class StorageContext:
         self.docstore.persist(persist_path=docstore_path)
         self.index_store.persist(persist_path=index_store_path)
         self.vector_store.persist(persist_path=vector_store_path)
+
+    def to_dict(self) -> dict:
+        all_simple = (
+            isinstance(self.vector_store, SimpleVectorStore)
+            and isinstance(self.docstore, SimpleDocumentStore)
+            and isinstance(self.index_store, SimpleIndexStore)
+        )
+        if not all_simple:
+            raise ValueError(
+                "to_dict only available when using simple doc/index/vector stores"
+            )
+
+        assert isinstance(self.vector_store, SimpleVectorStore)
+        assert isinstance(self.docstore, SimpleDocumentStore)
+        assert isinstance(self.index_store, SimpleIndexStore)
+
+        return {
+            VECTOR_STORE_KEY: self.vector_store.to_dict(),
+            DOC_STORE_KEY: self.docstore.to_dict(),
+            INDEX_STORE_KEY: self.index_store.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, save_dict: dict) -> "StorageContext":
+        """Create a StorageContext from dict."""
+        docstore = SimpleDocumentStore.from_dict(save_dict[DOC_STORE_KEY])
+        vector_store = SimpleVectorStore.from_dict(save_dict[VECTOR_STORE_KEY])
+        index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
+        return cls(
+            docstore=docstore, index_store=index_store, vector_store=vector_store
+        )
