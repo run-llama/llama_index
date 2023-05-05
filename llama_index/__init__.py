@@ -62,9 +62,9 @@ from llama_index.readers import (BeautifulSoupWebReader, ChromaReader,
                                  TrafilaturaWebReader, TwitterTweetReader,
                                  WeaviateReader, WikipediaReader)
 from llama_index.readers.download import download_loader
-from llama_index.response.notebook_utils import (pprint_extra_info,
-                                                 pprint_response,
-                                                 pprint_source_node)
+from llama_index.response.pprint_utils import (pprint_extra_info,
+                                               pprint_response,
+                                               pprint_source_node)
 # response
 from llama_index.response.schema import Response
 # storage
