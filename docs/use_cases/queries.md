@@ -176,7 +176,7 @@ query the index, and then ask followup questions.
 
 Here are some relevant resources:
 - [Query Transformations](/how_to/query/query_transformations.md)
-- [Multi-Step Query Decomposition Notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/vector_indices/SimpleIndexDemo-multistep.ipynb)
+- [Multi-Step Query Decomposition Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb)
 
 
 
