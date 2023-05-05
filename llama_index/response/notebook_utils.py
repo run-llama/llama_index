@@ -1,6 +1,4 @@
 """Utils for jupyter notebook."""
-import textwrap
-from pprint import pprint
 from typing import Any, Dict, Tuple
 
 from IPython.display import Markdown, display

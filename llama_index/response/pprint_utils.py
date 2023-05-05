@@ -12,7 +12,10 @@ def pprint_extra_info(extra_info: Dict[str, Any]) -> None:
     """Display extra info for jupyter notebook."""
     pprint(extra_info)
 
-def pprint_source_node(source_node: NodeWithScore, source_length: int = 350, wrap_width: int = 70) -> None:
+
+def pprint_source_node(
+    source_node: NodeWithScore, source_length: int = 350, wrap_width: int = 70
+) -> None:
     """Display source node for jupyter notebook."""
     source_text_fmt = truncate_text(source_node.node.get_text().strip(), source_length)
     print(f"Document ID: {source_node.node.doc_id}")
@@ -20,7 +23,9 @@ def pprint_source_node(source_node: NodeWithScore, source_length: int = 350, wra
     print(textwrap.fill(f"Text: {source_text_fmt}\n", width=wrap_width))
 
 
-def pprint_response(response: Response, source_length: int = 350, wrap_width: int = 70) -> None:
+def pprint_response(
+    response: Response, source_length: int = 350, wrap_width: int = 70
+) -> None:
     """Pretty print response for jupyter notebook."""
     if response.response is None:
         response_text = "None"
@@ -33,4 +38,6 @@ def pprint_response(response: Response, source_length: int = 350, wrap_width: in
     for ind, source_node in enumerate(response.source_nodes):
         print("_" * wrap_width)
         print(f"Source Node {ind + 1}/{len(response.source_nodes)}")
-        pprint_source_node(source_node, source_length=source_length, wrap_width=wrap_width)
+        pprint_source_node(
+            source_node, source_length=source_length, wrap_width=wrap_width
+        )
