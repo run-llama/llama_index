@@ -360,7 +360,7 @@ vector_store = MyScaleVectorStore(
 ```
 
 
-[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/vector_indices).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
 
 
 ```{toctree}
