@@ -1,7 +1,8 @@
 # Response Synthesis
 
-LlamaIndex offers different methods of synthesizing a response. The way to toggle this can be found in our 
-[Usage Pattern Guide](setting-response-mode). Below, we visually highlight how each response mode works.
+LlamaIndex offers different methods of synthesizing a response from relevant context. 
+The way to toggle this can be found in our [Usage Pattern Guide](setting-response-mode). 
+Below, we visually highlight how each response mode works.
 
 
 ### Refine
@@ -13,7 +14,7 @@ number of nodes.
 
 ![](/_static/indices/create_and_refine.png)
 
-### Compact and Refine
+### [Default] Compact and Refine
 Compact and refine mode first combine text chunks into larger consolidated chunks 
 that more fully utilize the available context window, then refine answers across them.
 
