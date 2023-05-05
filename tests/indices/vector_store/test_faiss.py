@@ -13,7 +13,7 @@ from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.readers.schema.base import Document
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.faiss import FaissVectorStore
-from llama_index.vector_stores.types import NodeEmbeddingResult, VectorStoreQuery
+from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
 
 
 @pytest.mark.skipif("CI" in os.environ, reason="no FAISS in CI")
@@ -71,11 +71,9 @@ def test_persist(tmp_path: Path) -> None:
 
     vector_store.add(
         [
-            NodeEmbeddingResult(
-                id="test id",
+            NodeWithEmbedding(
                 node=Node("test text"),
                 embedding=[0, 0, 0, 1, 1],
-                doc_id="test_doc",
             )
         ]
     )

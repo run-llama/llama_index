@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, cast
 
 from llama_index.data_structs import Node
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
@@ -96,14 +96,14 @@ class OpensearchVectorClient:
         # will 400 if the index already existed, so allow 400 errors right here
         assert res.status_code == 200 or res.status_code == 400
 
-    def index_results(self, results: List[NodeEmbeddingResult]) -> List[str]:
+    def index_results(self, results: List[NodeWithEmbedding]) -> List[str]:
         """Store results in the index."""
         bulk_req: List[Dict[Any, Any]] = []
         for result in results:
             bulk_req.append({"index": {"_index": self._index, "_id": result.id}})
             bulk_req.append(
                 {
-                    self._text_field: result.node.text,
+                    self._text_field: result.node.get_text(),
                     self._embedding_field: result.embedding,
                 }
             )
@@ -180,12 +180,12 @@ class OpensearchVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding results to index.
 
         Args
-            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
         self._client.index_results(embedding_results)

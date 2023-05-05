@@ -28,6 +28,7 @@ from llama_index.readers.make_com.wrapper import MakeWrapper
 from llama_index.readers.mbox import MboxReader
 from llama_index.readers.milvus import MilvusReader
 from llama_index.readers.mongo import SimpleMongoReader
+from llama_index.readers.metal import MetalReader
 from llama_index.readers.myscale import MyScaleReader
 from llama_index.readers.notion import NotionPageReader
 from llama_index.readers.obsidian import ObsidianReader
@@ -56,6 +57,7 @@ __all__ = [
     "SimpleMongoReader",
     "NotionPageReader",
     "GoogleDocsReader",
+    "MetalReader",
     "DiscordReader",
     "SlackReader",
     "WeaviateReader",

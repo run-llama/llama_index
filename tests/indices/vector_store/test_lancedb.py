@@ -1,9 +1,10 @@
+"""Test LanceDB index."""
 from typing import Any, List, Optional
-from unittest.mock import Mock
-from llama_index.indices.service_context import ServiceContext
 
 from llama_index.indices.vector_store import GPTVectorStoreIndex
+from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
+
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -12,20 +13,26 @@ from llama_index.vector_stores.types import (
 )
 
 
-class MockWeaviateVectorStore(VectorStore):
+class MockLanceDBVectorStore(VectorStore):
     stores_text: bool = True
 
     def __init__(
         self,
-        weaviate_client: Optional[Any] = None,
-        class_prefix: Optional[str] = None,
+        uri: str,
+        table_name: str = "vectors",
+        nprobes: int = 20,
+        refine_factor: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
-        self.weaviate_client = weaviate_client
-        self._class_prefix = class_prefix
+        self.connection = None
+        self.uri = uri
+        self.table_name = table_name
+        self.nprobes = nprobes
+        self.refine_factor = refine_factor
 
     @property
-    def client(self) -> Any:
+    def client(self) -> None:
+        """Get client."""
         return None
 
     def add(
@@ -41,13 +48,12 @@ class MockWeaviateVectorStore(VectorStore):
         return VectorStoreQueryResult()
 
 
-def test_basic(mock_service_context: ServiceContext) -> None:
+def test_save_load(mock_service_context: ServiceContext) -> None:
     """Test we can save and load."""
-    weaviate_client = Mock()
-    vector_store = MockWeaviateVectorStore(weaviate_client=weaviate_client)
+    vector_store = MockLanceDBVectorStore(uri=".")
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     GPTVectorStoreIndex.from_documents(
         documents=[],
-        storage_context=storage_context,
         service_context=mock_service_context,
+        storage_context=storage_context,
     )

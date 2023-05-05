@@ -7,7 +7,7 @@ from llama_index.indices.vector_store import GPTVectorStoreIndex
 from llama_index.storage.storage_context import StorageContext
 
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -48,7 +48,7 @@ class MockMilvusVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         return []
 

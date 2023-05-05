@@ -14,7 +14,7 @@ from llama_index.readers.weaviate.client import (
 )
 from llama_index.readers.weaviate.utils import get_default_class_prefix
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
@@ -75,12 +75,12 @@ class WeaviateVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding results to index.
 
         Args
-            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
         for result in embedding_results:

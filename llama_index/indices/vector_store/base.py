@@ -4,7 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.callbacks.schema import CBEventType
 from llama_index.async_utils import run_async_tasks
@@ -15,7 +15,10 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.vector_stores.types import NodeEmbeddingResult, VectorStore
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+)
 
 
 class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
@@ -57,29 +60,24 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         return VectorIndexRetriever(self, **kwargs)
 
     def _get_node_embedding_results(
-        self, nodes: Sequence[Node], existing_node_ids: Set
-    ) -> List[NodeEmbeddingResult]:
+        self, nodes: Sequence[Node]
+    ) -> List[NodeWithEmbedding]:
         """Get tuples of id, node, and embedding.
 
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.
 
         """
-        id_to_node_map: Dict[str, Node] = {}
         id_to_embed_map: Dict[str, List[float]] = {}
 
-        nodes_embedded = 0
         for n in nodes:
-            new_id = n.get_doc_id()
             if n.embedding is None:
-                nodes_embedded += 1
                 self._service_context.embed_model.queue_text_for_embedding(
-                    new_id, n.get_text()
+                    n.get_doc_id(), n.get_text()
                 )
             else:
-                id_to_embed_map[new_id] = n.embedding
+                id_to_embed_map[n.get_doc_id()] = n.embedding
 
-            id_to_node_map[new_id] = n
         event_id = self._service_context.callback_manager.on_event_start(
             CBEventType.EMBEDDING
         )
@@ -91,45 +89,37 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         ) = self._service_context.embed_model.get_queued_text_embeddings()
         self._service_context.callback_manager.on_event_end(
             CBEventType.EMBEDDING,
-            payload={"num_nodes": nodes_embedded},
+            payload={"num_nodes": len(result_ids)},
             event_id=event_id,
         )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
-        result_tups = []
-        for id, embed in id_to_embed_map.items():
-            doc_id = id_to_node_map[id].ref_doc_id
-            if doc_id is None:
-                raise ValueError("Reference doc id is None.")
-            result_tups.append(
-                NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
-            )
-        return result_tups
+        results = []
+        for node in nodes:
+            embedding = id_to_embed_map[node.get_doc_id()]
+            result = NodeWithEmbedding(node=node, embedding=embedding)
+            results.append(result)
+        return results
 
     async def _aget_node_embedding_results(
         self,
         nodes: Sequence[Node],
-        existing_node_ids: Set,
-    ) -> List[NodeEmbeddingResult]:
+    ) -> List[NodeWithEmbedding]:
         """Asynchronously get tuples of id, node, and embedding.
 
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.
 
         """
-        id_to_node_map: Dict[str, Node] = {}
         id_to_embed_map: Dict[str, List[float]] = {}
 
         text_queue: List[Tuple[str, str]] = []
         for n in nodes:
-            new_id = n.get_doc_id()
             if n.embedding is None:
-                text_queue.append((new_id, n.get_text()))
+                text_queue.append((n.get_doc_id(), n.get_text()))
             else:
-                id_to_embed_map[new_id] = n.embedding
-
-            id_to_node_map[new_id] = n
+                id_to_embed_map[n.get_doc_id()] = n.embedding
 
         event_id = self._service_context.callback_manager.on_event_start(
             CBEventType.EMBEDDING
@@ -151,25 +141,18 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
-        result_tups = []
-        for id, embed in id_to_embed_map.items():
-            doc_id = id_to_node_map[id].ref_doc_id
-            if doc_id is None:
-                raise ValueError("Reference doc id is None.")
-            result_tups.append(
-                NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
-            )
-        return result_tups
+        results = []
+        for node in nodes:
+            embedding = id_to_embed_map[node.get_doc_id()]
+            result = NodeWithEmbedding(node=node, embedding=embedding)
+            results.append(result)
+        return results
 
     async def _async_add_nodes_to_index(
         self, index_struct: IndexDict, nodes: Sequence[Node]
     ) -> None:
         """Asynchronously add nodes to index."""
-        embedding_results = await self._aget_node_embedding_results(
-            nodes,
-            set(),
-        )
-
+        embedding_results = await self._aget_node_embedding_results(nodes)
         new_ids = self._vector_store.add(embedding_results)
 
         # if the vector store doesn't store text, we need to add the nodes to the
@@ -185,11 +168,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         nodes: Sequence[Node],
     ) -> None:
         """Add document to index."""
-        embedding_results = self._get_node_embedding_results(
-            nodes,
-            set(),
-        )
-
+        embedding_results = self._get_node_embedding_results(nodes)
         new_ids = self._vector_store.add(embedding_results)
 
         if not self._vector_store.stores_text:

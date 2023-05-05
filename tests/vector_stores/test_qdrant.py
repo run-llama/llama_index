@@ -7,36 +7,35 @@ try:
 except ImportError:
     qdrant_client = None  # type: ignore
 
-from llama_index.data_structs import Node
+from llama_index.data_structs.node import Node, DocumentRelationship
 from llama_index.vector_stores import QdrantVectorStore
-from llama_index.vector_stores.types import NodeEmbeddingResult, VectorStoreQuery
+from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
 
 
 @pytest.fixture
-def node() -> Node:
-    return Node(text="lorem ipsum")
-
-
-@pytest.fixture
-def node_embeddings(node: Node) -> List[NodeEmbeddingResult]:
+def node_embeddings() -> List[NodeWithEmbedding]:
     return [
-        NodeEmbeddingResult(
-            id="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
+        NodeWithEmbedding(
             embedding=[1.0, 0.0],
-            doc_id="test-0",
-            node=node,
+            node=Node(
+                text="lorem ipsum",
+                doc_id="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
+                relationships={DocumentRelationship.SOURCE: "test-0"},
+            ),
         ),
-        NodeEmbeddingResult(
-            id="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
+        NodeWithEmbedding(
             embedding=[0.0, 1.0],
-            doc_id="test-1",
-            node=node,
+            node=Node(
+                text="lorem ipsum",
+                doc_id="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
+                relationships={DocumentRelationship.SOURCE: "test-1"},
+            ),
         ),
     ]
 
 
 @pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
-def test_add_stores_data(node_embeddings: List[NodeEmbeddingResult]) -> None:
+def test_add_stores_data(node_embeddings: List[NodeWithEmbedding]) -> None:
     client = qdrant_client.QdrantClient(":memory:")
     qdrant_vector_store = QdrantVectorStore(collection_name="test", client=client)
 

@@ -9,7 +9,7 @@ from typing import Any, List, Optional, cast
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQueryResult,
     VectorStoreQuery,
@@ -55,11 +55,11 @@ class QdrantVectorStore(VectorStore):
 
         self._batch_size = kwargs.get("batch_size", 100)
 
-    def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Add embedding results to index.
 
         Args
-            embedding_results: List[NodeEmbeddingResult]: list of embedding results
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
         from qdrant_client.http import models as rest
@@ -72,16 +72,16 @@ class QdrantVectorStore(VectorStore):
 
         ids = []
         for result_batch in iter_batch(embedding_results, self._batch_size):
-            new_ids = []
+            node_ids = []
             vectors = []
             payloads = []
             for result in result_batch:
-                new_ids.append(result.id)
+                node_ids.append(result.id)
                 vectors.append(result.embedding)
                 node = result.node
                 payloads.append(
                     {
-                        "doc_id": result.doc_id,
+                        "doc_id": result.ref_doc_id,
                         "text": node.get_text(),
                         "extra_info": node.extra_info,
                     }
@@ -90,12 +90,12 @@ class QdrantVectorStore(VectorStore):
             self._client.upsert(
                 collection_name=self._collection_name,
                 points=rest.Batch.construct(
-                    ids=new_ids,
+                    ids=node_ids,
                     vectors=vectors,
                     payloads=payloads,
                 ),
             )
-            ids.extend(new_ids)
+            ids.extend(node_ids)
         return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
