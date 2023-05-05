@@ -1,12 +1,11 @@
 # How Each Index Works
 
-This guide describes how each index works with diagrams. We also visually highlight our "Response Synthesis" modes.
+This guide describes how each index works with diagrams. 
 
 Some terminology:
 - **Node**: Corresponds to a chunk of text from a Document. LlamaIndex takes in Document objects and internally parses/chunks them into Node objects.
 - **Response Synthesis**: Our module which synthesizes a response given the retrieved Node. You can see how to 
     [specify different response modes](setting-response-mode) here. 
-    See below for an illustration of how each response mode works.
 
 ## List Index
 
