@@ -175,7 +175,7 @@ def test_fixed_recency_postprocessor(
     postprocessor = FixedRecencyPostprocessor(top_k=1, service_context=service_context)
     query_bundle: QueryBundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        node_with_scores, extra_info={"query_bundle": query_bundle}
+        node_with_scores, query_bundle=query_bundle
     )
     assert len(result_nodes) == 1
     assert result_nodes[0].node.get_text() == "date: 2020-01-04\n\nThis is a test v2."
@@ -195,7 +195,7 @@ def test_fixed_recency_postprocessor(
     )
     query_bundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        node_with_scores, extra_info={"query_bundle": query_bundle}
+        node_with_scores, query_bundle=query_bundle
     )
     assert len(result_nodes) == 1
     assert result_nodes[0].node.get_text() == "This is a test v2."
@@ -240,7 +240,7 @@ def test_embedding_recency_postprocessor(
     )
     query_bundle: QueryBundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
-        nodes_with_scores, extra_info={"query_bundle": query_bundle}
+        nodes_with_scores, query_bundle=query_bundle
     )
     assert len(result_nodes) == 4
     assert result_nodes[0].node.get_text() == "This is a test v2."

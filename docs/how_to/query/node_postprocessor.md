@@ -24,13 +24,13 @@ The base class is `BaseNodePostprocessor`, and the API interface is very simple:
 
 ```python
 
-class BaseNodePostprocessor(BasePostprocessor, BaseModel):
+class BaseNodePostprocessor:
     """Node postprocessor."""
 
     @abstractmethod
     def postprocess_nodes(
-        self, nodes: List[Node], extra_info: Optional[Dict] = None
-    ) -> List[Node]:
+        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
+    ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 ```
 
