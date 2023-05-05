@@ -1,4 +1,4 @@
-# Node Postprocessor
+# Second-Stage Processing
 
 By default, when a query is executed on an index or a composed graph, LlamaIndex performs
 the following steps:
@@ -159,4 +159,5 @@ maxdepth: 1
 ../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
 ../../examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
 ../../examples/node_postprocessor/PII.ipynb
+../../examples/node_postprocessor/CohereRerank.ipynb
 ```
