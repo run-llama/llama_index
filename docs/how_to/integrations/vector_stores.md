@@ -199,12 +199,13 @@ d = 1536
 faiss_index = faiss.IndexFlatL2(d)
 
 # construct vector store
-vector_store = FaissVectorStore(faiss_index, persist_dir='./storage')
+vector_store = FaissVectorStore(faiss_index)
 
 ...
 
 # NOTE: since faiss index is in-memory, we need to explicitly call
-#       vector_store.persist() or storage_context.persist() to save it to disk
+#       vector_store.persist() or storage_context.persist() to save it to disk.
+#       persist() takes in optional arg persist_path. If none give, will use default paths.
 storage_context.persist()
 ```
 
