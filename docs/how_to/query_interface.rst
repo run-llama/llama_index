@@ -56,5 +56,6 @@ Resources
    /how_to/index_structs/composability.rst
    /how_to/query/query_transformations.md
    /how_to/query/second_stage.md
+   /how_to/query/optimizers.md
    /how_to/query/response_synthesis.md
    /how_to/query/query_engines.md
