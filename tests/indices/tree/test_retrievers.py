@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.readers.schema.base import Document
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.readers.schema.base import Document
 
 
 def test_query(

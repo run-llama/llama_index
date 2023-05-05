@@ -2,12 +2,12 @@
 
 from typing import Dict, List
 
-from gpt_index.indices.composability.graph import ComposableGraph
-from gpt_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.tree.base import GPTTreeIndex
-from gpt_index.readers.schema.base import Document
+from llama_index.indices.composability.graph import ComposableGraph
+from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.readers.schema.base import Document
 
 
 def test_recursive_query_list_tree(

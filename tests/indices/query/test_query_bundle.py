@@ -3,12 +3,12 @@
 from typing import Dict, List
 
 import pytest
-from gpt_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.base import BaseEmbedding
 
-from gpt_index.indices.list.base import GPTListIndex
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.readers.schema.base import Document
+from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
+from llama_index.readers.schema.base import Document
 
 
 @pytest.fixture

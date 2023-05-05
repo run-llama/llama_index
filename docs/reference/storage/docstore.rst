@@ -3,6 +3,6 @@
 Document Store
 =====================
 
-.. automodule:: gpt_index.storage.docstore
+.. automodule:: llama_index.storage.docstore
    :members:
    :inherited-members:

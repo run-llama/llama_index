@@ -1,10 +1,10 @@
 from typing import Any, List
 from unittest.mock import patch
-from gpt_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
-from gpt_index.indices.knowledge_graph.retrievers import KGTableRetriever
-from gpt_index.indices.query.schema import QueryBundle
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.readers.schema.base import Document
+from llama_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
+from llama_index.indices.knowledge_graph.retrievers import KGTableRetriever
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
+from llama_index.readers.schema.base import Document
 from tests.indices.knowledge_graph.test_base import (
     MockEmbedding,
     mock_extract_triplets,

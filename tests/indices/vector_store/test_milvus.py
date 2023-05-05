@@ -2,12 +2,12 @@
 
 
 from typing import Any, List, Optional
-from gpt_index.indices.service_context import ServiceContext
-from gpt_index.indices.vector_store import GPTVectorStoreIndex
-from gpt_index.storage.storage_context import StorageContext
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.vector_store import GPTVectorStoreIndex
+from llama_index.storage.storage_context import StorageContext
 
-from gpt_index.vector_stores.types import (
-    NodeEmbeddingResult,
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -48,7 +48,7 @@ class MockMilvusVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         return []
 

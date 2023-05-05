@@ -11,7 +11,7 @@ from langchain.base_language import BaseLanguageModel
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
 
-from gpt_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
+from llama_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
 from typing import Any, cast
 
 logging.getLogger("root").setLevel(logging.WARNING)

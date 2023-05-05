@@ -24,8 +24,8 @@ Chroma stores both documents and vectors. This is an example of how to use Chrom
 
 ```python
 
-from gpt_index.readers.chroma import ChromaReader
-from gpt_index.indices import GPTListIndex
+from llama_index.readers.chroma import ChromaReader
+from llama_index.indices import GPTListIndex
 
 # The chroma reader loads data from a persisted Chroma collection.
 # This requires a collection name and a persist directory.
@@ -48,7 +48,7 @@ Qdrant also stores both documents and vectors. This is an example of how to use 
 
 ```python
 
-from gpt_index.readers.qdrant import QdrantReader
+from llama_index.readers.qdrant import QdrantReader
 
 reader = QdrantReader(host="localhost")
 
@@ -100,7 +100,7 @@ For instance, this is an example usage of the Pinecone data loader `PineconeRead
 
 ```python
 
-from gpt_index.readers.pinecone import PineconeReader
+from llama_index.readers.pinecone import PineconeReader
 
 reader = PineconeReader(api_key=api_key, environment="us-west1-gcp")
 
@@ -118,7 +118,7 @@ documents = reader.load_data(
 ```
 
 
-[Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/data_connectors).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/data_connectors).
 
 (vector-store-index)=
 
@@ -140,7 +140,7 @@ Once constructed, the index can be used for querying.
 By default, `GPTVectorStoreIndex` uses a in-memory `SimpleVectorStore`
 that's initialized as part of the default storage context. 
 ```python
-from gpt_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 
 # Load documents and build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
@@ -156,8 +156,8 @@ response = query_engine.query("What did the author do growing up?")
 
 We can query over a custom vector store as follows:
 ```python
-from gpt_index import GPTVectorStoreIndex, SimpleDirectoryReader, StorageContext
-from gpt_index.vector_stores import DeepLakeVectorStore
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader, StorageContext
+from llama_index.vector_stores import DeepLakeVectorStore
 
 # construct vector store and customize storage context
 storage_context = StorageContext.from_defaults(
@@ -179,7 +179,7 @@ Below we show more examples of how to construct various vector stores we support
 ```python
 import os
 import getpath
-from gpt_index.vector_stores import DeepLakeVectorStore
+from llama_index.vector_stores import DeepLakeVectorStore
 
 os.environ["OPENAI_API_KEY"] = getpath.getpath("OPENAI_API_KEY: ")
 os.environ["ACTIVELOOP_TOKEN"] = getpath.getpath("ACTIVELOOP_TOKEN: ")
@@ -192,7 +192,7 @@ vector_store = DeepLakeVectorStore(dataset_path=dataset_path, overwrite=True)
 **Faiss**
 ```python
 import faiss
-from gpt_index.vector_stores import FaissVectorStore
+from llama_index.vector_stores import FaissVectorStore
 
 # create faiss index
 d = 1536
@@ -211,7 +211,7 @@ storage_context.persist()
 **Weaviate**
 ```python
 import weaviate
-from gpt_index.vector_stores import WeaviateVectorStore
+from llama_index.vector_stores import WeaviateVectorStore
 
 # creating a Weaviate client
 resource_owner_config = weaviate.AuthClientPassword(
@@ -229,7 +229,7 @@ vector_store = WeaviateVectorStore(weaviate_client=client)
 **Pinecone**
 ```python
 import pinecone
-from gpt_index.vector_stores import PineconeVectorStore
+from llama_index.vector_stores import PineconeVectorStore
 
 # Creating a Pinecone index
 api_key = "api_key"
@@ -256,7 +256,7 @@ vector_store = PineconeVectorStore(
 **Qdrant**
 ```python
 import qdrant_client
-from gpt_index.vector_stores import QdrantVectorStore
+from llama_index.vector_stores import QdrantVectorStore
 
 # Creating a Qdrant vector store
 client = qdrant_client.QdrantClient(
@@ -277,7 +277,7 @@ vector_store = QdrantVectorStore(
 
 ```python
 import chromadb
-from gpt_index.vector_stores import ChromaVectorStore
+from llama_index.vector_stores import ChromaVectorStore
 
 # Creating a Chroma client
 # By default, Chroma will operate purely in-memory.
@@ -295,7 +295,7 @@ vector_store = ChromaVectorStore(
 
 ```python
 import pymilvus
-from gpt_index.vector_stores import MilvusVectorStore
+from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
@@ -318,7 +318,7 @@ and try downgrading.
 
 ```python
 import pymilvus
-from gpt_index.vector_stores import MilvusVectorStore
+from llama_index.vector_stores import MilvusVectorStore
 
 
 # construct vector store
@@ -342,7 +342,7 @@ and try downgrading.
 
 ```python
 import clickhouse_connect
-from gpt_index.vector_stores import MyScaleVectorStore
+from llama_index.vector_stores import MyScaleVectorStore
 
 # Creating a MyScale client
 client = clickhouse_connect.get_client(
@@ -360,4 +360,4 @@ vector_store = MyScaleVectorStore(
 ```
 
 
-[Example notebooks can be found here](https://github.com/jerryjliu/gpt_index/tree/main/examples/vector_indices).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/vector_indices).

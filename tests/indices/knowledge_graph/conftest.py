@@ -1,7 +1,7 @@
 from typing import List
 
 import pytest
-from gpt_index.readers.schema.base import Document
+from llama_index.readers.schema.base import Document
 
 
 @pytest.fixture
