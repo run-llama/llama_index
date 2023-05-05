@@ -66,7 +66,6 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
 
    guides/primer.rst
    guides/tutorials.rst
-   guides/notebooks.rst
 
 
 .. toctree::
