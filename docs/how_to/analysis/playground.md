@@ -39,7 +39,7 @@ playground.compare("What is the population of Berlin?")
 
 ### Example Notebook
 
-[Link to Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/analysis/PlaygroundDemo.ipynb).
+[Link to Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/analysis/PlaygroundDemo.ipynb).  
 
 
 ```{toctree}
