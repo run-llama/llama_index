@@ -9,7 +9,7 @@ from typing import (
 )
 
 from llama_index.data_structs.node import Node, NodeWithScore
-from llama_index.indices.postprocessor.node import BaseNodePostprocessor
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.response_builder import (
     BaseResponseBuilder,
@@ -158,9 +158,7 @@ class ResponseSynthesizer:
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         for node_processor in self._node_postprocessors:
-            nodes = node_processor.postprocess_nodes(
-                nodes, {"query_bundle": query_bundle}
-            )
+            nodes = node_processor.postprocess_nodes(nodes, query_bundle)
 
         text_chunks = []
         for node_with_score in nodes:
@@ -191,9 +189,7 @@ class ResponseSynthesizer:
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         for node_processor in self._node_postprocessors:
-            nodes = node_processor.postprocess_nodes(
-                nodes, {"query_bundle": query_bundle}
-            )
+            nodes = node_processor.postprocess_nodes(nodes, query_bundle)
 
         text_chunks = []
         for node_with_score in nodes:

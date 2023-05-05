@@ -1,7 +1,7 @@
 import json
 import math
 from typing import Any, Dict, List, Optional
-from llama_index.data_structs.node import Node, DocumentRelationship
+from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
