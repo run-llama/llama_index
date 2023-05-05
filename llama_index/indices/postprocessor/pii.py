@@ -73,7 +73,9 @@ class PIINodePostprocessor(BasePydanticNodePostprocessor):
         return text_output, json_dict
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         # swap out text from nodes, with the original node mappings
@@ -111,7 +113,9 @@ class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
         return new_text, mapping
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         from transformers import pipeline

@@ -31,7 +31,9 @@ class CohereRerank(BaseNodePostprocessor):
         self._model = model
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")

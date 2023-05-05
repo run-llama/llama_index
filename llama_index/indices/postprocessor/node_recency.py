@@ -60,7 +60,9 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
     in_extra_info: bool = True
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
@@ -124,7 +126,9 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
@@ -203,7 +207,9 @@ class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
     top_k: int = 1
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle] = None,
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         now = self.now or datetime.now().timestamp()
