@@ -157,3 +157,11 @@ class SimpleVectorStore(VectorStore):
             data_dict = json.load(f)
             data = SimpleVectorStoreData.from_dict(data_dict)
         return cls(data)
+
+    @classmethod
+    def from_dict(cls, save_dict: dict) -> "SimpleVectorStore":
+        data = SimpleVectorStoreData.from_dict(save_dict)
+        return cls(data)
+
+    def to_dict(self) -> dict:
+        return self._data.to_dict()
