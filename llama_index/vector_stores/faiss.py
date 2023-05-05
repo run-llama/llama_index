@@ -4,6 +4,7 @@ An index that that is built on top of an existing vector store.
 
 """
 
+import logging
 import os
 from typing import Any, List, cast
 
@@ -14,11 +15,9 @@ from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_FNAME,
     NodeWithEmbedding,
     VectorStore,
-    VectorStoreQueryResult,
     VectorStoreQuery,
+    VectorStoreQueryResult,
 )
-
-import logging
 
 logger = logging.getLogger()
 
@@ -105,25 +104,34 @@ class FaissVectorStore(VectorStore):
 
     def persist(
         self,
-        persist_path: str,
+        persist_path: str = None,
     ) -> None:
         """Save to file.
 
         This method saves the vector store to disk.
 
         Args:
-            save_path (str): The save_path of the file.
+            persist_path (str): The save_path of the file.
 
         """
         import faiss
 
-        dirpath = os.path.dirname(persist_path)
+        if persist_path is None:
+            # Defaults if persist path not provided
+            dirpath = os.path.join(DEFAULT_PERSIST_DIR)
+            persist_path = DEFAULT_PERSIST_FNAME
+        else:
+            dirpath = os.path.dirname(persist_path)
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)
 
         faiss.write_index(self._faiss_index, persist_path)
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(
+        self,
+        doc_id: str,
+        **delete_kwargs: Any,
+    ) -> None:
         """Delete a document.
 
         Args:
