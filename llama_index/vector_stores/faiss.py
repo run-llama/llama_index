@@ -119,7 +119,7 @@ class FaissVectorStore(VectorStore):
         if persist_path is None:
             # Defaults if persist path not provided
             dirpath = os.path.join(DEFAULT_PERSIST_DIR)
-            persist_path = DEFAULT_PERSIST_FNAME
+            persist_path = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
         else:
             dirpath = os.path.dirname(persist_path)
         if not os.path.exists(dirpath):
