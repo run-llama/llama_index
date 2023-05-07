@@ -29,6 +29,11 @@ class IndexDocumentSummary(IndexStruct):
         """Add node and summary."""
         summary_id = summary_node.get_doc_id()
         ref_doc_id = summary_node.ref_doc_id
+        if ref_doc_id is None:
+            raise ValueError(
+                "ref_doc_id of node cannot be None when building a document "
+                "summary index"
+            )
         self.doc_id_to_summary_id[ref_doc_id] = summary_id
 
         for node in nodes:
@@ -55,7 +60,7 @@ class IndexDocumentSummary(IndexStruct):
         node_ids = self.summary_id_to_node_ids[summary_id]
         for node_id in node_ids:
             del self.node_id_to_summary_id[node_id]
-        del self.summary_id_to_node_ids[summary_id][doc_id]
+        del self.summary_id_to_node_ids[summary_id]
 
     @classmethod
     def get_type(cls) -> IndexStructType:
