@@ -12,6 +12,7 @@ class CBEventType(str, Enum):
     """Callback manager event types."""
 
     CHUNKING = "chunking"
+    NODE_PARSING = "node_parsing"
     EMBEDDING = "embedding"
     LLM = "llm"
     QUERY = "query"

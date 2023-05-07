@@ -6,6 +6,8 @@ NOTE: this is a beta wrapper, will replace once better abstractions
 """
 from typing import Any, Generator, Optional, Tuple
 
+from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.schema import CBEventType
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.prompts.base import Prompt
 
@@ -42,6 +44,7 @@ class StableLMPredictor(BaseLLMPredictor):
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
         tokenizer_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -57,6 +60,7 @@ class StableLMPredictor(BaseLLMPredictor):
         self._system_prompt = system_prompt
         self._total_tokens_used = 0
         self._last_token_usage: Optional[int] = None
+        self._callback_manager = callback_manager or CallbackManager([])
 
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
@@ -104,6 +108,11 @@ class StableLMPredictor(BaseLLMPredictor):
         """
         from transformers import StoppingCriteriaList
 
+        llm_payload = prompt_args
+        llm_payload["template"] = prompt
+        event_id = self._callback_manager.on_event_start(
+            CBEventType.LLM, payload=prompt_args
+        )
         formatted_prompt = prompt.format(**prompt_args)
         full_prompt = (
             f"{self._system_prompt}" f"<|USER|>{formatted_prompt}<|ASSISTANT|>"
@@ -118,6 +127,11 @@ class StableLMPredictor(BaseLLMPredictor):
         )
         completion_tokens = tokens[0][input_tokens["input_ids"].size(1) :]
         completion = self.tokenizer.decode(completion_tokens, skip_special_tokens=True)
+        self._callback_manager.on_event_end(
+            CBEventType.LLM,
+            payload={"response": completion, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
+        )
         return completion, formatted_prompt
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:

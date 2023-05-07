@@ -12,6 +12,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain.llms import AI21
 from langchain.base_language import BaseLanguageModel
 
+from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.schema import CBEventType
 from llama_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
@@ -164,11 +166,13 @@ class LLMPredictor(BaseLLMPredictor):
         llm: Optional[BaseLanguageModel] = None,
         retry_on_throttling: bool = True,
         cache: Optional[BaseCache] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
         if cache is not None:
             langchain.llm_cache = cache
+        self._callback_manager = callback_manager or CallbackManager([])
         self.retry_on_throttling = retry_on_throttling
         self._total_tokens_used = 0
         self.flag = True
@@ -226,6 +230,11 @@ class LLMPredictor(BaseLLMPredictor):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
+        llm_payload = prompt_args
+        llm_payload["template"] = prompt
+        event_id = self._callback_manager.on_event_start(
+            CBEventType.LLM, payload=prompt_args
+        )
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = self._predict(prompt, **prompt_args)
         logger.debug(llm_prediction)
@@ -235,6 +244,11 @@ class LLMPredictor(BaseLLMPredictor):
         prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
+        self._callback_manager.on_event_end(
+            CBEventType.LLM,
+            payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
+        )
         return llm_prediction, formatted_prompt
 
     def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
@@ -306,6 +320,11 @@ class LLMPredictor(BaseLLMPredictor):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
+        llm_payload = prompt_args
+        llm_payload["template"] = prompt
+        event_id = self._callback_manager.on_event_start(
+            CBEventType.LLM, payload=prompt_args
+        )
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = await self._apredict(prompt, **prompt_args)
         logger.debug(llm_prediction)
@@ -315,4 +334,9 @@ class LLMPredictor(BaseLLMPredictor):
         prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
+        self._callback_manager.on_event_end(
+            CBEventType.LLM,
+            payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
+        )
         return llm_prediction, formatted_prompt
