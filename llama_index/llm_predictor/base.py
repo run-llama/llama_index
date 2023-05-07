@@ -230,7 +230,7 @@ class LLMPredictor(BaseLLMPredictor):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        llm_payload = prompt_args
+        llm_payload = {**prompt_args}
         llm_payload["template"] = prompt
         event_id = self._callback_manager.on_event_start(
             CBEventType.LLM, payload=prompt_args
@@ -320,7 +320,7 @@ class LLMPredictor(BaseLLMPredictor):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        llm_payload = prompt_args
+        llm_payload = {**prompt_args}
         llm_payload["template"] = prompt
         event_id = self._callback_manager.on_event_start(
             CBEventType.LLM, payload=prompt_args
