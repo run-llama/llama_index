@@ -22,6 +22,9 @@ from llama_index.indices.struct_store.pandas import GPTPandasIndex
 from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from llama_index.indices.tree.base import GPTTreeIndex
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.document_summary.base import GPTDocumentSummaryIndex
+from llama_index.data_structs.document_summary import IndexDocumentSummary
+
 
 INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[IndexStruct]] = {
     IndexStructType.TREE: IndexGraph,
@@ -32,6 +35,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[IndexStruct]
     IndexStructType.PANDAS: PandasStructTable,
     IndexStructType.KG: KG,
     IndexStructType.EMPTY: EmptyIndex,
+    IndexStructType.DOCUMENT_SUMMARY: IndexDocumentSummary,
 }
 
 
@@ -44,4 +48,5 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
     IndexStructType.PANDAS: GPTPandasIndex,
     IndexStructType.KG: GPTKnowledgeGraphIndex,
     IndexStructType.EMPTY: GPTEmptyIndex,
+    IndexStructType.DOCUMENT_SUMMARY: GPTDocumentSummaryIndex,
 }
