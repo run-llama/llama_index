@@ -12,14 +12,23 @@ from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
 
 
-def _get_default_node_parser(chunk_size_limit: Optional[int] = None, callback_manager: Optional[CallbackManager] = None) -> NodeParser:
+def _get_default_node_parser(
+    chunk_size_limit: Optional[int] = None,
+    callback_manager: Optional[CallbackManager] = None,
+) -> NodeParser:
     """Get default node parser."""
     callback_manager = callback_manager or CallbackManager([])
     if chunk_size_limit is None:
-        token_text_splitter = TokenTextSplitter(callback_manager=callback_manager)  # use default chunk size
+        token_text_splitter = TokenTextSplitter(
+            callback_manager=callback_manager
+        )  # use default chunk size
     else:
-        token_text_splitter = TokenTextSplitter(chunk_size=chunk_size_limit, callback_manager=callback_manager)
-    return SimpleNodeParser(text_splitter=token_text_splitter, callback_manager=callback_manager)
+        token_text_splitter = TokenTextSplitter(
+            chunk_size=chunk_size_limit, callback_manager=callback_manager
+        )
+    return SimpleNodeParser(
+        text_splitter=token_text_splitter, callback_manager=callback_manager
+    )
 
 
 @dataclass
@@ -81,10 +90,9 @@ class ServiceContext:
         prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
             llm_predictor, chunk_size_limit=chunk_size_limit
         )
-        
+
         node_parser = node_parser or _get_default_node_parser(
-            chunk_size_limit=chunk_size_limit,
-            callback_manager=callback_manager
+            chunk_size_limit=chunk_size_limit, callback_manager=callback_manager
         )
 
         llama_logger = llama_logger or LlamaLogger()

@@ -10,7 +10,7 @@ TIMESTAMP_FORMAT = "%m/%d/%Y, %H:%M:%S"
 
 class CBEventType(str, Enum):
     """Callback manager event types.
-    
+
     Attributes:
         CHUNKING: Logs for the before and after of text splitting.
         NODE_PARSING: Logs for the documents and the nodes that they are parsed into.
