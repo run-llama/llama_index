@@ -24,7 +24,7 @@ print(response)
 
 Relevant Resources:
 - [Quickstart](/getting_started/starter_example.md)
-- [Example notebook](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores)
+- [Example](../examples/vector_stores/SimpleIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores/SimpleIndexDemo.ipynb))
 
 
 ### Summarization
@@ -52,11 +52,16 @@ response = query_engine.query("<summarization_query>")
 LlamaIndex supports queries over structured data, whether that's a Pandas DataFrame or a SQL Database.
 
 Here are some relevant resources:
+
+**Guides**
+
 - [Guide on Text-to-SQL](/guides/tutorials/sql_guide.md)
-- [SQL Demo Notebook 1](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo.ipynb)
-- [SQL Demo Notebook 2 (Context)](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb)
-- [SQL Demo Notebook 3 (Big tables)](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-ManyTables.ipynb)
-- [Pandas Demo Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/PandasIndexDemo.ipynb).
+
+**Examples**
+- [SQL Demo 1](../examples/index_structs/struct_indices/SQLIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
+- [SQL Demo 2 (Context)](../examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb))
+- [SQL Demo 3 (Big tables)](../examples/index_structs/struct_indices//SQLIndexDemo-ManyTables.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-ManyTables.ipynb))
+- [Pandas Demo](../examples/index_structs/struct_indices/PandasIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/PandasIndexDemo.ipynb))
 
 
 ### Synthesis over Heterogeneous Data
@@ -80,7 +85,7 @@ response = query_engine.query("<query_str>")
 
 Here are some relevant resources:
 - [Composability](/how_to/index_structs/composability.md)
-- [City Analysis Demo](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb).
+- [City Analysis](../examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
 
 
@@ -132,8 +137,7 @@ response = query_engine.query(
 
 Here are some relevant resources:
 - [Router Query Engine Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb).
-- [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb)
-
+- [City Analysis Unified Query Interface](../examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
 
 ### Compare/Contrast Queries
@@ -163,8 +167,7 @@ This module will help break down a complex query into a simpler one over your ex
 
 Here are some relevant resources:
 - [Query Transformations](/how_to/query/query_transformations.md)
-- [City Analysis Example Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb)
-
+- [City Analysis Compare/Contrast Example](../examples//composable_indices/city_analysis/City_Analysis-Decompose.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb))
 
 ### Multi-Step Queries
 
@@ -176,7 +179,7 @@ query the index, and then ask followup questions.
 
 Here are some relevant resources:
 - [Query Transformations](/how_to/query/query_transformations.md)
-- [Multi-Step Query Decomposition Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb)
+- [Multi-Step Query Decomposition](../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 
 

@@ -10,11 +10,17 @@ capabilities our indices/graphs provide.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Index Structures
+   :caption: Guides
 
    /guides/primer/index_guide.md
    index_structs/update.md
    index_structs/composability.md
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+
    ../examples/index_structs/knowledge_graph/KnowledgeGraphDemo.ipynb
    ../examples/index_structs/struct_indices/PandasIndexDemo.ipynb
    ../examples/index_structs/struct_indices/SQLIndexDemo.ipynb
