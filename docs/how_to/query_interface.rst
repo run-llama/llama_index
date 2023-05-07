@@ -50,7 +50,7 @@ Resources
 
 .. toctree::
    :maxdepth: 1
-   :caption: Query Interface
+   :caption: Guides
 
    /guides/primer/usage_pattern.md
    /how_to/index_structs/composability.rst
