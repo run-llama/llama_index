@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from gpt_index import (
+from llama_index import (
     Document,
     GPTListIndex,
     QuestionAnswerPrompt,
@@ -139,11 +139,11 @@ class ResponseEvaluator:
         EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
         REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
 
-        response_obj = index.query(
-            answer,
+        query_engine = index.as_query_engine(
             text_qa_template=EVAL_PROMPT_TMPL,
             refine_template=REFINE_PROMPT_TMPL,
         )
+        response_obj = query_engine.query(answer)
 
         raw_response_txt = str(response_obj)
 
@@ -181,11 +181,11 @@ class ResponseEvaluator:
             EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
             REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
 
-            response_obj = index.query(
-                answer,
+            query_engine = index.as_query_engine(
                 text_qa_template=EVAL_PROMPT_TMPL,
                 refine_template=REFINE_PROMPT_TMPL,
             )
+            response_obj = query_engine.query(answer)
             raw_response_txt = str(response_obj)
 
             if "yes" in raw_response_txt.lower():
@@ -259,11 +259,11 @@ class QueryResponseEvaluator:
 
         query_response = f"Question: {query}\nResponse: {answer}"
 
-        response_obj = index.query(
-            query_response,
+        query_engine = index.as_query_engine(
             text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
             refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
         )
+        response_obj = query_engine.query(query_response)
 
         raw_response_txt = str(response_obj)
 
@@ -313,11 +313,11 @@ class QueryResponseEvaluator:
 
             query_response = f"Question: {query}\nResponse: {answer}"
 
-            response_obj = index.query(
-                query_response,
+            query_engine = index.as_query_engine(
                 text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
                 refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
             )
+            response_obj = query_engine.query(query_response)
             raw_response_txt = str(response_obj)
 
             if "yes" in raw_response_txt.lower():
