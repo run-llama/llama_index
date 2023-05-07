@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from llama_index import (
+from gpt_index import (
     Document,
     GPTListIndex,
     QuestionAnswerPrompt,
@@ -139,20 +139,18 @@ class ResponseEvaluator:
         EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
         REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
 
-        query_engine = index.as_query_engine(
+        response_obj = index.query(
+            answer,
             text_qa_template=EVAL_PROMPT_TMPL,
             refine_template=REFINE_PROMPT_TMPL,
         )
-        response_obj = query_engine.query(answer)
 
         raw_response_txt = str(response_obj)
 
         if "yes" in raw_response_txt.lower():
             response_txt = "YES"
-        elif "no" in raw_response_txt.lower():
-            response_txt = "NO"
         else:
-            raise ValueError("The response is invalid")
+            response_txt = "NO"
 
         return response_txt
 
@@ -183,19 +181,17 @@ class ResponseEvaluator:
             EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
             REFINE_PROMPT_TMPL = RefinePrompt(DEFAULT_REFINE_PROMPT)
 
-            query_engine = index.as_query_engine(
+            response_obj = index.query(
+                answer,
                 text_qa_template=EVAL_PROMPT_TMPL,
                 refine_template=REFINE_PROMPT_TMPL,
             )
-            response_obj = query_engine.query(answer)
             raw_response_txt = str(response_obj)
 
             if "yes" in raw_response_txt.lower():
                 response_txt = "YES"
-            elif "no" in raw_response_txt.lower():
-                response_txt = "NO"
             else:
-                raise ValueError("The response is invalid")
+                response_txt = "NO"
 
             response_texts.append(response_txt)
 
@@ -263,20 +259,18 @@ class QueryResponseEvaluator:
 
         query_response = f"Question: {query}\nResponse: {answer}"
 
-        query_engine = index.as_query_engine(
+        response_obj = index.query(
+            query_response,
             text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
             refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
         )
-        response_obj = query_engine.query(query_response)
 
         raw_response_txt = str(response_obj)
 
         if "yes" in raw_response_txt.lower():
             response_txt = "YES"
-        elif "no" in raw_response_txt.lower():
-            response_txt = "NO"
         else:
-            raise ValueError("The response is invalid")
+            response_txt = "NO"
 
         return response_txt
 
@@ -319,19 +313,17 @@ class QueryResponseEvaluator:
 
             query_response = f"Question: {query}\nResponse: {answer}"
 
-            query_engine = index.as_query_engine(
+            response_obj = index.query(
+                query_response,
                 text_qa_template=QUERY_RESPONSE_EVAL_PROMPT_TMPL,
                 refine_template=QUERY_RESPONSE_REFINE_PROMPT_TMPL,
             )
-            response_obj = query_engine.query(query_response)
             raw_response_txt = str(response_obj)
 
             if "yes" in raw_response_txt.lower():
                 response_txt = "YES"
-            elif "no" in raw_response_txt.lower():
-                response_txt = "NO"
             else:
-                raise ValueError("The response is invalid")
+                response_txt = "NO"
 
             response_texts.append(response_txt)
 
