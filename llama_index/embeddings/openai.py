@@ -103,7 +103,7 @@ def get_embedding(
 
     """
     text = text.replace("\n", " ")
-    return openai.Embedding.create(input=[text], model=engine)["data"][0]["embedding"]
+    return openai.Embedding.create(input=[text], model=engine, engine=engine)["data"][0]["embedding"]
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
