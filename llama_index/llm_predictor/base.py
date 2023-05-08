@@ -58,7 +58,7 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
                 max_input_size=GPT4_32K_CONTEXT_SIZE, num_output=max_tokens
             )
         else:
-            logger.warn(
+            logger.warning(
                 "Unknown max input size for %s, using defaults.", llm.model_name
             )
             return LLMMetadata()
