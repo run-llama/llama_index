@@ -23,20 +23,25 @@ logger = logging.getLogger(__name__)
 DEFAULT_CHOICE_SELECT_PROMPT_TMPL = (
     "A list of documents is shown below. Each document has a number next to it along "
     "with a summary of the document. A question is also provided. \n"
-    "Select the numbers of the documents "
-    "you should consult to answer the question, in order of relevance. \n"
+    "Respond with the numbers of the documents "
+    "you should consult to answer the question, in order of relevance, as well \n"
+    "as the relevance score. The relevance score is a number from 1-10 based on "
+    "how relevant you think the document is to the question.\n"
     "Do not include any documents that are not relevant to the question. \n"
     "Example format: \n"
-    "Document 1: <summary of document 1>\n"
-    "Document 2: <summary of document 2>\n"
-    "..."
-    "Document 10: <summary of document 10>\n"
+    "Document 1:\n<summary of document 1>\n\n"
+    "Document 2:\n<summary of document 2>\n\n"
+    "...\n\n"
+    "Document 10:\n<summary of document 10>\n\n"
     "Question: <question>\n"
-    "Answer: 9, 7, 4\n\n"
-    "Let's try this now: \n"
+    "Answer:\n"
+    "Doc: 9, Relevance: 7\n"
+    "Doc: 3, Relevance: 4\n"
+    "Doc: 7, Relevance: 3\n\n"
+    "Let's try this now: \n\n"
     "{context_str}\n"
     "Question: {query_str}\n"
-    "Answer: "
+    "Answer:\n"
 )
 DEFAULT_CHOICE_SELECT_PROMPT = QuestionAnswerPrompt(DEFAULT_CHOICE_SELECT_PROMPT_TMPL)
 
@@ -48,17 +53,25 @@ def default_format_node_batch_fn(
     fmt_node_txts = []
     for idx in range(len(summary_nodes)):
         number = idx + 1
-        fmt_node_txts.append(f"Document {number}: {summary_nodes[idx].get_text()}")
-    return "\n".join(fmt_node_txts)
+        fmt_node_txts.append(f"Document {number}:\n{summary_nodes[idx].get_text()}")
+    return "\n\n".join(fmt_node_txts)
 
 
-def default_parse_choice_select_answer_fn(answer: str, num_choices: int) -> List[int]:
+def default_parse_choice_select_answer_fn(
+    answer: str, num_choices: int
+) -> Tuple[List[int], Optional[List[float]]]:
     """Default parse choice select answer function."""
-    answer_tokens = answer.split(",")
-    answer_nums = [int(ans.strip()) for ans in answer_tokens]
-    # prune choices based on num_choices
-    pruned_answer = [a for a in answer_nums if a <= num_choices]
-    return pruned_answer
+    answer_lines = answer.split("\n")
+    answer_nums = []
+    answer_relevances = []
+    for answer_line in answer_lines:
+        line_tokens = answer_line.split(",")
+        answer_num = int(line_tokens[0].split(":")[1].strip())
+        if answer_num > num_choices:
+            continue
+        answer_nums.append(answer_num)
+        answer_relevances.append(float(line_tokens[1].split(":")[1].strip()))
+    return answer_nums, answer_relevances
 
 
 class DocumentSummaryIndexRetriever(BaseRetriever):
@@ -112,17 +125,18 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
                 context_str=fmt_batch_str,
                 query_str=query_str,
             )
-            raw_choices = self._parse_choice_select_answer_fn(
+            raw_choices, relevances = self._parse_choice_select_answer_fn(
                 raw_response, len(summary_nodes)
             )
             choice_idxs = [choice - 1 for choice in raw_choices]
 
             choice_summary_ids = [summary_ids_batch[ci] for ci in choice_idxs]
 
-            for summary_id in choice_summary_ids:
+            for idx, summary_id in enumerate(choice_summary_ids):
                 node_ids = self._index.index_struct.summary_id_to_node_ids[summary_id]
                 nodes = self._index.docstore.get_nodes(node_ids)
-                results.extend([NodeWithScore(n) for n in nodes])
+                relevance = relevances[idx] if relevances is not None else None
+                results.extend([NodeWithScore(n, score=relevance) for n in nodes])
 
         return results
 
