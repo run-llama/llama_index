@@ -38,7 +38,7 @@ class BaseDocument(DataClassJsonMixin):
     def _generate_doc_hash(self) -> str:
         """Generate a hash to represent the document."""
         doc_identity = str(self.text) + str(self.extra_info)
-        return sha256(doc_identity.encode()).hexdigest()
+        return sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest()
 
     @classmethod
     @abstractmethod

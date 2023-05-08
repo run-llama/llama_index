@@ -144,3 +144,13 @@ Output:
 {'Education': 'Before college, the author wrote short stories and experimented with programming on an IBM 1401.', 'Work': 'The author worked on writing and programming outside of school.'}
 ```
 
+
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+
+../examples/output_parsing/GuardrailsDemo.ipynb
+../examples/output_parsing/LangchainOutputParserDemo.ipynb
+```
