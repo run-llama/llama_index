@@ -6,19 +6,12 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.readers.redis.utils import (
-    TokenEscaper,
-    array_to_buffer,
-    check_redis_modules_exist,
-    convert_bytes,
-    get_redis_query,
-)
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
+from llama_index.readers.redis.utils import (TokenEscaper, array_to_buffer,
+                                             check_redis_modules_exist,
+                                             convert_bytes, get_redis_query)
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
 
 _logger = logging.getLogger(__name__)
 
@@ -40,6 +33,14 @@ class RedisVectorStore(VectorStore):
     ) -> None:
         """Initialize RedisVectorStore.
 
+        For index arguments that can be passed to RediSearch, see
+        https://redis.io/docs/stack/search/reference/vectors/
+
+        The index arguments will depend on the index type chosen. There
+        are two available index types
+            - FLAT: a flat index that uses brute force search
+            - HNSW: a hierarchical navigable small world graph index
+
         Args:
             index_name (str): Name of the index.
             index_prefix (str): Prefix for the index. Defaults to "llama_index".
@@ -58,7 +59,7 @@ class RedisVectorStore(VectorStore):
             >>> vector_store = RedisVectorStore(
             >>>     index_name="my_index",
             >>>     index_prefix="gpt_index",
-            >>>     index_args={"algorithm": "HNSW", "m": 16, "efConstruction": 200, "distance_metric": "cosine"},
+            >>>     index_args={"algorithm": "HNSW", "m": 16, "ef_construction": 200, "distance_metric": "cosine"},
             >>>     redis_url="redis://localhost:6379/",
             >>>     overwrite=True)
 
@@ -207,10 +208,11 @@ class RedisVectorStore(VectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
-    def persist(self, in_background=True) -> None:
+    def persist(self, persist_path: str, in_background=True) -> None:
         """Persist the vector store to disk.
 
         Args:
+            persist_path (str): Path to persist the vector store to. (doesn't apply)
             in_background (bool, optional): Persist in background. Defaults to True.
         """
         if in_background:
@@ -223,7 +225,8 @@ class RedisVectorStore(VectorStore):
     def _create_index(self) -> None:
         # should never be called outside class and hence should not raise importerror
         from redis.commands.search.field import TagField, TextField
-        from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+        from redis.commands.search.indexDefinition import (IndexDefinition,
+                                                           IndexType)
 
         # Create Index
         default_fields = [
@@ -262,7 +265,7 @@ class RedisVectorStore(VectorStore):
     def _create_vector_field(
         self,
         name: str,
-        dims: int = "1536",
+        dims: int = 1536,
         algorithm: str = "FLAT",
         datatype: str = "FLOAT32",
         distance_metric: str = "COSINE",
@@ -277,20 +280,20 @@ class RedisVectorStore(VectorStore):
         """Create a RediSearch VectorField.
 
         Args:
-        name: The name of the field.
-        algorithm: The algorithm used to index the vector.
-        dims: The dimensionality of the vector.
-        datatype: The type of the vector. default: FLOAT32
-        distance_metric: The distance metric used to compare vectors.
-        initial_cap: The initial capacity of the index.
-        block_size: The block size of the index.
-        m: The number of outgoing edges in the HNSW graph.
-        ef_construction: Number of maximum allowed potential outgoing edges
-                        candidates for each node in the graph, during the graph building.
-        ef_runtime: The umber of maximum top candidates to hold during the KNN search
+            name (str): The name of the field.
+            algorithm (str): The algorithm used to index the vector.
+            dims (int): The dimensionality of the vector.
+            datatype (str): The type of the vector. default: FLOAT32
+            distance_metric (str): The distance metric used to compare vectors.
+            initial_cap (int): The initial capacity of the index.
+            block_size (int): The block size of the index.
+            m (int): The number of outgoing edges in the HNSW graph.
+            ef_construction (int): Number of maximum allowed potential outgoing edges
+                            candidates for each node in the graph, during the graph building.
+            ef_runtime (int): The umber of maximum top candidates to hold during the KNN search
 
         returns:
-        A RediSearch VectorField.
+            A RediSearch VectorField.
         """
         from redis.commands.search.field import VectorField
 
