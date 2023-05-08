@@ -6,7 +6,7 @@ An index that that is built on top of an existing vector store.
 
 import logging
 import os
-from typing import Any, List, cast
+from typing import Any, List, Optional, cast
 
 import numpy as np
 
@@ -104,7 +104,7 @@ class FaissVectorStore(VectorStore):
 
     def persist(
         self,
-        persist_path: str = None,
+        persist_path: Optional[str] = None,
     ) -> None:
         """Save to file.
 
