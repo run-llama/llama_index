@@ -2,7 +2,7 @@
 
 import logging
 from threading import Thread
-from typing import Any, cast, List, Generator, Optional, Tuple
+from typing import Any, List, Generator, Optional, Tuple
 
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.prompts.base import Prompt
@@ -12,7 +12,7 @@ from llama_index.prompts.prompts import SimpleInputPrompt
 logger = logging.getLogger(__name__)
 
 
-class HuggingFacePredictor(BaseLLMPredictor):
+class HuggingFaceLLMPredictor(BaseLLMPredictor):
     """Huggingface Specific LLM predictor class.
 
     Wrapper around an LLMPredictor to provide streamlined access to HuggingFace models.
@@ -59,8 +59,9 @@ class HuggingFacePredictor(BaseLLMPredictor):
         )
 
         # check max_input_size
+        config_dict = self.model.config.to_dict()
         model_max_input_size = int(
-            self.model.config.get("max_position_embeddings", max_input_size)
+            config_dict.get("max_position_embeddings", max_input_size)
         )
         if model_max_input_size and model_max_input_size < max_input_size:
             logger.warning(
@@ -90,20 +91,21 @@ class HuggingFacePredictor(BaseLLMPredictor):
         self._last_token_usage: Optional[int] = None
 
         # setup stopping criteria
-        stopping_ids = stopping_ids or []
+        stopping_ids_list = stopping_ids or []
 
         class StopOnTokens(StoppingCriteria):
-            stopping_ids: List[int]
-
             def __call__(
-                self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs: Any
+                self,
+                input_ids: torch.LongTensor,
+                scores: torch.FloatTensor,
+                **kwargs: Any,
             ) -> bool:
-                for stop_id in self.stopping_ids:
+                for stop_id in stopping_ids_list:
                     if input_ids[0][-1] == stop_id:
                         return True
                 return False
 
-        self._stopping_criteria = StoppingCriteriaList([StopOnTokens(stopping_ids)])
+        self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
@@ -138,7 +140,11 @@ class HuggingFacePredictor(BaseLLMPredictor):
         ):
             inputs = inputs.to("cuda")
 
-        streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True)
+        streamer = TextIteratorStreamer(
+            self.tokenizer,
+            skip_prompt=True,
+            decode_kwargs={"skip_special_tokens": True},
+        )
         generation_kwargs = dict(
             inputs,
             streamer=streamer,
@@ -149,10 +155,16 @@ class HuggingFacePredictor(BaseLLMPredictor):
         )
 
         # generate in background thread
+        # NOTE/TODO: token counting doesn't work with streaming
         thread = Thread(target=self.model.generate, kwargs=generation_kwargs)
         thread.start()
-        # NOTE/TODO: token counting doesn't work with streaming
-        return cast(Generator, streamer), formatted_prompt
+
+        # create generator based off of streamer
+        def response() -> Generator:
+            for x in streamer:
+                yield x
+
+        return response(), formatted_prompt
 
     @property
     def total_tokens_used(self) -> int:
@@ -200,6 +212,7 @@ class HuggingFacePredictor(BaseLLMPredictor):
             stopping_criteria=self._stopping_criteria,
         )
         completion_tokens = tokens[0][inputs["input_ids"].size(1) :]
+        self._total_tokens_used += len(completion_tokens) + inputs["input_ids"].size(1)
         completion = self.tokenizer.decode(completion_tokens, skip_special_tokens=True)
         return completion, formatted_prompt
 

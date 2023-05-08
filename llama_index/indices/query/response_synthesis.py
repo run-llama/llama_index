@@ -149,7 +149,9 @@ class ResponseSynthesizer:
                 extra_info=response_extra_info,
             )
         else:
-            raise ValueError("Response must be a string or a generator.")
+            raise ValueError(
+                f"Response must be a string or a generator. Found {type(response_str)}"
+            )
 
     def synthesize(
         self,
