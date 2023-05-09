@@ -6,7 +6,7 @@ An index that that is built on top of an existing vector store.
 
 import logging
 import os
-from typing import Any, List, Optional, cast
+from typing import Any, List, cast
 
 import numpy as np
 
