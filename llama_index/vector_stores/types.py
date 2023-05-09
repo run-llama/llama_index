@@ -3,7 +3,8 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import (Any, Dict, List, Optional, Protocol, Union,
+                    runtime_checkable)
 
 from llama_index.data_structs.node import Node
 
@@ -56,6 +57,18 @@ class VectorStoreQueryMode(str, Enum):
 
 
 @dataclass
+class ExactMatchFilter:
+    key: str
+    value: Union[str, int, float]
+
+
+@dataclass
+class MetadataFilters:
+    # TODO: support more advanced expressions
+    filters: List[ExactMatchFilter]
+
+
+@dataclass
 class VectorStoreQuery:
     """Vector store query."""
 
@@ -68,6 +81,8 @@ class VectorStoreQuery:
 
     # NOTE: only for hybrid search (0 for bm25, 1 for vector search)
     alpha: Optional[float] = None
+
+    filters: Optional[MetadataFilters] = None
 
 
 @runtime_checkable
