@@ -14,7 +14,7 @@ class StreamingGeneratorCallbackHandler(BaseCallbackHandler):
         self._done = Event()
     
     def __deepcopy__(self, memo: Any):
-        # NOTE: hack to avoid skip deepcopy in langchain
+        # NOTE: hack to bypass deepcopy in langchain
         return self 
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> Any:
@@ -32,7 +32,7 @@ class StreamingGeneratorCallbackHandler(BaseCallbackHandler):
     def get_response_gen(self) -> Generator:
         while True:
             if not self._token_queue.empty():
-                token = self._token_queue.get(timeout=0.5)
+                token = self._token_queue.get_nowait()
                 yield token
             elif self._done.is_set():
                 break
