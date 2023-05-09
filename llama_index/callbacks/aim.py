@@ -5,7 +5,7 @@ from aim import Run, Text
 from aim.ext.system_info import DEFAULT_SYSTEM_TRACKING_INT
 import logging
 
-logger = logging.getLogger("root").setLevel(logging.WARNING)
+logger = logging.getLogger(__name__).setLevel(logging.WARNING)
 
 
 class AimCallback(BaseCallbackHandler):
