@@ -11,13 +11,10 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-    VectorStoreQueryResult,
-)
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryMode,
+                                             VectorStoreQueryResult)
 
 _logger = logging.getLogger(__name__)
 
@@ -110,12 +107,7 @@ class PineconeVectorStore(VectorStore):
 
     Args:
         pinecone_index (Optional[pinecone.Index]): Pinecone index instance
-        pinecone_kwargs (Optional[Dict]): kwargs to pass to Pinecone index.
-            NOTE: deprecated. If specified, then insert_kwargs, query_kwargs,
-            and delete_kwargs cannot be specified.
         insert_kwargs (Optional[Dict]): insert kwargs during `upsert` call.
-        query_kwargs (Optional[Dict]): query kwargs during `query` call.
-        delete_kwargs (Optional[Dict]): delete kwargs during `delete` call.
         add_sparse_vector (bool): whether to add sparse vector to index.
         tokenizer (Optional[Callable]): tokenizer to use to generate sparse
 
@@ -129,11 +121,7 @@ class PineconeVectorStore(VectorStore):
         index_name: Optional[str] = None,
         environment: Optional[str] = None,
         namespace: Optional[str] = None,
-        metadata_filters: Optional[Dict[str, Any]] = None,
-        pinecone_kwargs: Optional[Dict] = None,
         insert_kwargs: Optional[Dict] = None,
-        query_kwargs: Optional[Dict] = None,
-        delete_kwargs: Optional[Dict] = None,
         add_sparse_vector: bool = False,
         tokenizer: Optional[Callable] = None,
         **kwargs: Any,
@@ -167,21 +155,7 @@ class PineconeVectorStore(VectorStore):
             pinecone.init(environment=environment)
             self._pinecone_index = pinecone.Index(index_name)
 
-        self._metadata_filters = metadata_filters or {}
-        self._pinecone_kwargs = pinecone_kwargs or {}
-        if pinecone_kwargs and (insert_kwargs or query_kwargs or delete_kwargs):
-            raise ValueError(
-                "pinecone_kwargs cannot be specified if insert_kwargs, "
-                "query_kwargs, or delete_kwargs are specified."
-            )
-        elif pinecone_kwargs:
-            self._insert_kwargs = pinecone_kwargs
-            self._query_kwargs = pinecone_kwargs
-            self._delete_kwargs = pinecone_kwargs
-        else:
-            self._insert_kwargs = insert_kwargs or {}
-            self._query_kwargs = query_kwargs or {}
-            self._delete_kwargs = delete_kwargs or {}
+        self._insert_kwargs = insert_kwargs or {}
 
         self._add_sparse_vector = add_sparse_vector
         if tokenizer is None:
@@ -221,15 +195,6 @@ class PineconeVectorStore(VectorStore):
                 )
             # if additional metadata keys overlap with the default keys,
             # then throw an error
-            intersecting_keys = set(metadata.keys()).intersection(
-                self._metadata_filters.keys()
-            )
-            if intersecting_keys:
-                raise ValueError(
-                    "metadata_filters keys overlap with default "
-                    f"metadata keys: {intersecting_keys}"
-                )
-            metadata.update(self._metadata_filters)
 
             entry = {
                 "id": node_id,
@@ -242,7 +207,7 @@ class PineconeVectorStore(VectorStore):
                 )[0]
                 entry.update({"sparse_values": sparse_vector})
             self._pinecone_index.upsert(
-                [entry], namespace=self._namespace, **self._pinecone_kwargs
+                [entry], namespace=self._namespace, **self._insert_kwargs
             )
             ids.append(node_id)
         return ids
@@ -256,7 +221,7 @@ class PineconeVectorStore(VectorStore):
         """
         # delete by filtering on the doc_id metadata
         self._pinecone_index.delete(
-            filter={"doc_id": {"$eq": doc_id}}, **self._pinecone_kwargs
+            filter={"doc_id": {"$eq": doc_id}}, **delete_kwargs
         )
 
     @property
@@ -264,7 +229,7 @@ class PineconeVectorStore(VectorStore):
         """Return Pinecone client."""
         return self._pinecone_index
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -300,8 +265,7 @@ class PineconeVectorStore(VectorStore):
             include_values=True,
             include_metadata=True,
             namespace=self._namespace,
-            filter=self._metadata_filters,
-            **self._pinecone_kwargs,
+            **kwargs,
         )
 
         top_k_nodes = []

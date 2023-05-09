@@ -1,10 +1,10 @@
 """Base vector store index query."""
 
 
-from typing import Any, List, Optional
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
+from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.schema import CBEventType
+from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
@@ -12,10 +12,8 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.vector_stores.types import (
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-)
+from llama_index.vector_stores.types import (VectorStoreQuery,
+                                             VectorStoreQueryMode)
 
 
 class VectorIndexRetriever(BaseRetriever):
@@ -48,6 +46,8 @@ class VectorIndexRetriever(BaseRetriever):
         self._alpha = alpha
         self._doc_ids = doc_ids
 
+        self._kwargs: Dict[str, Any] = kwargs.get("retriever_kwargs", {})
+
     @llm_token_counter("retrieve")
     def _retrieve(
         self,
@@ -75,7 +75,7 @@ class VectorIndexRetriever(BaseRetriever):
             mode=self._vector_store_query_mode,
             alpha=self._alpha,
         )
-        query_result = self._vector_store.query(query)
+        query_result = self._vector_store.query(query, **self._kwargs)
 
         if query_result.nodes is None:
             # NOTE: vector store does not keep text and returns node indices.

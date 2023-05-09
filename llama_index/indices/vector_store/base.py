@@ -6,8 +6,8 @@ An index that that is built on top of an existing vector store.
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.callbacks.schema import CBEventType
 from llama_index.async_utils import run_async_tasks
+from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.data_structs.node import ImageNode, IndexNode, Node
 from llama_index.indices.base import BaseGPTIndex
@@ -15,10 +15,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-)
+from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
 
 
 class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
@@ -55,7 +52,8 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         # NOTE: lazy import
-        from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
+        from llama_index.indices.vector_store.retrievers import \
+            VectorIndexRetriever
 
         return VectorIndexRetriever(self, **kwargs)
 

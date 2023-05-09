@@ -2,11 +2,10 @@
 
 
 from dataclasses import dataclass
-from typing import Any, List, Optional, Protocol, runtime_checkable
-
 from enum import Enum
-from llama_index.data_structs.node import Node
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
+from llama_index.data_structs.node import Node
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"
@@ -60,13 +59,11 @@ class VectorStoreQueryMode(str, Enum):
 class VectorStoreQuery:
     """Vector store query."""
 
-    # dense embedding
     query_embedding: Optional[List[float]] = None
     similarity_top_k: int = 1
     doc_ids: Optional[List[str]] = None
     query_str: Optional[str] = None
 
-    # NOTE: current mode
     mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT
 
     # NOTE: only for hybrid search (0 for bm25, 1 for vector search)
@@ -99,6 +96,7 @@ class VectorStore(Protocol):
     def query(
         self,
         query: VectorStoreQuery,
+        **kwargs: Any
     ) -> VectorStoreQueryResult:
         """Query vector store."""
         ...
