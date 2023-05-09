@@ -81,13 +81,15 @@ class GPTTreeIndexBuilder:
         }
         cur_node_list = get_sorted_node_list(cur_nodes)
         num_chunks = math.ceil(len(cur_node_list) / self.num_children)
-        logger.info(
-            f"> Building index from nodes: {num_chunks} chunks"
-        )
-        nodes_per_chunk = [len(cur_node_list) // num_chunks + (1 if i < len(cur_node_list) % num_chunks else 0) for i in range(num_chunks)]
-        
+        logger.info(f"> Building index from nodes: {num_chunks} chunks")
+        nodes_per_chunk = [
+            len(cur_node_list) // num_chunks
+            + (1 if i < len(cur_node_list) % num_chunks else 0)
+            for i in range(num_chunks)
+        ]
+
         indices, cur_nodes_chunks, text_chunks = [], [], []
-        
+
         pos = 0
         for i, num_nodes in enumerate(nodes_per_chunk):
             cur_nodes_chunk = cur_node_list[pos : pos + num_nodes]
@@ -97,8 +99,8 @@ class GPTTreeIndexBuilder:
             indices.append(pos)
             cur_nodes_chunks.append(cur_nodes_chunk)
             text_chunks.append(text_chunk)
-            pos += num_nodes     
-            
+            pos += num_nodes
+
         return indices, cur_nodes_chunks, text_chunks
 
     def _construct_parent_nodes(
@@ -210,39 +212,39 @@ class GPTTreeIndexBuilder:
 
         tasks = []
         done_tasks = []
-        
+
         for text_chunk in text_chunks:
-            
+
             task = asyncio.create_task(
-                    self._service_context.llm_predictor.apredict(
-                        self.summary_prompt, context_str=text_chunk
-                        )
-                    )
+                self._service_context.llm_predictor.apredict(
+                    self.summary_prompt, context_str=text_chunk
+                )
+            )
 
             tasks.append(task)
-            logger.debug(
-                    f"> Adding indexing job, now {len(tasks)} active..."
-                )
-            
+            logger.debug(f"> Adding indexing job, now {len(tasks)} active...")
+
             # if max_jobs reached, wait for one to finish
             if len(tasks) >= max_jobs:
                 logger.debug(
                     f"> Max jobs reached ({max_jobs}). Waiting for one to finish..."
                 )
-                done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                
+                done, pending = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+
                 for task in done:
                     done_tasks.append(task.result())
                     tasks.remove(task)
-                
+
                 # Update the tasks list with pending tasks
                 tasks = list(pending)
-        
+
         # Collect results from remaining running tasks
         remaining_outputs = await asyncio.gather(*tasks)
-        
+
         outputs: List[Tuple[str, str]] = done_tasks + remaining_outputs
-        
+
         summaries = [output[0] for output in outputs]
         self._service_context.llama_logger.add_log(
             {"summaries": summaries, "level": level}
