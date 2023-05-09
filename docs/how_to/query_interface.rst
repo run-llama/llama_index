@@ -50,9 +50,12 @@ Resources
 
 .. toctree::
    :maxdepth: 1
-   :caption: Query Interface
+   :caption: Guides
 
    /guides/primer/usage_pattern.md
    /how_to/index_structs/composability.rst
    /how_to/query/query_transformations.md
-   /how_to/query/node_postprocessor.md
+   /how_to/query/second_stage.md
+   /how_to/query/optimizers.md
+   /how_to/query/response_synthesis.md
+   /how_to/query/query_engines.md

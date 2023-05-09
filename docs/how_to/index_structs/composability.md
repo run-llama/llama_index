@@ -113,4 +113,15 @@ NOTE: You can stack indices as many times as you want, depending on the hierarch
 
 We can take a look at a code example below as well. We first build two tree indices, one over the Wikipedia NYC page, and the other over Paul Graham's essay. We then define a keyword extractor index over the two tree indices.
 
-[Here is an example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/ComposableIndices.ipynb).
+[Here is an example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/ComposableIndices.ipynb).
+
+
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+../../examples/composable_indices/ComposableIndices-Prior.ipynb
+../../examples/composable_indices/ComposableIndices-Weaviate.ipynb
+../../examples/composable_indices/ComposableIndices.ipynb
+```
