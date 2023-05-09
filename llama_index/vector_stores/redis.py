@@ -3,7 +3,7 @@
 An index that that is built on top of an existing vector store.
 """
 import logging
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.readers.redis.utils import (TokenEscaper, array_to_buffer,
@@ -16,6 +16,11 @@ from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
 _logger = logging.getLogger(__name__)
 
 
+if TYPE_CHECKING:
+    from redis.client import Redis as RedisType
+    from redis.commands.search.field import VectorField
+
+
 class RedisVectorStore(VectorStore):
     stores_text = True
     stores_node = True
@@ -24,10 +29,10 @@ class RedisVectorStore(VectorStore):
 
     def __init__(
         self,
-        index_name: Optional[str],
-        index_prefix: Optional[str] = "llama_index",
+        index_name: str,
+        index_prefix: str = "llama_index",
         index_args: Optional[Dict[str, Any]] = None,
-        redis_url: Optional[str] = "redis://localhost:6379",
+        redis_url: str = "redis://localhost:6379",
         overwrite: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -84,11 +89,13 @@ class RedisVectorStore(VectorStore):
         self._index_name = index_name
         self._index_args = index_args if index_args is not None else {}
         self._overwrite = overwrite
-        self._vector_field = self._index_args.get("vector_field", "vector")
-        self._vector_key = self._index_args.get("vector_key", "vector")
+        self._vector_field = str(self._index_args.get("vector_field", "vector"))
+        self._vector_key = str(self._index_args.get("vector_key", "vector"))
+
+
 
     @property
-    def client(self) -> Any:
+    def client(self) -> 'RedisType':
         """Return the redis client instance"""
         return self._redis_client
 
@@ -122,33 +129,32 @@ class RedisVectorStore(VectorStore):
         ids = []
         for result in embedding_results:
             # Add extra info and node info to the index
-            node_info = (
-                result.node.node_info if result.node.node_info is not None else {}
-            )
-            extra_info = (
-                result.node.extra_info if result.node.extra_info is not None else {}
-            )
+            # cast types to satisfy mypy
+            node_info = cast_metadata_types(result.node.node_info)
+            extra_info = cast_metadata_types(result.node.extra_info)
 
             mapping = {
                 "id": result.id,
                 "doc_id": result.ref_doc_id,
-                "text": result.node.text,
+                "text": result.node.get_text(),
                 self._vector_key: array_to_buffer(result.embedding),
                 **node_info,
                 **extra_info,
             }
             ids.append(result.id)
-            key = "_".join((self._prefix, str(result.id)))
-            self._redis_client.hset(key, mapping=mapping)
+            key = "_".join([self._prefix, str(result.id)])
+            self._redis_client.hset(key, mapping=mapping)  # type: ignore
 
         _logger.info(f"Added {len(ids)} documents to index {self._index_name}")
         return ids
 
-    def delete(self, doc_id: str) -> None:
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a specific document from the index by doc_id
 
         Args:
             doc_id (str): The doc_id of the document to delete.
+            delete_kwargs (Any): Additional arguments to pass to the delete method.
+
         """
         # use tokenizer to escape dashes in query
         query_str = "@doc_id:{%s}" % self.tokenizer.escape(doc_id)
@@ -161,7 +167,7 @@ class RedisVectorStore(VectorStore):
             f"Deleted {len(results.docs)} documents from index {self._index_name}"
         )
 
-    def delete_index(self):
+    def delete_index(self) -> None:
         """Delete the index and all documents."""
         _logger.info(f"Deleting index {self._index_name}")
         self._redis_client.ft(self._index_name).dropindex(delete_documents=True)
@@ -177,7 +183,15 @@ class RedisVectorStore(VectorStore):
         """
         from redis.exceptions import ResponseError as RedisResponseError
 
-        redis_query = self._prep_query(query.similarity_top_k)
+
+        return_fields = ["id", "doc_id", "text", self._vector_key, "vector_score"]
+
+        redis_query = get_redis_query(
+            return_fields=return_fields, top_k=query.similarity_top_k, vector_field=self._vector_field
+        )
+        if not query.query_embedding:
+            raise ValueError("Query embedding is required for querying.")
+
         query_params = {
             "vector": array_to_buffer(query.query_embedding),
         }
@@ -185,7 +199,7 @@ class RedisVectorStore(VectorStore):
 
         try:
             results = self._redis_client.ft(self._index_name).search(
-                redis_query, query_params=query_params
+                redis_query, query_params=query_params # type: ignore
             )
         except RedisResponseError as e:
             _logger.error(f"Error querying index {self._index_name}: {e}")
@@ -208,7 +222,7 @@ class RedisVectorStore(VectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
-    def persist(self, persist_path: str, in_background=True) -> None:
+    def persist(self, persist_path: str, in_background: bool=True) -> None:
         """Persist the vector store to disk.
 
         Args:
@@ -253,15 +267,6 @@ class RedisVectorStore(VectorStore):
         indices = convert_bytes(self._redis_client.execute_command("FT._LIST"))
         return self._index_name in indices
 
-    def _prep_query(self, top_k: int = 10) -> str:
-        # returns vector_score by default
-        return_fields = ["id", "doc_id", "text", self._vector_key, "vector_score"]
-
-        redis_query = get_redis_query(
-            return_fields=return_fields, top_k=top_k, vector_field=self._vector_field
-        )
-        return redis_query
-
     def _create_vector_field(
         self,
         name: str,
@@ -276,7 +281,7 @@ class RedisVectorStore(VectorStore):
         ef_runtime: int = 10,
         epsilon: float = 0.8,
         **kwargs: Any,
-    ):
+    ) -> 'VectorField':
         """Create a RediSearch VectorField.
 
         Args:
@@ -324,3 +329,11 @@ class RedisVectorStore(VectorStore):
                     "BLOCK_SIZE": block_size,
                 },
             )
+
+
+def cast_metadata_types(mapping: Optional[Dict[str, Any]]) -> Dict[str, str]:
+    metadata = {}
+    if mapping:
+        for key, value in mapping.items():
+            metadata[str(key)] = str(value)
+    return metadata

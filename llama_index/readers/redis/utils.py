@@ -1,13 +1,14 @@
 import logging
 import re
-from typing import List, Optional, Pattern
+from typing import TYPE_CHECKING, Any, List, Optional, Pattern
 
 import numpy as np
 
-from llama_index.readers.schema.base import Document
-
 _logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from redis.client import Redis as RedisType
+    from redis.commands.search.query import Query
 
 class TokenEscaper:
     """
@@ -25,7 +26,7 @@ class TokenEscaper:
             self.escaped_chars_re = re.compile(self.DEFAULT_ESCAPED_CHARS)
 
     def escape(self, value: str) -> str:
-        def escape_symbol(match):
+        def escape_symbol(match: re.Match) -> str:
             value = match.group(0)
             return f"\\{value}"
 
@@ -39,7 +40,7 @@ REDIS_REQUIRED_MODULES = [
 ]
 
 
-def check_redis_modules_exist(client) -> None:
+def check_redis_modules_exist(client: 'RedisType') -> None:
     """Check if the correct Redis modules are installed."""
     installed_modules = client.module_list()
     installed_modules = {
@@ -48,7 +49,7 @@ def check_redis_modules_exist(client) -> None:
     for module in REDIS_REQUIRED_MODULES:
         if module["name"] in installed_modules and int(
             installed_modules[module["name"]][b"ver"]
-        ) >= int(module["ver"]):
+        ) >= int(module["ver"]): # type: ignore[call-overload]
             return
     # otherwise raise error
     error_message = (
@@ -65,7 +66,7 @@ def get_redis_query(
     vector_field: str = "vector",
     sort: bool = True,
     filters: str = "*",
-) -> List[Document]:
+) -> 'Query':
     """Create a vector query for use with a SearchIndex
 
     Args:
@@ -85,7 +86,7 @@ def get_redis_query(
     return query
 
 
-def convert_bytes(data):
+def convert_bytes(data: Any) -> Any:
     if isinstance(data, bytes):
         return data.decode("ascii")
     if isinstance(data, dict):
@@ -97,9 +98,5 @@ def convert_bytes(data):
     return data
 
 
-def array_to_buffer(array: List[float], dtype: np.dtype = np.float32) -> bytes:
+def array_to_buffer(array: List[float], dtype: Any=np.float32) -> bytes:
     return np.array(array).astype(dtype).tobytes()
-
-
-def buffer_to_array(bytes: bytes, dtype: np.dtype = np.float32) -> List[float]:
-    return np.frombuffer(bytes, dtype=dtype).tolist()
