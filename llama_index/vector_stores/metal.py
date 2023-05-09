@@ -1,13 +1,11 @@
 import json
 import math
 from typing import Any, Dict, List, Optional
+
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
 
 
 class MetalVectorStore(VectorStore):
@@ -16,7 +14,6 @@ class MetalVectorStore(VectorStore):
         api_key: str,
         client_id: str,
         index_id: str,
-        filters: Optional[Dict[str, Any]] = None,
     ):
         """Init params."""
         import_err_msg = (
@@ -31,16 +28,17 @@ class MetalVectorStore(VectorStore):
         self.api_key = api_key
         self.client_id = client_id
         self.index_id = index_id
-        self.filters = filters
 
         self.metal_client = Metal(api_key, client_id, index_id)
         self.stores_text = True
         self.is_embedding_query = True
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        filters = kwargs.get('filters', {})
+
         payload = {
             "embedding": query.query_embedding,  # Query Embedding
-            "filters": self.filters,  # Metadata Filters
+            "filters": filters,  # Metadata Filters
         }
         response = self.metal_client.search(payload, limit=query.similarity_top_k)
 
