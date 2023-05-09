@@ -1,4 +1,4 @@
-import queue
+from queue import Queue
 from threading import Event
 from typing import Any, Generator, Union
 
@@ -7,20 +7,20 @@ from langchain.schema import LLMResult
 
 
 class StreamingGeneratorCallbackHandler(BaseCallbackHandler):
-    """Streaming callback handler.
-    """
+    """Streaming callback handler."""
+
     def __init__(self) -> None:
-        self._token_queue = queue.Queue()
+        self._token_queue: Queue = Queue()
         self._done = Event()
-    
-    def __deepcopy__(self, memo: Any):
+
+    def __deepcopy__(self, memo: Any) -> "StreamingGeneratorCallbackHandler":
         # NOTE: hack to bypass deepcopy in langchain
-        return self 
+        return self
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> Any:
         """Run on new LLM token. Only available when streaming is enabled."""
         self._token_queue.put_nowait(token)
-    
+
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         self._done.set()
 
@@ -36,8 +36,3 @@ class StreamingGeneratorCallbackHandler(BaseCallbackHandler):
                 yield token
             elif self._done.is_set():
                 break
-            
-            
-            
-
-

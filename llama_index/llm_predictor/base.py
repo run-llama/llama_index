@@ -11,14 +11,19 @@ import openai
 from langchain import BaseCache, Cohere, LLMChain, OpenAI
 from langchain.base_language import BaseLanguageModel
 from langchain.chat_models import ChatOpenAI
+from langchain.chat_models.base import BaseChatModel
 from langchain.llms import AI21
+from langchain.llms.base import BaseLLM
+from langchain.llms.openai import BaseOpenAI
 
 from llama_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
-from llama_index.langchain_helpers.streaming import \
-    StreamingGeneratorCallbackHandler
+from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.prompts.base import Prompt
-from llama_index.utils import (ErrorToRetry, globals_helper,
-                               retry_on_exceptions_with_backoff)
+from llama_index.utils import (
+    ErrorToRetry,
+    globals_helper,
+    retry_on_exceptions_with_backoff,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -251,11 +256,15 @@ class LLMPredictor(BaseLLMPredictor):
 
         """
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-        
+
         handler = StreamingGeneratorCallbackHandler()
-        self._llm.callbacks =[handler]
+
+        assert isinstance(self._llm, (BaseLLM, BaseChatModel))
+        self._llm.callbacks = [handler]
+
+        assert isinstance(self._llm, (BaseOpenAI, ChatOpenAI))
         self._llm.streaming = True
-            
+
         thread = Thread(target=self._predict, args=[prompt], kwargs=prompt_args)
         thread.start()
 
