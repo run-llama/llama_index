@@ -1,9 +1,10 @@
 """Simple vector store index."""
 
-from dataclasses import dataclass, field
 import json
+import logging
 import os
-from typing import Any, Dict, List, cast, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, cast
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -16,12 +17,10 @@ from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_FNAME,
     NodeWithEmbedding,
     VectorStore,
-    VectorStoreQueryResult,
     VectorStoreQuery,
     VectorStoreQueryMode,
+    VectorStoreQueryResult,
 )
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +134,10 @@ class SimpleVectorStore(VectorStore):
 
         return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
 
-    def persist(self, persist_path: str) -> None:
+    def persist(
+        self,
+        persist_path: str = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME),
+    ) -> None:
         """Persist the SimpleVectorStore to a directory."""
         dirpath = os.path.dirname(persist_path)
         if not os.path.exists(dirpath):

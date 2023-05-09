@@ -104,7 +104,7 @@ class FaissVectorStore(VectorStore):
 
     def persist(
         self,
-        persist_path: Optional[str] = None,
+        persist_path: str = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME),
     ) -> None:
         """Save to file.
 
@@ -116,12 +116,7 @@ class FaissVectorStore(VectorStore):
         """
         import faiss
 
-        if persist_path is None:
-            # Defaults if persist path not provided
-            dirpath = os.path.join(DEFAULT_PERSIST_DIR)
-            persist_path = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
-        else:
-            dirpath = os.path.dirname(persist_path)
+        dirpath = os.path.dirname(persist_path)
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)
 
