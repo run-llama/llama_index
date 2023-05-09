@@ -87,7 +87,7 @@ class LLMSingleSelector(BaseSelector):
         choices_text = _build_choices_text(choices)
 
         # predict
-        prediction, _ = self._llm_predictor.predict(
+        prediction, formatted_prompt = self._llm_predictor.predict(
             prompt=self._prompt,
             num_choices=len(choices),
             context_list=choices_text,
@@ -96,7 +96,7 @@ class LLMSingleSelector(BaseSelector):
 
         # parse output
         assert self._prompt.output_parser is not None
-        parse = self._prompt.output_parser.parse(prediction)
+        parse = self._prompt.output_parser.parse(prediction, formatted_prompt)
         return _structured_output_to_selector_result(parse)
 
     async def _aselect(
@@ -106,7 +106,7 @@ class LLMSingleSelector(BaseSelector):
         choices_text = _build_choices_text(choices)
 
         # predict
-        prediction, _ = await self._llm_predictor.apredict(
+        prediction, formatted_prompt = await self._llm_predictor.apredict(
             prompt=self._prompt,
             num_choices=len(choices),
             context_list=choices_text,
@@ -115,7 +115,7 @@ class LLMSingleSelector(BaseSelector):
 
         # parse output
         assert self._prompt.output_parser is not None
-        parse = self._prompt.output_parser.parse(prediction)
+        parse = self._prompt.output_parser.parse(prediction, formatted_prompt)
         return _structured_output_to_selector_result(parse)
 
 
@@ -171,7 +171,7 @@ class LLMMultiSelector(BaseSelector):
         context_list = _build_choices_text(choices)
         max_outputs = self._max_outputs or len(choices)
 
-        prediction, _ = self._llm_predictor.predict(
+        prediction, formatted_prompt = self._llm_predictor.predict(
             prompt=self._prompt,
             num_choices=len(choices),
             max_outputs=max_outputs,
@@ -180,7 +180,7 @@ class LLMMultiSelector(BaseSelector):
         )
 
         assert self._prompt.output_parser is not None
-        parsed = self._prompt.output_parser.parse(prediction)
+        parsed = self._prompt.output_parser.parse(prediction, formatted_prompt)
         return _structured_output_to_selector_result(parsed)
 
     async def _aselect(
@@ -190,7 +190,7 @@ class LLMMultiSelector(BaseSelector):
         context_list = _build_choices_text(choices)
         max_outputs = self._max_outputs or len(choices)
 
-        prediction, _ = await self._llm_predictor.apredict(
+        prediction, formatted_prompt = await self._llm_predictor.apredict(
             prompt=self._prompt,
             num_choices=len(choices),
             max_outputs=max_outputs,
@@ -199,5 +199,5 @@ class LLMMultiSelector(BaseSelector):
         )
 
         assert self._prompt.output_parser is not None
-        parsed = self._prompt.output_parser.parse(prediction)
+        parsed = self._prompt.output_parser.parse(prediction, formatted_prompt)
         return _structured_output_to_selector_result(parsed)

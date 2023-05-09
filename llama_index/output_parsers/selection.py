@@ -45,7 +45,7 @@ class Answer(DataClassJsonMixin):
 
 
 class SelectionOutputParser(BaseOutputParser):
-    def parse(self, output: str) -> Any:
+    def parse(self, output: str, formatted_prompt: str) -> Any:
         json_list = json.loads(output)
         answers = [Answer.from_dict(json_dict) for json_dict in json_list]
         return StructuredOutput(raw_output=output, parsed_output=answers)

@@ -66,6 +66,7 @@ class GuardrailsOutputParser(BaseOutputParser):
     def parse(
         self,
         output: str,
+        formatted_prompt: str,
         llm: Optional[BaseLLM] = None,
         num_reasks: Optional[int] = 1,
         *args: Any,

@@ -18,7 +18,11 @@ class LangchainOutputParser(BaseOutputParser):
         self._output_parser = output_parser
         self._format_key = format_key
 
-    def parse(self, output: str) -> Any:
+    def parse(
+        self,
+        output: str,
+        formatted_prompt: str,
+    ) -> Any:
         """Parse, validate, and correct errors programmatically."""
         # TODO: this object may be stringified by our upstream llmpredictor,
         # figure out better
