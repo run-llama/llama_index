@@ -85,7 +85,9 @@ class GPTTreeIndexBuilder:
             f"> Building index from nodes: {num_chunks} chunks"
         )
         nodes_per_chunk = [len(cur_node_list) // num_chunks + (1 if i < len(cur_node_list) % num_chunks else 0) for i in range(num_chunks)]
-
+        
+        indices, cur_nodes_chunks, text_chunks = [], [], []
+        
         pos = 0
         for i, num_nodes in enumerate(nodes_per_chunk):
             cur_nodes_chunk = cur_node_list[pos : pos + num_nodes]
