@@ -39,6 +39,8 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         query_wrapper_prompt: SimpleInputPrompt = DEFAULT_SIMPLE_INPUT_PROMPT,
         tokenizer_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
         model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
+        model: Optional[Any] = None,
+        tokenizer: Optional[Any] = None,
         device_map: str = "auto",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
@@ -54,7 +56,7 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         )
 
         model_kwargs = model_kwargs or {}
-        self.model = AutoModelForCausalLM.from_pretrained(
+        self.model = model or AutoModelForCausalLM.from_pretrained(
             model_name, device_map=device_map, **model_kwargs
         )
 
@@ -75,7 +77,7 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         if "max_length" not in tokenizer_kwargs:
             tokenizer_kwargs["max_length"] = max_input_size
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
+        self.tokenizer = tokenizer or AutoTokenizer.from_pretrained(
             tokenizer_name, **tokenizer_kwargs
         )
 
