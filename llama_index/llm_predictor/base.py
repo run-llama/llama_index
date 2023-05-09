@@ -1,20 +1,21 @@
 """Wrapper functions around an LLM chain."""
 
-import asyncio
 import logging
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Generator, Optional, Protocol, Tuple
+from threading import Thread
+from typing import Any, Generator, Optional, Protocol, Tuple
 
 import langchain
 import openai
 from langchain import BaseCache, Cohere, LLMChain, OpenAI
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import AI21
 
 from llama_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
+from llama_index.langchain_helpers.streaming import \
+    StreamingGeneratorCallbackHandler
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (ErrorToRetry, globals_helper,
                                retry_on_exceptions_with_backoff)
@@ -251,23 +252,14 @@ class LLMPredictor(BaseLLMPredictor):
         """
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         
-        handler = AsyncIteratorCallbackHandler()
-        self._llm.callbacks = [handler]
-        coro = self.apredict(prompt, **prompt_args)
-        loop = asyncio.get_event_loop()
-        loop.create_task(coro)
+        handler = StreamingGeneratorCallbackHandler()
+        self._llm.callbacks =[handler]
+        self._llm.streaming = True
+            
+        thread = Thread(target=self._predict, args=[prompt], kwargs=prompt_args)
+        thread.start()
 
-        def sync_generator(async_iterator: AsyncIterator):
-            loop = asyncio.get_event_loop()
-            while True:
-                try:
-                    item = loop.run_until_complete(async_iterator.__anext__())
-                    print(item)
-                    yield item
-                except StopAsyncIteration:
-                    break
-
-        response_gen = sync_generator(handler.aiter())
+        response_gen = handler.get_response_gen()
 
         # NOTE/TODO: token counting doesn't work with streaming
         return response_gen, formatted_prompt
