@@ -9,3 +9,4 @@ query_engine = index.as_query_engine()
 # index.storage_context.persist()
 response = query_engine.query("What did the author do growing up?")
 print(response)
+#
