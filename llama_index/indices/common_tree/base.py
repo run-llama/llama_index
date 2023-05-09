@@ -192,6 +192,7 @@ class GPTTreeIndexBuilder:
         cur_node_ids: Dict[int, str],
         all_node_ids: Dict[int, str],
         level: int = 0,
+        max_jobs: int = 99,
     ) -> IndexGraph:
         """Consolidates chunks recursively, in a bottoms-up fashion."""
         if len(cur_node_ids) <= self.num_children:
@@ -205,13 +206,41 @@ class GPTTreeIndexBuilder:
             CBEventType.TREE, payload={"chunks": text_chunks}
         )
 
-        tasks = [
-            self._service_context.llm_predictor.apredict(
-                self.summary_prompt, context_str=text_chunk
-            )
-            for text_chunk in text_chunks
-        ]
-        outputs: List[Tuple[str, str]] = await asyncio.gather(*tasks)
+        tasks = []
+        done_tasks = []
+        
+        for text_chunk in text_chunks:
+            
+            task = asyncio.create_task(
+                    self._service_context.llm_predictor.apredict(
+                        self.summary_prompt, context_str=text_chunk
+                        )
+                    )
+
+            tasks.append(task)
+            logger.debug(
+                    f"> Adding indexing job, now {len(tasks)} active..."
+                )
+            
+            # if max_jobs reached, wait for one to finish
+            if len(tasks) >= max_jobs:
+                logger.debug(
+                    f"> Max jobs reached ({max_jobs}). Waiting for one to finish..."
+                )
+                done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+                
+                for task in done:
+                    done_tasks.append(task.result())
+                    tasks.remove(task)
+                
+                # Update the tasks list with pending tasks
+                tasks = list(pending)
+        
+        # Collect results from remaining running tasks
+        remaining_outputs = await asyncio.gather(*tasks)
+        
+        outputs: List[Tuple[str, str]] = done_tasks + remaining_outputs
+        
         summaries = [output[0] for output in outputs]
         self._service_context.llama_logger.add_log(
             {"summaries": summaries, "level": level}
