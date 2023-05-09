@@ -177,7 +177,6 @@ Several example notebooks are also listed below:
 
 - [StableLM](../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
 - [Camel](../../examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
-- [MosaicLM](../../examples/customization/llms/SimpleIndexDemo-Huggingface_MosaicML.ipynb)
 
 
 ## Example: Using a Custom LLM Model - Advnanced
