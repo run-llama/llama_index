@@ -5,16 +5,20 @@ from typing import Any, List, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import truncate_text
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
 
 logger = logging.getLogger(__name__)
 
+def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
+    filters = {}
+    for filter in standard_filters.filters:
+        filters[filter.key] = filter.value
+    return filter
 
+ 
 class ChromaVectorStore(VectorStore):
     """Chroma vector store.
 
@@ -87,7 +91,7 @@ class ChromaVectorStore(VectorStore):
         """Return client."""
         return self._collection
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -95,8 +99,21 @@ class ChromaVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        if query.filters is not None:
+            if "where" in kwargs:
+                raise ValueError("Cannot specify where via both query and kwargs. "
+                                 "Use kwargs only for chroma specific items that are "
+                                 "not supported via the generic query interface.")
+            where = _to_chroma_filter(query.filters)
+        else:
+            where = kwargs.pop('where', {})
+
+
         results = self._collection.query(
-            query_embeddings=query.query_embedding, n_results=query.similarity_top_k
+            query_embeddings=query.query_embedding, 
+            n_results=query.similarity_top_k,
+            where=where,
+            **kwargs,
         )
 
         logger.debug(f"> Top {len(results['documents'])} nodes:")

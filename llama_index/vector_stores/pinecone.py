@@ -11,7 +11,8 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
                                              VectorStoreQuery,
                                              VectorStoreQueryMode,
                                              VectorStoreQueryResult)
@@ -94,6 +95,14 @@ def get_default_tokenizer() -> Callable:
         max_length=512,
     )
     return tokenizer
+
+
+def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
+    """Convert from standard dataclass to pinecone filter dict."""
+    filters = {}
+    for filter in standard_filters.filters:
+        filters[filter.key] = filter.value
+    return filter
 
 
 class PineconeVectorStore(VectorStore):
@@ -257,6 +266,16 @@ class PineconeVectorStore(VectorStore):
             query_embedding = cast(List[float], query.query_embedding)
             if query.alpha is not None:
                 query_embedding = [v * query.alpha for v in query_embedding]
+            
+        if query.filters is not None:
+            if 'filter' in kwargs:
+                raise ValueError("Cannot specify filter via both query and kwargs. "
+                                 "Use kwargs only for pinecone specific items that are "
+                                 "not supported via the generic query interface.")
+            filter = _to_pinecone_filter(query.filters)
+        else:
+            filter = kwargs.pop('filter', {})
+
 
         response = self._pinecone_index.query(
             vector=query_embedding,
@@ -265,6 +284,7 @@ class PineconeVectorStore(VectorStore):
             include_values=True,
             include_metadata=True,
             namespace=self._namespace,
+            filter=filter,
             **kwargs,
         )
 
