@@ -13,6 +13,7 @@ import logging
 import os
 import pathlib
 import tempfile
+import re
 from typing import Any, Callable, List, Optional, Tuple
 
 from llama_index.readers.base import BaseReader
@@ -50,15 +51,15 @@ class GithubRepositoryReader(BaseReader):
     """
 
     def __init__(
-        self,
-        owner: str,
-        repo: str,
-        use_parser: bool = True,
-        verbose: bool = False,
-        github_token: Optional[str] = None,
-        concurrent_requests: int = 5,
-        ignore_file_extensions: Optional[List[str]] = None,
-        ignore_directories: Optional[List[str]] = None,
+            self,
+            owner: str,
+            repo: str,
+            use_parser: bool = True,
+            verbose: bool = False,
+            github_token: Optional[str] = None,
+            concurrent_requests: int = 5,
+            ignore_file_extensions: Optional[List[str]] = None,
+            ignore_directories: Optional[List[str]] = None,
     ):
         """
         Initialize params.
@@ -74,9 +75,9 @@ class GithubRepositoryReader(BaseReader):
             - concurrent_requests (int): Number of concurrent requests to
                 make to the Github API.
             - ignore_file_extensions (List[str]): List of file extensions to ignore.
-                i.e. ['.png', '.jpg']
+                i.e. ['.*.png', '.*.jpg']
             - ignore_directories (List[str]): List of directories to ignore.
-                i.e. ['node_modules', 'dist']
+                i.e. ['.*node_modules.*', '.*dist.*']
 
         Raises:
             - `ValueError`: If the github_token is not provided and
@@ -157,9 +158,9 @@ class GithubRepositoryReader(BaseReader):
         )
 
     def load_data(
-        self,
-        commit_sha: Optional[str] = None,
-        branch: Optional[str] = None,
+            self,
+            commit_sha: Optional[str] = None,
+            branch: Optional[str] = None,
     ) -> List[Document]:
         """
         Load data from a commit or a branch.
@@ -186,7 +187,7 @@ class GithubRepositoryReader(BaseReader):
         raise ValueError("You must specify one of commit or branch.")
 
     async def _recurse_tree(
-        self, tree_sha: str, current_path: str = "", current_depth: int = 0
+            self, tree_sha: str, current_path: str = "", current_depth: int = 0
     ) -> Any:
         """
         Recursively get all blob tree objects in a tree.
@@ -219,35 +220,35 @@ class GithubRepositoryReader(BaseReader):
                     self._verbose,
                     "\t" * current_depth + f"recursing into {tree_obj.path}",
                 )
-                if self._ignore_directories is not None:
-                    if file_path in self._ignore_directories:
-                        print_if_verbose(
-                            self._verbose,
-                            "\t" * current_depth
-                            + f"ignoring tree {tree_obj.path} due to directory",
-                        )
-                        continue
 
-                blobs_and_full_paths.extend(
-                    await self._recurse_tree(tree_obj.sha, file_path, current_depth + 1)
-                )
+                if self._ignore_directories is not None and \
+                        any(map(lambda x: re.match(x, file_path), self._ignore_directories)):
+                    print_if_verbose(
+                        self._verbose,
+                        "\t" * current_depth
+                        + f"ignoring tree {tree_obj.path} due to directory",
+                    )
+                else:
+                    blobs_and_full_paths.extend(
+                        await self._recurse_tree(tree_obj.sha, file_path, current_depth + 1)
+                    )
             elif tree_obj.type == "blob":
                 print_if_verbose(
                     self._verbose, "\t" * current_depth + f"found blob {tree_obj.path}"
                 )
-                if self._ignore_file_extensions is not None:
-                    if get_file_extension(file_path) in self._ignore_file_extensions:
-                        print_if_verbose(
-                            self._verbose,
-                            "\t" * current_depth
-                            + f"ignoring blob {tree_obj.path} due to file extension",
-                        )
-                        continue
-                blobs_and_full_paths.append((tree_obj, file_path))
+                if self._ignore_file_extensions is not None and \
+                        any(map(lambda x: re.match(x, get_file_extension(file_path)), self._ignore_file_extensions)):
+                    print_if_verbose(
+                        self._verbose,
+                        "\t" * current_depth
+                        + f"ignoring blob {tree_obj.path} due to file extension",
+                    )
+                else:
+                    blobs_and_full_paths.append((tree_obj, file_path))
         return blobs_and_full_paths
 
     async def _generate_documents(
-        self, blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]]
+            self, blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]]
     ) -> List[Document]:
         """
         Generate documents from a list of blobs and their full paths.
@@ -270,7 +271,7 @@ class GithubRepositoryReader(BaseReader):
         async for blob_data, full_path in buffered_iterator:
             print_if_verbose(self._verbose, f"generating document for {full_path}")
             assert (
-                blob_data.encoding == "base64"
+                    blob_data.encoding == "base64"
             ), f"blob encoding {blob_data.encoding} not supported"
             decoded_bytes = None
             try:
@@ -320,7 +321,7 @@ class GithubRepositoryReader(BaseReader):
         return documents
 
     def _parse_supported_file(
-        self, file_path: str, file_content: bytes, tree_sha: str, tree_path: str
+            self, file_path: str, file_content: bytes, tree_sha: str, tree_path: str
     ) -> Optional[Document]:
         """
         Parse a file if it is supported by a parser.
@@ -341,10 +342,10 @@ class GithubRepositoryReader(BaseReader):
             )
             with tempfile.TemporaryDirectory() as tmpdirname:
                 with tempfile.NamedTemporaryFile(
-                    dir=tmpdirname,
-                    suffix=f".{file_extension}",
-                    mode="w+b",
-                    delete=False,
+                        dir=tmpdirname,
+                        suffix=f".{file_extension}",
+                        mode="w+b",
+                        delete=False,
                 ) as tmpfile:
                     print_if_verbose(
                         self._verbose,
@@ -389,6 +390,7 @@ class GithubRepositoryReader(BaseReader):
 if __name__ == "__main__":
     import time
 
+
     def timeit(func: Callable) -> Callable:
         """Time a function."""
 
@@ -401,6 +403,7 @@ if __name__ == "__main__":
 
         return wrapper
 
+
     reader1 = GithubRepositoryReader(
         github_token=os.environ["GITHUB_TOKEN"],
         owner="jerryjliu",
@@ -409,6 +412,7 @@ if __name__ == "__main__":
         verbose=True,
         ignore_directories=["examples"],
     )
+
 
     @timeit
     def load_data_from_commit() -> None:
@@ -419,12 +423,14 @@ if __name__ == "__main__":
         for document in documents:
             print(document.extra_info)
 
+
     @timeit
     def load_data_from_branch() -> None:
         """Load data from a branch."""
         documents = reader1.load_data(branch="main")
         for document in documents:
             print(document.extra_info)
+
 
     input("Press enter to load github repository from branch name...")
 
