@@ -171,13 +171,13 @@ stablelm_predictor = HuggingFaceLLMPredictor(
 service_context = ServiceContext.from_defaults(chunk_size_limit=1024, llm_predictor=stablelm_predictor)
 ```
 
-An API reference can be found [here]().
+An API reference can be found [here](../../reference/llm_predictor.rst).
 
 Several example notebooks are also listed below:
 
-- one
-- two 
-- three
+- [StableLM](../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
+- [Camel](../../examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
+- [MosaicLM](../../examples/customization/llms/SimpleIndexDemo-Huggingface_MosaicML.ipynb)
 
 
 ## Example: Using a Custom LLM Model - Advnanced
