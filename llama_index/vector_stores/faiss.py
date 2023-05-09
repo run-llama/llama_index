@@ -4,21 +4,17 @@ An index that that is built on top of an existing vector store.
 
 """
 
+import logging
 import os
 from typing import Any, List, cast
 
 import numpy as np
 
-from llama_index.vector_stores.types import (
-    DEFAULT_PERSIST_DIR,
-    DEFAULT_PERSIST_FNAME,
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQueryResult,
-    VectorStoreQuery,
-)
-
-import logging
+from llama_index.vector_stores.types import (DEFAULT_PERSIST_DIR,
+                                             DEFAULT_PERSIST_FNAME,
+                                             NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
 
 logger = logging.getLogger()
 
@@ -135,6 +131,7 @@ class FaissVectorStore(VectorStore):
     def query(
         self,
         query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
@@ -143,6 +140,9 @@ class FaissVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        if query.filters is not None:
+            raise ValueError('Metadata filters not implemented for Faiss yet.')
+
         query_embedding = cast(List[float], query.query_embedding)
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
         dists, indices = self._faiss_index.search(

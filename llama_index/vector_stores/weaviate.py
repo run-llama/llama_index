@@ -95,7 +95,7 @@ class WeaviateVectorStore(VectorStore):
         """
         delete_document(self._client, doc_id, self._class_prefix)
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
         if query.filters is not None:
             raise ValueError('Metadata filters not implemented for Weaviate yet.')

@@ -1,27 +1,21 @@
 """Simple vector store index."""
 
-from dataclasses import dataclass, field
 import json
+import logging
 import os
-from typing import Any, Dict, List, cast, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, cast
 
 from dataclasses_json import DataClassJsonMixin
 
 from llama_index.indices.query.embedding_utils import (
-    get_top_k_embeddings,
-    get_top_k_embeddings_learner,
-)
-from llama_index.vector_stores.types import (
-    DEFAULT_PERSIST_DIR,
-    DEFAULT_PERSIST_FNAME,
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQueryResult,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-)
-
-import logging
+    get_top_k_embeddings, get_top_k_embeddings_learner)
+from llama_index.vector_stores.types import (DEFAULT_PERSIST_DIR,
+                                             DEFAULT_PERSIST_FNAME,
+                                             NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryMode,
+                                             VectorStoreQueryResult)
 
 logger = logging.getLogger(__name__)
 
@@ -107,8 +101,13 @@ class SimpleVectorStore(VectorStore):
     def query(
         self,
         query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
+        if query.filters is not None:
+            raise ValueError('Metadata filters not implemented for '
+                             "SimpleVectorStore yet.")
+
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()
         node_ids = [t[0] for t in items]

@@ -8,12 +8,9 @@ from typing import Any, List, Optional, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import iter_batch
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQueryResult,
-    VectorStoreQuery,
-)
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
 
 logger = logging.getLogger(__name__)
 
@@ -150,13 +147,14 @@ class QdrantVectorStore(VectorStore):
     def query(
         self,
         query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
         """
-        from qdrant_client.http.models import Payload, Filter
+        from qdrant_client.http.models import Filter, Payload
 
         query_embedding = cast(List[float], query.query_embedding)
 
@@ -192,11 +190,7 @@ class QdrantVectorStore(VectorStore):
         if not query.doc_ids and not query.query_str:
             return None
 
-        from qdrant_client.http.models import (
-            FieldCondition,
-            Filter,
-            MatchAny,
-        )
+        from qdrant_client.http.models import FieldCondition, Filter, MatchAny
 
         must_conditions = []
 
@@ -207,4 +201,7 @@ class QdrantVectorStore(VectorStore):
                     match=MatchAny(any=[doc_id for doc_id in query.doc_ids]),
                 )
             )
+        if query.filters is not None:
+            raise ValueError('Metadata filters not implemented for Qdrant yet.')
+
         return Filter(must=must_conditions)

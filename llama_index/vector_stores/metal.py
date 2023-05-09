@@ -3,9 +3,19 @@ import math
 from typing import Any, Dict, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+from llama_index.vector_stores.types import (MetadataFilters, NodeWithEmbedding, VectorStore,
                                              VectorStoreQuery,
                                              VectorStoreQueryResult)
+
+
+def _to_metal_filters(standard_filters: MetadataFilters) -> list:
+    filters = []
+    for filter in standard_filters.filters:
+        filters.append({
+            'field': filter.key,
+            'value': filter.value,
+        })
+    return filters
 
 
 class MetalVectorStore(VectorStore):
@@ -21,8 +31,8 @@ class MetalVectorStore(VectorStore):
         )
         try:
             import metal_sdk  # noqa: F401
-        except ImportError:
             raise ImportError(import_err_msg)
+        except ImportError:
         from metal_sdk.metal import Metal  # noqa: F401
 
         self.api_key = api_key
@@ -34,7 +44,14 @@ class MetalVectorStore(VectorStore):
         self.is_embedding_query = True
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        filters = kwargs.get('filters', {})
+        if query.filters is not None:
+            if "filters" in kwargs:
+                raise ValueError("Cannot specify filter via both query and kwargs. "
+                                 "Use kwargs only for metal specific items that are "
+                                 "not supported via the generic query interface.")
+            filters = _to_metal_filters(query.filters)
+        else:
+            filters = kwargs.get('filters', {})
 
         payload = {
             "embedding": query.query_embedding,  # Query Embedding

@@ -8,13 +8,10 @@ from typing import Any, List, Optional
 from uuid import uuid4
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-    VectorStoreQueryResult,
-)
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryMode,
+                                             VectorStoreQueryResult)
 
 logger = logging.getLogger(__name__)
 
@@ -180,13 +177,8 @@ class MilvusVectorStore(VectorStore):
             logger.debug(f"Creating new connection: {self.alias}")
 
     def _create_collection(self) -> None:
-        from pymilvus import (
-            Collection,
-            CollectionSchema,
-            DataType,
-            FieldSchema,
-            MilvusException,
-        )
+        from pymilvus import (Collection, CollectionSchema, DataType,
+                              FieldSchema, MilvusException)
 
         try:
             fields = [
@@ -367,7 +359,7 @@ class MilvusVectorStore(VectorStore):
             logger.debug(f"Unsuccessfully deleted embedding with doc_id: {doc_ids}")
             raise e
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -382,6 +374,9 @@ class MilvusVectorStore(VectorStore):
 
         if query.mode != VectorStoreQueryMode.DEFAULT:
             raise ValueError(f"Milvus does not support {query.mode} yet.")
+        
+        if query.filters is not None:
+            raise ValueError('Metadata filters not implemented for Milvus yet.')
 
         expr: Optional[str] = None
         if query.doc_ids is not None and len(query.doc_ids) != 0:
