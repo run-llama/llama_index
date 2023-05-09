@@ -3,6 +3,7 @@
 
 import asyncio
 import logging
+import math
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
@@ -79,18 +80,23 @@ class GPTTreeIndexBuilder:
             for index, node_id in cur_node_ids.items()
         }
         cur_node_list = get_sorted_node_list(cur_nodes)
+        num_chunks = math.ceil(len(cur_node_list) / self.num_children)
         logger.info(
-            f"> Building index from nodes: {len(cur_nodes) // self.num_children} chunks"
+            f"> Building index from nodes: {num_chunks} chunks"
         )
-        indices, cur_nodes_chunks, text_chunks = [], [], []
-        for i in range(0, len(cur_node_list), self.num_children):
-            cur_nodes_chunk = cur_node_list[i : i + self.num_children]
+        nodes_per_chunk = [len(cur_node_list) // num_chunks + (1 if i < len(cur_node_list) % num_chunks else 0) for i in range(num_chunks)]
+
+        pos = 0
+        for i, num_nodes in enumerate(nodes_per_chunk):
+            cur_nodes_chunk = cur_node_list[pos : pos + num_nodes]
             text_chunk = self._service_context.prompt_helper.get_text_from_nodes(
                 cur_nodes_chunk, prompt=self.summary_prompt
             )
-            indices.append(i)
+            indices.append(pos)
             cur_nodes_chunks.append(cur_nodes_chunk)
             text_chunks.append(text_chunk)
+            pos += num_nodes     
+            
         return indices, cur_nodes_chunks, text_chunks
 
     def _construct_parent_nodes(
