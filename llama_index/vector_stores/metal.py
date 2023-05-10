@@ -1,12 +1,14 @@
 import json
 import math
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Tuple
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (MetadataFilters, NodeWithEmbedding, VectorStore,
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
                                              VectorStoreQuery,
                                              VectorStoreQueryResult)
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 
 def _to_metal_filters(standard_filters: MetadataFilters) -> list:
@@ -17,6 +19,15 @@ def _to_metal_filters(standard_filters: MetadataFilters) -> list:
             'value': filter.value,
         })
     return filters
+
+
+def _legacy_metadata_dict_to_node(metadata) -> Tuple[dict, dict, dict]:
+    if "extra_info" in metadata:
+        extra_info = json.loads(metadata["extra_info"])
+    ref_doc_id = metadata["doc_id"]
+    relationships = {DocumentRelationship.SOURCE: ref_doc_id}
+    node_info = None
+    return extra_info, node_info, relationships
 
 
 class MetalVectorStore(VectorStore):
@@ -32,8 +43,8 @@ class MetalVectorStore(VectorStore):
         )
         try:
             import metal_sdk  # noqa: F401
-            raise ImportError(import_err_msg)
         except ImportError:
+            raise ImportError(import_err_msg)
         from metal_sdk.metal import Metal  # noqa: F401
 
         self.api_key = api_key
@@ -73,12 +84,7 @@ class MetalVectorStore(VectorStore):
                 extra_info, node_info, relationships = metadata_dict_to_node(item['metadata'])
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                metadata = item["metadata"]
-                if "extra_info" in metadata:
-                    extra_info = json.loads(metadata["extra_info"])
-                ref_doc_id = metadata["doc_id"]
-                relationships = {DocumentRelationship.SOURCE: ref_doc_id}
-                node_info = None
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(item['metadata'])
 
             node = Node(
                 text=text,

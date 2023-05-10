@@ -136,6 +136,32 @@ def _class_name(class_prefix: str) -> str:
     """Return class name."""
     return f"{class_prefix}_Node"
 
+def _legacy_metadata_dict_to_node(entry):
+    """Legacy logic for converting metadata dict to node data.
+    Only for backwards compatibility.
+    """
+    extra_info_str = entry["extra_info"]
+    if extra_info_str == "":
+        extra_info = None
+    else:
+        extra_info = json.loads(extra_info_str)
+
+    node_info_str = entry["node_info"]
+    if node_info_str == "":
+        node_info = None
+    else:
+        node_info = json.loads(node_info_str)
+
+    relationships_str = entry["relationships"]
+    relationships: Dict[DocumentRelationship, str]
+    if relationships_str == "":
+        relationships = field(default_factory=dict)
+    else:
+        relationships = {
+            DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
+        }
+    return extra_info, node_info, relationships
+
 
 def _to_node(entry: Dict) -> Node:
     """Convert to Node."""
@@ -144,26 +170,7 @@ def _to_node(entry: Dict) -> Node:
         doc_id = metadata_dict.pop("node_id")
         extra_info, node_info, relationships = metadata_dict_to_node(metadata_dict)
     except Exception:
-        extra_info_str = entry["extra_info"]
-        if extra_info_str == "":
-            extra_info = None
-        else:
-            extra_info = json.loads(extra_info_str)
-
-        node_info_str = entry["node_info"]
-        if node_info_str == "":
-            node_info = None
-        else:
-            node_info = json.loads(node_info_str)
-
-        relationships_str = entry["relationships"]
-        relationships: Dict[DocumentRelationship, str]
-        if relationships_str == "":
-            relationships = field(default_factory=dict)
-        else:
-            relationships = {
-                DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
-            }
+        _legacy_metadata_dict_to_node(metadata_dict)
         doc_id = entry["doc_id"]
 
     return Node(

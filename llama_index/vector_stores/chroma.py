@@ -1,7 +1,7 @@
 """Chroma vector store."""
 import logging
 import math
-from typing import Any, List, cast
+from typing import Any, List, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import truncate_text
@@ -20,7 +20,14 @@ def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
         filters[filter.key] = filter.value
     return filter
 
- 
+def _legacy_metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
+    extra_info = metadata
+    node_info = None
+    relationships = {
+        DocumentRelationship.SOURCE: metadata["document_id"],
+    }
+    return extra_info, node_info, relationships
+
 class ChromaVectorStore(VectorStore):
     """Chroma vector store.
 
@@ -132,11 +139,8 @@ class ChromaVectorStore(VectorStore):
                 extra_info, node_info, relationships = metadata_dict_to_node(metadata)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                extra_info = metadata
-                node_info = None
-                relationships = {
-                    DocumentRelationship.SOURCE: metadata["document_id"],
-                }
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(metadata)
+
 
             node = Node(
                 doc_id=node_id,

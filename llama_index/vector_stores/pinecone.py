@@ -107,6 +107,13 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     return filter
 
 
+def _legacy_metadata_dict_to_node(metadata):
+    extra_info = get_node_info_from_metadata(metadata, "extra_info")
+    node_info = get_node_info_from_metadata(metadata, "node_info")
+    doc_id = metadata["doc_id"]
+    relationships = {DocumentRelationship.SOURCE: doc_id}
+    return extra_info, node_info, relationships
+
 class PineconeVectorStore(VectorStore):
     """Pinecone Vector Store.
 
@@ -286,14 +293,10 @@ class PineconeVectorStore(VectorStore):
             text = match.metadata["text"]
             id = match.metadata["id"]
             try:
-                metadata_dict = match.metadata.copy()
-                extra_info, node_info, relationships = metadata_dict_to_node(metadata_dict)
+                extra_info, node_info, relationships = metadata_dict_to_node(match.metadata)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                extra_info = get_node_info_from_metadata(match.metadata, "extra_info")
-                node_info = get_node_info_from_metadata(match.metadata, "node_info")
-                doc_id = match.metadata["doc_id"]
-                relationships = {DocumentRelationship.SOURCE: doc_id}
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(match.metadata)
 
             node = Node(
                 text=text,
@@ -309,3 +312,4 @@ class PineconeVectorStore(VectorStore):
         return VectorStoreQueryResult(
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
+

@@ -35,6 +35,8 @@ def node_to_metadata_dict(node: Node) -> dict:
 
 def metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
     """Common logic for loading Node data from metadata dict."""
+    # make a copy first
+    metadata = metadata.copy()
 
     # load node_info from json string
     node_info_str = metadata.pop("node_info", "")

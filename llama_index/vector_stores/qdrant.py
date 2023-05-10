@@ -4,7 +4,7 @@ An index that is built on top of an existing Qdrant collection.
 
 """
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, List, Optional, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import iter_batch
@@ -16,6 +16,13 @@ from llama_index.vector_stores.utils import (metadata_dict_to_node,
 
 logger = logging.getLogger(__name__)
 
+def _legacy_metadata_dict_to_node(payload) -> Tuple[dict, dict, dict]:
+    extra_info=payload.get("extra_info")
+    relationships={
+        DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
+    }
+    node_info = None
+    return extra_info, node_info, relationships
 
 class QdrantVectorStore(VectorStore):
     """Qdrant Vector Store.
@@ -178,6 +185,8 @@ class QdrantVectorStore(VectorStore):
                 # TODO: figure out how Payload is different from dict
                 extra_info, node_info, relationships = metadata_dict_to_node(payload)
             except Exception:
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(payload)
+
                 extra_info=payload.get("extra_info")
                 relationships={
                     DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
@@ -211,6 +220,7 @@ class QdrantVectorStore(VectorStore):
                     match=MatchAny(any=[doc_id for doc_id in query.doc_ids]),
                 )
             )
+        # TODO: implement this
         if query.filters is not None:
             raise ValueError('Metadata filters not implemented for Qdrant yet.')
 
