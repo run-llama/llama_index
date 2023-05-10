@@ -90,8 +90,7 @@ _TEXT_MODE_MODEL_DICT = {
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 def get_embedding(
-    text: str,
-    engine: Optional[str] = None,
+    text: str, engine: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
     """Get embedding.
 
@@ -103,11 +102,15 @@ def get_embedding(
 
     """
     text = text.replace("\n", " ")
-    return openai.Embedding.create(input=[text], model=engine)["data"][0]["embedding"]
+    return openai.Embedding.create(input=[text], model=engine, **kwargs)["data"][0][
+        "embedding"
+    ]
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
-async def aget_embedding(text: str, engine: Optional[str] = None) -> List[float]:
+async def aget_embedding(
+    text: str, engine: Optional[str] = None, **kwargs: Any
+) -> List[float]:
     """Asynchronously get embedding.
 
     NOTE: Copied from OpenAI's embedding utils:
@@ -120,15 +123,14 @@ async def aget_embedding(text: str, engine: Optional[str] = None) -> List[float]
     # replace newlines, which can negatively affect performance.
     text = text.replace("\n", " ")
 
-    return (await openai.Embedding.acreate(input=[text], model=engine))["data"][0][
-        "embedding"
-    ]
+    return (await openai.Embedding.acreate(input=[text], model=engine, **kwargs))[
+        "data"
+    ][0]["embedding"]
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 def get_embeddings(
-    list_of_text: List[str],
-    engine: Optional[str] = None,
+    list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
 ) -> List[List[float]]:
     """Get embeddings.
 
@@ -144,13 +146,13 @@ def get_embeddings(
     # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    data = openai.Embedding.create(input=list_of_text, model=engine).data
+    data = openai.Embedding.create(input=list_of_text, model=engine, **kwargs).data
     return [d["embedding"] for d in data]
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 async def aget_embeddings(
-    list_of_text: List[str], engine: Optional[str] = None
+    list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
 ) -> List[List[float]]:
     """Asynchronously get embeddings.
 
@@ -166,7 +168,9 @@ async def aget_embeddings(
     # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    data = (await openai.Embedding.acreate(input=list_of_text, model=engine)).data
+    data = (
+        await openai.Embedding.acreate(input=list_of_text, model=engine, **kwargs)
+    ).data
     return [d["embedding"] for d in data]
 
 
@@ -174,7 +178,7 @@ def get_engine(
     mode: str,
     model: str,
     mode_model_dict: Dict[
-        Tuple(OpenAIEmbeddingMode, OpenAIEmbeddingModelType), OpenAIEmbeddingModeModel
+        Tuple[OpenAIEmbeddingMode, OpenAIEmbeddingModelType], OpenAIEmbeddingModeModel
     ],
 ) -> OpenAIEmbeddingModeModel:
     """Get engine."""
@@ -228,26 +232,26 @@ class OpenAIEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         if self.deployment_name is not None:
-            engine = self.deployment_name
-        else:
-            engine = self.query_engine
-        return get_embedding(query, engine=engine)
+            return get_embedding(
+                query, engine=self.query_engine, deployment_id=self.deployment_name
+            )
+        return get_embedding(query, engine=self.query_engine)
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         if self.deployment_name is not None:
-            engine = self.deployment_name
-        else:
-            engine = self.text_engine
-        return get_embedding(text, engine=engine)
+            return get_embedding(
+                text, engine=self.text_engine, deployment_id=self.deployment_name
+            )
+        return get_embedding(text, engine=self.text_engine)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
         if self.deployment_name is not None:
-            engine = self.deployment_name
-        else:
-            engine = self.text_engine
-        return await aget_embedding(text, engine=engine)
+            return await aget_embedding(
+                text, engine=self.text_engine, deployment_id=self.deployment_name
+            )
+        return await aget_embedding(text, engine=self.text_engine)
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings.
@@ -257,17 +261,15 @@ class OpenAIEmbedding(BaseEmbedding):
 
         """
         if self.deployment_name is not None:
-            engine = self.deployment_name
-        else:
-            engine = self.text_engine
-        embeddings = get_embeddings(texts, engine=engine)
-        return embeddings
+            return get_embeddings(
+                texts, engine=self.text_engine, deployment_id=self.deployment_name
+            )
+        return get_embeddings(texts, engine=self.text_engine)
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         if self.deployment_name is not None:
-            engine = self.deployment_name
-        else:
-            engine = self.text_engine
-        embeddings = await aget_embeddings(texts, engine=engine)
-        return embeddings
+            return await aget_embeddings(
+                texts, engine=self.text_engine, deployment_id=self.deployment_name
+            )
+        return await aget_embeddings(texts, engine=self.text_engine)
