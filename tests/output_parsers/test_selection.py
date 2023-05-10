@@ -1,6 +1,7 @@
 import pytest
+
 from llama_index.output_parsers.base import StructuredOutput
-from llama_index.output_parsers.selection import SelectionOutputParser
+from llama_index.output_parsers.selection import Answer, SelectionOutputParser
 
 
 @pytest.fixture()
@@ -26,3 +27,19 @@ def test_parse(output_parser: SelectionOutputParser) -> None:
     assert len(parsed.parsed_output) == 2
     assert parsed.parsed_output[0].choice == 1
     assert parsed.parsed_output[0].reason == "just because"
+
+
+def test_bugfix_llm_output_with_string_outside_of_json_issue_3135(
+    output_parser: SelectionOutputParser,
+) -> None:
+    # https://github.com/jerryjliu/llama_index/issues/3135
+    output = """
+    Output:
+    [
+      {
+        "choice": 1,
+        "reason": "Useful for questions that seek to gain a general understanding of something."
+      }
+    ]
+    """
+    output_parser.parse(output)

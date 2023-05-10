@@ -1,8 +1,9 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from typing import Any
 
 from dataclasses_json import DataClassJsonMixin
+
 from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
 
 
@@ -45,7 +46,15 @@ class Answer(DataClassJsonMixin):
 
 
 class SelectionOutputParser(BaseOutputParser):
+    def _marshal_to_json(self, output: str) -> str:
+        "llm output to json friendly"
+        output = output.strip()
+        if output.startswith("Output:"):
+            return output.strip().replace("Output:", "").strip()
+        return output.strip()
+
     def parse(self, output: str) -> Any:
+        output = self._marshal_to_json(output)
         json_list = json.loads(output)
         answers = [Answer.from_dict(json_dict) for json_dict in json_list]
         return StructuredOutput(raw_output=output, parsed_output=answers)
