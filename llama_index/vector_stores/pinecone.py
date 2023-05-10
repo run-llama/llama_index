@@ -104,7 +104,7 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     filters = {}
     for filter in standard_filters.filters:
         filters[filter.key] = filter.value
-    return filter
+    return filters
 
 
 def _legacy_metadata_dict_to_node(metadata):
@@ -312,4 +312,3 @@ class PineconeVectorStore(VectorStore):
         return VectorStoreQueryResult(
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
-
