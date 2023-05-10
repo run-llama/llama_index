@@ -1,10 +1,15 @@
 import os
 from pathlib import Path
-from llama_index import LLMPredictor, SimpleDirectoryReader
+from llama_index import GPTSimpleKeywordTableIndex, LLMPredictor, SimpleDirectoryReader
 import requests
 from dotenv import load_dotenv
 import logging
 import sys
+from llama_index import GPTVectorStoreIndex, ServiceContext, StorageContext
+from langchain.llms.openai import OpenAIChat
+from langchain.chat_models import ChatOpenAI
+from llama_index.indices.composability import ComposableGraph
+
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -13,69 +18,57 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
-# Set up logging
 # logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 # logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
-wiki_titles = ["characters", "expeditions"]
-docs = {}
+wiki_titles = ["player-characters", "expeditions"]
+documents = {}
 for title in wiki_titles:
-    docs[title] = SimpleDirectoryReader(input_dir=f"data/{title}").load_data()
+    documents[title] = SimpleDirectoryReader(input_dir=f"data/{title}").load_data()
 
+######## Defining the Set of Indexes
 
-for title in wiki_titles:
-    response = requests.get(
-        "https://en.wikipedia.org/w/api.php",
-        params={
-            "action": "query",
-            "format": "json",
-            "titles": title,
-            "prop": "extracts",
-            # 'exintro': True,
-            "explaintext": True,
-        },
-    ).json()
-    page = next(iter(response["query"]["pages"].values()))
-    wiki_text = page["extract"]
-
-    data_path = Path("data")
-    if not data_path.exists():
-        Path.mkdir(data_path)
-
-    with open(data_path / f"{title}.txt", "w") as fp:
-        fp.write(wiki_text)
-
-
-# Load all wiki documents
-city_docs = {}
-for wiki_title in wiki_titles:
-    city_docs[wiki_title] = SimpleDirectoryReader(
-        input_files=[f"data/{wiki_title}.txt"]
-    ).load_data()
-
-
-from llama_index import GPTVectorStoreIndex, ServiceContext, StorageContext
-from langchain.llms.openai import OpenAIChat
-
-# set service context
-llm_predictor_gpt4 = LLMPredictor(
-    llm=OpenAIChat(temperature=0, model_name="text-davinci-003")
-)
+llm_predictor = LLMPredictor(llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"))
 service_context = ServiceContext.from_defaults(
-    llm_predictor=llm_predictor_gpt4, chunk_size_limit=1024
+    llm_predictor=llm_predictor, chunk_size_limit=1024
 )
 
-# Build city document index
-vector_indices = {}
+vector_indexes = {}
 for wiki_title in wiki_titles:
     storage_context = StorageContext.from_defaults()
-    # build vector index
-    vector_indices[wiki_title] = GPTVectorStoreIndex.from_documents(
-        city_docs[wiki_title],
+    vector_indexes[wiki_title] = GPTVectorStoreIndex.from_documents(
+        documents[wiki_title],
         service_context=service_context,
         storage_context=storage_context,
     )
-    # set id for vector index
-    vector_indices[wiki_title].index_struct.index_id = wiki_title
-    # persist to disk
-    storage_context.persist(persist_dir=f"./storage/{wiki_title}")
+    vector_indexes[wiki_title].index_struct.index_id = wiki_title
+
+# print(vector_indexes)
+
+index_summaries = {}
+for wiki_title in wiki_titles:
+    # set summary for text file.
+    index_summaries[wiki_title] = (
+        f"This content contains articles about {wiki_title}. "
+        f"Use this index if you need to lookup specific facts about {wiki_title}. "
+    )
+
+# print(index_summaries)
+
+graph = ComposableGraph.from_indices(
+    GPTSimpleKeywordTableIndex,
+    [index for _, index in vector_indexes.items()],
+    [summary for _, summary in index_summaries.items()],
+    max_keywords_per_chunk=50,
+)
+
+# get root index
+root_index = graph.get_index(graph.index_struct.root_id, GPTSimpleKeywordTableIndex)
+
+
+# This will call the API.
+# query_engine = vector_indexes["characters"].as_query_engine()
+# response = query_engine.query("who is timou?")
+# print(str(response))
+
+############### Defining a Graph for Compare/Contrast Queries
