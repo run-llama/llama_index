@@ -179,7 +179,7 @@ Several example notebooks are also listed below:
 - [Camel](../../examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
 
 
-## Example: Using a Custom LLM Model - Advnanced
+## Example: Using a Custom LLM Model - Advanced
 
 To use a custom LLM model, you only need to implement the `LLM` class [from Langchain](https://langchain.readthedocs.io/en/latest/modules/llms/examples/custom_llm.html). You will be responsible for passing the text to the model and returning the newly generated tokens.
 
