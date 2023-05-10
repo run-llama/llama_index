@@ -2,6 +2,7 @@ from typing import Any, List, Optional, Sequence
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_CLASS
+from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 
 import logging
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 def load_index_from_storage(
     storage_context: StorageContext,
+    service_context: Optional[ServiceContext] = None,
     index_id: Optional[str] = None,
     **kwargs: Any,
 ) -> BaseGPTIndex:
@@ -19,6 +21,8 @@ def load_index_from_storage(
     Args:
         storage_context (StorageContext): storage context containing
             docstore, index store and vector store.
+        service_context (ServiceContext): service context containing
+            the predictor for which the index was originally created from.
         index_id (Optional[str]): ID of the index to load.
             Defaults to None, which assumes there's only a single index
             in the index store and load it.
@@ -30,7 +34,9 @@ def load_index_from_storage(
     else:
         index_ids = [index_id]
 
-    indices = load_indices_from_storage(storage_context, index_ids=index_ids, **kwargs)
+    indices = load_indices_from_storage(
+        storage_context, service_context, index_ids=index_ids, **kwargs
+    )
 
     if len(indices) == 0:
         raise ValueError(
@@ -47,6 +53,7 @@ def load_index_from_storage(
 
 def load_indices_from_storage(
     storage_context: StorageContext,
+    service_context: Optional[ServiceContext] = None,
     index_ids: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> List[BaseGPTIndex]:
@@ -55,6 +62,8 @@ def load_indices_from_storage(
     Args:
         storage_context (StorageContext): storage context containing
             docstore, index store and vector store.
+        service_context (ServiceContext): service context containing
+            the predictor for which the index was originally created from.
         index_id (Optional[Sequence[str]]): IDs of the indices to load.
             Defaults to None, which loads all indices in the index store.
         **kwargs: Additional keyword args to pass to the index constructors.
@@ -76,7 +85,10 @@ def load_indices_from_storage(
         type_ = index_struct.get_type()
         index_cls = INDEX_STRUCT_TYPE_TO_INDEX_CLASS[type_]
         index = index_cls(
-            index_struct=index_struct, storage_context=storage_context, **kwargs
+            index_struct=index_struct,
+            storage_context=storage_context,
+            service_context=service_context,
+            **kwargs,
         )
         indices.append(index)
     return indices
