@@ -14,11 +14,13 @@ from langchain.chat_models import ChatOpenAI
 from langchain.llms import AI21
 
 from llama_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
-from llama_index.langchain_helpers.streaming import \
-    StreamingGeneratorCallbackHandler
+from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.prompts.base import Prompt
-from llama_index.utils import (ErrorToRetry, globals_helper,
-                               retry_on_exceptions_with_backoff)
+from llama_index.utils import (
+    ErrorToRetry,
+    globals_helper,
+    retry_on_exceptions_with_backoff,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -254,13 +256,13 @@ class LLMPredictor(BaseLLMPredictor):
 
         handler = StreamingGeneratorCallbackHandler()
 
-        if not hasattr(self._llm, 'callbacks'):
-            raise ValueError('LLM must support callbacks to use streaming.')
+        if not hasattr(self._llm, "callbacks"):
+            raise ValueError("LLM must support callbacks to use streaming.")
 
         self._llm.callbacks = [handler]
 
-        if not getattr(self._llm, 'streaming', False):
-            raise ValueError('LLM must support streaming and set streaming=True.')
+        if not getattr(self._llm, "streaming", False):
+            raise ValueError("LLM must support streaming and set streaming=True.")
 
         thread = Thread(target=self._predict, args=[prompt], kwargs=prompt_args)
         thread.start()
