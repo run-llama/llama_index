@@ -9,6 +9,8 @@ from llama_index.vector_stores.types import (MetadataFilters,
                                              NodeWithEmbedding, VectorStore,
                                              VectorStoreQuery,
                                              VectorStoreQueryResult)
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +66,7 @@ class ChromaVectorStore(VectorStore):
         documents = []
         for result in embedding_results:
             embeddings.append(result.embedding)
-            extra_info = result.node.extra_info or {}
-            metadatas.append({**extra_info, **{"document_id": result.ref_doc_id}})
+            metadatas.append(node_to_metadata_dict(result.node))
             ids.append(result.id)
             documents.append(result.node.get_text())
 
@@ -126,14 +127,23 @@ class ChromaVectorStore(VectorStore):
             results["metadatas"][0],
             results["distances"][0],
         ):
-            node_id = result[0]
+            node_id, text, metadata, distance = result
+            try:
+                extra_info, node_info, relationships = metadata_dict_to_node(metadata)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                extra_info = metadata
+                node_info = None
+                relationships = {
+                    DocumentRelationship.SOURCE: metadata["document_id"],
+                }
+
             node = Node(
                 doc_id=node_id,
-                text=result[1],
-                extra_info=result[2],
-                relationships={
-                    DocumentRelationship.SOURCE: result[2]["document_id"],
-                },
+                text=text,
+                extra_info=extra_info,
+                node_info=node_info,
+                relationships=relationships,
             )
             nodes.append(node)
 

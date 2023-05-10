@@ -11,6 +11,8 @@ from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
                                              VectorStoreQuery,
                                              VectorStoreQueryResult)
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 logger = logging.getLogger(__name__)
 
@@ -76,13 +78,13 @@ class QdrantVectorStore(VectorStore):
                 node_ids.append(result.id)
                 vectors.append(result.embedding)
                 node = result.node
-                payloads.append(
-                    {
-                        "doc_id": result.ref_doc_id,
-                        "text": node.get_text(),
-                        "extra_info": node.extra_info,
-                    }
-                )
+
+                metadata = {}
+                metadata['text'] = node.get_text()
+                additional_metadata = node_to_metadata_dict(node)
+                metadata.update(additional_metadata)
+
+                payloads.append(metadata)
 
             self._client.upsert(
                 collection_name=self._collection_name,
@@ -172,13 +174,21 @@ class QdrantVectorStore(VectorStore):
         ids = []
         for point in response:
             payload = cast(Payload, point.payload)
+            try:
+                # TODO: figure out how Payload is different from dict
+                extra_info, node_info, relationships = metadata_dict_to_node(payload)
+            except Exception:
+                extra_info=payload.get("extra_info")
+                relationships={
+                    DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
+                }
+                node_info = None
             node = Node(
                 doc_id=str(point.id),
                 text=payload.get("text"),
-                extra_info=payload.get("extra_info"),
-                relationships={
-                    DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
-                },
+                extra_info=extra_info,
+                node_info=node_info,
+                relationships=relationships,
             )
             nodes.append(node)
             similarities.append(point.score)

@@ -6,6 +6,7 @@ from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (MetadataFilters, NodeWithEmbedding, VectorStore,
                                              VectorStoreQuery,
                                              VectorStoreQueryResult)
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 
 def _to_metal_filters(standard_filters: MetadataFilters) -> list:
@@ -65,19 +66,29 @@ class MetalVectorStore(VectorStore):
 
         for item in response["data"]:
             text = item["text"]
-            metadata = item["metadata"]
-            ref_doc_id = metadata["doc_id"]
-            if "extra_info" in metadata:
-                extra_info = json.loads(metadata["extra_info"])
-            id = item["id"]
+            id_ = item["id"]
+            
+            # load additional Node data
+            try:
+                extra_info, node_info, relationships = metadata_dict_to_node(item['metadata'])
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata = item["metadata"]
+                if "extra_info" in metadata:
+                    extra_info = json.loads(metadata["extra_info"])
+                ref_doc_id = metadata["doc_id"]
+                relationships = {DocumentRelationship.SOURCE: ref_doc_id}
+                node_info = None
+
             node = Node(
                 text=text,
+                doc_id=id_,
                 extra_info=extra_info,
-                doc_id=id,
-                relationships={DocumentRelationship.SOURCE: ref_doc_id},
+                node_info=node_info,
+                relationships=relationships,
             )
             nodes.append(node)
-            ids.append(item["id"])
+            ids.append(id_)
 
             similarity_score = 1.0 - math.exp(-item["dist"])
             similarities.append(similarity_score)
@@ -104,10 +115,10 @@ class MetalVectorStore(VectorStore):
             ids.append(result.id)
 
             metadata = {}
-            metadata["doc_id"] = result.ref_doc_id
             metadata["text"] = result.node.get_text()
-            if result.node.extra_info is not None:
-                metadata["extra_info"] = json.dumps(result.node.extra_info)
+
+            additional_metadata = node_to_metadata_dict(result.node)
+            metadata.update(additional_metadata)
 
             payload = {
                 "embedding": result.embedding,

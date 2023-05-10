@@ -16,6 +16,8 @@ from llama_index.vector_stores.types import (MetadataFilters,
                                              VectorStoreQuery,
                                              VectorStoreQueryMode,
                                              VectorStoreQueryResult)
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 _logger = logging.getLogger(__name__)
 
@@ -188,22 +190,11 @@ class PineconeVectorStore(VectorStore):
 
             metadata = {
                 "text": node.get_text(),
-                # NOTE: this is the reference to source doc
-                "doc_id": node.ref_doc_id,
                 "id": node_id,
             }
-            if node.extra_info:
-                # TODO: check if overlap with default metadata keys
-                metadata.update(
-                    get_metadata_from_node_info(node.extra_info, "extra_info")
-                )
-            if node.node_info:
-                # TODO: check if overlap with default metadata keys
-                metadata.update(
-                    get_metadata_from_node_info(node.node_info, "node_info")
-                )
-            # if additional metadata keys overlap with the default keys,
-            # then throw an error
+
+            additional_metadata = node_to_metadata_dict(node)
+            metadata.update(additional_metadata)
 
             entry = {
                 "id": node_id,
@@ -293,17 +284,23 @@ class PineconeVectorStore(VectorStore):
         top_k_scores = []
         for match in response.matches:
             text = match.metadata["text"]
-            extra_info = get_node_info_from_metadata(match.metadata, "extra_info")
-            node_info = get_node_info_from_metadata(match.metadata, "node_info")
-            doc_id = match.metadata["doc_id"]
             id = match.metadata["id"]
+            try:
+                metadata_dict = match.metadata.copy()
+                extra_info, node_info, relationships = metadata_dict_to_node(metadata_dict)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                extra_info = get_node_info_from_metadata(match.metadata, "extra_info")
+                node_info = get_node_info_from_metadata(match.metadata, "node_info")
+                doc_id = match.metadata["doc_id"]
+                relationships = {DocumentRelationship.SOURCE: doc_id}
 
             node = Node(
                 text=text,
+                doc_id=id,
                 extra_info=extra_info,
                 node_info=node_info,
-                doc_id=id,
-                relationships={DocumentRelationship.SOURCE: doc_id},
+                relationships=relationships,
             )
             top_k_ids.append(match.id)
             top_k_nodes.append(node)

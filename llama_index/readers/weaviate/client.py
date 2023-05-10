@@ -5,20 +5,18 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 """
 
 import json
+import logging
 from dataclasses import field
 from typing import Any, Dict, List, Optional, cast
 
 from llama_index.data_structs.data_structs import Node
 from llama_index.data_structs.node import DocumentRelationship
-from llama_index.readers.weaviate.utils import (
-    get_by_id,
-    parse_get_response,
-    validate_client,
-)
-from llama_index.utils import get_new_id
-from llama_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
-
-import logging
+from llama_index.readers.weaviate.utils import (get_by_id, parse_get_response,
+                                                validate_client)
+from llama_index.vector_stores.types import (VectorStoreQuery,
+                                             VectorStoreQueryMode)
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 _logger = logging.getLogger(__name__)
 
@@ -141,31 +139,37 @@ def _class_name(class_prefix: str) -> str:
 
 def _to_node(entry: Dict) -> Node:
     """Convert to Node."""
-    extra_info_str = entry["extra_info"]
-    if extra_info_str == "":
-        extra_info = None
-    else:
-        extra_info = json.loads(extra_info_str)
+    try:
+        metadata_dict = entry.copy()
+        doc_id = metadata_dict.pop("node_id")
+        extra_info, node_info, relationships = metadata_dict_to_node(metadata_dict)
+    except Exception:
+        extra_info_str = entry["extra_info"]
+        if extra_info_str == "":
+            extra_info = None
+        else:
+            extra_info = json.loads(extra_info_str)
 
-    node_info_str = entry["node_info"]
-    if node_info_str == "":
-        node_info = None
-    else:
-        node_info = json.loads(node_info_str)
+        node_info_str = entry["node_info"]
+        if node_info_str == "":
+            node_info = None
+        else:
+            node_info = json.loads(node_info_str)
 
-    relationships_str = entry["relationships"]
-    relationships: Dict[DocumentRelationship, str]
-    if relationships_str == "":
-        relationships = field(default_factory=dict)
-    else:
-        relationships = {
-            DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
-        }
+        relationships_str = entry["relationships"]
+        relationships: Dict[DocumentRelationship, str]
+        if relationships_str == "":
+            relationships = field(default_factory=dict)
+        else:
+            relationships = {
+                DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
+            }
+        doc_id = entry["doc_id"]
 
     return Node(
         text=entry["text"],
-        doc_id=entry["doc_id"],
         embedding=entry["_additional"]["vector"],
+        doc_id=doc_id,
         extra_info=extra_info,
         node_info=node_info,
         relationships=relationships,
@@ -174,32 +178,6 @@ def _to_node(entry: Dict) -> Node:
 
 def _node_to_dict(node: Node) -> dict:
     node_dict = node.to_dict()
-    node_dict.pop("embedding")  # NOTE: stored outside of dict
-
-    # json-serialize the extra_info
-    extra_info = node_dict.pop("extra_info")
-    extra_info_str = ""
-    if extra_info is not None:
-        extra_info_str = json.dumps(extra_info)
-    node_dict["extra_info"] = extra_info_str
-
-    # json-serialize the node_info
-    node_info = node_dict.pop("node_info")
-    node_info_str = ""
-    if node_info is not None:
-        node_info_str = json.dumps(node_info)
-    node_dict["node_info"] = node_info_str
-
-    # json-serialize the relationships
-    relationships = node_dict.pop("relationships")
-    relationships_str = ""
-    if relationships is not None:
-        relationships_str = json.dumps(relationships)
-    node_dict["relationships"] = relationships_str
-
-    ref_doc_id = node.ref_doc_id
-    if ref_doc_id is not None:
-        node_dict["ref_doc_id"] = ref_doc_id
     return node_dict
 
 
@@ -207,18 +185,22 @@ def _add_node(
     client: Any, node: Node, class_prefix: str, batch: Optional[Any] = None
 ) -> str:
     """Add node."""
-    node_dict = _node_to_dict(node)
-    vector = node.embedding
+    metadata = {}
+    metadata['text'] = node.get_text()
+    metadata['node_id'] = node.get_doc_id()
 
-    # TODO: account for existing nodes that are stored
-    node_id = get_new_id(set())
+    additional_metadata = node_to_metadata_dict(node)
+    metadata.update(additional_metadata)
+
+    vector = node.embedding
+    node_id = node.get_doc_id()
     class_name = _class_name(class_prefix)
 
     # if batch object is provided (via a context manager), use that instead
     if batch is not None:
-        batch.add_data_object(node_dict, class_name, node_id, vector)
+        batch.add_data_object(metadata, class_name, node_id, vector)
     else:
-        client.batch.add_data_object(node_dict, class_name, node_id, vector)
+        client.batch.add_data_object(metadata, class_name, node_id, vector)
 
     return node_id
 
