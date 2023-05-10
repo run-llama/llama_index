@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from redis.client import Redis as RedisType
     from redis.commands.search.query import Query
 
+
 class TokenEscaper:
     """
     Escape punctuation within an input string. Taken from RedisOM Python.
@@ -40,7 +41,7 @@ REDIS_REQUIRED_MODULES = [
 ]
 
 
-def check_redis_modules_exist(client: 'RedisType') -> None:
+def check_redis_modules_exist(client: "RedisType") -> None:
     """Check if the correct Redis modules are installed."""
     installed_modules = client.module_list()
     installed_modules = {
@@ -49,7 +50,9 @@ def check_redis_modules_exist(client: 'RedisType') -> None:
     for module in REDIS_REQUIRED_MODULES:
         if module["name"] in installed_modules and int(
             installed_modules[module["name"]][b"ver"]
-        ) >= int(module["ver"]): # type: ignore[call-overload]
+        ) >= int(
+            module["ver"]
+        ):  # type: ignore[call-overload]
             return
     # otherwise raise error
     error_message = (
@@ -66,13 +69,14 @@ def get_redis_query(
     vector_field: str = "vector",
     sort: bool = True,
     filters: str = "*",
-) -> 'Query':
+) -> "Query":
     """Create a vector query for use with a SearchIndex
 
     Args:
         return_fields (t.List[str]): A list of fields to return in the query results
         top_k (int, optional): The number of results to return. Defaults to 20.
-        vector_field (str, optional): The name of the vector field in the index. Defaults to "vector".
+        vector_field (str, optional): The name of the vector field in the index.
+            Defaults to "vector".
         sort (bool, optional): Whether to sort the results by score. Defaults to True.
         filters (str, optional): string to filter the results by. Defaults to "*".
 
@@ -98,5 +102,5 @@ def convert_bytes(data: Any) -> Any:
     return data
 
 
-def array_to_buffer(array: List[float], dtype: Any=np.float32) -> bytes:
+def array_to_buffer(array: List[float], dtype: Any = np.float32) -> bytes:
     return np.array(array).astype(dtype).tobytes()

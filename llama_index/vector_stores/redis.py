@@ -6,12 +6,19 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.readers.redis.utils import (TokenEscaper, array_to_buffer,
-                                             check_redis_modules_exist,
-                                             convert_bytes, get_redis_query)
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.readers.redis.utils import (
+    TokenEscaper,
+    array_to_buffer,
+    check_redis_modules_exist,
+    convert_bytes,
+    get_redis_query,
+)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -50,8 +57,10 @@ class RedisVectorStore(VectorStore):
             index_name (str): Name of the index.
             index_prefix (str): Prefix for the index. Defaults to "llama_index".
             index_args (Dict[str, Any]): Arguments for the index. Defaults to None.
-            redis_url (str): URL for the redis instance. Defaults to "redis://localhost:6379".
-            overwrite (bool): Whether to overwrite the index if it already exists. Defaults to False.
+            redis_url (str): URL for the redis instance.
+                Defaults to "redis://localhost:6379".
+            overwrite (bool): Whether to overwrite the index if it already exists.
+                Defaults to False.
             kwargs (Any): Additional arguments to pass to the redis client.
 
         Raises:
@@ -64,7 +73,8 @@ class RedisVectorStore(VectorStore):
             >>> vector_store = RedisVectorStore(
             >>>     index_name="my_index",
             >>>     index_prefix="gpt_index",
-            >>>     index_args={"algorithm": "HNSW", "m": 16, "ef_construction": 200, "distance_metric": "cosine"},
+            >>>     index_args={"algorithm": "HNSW", "m": 16, "ef_construction": 200,
+                "distance_metric": "cosine"},
             >>>     redis_url="redis://localhost:6379/",
             >>>     overwrite=True)
 
@@ -92,10 +102,8 @@ class RedisVectorStore(VectorStore):
         self._vector_field = str(self._index_args.get("vector_field", "vector"))
         self._vector_key = str(self._index_args.get("vector_key", "vector"))
 
-
-
     @property
-    def client(self) -> 'RedisType':
+    def client(self) -> "RedisType":
         """Return the redis client instance"""
         return self._redis_client
 
@@ -103,7 +111,8 @@ class RedisVectorStore(VectorStore):
         """Add embedding results to the index.
 
         Args:
-            embedding_results (List[NodeWithEmbedding]): List of embedding results to add to the index.
+            embedding_results (List[NodeWithEmbedding]): List of embedding results to
+                add to the index.
 
         Returns:
             List[str]: List of ids of the documents added to the index.
@@ -183,11 +192,12 @@ class RedisVectorStore(VectorStore):
         """
         from redis.exceptions import ResponseError as RedisResponseError
 
-
         return_fields = ["id", "doc_id", "text", self._vector_key, "vector_score"]
 
         redis_query = get_redis_query(
-            return_fields=return_fields, top_k=query.similarity_top_k, vector_field=self._vector_field
+            return_fields=return_fields,
+            top_k=query.similarity_top_k,
+            vector_field=self._vector_field,
         )
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
@@ -199,7 +209,7 @@ class RedisVectorStore(VectorStore):
 
         try:
             results = self._redis_client.ft(self._index_name).search(
-                redis_query, query_params=query_params # type: ignore
+                redis_query, query_params=query_params  # type: ignore
             )
         except RedisResponseError as e:
             _logger.error(f"Error querying index {self._index_name}: {e}")
@@ -222,7 +232,7 @@ class RedisVectorStore(VectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
-    def persist(self, persist_path: str, in_background: bool=True) -> None:
+    def persist(self, persist_path: str, in_background: bool = True) -> None:
         """Persist the vector store to disk.
 
         Args:
@@ -239,8 +249,7 @@ class RedisVectorStore(VectorStore):
     def _create_index(self) -> None:
         # should never be called outside class and hence should not raise importerror
         from redis.commands.search.field import TagField, TextField
-        from redis.commands.search.indexDefinition import (IndexDefinition,
-                                                           IndexType)
+        from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
         # Create Index
         default_fields = [
@@ -281,7 +290,7 @@ class RedisVectorStore(VectorStore):
         ef_runtime: int = 10,
         epsilon: float = 0.8,
         **kwargs: Any,
-    ) -> 'VectorField':
+    ) -> "VectorField":
         """Create a RediSearch VectorField.
 
         Args:
@@ -294,8 +303,10 @@ class RedisVectorStore(VectorStore):
             block_size (int): The block size of the index.
             m (int): The number of outgoing edges in the HNSW graph.
             ef_construction (int): Number of maximum allowed potential outgoing edges
-                            candidates for each node in the graph, during the graph building.
-            ef_runtime (int): The umber of maximum top candidates to hold during the KNN search
+                            candidates for each node in the graph,
+                            during the graph building.
+            ef_runtime (int): The umber of maximum top candidates to hold during the
+                KNN search
 
         returns:
             A RediSearch VectorField.
