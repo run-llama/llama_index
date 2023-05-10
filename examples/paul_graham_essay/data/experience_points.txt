@@ -1,0 +1,17 @@
+Experience point guide
+
+For each expedition you venture out on your experience grows!
+
+Experience points are counted in a different manner in Kazar. A single point is worth considerably more and indicates a dramatic foray into the wilderness.
+
+The more dangerous the Expedition the greater the chance the reward will be higher than a single point. Failing to achieve any objectives during an Expedition could mean not receiving an experience point upon return.
+
+Characters that fall behind on XP can benefit from joining higher level characters on more dangerous missions.
+
+All characters start at level 1 with one experience point - what they know from life so far. Experience points stack.
+
+Level 1: 1 XP
+Level 2: 2 XP
+Level 3: 4 XP
+Level 4: 8 XP
+Level 5: ???
