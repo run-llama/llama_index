@@ -1,7 +1,7 @@
 """OpenAI embeddings file."""
 
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
@@ -170,6 +170,20 @@ async def aget_embeddings(
     return [d["embedding"] for d in data]
 
 
+def get_engine(
+    mode: str,
+    model: str,
+    mode_model_dict: Dict[
+        Tuple(OpenAIEmbeddingMode, OpenAIEmbeddingModelType), OpenAIEmbeddingModeModel
+    ],
+) -> OpenAIEmbeddingModeModel:
+    """Get engine."""
+    key = (mode, model)
+    if key not in mode_model_dict:
+        raise ValueError(f"Invalid mode, model combination: {key}")
+    return mode_model_dict[key]
+
+
 class OpenAIEmbedding(BaseEmbedding):
     """OpenAI class for embeddings.
 
@@ -208,16 +222,15 @@ class OpenAIEmbedding(BaseEmbedding):
         self.mode = OpenAIEmbeddingMode(mode)
         self.model = OpenAIEmbeddingModelType(model)
         self.deployment_name = deployment_name
+        self.query_engine = get_engine(self.mode, self.model, _QUERY_MODE_MODEL_DICT)
+        self.text_engine = get_engine(self.mode, self.model, _TEXT_MODE_MODEL_DICT)
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         if self.deployment_name is not None:
             engine = self.deployment_name
         else:
-            key = (self.mode, self.model)
-            if key not in _QUERY_MODE_MODEL_DICT:
-                raise ValueError(f"Invalid mode, model combination: {key}")
-            engine = _QUERY_MODE_MODEL_DICT[key]
+            engine = self.query_engine
         return get_embedding(query, engine=engine)
 
     def _get_text_embedding(self, text: str) -> List[float]:
@@ -225,10 +238,7 @@ class OpenAIEmbedding(BaseEmbedding):
         if self.deployment_name is not None:
             engine = self.deployment_name
         else:
-            key = (self.mode, self.model)
-            if key not in _TEXT_MODE_MODEL_DICT:
-                raise ValueError(f"Invalid mode, model combination: {key}")
-            engine = _TEXT_MODE_MODEL_DICT[key]
+            engine = self.text_engine
         return get_embedding(text, engine=engine)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
@@ -236,10 +246,7 @@ class OpenAIEmbedding(BaseEmbedding):
         if self.deployment_name is not None:
             engine = self.deployment_name
         else:
-            key = (self.mode, self.model)
-            if key not in _TEXT_MODE_MODEL_DICT:
-                raise ValueError(f"Invalid mode, model combination: {key}")
-            engine = _TEXT_MODE_MODEL_DICT[key]
+            engine = self.text_engine
         return await aget_embedding(text, engine=engine)
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
@@ -252,10 +259,7 @@ class OpenAIEmbedding(BaseEmbedding):
         if self.deployment_name is not None:
             engine = self.deployment_name
         else:
-            key = (self.mode, self.model)
-            if key not in _TEXT_MODE_MODEL_DICT:
-                raise ValueError(f"Invalid mode, model combination: {key}")
-            engine = _TEXT_MODE_MODEL_DICT[key]
+            engine = self.text_engine
         embeddings = get_embeddings(texts, engine=engine)
         return embeddings
 
@@ -264,9 +268,6 @@ class OpenAIEmbedding(BaseEmbedding):
         if self.deployment_name is not None:
             engine = self.deployment_name
         else:
-            key = (self.mode, self.model)
-            if key not in _TEXT_MODE_MODEL_DICT:
-                raise ValueError(f"Invalid mode, model combination: {key}")
-            engine = _TEXT_MODE_MODEL_DICT[key]
+            engine = self.text_engine
         embeddings = await aget_embeddings(texts, engine=engine)
         return embeddings
