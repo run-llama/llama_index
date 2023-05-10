@@ -10,6 +10,10 @@ from llama_index.utils import get_new_id
 
 
 def _validate_is_flat_dict(metadata_dict: dict) -> None:
+    """
+    Validate that metadata dict is flat, 
+    and only uses str keys, and (str, int, float) values.
+    """
     for key, val in metadata_dict.items():
         if not isinstance(key, str):
             raise ValueError('Metadata key must be str!')
