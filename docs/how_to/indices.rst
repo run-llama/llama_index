@@ -24,4 +24,5 @@ capabilities our indices/graphs provide.
    ../examples/index_structs/knowledge_graph/KnowledgeGraphDemo.ipynb
    ../examples/index_structs/struct_indices/PandasIndexDemo.ipynb
    ../examples/index_structs/struct_indices/SQLIndexDemo.ipynb
+   ../examples/index_structs/doc_summary/DocSummary.ipynb
 

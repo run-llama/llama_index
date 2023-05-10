@@ -101,6 +101,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    reference/indices.rst
    reference/query.rst
    reference/node.rst
+   reference/llm_predictor.rst
    reference/node_postprocessor.rst
    reference/storage.rst
    reference/composability.rst

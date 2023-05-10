@@ -38,9 +38,6 @@ def test_build_tree(
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
 
-    print(tree.docstore.docs)
-    print(len(tree.docstore.docs))
-    print(tree.index_struct.all_nodes)
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
     assert nodes[0].text == "Hello world."
     assert nodes[1].text == "This is a test."

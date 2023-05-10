@@ -52,6 +52,8 @@ class IndexStructType(str, Enum):
             for more information on the SQL vector store index.
         KG ("kg"): Knowledge Graph index.
             See :ref:`Ref-Indices-Knowledge-Graph` for KG indices.
+        DOCUMENT_SUMMARY ("document_summary"): Document Summary Index.
+            See :ref:`Ref-Indices-Document-Summary` for Summary Indices.
 
     """
 
@@ -87,3 +89,5 @@ class IndexStructType(str, Enum):
     COMPOSITE = "composite"
 
     PANDAS = "pandas"
+
+    DOCUMENT_SUMMARY = "document_summary"
