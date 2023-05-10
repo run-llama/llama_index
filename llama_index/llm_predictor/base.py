@@ -3,16 +3,18 @@
 import logging
 from abc import abstractmethod
 from dataclasses import dataclass
+from threading import Thread
 from typing import Any, Generator, Optional, Protocol, Tuple
 
 import langchain
 import openai
-from langchain import Cohere, LLMChain, OpenAI, BaseCache
+from langchain import BaseCache, Cohere, LLMChain, OpenAI
+from langchain.base_language import BaseLanguageModel
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import AI21
-from langchain.base_language import BaseLanguageModel
 
 from llama_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
+from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
     ErrorToRetry,
@@ -250,11 +252,23 @@ class LLMPredictor(BaseLLMPredictor):
             str: The predicted answer.
 
         """
-        if not isinstance(self._llm, OpenAI):
-            raise ValueError("stream is only supported for OpenAI LLMs")
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-        raw_response_gen = self._llm.stream(formatted_prompt)
-        response_gen = _get_response_gen(raw_response_gen)
+
+        handler = StreamingGeneratorCallbackHandler()
+
+        if not hasattr(self._llm, "callbacks"):
+            raise ValueError("LLM must support callbacks to use streaming.")
+
+        self._llm.callbacks = [handler]
+
+        if not getattr(self._llm, "streaming", False):
+            raise ValueError("LLM must support streaming and set streaming=True.")
+
+        thread = Thread(target=self._predict, args=[prompt], kwargs=prompt_args)
+        thread.start()
+
+        response_gen = handler.get_response_gen()
+
         # NOTE/TODO: token counting doesn't work with streaming
         return response_gen, formatted_prompt
 
