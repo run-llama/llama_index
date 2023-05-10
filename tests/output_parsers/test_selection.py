@@ -20,7 +20,7 @@ def test_parse(output_parser: SelectionOutputParser) -> None:
         {"choice": 2, "reason": "why not"}
     ]
     """
-    parsed = output_parser.parse(output=output)
+    parsed = output_parser.parse(output=output, formatted_prompt="")
     assert isinstance(parsed, StructuredOutput)
     assert isinstance(parsed.parsed_output, list)
     assert len(parsed.parsed_output) == 2

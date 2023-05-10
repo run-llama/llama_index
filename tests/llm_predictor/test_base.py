@@ -22,9 +22,9 @@ except ImportError:
 class MockOutputParser(BaseOutputParser):
     """Mock output parser."""
 
-    def parse(self, output: str) -> str:
+    def parse(self, output: str, formatted_prompt: str) -> str:
         """Parse output."""
-        return output + "\n" + output
+        return output + "\n" + formatted_prompt
 
     def format(self, output: str) -> str:
         """Format output."""
@@ -46,7 +46,7 @@ def test_struct_llm_predictor(mock_init: Any, mock_predict: Any) -> None:
     llm_prediction, formatted_output = llm_predictor.predict(
         prompt, query_str="hello world"
     )
-    assert llm_prediction == "hello world\nhello world"
+    assert llm_prediction == "hello world\nmocked formatted prompt"
 
     # no change
     prompt = SimpleInputPrompt("{query_str}")

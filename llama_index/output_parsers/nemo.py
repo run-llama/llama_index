@@ -1,106 +1,98 @@
-"""NeMo Guardrails output parser.
+"""NeMo Hallucincation output parser.
 
 See https://github.com/NVIDIA/NeMo-Guardrails.
 
 """
 try:
-    from nemoguardrails import LLMRails, RailsConfig
+    from nemoguardrails.actions.hallucination import check_hallucination
+    from nemoguardrails.actions.fact_checking import check_facts
 except ImportError:
-    LLMRails = None
-    RailsConfig = None
+    check_hallucination = None
 
 import asyncio
-from typing import Any
-
+from typing import Any, Optional
+from langchain.llms import OpenAI
 
 from llama_index.output_parsers.base import BaseOutputParser
 
+DEFAULT_HALLUCINATION_RESPONSE = (
+    "This response may have been hallucincated, "
+    "and should be validated and fact-checked by an expert."
+)
+
+DEFAULT_FACT_CHECK_RESPONSE = (
+    "This answer is not supported by evidence found in the retrieved "
+    "context, and should be validated and fact-checked by an expert."
+)
+
 
 class NeMoGaurdrailsOutputParser(BaseOutputParser):
-    """NeMo Gaurdrails output parser."""
+    """NeMo Guardrails output parser.
 
-    def __init__(self, config: RailsConfig, verbose: bool = False):
-        """Initialize a NeMo Guardrails output parser."""
-        self.config = config
-        self.verbose = verbose
-        self.gaurdrails = LLMRails(self.config, verbose=verbose)
+    Args:
+        llm (Optional[OpenAI]):
+            The LLM to use for hallucination checking.
+            Currently NeMo only supports OpenAI LLMs.
+        check_hallucination (bool):
+            Flag for whether to check for hallucination or not.
+            Defaults to True.
+        check_facts (bool):
+            Flag for whether to check that the response is supported by the context.
+            Defaults to True.
+        remove_failed_facts (bool):
+            Flag to remove responses that fail the fact check. Defaults to False.
+        hallucination_str (str):
+            String to indicate a hallucinated response. Is appened to normal output.
+        grounded_str (str):
+            String to indicate an un-grounded response. Is appened to normal output.
+    """
 
-    @classmethod
-    def from_path(
-        cls, config_path: str, verbose: bool = False
-    ) -> "NeMoGaurdrailsOutputParser":
-        """From file configs."""
-        if RailsConfig is None:
-            raise ImportError(
-                "NeMo Gaurdrails is not installed. Run `pip install nemogaurdrails`. "
-                "You may need to upgrade your langchain version after installing."
-            )
+    def __init__(
+        self,
+        llm: Optional[OpenAI] = None,
+        check_hallucination: bool = True,
+        check_facts: bool = True,
+        remove_failed_facts: bool = False,
+        hallucination_str: str = DEFAULT_HALLUCINATION_RESPONSE,
+        fact_check_str: str = DEFAULT_FACT_CHECK_RESPONSE,
+    ) -> None:
+        self.llm = llm or OpenAI(model_name="text-davinci-003", temperature=0.0)
 
-        config = RailsConfig.from_path(config_path)
+        self.check_hallucination = check_hallucination
+        self.hallucination_str = hallucination_str
 
-        return cls(config, verbose=verbose)
-
-    @classmethod
-    def from_content(
-        cls, colang_content: str, yaml_content: str, verbose: bool = False
-    ) -> "NeMoGaurdrailsOutputParser":
-        """From content strings."""
-        if RailsConfig is None:
-            raise ImportError(
-                "NeMo Gaurdrails is not installed. Run `pip install nemogaurdrails`. "
-                "You may need to upgrade your langchain version after installing."
-            )
-
-        config = RailsConfig.from_content(
-            colang_content=colang_content, yaml_content=yaml_content
-        )
-
-        return cls(config, verbose=verbose)
+        self.check_facts = check_facts
+        self.fact_check_str = fact_check_str
+        self.remove_failed_facts = remove_failed_facts
 
     def parse(self, output: str, formatted_prompt: str) -> Any:
         """Parse, validate, and correct errors programmatically."""
-
-        events = [
-            {"type": "user_said", "content": formatted_prompt},
-            {"type": "bot_said", "content": output},
-        ]
-
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-
-        if loop and loop.is_running():
-            raise RuntimeError(
-                "You are using the sync `generate` inside async code. "
-                "You should replace with `await generate_async(...)."
+        # TODO: super hacky, since NeMo functions are mostly async
+        new_output = output
+        if self.check_hallucination:
+            hallucination_context = {
+                "last_bot_message": output,
+                "_last_bot_prompt": formatted_prompt,
+            }
+            is_hallucinating = asyncio.run(
+                check_hallucination(hallucination_context, llm=self.llm)
             )
+            if is_hallucinating:
+                new_output = f"{new_output}\n{self.hallucination_str}"
 
-        # TODO: super hacky. Is there a better option?
-        new_events = asyncio.run(self.gaurdrails.runtime.generate_events(events))
-        if len(new_events) >= 2 and new_events[-2].get("type", "") == "bot_said":
-            new_output = new_events[-2].get("content", output)
-            if not new_output:
-                return output
+        if self.check_facts:
+            facts_context = {
+                "last_bot_message": output,
+                "relevant_chunks": formatted_prompt,
+            }
+            is_contradiction = asyncio.run(check_facts(facts_context, llm=self.llm))
+            if is_contradiction is True and self.remove_failed_facts:
+                new_output = ""
+            elif is_contradiction is True:
+                new_output = f"{new_output}\n{self.fact_check_str}"
 
-            # TODO use logger here
-            if self.verbose:
-                print(f"Original:\n{output}\n\nNew:\n{new_output}")
-
-            return new_output
-
-        return output
-
-        # or, another approach, but doesn't seem to work well
-        # messages = [
-        #    {"type": "user", "content": formatted_prompt},
-        #    {"type": "bot", "content": output},
-        # ]
-
-        # new_message = self.gaurdrails.generate(messages=messages)
-
-        # return new_message.get("content", output)
+        return new_output
 
     def format(self, query: str) -> str:
-        """Unused for NeMoGaurdRailsParser."""
+        """Unused for NeMoGaurdrailsOutputParser."""
         return query
