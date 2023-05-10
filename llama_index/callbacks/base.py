@@ -75,7 +75,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         event_id = event_id or str(uuid.uuid4())
         for handler in self.handlers:
             if event_type not in handler.event_ends_to_ignore:
-                handler.on_event_start(event_type, payload, event_id=event_id, **kwargs)
+                handler.on_event_end(event_type, payload, event_id=event_id, **kwargs)
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""
