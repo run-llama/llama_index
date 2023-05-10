@@ -51,8 +51,8 @@ class SelectionOutputParser(BaseOutputParser):
         Extracts a substring that represents a valid JSON array.
 
         Args:
-            output: A string that may contain a valid JSON array surrounded by extraneous
-                    characters or information.
+            output: A string that may contain a valid JSON array surrounded by
+            extraneous characters or information.
 
         Returns:
             A string representing a valid JSON array.
