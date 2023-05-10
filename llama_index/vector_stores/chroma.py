@@ -15,6 +15,7 @@ from llama_index.vector_stores.utils import (metadata_dict_to_node,
 logger = logging.getLogger(__name__)
 
 def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
+    """Translate standard metadata filters to Chroma specific spec."""
     filters = {}
     for filter in standard_filters.filters:
         filters[filter.key] = filter.value

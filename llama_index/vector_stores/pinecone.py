@@ -19,20 +19,8 @@ from llama_index.vector_stores.types import (MetadataFilters,
 from llama_index.vector_stores.utils import (metadata_dict_to_node,
                                              node_to_metadata_dict)
 
-_logger = logging.getLogger(__name__)
 
-
-def get_metadata_from_node_info(
-    node_info: Dict[str, Any], field_prefix: str
-) -> Dict[str, Any]:
-    """Get metadata from node extra info."""
-    metadata = {}
-    for key, value in node_info.items():
-        metadata[field_prefix + "_" + key] = value
-    return metadata
-
-
-def get_node_info_from_metadata(
+def _get_node_info_from_metadata(
     metadata: Dict[str, Any], field_prefix: str
 ) -> Dict[str, Any]:
     """Get node extra info from metadata."""
@@ -108,8 +96,8 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
 
 
 def _legacy_metadata_dict_to_node(metadata):
-    extra_info = get_node_info_from_metadata(metadata, "extra_info")
-    node_info = get_node_info_from_metadata(metadata, "node_info")
+    extra_info = _get_node_info_from_metadata(metadata, "extra_info")
+    node_info = _get_node_info_from_metadata(metadata, "node_info")
     doc_id = metadata["doc_id"]
     relationships = {DocumentRelationship.SOURCE: doc_id}
     return extra_info, node_info, relationships
