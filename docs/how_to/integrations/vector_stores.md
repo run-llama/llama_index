@@ -17,8 +17,7 @@ LlamaIndex supports loading data from the following sources. See [Data Connector
 - Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
 - Milvus (`MilvusReader`). [Installation](https://milvus.io/docs)
 - Zilliz (`MilvusReader`). [Quickstart](https://zilliz.com/doc/quick_start)
-- MyScale (`MyScaleReader`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/). 
-
+- MyScale (`MyScaleReader`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
@@ -97,7 +96,6 @@ NOTE: Both Pinecone and Faiss data loaders assume that the respective data sourc
 
 For instance, this is an example usage of the Pinecone data loader `PineconeReader`:
 
-
 ```python
 
 from llama_index.readers.pinecone import PineconeReader
@@ -117,7 +115,6 @@ documents = reader.load_data(
 
 ```
 
-
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/data_connectors).
 
 (vector-store-index)=
@@ -130,7 +127,7 @@ as the storage backend for `GPTVectorStoreIndex`.
 A detailed API reference is [found here](/reference/indices/vector_store.rst).
 
 Similar to any other index within LlamaIndex (tree, keyword table, list), `GPTVectorStoreIndex` can be constructed upon any collection
-of documents. 
+of documents.
 We use the vector store within the index to store embeddings for the input text chunks.
 
 Once constructed, the index can be used for querying.
@@ -138,7 +135,8 @@ Once constructed, the index can be used for querying.
 **Default Vector Store Index Construction/Querying**
 
 By default, `GPTVectorStoreIndex` uses a in-memory `SimpleVectorStore`
-that's initialized as part of the default storage context. 
+that's initialized as part of the default storage context.
+
 ```python
 from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 
@@ -155,6 +153,7 @@ response = query_engine.query("What did the author do growing up?")
 **Custom Vector Store Index Construction/Querying**
 
 We can query over a custom vector store as follows:
+
 ```python
 from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader, StorageContext
 from llama_index.vector_stores import DeepLakeVectorStore
@@ -175,7 +174,28 @@ response = query_engine.query("What did the author do growing up?")
 
 Below we show more examples of how to construct various vector stores we support.
 
+**Redis**
+First, start Redis-Stack (or get url from Redis provider)
+
+```bash
+docker run --name redis-vecdb -d -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
+```
+
+Then connect and use Redis as a vector database with LlamaIndex
+
+```python
+from llama_index.vector_stores import RedisVectorStore
+vector_store = RedisVectorStore(
+    index_name="llm-project",
+    redis_url="redis://localhost:6379",
+    overwrite=True
+)
+```
+
+This can be used with the `GPTVectorStoreIndex` to provide a query interface for retrieval, querying, deleting, persisting the index, and more.
+
 **DeepLake**
+
 ```python
 import os
 import getpath
@@ -190,6 +210,7 @@ vector_store = DeepLakeVectorStore(dataset_path=dataset_path, overwrite=True)
 ```
 
 **Faiss**
+
 ```python
 import faiss
 from llama_index.vector_stores import FaissVectorStore
@@ -210,6 +231,7 @@ storage_context.persist()
 ```
 
 **Weaviate**
+
 ```python
 import weaviate
 from llama_index.vector_stores import WeaviateVectorStore
@@ -228,6 +250,7 @@ vector_store = WeaviateVectorStore(weaviate_client=client)
 ```
 
 **Pinecone**
+
 ```python
 import pinecone
 from llama_index.vector_stores import PineconeVectorStore
@@ -236,9 +259,9 @@ from llama_index.vector_stores import PineconeVectorStore
 api_key = "api_key"
 pinecone.init(api_key=api_key, environment="us-west1-gcp")
 pinecone.create_index(
-    "quickstart", 
-    dimension=1536, 
-    metric="euclidean", 
+    "quickstart",
+    dimension=1536,
+    metric="euclidean",
     pod_type="p1"
 )
 index = pinecone.Index("quickstart")
@@ -249,12 +272,13 @@ metadata_filters = {"title": "paul_graham_essay"}
 
 # construct vector store
 vector_store = PineconeVectorStore(
-    pinecone_index=index, 
+    pinecone_index=index,
     metadata_filters=metadata_filters
 )
 ```
 
 **Qdrant**
+
 ```python
 import qdrant_client
 from llama_index.vector_stores import QdrantVectorStore
@@ -270,7 +294,7 @@ collection_name = "paul_graham"
 # construct vector store
 vector_store = QdrantVectorStore(
     client=client,
-    collection_name=collection_name, 
+    collection_name=collection_name,
 )
 ```
 
@@ -292,6 +316,7 @@ vector_store = ChromaVectorStore(
 ```
 
 **Milvus**
+
 - Milvus Index offers the ability to store both Documents and their embeddings. Documents are limited to the predefined Document attributes and does not include extra_info.
 
 ```python
@@ -300,8 +325,8 @@ from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
-    host='localhost', 
-    port=19530, 
+    host='localhost',
+    port=19530,
     overwrite='True'
 )
 
@@ -313,8 +338,8 @@ If you get stuck at building wheel for `grpcio`, check if you are using python 3
 (there's a known issue: https://github.com/milvus-io/pymilvus/issues/1308)
 and try downgrading.
 
-
 **Zilliz**
+
 - Zilliz Cloud (hosted version of Milvus) uses the Milvus Index with some extra arguments.
 
 ```python
@@ -324,11 +349,11 @@ from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
-    host='foo.vectordb.zillizcloud.com', 
-    port=403, 
-    user="db_admin", 
-    password="foo", 
-    use_secure=True, 
+    host='foo.vectordb.zillizcloud.com',
+    port=403,
+    user="db_admin",
+    password="foo",
+    use_secure=True,
     overwrite='True'
 )
 ```
@@ -347,9 +372,9 @@ from llama_index.vector_stores import MyScaleVectorStore
 
 # Creating a MyScale client
 client = clickhouse_connect.get_client(
-    host='YOUR_CLUSTER_HOST', 
-    port=8443, 
-    username='YOUR_USERNAME', 
+    host='YOUR_CLUSTER_HOST',
+    port=8443,
+    username='YOUR_USERNAME',
     password='YOUR_CLUSTER_PASSWORD'
 )
 
@@ -360,9 +385,7 @@ vector_store = MyScaleVectorStore(
 )
 ```
 
-
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
-
 
 ```{toctree}
 ---
@@ -370,6 +393,7 @@ caption: Examples
 maxdepth: 1
 ---
 ../../examples/vector_stores/SimpleIndexDemo.ipynb
+../../examples/vector_stores/RedisIndexDemo.ipynb
 ../../examples/vector_stores/QdrantIndexDemo.ipynb
 ../../examples/vector_stores/FaissIndexDemo.ipynb
 ../../examples/vector_stores/DeepLakeIndexDemo.ipynb
@@ -385,4 +409,3 @@ maxdepth: 1
 ../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
 ```
-
