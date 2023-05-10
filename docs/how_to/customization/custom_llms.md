@@ -251,6 +251,8 @@ maxdepth: 1
 ---
 
 ../../examples/customization/llms/AzureOpenAI.ipynb
-../../examples/customization/llms/SimpleIndexDemo-StableLM.ipynb
+../../examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
+../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
+../../examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
 ```
 
