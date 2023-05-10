@@ -177,12 +177,10 @@ async def aget_embeddings(
 def get_engine(
     mode: str,
     model: str,
-    mode_model_dict: Dict[
-        Tuple[OpenAIEmbeddingMode, OpenAIEmbeddingModelType], OpenAIEmbeddingModeModel
-    ],
+    mode_model_dict: Dict[Tuple[OpenAIEmbeddingMode, str], OpenAIEmbeddingModeModel],
 ) -> OpenAIEmbeddingModeModel:
     """Get engine."""
-    key = (mode, model)
+    key = (OpenAIEmbeddingMode(mode), OpenAIEmbeddingModelType(model))
     if key not in mode_model_dict:
         raise ValueError(f"Invalid mode, model combination: {key}")
     return mode_model_dict[key]
@@ -223,35 +221,27 @@ class OpenAIEmbedding(BaseEmbedding):
     ) -> None:
         """Init params."""
         super().__init__(**kwargs)
-        self.mode = OpenAIEmbeddingMode(mode)
-        self.model = OpenAIEmbeddingModelType(model)
         self.deployment_name = deployment_name
-        self.query_engine = get_engine(self.mode, self.model, _QUERY_MODE_MODEL_DICT)
-        self.text_engine = get_engine(self.mode, self.model, _TEXT_MODE_MODEL_DICT)
+        self.query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
+        self.text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        if self.deployment_name is not None:
-            return get_embedding(
-                query, engine=self.query_engine, deployment_id=self.deployment_name
-            )
-        return get_embedding(query, engine=self.query_engine)
+        return get_embedding(
+            query, engine=self.query_engine, deployment_id=self.deployment_name
+        )
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        if self.deployment_name is not None:
-            return get_embedding(
-                text, engine=self.text_engine, deployment_id=self.deployment_name
-            )
-        return get_embedding(text, engine=self.text_engine)
+        return get_embedding(
+            text, engine=self.text_engine, deployment_id=self.deployment_name
+        )
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        if self.deployment_name is not None:
-            return await aget_embedding(
-                text, engine=self.text_engine, deployment_id=self.deployment_name
-            )
-        return await aget_embedding(text, engine=self.text_engine)
+        return await aget_embedding(
+            text, engine=self.text_engine, deployment_id=self.deployment_name
+        )
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings.
@@ -260,16 +250,12 @@ class OpenAIEmbedding(BaseEmbedding):
         Can be overriden for batch queries.
 
         """
-        if self.deployment_name is not None:
-            return get_embeddings(
-                texts, engine=self.text_engine, deployment_id=self.deployment_name
-            )
-        return get_embeddings(texts, engine=self.text_engine)
+        return get_embeddings(
+            texts, engine=self.text_engine, deployment_id=self.deployment_name
+        )
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        if self.deployment_name is not None:
-            return await aget_embeddings(
-                texts, engine=self.text_engine, deployment_id=self.deployment_name
-            )
-        return await aget_embeddings(texts, engine=self.text_engine)
+        return await aget_embeddings(
+            texts, engine=self.text_engine, deployment_id=self.deployment_name
+        )
