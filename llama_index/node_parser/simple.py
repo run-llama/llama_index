@@ -30,9 +30,9 @@ class SimpleNodeParser(NodeParser):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Init params."""
-        self._callback_manager = callback_manager or CallbackManager([])
+        self.callback_manager = callback_manager or CallbackManager([])
         self._text_splitter = text_splitter or TokenTextSplitter(
-            callback_manager=self._callback_manager
+            callback_manager=self.callback_manager
         )
         self._include_extra_info = include_extra_info
         self._include_prev_next_rel = include_prev_next_rel
@@ -48,7 +48,7 @@ class SimpleNodeParser(NodeParser):
             include_extra_info (bool): whether to include extra info in nodes
 
         """
-        event_id = self._callback_manager.on_event_start(
+        event_id = self.callback_manager.on_event_start(
             CBEventType.NODE_PARSING, payload={"documents": documents}
         )
         all_nodes: List[Node] = []
@@ -60,7 +60,7 @@ class SimpleNodeParser(NodeParser):
                 include_prev_next_rel=self._include_prev_next_rel,
             )
             all_nodes.extend(nodes)
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.NODE_PARSING, payload={"nodes": all_nodes}, event_id=event_id
         )
         return all_nodes

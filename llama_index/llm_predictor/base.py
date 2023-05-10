@@ -172,7 +172,7 @@ class LLMPredictor(BaseLLMPredictor):
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
         if cache is not None:
             langchain.llm_cache = cache
-        self._callback_manager = callback_manager or CallbackManager([])
+        self.callback_manager = callback_manager or CallbackManager([])
         self.retry_on_throttling = retry_on_throttling
         self._total_tokens_used = 0
         self.flag = True
@@ -232,8 +232,9 @@ class LLMPredictor(BaseLLMPredictor):
         """
         llm_payload = {**prompt_args}
         llm_payload["template"] = prompt
-        event_id = self._callback_manager.on_event_start(
-            CBEventType.LLM, payload=prompt_args
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.LLM,
+            payload=llm_payload,
         )
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = self._predict(prompt, **prompt_args)
@@ -244,7 +245,7 @@ class LLMPredictor(BaseLLMPredictor):
         prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.LLM,
             payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
             event_id=event_id,
@@ -322,7 +323,7 @@ class LLMPredictor(BaseLLMPredictor):
         """
         llm_payload = {**prompt_args}
         llm_payload["template"] = prompt
-        event_id = self._callback_manager.on_event_start(
+        event_id = self.callback_manager.on_event_start(
             CBEventType.LLM, payload=prompt_args
         )
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
@@ -334,7 +335,7 @@ class LLMPredictor(BaseLLMPredictor):
         prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.LLM,
             payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
             event_id=event_id,

@@ -60,7 +60,7 @@ class BaseEmbedding:
         self._total_tokens_used = 0
         self._last_token_usage: Optional[int] = None
         self._tokenizer = tokenizer or globals_helper.tokenizer
-        self._callback_manager = callback_manager or CallbackManager([])
+        self.callback_manager = callback_manager or CallbackManager([])
         # list of tuples of id, text
         self._text_queue: List[Tuple[str, str]] = []
         if embed_batch_size <= 0:
@@ -73,11 +73,11 @@ class BaseEmbedding:
 
     def get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        event_id = self._callback_manager.on_event_start(CBEventType.EMBEDDING)
+        event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
         query_embedding = self._get_query_embedding(query)
         query_tokens_count = len(self._tokenizer(query))
         self._total_tokens_used += query_tokens_count
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
         )
         return query_embedding
@@ -129,11 +129,11 @@ class BaseEmbedding:
 
     def get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        event_id = self._callback_manager.on_event_start(CBEventType.EMBEDDING)
+        event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
         text_embedding = self._get_text_embedding(text)
         text_tokens_count = len(self._tokenizer(text))
         self._total_tokens_used += text_tokens_count
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
         )
         return text_embedding

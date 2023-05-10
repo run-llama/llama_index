@@ -250,7 +250,7 @@ class OpenAIEmbedding(BaseEmbedding):
         Can be overriden for batch queries.
 
         """
-        event_id = self._callback_manager.on_event_start(CBEventType.EMBEDDING)
+        event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
         if self.deployment_name is not None:
             engine = self.deployment_name
         else:
@@ -259,14 +259,14 @@ class OpenAIEmbedding(BaseEmbedding):
                 raise ValueError(f"Invalid mode, model combination: {key}")
             engine = _TEXT_MODE_MODEL_DICT[key]
         embeddings = get_embeddings(texts, engine=engine)
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.EMBEDDING, payload={"num_nodes": len(texts)}, event_id=event_id
         )
         return embeddings
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        event_id = self._callback_manager.on_event_start(CBEventType.EMBEDDING)
+        event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
         if self.deployment_name is not None:
             engine = self.deployment_name
         else:
@@ -275,7 +275,7 @@ class OpenAIEmbedding(BaseEmbedding):
                 raise ValueError(f"Invalid mode, model combination: {key}")
             engine = _TEXT_MODE_MODEL_DICT[key]
         embeddings = await aget_embeddings(texts, engine=engine)
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.EMBEDDING, payload={"num_nodes": len(texts)}, event_id=event_id
         )
         return embeddings

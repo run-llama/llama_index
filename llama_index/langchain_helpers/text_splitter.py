@@ -46,7 +46,7 @@ class TokenTextSplitter(TextSplitter):
         self._chunk_overlap = chunk_overlap
         self.tokenizer = tokenizer or globals_helper.tokenizer
         self._backup_separators = backup_separators
-        self._callback_manager = callback_manager or CallbackManager([])
+        self.callback_manager = callback_manager or CallbackManager([])
 
     def _reduce_chunk_size(
         self, start_idx: int, cur_idx: int, splits: List[str]
@@ -128,12 +128,12 @@ class TokenTextSplitter(TextSplitter):
 
     def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
-        event_id = self._callback_manager.on_event_start(
+        event_id = self.callback_manager.on_event_start(
             CBEventType.CHUNKING, payload={"text": text}
         )
         text_splits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
         chunks = [text_split.text_chunk for text_split in text_splits]
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.CHUNKING, payload={"chunks": chunks}, event_id=event_id
         )
         return chunks
@@ -144,7 +144,7 @@ class TokenTextSplitter(TextSplitter):
         """Split incoming text and return chunks with overlap size."""
         if text == "":
             return []
-        event_id = self._callback_manager.on_event_start(
+        event_id = self.callback_manager.on_event_start(
             CBEventType.CHUNKING, payload={"text": text}
         )
 
@@ -235,7 +235,7 @@ class TokenTextSplitter(TextSplitter):
 
         # run postprocessing to remove blank spaces
         docs = self._postprocess_splits(docs)
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.CHUNKING,
             payload={"chunks": [x.text_chunk for x in docs]},
             event_id=event_id,
@@ -295,7 +295,7 @@ class SentenceSplitter(TextSplitter):
         self._chunk_overlap = chunk_overlap
         self.tokenizer = tokenizer or globals_helper.tokenizer
         self._backup_separators = backup_separators
-        self._callback_manager = callback_manager or CallbackManager([])
+        self.callback_manager = callback_manager or CallbackManager([])
         if chunking_tokenizer_fn is None:
             import nltk.tokenize.punkt as pkt
 
@@ -345,7 +345,7 @@ class SentenceSplitter(TextSplitter):
         """
         if text == "":
             return []
-        event_id = self._callback_manager.on_event_start(
+        event_id = self.callback_manager.on_event_start(
             CBEventType.CHUNKING, payload={"text": text}
         )
 
@@ -441,7 +441,7 @@ class SentenceSplitter(TextSplitter):
         # run postprocessing to remove blank spaces
         docs = self._postprocess_splits(docs)
 
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.CHUNKING,
             payload={"chunks": [x.text_chunk for x in docs]},
             event_id=event_id,
@@ -450,12 +450,12 @@ class SentenceSplitter(TextSplitter):
 
     def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
-        event_id = self._callback_manager.on_event_start(
+        event_id = self.callback_manager.on_event_start(
             CBEventType.CHUNKING, payload={"text": text}
         )
         text_splits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
         chunks = [text_split.text_chunk for text_split in text_splits]
-        self._callback_manager.on_event_end(
+        self.callback_manager.on_event_end(
             CBEventType.CHUNKING, payload={"chunks": chunks}, event_id=event_id
         )
         return chunks
