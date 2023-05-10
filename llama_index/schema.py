@@ -36,7 +36,14 @@ class BaseDocument(DataClassJsonMixin):
     embedding: Optional[List[float]] = None
     doc_hash: Optional[str] = None
 
-    # extra fields
+    """"
+    metadata fields
+    - it is injected as part of the text shown to LLMs as context
+    - it is used by vector DBs for metadata filtering
+
+    This must be a flat dictionary, 
+    and only uses str keys, and (str, int, float) values.
+    """
     extra_info: Optional[Dict[str, Any]] = None
 
     def __post_init__(self) -> None:
