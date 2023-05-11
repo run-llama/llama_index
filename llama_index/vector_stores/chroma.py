@@ -5,14 +5,12 @@ from typing import Any, List, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import truncate_text
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +114,7 @@ class ChromaVectorStore(VectorStore):
         if query.filters is not None:
             if "where" in kwargs:
                 raise ValueError(
-                    "Cannot specify where via both query and kwargs. "
+                    "Cannot specify metadata filters via both query and kwargs. "
                     "Use kwargs only for chroma specific items that are "
                     "not supported via the generic query interface."
                 )
@@ -135,13 +133,12 @@ class ChromaVectorStore(VectorStore):
         nodes = []
         similarities = []
         ids = []
-        for result in zip(
+        for node_id, text, metadata, distance  in zip(
             results["ids"][0],
             results["documents"][0],
             results["metadatas"][0],
             results["distances"][0],
         ):
-            node_id, text, metadata, distance = result
             try:
                 extra_info, node_info, relationships = metadata_dict_to_node(metadata)
             except Exception:
@@ -159,12 +156,12 @@ class ChromaVectorStore(VectorStore):
             )
             nodes.append(node)
 
-            similarity_score = 1.0 - math.exp(-result[3])
+            similarity_score = 1.0 - math.exp(-distance)
             similarities.append(similarity_score)
 
             logger.debug(
-                f"> [Node {result[0]}] [Similarity score: {similarity_score}] "
-                f"{truncate_text(str(result[1]), 100)}"
+                f"> [Node {node_id}] [Similarity score: {similarity_score}] "
+                f"{truncate_text(str(text), 100)}"
             )
             ids.append(node_id)
 

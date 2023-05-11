@@ -3,12 +3,9 @@ import json
 from typing import Any, Dict, List, Optional, cast
 
 from llama_index.data_structs import Node
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
 
 
 class OpensearchVectorClient:
