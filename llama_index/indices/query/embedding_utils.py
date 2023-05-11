@@ -10,7 +10,7 @@ from llama_index.vector_stores.types import VectorStoreQueryMode
 def get_top_k_embeddings(
     query_embedding: List[float],
     embeddings: List[List[float]],
-    similarity_fn: Optional[Callable[..., float]] = None,
+    similarity_fn: Optional[Callable[..., np.ndarray]] = None,
     similarity_top_k: Optional[int] = None,
     embedding_ids: Optional[List] = None,
     similarity_cutoff: Optional[float] = None,
@@ -21,10 +21,7 @@ def get_top_k_embeddings(
 
     similarity_fn = similarity_fn or default_similarity_fn
 
-    similarities = []
-    for emb in embeddings:
-        similarity = similarity_fn(query_embedding, emb)
-        similarities.append(similarity)
+    similarities = similarity_fn(np.array(query_embedding), np.array(embeddings))
 
     sorted_tups = sorted(
         zip(similarities, embedding_ids), key=lambda x: x[0], reverse=True

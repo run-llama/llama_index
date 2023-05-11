@@ -85,7 +85,6 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
         top_similarities, top_idxs = get_top_k_embeddings(
             query_embedding=query_bundle.embedding,
             embeddings=text_embeddings,
-            similarity_fn=self.embed_model.similarity,
             similarity_top_k=num_top_k,
             embedding_ids=[i for i in range(len(text_embeddings))],
             similarity_cutoff=threshold,

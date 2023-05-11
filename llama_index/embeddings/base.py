@@ -11,8 +11,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType
 from llama_index.utils import globals_helper
 
-# TODO: change to numpy array
-EMB_TYPE = List
+EMB_TYPE = np.ndarray
 
 DEFAULT_EMBED_BATCH_SIZE = 10
 
@@ -30,20 +29,27 @@ def mean_agg(embeddings: List[List[float]]) -> List[float]:
     return list(np.array(embeddings).mean(axis=0))
 
 
-def similarity(
-    embedding1: EMB_TYPE,
-    embedding2: EMB_TYPE,
+def vim similarity(
+    source_embedding: EMB_TYPE,
+    target_embeddings: EMB_TYPE,
     mode: SimilarityMode = SimilarityMode.DEFAULT,
-) -> float:
-    """Get embedding similarity."""
+) -> np.ndarray:
+    """Get batch embedding similarity."""
+    if len(source_embedding.shape) != 1:
+        raise ValueError("Source embeddings should be a 1D list of a single vector.")
+    if len(target_embeddings.shape) != 2:
+        raise ValueError("Target embeddings should be a 2D list of vectors.")
+
     if mode == SimilarityMode.EUCLIDEAN:
-        return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
+        return np.linalg.norm(source_embedding - target_embeddings, axis=-1)
     elif mode == SimilarityMode.DOT_PRODUCT:
-        product = np.dot(embedding1, embedding2)
+        product = np.dot(source_embedding, target_embeddings.T)
         return product
     else:
-        product = np.dot(embedding1, embedding2)
-        norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
+        product = np.dot(source_embedding, target_embeddings.T)
+        norm = np.linalg.norm(source_embedding) * np.linalg.norm(
+            target_embeddings, axis=-1
+        )
         return product / norm
 
 
@@ -211,12 +217,12 @@ class BaseEmbedding:
 
     def similarity(
         self,
-        embedding1: EMB_TYPE,
-        embedding2: EMB_TYPE,
+        embedding1: List,
+        embedding2: List,
         mode: SimilarityMode = SimilarityMode.DEFAULT,
     ) -> float:
         """Get embedding similarity."""
-        return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
+        return similarity(np.array(embedding1), np.array([embedding2]), mode=mode)[0]
 
     @property
     def total_tokens_used(self) -> int:
