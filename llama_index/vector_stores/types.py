@@ -3,10 +3,9 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import (Any, Dict, List, Optional, Protocol, Union,
-                    runtime_checkable)
+from typing import Any, List, Optional, Protocol, Union, runtime_checkable
 
-from dataclasses_json import DataClassJsonMixin
+from pydantic import BaseModel
 
 from llama_index.data_structs.node import Node
 
@@ -58,20 +57,17 @@ class VectorStoreQueryMode(str, Enum):
     LINEAR_REGRESSION = "linear_regression"
 
 
-@dataclass
-class ExactMatchFilter(DataClassJsonMixin):
+class ExactMatchFilter(BaseModel):
     key: str
     value: Union[str, int, float]
 
 
-@dataclass
-class MetadataFilters(DataClassJsonMixin):
+class MetadataFilters(BaseModel):
     # TODO: support more advanced expressions
     filters: List[ExactMatchFilter]
 
 
-@dataclass
-class QueryAndMetadataFilters(DataClassJsonMixin):
+class QueryAndMetadataFilters(BaseModel):
     query: str
     filters: List[ExactMatchFilter]
 

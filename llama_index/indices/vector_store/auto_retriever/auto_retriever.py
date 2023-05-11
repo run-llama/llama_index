@@ -13,10 +13,13 @@ from llama_index.indices.vector_store.auto_retriever.prompts import (
 from llama_index.indices.vector_store.auto_retriever.schema import \
     VectorStoreInfo
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
-from llama_index.vector_stores.types import MetadataFilters, VectorStoreQuery
+from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
+from llama_index.output_parsers.base import StructuredOutput
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             QueryAndMetadataFilters)
 
 
-class VectorIndexAutoRetriever(base_retriever):
+class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
     def __init__(
             self,
             index: GPTVectorStoreIndex,
@@ -37,29 +40,21 @@ class VectorIndexAutoRetriever(base_retriever):
         )
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        info_str = self._vector_store_info.to_json()
+        # prepare input
+        info_str = self._vector_store_info.to_json(indent=4)
+        schema_str = QueryAndMetadataFilters.schema_json(indent=4)
 
-        # call LLM to get output
-        output = self._service_context.llm_predictor.predict(
+        # call LLM
+        output, _ = self._service_context.llm_predictor.predict(
             self._prompt, 
+            schema_str=schema_str,
             info_str=info_str,
             query_str=query_bundle.query_str
         )
 
-        parse = self._prompt.output_parser.parse(output)
-
-        # parse vector store query from output
-        filters = cast(MetadataFilters, parse.parsed_output)
-
-        query = VectorStoreQuery(
-            query_str=query_bundle.query_str,
-            filters=filters,
-       )
-    
-        # query vector store
-        query_result = self._vector_store.query(query)
-
-        # parse into final result
-        ...
-
-        return node_with_scores
+        # parse output
+        structured_output = cast(StructuredOutput, self._prompt.output_parser.parse(output))
+        query_and_filters = cast(QueryAndMetadataFilters, structured_output.parsed_output)
+        
+        retriever = VectorIndexRetriever(self._index, filters=MetadataFilters(filters=query_and_filters.filters))
+        return retriever.retrieve(query_and_filters.query)
