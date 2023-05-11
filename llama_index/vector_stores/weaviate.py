@@ -83,9 +83,6 @@ class WeaviateVectorStore(VectorStore):
             embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
-        if not embedding_results:
-            return []
-
         for result in embedding_results:
             node = result.node
             embedding = result.embedding

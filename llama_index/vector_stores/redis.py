@@ -120,8 +120,6 @@ class RedisVectorStore(VectorStore):
         Raises:
             ValueError: If the index already exists and overwrite is False.
         """
-        if not embedding_results:
-            return []
 
         # check index exists, call once to avoid calling multiple times
         index_exists = self._index_exists()

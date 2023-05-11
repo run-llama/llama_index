@@ -54,9 +54,6 @@ class ChromaVectorStore(VectorStore):
         if not self._collection:
             raise ValueError("Collection not initialized")
 
-        if not embedding_results:
-            return []
-
         embeddings = []
         metadatas = []
         ids = []

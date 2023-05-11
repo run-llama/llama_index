@@ -198,9 +198,6 @@ class PineconeVectorStore(VectorStore):
             embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
-        if not embedding_results:
-            return []
-
         ids = []
         for result in embedding_results:
             node_id = result.id

@@ -88,9 +88,6 @@ class FaissVectorStore(VectorStore):
             embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
-        if not embedding_results:
-            return []
-
         new_ids = []
         for result in embedding_results:
             text_embedding = result.embedding
