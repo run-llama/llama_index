@@ -7,7 +7,9 @@ index = GPTVectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()
 # query_engine.query("what is AI?")
 # index.storage_context.persist()
-response = query_engine.query("What did the author do growing up?")
-print(response)
+while True:
+    question_prompt = input("Your question: ")
+    response = query_engine.query(question_prompt)
+    print("Answer: ", response)
 #
 #
