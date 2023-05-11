@@ -7,7 +7,6 @@ An index that that is built on top of an existing vector store.
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.data_structs.node import ImageNode, IndexNode, Node
 from llama_index.indices.base import BaseGPTIndex
