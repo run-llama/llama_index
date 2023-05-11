@@ -224,23 +224,33 @@ class OpenAIEmbedding(BaseEmbedding):
         self.deployment_name = deployment_name
         self.query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self.text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
+        self._extra_params = kwargs
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return get_embedding(
-            query, engine=self.query_engine, deployment_id=self.deployment_name
+            query,
+            engine=self.query_engine,
+            deployment_id=self.deployment_name,
+            **self._extra_params,
         )
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         return get_embedding(
-            text, engine=self.text_engine, deployment_id=self.deployment_name
+            text,
+            engine=self.text_engine,
+            deployment_id=self.deployment_name,
+            **self._extra_params,
         )
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
         return await aget_embedding(
-            text, engine=self.text_engine, deployment_id=self.deployment_name
+            text,
+            engine=self.text_engine,
+            deployment_id=self.deployment_name,
+            **self._extra_params,
         )
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
@@ -251,11 +261,17 @@ class OpenAIEmbedding(BaseEmbedding):
 
         """
         return get_embeddings(
-            texts, engine=self.text_engine, deployment_id=self.deployment_name
+            texts,
+            engine=self.text_engine,
+            deployment_id=self.deployment_name,
+            **self._extra_params,
         )
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         return await aget_embeddings(
-            texts, engine=self.text_engine, deployment_id=self.deployment_name
+            texts,
+            engine=self.text_engine,
+            deployment_id=self.deployment_name,
+            **self._extra_params,
         )

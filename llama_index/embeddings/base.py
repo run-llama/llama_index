@@ -52,6 +52,7 @@ class BaseEmbedding:
         self,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         tokenizer: Optional[Callable] = None,
+        **kwargs
     ) -> None:
         """Init params."""
         self._total_tokens_used = 0
