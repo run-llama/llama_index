@@ -4,7 +4,6 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.base import (
@@ -121,25 +120,12 @@ class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.LLM,
-            payload={
-                "template": self.query_keyword_extract_template,
-                "question": query_str,
-                "max_keywords": self.max_keywords_per_query,
-            },
-        )
         response, formatted_prompt = self._service_context.llm_predictor.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,
         )
         keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM,
-            payload={"keywords": keywords, "formatted_prompt": formatted_prompt},
-            event_id=event_id,
-        )
         return list(keywords)
 
 

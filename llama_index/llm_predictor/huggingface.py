@@ -4,6 +4,8 @@ import logging
 from threading import Thread
 from typing import Any, List, Generator, Optional, Tuple
 
+from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.schema import CBEventType
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
@@ -45,6 +47,7 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         model_kwargs: Optional[dict] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
         import torch
@@ -54,6 +57,8 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
             StoppingCriteria,
             StoppingCriteriaList,
         )
+
+        self.callback_manager = callback_manager or CallbackManager([])
 
         model_kwargs = model_kwargs or {}
         self.model = model or AutoModelForCausalLM.from_pretrained(
@@ -195,6 +200,12 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         """
         import torch
 
+        llm_payload = {**prompt_args}
+        llm_payload["template"] = prompt
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.LLM, payload=llm_payload
+        )
+
         formatted_prompt = prompt.format(**prompt_args)
         full_prompt = self._query_wrapper_prompt.format(query_str=formatted_prompt)
         if self._system_prompt:
@@ -216,6 +227,12 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         completion_tokens = tokens[0][inputs["input_ids"].size(1) :]
         self._total_tokens_used += len(completion_tokens) + inputs["input_ids"].size(1)
         completion = self.tokenizer.decode(completion_tokens, skip_special_tokens=True)
+
+        self.callback_manager.on_event_end(
+            CBEventType.LLM,
+            payload={"response": completion, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
+        )
         return completion, formatted_prompt
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
