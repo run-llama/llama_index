@@ -2,8 +2,12 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from aim import Run, Text
-from aim.ext.system_info import DEFAULT_SYSTEM_TRACKING_INT
+try:
+    from aim import Run, Text
+    from aim.ext.system_info import DEFAULT_SYSTEM_TRACKING_INT
+except ModuleNotFoundError:
+    Run, Text = None, None
+    DEFAULT_SYSTEM_TRACKING_INT = None
 
 from llama_index.callbacks.base import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType
@@ -49,6 +53,11 @@ class AimCallback(BaseCallbackHandler):
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
         run_params: Optional[Dict[str, Any]] = None,
     ) -> None:
+        if Run is None:
+            raise ModuleNotFoundError(
+                "Please install aim to use the AimCallback: 'pip install aim'"
+            )
+
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )
