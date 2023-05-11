@@ -186,16 +186,11 @@ class QdrantVectorStore(VectorStore):
             try:
                 extra_info, node_info, relationships = metadata_dict_to_node(payload)
             except Exception:
-                logger.debug('Failed to parse Node metadata, fallback to legacy logic.') 
+                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
                 extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
                     payload
                 )
 
-                extra_info = payload.get("extra_info")
-                relationships = {
-                    DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
-                }
-                node_info = None
             node = Node(
                 doc_id=str(point.id),
                 text=payload.get("text"),

@@ -6,12 +6,19 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.readers.redis.utils import (TokenEscaper, array_to_buffer,
-                                             check_redis_modules_exist,
-                                             convert_bytes, get_redis_query)
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.readers.redis.utils import (
+    TokenEscaper,
+    array_to_buffer,
+    check_redis_modules_exist,
+    convert_bytes,
+    get_redis_query,
+)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 from llama_index.vector_stores.utils import node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
@@ -239,8 +246,7 @@ class RedisVectorStore(VectorStore):
     def _create_index(self) -> None:
         # should never be called outside class and hence should not raise importerror
         from redis.commands.search.field import TagField, TextField
-        from redis.commands.search.indexDefinition import (IndexDefinition,
-                                                           IndexType)
+        from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
         # Create Index
         default_fields = [

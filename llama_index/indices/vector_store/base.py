@@ -51,8 +51,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         # NOTE: lazy import
-        from llama_index.indices.vector_store.retrievers import \
-            VectorIndexRetriever
+        from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 
         return VectorIndexRetriever(self, **kwargs)
 

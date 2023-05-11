@@ -5,12 +5,14 @@ from typing import Any, List, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import truncate_text
-from llama_index.vector_stores.types import (MetadataFilters,
-                                             NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
-from llama_index.vector_stores.utils import (metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.vector_stores.types import (
+    MetadataFilters,
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +135,7 @@ class ChromaVectorStore(VectorStore):
         nodes = []
         similarities = []
         ids = []
-        for node_id, text, metadata, distance  in zip(
+        for node_id, text, metadata, distance in zip(
             results["ids"][0],
             results["documents"][0],
             results["metadatas"][0],

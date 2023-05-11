@@ -9,9 +9,12 @@ from typing import Any, Dict, List, Optional, cast
 import numpy as np
 
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 logger = logging.getLogger(__name__)
 
