@@ -149,6 +149,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         nodes: Sequence[Node],
     ) -> None:
         """Add document to index."""
+        if not nodes:
+            return
+
         embedding_results = self._get_node_embedding_results(nodes)
         new_ids = self._vector_store.add(embedding_results)
 
