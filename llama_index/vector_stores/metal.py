@@ -84,6 +84,9 @@ class MetalVectorStore(VectorStore):
         if not self.metal_client:
             raise ValueError("metal_client not initialized")
 
+        if not embedding_results:
+            return []
+
         ids = []
         for result in embedding_results:
             ids.append(result.id)

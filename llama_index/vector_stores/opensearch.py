@@ -188,6 +188,9 @@ class OpensearchVectorStore(VectorStore):
             embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
+        if not embedding_results:
+            return []
+
         self._client.index_results(embedding_results)
         return [result.id for result in embedding_results]
 

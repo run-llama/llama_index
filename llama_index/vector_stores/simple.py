@@ -87,6 +87,9 @@ class SimpleVectorStore(VectorStore):
         embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding_results to index."""
+        if not embedding_results:
+            return []
+
         for result in embedding_results:
             self._data.embedding_dict[result.id] = result.embedding
             self._data.text_id_to_doc_id[result.id] = result.ref_doc_id

@@ -64,6 +64,9 @@ class QdrantVectorStore(VectorStore):
         """
         from qdrant_client.http import models as rest
 
+        if not embedding_results:
+            return []
+
         if len(embedding_results) > 0 and not self._collection_initialized:
             self._create_collection(
                 collection_name=self._collection_name,

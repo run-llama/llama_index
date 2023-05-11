@@ -67,6 +67,9 @@ class LanceDBVectorStore(VectorStore):
         self,
         embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
+        if not embedding_results:
+            return []
+
         data = []
         ids = []
         for result in embedding_results:

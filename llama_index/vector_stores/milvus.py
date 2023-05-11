@@ -302,8 +302,11 @@ class MilvusVectorStore(VectorStore):
         """
         from pymilvus import MilvusException
 
+        if not embedding_results:
+            return []
+
         # If the collection doesnt exist yet, create the collection, index, and load it
-        if self.collection is None and len(embedding_results) != 0:
+        if self.collection is None:
             self.dim = len(embedding_results[0].embedding)
             self._create_collection()
             self._create_index()

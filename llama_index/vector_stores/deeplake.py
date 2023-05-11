@@ -156,6 +156,9 @@ class DeepLakeVectorStore(VectorStore):
         Returns:
             List[str]: List of ids inserted.
         """
+        if not embedding_results:
+            return []
+
         data_to_injest = []
         ids = []
 
