@@ -11,20 +11,22 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-)
+from llama_index.vector_stores.types import (MetadataFilters, VectorStoreQuery,
+                                             VectorStoreQueryMode)
 
 
 class VectorIndexRetriever(BaseRetriever):
-    """Base vector store query.
+    """Vector index retriever.
 
     Args:
-        embed_model (Optional[BaseEmbedding]): embedding model
-        similarity_top_k (int): number of top k results to return
-        vector_store (Optional[VectorStore]): vector store
+        index (GPTVectorStoreIndex): vector store index.
+        similarity_top_k (int): number of top k results to return.
+        vector_store_query_mode (str): vector store query mode
+            See reference for VectorStoreQueryMode for full list of supported modes.
+        filters (Optional[MetadataFilters]): metadata filters, defaults to None
+        alpha (float): weight for sparse/dense retrieval, only used for 
+            hybrid query mode.
+        doc_ids (Optional[List[str]]): list of documents to constrain search. 
 
     """
 
