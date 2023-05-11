@@ -12,7 +12,7 @@ from llama_index.utils import get_new_id
 def _validate_is_flat_dict(metadata_dict: dict) -> None:
     """
     Validate that metadata dict is flat,
-    and only uses str keys, and (str, int, float) values.
+    and key is str, and value is one of (str, int, float).
     """
     for key, val in metadata_dict.items():
         if not isinstance(key, str):
@@ -38,8 +38,8 @@ class BaseDocument(DataClassJsonMixin):
 
     """"
     metadata fields
-    - it is injected as part of the text shown to LLMs as context
-    - it is used by vector DBs for metadata filtering
+    - injected as part of the text shown to LLMs as context
+    - used by vector DBs for metadata filtering
 
     This must be a flat dictionary, 
     and only uses str keys, and (str, int, float) values.

@@ -8,13 +8,11 @@ from typing import Any, List, Optional, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import iter_batch
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 logger = logging.getLogger(__name__)
 

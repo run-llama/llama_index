@@ -58,13 +58,13 @@ class VectorStoreQueryMode(str, Enum):
 
 
 class ExactMatchFilter(BaseModel):
-    """Exact match metadata filter."""
+    """Exact match metadata filter for vector stores."""
     key: str
     value: Union[str, int, float]
 
 
 class MetadataFilters(BaseModel):
-    """Metadata filters.
+    """Metadata filters for vector stores.
 
     Currently only supports exact match filters.
     TODO: support more advanced expressions.

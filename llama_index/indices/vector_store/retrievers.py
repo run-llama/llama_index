@@ -11,11 +11,8 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-)
+from llama_index.vector_stores.types import (MetadataFilters, VectorStoreQuery,
+                                             VectorStoreQueryMode)
 
 
 class VectorIndexRetriever(BaseRetriever):
