@@ -56,6 +56,13 @@ def metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
             DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
         }
 
+    # remove other known fields
+    metadata.pop("text", None)
+    metadata.pop("id", None)
+    metadata.pop("document_id", None)
+    metadata.pop("doc_id", None)
+    metadata.pop("ref_doc_id", None)
+
     # remaining metadata is extra_info
     extra_info = metadata
 
