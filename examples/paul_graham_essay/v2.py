@@ -10,6 +10,8 @@ from langchain.llms.openai import OpenAIChat
 from langchain.chat_models import ChatOpenAI
 from llama_index.indices.composability import ComposableGraph
 from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.query_engine.transform_query_engine import TransformQueryEngine
+
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -69,43 +71,29 @@ root_summary = (
 )
 
 
-# # define decompose_transform
-# decompose_transform = DecomposeQueryTransform(llm_predictor, verbose=True)
+# define decompose_transform
+decompose_transform = DecomposeQueryTransform(llm_predictor, verbose=True)
 
-# # define custom query engines
-# from llama_index.query_engine.transform_query_engine import TransformQueryEngine
+# define custom query engines
+custom_query_engines = {}
+for index in vector_indexes.values():
+    query_engine = index.as_query_engine(service_context=service_context)
+    query_engine = TransformQueryEngine(
+        query_engine,
+        query_transform=decompose_transform,
+        transform_extra_info={"index_summary": index.index_struct.summary},
+    )
+    custom_query_engines[index.index_id] = query_engine
+custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
+    retriever_mode="simple",
+    response_mode="tree_summarize",
+    service_context=service_context,
+)
 
-# custom_query_engines = {}
-# for index in vector_indexes.values():
-#     query_engine = index.as_query_engine(service_context=service_context)
-#     query_engine = TransformQueryEngine(
-#         query_engine,
-#         query_transform=decompose_transform,
-#         transform_extra_info={"index_summary": index.index_struct.summary},
-#     )
-#     custom_query_engines[index.index_id] = query_engine
-# custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
-#     retriever_mode="simple",
-#     response_mode="tree_summarize",
-#     service_context=service_context,
-# )
+# define query engine
+query_engine = graph.as_query_engine(custom_query_engines)
 
-# # define query engine
-# query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
-# print("QUERY ENGINE")
-# print(query_engine)
-
-# # query the graph
-# response = query_engine.query("how are you?")
+# query the graph
+response = query_engine.query("Compare Timou to Thaddeus")
 
 # https://chat.openai.com/c/f5742f35-fce9-4659-b993-5b14de9e383f
-
-# <llama_index.query_engine.graph_query_engine.ComposableGraphQueryEngine object at 0x7fd4d0e61d80>
-# INFO:llama_index.indices.keyword_table.retrievers:> Starting query: how are you?
-# INFO:llama_index.indices.keyword_table.retrievers:query keywords: []
-# INFO:llama_index.indices.keyword_table.retrievers:> Extracted keywords: []
-# Warning: num_chunks text splitter was zero, setting to 1 to avoid division by zero
-# INFO:llama_index.token_counter.token_counter:> [get_response] Total LLM token usage: 0 tokens
-# INFO:llama_index.token_counter.token_counter:> [get_response] Total embedding token usage: 0 tokens
-# INFO:llama_index.token_counter.token_counter:> [get_response] Total LLM token usage: 0 tokens
-# INFO:llama_index.token_counter.token_counter:> [get_response] Total embedding token usage: 0 tokens
