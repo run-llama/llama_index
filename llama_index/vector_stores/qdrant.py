@@ -184,9 +184,9 @@ class QdrantVectorStore(VectorStore):
         for point in response:
             payload = cast(Payload, point.payload)
             try:
-                # TODO: figure out how Payload is different from dict
                 extra_info, node_info, relationships = metadata_dict_to_node(payload)
             except Exception:
+                logger.debug('Failed to parse Node metadata, fallback to legacy logic.') 
                 extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
                     payload
                 )
