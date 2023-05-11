@@ -3,7 +3,6 @@
 
 from typing import Any, Dict, List, Optional
 
-from llama_index.callbacks.schema import CBEventType
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.data_structs.node import NodeWithScore
@@ -12,11 +11,8 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-)
+from llama_index.vector_stores.types import (MetadataFilters, VectorStoreQuery,
+                                             VectorStoreQueryMode)
 
 
 class VectorIndexRetriever(BaseRetriever):
@@ -60,16 +56,10 @@ class VectorIndexRetriever(BaseRetriever):
     ) -> List[NodeWithScore]:
         if self._vector_store.is_embedding_query:
             if query_bundle.embedding is None:
-                event_id = self._service_context.callback_manager.on_event_start(
-                    CBEventType.EMBEDDING
-                )
                 query_bundle.embedding = (
                     self._service_context.embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
                     )
-                )
-                self._service_context.callback_manager.on_event_end(
-                    CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
                 )
 
         query = VectorStoreQuery(

@@ -140,7 +140,10 @@ class SimpleVectorStore(VectorStore):
 
         return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
 
-    def persist(self, persist_path: str) -> None:
+    def persist(
+        self,
+        persist_path: str = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME),
+    ) -> None:
         """Persist the SimpleVectorStore to a directory."""
         dirpath = os.path.dirname(persist_path)
         if not os.path.exists(dirpath):

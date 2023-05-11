@@ -3,16 +3,20 @@
 import logging
 from abc import abstractmethod
 from dataclasses import dataclass
+from threading import Thread
 from typing import Any, Generator, Optional, Protocol, Tuple
 
 import langchain
 import openai
-from langchain import Cohere, LLMChain, OpenAI, BaseCache
+from langchain import BaseCache, Cohere, LLMChain, OpenAI
+from langchain.base_language import BaseLanguageModel
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import AI21
-from langchain.base_language import BaseLanguageModel
 
+from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.schema import CBEventType
 from llama_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
+from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
     ErrorToRetry,
@@ -58,7 +62,7 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
                 max_input_size=GPT4_32K_CONTEXT_SIZE, num_output=max_tokens
             )
         else:
-            logger.warn(
+            logger.warning(
                 "Unknown max input size for %s, using defaults.", llm.model_name
             )
             return LLMMetadata()
@@ -164,11 +168,13 @@ class LLMPredictor(BaseLLMPredictor):
         llm: Optional[BaseLanguageModel] = None,
         retry_on_throttling: bool = True,
         cache: Optional[BaseCache] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
         self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
         if cache is not None:
             langchain.llm_cache = cache
+        self.callback_manager = callback_manager or CallbackManager([])
         self.retry_on_throttling = retry_on_throttling
         self._total_tokens_used = 0
         self.flag = True
@@ -226,6 +232,12 @@ class LLMPredictor(BaseLLMPredictor):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
+        llm_payload = {**prompt_args}
+        llm_payload["template"] = prompt
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.LLM,
+            payload=llm_payload,
+        )
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = self._predict(prompt, **prompt_args)
         logger.debug(llm_prediction)
@@ -235,6 +247,11 @@ class LLMPredictor(BaseLLMPredictor):
         prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
+        self.callback_manager.on_event_end(
+            CBEventType.LLM,
+            payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
+        )
         return llm_prediction, formatted_prompt
 
     def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
@@ -250,11 +267,23 @@ class LLMPredictor(BaseLLMPredictor):
             str: The predicted answer.
 
         """
-        if not isinstance(self._llm, OpenAI):
-            raise ValueError("stream is only supported for OpenAI LLMs")
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
-        raw_response_gen = self._llm.stream(formatted_prompt)
-        response_gen = _get_response_gen(raw_response_gen)
+
+        handler = StreamingGeneratorCallbackHandler()
+
+        if not hasattr(self._llm, "callbacks"):
+            raise ValueError("LLM must support callbacks to use streaming.")
+
+        self._llm.callbacks = [handler]
+
+        if not getattr(self._llm, "streaming", False):
+            raise ValueError("LLM must support streaming and set streaming=True.")
+
+        thread = Thread(target=self._predict, args=[prompt], kwargs=prompt_args)
+        thread.start()
+
+        response_gen = handler.get_response_gen()
+
         # NOTE/TODO: token counting doesn't work with streaming
         return response_gen, formatted_prompt
 
@@ -306,6 +335,11 @@ class LLMPredictor(BaseLLMPredictor):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
+        llm_payload = {**prompt_args}
+        llm_payload["template"] = prompt
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.LLM, payload=prompt_args
+        )
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = await self._apredict(prompt, **prompt_args)
         logger.debug(llm_prediction)
@@ -315,4 +349,9 @@ class LLMPredictor(BaseLLMPredictor):
         prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
+        self.callback_manager.on_event_end(
+            CBEventType.LLM,
+            payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
+            event_id=event_id,
+        )
         return llm_prediction, formatted_prompt

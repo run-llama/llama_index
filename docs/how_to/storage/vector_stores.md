@@ -49,6 +49,7 @@ maxdepth: 1
 ../../examples/vector_stores/ChromaIndexDemo.ipynb
 ../../examples/vector_stores/LanceDBIndexDemo.ipynb
 ../../examples/vector_stores/MilvusIndexDemo.ipynb
+../../examples/vector_stores/RedisIndexDemo.ipynb
 ../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb

@@ -75,20 +75,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             else:
                 id_to_embed_map[n.get_doc_id()] = n.embedding
 
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.EMBEDDING
-        )
-
         # call embedding model to get embeddings
         (
             result_ids,
             result_embeddings,
         ) = self._service_context.embed_model.get_queued_text_embeddings()
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.EMBEDDING,
-            payload={"num_nodes": len(result_ids)},
-            event_id=event_id,
-        )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
@@ -118,10 +109,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             else:
                 id_to_embed_map[n.get_doc_id()] = n.embedding
 
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.EMBEDDING
-        )
-
         # call embedding model to get embeddings
         (
             result_ids,
@@ -130,11 +117,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             text_queue
         )
 
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.EMBEDDING,
-            payload={"num_nodes": len(text_queue)},
-            event_id=event_id,
-        )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
