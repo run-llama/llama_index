@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, List, Optional, Protocol, Union, runtime_checkable
 
+from pydantic import BaseModel
+
 from llama_index.data_structs.node import Node
 
 DEFAULT_PERSIST_DIR = "./storage"
@@ -55,15 +57,18 @@ class VectorStoreQueryMode(str, Enum):
     LINEAR_REGRESSION = "linear_regression"
 
 
-@dataclass
-class ExactMatchFilter:
+class ExactMatchFilter(BaseModel):
+    """Exact match metadata filter."""
     key: str
     value: Union[str, int, float]
 
 
-@dataclass
-class MetadataFilters:
-    # TODO: support more advanced expressions
+class MetadataFilters(BaseModel):
+    """Metadata filters.
+
+    Currently only supports exact match filters.
+    TODO: support more advanced expressions.
+    """
     filters: List[ExactMatchFilter]
 
 
@@ -81,6 +86,7 @@ class VectorStoreQuery:
     # NOTE: only for hybrid search (0 for bm25, 1 for vector search)
     alpha: Optional[float] = None
 
+    # metadata filters
     filters: Optional[MetadataFilters] = None
 
 
