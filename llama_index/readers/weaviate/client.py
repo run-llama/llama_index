@@ -7,16 +7,17 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 import json
 import logging
 from dataclasses import field
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.data_structs.data_structs import Node
 from llama_index.data_structs.node import DocumentRelationship
-from llama_index.readers.weaviate.utils import (get_by_id, parse_get_response,
-                                                validate_client)
-from llama_index.vector_stores.types import (VectorStoreQuery,
-                                             VectorStoreQueryMode)
-from llama_index.vector_stores.utils import (metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.readers.weaviate.utils import (
+    get_by_id,
+    parse_get_response,
+    validate_client,
+)
+from llama_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 
@@ -136,19 +137,20 @@ def _class_name(class_prefix: str) -> str:
     """Return class name."""
     return f"{class_prefix}_Node"
 
-def _legacy_metadata_dict_to_node(entry):
+
+def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, dict]:
     """Legacy logic for converting metadata dict to node data.
     Only for backwards compatibility.
     """
     extra_info_str = entry["extra_info"]
     if extra_info_str == "":
-        extra_info = None
+        extra_info = {}
     else:
         extra_info = json.loads(extra_info_str)
 
     node_info_str = entry["node_info"]
     if node_info_str == "":
-        node_info = None
+        node_info = {}
     else:
         node_info = json.loads(node_info_str)
 
@@ -193,8 +195,8 @@ def _add_node(
 ) -> str:
     """Add node."""
     metadata = {}
-    metadata['text'] = node.get_text()
-    metadata['node_id'] = node.get_doc_id()
+    metadata["text"] = node.get_text()
+    metadata["node_id"] = node.get_doc_id()
 
     additional_metadata = node_to_metadata_dict(node)
     metadata.update(additional_metadata)

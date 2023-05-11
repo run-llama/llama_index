@@ -1,32 +1,36 @@
 import json
 import math
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (MetadataFilters,
-                                             NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
-from llama_index.vector_stores.utils import (metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.vector_stores.types import (
+    MetadataFilters,
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 
 def _to_metal_filters(standard_filters: MetadataFilters) -> list:
     filters = []
     for filter in standard_filters.filters:
-        filters.append({
-            'field': filter.key,
-            'value': filter.value,
-        })
+        filters.append(
+            {
+                "field": filter.key,
+                "value": filter.value,
+            }
+        )
     return filters
 
 
-def _legacy_metadata_dict_to_node(metadata) -> Tuple[dict, dict, dict]:
+def _legacy_metadata_dict_to_node(metadata: Dict[str, Any]) -> Tuple[dict, dict, dict]:
     if "extra_info" in metadata:
         extra_info = json.loads(metadata["extra_info"])
     ref_doc_id = metadata["doc_id"]
     relationships = {DocumentRelationship.SOURCE: ref_doc_id}
-    node_info = None
+    node_info: dict = {}
     return extra_info, node_info, relationships
 
 
@@ -58,12 +62,14 @@ class MetalVectorStore(VectorStore):
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         if query.filters is not None:
             if "filters" in kwargs:
-                raise ValueError("Cannot specify filter via both query and kwargs. "
-                                 "Use kwargs only for metal specific items that are "
-                                 "not supported via the generic query interface.")
+                raise ValueError(
+                    "Cannot specify filter via both query and kwargs. "
+                    "Use kwargs only for metal specific items that are "
+                    "not supported via the generic query interface."
+                )
             filters = _to_metal_filters(query.filters)
         else:
-            filters = kwargs.get('filters', {})
+            filters = kwargs.get("filters", {})
 
         payload = {
             "embedding": query.query_embedding,  # Query Embedding
@@ -78,13 +84,17 @@ class MetalVectorStore(VectorStore):
         for item in response["data"]:
             text = item["text"]
             id_ = item["id"]
-            
+
             # load additional Node data
             try:
-                extra_info, node_info, relationships = metadata_dict_to_node(item['metadata'])
+                extra_info, node_info, relationships = metadata_dict_to_node(
+                    item["metadata"]
+                )
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(item['metadata'])
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                    item["metadata"]
+                )
 
             node = Node(
                 text=text,

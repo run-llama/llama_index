@@ -3,8 +3,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import (Any, Dict, List, Optional, Protocol, Union,
-                    runtime_checkable)
+from typing import Any, List, Optional, Protocol, Union, runtime_checkable
 
 from llama_index.data_structs.node import Node
 
@@ -108,11 +107,7 @@ class VectorStore(Protocol):
         """Delete doc."""
         ...
 
-    def query(
-        self,
-        query: VectorStoreQuery,
-        **kwargs: Any
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
         ...
 

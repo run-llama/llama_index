@@ -6,13 +6,19 @@ An index that that is built on top of an existing vector store.
 
 from typing import Any, List, Optional, cast
 
-from llama_index.readers.weaviate.client import (add_nodes, create_schema,
-                                                 delete_document,
-                                                 weaviate_query)
+from llama_index.readers.weaviate.client import (
+    add_nodes,
+    create_schema,
+    delete_document,
+    weaviate_query,
+)
 from llama_index.readers.weaviate.utils import get_default_class_prefix
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 
 class WeaviateVectorStore(VectorStore):
@@ -98,7 +104,7 @@ class WeaviateVectorStore(VectorStore):
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
         if query.filters is not None:
-            raise ValueError('Metadata filters not implemented for Weaviate yet.')
+            raise ValueError("Metadata filters not implemented for Weaviate yet.")
 
         nodes = weaviate_query(
             self._client,

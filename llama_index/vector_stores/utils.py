@@ -1,18 +1,17 @@
-
-
 import json
 from dataclasses import field
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 
 
 def node_to_metadata_dict(node: Node) -> dict:
     """Common logic for saving Node data into metadata dict."""
-    metadata = {}
-    
+    metadata: Dict[str, Any] = {}
+
     # store extra_info directly to allow metadata filtering
-    metadata.update(node.extra_info)
+    if node.extra_info is not None:
+        metadata.update(node.extra_info)
 
     # json-serialize the node_info
     node_info_str = ""
@@ -27,11 +26,12 @@ def node_to_metadata_dict(node: Node) -> dict:
     metadata["relationships"] = relationships_str
 
     # store ref doc id at top level to allow metadata filtering
-    metadata['document_id'] = node.ref_doc_id or "None" # for Chroma
-    metadata['doc_id'] = node.ref_doc_id or "None"  # for Pinecone, Qdrant
-    metadata['ref_doc_id'] = node.ref_doc_id or "None" # for Weaviate
+    metadata["document_id"] = node.ref_doc_id or "None"  # for Chroma
+    metadata["doc_id"] = node.ref_doc_id or "None"  # for Pinecone, Qdrant
+    metadata["ref_doc_id"] = node.ref_doc_id or "None"  # for Weaviate
 
     return metadata
+
 
 def metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
     """Common logic for loading Node data from metadata dict."""
@@ -41,7 +41,7 @@ def metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
     # load node_info from json string
     node_info_str = metadata.pop("node_info", "")
     if node_info_str == "":
-        node_info = None
+        node_info = {}
     else:
         node_info = json.loads(node_info_str)
 
@@ -57,6 +57,5 @@ def metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
 
     # remaining metadata is extra_info
     extra_info = metadata
-    
-    return extra_info, node_info, relationships
 
+    return extra_info, node_info, relationships

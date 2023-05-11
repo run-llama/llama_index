@@ -2,10 +2,10 @@
 
 
 from typing import Any, List, Optional
+
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store import GPTVectorStoreIndex
 from llama_index.storage.storage_context import StorageContext
-
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -55,7 +55,7 @@ class MockMilvusVectorStore(VectorStore):
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         return None
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         return VectorStoreQueryResult()
 
 

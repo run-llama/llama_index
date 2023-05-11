@@ -2,9 +2,12 @@
 from typing import Any, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 
 class LanceDBVectorStore(VectorStore):
@@ -100,7 +103,7 @@ class LanceDBVectorStore(VectorStore):
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
         if query.filters is not None:
-            raise ValueError('Metadata filters not implemented for LanceDB yet.')
+            raise ValueError("Metadata filters not implemented for LanceDB yet.")
 
         table = self.connection.open_table(self.table_name)
         lance_query = (

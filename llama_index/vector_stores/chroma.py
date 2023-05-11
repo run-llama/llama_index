@@ -5,14 +5,17 @@ from typing import Any, List, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import truncate_text
-from llama_index.vector_stores.types import (MetadataFilters,
-                                             NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
-from llama_index.vector_stores.utils import (metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.vector_stores.types import (
+    MetadataFilters,
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
+
 
 def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
     """Translate standard metadata filters to Chroma specific spec."""
@@ -21,13 +24,15 @@ def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
         filters[filter.key] = filter.value
     return filters
 
+
 def _legacy_metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
     extra_info = metadata
-    node_info = None
+    node_info: dict = {}
     relationships = {
         DocumentRelationship.SOURCE: metadata["document_id"],
     }
     return extra_info, node_info, relationships
+
 
 class ChromaVectorStore(VectorStore):
     """Chroma vector store.
@@ -110,16 +115,17 @@ class ChromaVectorStore(VectorStore):
         """
         if query.filters is not None:
             if "where" in kwargs:
-                raise ValueError("Cannot specify where via both query and kwargs. "
-                                 "Use kwargs only for chroma specific items that are "
-                                 "not supported via the generic query interface.")
+                raise ValueError(
+                    "Cannot specify where via both query and kwargs. "
+                    "Use kwargs only for chroma specific items that are "
+                    "not supported via the generic query interface."
+                )
             where = _to_chroma_filter(query.filters)
         else:
-            where = kwargs.pop('where', {})
-
+            where = kwargs.pop("where", {})
 
         results = self._collection.query(
-            query_embeddings=query.query_embedding, 
+            query_embeddings=query.query_embedding,
             n_results=query.similarity_top_k,
             where=where,
             **kwargs,
@@ -140,8 +146,9 @@ class ChromaVectorStore(VectorStore):
                 extra_info, node_info, relationships = metadata_dict_to_node(metadata)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(metadata)
-
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                    metadata
+                )
 
             node = Node(
                 doc_id=node_id,

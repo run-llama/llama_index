@@ -10,11 +10,14 @@ from typing import Any, List, cast
 
 import numpy as np
 
-from llama_index.vector_stores.types import (DEFAULT_PERSIST_DIR,
-                                             DEFAULT_PERSIST_FNAME,
-                                             NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.vector_stores.types import (
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 logger = logging.getLogger()
 
@@ -141,7 +144,7 @@ class FaissVectorStore(VectorStore):
 
         """
         if query.filters is not None:
-            raise ValueError('Metadata filters not implemented for Faiss yet.')
+            raise ValueError("Metadata filters not implemented for Faiss yet.")
 
         query_embedding = cast(List[float], query.query_embedding)
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]

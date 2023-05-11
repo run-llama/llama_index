@@ -8,9 +8,12 @@ from requests.adapters import HTTPAdapter, Retry
 from tqdm.auto import tqdm
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 
 def convert_docs_to_json(embedding_results: List[NodeWithEmbedding]) -> List[Dict]:
@@ -113,10 +116,11 @@ class ChatGPTRetrievalPluginClient(VectorStore):
     def query(
         self,
         query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
         if query.filters is not None:
-            raise ValueError('Metadata filters not implemented for ChatGPT Plugin yet.')
+            raise ValueError("Metadata filters not implemented for ChatGPT Plugin yet.")
 
         if query.query_str is None:
             raise ValueError("query_str must be provided")
