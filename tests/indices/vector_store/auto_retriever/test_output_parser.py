@@ -4,7 +4,7 @@ from typing import cast
 from llama_index.indices.vector_store.auto_retriever.output_parser import \
     VectorStoreQueryOutputParser
 from llama_index.output_parsers.base import StructuredOutput
-from llama_index.vector_stores.types import QueryAndMetadataFilters
+from llama_index.vector_stores.types import VectorStoreQuerySpec
 
 
 def test_output_parser():
@@ -29,4 +29,4 @@ def test_output_parser():
     parser = VectorStoreQueryOutputParser()
     output = parser.parse(output_str)
     structured_output = cast(StructuredOutput, output)
-    assert isinstance(structured_output.parsed_output, QueryAndMetadataFilters)
+    assert isinstance(structured_output.parsed_output, VectorStoreQuerySpec)

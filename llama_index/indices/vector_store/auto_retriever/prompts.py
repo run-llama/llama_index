@@ -2,8 +2,12 @@
 
 from typing import List
 
+from llama_index.indices.vector_store.auto_retriever.schema import (
+    MetadataInfo, VectorStoreInfo)
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
+from llama_index.vector_stores.types import (ExactMatchFilter,
+                                             VectorStoreQuerySpec)
 
 # single select
 PREFIX = """\
@@ -26,51 +30,44 @@ applied return {{}} for the filter value.\
 
 """
 
+example_info = VectorStoreInfo(
+    content_info="Lyrics of a song",
+    metadata_info=[
+        MetadataInfo(name='artist', type='str', description='Name of the song artist'),
+        MetadataInfo(name='genre', type='str', description="The song genre, one of \"pop\", \"rock\" or \"rap\"")
+    ]
+)
+
+example_query = "What are songs by Taylor Swift or Katy Perry in the dance pop genre"
+
+example_output = VectorStoreQuerySpec(
+    query="teenager love",
+    filters=[
+        ExactMatchFilter(key="artist", value="Taylor Swift"),
+        ExactMatchFilter(key="artist", value="Katy Perry"),
+        ExactMatchFilter(key="genre", value="pop"),
+    ]
+)
+
 EXAMPLES ="""\
 << Example 1. >>
 Data Source:
 ```json
-{
-    "content_info": "Lyrics of a song",
-    "metadata_info": [
-        {
-            "name": "artist",
-            "type": "string",
-            "description": "Name of the song artist"
-        },
-        {
-            "name": "genre",
-            "type": "string",
-            "description": "The song genre, one of \"pop\", \"rock\" or \"rap\""
-        }
-    }
-}
+{info_str}
 ```
 
 User Query:
-What are songs by Taylor Swift or Katy Perry in the dance pop genre
+{query_str}
 
 Structured Request:
 ```json
-{
-    "query": "teenager love",
-    "filters": [
-        {
-            "key": "artist",
-            "value": "Taylor Swift"
-        },
-        {
-            "key": "artist",
-            "value": "Katy Perry"
-        },
-        {
-            "key": "genre",
-            "value": "pop"
-        }
-    ]
-}
+{output_str}
 ```
-""".replace(
+""".format(
+    info_str=example_info.to_json(indent=4),
+    query_str=example_query,
+    output_str=example_output.json()
+).replace(
     "{", "{{"
 ).replace(
     "}", "}}"
@@ -78,7 +75,7 @@ Structured Request:
 
 
 SUFFIX = """
-<< Example 3. >>
+<< Example 2. >>
 Data Source:
 ```json
 {info_str}

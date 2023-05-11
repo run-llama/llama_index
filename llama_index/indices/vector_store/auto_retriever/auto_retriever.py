@@ -1,6 +1,7 @@
 
 
 
+import logging
 from typing import Any, Dict, List, cast
 
 from llama_index.data_structs.node import NodeWithScore
@@ -16,8 +17,9 @@ from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 from llama_index.output_parsers.base import StructuredOutput
 from llama_index.vector_stores.types import (MetadataFilters,
-                                             QueryAndMetadataFilters)
+                                             VectorStoreQuerySpec)
 
+_logger = logging.getLogger(__name__)
 
 class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
     def __init__(
@@ -42,7 +44,7 @@ class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input
         info_str = self._vector_store_info.to_json(indent=4)
-        schema_str = QueryAndMetadataFilters.schema_json(indent=4)
+        schema_str = VectorStoreQuerySpec.schema_json(indent=4)
 
         # call LLM
         output, _ = self._service_context.llm_predictor.predict(
@@ -54,7 +56,13 @@ class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
 
         # parse output
         structured_output = cast(StructuredOutput, self._prompt.output_parser.parse(output))
-        query_and_filters = cast(QueryAndMetadataFilters, structured_output.parsed_output)
+        query_and_filters = cast(VectorStoreQuerySpec, structured_output.parsed_output)
+
+        _logger.info(f'Auto query: {query_and_filters.query}')
+        filter_dict = {
+            filter.key: filter.value for filter in query_and_filters.filters
+        }
+        _logger.info(f'Auto filter: {filter_dict}')
         
         retriever = VectorIndexRetriever(self._index, filters=MetadataFilters(filters=query_and_filters.filters))
         return retriever.retrieve(query_and_filters.query)

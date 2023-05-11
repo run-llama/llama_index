@@ -67,7 +67,7 @@ class MetadataFilters(BaseModel):
     filters: List[ExactMatchFilter]
 
 
-class QueryAndMetadataFilters(BaseModel):
+class VectorStoreQuerySpec(BaseModel):
     query: str
     filters: List[ExactMatchFilter]
 
