@@ -11,13 +11,12 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.data_structs.data_structs import Node
 from llama_index.data_structs.node import DocumentRelationship
-from llama_index.readers.weaviate.utils import (
-    get_by_id,
-    parse_get_response,
-    validate_client,
-)
-from llama_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.readers.weaviate.utils import (get_by_id, parse_get_response,
+                                                validate_client)
+from llama_index.vector_stores.types import (VectorStoreQuery,
+                                             VectorStoreQueryMode)
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 _logger = logging.getLogger(__name__)
 
@@ -169,25 +168,22 @@ def _to_node(entry: Dict) -> Node:
     """Convert to Node."""
     try:
         metadata_dict = entry.copy()
-        doc_id = metadata_dict.pop("node_id")
+        id_ = metadata_dict['id']
         extra_info, node_info, relationships = metadata_dict_to_node(metadata_dict)
     except Exception:
-        _legacy_metadata_dict_to_node(metadata_dict)
-        doc_id = entry["doc_id"]
+        id_ = entry["doc_id"]
+        extra_info, node_info, relationships = _legacy_metadata_dict_to_node(metadata_dict)
 
     return Node(
         text=entry["text"],
         embedding=entry["_additional"]["vector"],
-        doc_id=doc_id,
+        doc_id=id_,
         extra_info=extra_info,
         node_info=node_info,
         relationships=relationships,
     )
 
 
-def _node_to_dict(node: Node) -> dict:
-    node_dict = node.to_dict()
-    return node_dict
 
 
 def _add_node(
@@ -196,7 +192,7 @@ def _add_node(
     """Add node."""
     metadata = {}
     metadata["text"] = node.get_text()
-    metadata["node_id"] = node.get_doc_id()
+    metadata["id"] = node.get_doc_id()
 
     additional_metadata = node_to_metadata_dict(node)
     metadata.update(additional_metadata)
