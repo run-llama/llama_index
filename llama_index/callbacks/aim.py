@@ -35,6 +35,7 @@ class AimCallback(BaseCallbackHandler):
         capture_terminal_logs: Optional[bool] = True,
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
+        run_params: Optional[Dict[str, Any]] = None,
     ):
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
@@ -55,7 +56,7 @@ class AimCallback(BaseCallbackHandler):
 
         self._llm_response_step = 0
 
-        self.setup()
+        self.setup(run_params)
 
     def on_event_start(
         self,
@@ -64,6 +65,20 @@ class AimCallback(BaseCallbackHandler):
         event_id: str = "",
         **kwargs: Any,
     ) -> str:
+        """
+        Args:
+            event_type (CBEventType): event type to store.
+            payload (Optional[Dict[str, Any]]): payload to store.
+            event_id (str): event id to store.
+        """
+
+    def on_event_end(
+        self,
+        event_type: CBEventType,
+        payload: Optional[Dict[str, Any]] = None,
+        event_id: str = "",
+        **kwargs: Any,
+    ) -> None:
         """
         Args:
             event_type (CBEventType): event type to store.
@@ -86,20 +101,14 @@ class AimCallback(BaseCallbackHandler):
             )
 
             self._llm_response_step += 1
-
-    def on_event_end(
-        self,
-        event_type: CBEventType,
-        payload: Optional[Dict[str, Any]] = None,
-        event_id: str = "",
-        **kwargs: Any,
-    ) -> None:
-        """
-        Args:
-            event_type (CBEventType): event type to store.
-            payload (Optional[Dict[str, Any]]): payload to store.
-            event_id (str): event id to store.
-        """
+        elif event_type is CBEventType.CHUNKING and payload:
+            for chunk_id, chunk in enumerate(payload["chunks"]):
+                self._run.track(
+                    Text(chunk),
+                    name="chunk",
+                    step=self._llm_response_step,
+                    context={"chunk_id": chunk_id, "event_id": event_id},
+                )
 
     @property
     def experiment(self) -> Run:
