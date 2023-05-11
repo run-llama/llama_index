@@ -29,7 +29,7 @@ def test_parse(output_parser: SelectionOutputParser) -> None:
     assert parsed.parsed_output[0].reason == "just because"
 
 
-def test_bugfix_llm_output_with_string_outside_of_json_issue_3135(
+def test_parse_non_json_friendly_llm_output(
     output_parser: SelectionOutputParser,
 ) -> None:
     # https://github.com/jerryjliu/llama_index/issues/3135
@@ -38,8 +38,13 @@ def test_bugfix_llm_output_with_string_outside_of_json_issue_3135(
     [
       {
         "choice": 1,
-        "reason": "Useful for questions that seek to gain a "
+        "reason": "Useful for questions"
       }
     ]
     """
-    output_parser.parse(output)
+    parsed = output_parser.parse(output)
+    assert isinstance(parsed, StructuredOutput)
+    assert isinstance(parsed.parsed_output, list)
+    assert len(parsed.parsed_output) == 1
+    assert parsed.parsed_output[0].choice == 1
+    assert parsed.parsed_output[0].reason == "Useful for questions"
