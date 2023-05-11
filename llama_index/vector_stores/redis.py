@@ -6,19 +6,13 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.readers.redis.utils import (
-    TokenEscaper,
-    array_to_buffer,
-    check_redis_modules_exist,
-    convert_bytes,
-    get_redis_query,
-)
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
+from llama_index.readers.redis.utils import (TokenEscaper, array_to_buffer,
+                                             check_redis_modules_exist,
+                                             convert_bytes, get_redis_query)
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
+from llama_index.vector_stores.utils import node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 
@@ -137,19 +131,15 @@ class RedisVectorStore(VectorStore):
 
         ids = []
         for result in embedding_results:
-            # Add extra info and node info to the index
-            # cast types to satisfy mypy
-            node_info = cast_metadata_types(result.node.node_info)
-            extra_info = cast_metadata_types(result.node.extra_info)
-
             mapping = {
                 "id": result.id,
                 "doc_id": result.ref_doc_id,
                 "text": result.node.get_text(),
                 self._vector_key: array_to_buffer(result.embedding),
-                **node_info,
-                **extra_info,
             }
+            additional_metadata = node_to_metadata_dict(result.node)
+            mapping.update(additional_metadata)
+
             ids.append(result.id)
             key = "_".join([self._prefix, str(result.id)])
             self._redis_client.hset(key, mapping=mapping)  # type: ignore
@@ -181,7 +171,7 @@ class RedisVectorStore(VectorStore):
         _logger.info(f"Deleting index {self._index_name}")
         self._redis_client.ft(self._index_name).dropindex(delete_documents=True)
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query the index.
 
         Args:
@@ -249,7 +239,8 @@ class RedisVectorStore(VectorStore):
     def _create_index(self) -> None:
         # should never be called outside class and hence should not raise importerror
         from redis.commands.search.field import TagField, TextField
-        from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+        from redis.commands.search.indexDefinition import (IndexDefinition,
+                                                           IndexType)
 
         # Create Index
         default_fields = [
