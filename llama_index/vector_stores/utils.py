@@ -26,6 +26,7 @@ def node_to_metadata_dict(node: Node) -> dict:
     metadata["relationships"] = relationships_str
 
     # store ref doc id at top level to allow metadata filtering
+    # kept for backwards compatibility, will consolidate in future
     metadata["document_id"] = node.ref_doc_id or "None"  # for Chroma
     metadata["doc_id"] = node.ref_doc_id or "None"  # for Pinecone, Qdrant, Redis
     metadata["ref_doc_id"] = node.ref_doc_id or "None"  # for Weaviate
