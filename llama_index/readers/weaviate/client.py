@@ -11,12 +11,13 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.data_structs.data_structs import Node
 from llama_index.data_structs.node import DocumentRelationship
-from llama_index.readers.weaviate.utils import (get_by_id, parse_get_response,
-                                                validate_client)
-from llama_index.vector_stores.types import (VectorStoreQuery,
-                                             VectorStoreQueryMode)
-from llama_index.vector_stores.utils import (metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.readers.weaviate.utils import (
+    get_by_id,
+    parse_get_response,
+    validate_client,
+)
+from llama_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 
@@ -168,11 +169,14 @@ def _to_node(entry: Dict) -> Node:
     """Convert to Node."""
     try:
         metadata_dict = entry.copy()
-        id_ = metadata_dict['id']
+        id_ = metadata_dict["id"]
         extra_info, node_info, relationships = metadata_dict_to_node(metadata_dict)
     except Exception:
+        _logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
         id_ = entry["doc_id"]
-        extra_info, node_info, relationships = _legacy_metadata_dict_to_node(metadata_dict)
+        extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+            metadata_dict
+        )
 
     return Node(
         text=entry["text"],
@@ -182,8 +186,6 @@ def _to_node(entry: Dict) -> Node:
         node_info=node_info,
         relationships=relationships,
     )
-
-
 
 
 def _add_node(
