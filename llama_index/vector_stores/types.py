@@ -6,6 +6,8 @@ from enum import Enum
 from typing import (Any, Dict, List, Optional, Protocol, Union,
                     runtime_checkable)
 
+from dataclasses_json import DataClassJsonMixin
+
 from llama_index.data_structs.node import Node
 
 DEFAULT_PERSIST_DIR = "./storage"
@@ -57,15 +59,22 @@ class VectorStoreQueryMode(str, Enum):
 
 
 @dataclass
-class ExactMatchFilter:
+class ExactMatchFilter(DataClassJsonMixin):
     key: str
     value: Union[str, int, float]
 
 
 @dataclass
-class MetadataFilters:
+class MetadataFilters(DataClassJsonMixin):
     # TODO: support more advanced expressions
     filters: List[ExactMatchFilter]
+
+
+@dataclass
+class QueryAndMetadataFilters(DataClassJsonMixin):
+    query: str
+    filters: List[ExactMatchFilter]
+
 
 
 @dataclass
