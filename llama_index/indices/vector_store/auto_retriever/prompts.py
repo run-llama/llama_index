@@ -26,7 +26,10 @@ Make sure that filters only refer to attributes that exist in the data source.
 Make sure that filters take into account the descriptions of attributes and only make \
 comparisons that are feasible given the type of data being stored.
 Make sure that filters are only used as needed. If there are no filters that should be \
-applied return {{}} for the filter value.\
+applied return [] for the filter value.\
+
+If the user's query explicitly mentions number of documents to retrieve, set top_k to \
+that number, otherwise use the default value of 2. Do not set top_k above 20. 
 
 """
 
@@ -46,7 +49,8 @@ example_output = VectorStoreQuerySpec(
         ExactMatchFilter(key="artist", value="Taylor Swift"),
         ExactMatchFilter(key="artist", value="Katy Perry"),
         ExactMatchFilter(key="genre", value="pop"),
-    ]
+    ],
+    top_k=2,
 )
 
 EXAMPLES ="""\

@@ -56,13 +56,18 @@ class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
 
         # parse output
         structured_output = cast(StructuredOutput, self._prompt.output_parser.parse(output))
-        query_and_filters = cast(VectorStoreQuerySpec, structured_output.parsed_output)
+        query_spec = cast(VectorStoreQuerySpec, structured_output.parsed_output)
 
-        _logger.info(f'Auto query: {query_and_filters.query}')
+        _logger.info(f'Auto query: {query_spec.query}')
         filter_dict = {
-            filter.key: filter.value for filter in query_and_filters.filters
+            filter.key: filter.value for filter in query_spec.filters
         }
         _logger.info(f'Auto filter: {filter_dict}')
+        _logger.info(f'Auto top_k: {query_spec.top_k}')
         
-        retriever = VectorIndexRetriever(self._index, filters=MetadataFilters(filters=query_and_filters.filters))
-        return retriever.retrieve(query_and_filters.query)
+        retriever = VectorIndexRetriever(
+            self._index, 
+            filters=MetadataFilters(filters=query_spec.filters), 
+            similarity_top_k=query_spec.top_k
+        )
+        return retriever.retrieve(query_spec.query)
