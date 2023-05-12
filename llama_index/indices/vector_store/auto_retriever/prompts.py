@@ -1,13 +1,12 @@
-
-
 from typing import List
 
 from llama_index.indices.vector_store.auto_retriever.schema import (
-    MetadataInfo, VectorStoreInfo)
+    MetadataInfo,
+    VectorStoreInfo,
+)
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
-from llama_index.vector_stores.types import (ExactMatchFilter,
-                                             VectorStoreQuerySpec)
+from llama_index.vector_stores.types import ExactMatchFilter, VectorStoreQuerySpec
 
 # single select
 PREFIX = """\
@@ -36,9 +35,13 @@ that number, otherwise do not set top_k.
 example_info = VectorStoreInfo(
     content_info="Lyrics of a song",
     metadata_info=[
-        MetadataInfo(name='artist', type='str', description='Name of the song artist'),
-        MetadataInfo(name='genre', type='str', description="The song genre, one of \"pop\", \"rock\" or \"rap\"")
-    ]
+        MetadataInfo(name="artist", type="str", description="Name of the song artist"),
+        MetadataInfo(
+            name="genre",
+            type="str",
+            description='The song genre, one of "pop", "rock" or "rap"',
+        ),
+    ],
 )
 
 example_query = "What are songs by Taylor Swift or Katy Perry in the dance pop genre"
@@ -52,7 +55,8 @@ example_output = VectorStoreQuerySpec(
     ],
 )
 
-EXAMPLES ="""\
+EXAMPLES = (
+    """\
 << Example 1. >>
 Data Source:
 ```json
@@ -67,13 +71,12 @@ Structured Request:
 {output_str}
 ```
 """.format(
-    info_str=example_info.json(indent=4),
-    query_str=example_query,
-    output_str=example_output.json()
-).replace(
-    "{", "{{"
-).replace(
-    "}", "}}"
+        info_str=example_info.json(indent=4),
+        query_str=example_query,
+        output_str=example_output.json(),
+    )
+    .replace("{", "{{")
+    .replace("}", "}}")
 )
 
 
@@ -97,7 +100,7 @@ class VectorStoreQueryPrompt(Prompt):
     """Vector store query prompt."""
 
     prompt_type: PromptType = PromptType.VECTOR_STORE_QUERY
-    input_variables: List[str] = ['schema_str', "info_str", "query_str"]
+    input_variables: List[str] = ["schema_str", "info_str", "query_str"]
 
 
 DEFAULT_VECTOR_STORE_QUERY_PROMPT = VectorStoreQueryPrompt(

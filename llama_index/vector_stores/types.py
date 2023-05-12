@@ -80,7 +80,6 @@ class VectorStoreQuerySpec(BaseModel):
     top_k: Optional[int] = None
 
 
-
 @dataclass
 class VectorStoreQuery:
     """Vector store query."""
