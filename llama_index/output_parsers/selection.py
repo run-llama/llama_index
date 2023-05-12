@@ -1,8 +1,9 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from typing import Any
 
 from dataclasses_json import DataClassJsonMixin
+
 from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
 
 
@@ -45,7 +46,26 @@ class Answer(DataClassJsonMixin):
 
 
 class SelectionOutputParser(BaseOutputParser):
+    def _marshal_llm_to_json(self, output: str) -> str:
+        """Extract a valid JSON array from a string.
+        Extracts a substring that represents a valid JSON array.
+
+        Args:
+            output: A string that may contain a valid JSON array surrounded by
+            extraneous characters or information.
+
+        Returns:
+            A string representing a valid JSON array.
+
+        """
+        output = output.strip()
+        left = output.find("[")
+        right = output.rfind("]")
+        output = output[left : right + 1]
+        return output
+
     def parse(self, output: str) -> Any:
+        output = self._marshal_llm_to_json(output)
         json_list = json.loads(output)
         answers = [Answer.from_dict(json_dict) for json_dict in json_list]
         return StructuredOutput(raw_output=output, parsed_output=answers)
