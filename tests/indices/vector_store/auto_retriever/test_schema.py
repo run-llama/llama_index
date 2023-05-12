@@ -22,4 +22,4 @@ def test_to_json():
 
     expected_json = """{"metadata_info": [{"name": "director", "type": "str", "description": "The director of the movie"}, {"name": "theme", "type": "str", "description": "The theme of the movie"}], "content_info": "collection of movie plot summaries"}"""
 
-    assert info.to_json() == expected_json
+    assert info.json() == expected_json

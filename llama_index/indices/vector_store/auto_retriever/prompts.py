@@ -68,7 +68,7 @@ Structured Request:
 {output_str}
 ```
 """.format(
-    info_str=example_info.to_json(indent=4),
+    info_str=example_info.json(indent=4),
     query_str=example_query,
     output_str=example_output.json()
 ).replace(

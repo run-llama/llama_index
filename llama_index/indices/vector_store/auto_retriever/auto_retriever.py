@@ -2,11 +2,12 @@
 
 
 import logging
-from typing import Any, Dict, List, cast
+from typing import List, Optional, cast
 
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices import base_retriever
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.auto_retriever.output_parser import \
     VectorStoreQueryOutputParser
 from llama_index.indices.vector_store.auto_retriever.prompts import (
@@ -26,24 +27,24 @@ class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
             self,
             index: GPTVectorStoreIndex,
             vector_store_info: VectorStoreInfo,
-            **kwargs: Any,
+            prompt_template_str: Optional[str] = None,
+            service_context: Optional[ServiceContext] = None,
         ) -> None:
         self._index = index
-        self._vector_store = self._index.vector_store
-        self._service_context = self._index.service_context
-        self._docstore = self._index.docstore
-
-        self._kwargs: Dict[str, Any] = kwargs.get("retriever_kwargs", {})
-
         self._vector_store_info = vector_store_info
+        self._service_context = service_context or self._index.service_context
+
+        # prompt
+        prompt_template_str = prompt_template_str or DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL
+        output_parser = VectorStoreQueryOutputParser()
         self._prompt =  VectorStoreQueryPrompt(
-            template=DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL,
-            output_parser=VectorStoreQueryOutputParser(),
+            template=prompt_template_str,
+            output_parser=output_parser,
         )
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input
-        info_str = self._vector_store_info.to_json(indent=4)
+        info_str = self._vector_store_info.json(indent=4)
         schema_str = VectorStoreQuerySpec.schema_json(indent=4)
 
         # call LLM

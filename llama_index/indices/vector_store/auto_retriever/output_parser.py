@@ -33,4 +33,5 @@ class VectorStoreQueryOutputParser(BaseOutputParser):
         return StructuredOutput(raw_output=output, parsed_output=query_and_filters)
     
     def format(self, prompt_template: str) -> str:
+        del prompt_template
         raise NotImplementedError()

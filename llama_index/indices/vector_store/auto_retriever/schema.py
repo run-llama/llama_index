@@ -1,19 +1,16 @@
 
 
-from dataclasses import dataclass
 from typing import List
 
-from dataclasses_json import DataClassJsonMixin
+from pydantic import BaseModel
 
 
-@dataclass
-class MetadataInfo(DataClassJsonMixin):
+class MetadataInfo(BaseModel):
     name: str
     type: str
     description: str
 
-@dataclass
-class VectorStoreInfo(DataClassJsonMixin):
+class VectorStoreInfo(BaseModel):
     metadata_info: List[MetadataInfo]
     content_info: str
 
