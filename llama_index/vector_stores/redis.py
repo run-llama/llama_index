@@ -216,6 +216,7 @@ class RedisVectorStore(VectorStore):
         nodes = []
         scores = []
         for doc in results.docs:
+            # TODO: properly retrieve metadata
             node = Node(
                 text=doc.text,
                 doc_id=doc.id,

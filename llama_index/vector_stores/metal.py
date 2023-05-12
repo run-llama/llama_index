@@ -28,6 +28,8 @@ def _to_metal_filters(standard_filters: MetadataFilters) -> list:
 def _legacy_metadata_dict_to_node(metadata: Dict[str, Any]) -> Tuple[dict, dict, dict]:
     if "extra_info" in metadata:
         extra_info = json.loads(metadata["extra_info"])
+    else:
+        extra_info = {}
     ref_doc_id = metadata["doc_id"]
     relationships = {DocumentRelationship.SOURCE: ref_doc_id}
     node_info: dict = {}

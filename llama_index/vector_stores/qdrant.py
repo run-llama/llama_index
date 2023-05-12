@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def _legacy_metadata_dict_to_node(payload: Any) -> Tuple[dict, dict, dict]:
-    extra_info = payload.get("extra_info")
+    extra_info = payload.get("extra_info", {})
     relationships = {
         DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
     }

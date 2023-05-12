@@ -168,15 +168,12 @@ def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, di
 def _to_node(entry: Dict) -> Node:
     """Convert to Node."""
     try:
-        metadata_dict = entry.copy()
-        id_ = metadata_dict["id"]
-        extra_info, node_info, relationships = metadata_dict_to_node(metadata_dict)
-    except Exception:
-        _logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
+        id_ = entry["id"]
+        extra_info, node_info, relationships = metadata_dict_to_node(entry)
+    except Exception as e:
+        _logger.debug("Failed to parse Node metadata, fallback to legacy logic.", e)
         id_ = entry["doc_id"]
-        extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
-            metadata_dict
-        )
+        extra_info, node_info, relationships = _legacy_metadata_dict_to_node(entry)
 
     return Node(
         text=entry["text"],

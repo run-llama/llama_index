@@ -111,7 +111,7 @@ class SimpleVectorStore(VectorStore):
         """Get nodes for response."""
         if query.filters is not None:
             raise ValueError(
-                "Metadata filters not implemented for " "SimpleVectorStore yet."
+                "Metadata filters not implemented for SimpleVectorStore yet."
             )
 
         # TODO: consolidate with get_query_text_embedding_similarities
