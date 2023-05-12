@@ -92,7 +92,7 @@ class QdrantVectorStore(VectorStore):
                 node = result.node
 
                 metadata = {}
-                metadata["text"] = node.text or None
+                metadata["text"] = node.text or ""
                 additional_metadata = node_to_metadata_dict(node)
                 metadata.update(additional_metadata)
 
