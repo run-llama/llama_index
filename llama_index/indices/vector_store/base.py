@@ -133,6 +133,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self, index_struct: IndexDict, nodes: Sequence[Node]
     ) -> None:
         """Asynchronously add nodes to index."""
+        if not nodes:
+            return
+
         embedding_results = await self._aget_node_embedding_results(nodes)
         new_ids = self._vector_store.add(embedding_results)
 
