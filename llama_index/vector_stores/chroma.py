@@ -81,7 +81,7 @@ class ChromaVectorStore(VectorStore):
             embeddings.append(result.embedding)
             metadatas.append(node_to_metadata_dict(result.node))
             ids.append(result.id)
-            documents.append(result.node.get_text())
+            documents.append(result.node.text or "")
 
         self._collection.add(
             embeddings=embeddings,

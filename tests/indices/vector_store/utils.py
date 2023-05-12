@@ -1,7 +1,12 @@
+import sys
 from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock
 
 import numpy as np
+
+from llama_index.storage.storage_context import StorageContext
+from llama_index.vector_stores.pinecone import PineconeVectorStore
+from tests.mock_utils.mock_utils import mock_tokenizer
 
 
 class MockPineconeIndex:
@@ -46,14 +51,19 @@ class MockPineconeIndex:
         for index in indices:
             tup = self._tuples[index]
             match = MagicMock()
-            match.metadata = {
-                "text": tup["metadata"]["text"],
-                "doc_id": tup["metadata"]["doc_id"],
-                "id": tup["metadata"]["id"],
-            }
-
+            match.metadata = tup["metadata"]
             matches.append(match)
 
         response = MagicMock()
         response.matches = matches
         return response
+
+
+def get_pinecone_storage_context() -> StorageContext:
+    # NOTE: mock pinecone import
+    sys.modules["pinecone"] = MagicMock()
+    return StorageContext.from_defaults(
+        vector_store=PineconeVectorStore(
+            pinecone_index=MockPineconeIndex(), tokenizer=mock_tokenizer
+        )
+    )
