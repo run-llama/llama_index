@@ -18,6 +18,8 @@ While each callback may not leverage each event type, the following events are a
 - SYNTHESIZE -> Logs for the result for synthesize calls.
 - TREE -> Logs for the summary and level of summaries generated.
 
+You can implement your own callback to track these events, or use an existing callback.
+
 Complete examples can be found in the notebooks below:
 
 - [LlamaDebugHandler](../examples/callbacks/LlamaDebugHandler.ipynb)
