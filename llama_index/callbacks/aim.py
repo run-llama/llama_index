@@ -1,13 +1,10 @@
 import logging
-from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 try:
     from aim import Run, Text
-    from aim.ext.system_info import DEFAULT_SYSTEM_TRACKING_INT
 except ModuleNotFoundError:
     Run, Text = None, None
-    DEFAULT_SYSTEM_TRACKING_INT = None
 
 from llama_index.callbacks.base import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType
@@ -46,7 +43,7 @@ class AimCallback(BaseCallbackHandler):
         self,
         repo: Optional[str] = None,
         experiment_name: Optional[str] = None,
-        system_tracking_interval: Optional[int] = DEFAULT_SYSTEM_TRACKING_INT,
+        system_tracking_interval: Optional[int] = 1,
         log_system_params: Optional[bool] = True,
         capture_terminal_logs: Optional[bool] = True,
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
@@ -79,7 +76,6 @@ class AimCallback(BaseCallbackHandler):
 
         self.setup(run_params)
 
-    @abstractmethod
     def on_event_start(
         self,
         event_type: CBEventType,
@@ -93,6 +89,7 @@ class AimCallback(BaseCallbackHandler):
             payload (Optional[Dict[str, Any]]): payload to store.
             event_id (str): event id to store.
         """
+        return ""
 
     def on_event_end(
         self,
