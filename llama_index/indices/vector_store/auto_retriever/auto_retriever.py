@@ -16,7 +16,7 @@ from llama_index.indices.vector_store.auto_retriever.prompts import (
 from llama_index.indices.vector_store.auto_retriever.schema import VectorStoreInfo
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
-from llama_index.output_parsers.base import StructuredOutput
+from llama_index.output_parsers.base import OutputParserException, StructuredOutput
 from llama_index.vector_stores.types import MetadataFilters, VectorStoreQuerySpec
 
 _logger = logging.getLogger(__name__)
@@ -63,21 +63,29 @@ class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
 
         # parse output
         assert self._prompt.output_parser is not None
-        structured_output = cast(
-            StructuredOutput, self._prompt.output_parser.parse(output)
-        )
-        query_spec = cast(VectorStoreQuerySpec, structured_output.parsed_output)
+        try:
+            structured_output = cast(
+                StructuredOutput, self._prompt.output_parser.parse(output)
+            )
+            query_spec = cast(VectorStoreQuerySpec, structured_output.parsed_output)
+        except OutputParserException:
+            _logger.warn("Failed to parse query spec, using defaults as fallback.")
+            query_spec = VectorStoreQuerySpec(
+                query=query_bundle.query_str,
+                filters=[],
+                top_k=None,
+            )
 
-        _logger.info(f"Auto query: {query_spec.query}")
+        _logger.info(f"Using query str: {query_spec.query}")
         filter_dict = {filter.key: filter.value for filter in query_spec.filters}
-        _logger.info(f"Auto filter: {filter_dict}")
+        _logger.info(f"Using filters: {filter_dict}")
 
         if query_spec.top_k is None:
             similarity_top_k = DEFAULT_SIMILARITY_TOP_K
         else:
             similarity_top_k = min(query_spec.top_k, self._max_top_k)
 
-        _logger.info(f"Auto top_k: {similarity_top_k}")
+        _logger.info(f"Using top_k: {similarity_top_k}")
 
         retriever = VectorIndexRetriever(
             self._index,
