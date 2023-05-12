@@ -9,6 +9,18 @@ from dataclasses_json import DataClassJsonMixin
 from llama_index.utils import get_new_id
 
 
+def _validate_is_flat_dict(metadata_dict: dict) -> None:
+    """
+    Validate that metadata dict is flat,
+    and key is str, and value is one of (str, int, float).
+    """
+    for key, val in metadata_dict.items():
+        if not isinstance(key, str):
+            raise ValueError("Metadata key must be str!")
+        if not isinstance(val, (str, int, float)):
+            raise ValueError("Value must be one of (str, int, float)")
+
+
 @dataclass
 class BaseDocument(DataClassJsonMixin):
     """Base document.
@@ -24,7 +36,14 @@ class BaseDocument(DataClassJsonMixin):
     embedding: Optional[List[float]] = None
     doc_hash: Optional[str] = None
 
-    # extra fields
+    """"
+    metadata fields
+    - injected as part of the text shown to LLMs as context
+    - used by vector DBs for metadata filtering
+
+    This must be a flat dictionary, 
+    and only uses str keys, and (str, int, float) values.
+    """
     extra_info: Optional[Dict[str, Any]] = None
 
     def __post_init__(self) -> None:
@@ -34,6 +53,9 @@ class BaseDocument(DataClassJsonMixin):
             self.doc_id = get_new_id(set())
         if self.doc_hash is None:
             self.doc_hash = self._generate_doc_hash()
+
+        if self.extra_info is not None:
+            _validate_is_flat_dict(self.extra_info)
 
     def _generate_doc_hash(self) -> str:
         """Generate a hash to represent the document."""

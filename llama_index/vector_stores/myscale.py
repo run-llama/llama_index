@@ -209,13 +209,17 @@ class MyScaleVectorStore(VectorStore):
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
         )
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
 
         """
+        if query.filters is not None:
+            raise ValueError(
+                "Metadata filters not implemented for SimpleVectorStore yet."
+            )
 
         query_embedding = cast(List[float], query.query_embedding)
         where_str = (

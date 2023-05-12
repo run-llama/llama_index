@@ -106,8 +106,14 @@ class SimpleVectorStore(VectorStore):
     def query(
         self,
         query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
+        if query.filters is not None:
+            raise ValueError(
+                "Metadata filters not implemented for SimpleVectorStore yet."
+            )
+
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()
         node_ids = [t[0] for t in items]

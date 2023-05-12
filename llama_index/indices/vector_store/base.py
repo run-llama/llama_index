@@ -14,10 +14,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-)
+from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
 
 
 class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
@@ -133,6 +130,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self, index_struct: IndexDict, nodes: Sequence[Node]
     ) -> None:
         """Asynchronously add nodes to index."""
+        if not nodes:
+            return
+
         embedding_results = await self._aget_node_embedding_results(nodes)
         new_ids = self._vector_store.add(embedding_results)
 
@@ -149,6 +149,9 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         nodes: Sequence[Node],
     ) -> None:
         """Add document to index."""
+        if not nodes:
+            return
+
         embedding_results = self._get_node_embedding_results(nodes)
         new_ids = self._vector_store.add(embedding_results)
 

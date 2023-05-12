@@ -138,6 +138,7 @@ class FaissVectorStore(VectorStore):
     def query(
         self,
         query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
@@ -146,6 +147,9 @@ class FaissVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        if query.filters is not None:
+            raise ValueError("Metadata filters not implemented for Faiss yet.")
+
         query_embedding = cast(List[float], query.query_embedding)
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
         dists, indices = self._faiss_index.search(
