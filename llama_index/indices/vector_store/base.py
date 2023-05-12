@@ -14,10 +14,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-)
+from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
 
 
 class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):

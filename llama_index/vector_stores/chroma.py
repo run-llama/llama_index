@@ -1,18 +1,37 @@
 """Chroma vector store."""
 import logging
 import math
-from typing import Any, List, cast
+from typing import Any, List, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
+
+
+def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
+    """Translate standard metadata filters to Chroma specific spec."""
+    filters = {}
+    for filter in standard_filters.filters:
+        filters[filter.key] = filter.value
+    return filters
+
+
+def _legacy_metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
+    extra_info = metadata
+    node_info: dict = {}
+    relationships = {
+        DocumentRelationship.SOURCE: metadata["document_id"],
+    }
+    return extra_info, node_info, relationships
 
 
 class ChromaVectorStore(VectorStore):
@@ -60,8 +79,7 @@ class ChromaVectorStore(VectorStore):
         documents = []
         for result in embedding_results:
             embeddings.append(result.embedding)
-            extra_info = result.node.extra_info or {}
-            metadatas.append({**extra_info, **{"document_id": result.ref_doc_id}})
+            metadatas.append(node_to_metadata_dict(result.node))
             ids.append(result.id)
             documents.append(result.node.get_text())
 
@@ -87,7 +105,7 @@ class ChromaVectorStore(VectorStore):
         """Return client."""
         return self._collection
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -95,37 +113,57 @@ class ChromaVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        if query.filters is not None:
+            if "where" in kwargs:
+                raise ValueError(
+                    "Cannot specify metadata filters via both query and kwargs. "
+                    "Use kwargs only for chroma specific items that are "
+                    "not supported via the generic query interface."
+                )
+            where = _to_chroma_filter(query.filters)
+        else:
+            where = kwargs.pop("where", {})
+
         results = self._collection.query(
-            query_embeddings=query.query_embedding, n_results=query.similarity_top_k
+            query_embeddings=query.query_embedding,
+            n_results=query.similarity_top_k,
+            where=where,
+            **kwargs,
         )
 
         logger.debug(f"> Top {len(results['documents'])} nodes:")
         nodes = []
         similarities = []
         ids = []
-        for result in zip(
+        for node_id, text, metadata, distance in zip(
             results["ids"][0],
             results["documents"][0],
             results["metadatas"][0],
             results["distances"][0],
         ):
-            node_id = result[0]
+            try:
+                extra_info, node_info, relationships = metadata_dict_to_node(metadata)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                    metadata
+                )
+
             node = Node(
                 doc_id=node_id,
-                text=result[1],
-                extra_info=result[2],
-                relationships={
-                    DocumentRelationship.SOURCE: result[2]["document_id"],
-                },
+                text=text,
+                extra_info=extra_info,
+                node_info=node_info,
+                relationships=relationships,
             )
             nodes.append(node)
 
-            similarity_score = 1.0 - math.exp(-result[3])
+            similarity_score = 1.0 - math.exp(-distance)
             similarities.append(similarity_score)
 
             logger.debug(
-                f"> [Node {result[0]}] [Similarity score: {similarity_score}] "
-                f"{truncate_text(str(result[1]), 100)}"
+                f"> [Node {node_id}] [Similarity score: {similarity_score}] "
+                f"{truncate_text(str(text), 100)}"
             )
             ids.append(node_id)
 

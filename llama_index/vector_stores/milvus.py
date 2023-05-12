@@ -367,7 +367,7 @@ class MilvusVectorStore(VectorStore):
             logger.debug(f"Unsuccessfully deleted embedding with doc_id: {doc_ids}")
             raise e
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -382,6 +382,9 @@ class MilvusVectorStore(VectorStore):
 
         if query.mode != VectorStoreQueryMode.DEFAULT:
             raise ValueError(f"Milvus does not support {query.mode} yet.")
+
+        if query.filters is not None:
+            raise ValueError("Metadata filters not implemented for Milvus yet.")
 
         expr: Optional[str] = None
         if query.doc_ids is not None and len(query.doc_ids) != 0:

@@ -8,31 +8,23 @@ import logging
 import os
 from collections import Counter
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 
 
-def get_metadata_from_node_info(
-    node_info: Dict[str, Any], field_prefix: str
-) -> Dict[str, Any]:
-    """Get metadata from node extra info."""
-    metadata = {}
-    for key, value in node_info.items():
-        metadata[field_prefix + "_" + key] = value
-    return metadata
-
-
-def get_node_info_from_metadata(
+def _get_node_info_from_metadata(
     metadata: Dict[str, Any], field_prefix: str
 ) -> Dict[str, Any]:
     """Get node extra info from metadata."""
@@ -99,6 +91,22 @@ def get_default_tokenizer() -> Callable:
     return tokenizer
 
 
+def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
+    """Convert from standard dataclass to pinecone filter dict."""
+    filters = {}
+    for filter in standard_filters.filters:
+        filters[filter.key] = filter.value
+    return filters
+
+
+def _legacy_metadata_dict_to_node(metadata: Dict[str, Any]) -> Tuple[dict, dict, dict]:
+    extra_info = _get_node_info_from_metadata(metadata, "extra_info")
+    node_info = _get_node_info_from_metadata(metadata, "node_info")
+    doc_id = metadata["doc_id"]
+    relationships = {DocumentRelationship.SOURCE: doc_id}
+    return extra_info, node_info, relationships
+
+
 class PineconeVectorStore(VectorStore):
     """Pinecone Vector Store.
 
@@ -110,12 +118,7 @@ class PineconeVectorStore(VectorStore):
 
     Args:
         pinecone_index (Optional[pinecone.Index]): Pinecone index instance
-        pinecone_kwargs (Optional[Dict]): kwargs to pass to Pinecone index.
-            NOTE: deprecated. If specified, then insert_kwargs, query_kwargs,
-            and delete_kwargs cannot be specified.
         insert_kwargs (Optional[Dict]): insert kwargs during `upsert` call.
-        query_kwargs (Optional[Dict]): query kwargs during `query` call.
-        delete_kwargs (Optional[Dict]): delete kwargs during `delete` call.
         add_sparse_vector (bool): whether to add sparse vector to index.
         tokenizer (Optional[Callable]): tokenizer to use to generate sparse
 
@@ -129,11 +132,7 @@ class PineconeVectorStore(VectorStore):
         index_name: Optional[str] = None,
         environment: Optional[str] = None,
         namespace: Optional[str] = None,
-        metadata_filters: Optional[Dict[str, Any]] = None,
-        pinecone_kwargs: Optional[Dict] = None,
         insert_kwargs: Optional[Dict] = None,
-        query_kwargs: Optional[Dict] = None,
-        delete_kwargs: Optional[Dict] = None,
         add_sparse_vector: bool = False,
         tokenizer: Optional[Callable] = None,
         **kwargs: Any,
@@ -167,21 +166,7 @@ class PineconeVectorStore(VectorStore):
             pinecone.init(environment=environment)
             self._pinecone_index = pinecone.Index(index_name)
 
-        self._metadata_filters = metadata_filters or {}
-        self._pinecone_kwargs = pinecone_kwargs or {}
-        if pinecone_kwargs and (insert_kwargs or query_kwargs or delete_kwargs):
-            raise ValueError(
-                "pinecone_kwargs cannot be specified if insert_kwargs, "
-                "query_kwargs, or delete_kwargs are specified."
-            )
-        elif pinecone_kwargs:
-            self._insert_kwargs = pinecone_kwargs
-            self._query_kwargs = pinecone_kwargs
-            self._delete_kwargs = pinecone_kwargs
-        else:
-            self._insert_kwargs = insert_kwargs or {}
-            self._query_kwargs = query_kwargs or {}
-            self._delete_kwargs = delete_kwargs or {}
+        self._insert_kwargs = insert_kwargs or {}
 
         self._add_sparse_vector = add_sparse_vector
         if tokenizer is None:
@@ -205,31 +190,11 @@ class PineconeVectorStore(VectorStore):
 
             metadata = {
                 "text": node.get_text(),
-                # NOTE: this is the reference to source doc
-                "doc_id": node.ref_doc_id,
                 "id": node_id,
             }
-            if node.extra_info:
-                # TODO: check if overlap with default metadata keys
-                metadata.update(
-                    get_metadata_from_node_info(node.extra_info, "extra_info")
-                )
-            if node.node_info:
-                # TODO: check if overlap with default metadata keys
-                metadata.update(
-                    get_metadata_from_node_info(node.node_info, "node_info")
-                )
-            # if additional metadata keys overlap with the default keys,
-            # then throw an error
-            intersecting_keys = set(metadata.keys()).intersection(
-                self._metadata_filters.keys()
-            )
-            if intersecting_keys:
-                raise ValueError(
-                    "metadata_filters keys overlap with default "
-                    f"metadata keys: {intersecting_keys}"
-                )
-            metadata.update(self._metadata_filters)
+
+            additional_metadata = node_to_metadata_dict(node)
+            metadata.update(additional_metadata)
 
             entry = {
                 "id": node_id,
@@ -242,7 +207,7 @@ class PineconeVectorStore(VectorStore):
                 )[0]
                 entry.update({"sparse_values": sparse_vector})
             self._pinecone_index.upsert(
-                [entry], namespace=self._namespace, **self._pinecone_kwargs
+                [entry], namespace=self._namespace, **self._insert_kwargs
             )
             ids.append(node_id)
         return ids
@@ -255,16 +220,14 @@ class PineconeVectorStore(VectorStore):
 
         """
         # delete by filtering on the doc_id metadata
-        self._pinecone_index.delete(
-            filter={"doc_id": {"$eq": doc_id}}, **self._pinecone_kwargs
-        )
+        self._pinecone_index.delete(filter={"doc_id": {"$eq": doc_id}}, **delete_kwargs)
 
     @property
     def client(self) -> Any:
         """Return Pinecone client."""
         return self._pinecone_index
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -293,6 +256,17 @@ class PineconeVectorStore(VectorStore):
             if query.alpha is not None:
                 query_embedding = [v * query.alpha for v in query_embedding]
 
+        if query.filters is not None:
+            if "filter" in kwargs:
+                raise ValueError(
+                    "Cannot specify filter via both query and kwargs. "
+                    "Use kwargs only for pinecone specific items that are "
+                    "not supported via the generic query interface."
+                )
+            filter = _to_pinecone_filter(query.filters)
+        else:
+            filter = kwargs.pop("filter", {})
+
         response = self._pinecone_index.query(
             vector=query_embedding,
             sparse_vector=sparse_vector,
@@ -300,8 +274,8 @@ class PineconeVectorStore(VectorStore):
             include_values=True,
             include_metadata=True,
             namespace=self._namespace,
-            filter=self._metadata_filters,
-            **self._pinecone_kwargs,
+            filter=filter,
+            **kwargs,
         )
 
         top_k_nodes = []
@@ -309,17 +283,26 @@ class PineconeVectorStore(VectorStore):
         top_k_scores = []
         for match in response.matches:
             text = match.metadata["text"]
-            extra_info = get_node_info_from_metadata(match.metadata, "extra_info")
-            node_info = get_node_info_from_metadata(match.metadata, "node_info")
-            doc_id = match.metadata["doc_id"]
             id = match.metadata["id"]
+            try:
+                extra_info, node_info, relationships = metadata_dict_to_node(
+                    match.metadata
+                )
+            except Exception:
+                _logger.debug(
+                    "Failed to parse Node metadata, fallback to legacy logic."
+                )
+                # NOTE: deprecated legacy logic for backward compatibility
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                    match.metadata
+                )
 
             node = Node(
                 text=text,
+                doc_id=id,
                 extra_info=extra_info,
                 node_info=node_info,
-                doc_id=id,
-                relationships={DocumentRelationship.SOURCE: doc_id},
+                relationships=relationships,
             )
             top_k_ids.append(match.id)
             top_k_nodes.append(node)

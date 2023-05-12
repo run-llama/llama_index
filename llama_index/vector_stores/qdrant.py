@@ -4,18 +4,28 @@ An index that is built on top of an existing Qdrant collection.
 
 """
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, List, Optional, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
-    VectorStoreQueryResult,
     VectorStoreQuery,
+    VectorStoreQueryResult,
 )
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
+
+
+def _legacy_metadata_dict_to_node(payload: Any) -> Tuple[dict, dict, dict]:
+    extra_info = payload.get("extra_info", {})
+    relationships = {
+        DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
+    }
+    node_info: dict = {}
+    return extra_info, node_info, relationships
 
 
 class QdrantVectorStore(VectorStore):
@@ -79,13 +89,13 @@ class QdrantVectorStore(VectorStore):
                 node_ids.append(result.id)
                 vectors.append(result.embedding)
                 node = result.node
-                payloads.append(
-                    {
-                        "doc_id": result.ref_doc_id,
-                        "text": node.get_text(),
-                        "extra_info": node.extra_info,
-                    }
-                )
+
+                metadata = {}
+                metadata["text"] = node.get_text()
+                additional_metadata = node_to_metadata_dict(node)
+                metadata.update(additional_metadata)
+
+                payloads.append(metadata)
 
             self._client.upsert(
                 collection_name=self._collection_name,
@@ -150,13 +160,14 @@ class QdrantVectorStore(VectorStore):
     def query(
         self,
         query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
         """
-        from qdrant_client.http.models import Payload, Filter
+        from qdrant_client.http.models import Filter, Payload
 
         query_embedding = cast(List[float], query.query_embedding)
 
@@ -174,13 +185,20 @@ class QdrantVectorStore(VectorStore):
         ids = []
         for point in response:
             payload = cast(Payload, point.payload)
+            try:
+                extra_info, node_info, relationships = metadata_dict_to_node(payload)
+            except Exception:
+                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                    payload
+                )
+
             node = Node(
                 doc_id=str(point.id),
                 text=payload.get("text"),
-                extra_info=payload.get("extra_info"),
-                relationships={
-                    DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
-                },
+                extra_info=extra_info,
+                node_info=node_info,
+                relationships=relationships,
             )
             nodes.append(node)
             similarities.append(point.score)
@@ -192,11 +210,7 @@ class QdrantVectorStore(VectorStore):
         if not query.doc_ids and not query.query_str:
             return None
 
-        from qdrant_client.http.models import (
-            FieldCondition,
-            Filter,
-            MatchAny,
-        )
+        from qdrant_client.http.models import FieldCondition, Filter, MatchAny
 
         must_conditions = []
 
@@ -207,4 +221,8 @@ class QdrantVectorStore(VectorStore):
                     match=MatchAny(any=[doc_id for doc_id in query.doc_ids]),
                 )
             )
+        # TODO: implement this
+        if query.filters is not None:
+            raise ValueError("Metadata filters not implemented for Qdrant yet.")
+
         return Filter(must=must_conditions)
