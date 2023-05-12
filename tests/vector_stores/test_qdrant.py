@@ -7,7 +7,7 @@ try:
 except ImportError:
     qdrant_client = None  # type: ignore
 
-from llama_index.data_structs.node import Node, DocumentRelationship
+from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores import QdrantVectorStore
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
 
@@ -60,7 +60,7 @@ def test_build_query_filter_returns_none() -> None:
 
 @pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
 def test_build_query_filter_returns_match_any() -> None:
-    from qdrant_client.http.models import Filter, FieldCondition, MatchAny
+    from qdrant_client.http.models import FieldCondition, Filter, MatchAny
 
     client = qdrant_client.QdrantClient(":memory:")
     qdrant_vector_store = QdrantVectorStore(collection_name="test", client=client)
@@ -78,7 +78,7 @@ def test_build_query_filter_returns_match_any() -> None:
 
 @pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
 def test_build_query_filter_returns_text_filter() -> None:
-    from qdrant_client.http.models import Filter, FieldCondition, MatchText
+    from qdrant_client.http.models import FieldCondition, Filter, MatchText
 
     client = qdrant_client.QdrantClient(":memory:")
     qdrant_vector_store = QdrantVectorStore(collection_name="test", client=client)
@@ -96,7 +96,7 @@ def test_build_query_filter_returns_text_filter() -> None:
 
 @pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
 def test_build_query_filter_returns_combined_filter() -> None:
-    from qdrant_client.http.models import Filter, FieldCondition, MatchText, MatchAny
+    from qdrant_client.http.models import FieldCondition, Filter, MatchAny, MatchText
 
     client = qdrant_client.QdrantClient(":memory:")
     qdrant_vector_store = QdrantVectorStore(collection_name="test", client=client)

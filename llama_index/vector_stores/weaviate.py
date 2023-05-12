@@ -16,8 +16,8 @@ from llama_index.readers.weaviate.utils import get_default_class_prefix
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
-    VectorStoreQueryResult,
     VectorStoreQuery,
+    VectorStoreQueryResult,
 )
 
 
@@ -101,8 +101,11 @@ class WeaviateVectorStore(VectorStore):
         """
         delete_document(self._client, doc_id, self._class_prefix)
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
+        if query.filters is not None:
+            raise ValueError("Metadata filters not implemented for Weaviate yet.")
+
         nodes = weaviate_query(
             self._client,
             self._class_prefix,

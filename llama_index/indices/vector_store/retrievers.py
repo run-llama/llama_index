@@ -1,9 +1,9 @@
 """Base vector store index query."""
 
 
-from typing import Any, List, Optional
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
+from typing import Any, Dict, List, Optional
 
+from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
@@ -12,18 +12,26 @@ from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
 
 
 class VectorIndexRetriever(BaseRetriever):
-    """Base vector store query.
+    """Vector index retriever.
 
     Args:
-        embed_model (Optional[BaseEmbedding]): embedding model
-        similarity_top_k (int): number of top k results to return
-        vector_store (Optional[VectorStore]): vector store
+        index (GPTVectorStoreIndex): vector store index.
+        similarity_top_k (int): number of top k results to return.
+        vector_store_query_mode (str): vector store query mode
+            See reference for VectorStoreQueryMode for full list of supported modes.
+        filters (Optional[MetadataFilters]): metadata filters, defaults to None
+        alpha (float): weight for sparse/dense retrieval, only used for
+            hybrid query mode.
+        doc_ids (Optional[List[str]]): list of documents to constrain search.
+        vector_store_kwargs (dict): Additional vector store specific kwargs to pass
+            through to the vector store at query time.
 
     """
 
@@ -31,7 +39,8 @@ class VectorIndexRetriever(BaseRetriever):
         self,
         index: GPTVectorStoreIndex,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
-        vector_store_query_mode: str = VectorStoreQueryMode.DEFAULT,
+        vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
+        filters: Optional[MetadataFilters] = None,
         alpha: Optional[float] = None,
         doc_ids: Optional[List[str]] = None,
         **kwargs: Any,
@@ -46,6 +55,9 @@ class VectorIndexRetriever(BaseRetriever):
         self._vector_store_query_mode = VectorStoreQueryMode(vector_store_query_mode)
         self._alpha = alpha
         self._doc_ids = doc_ids
+        self._filters = filters
+
+        self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
 
     @llm_token_counter("retrieve")
     def _retrieve(
@@ -67,8 +79,9 @@ class VectorIndexRetriever(BaseRetriever):
             query_str=query_bundle.query_str,
             mode=self._vector_store_query_mode,
             alpha=self._alpha,
+            filters=self._filters,
         )
-        query_result = self._vector_store.query(query)
+        query_result = self._vector_store.query(query, **self._kwargs)
 
         if query_result.nodes is None:
             # NOTE: vector store does not keep text and returns node indices.

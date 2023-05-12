@@ -5,20 +5,15 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 """
 
 import json
+import logging
 from dataclasses import field
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.data_structs.data_structs import Node
 from llama_index.data_structs.node import DocumentRelationship
-from llama_index.readers.weaviate.utils import (
-    get_by_id,
-    parse_get_response,
-    validate_client,
-)
-from llama_index.utils import get_new_id
+from llama_index.readers.weaviate.utils import parse_get_response, validate_client
 from llama_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
-
-import logging
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 
@@ -35,11 +30,6 @@ NODE_SCHEMA: List[Dict] = [
     },
     {
         "dataType": ["string"],
-        "description": "extra_info (in JSON)",
-        "name": "extra_info",
-    },
-    {
-        "dataType": ["string"],
         "description": "The ref_doc_id of the Node",
         "name": "ref_doc_id",
     },
@@ -50,25 +40,10 @@ NODE_SCHEMA: List[Dict] = [
     },
     {
         "dataType": ["string"],
-        "description": "The hash of the Document",
-        "name": "doc_hash",
-    },
-    {
-        "dataType": ["string"],
         "description": "The relationships of the node (in JSON)",
         "name": "relationships",
     },
 ]
-
-
-def _get_by_id(client: Any, object_id: str, class_prefix: str) -> Dict:
-    """Get entry by id."""
-    validate_client(client)
-    class_name = _class_name(class_prefix)
-    properties = NODE_SCHEMA
-    prop_names = [p["name"] for p in properties]
-    entry = get_by_id(client, object_id, class_name, prop_names)
-    return entry
 
 
 def create_schema(client: Any, class_prefix: str) -> None:
@@ -139,17 +114,19 @@ def _class_name(class_prefix: str) -> str:
     return f"{class_prefix}_Node"
 
 
-def _to_node(entry: Dict) -> Node:
-    """Convert to Node."""
+def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, dict]:
+    """Legacy logic for converting metadata dict to node data.
+    Only for backwards compatibility.
+    """
     extra_info_str = entry["extra_info"]
     if extra_info_str == "":
-        extra_info = None
+        extra_info = {}
     else:
         extra_info = json.loads(extra_info_str)
 
     node_info_str = entry["node_info"]
     if node_info_str == "":
-        node_info = None
+        node_info = {}
     else:
         node_info = json.loads(node_info_str)
 
@@ -161,64 +138,52 @@ def _to_node(entry: Dict) -> Node:
         relationships = {
             DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
         }
+    return extra_info, node_info, relationships
+
+
+def _to_node(entry: Dict) -> Node:
+    """Convert to Node."""
+    additional = entry.pop("_additional")
+    try:
+        extra_info, node_info, relationships = metadata_dict_to_node(entry)
+    except Exception as e:
+        _logger.debug("Failed to parse Node metadata, fallback to legacy logic.", e)
+        extra_info, node_info, relationships = _legacy_metadata_dict_to_node(entry)
 
     return Node(
         text=entry["text"],
+        embedding=additional["vector"],
         doc_id=entry["doc_id"],
-        embedding=entry["_additional"]["vector"],
         extra_info=extra_info,
         node_info=node_info,
         relationships=relationships,
     )
 
 
-def _node_to_dict(node: Node) -> dict:
-    node_dict = node.to_dict()
-    node_dict.pop("embedding")  # NOTE: stored outside of dict
-
-    # json-serialize the extra_info
-    extra_info = node_dict.pop("extra_info")
-    extra_info_str = ""
-    if extra_info is not None:
-        extra_info_str = json.dumps(extra_info)
-    node_dict["extra_info"] = extra_info_str
-
-    # json-serialize the node_info
-    node_info = node_dict.pop("node_info")
-    node_info_str = ""
-    if node_info is not None:
-        node_info_str = json.dumps(node_info)
-    node_dict["node_info"] = node_info_str
-
-    # json-serialize the relationships
-    relationships = node_dict.pop("relationships")
-    relationships_str = ""
-    if relationships is not None:
-        relationships_str = json.dumps(relationships)
-    node_dict["relationships"] = relationships_str
-
-    ref_doc_id = node.ref_doc_id
-    if ref_doc_id is not None:
-        node_dict["ref_doc_id"] = ref_doc_id
-    return node_dict
-
-
 def _add_node(
     client: Any, node: Node, class_prefix: str, batch: Optional[Any] = None
 ) -> str:
     """Add node."""
-    node_dict = _node_to_dict(node)
-    vector = node.embedding
+    metadata = {}
+    metadata["text"] = node.get_text()
 
-    # TODO: account for existing nodes that are stored
-    node_id = get_new_id(set())
+    additional_metadata = node_to_metadata_dict(node)
+    metadata.update(additional_metadata)
+
+    # NOTE: important to set this after additional_metadata to override.
+    #       be default, "doc_id" refers to source doc id, but for legacy reason
+    #       we use "doc_id" to refer to node id in weaviate.
+    metadata["doc_id"] = node.get_doc_id()
+
+    vector = node.embedding
+    node_id = node.get_doc_id()
     class_name = _class_name(class_prefix)
 
     # if batch object is provided (via a context manager), use that instead
     if batch is not None:
-        batch.add_data_object(node_dict, class_name, node_id, vector)
+        batch.add_data_object(metadata, class_name, node_id, vector)
     else:
-        client.batch.add_data_object(node_dict, class_name, node_id, vector)
+        client.batch.add_data_object(metadata, class_name, node_id, vector)
 
     return node_id
 

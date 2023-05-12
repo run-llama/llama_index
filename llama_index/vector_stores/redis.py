@@ -19,6 +19,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.utils import node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 
@@ -120,36 +121,33 @@ class RedisVectorStore(VectorStore):
         Raises:
             ValueError: If the index already exists and overwrite is False.
         """
+        # check to see if empty document list was passed
+        if len(embedding_results) == 0:
+            return []
 
-        # check index exists, call once to avoid calling multiple times
-        index_exists = self._index_exists()
-        if index_exists and self._overwrite:
-            self.delete_index()
+        # set vector dim for creation if index doesn't exist
+        self._index_args["dims"] = len(embedding_results[0].embedding)
 
-        elif index_exists and not self._overwrite:
-            raise ValueError("Index already exists and overwrite is False.")
-
-        else:  # index does not exist, create it
-            # get vector dim from embedding results if index does not exist
-            # as it will be created from the embedding result attributes.
-            self._index_args["dims"] = len(embedding_results[0].embedding)
+        if self._index_exists():
+            if self._overwrite:
+                self.delete_index()
+                self._create_index()
+            else:
+                logging.info(f"Adding document to existing index {self._index_name}")
+        else:
             self._create_index()
 
         ids = []
         for result in embedding_results:
-            # Add extra info and node info to the index
-            # cast types to satisfy mypy
-            node_info = cast_metadata_types(result.node.node_info)
-            extra_info = cast_metadata_types(result.node.extra_info)
-
             mapping = {
                 "id": result.id,
                 "doc_id": result.ref_doc_id,
                 "text": result.node.get_text(),
                 self._vector_key: array_to_buffer(result.embedding),
-                **node_info,
-                **extra_info,
             }
+            additional_metadata = node_to_metadata_dict(result.node)
+            mapping.update(additional_metadata)
+
             ids.append(result.id)
             key = "_".join([self._prefix, str(result.id)])
             self._redis_client.hset(key, mapping=mapping)  # type: ignore
@@ -169,6 +167,13 @@ class RedisVectorStore(VectorStore):
         query_str = "@doc_id:{%s}" % self.tokenizer.escape(doc_id)
         # find all documents that match a doc_id
         results = self._redis_client.ft(self._index_name).search(query_str)
+        if len(results.docs) == 0:
+            # don't raise an error but warn the user that document wasn't found
+            # could be a result of eviction policy
+            _logger.warning(
+                f"Document with doc_id {doc_id} not found in index {self._index_name}"
+            )
+            return
 
         for doc in results.docs:
             self._redis_client.delete(doc.id)
@@ -181,7 +186,7 @@ class RedisVectorStore(VectorStore):
         _logger.info(f"Deleting index {self._index_name}")
         self._redis_client.ft(self._index_name).dropindex(delete_documents=True)
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query the index.
 
         Args:
@@ -189,8 +194,14 @@ class RedisVectorStore(VectorStore):
 
         Returns:
             VectorStoreQueryResult: query result
+
+        Raises:
+            ValueError: If query.query_embedding is None.
+            redis.exceptions.RedisError: If there is an error querying the index.
+            redis.exceptions.TimeoutError: If there is a timeout querying the index.
         """
-        from redis.exceptions import ResponseError as RedisResponseError
+        from redis.exceptions import RedisError
+        from redis.exceptions import TimeoutError as RedisTimeoutError
 
         return_fields = ["id", "doc_id", "text", self._vector_key, "vector_score"]
 
@@ -211,14 +222,18 @@ class RedisVectorStore(VectorStore):
             results = self._redis_client.ft(self._index_name).search(
                 redis_query, query_params=query_params  # type: ignore
             )
-        except RedisResponseError as e:
-            _logger.error(f"Error querying index {self._index_name}: {e}")
+        except RedisTimeoutError as e:
+            _logger.error(f"Query timed out on {self._index_name}: {e}")
+            raise e
+        except RedisError as e:
+            _logger.error(f"Error querying {self._index_name}: {e}")
             raise e
 
         ids = []
         nodes = []
         scores = []
         for doc in results.docs:
+            # TODO: properly retrieve metadata
             node = Node(
                 text=doc.text,
                 doc_id=doc.id,
@@ -238,13 +253,24 @@ class RedisVectorStore(VectorStore):
         Args:
             persist_path (str): Path to persist the vector store to. (doesn't apply)
             in_background (bool, optional): Persist in background. Defaults to True.
+
+        Raises:
+            redis.exceptions.RedisError: If there is an error
+                                         persisting the index to disk.
         """
-        if in_background:
-            _logger.info("Saving index to disk in background")
-            self._redis_client.bgsave()
-        else:
-            _logger.info("Saving index to disk")
-            self._redis_client.save()
+        from redis.exceptions import RedisError
+
+        try:
+            if in_background:
+                _logger.info("Saving index to disk in background")
+                self._redis_client.bgsave()
+            else:
+                _logger.info("Saving index to disk")
+                self._redis_client.save()
+
+        except RedisError as e:
+            _logger.error(f"Error saving index to disk: {e}")
+            raise e
 
     def _create_index(self) -> None:
         # should never be called outside class and hence should not raise importerror
@@ -311,34 +337,40 @@ class RedisVectorStore(VectorStore):
         returns:
             A RediSearch VectorField.
         """
+        from redis import DataError
         from redis.commands.search.field import VectorField
 
-        if algorithm.upper() == "HNSW":
-            return VectorField(
-                name,
-                "HNSW",
-                {
-                    "TYPE": datatype.upper(),
-                    "DIM": dims,
-                    "DISTANCE_METRIC": distance_metric.upper(),
-                    "INITIAL_CAP": initial_cap,
-                    "M": m,
-                    "EF_CONSTRUCTION": ef_construction,
-                    "EF_RUNTIME": ef_runtime,
-                    "EPSILON": epsilon,
-                },
-            )
-        else:
-            return VectorField(
-                name,
-                "FLAT",
-                {
-                    "TYPE": datatype.upper(),
-                    "DIM": dims,
-                    "DISTANCE_METRIC": distance_metric.upper(),
-                    "INITIAL_CAP": initial_cap,
-                    "BLOCK_SIZE": block_size,
-                },
+        try:
+            if algorithm.upper() == "HNSW":
+                return VectorField(
+                    name,
+                    "HNSW",
+                    {
+                        "TYPE": datatype.upper(),
+                        "DIM": dims,
+                        "DISTANCE_METRIC": distance_metric.upper(),
+                        "INITIAL_CAP": initial_cap,
+                        "M": m,
+                        "EF_CONSTRUCTION": ef_construction,
+                        "EF_RUNTIME": ef_runtime,
+                        "EPSILON": epsilon,
+                    },
+                )
+            else:
+                return VectorField(
+                    name,
+                    "FLAT",
+                    {
+                        "TYPE": datatype.upper(),
+                        "DIM": dims,
+                        "DISTANCE_METRIC": distance_metric.upper(),
+                        "INITIAL_CAP": initial_cap,
+                        "BLOCK_SIZE": block_size,
+                    },
+                )
+        except DataError as e:
+            raise ValueError(
+                f"Failed to create Redis index vector field with error: {e}"
             )
 
 
@@ -346,5 +378,9 @@ def cast_metadata_types(mapping: Optional[Dict[str, Any]]) -> Dict[str, str]:
     metadata = {}
     if mapping:
         for key, value in mapping.items():
-            metadata[str(key)] = str(value)
+            try:
+                metadata[str(key)] = str(value)
+            except (TypeError, ValueError) as e:
+                # warn the user and continue
+                _logger.warning("Failed to cast metadata to string", e)
     return metadata
