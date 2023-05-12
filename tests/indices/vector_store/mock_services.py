@@ -28,4 +28,3 @@ class MockEmbedding(BaseEmbedding):
             return [1, 0, 0, 0, 0]
         else:
             return [0, 0, 0, 0, 0]
-

@@ -1,23 +1,19 @@
 """Test recursive queries."""
 
 import asyncio
-import sys
 from typing import Any, Dict, List
-from unittest.mock import MagicMock
 
 import pytest
 
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.composability.graph import ComposableGraph
-from llama_index.indices.keyword_table.simple_base import \
-    GPTSimpleKeywordTableIndex
+from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.readers.schema.base import Document
 from tests.indices.vector_store.utils import get_pinecone_storage_context
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
-from tests.mock_utils.mock_utils import mock_tokenizer
 
 
 class MockEmbedding(BaseEmbedding):
@@ -286,7 +282,6 @@ def test_recursive_query_vector_vector(
     query_str = "Cat?"
     response = query_engine.query(query_str)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
-
 
 
 def test_recursive_query_pinecone_pinecone(

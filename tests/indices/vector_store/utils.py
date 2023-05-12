@@ -51,12 +51,13 @@ class MockPineconeIndex:
         for index in indices:
             tup = self._tuples[index]
             match = MagicMock()
-            match.metadata = tup['metadata']
+            match.metadata = tup["metadata"]
             matches.append(match)
 
         response = MagicMock()
         response.matches = matches
         return response
+
 
 def get_pinecone_storage_context() -> StorageContext:
     # NOTE: mock pinecone import

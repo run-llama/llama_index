@@ -11,12 +11,9 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.data_structs.data_structs import Node
 from llama_index.data_structs.node import DocumentRelationship
-from llama_index.readers.weaviate.utils import (parse_get_response,
-                                                validate_client)
-from llama_index.vector_stores.types import (VectorStoreQuery,
-                                             VectorStoreQueryMode)
-from llama_index.vector_stores.utils import (metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.readers.weaviate.utils import parse_get_response, validate_client
+from llama_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 

@@ -1,8 +1,6 @@
 """Test pinecone indexes."""
 
-import sys
 from typing import List
-from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -45,20 +43,20 @@ def test_build_pinecone(
     assert len(nodes) == 1
     assert nodes[0].node.get_text() == "This is another test."
 
+
 def test_node_with_metadata(
     mock_service_context: ServiceContext,
 ) -> None:
     storage_context = get_pinecone_storage_context()
-    nodes = [
-        Node(text='test node text', extra_info={'key': 'value'})
-    ]
-    index = GPTVectorStoreIndex(nodes, storage_context=storage_context, service_context=mock_service_context)
+    input_nodes = [Node(text="test node text", extra_info={"key": "value"})]
+    index = GPTVectorStoreIndex(
+        input_nodes,
+        storage_context=storage_context,
+        service_context=mock_service_context,
+    )
 
     retriever = index.as_retriever(similarity_top_k=1)
     nodes = retriever.retrieve("What is?")
     assert len(nodes) == 1
-    assert nodes[0].node.text == 'test node text'
-    assert nodes[0].node.extra_info == {'key': 'value'}
-
-
-
+    assert nodes[0].node.text == "test node text"
+    assert nodes[0].node.extra_info == {"key": "value"}
