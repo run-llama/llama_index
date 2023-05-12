@@ -77,7 +77,7 @@ class MetadataFilters(BaseModel):
 class VectorStoreQuerySpec(BaseModel):
     query: str
     filters: List[ExactMatchFilter]
-    top_k: int
+    top_k: Optional[int] = None
 
 
 

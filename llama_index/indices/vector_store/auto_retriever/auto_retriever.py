@@ -4,6 +4,7 @@
 import logging
 from typing import List, Optional, cast
 
+from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices import base_retriever
 from llama_index.indices.query.schema import QueryBundle
@@ -29,6 +30,7 @@ class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
             vector_store_info: VectorStoreInfo,
             prompt_template_str: Optional[str] = None,
             service_context: Optional[ServiceContext] = None,
+            max_top_k: int = 20,
         ) -> None:
         self._index = index
         self._vector_store_info = vector_store_info
@@ -41,6 +43,9 @@ class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
             template=prompt_template_str,
             output_parser=output_parser,
         )
+
+        # additional config
+        self._max_top_k = max_top_k
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input
@@ -64,11 +69,17 @@ class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
             filter.key: filter.value for filter in query_spec.filters
         }
         _logger.info(f'Auto filter: {filter_dict}')
-        _logger.info(f'Auto top_k: {query_spec.top_k}')
         
+        if query_spec.top_k is None:
+            similarity_top_k = DEFAULT_SIMILARITY_TOP_K
+        else:
+            similarity_top_k = min(query_spec.top_k, self._max_top_k)
+
+        _logger.info(f'Auto top_k: {similarity_top_k}')
+
         retriever = VectorIndexRetriever(
             self._index, 
             filters=MetadataFilters(filters=query_spec.filters), 
-            similarity_top_k=query_spec.top_k
+            similarity_top_k=similarity_top_k,
         )
         return retriever.retrieve(query_spec.query)

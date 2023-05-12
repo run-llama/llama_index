@@ -29,7 +29,7 @@ Make sure that filters are only used as needed. If there are no filters that sho
 applied return [] for the filter value.\
 
 If the user's query explicitly mentions number of documents to retrieve, set top_k to \
-that number, otherwise use the default value of 2. Do not set top_k above 20. 
+that number, otherwise do not set top_k. 
 
 """
 
@@ -50,7 +50,6 @@ example_output = VectorStoreQuerySpec(
         ExactMatchFilter(key="artist", value="Katy Perry"),
         ExactMatchFilter(key="genre", value="pop"),
     ],
-    top_k=2,
 )
 
 EXAMPLES ="""\
