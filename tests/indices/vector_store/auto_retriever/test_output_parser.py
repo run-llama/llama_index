@@ -1,10 +1,10 @@
 from typing import cast
 
-from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser import \
-    VectorStoreQueryOutputParser
+from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser import (
+    VectorStoreQueryOutputParser,
+)
 from llama_index.output_parsers.base import StructuredOutput
-from llama_index.vector_stores.types import (ExactMatchFilter,
-                                             VectorStoreQuerySpec)
+from llama_index.vector_stores.types import ExactMatchFilter, VectorStoreQuerySpec
 
 
 def test_output_parser() -> None:

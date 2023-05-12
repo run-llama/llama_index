@@ -8,14 +8,19 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
-from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser import \
-    VectorStoreQueryOutputParser
+from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser import (
+    VectorStoreQueryOutputParser,
+)
 from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
-    DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL, VectorStoreQueryPrompt)
-from llama_index.output_parsers.base import (OutputParserException,
-                                             StructuredOutput)
-from llama_index.vector_stores.types import (MetadataFilters, VectorStoreInfo,
-                                             VectorStoreQuerySpec)
+    DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL,
+    VectorStoreQueryPrompt,
+)
+from llama_index.output_parsers.base import OutputParserException, StructuredOutput
+from llama_index.vector_stores.types import (
+    MetadataFilters,
+    VectorStoreInfo,
+    VectorStoreQuerySpec,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -31,7 +36,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         vector_store_info (VectorStoreInfo): additional information information about
             vector store content and supported metadata filters. The natural language
             description is used by an LLM to automatically set vector store query
-            parameters.   
+            parameters.
         prompt_template_str: custom prompt template string for LLM.
             Uses default template string if None.
         service_context: service context containing reference to LLMPredictor.
@@ -39,6 +44,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         max_top_k: the maximum top_k allowed. The top_k set by LLM will be clamped
             to this value.
     """
+
     def __init__(
         self,
         index: GPTVectorStoreIndex,

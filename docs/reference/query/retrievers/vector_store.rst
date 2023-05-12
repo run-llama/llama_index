@@ -1,11 +1,11 @@
 Vector Store Retrievers
 =======================
 
-.. automodule:: llama_index.indices.vector_store.retrievers
+.. automodule:: llama_index.indices.vector_store.retrievers.retriever
    :members:
    :inherited-members:
 
-.. automodule:: llama_index.indices.vector_store.auto_retriever.auto_retriever
+.. automodule:: llama_index.indices.vector_store.retrievers.auto_retriever.auto_retriever
    :members:
    :inherited-members:
 
