@@ -27,6 +27,8 @@ class VectorIndexRetriever(BaseRetriever):
         alpha (float): weight for sparse/dense retrieval, only used for
             hybrid query mode.
         doc_ids (Optional[List[str]]): list of documents to constrain search.
+        vector_store_kwargs (dict): Additional vector store specific kwargs to pass
+            through to the vector store at query time.
 
     """
 
