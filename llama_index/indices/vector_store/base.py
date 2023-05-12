@@ -7,7 +7,6 @@ An index that that is built on top of an existing vector store.
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.data_structs.node import ImageNode, IndexNode, Node
 from llama_index.indices.base import BaseGPTIndex
@@ -52,8 +51,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         # NOTE: lazy import
-        from llama_index.indices.vector_store.retrievers import \
-            VectorIndexRetriever
+        from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 
         return VectorIndexRetriever(self, **kwargs)
 
@@ -76,20 +74,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             else:
                 id_to_embed_map[n.get_doc_id()] = n.embedding
 
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.EMBEDDING
-        )
-
         # call embedding model to get embeddings
         (
             result_ids,
             result_embeddings,
         ) = self._service_context.embed_model.get_queued_text_embeddings()
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.EMBEDDING,
-            payload={"num_nodes": len(result_ids)},
-            event_id=event_id,
-        )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
@@ -119,10 +108,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             else:
                 id_to_embed_map[n.get_doc_id()] = n.embedding
 
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.EMBEDDING
-        )
-
         # call embedding model to get embeddings
         (
             result_ids,
@@ -131,11 +116,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
             text_queue
         )
 
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.EMBEDDING,
-            payload={"num_nodes": len(text_queue)},
-            event_id=event_id,
-        )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 

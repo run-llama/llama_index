@@ -1,7 +1,7 @@
 """OpenAI embeddings file."""
 
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
@@ -90,8 +90,7 @@ _TEXT_MODE_MODEL_DICT = {
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 def get_embedding(
-    text: str,
-    engine: Optional[str] = None,
+    text: str, engine: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
     """Get embedding.
 
@@ -103,11 +102,15 @@ def get_embedding(
 
     """
     text = text.replace("\n", " ")
-    return openai.Embedding.create(input=[text], model=engine)["data"][0]["embedding"]
+    return openai.Embedding.create(input=[text], model=engine, **kwargs)["data"][0][
+        "embedding"
+    ]
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
-async def aget_embedding(text: str, engine: Optional[str] = None) -> List[float]:
+async def aget_embedding(
+    text: str, engine: Optional[str] = None, **kwargs: Any
+) -> List[float]:
     """Asynchronously get embedding.
 
     NOTE: Copied from OpenAI's embedding utils:
@@ -120,15 +123,14 @@ async def aget_embedding(text: str, engine: Optional[str] = None) -> List[float]
     # replace newlines, which can negatively affect performance.
     text = text.replace("\n", " ")
 
-    return (await openai.Embedding.acreate(input=[text], model=engine))["data"][0][
-        "embedding"
-    ]
+    return (await openai.Embedding.acreate(input=[text], model=engine, **kwargs))[
+        "data"
+    ][0]["embedding"]
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 def get_embeddings(
-    list_of_text: List[str],
-    engine: Optional[str] = None,
+    list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
 ) -> List[List[float]]:
     """Get embeddings.
 
@@ -144,13 +146,13 @@ def get_embeddings(
     # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    data = openai.Embedding.create(input=list_of_text, model=engine).data
+    data = openai.Embedding.create(input=list_of_text, model=engine, **kwargs).data
     return [d["embedding"] for d in data]
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 async def aget_embeddings(
-    list_of_text: List[str], engine: Optional[str] = None
+    list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
 ) -> List[List[float]]:
     """Asynchronously get embeddings.
 
@@ -166,8 +168,22 @@ async def aget_embeddings(
     # replace newlines, which can negatively affect performance.
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    data = (await openai.Embedding.acreate(input=list_of_text, model=engine)).data
+    data = (
+        await openai.Embedding.acreate(input=list_of_text, model=engine, **kwargs)
+    ).data
     return [d["embedding"] for d in data]
+
+
+def get_engine(
+    mode: str,
+    model: str,
+    mode_model_dict: Dict[Tuple[OpenAIEmbeddingMode, str], OpenAIEmbeddingModeModel],
+) -> OpenAIEmbeddingModeModel:
+    """Get engine."""
+    key = (OpenAIEmbeddingMode(mode), OpenAIEmbeddingModelType(model))
+    if key not in mode_model_dict:
+        raise ValueError(f"Invalid mode, model combination: {key}")
+    return mode_model_dict[key]
 
 
 class OpenAIEmbedding(BaseEmbedding):
@@ -205,42 +221,27 @@ class OpenAIEmbedding(BaseEmbedding):
     ) -> None:
         """Init params."""
         super().__init__(**kwargs)
-        self.mode = OpenAIEmbeddingMode(mode)
-        self.model = OpenAIEmbeddingModelType(model)
         self.deployment_name = deployment_name
+        self.query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
+        self.text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        if self.deployment_name is not None:
-            engine = self.deployment_name
-        else:
-            key = (self.mode, self.model)
-            if key not in _QUERY_MODE_MODEL_DICT:
-                raise ValueError(f"Invalid mode, model combination: {key}")
-            engine = _QUERY_MODE_MODEL_DICT[key]
-        return get_embedding(query, engine=engine)
+        return get_embedding(
+            query, engine=self.query_engine, deployment_id=self.deployment_name
+        )
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        if self.deployment_name is not None:
-            engine = self.deployment_name
-        else:
-            key = (self.mode, self.model)
-            if key not in _TEXT_MODE_MODEL_DICT:
-                raise ValueError(f"Invalid mode, model combination: {key}")
-            engine = _TEXT_MODE_MODEL_DICT[key]
-        return get_embedding(text, engine=engine)
+        return get_embedding(
+            text, engine=self.text_engine, deployment_id=self.deployment_name
+        )
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        if self.deployment_name is not None:
-            engine = self.deployment_name
-        else:
-            key = (self.mode, self.model)
-            if key not in _TEXT_MODE_MODEL_DICT:
-                raise ValueError(f"Invalid mode, model combination: {key}")
-            engine = _TEXT_MODE_MODEL_DICT[key]
-        return await aget_embedding(text, engine=engine)
+        return await aget_embedding(
+            text, engine=self.text_engine, deployment_id=self.deployment_name
+        )
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings.
@@ -249,24 +250,12 @@ class OpenAIEmbedding(BaseEmbedding):
         Can be overriden for batch queries.
 
         """
-        if self.deployment_name is not None:
-            engine = self.deployment_name
-        else:
-            key = (self.mode, self.model)
-            if key not in _TEXT_MODE_MODEL_DICT:
-                raise ValueError(f"Invalid mode, model combination: {key}")
-            engine = _TEXT_MODE_MODEL_DICT[key]
-        embeddings = get_embeddings(texts, engine=engine)
-        return embeddings
+        return get_embeddings(
+            texts, engine=self.text_engine, deployment_id=self.deployment_name
+        )
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        if self.deployment_name is not None:
-            engine = self.deployment_name
-        else:
-            key = (self.mode, self.model)
-            if key not in _TEXT_MODE_MODEL_DICT:
-                raise ValueError(f"Invalid mode, model combination: {key}")
-            engine = _TEXT_MODE_MODEL_DICT[key]
-        embeddings = await aget_embeddings(texts, engine=engine)
-        return embeddings
+        return await aget_embeddings(
+            texts, engine=self.text_engine, deployment_id=self.deployment_name
+        )

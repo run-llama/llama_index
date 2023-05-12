@@ -8,21 +8,25 @@ from typing import Any, List, Optional, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.utils import iter_batch
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
-from llama_index.vector_stores.utils import (metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
 
-def _legacy_metadata_dict_to_node(payload) -> Tuple[dict, dict, dict]:
-    extra_info=payload.get("extra_info")
-    relationships={
+
+def _legacy_metadata_dict_to_node(payload: Any) -> Tuple[dict, dict, dict]:
+    extra_info = payload.get("extra_info", {})
+    relationships = {
         DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
     }
-    node_info = None
+    node_info: dict = {}
     return extra_info, node_info, relationships
+
 
 class QdrantVectorStore(VectorStore):
     """Qdrant Vector Store.
@@ -87,7 +91,7 @@ class QdrantVectorStore(VectorStore):
                 node = result.node
 
                 metadata = {}
-                metadata['text'] = node.get_text()
+                metadata["text"] = node.get_text()
                 additional_metadata = node_to_metadata_dict(node)
                 metadata.update(additional_metadata)
 
@@ -182,16 +186,13 @@ class QdrantVectorStore(VectorStore):
         for point in response:
             payload = cast(Payload, point.payload)
             try:
-                # TODO: figure out how Payload is different from dict
                 extra_info, node_info, relationships = metadata_dict_to_node(payload)
             except Exception:
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(payload)
+                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                    payload
+                )
 
-                extra_info=payload.get("extra_info")
-                relationships={
-                    DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
-                }
-                node_info = None
             node = Node(
                 doc_id=str(point.id),
                 text=payload.get("text"),
@@ -222,6 +223,6 @@ class QdrantVectorStore(VectorStore):
             )
         # TODO: implement this
         if query.filters is not None:
-            raise ValueError('Metadata filters not implemented for Qdrant yet.')
+            raise ValueError("Metadata filters not implemented for Qdrant yet.")
 
         return Filter(must=must_conditions)

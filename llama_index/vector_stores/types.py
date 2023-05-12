@@ -58,12 +58,19 @@ class VectorStoreQueryMode(str, Enum):
 
 
 class ExactMatchFilter(BaseModel):
+    """Exact match metadata filter for vector stores."""
+
     key: str
     value: Union[str, int, float]
 
 
 class MetadataFilters(BaseModel):
-    # TODO: support more advanced expressions
+    """Metadata filters for vector stores.
+
+    Currently only supports exact match filters.
+    TODO: support more advanced expressions.
+    """
+
     filters: List[ExactMatchFilter]
 
 
@@ -88,6 +95,7 @@ class VectorStoreQuery:
     # NOTE: only for hybrid search (0 for bm25, 1 for vector search)
     alpha: Optional[float] = None
 
+    # metadata filters
     filters: Optional[MetadataFilters] = None
 
 
@@ -114,11 +122,7 @@ class VectorStore(Protocol):
         """Delete doc."""
         ...
 
-    def query(
-        self,
-        query: VectorStoreQuery,
-        **kwargs: Any
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
         ...
 

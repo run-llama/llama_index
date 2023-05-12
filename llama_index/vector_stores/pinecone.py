@@ -8,16 +8,20 @@ import logging
 import os
 from collections import Counter
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (MetadataFilters,
-                                             NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryMode,
-                                             VectorStoreQueryResult)
-from llama_index.vector_stores.utils import (metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.vector_stores.types import (
+    MetadataFilters,
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+    VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+
+_logger = logging.getLogger(__name__)
 
 
 def _get_node_info_from_metadata(
@@ -95,12 +99,13 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     return filters
 
 
-def _legacy_metadata_dict_to_node(metadata):
+def _legacy_metadata_dict_to_node(metadata: Dict[str, Any]) -> Tuple[dict, dict, dict]:
     extra_info = _get_node_info_from_metadata(metadata, "extra_info")
     node_info = _get_node_info_from_metadata(metadata, "node_info")
     doc_id = metadata["doc_id"]
     relationships = {DocumentRelationship.SOURCE: doc_id}
     return extra_info, node_info, relationships
+
 
 class PineconeVectorStore(VectorStore):
     """Pinecone Vector Store.
@@ -215,9 +220,7 @@ class PineconeVectorStore(VectorStore):
 
         """
         # delete by filtering on the doc_id metadata
-        self._pinecone_index.delete(
-            filter={"doc_id": {"$eq": doc_id}}, **delete_kwargs
-        )
+        self._pinecone_index.delete(filter={"doc_id": {"$eq": doc_id}}, **delete_kwargs)
 
     @property
     def client(self) -> Any:
@@ -252,16 +255,17 @@ class PineconeVectorStore(VectorStore):
             query_embedding = cast(List[float], query.query_embedding)
             if query.alpha is not None:
                 query_embedding = [v * query.alpha for v in query_embedding]
-            
+
         if query.filters is not None:
-            if 'filter' in kwargs:
-                raise ValueError("Cannot specify filter via both query and kwargs. "
-                                 "Use kwargs only for pinecone specific items that are "
-                                 "not supported via the generic query interface.")
+            if "filter" in kwargs:
+                raise ValueError(
+                    "Cannot specify filter via both query and kwargs. "
+                    "Use kwargs only for pinecone specific items that are "
+                    "not supported via the generic query interface."
+                )
             filter = _to_pinecone_filter(query.filters)
         else:
-            filter = kwargs.pop('filter', {})
-
+            filter = kwargs.pop("filter", {})
 
         response = self._pinecone_index.query(
             vector=query_embedding,
@@ -281,10 +285,17 @@ class PineconeVectorStore(VectorStore):
             text = match.metadata["text"]
             id = match.metadata["id"]
             try:
-                extra_info, node_info, relationships = metadata_dict_to_node(match.metadata)
+                extra_info, node_info, relationships = metadata_dict_to_node(
+                    match.metadata
+                )
             except Exception:
+                _logger.debug(
+                    "Failed to parse Node metadata, fallback to legacy logic."
+                )
                 # NOTE: deprecated legacy logic for backward compatibility
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(match.metadata)
+                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                    match.metadata
+                )
 
             node = Node(
                 text=text,

@@ -6,7 +6,6 @@ from typing import Any, Callable, Optional
 import pandas as pd
 from langchain.input import print_text
 
-from llama_index.callbacks.schema import CBEventType
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.struct_store.pandas import GPTPandasIndex
@@ -111,15 +110,6 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
         """Answer a query."""
         context = self._get_table_context()
 
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.LLM,
-            payload={
-                "template": self._pandas_prompt,
-                "df_str": context,
-                "query_str": query_bundle.query_str,
-                "instruction_str": self._instruction_str,
-            },
-        )
         (
             pandas_response_str,
             formatted_prompt,
@@ -129,14 +119,7 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
             query_str=query_bundle.query_str,
             instruction_str=self._instruction_str,
         )
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM,
-            payload={
-                "response": pandas_response_str,
-                "formatted_prompt": formatted_prompt,
-            },
-            event_id=event_id,
-        )
+
         if self._verbose:
             print_text(f"> Pandas Instructions:\n" f"```\n{pandas_response_str}\n```\n")
         pandas_output = self._output_processor(

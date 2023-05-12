@@ -9,12 +9,18 @@ from typing import Any, Dict, List, Optional, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.indices.service_context import ServiceContext
-from llama_index.readers.myscale import (MyScaleSettings, escape_str,
-                                         format_list_to_string)
+from llama_index.readers.myscale import (
+    MyScaleSettings,
+    escape_str,
+    format_list_to_string,
+)
 from llama_index.utils import iter_batch
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +77,7 @@ class MyScaleVectorStore(VectorStore):
             please run `pip install clickhouse-connect`
         """
         try:
-            from clickhouse_connect.driver.httpclient import \
-                HttpClient  # noqa: F401
+            from clickhouse_connect.driver.httpclient import HttpClient  # noqa: F401
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -204,7 +209,7 @@ class MyScaleVectorStore(VectorStore):
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
         )
 
-    def query(self, query: VectorStoreQuery, **kwargs) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -212,7 +217,9 @@ class MyScaleVectorStore(VectorStore):
 
         """
         if query.filters is not None:
-            raise ValueError('Metadata filters not implemented for SimpleVectorStore yet.')
+            raise ValueError(
+                "Metadata filters not implemented for SimpleVectorStore yet."
+            )
 
         query_embedding = cast(List[float], query.query_embedding)
         where_str = (
