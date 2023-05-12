@@ -52,7 +52,7 @@ class VectorIndexRetriever(BaseRetriever):
         self._doc_ids = doc_ids
         self._filters = filters
 
-        self._kwargs: Dict[str, Any] = kwargs.get("retriever_kwargs", {})
+        self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
 
     @llm_token_counter("retrieve")
     def _retrieve(
