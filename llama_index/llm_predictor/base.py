@@ -338,7 +338,7 @@ class LLMPredictor(BaseLLMPredictor):
         llm_payload = {**prompt_args}
         llm_payload["template"] = prompt
         event_id = self.callback_manager.on_event_start(
-            CBEventType.LLM, payload=prompt_args
+            CBEventType.LLM, payload=llm_payload
         )
         formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
         llm_prediction = await self._apredict(prompt, **prompt_args)
