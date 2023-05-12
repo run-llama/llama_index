@@ -6,12 +6,12 @@ from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store.auto_retriever.output_parser import \
-    VectorStoreQueryOutputParser
-from llama_index.indices.vector_store.auto_retriever.prompts import (
-    DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL, VectorStoreQueryPrompt)
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
+from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser import \
+    VectorStoreQueryOutputParser
+from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
+    DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL, VectorStoreQueryPrompt)
 from llama_index.output_parsers.base import (OutputParserException,
                                              StructuredOutput)
 from llama_index.vector_stores.types import (MetadataFilters, VectorStoreInfo,
