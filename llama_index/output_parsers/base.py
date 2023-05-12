@@ -23,3 +23,7 @@ class BaseOutputParser(Protocol):
     @abstractmethod
     def format(self, output: str) -> str:
         """Format a query with structured output formatting instructions."""
+
+
+class OutputParserException(Exception):
+    pass

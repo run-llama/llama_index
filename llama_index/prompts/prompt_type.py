@@ -47,5 +47,7 @@ class PromptType(str, Enum):
     # Multiple select prompt
     MULTI_SELECT = "multi_select"
 
+    VECTOR_STORE_QUERY = "vector_store_query"
+
     # custom (by default)
     CUSTOM = "custom"

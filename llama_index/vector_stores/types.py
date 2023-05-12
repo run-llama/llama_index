@@ -74,6 +74,39 @@ class MetadataFilters(BaseModel):
     filters: List[ExactMatchFilter]
 
 
+class VectorStoreQuerySpec(BaseModel):
+    """Schema for a structured request for vector store
+    (i.e. to be converted to a VectorStoreQuery).
+
+    Currently only used by VectorIndexAutoRetriever.
+    """
+
+    query: str
+    filters: List[ExactMatchFilter]
+    top_k: Optional[int] = None
+
+
+class MetadataInfo(BaseModel):
+    """Information about a metadata filter supported by a vector store.
+
+    Currently only used by VectorIndexAutoRetriever.
+    """
+
+    name: str
+    type: str
+    description: str
+
+
+class VectorStoreInfo(BaseModel):
+    """Information about a vector store (content and supported metadata filters).
+
+    Currently only used by VectorIndexAutoRetriever.
+    """
+
+    metadata_info: List[MetadataInfo]
+    content_info: str
+
+
 @dataclass
 class VectorStoreQuery:
     """Vector store query."""
