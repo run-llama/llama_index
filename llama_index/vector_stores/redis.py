@@ -257,7 +257,8 @@ class RedisVectorStore(VectorStore):
             in_background (bool, optional): Persist in background. Defaults to True.
 
         Raises:
-            redis.execptions.RedisError: If there is an error persisting the index to disk.
+            redis.exceptions.RedisError: If there is an error
+                                         persisting the index to disk.
         """
         from redis.exceptions import RedisError
 
