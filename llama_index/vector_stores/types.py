@@ -80,6 +80,17 @@ class VectorStoreQuerySpec(BaseModel):
     top_k: Optional[int] = None
 
 
+class MetadataInfo(BaseModel):
+    name: str
+    type: str
+    description: str
+
+
+class VectorStoreInfo(BaseModel):
+    metadata_info: List[MetadataInfo]
+    content_info: str
+
+
 @dataclass
 class VectorStoreQuery:
     """Vector store query."""
