@@ -86,12 +86,13 @@ class QdrantVectorStore(VectorStore):
             vectors = []
             payloads = []
             for result in result_batch:
+                assert isinstance(result, NodeWithEmbedding)
                 node_ids.append(result.id)
                 vectors.append(result.embedding)
                 node = result.node
 
                 metadata = {}
-                metadata["text"] = node.get_text()
+                metadata["text"] = node.text or ""
                 additional_metadata = node_to_metadata_dict(node)
                 metadata.update(additional_metadata)
 

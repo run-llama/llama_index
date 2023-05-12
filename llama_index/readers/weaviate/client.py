@@ -165,7 +165,7 @@ def _add_node(
 ) -> str:
     """Add node."""
     metadata = {}
-    metadata["text"] = node.get_text()
+    metadata["text"] = node.text or ""
 
     additional_metadata = node_to_metadata_dict(node)
     metadata.update(additional_metadata)
