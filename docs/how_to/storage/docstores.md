@@ -11,7 +11,7 @@ They can be persisted to (and loaded from) disk by calling `docstore.persist()` 
 ### MongoDB Document Store
 We support MongoDB as an alternative document store backend that persists data as `Node` objects are ingested.
 ```python
-from llama_index.docstore import MongoDocumentStore
+from llama_index.storage.docstore import MongoDocumentStore
 from llama_index.node_parser import SimpleNodeParser
 
 # create parser and parse document into nodes 
