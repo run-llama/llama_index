@@ -174,7 +174,7 @@ class RedisVectorStore(VectorStore):
             # don't raise an error but warn the user that document wasn't found
             # could be a result of eviction policy
             _logger.warning(
-                f"Could not find document with doc_id {doc_id} in index {self._index_name}"
+                f"Document with doc_id {doc_id} not found in index {self._index_name}"
             )
             return
 
@@ -383,5 +383,5 @@ def cast_metadata_types(mapping: Optional[Dict[str, Any]]) -> Dict[str, str]:
                 metadata[str(key)] = str(value)
             except (TypeError, ValueError) as e:
                 # warn the user and continue
-                _logger.warning("Failed to cast metadata key %s to string: %s", key, e)
+                _logger.warning("Failed to cast metadata to string", e)
     return metadata
