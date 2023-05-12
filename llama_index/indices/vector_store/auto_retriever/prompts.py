@@ -8,7 +8,6 @@ from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.vector_stores.types import ExactMatchFilter, VectorStoreQuerySpec
 
-# single select
 PREFIX = """\
 Your goal is to structure the user's query to match the request schema provided below.
 
@@ -22,8 +21,7 @@ The query string should contain only text that is expected to match the contents
 documents. Any conditions in the filter should not be mentioned in the query as well.
 
 Make sure that filters only refer to attributes that exist in the data source.
-Make sure that filters take into account the descriptions of attributes and only make \
-comparisons that are feasible given the type of data being stored.
+Make sure that filters take into account the descriptions of attributes.
 Make sure that filters are only used as needed. If there are no filters that should be \
 applied return [] for the filter value.\
 
