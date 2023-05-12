@@ -11,15 +11,13 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-    VectorStoreQueryResult,
-)
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryMode,
+                                             VectorStoreQueryResult)
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 _logger = logging.getLogger(__name__)
 
@@ -189,7 +187,7 @@ class PineconeVectorStore(VectorStore):
             node = result.node
 
             metadata = {
-                "text": node.get_text(),
+                "text": node.text or "",
                 "id": node_id,
             }
 
