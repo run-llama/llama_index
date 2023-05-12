@@ -3,7 +3,7 @@ from typing import List, Optional, cast
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.data_structs.node import NodeWithScore
-from llama_index.indices import base_retriever
+from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.auto_retriever.output_parser import \
@@ -20,7 +20,25 @@ from llama_index.vector_stores.types import (MetadataFilters, VectorStoreInfo,
 _logger = logging.getLogger(__name__)
 
 
-class VectorIndexAutoRetriever(base_retriever.BaseRetriever):
+class VectorIndexAutoRetriever(BaseRetriever):
+    """Vector store auto retriever.
+
+    A retriever for vector store index that uses an LLM to automatically set
+    vector store query parameters.
+
+    Args:
+        index (GPTVectorStoreIndex): vector store index
+        vector_store_info (VectorStoreInfo): additional information information about
+            vector store content and supported metadata filters. The natural language
+            description is used by an LLM to automatically set vector store query
+            parameters.   
+        prompt_template_str: custom prompt template string for LLM.
+            Uses default template string if None.
+        service_context: service context containing reference to LLMPredictor.
+            Uses service context from index be default if None.
+        max_top_k: the maximum top_k allowed. The top_k set by LLM will be clamped
+            to this value.
+    """
     def __init__(
         self,
         index: GPTVectorStoreIndex,
