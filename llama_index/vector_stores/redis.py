@@ -203,6 +203,10 @@ class RedisVectorStore(VectorStore):
         from redis.exceptions import RedisError
         from redis.exceptions import TimeoutError as RedisTimeoutError
 
+        # TODO: implement this
+        if query.filters is not None:
+            raise ValueError("Metadata filters not implemented for Redis yet.")
+
         return_fields = ["id", "doc_id", "text", self._vector_key, "vector_score"]
 
         redis_query = get_redis_query(
