@@ -1,12 +1,10 @@
 from typing import List
 
-from llama_index.indices.vector_store.auto_retriever.schema import (
-    MetadataInfo,
-    VectorStoreInfo,
-)
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
-from llama_index.vector_stores.types import ExactMatchFilter, VectorStoreQuerySpec
+from llama_index.vector_stores.types import (ExactMatchFilter, MetadataInfo,
+                                             VectorStoreInfo,
+                                             VectorStoreQuerySpec)
 
 PREFIX = """\
 Your goal is to structure the user's query to match the request schema provided below.
