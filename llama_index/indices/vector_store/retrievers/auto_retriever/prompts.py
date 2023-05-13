@@ -1,3 +1,5 @@
+"""Autoretriever prompts."""
+
 from typing import List
 
 from llama_index.prompts.base import Prompt
@@ -8,6 +10,11 @@ from llama_index.vector_stores.types import (
     VectorStoreInfo,
     VectorStoreQuerySpec,
 )
+
+# NOTE: these prompts are inspired from langchain's self-query prompt,
+# and adapted to our use case.
+# https://github.com/hwchase17/langchain/tree/main/langchain/chains/query_constructor/prompt.py
+
 
 PREFIX = """\
 Your goal is to structure the user's query to match the request schema provided below.
