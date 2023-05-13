@@ -77,8 +77,7 @@ def test_llm_query(
     query_str = "What is?"
     retriever = index.as_retriever(retriever_mode="llm", choice_batch_size=2)
     nodes = retriever.retrieve(query_str)
-    print(nodes)
-    raise Exception
     assert len(nodes) == 2
 
-    assert nodes[0].node.text == "This is a test"
+    assert nodes[0].node.text == "This is a test."
+    assert nodes[1].node.text == "This is a test v2."
