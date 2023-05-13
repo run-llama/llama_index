@@ -1,6 +1,8 @@
 """Simple node parser."""
 from typing import List, Optional, Sequence
 
+from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import Node
 from llama_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
 from llama_index.node_parser.node_utils import get_nodes_from_document
@@ -25,9 +27,13 @@ class SimpleNodeParser(NodeParser):
         text_splitter: Optional[TextSplitter] = None,
         include_extra_info: bool = True,
         include_prev_next_rel: bool = True,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Init params."""
-        self._text_splitter = text_splitter or TokenTextSplitter()
+        self.callback_manager = callback_manager or CallbackManager([])
+        self._text_splitter = text_splitter or TokenTextSplitter(
+            callback_manager=self.callback_manager
+        )
         self._include_extra_info = include_extra_info
         self._include_prev_next_rel = include_prev_next_rel
 
@@ -42,6 +48,9 @@ class SimpleNodeParser(NodeParser):
             include_extra_info (bool): whether to include extra info in nodes
 
         """
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.NODE_PARSING, payload={"documents": documents}
+        )
         all_nodes: List[Node] = []
         for document in documents:
             nodes = get_nodes_from_document(
@@ -51,4 +60,7 @@ class SimpleNodeParser(NodeParser):
                 include_prev_next_rel=self._include_prev_next_rel,
             )
             all_nodes.extend(nodes)
+        self.callback_manager.on_event_end(
+            CBEventType.NODE_PARSING, payload={"nodes": all_nodes}, event_id=event_id
+        )
         return all_nodes

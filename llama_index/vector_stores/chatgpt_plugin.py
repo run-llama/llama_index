@@ -7,12 +7,12 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from tqdm.auto import tqdm
 
-from llama_index.data_structs.node import Node, DocumentRelationship
+from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
-    VectorStoreQueryResult,
     VectorStoreQuery,
+    VectorStoreQueryResult,
 )
 
 
@@ -116,8 +116,12 @@ class ChatGPTRetrievalPluginClient(VectorStore):
     def query(
         self,
         query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
+        if query.filters is not None:
+            raise ValueError("Metadata filters not implemented for ChatGPT Plugin yet.")
+
         if query.query_str is None:
             raise ValueError("query_str must be provided")
         headers = {"Authorization": f"Bearer {self._bearer_token}"}
