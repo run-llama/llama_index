@@ -1,4 +1,4 @@
-"""Autoretreiver prompts."""
+"""Autoretriever prompts."""
 
 from typing import List
 
