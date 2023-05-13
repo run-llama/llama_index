@@ -15,63 +15,16 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
 )
+from llama_index.prompts.default_choice_select import (
+    DEFAULT_CHOICE_SELECT_PROMPT,
+)
 import logging
+from llama_index.indices.utils import (
+    default_format_node_batch_fn,
+    default_parse_choice_select_answer_fn,
+)
 
 logger = logging.getLogger(__name__)
-
-
-DEFAULT_CHOICE_SELECT_PROMPT_TMPL = (
-    "A list of documents is shown below. Each document has a number next to it along "
-    "with a summary of the document. A question is also provided. \n"
-    "Respond with the numbers of the documents "
-    "you should consult to answer the question, in order of relevance, as well \n"
-    "as the relevance score. The relevance score is a number from 1-10 based on "
-    "how relevant you think the document is to the question.\n"
-    "Do not include any documents that are not relevant to the question. \n"
-    "Example format: \n"
-    "Document 1:\n<summary of document 1>\n\n"
-    "Document 2:\n<summary of document 2>\n\n"
-    "...\n\n"
-    "Document 10:\n<summary of document 10>\n\n"
-    "Question: <question>\n"
-    "Answer:\n"
-    "Doc: 9, Relevance: 7\n"
-    "Doc: 3, Relevance: 4\n"
-    "Doc: 7, Relevance: 3\n\n"
-    "Let's try this now: \n\n"
-    "{context_str}\n"
-    "Question: {query_str}\n"
-    "Answer:\n"
-)
-DEFAULT_CHOICE_SELECT_PROMPT = QuestionAnswerPrompt(DEFAULT_CHOICE_SELECT_PROMPT_TMPL)
-
-
-def default_format_node_batch_fn(
-    summary_nodes: List[Node],
-) -> str:
-    """Default format node batch function."""
-    fmt_node_txts = []
-    for idx in range(len(summary_nodes)):
-        number = idx + 1
-        fmt_node_txts.append(f"Document {number}:\n{summary_nodes[idx].get_text()}")
-    return "\n\n".join(fmt_node_txts)
-
-
-def default_parse_choice_select_answer_fn(
-    answer: str, num_choices: int
-) -> Tuple[List[int], Optional[List[float]]]:
-    """Default parse choice select answer function."""
-    answer_lines = answer.split("\n")
-    answer_nums = []
-    answer_relevances = []
-    for answer_line in answer_lines:
-        line_tokens = answer_line.split(",")
-        answer_num = int(line_tokens[0].split(":")[1].strip())
-        if answer_num > num_choices:
-            continue
-        answer_nums.append(answer_num)
-        answer_relevances.append(float(line_tokens[1].split(":")[1].strip()))
-    return answer_nums, answer_relevances
 
 
 class DocumentSummaryIndexRetriever(BaseRetriever):
