@@ -1,7 +1,7 @@
 """Utilities for GPT indices."""
 import logging
 import re
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 from llama_index.data_structs.node import Node
 from llama_index.utils import globals_helper, truncate_text
@@ -58,3 +58,35 @@ def log_vector_store_query_result(
         fmt_txts.append(fmt_txt)
     top_k_node_text = "\n".join(fmt_txts)
     logger.debug(f"> Top {len(result.nodes)} nodes:\n{top_k_node_text}")
+
+
+def default_format_node_batch_fn(
+    summary_nodes: List[Node],
+) -> str:
+    """Default format node batch function.
+
+    Assign each summary node a number, and format the batch of nodes.
+
+    """
+    fmt_node_txts = []
+    for idx in range(len(summary_nodes)):
+        number = idx + 1
+        fmt_node_txts.append(f"Document {number}:\n{summary_nodes[idx].get_text()}")
+    return "\n\n".join(fmt_node_txts)
+
+
+def default_parse_choice_select_answer_fn(
+    answer: str, num_choices: int
+) -> Tuple[List[int], Optional[List[float]]]:
+    """Default parse choice select answer function."""
+    answer_lines = answer.split("\n")
+    answer_nums = []
+    answer_relevances = []
+    for answer_line in answer_lines:
+        line_tokens = answer_line.split(",")
+        answer_num = int(line_tokens[0].split(":")[1].strip())
+        if answer_num > num_choices:
+            continue
+        answer_nums.append(answer_num)
+        answer_relevances.append(float(line_tokens[1].split(":")[1].strip()))
+    return answer_nums, answer_relevances
