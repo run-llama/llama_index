@@ -5,7 +5,8 @@ from llama_index.indices.list.retrievers import ListIndexEmbeddingRetriever
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.schema.base import Document
-from llama_index.prompts.prompts import Prompt, QuestionAnswerPrompt
+from llama_index.prompts.prompts import Prompt
+from llama_index.prompts.choice_select import ChoiceSelectPrompt
 from tests.indices.list.test_index import _get_embeddings
 
 
@@ -49,7 +50,7 @@ def mock_llmpredictor_predict(
     self: Any, prompt: Prompt, **prompt_args: Any
 ) -> Tuple[str, str]:
     """Patch llm predictor predict."""
-    assert isinstance(prompt, QuestionAnswerPrompt)
+    assert isinstance(prompt, ChoiceSelectPrompt)
     return "Doc: 2, Relevance: 5", ""
 
 

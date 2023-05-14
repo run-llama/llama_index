@@ -9,13 +9,15 @@ from llama_index.indices.query.embedding_utils import (
 )
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.list.base import GPTListIndex
-from llama_index.prompts.prompts import QuestionAnswerPrompt
-from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_choice_select import DEFAULT_CHOICE_SELECT_PROMPT
+from llama_index.prompts.choice_select import (
+    DEFAULT_CHOICE_SELECT_PROMPT,
+    ChoiceSelectPrompt
+)
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
+from llama_index.indices.service_context import ServiceContext
 
 logger = logging.getLogger(__name__)
 
@@ -123,10 +125,11 @@ class ListIndexLLMRetriever(BaseRetriever):
 
     Args:
         index (GPTListIndex): The index to retrieve from.
-        choice_select_prompt (Optional[QuestionAnswerPrompt]): A Question-Answer Prompt
+        choice_select_prompt (Optional[ChoiceSelectPrompt]): A Choice-Select Prompt
            (see :ref:`Prompt-Templates`).)
         choice_batch_size (int): The number of nodes to query at a time.
-        format_node_batch_fn (Optional[Callable]): A function that formats a batch of nodes
+        format_node_batch_fn (Optional[Callable]): A function that formats a
+            batch of nodes.
         parse_choice_select_answer_fn (Optional[Callable]): A function that parses the
             choice select answer.
         service_context (Optional[ServiceContext]): A service context.
@@ -136,7 +139,7 @@ class ListIndexLLMRetriever(BaseRetriever):
     def __init__(
         self,
         index: GPTListIndex,
-        choice_select_prompt: Optional[QuestionAnswerPrompt] = None,
+        choice_select_prompt: Optional[ChoiceSelectPrompt] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
