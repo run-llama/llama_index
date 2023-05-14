@@ -4,9 +4,7 @@ from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.storage.storage_context import StorageContext
 from llama_index.prompts.default_choice_select import DEFAULT_CHOICE_SELECT_PROMPT
-import os
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
@@ -45,6 +43,8 @@ class LLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        if query_bundle is None:
+            raise ValueError("Query bundle must be provided.")
         initial_results: List[NodeWithScore] = []
         for idx in range(0, len(nodes), self._choice_batch_size):
             nodes_batch = [
@@ -73,7 +73,7 @@ class LLMRerank(BaseNodePostprocessor):
                 ]
             )
 
-        results = sorted(initial_results, key=lambda x: x.score, reverse=True)[
+        results = sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[
             : self._top_n
         ]
         return results

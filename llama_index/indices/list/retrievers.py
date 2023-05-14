@@ -11,7 +11,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.list.base import GPTListIndex
 from llama_index.prompts.choice_select import (
     DEFAULT_CHOICE_SELECT_PROMPT,
-    ChoiceSelectPrompt
+    ChoiceSelectPrompt,
 )
 from llama_index.indices.utils import (
     default_format_node_batch_fn,

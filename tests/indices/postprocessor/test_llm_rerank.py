@@ -1,27 +1,11 @@
 """Test LLM reranker."""
 
-from pathlib import Path
-import pytest
-from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
-from llama_index.readers import Document
-
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
-from llama_index.indices.service_context import ServiceContext
-from llama_index.data_structs.node import Node, DocumentRelationship, NodeWithScore
-from llama_index.indices.postprocessor.node import (
-    PrevNextNodePostprocessor,
-    KeywordNodePostprocessor,
-)
-from llama_index.indices.postprocessor.node_recency import (
-    FixedRecencyPostprocessor,
-    EmbeddingRecencyPostprocessor,
-    TimeWeightedPostprocessor,
-)
+from llama_index.prompts.prompts import Prompt
+from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.llm_predictor import LLMPredictor
 from unittest.mock import patch
-from llama_index.embeddings.openai import OpenAIEmbedding
-from typing import List, Any, Tuple, cast, Dict
+from typing import List, Any, Tuple
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 from llama_index.indices.postprocessor.llm_rerank import LLMRerank
 
@@ -55,7 +39,7 @@ def mock_llmpredictor_predict(
 
 def mock_format_node_batch_fn(nodes: List[Node]) -> str:
     """Mock format node batch fn."""
-    return "\n".join([node.text for node in nodes])
+    return "\n".join([node.get_text() for node in nodes])
 
 
 @patch.object(
@@ -85,8 +69,10 @@ def test_llm_rerank() -> None:
         top_n=3,
     )
     query_str = "What is?"
-    nodes = llm_rerank.postprocess_nodes(nodes_with_score, QueryBundle(query_str))
-    assert len(nodes) == 3
-    assert nodes[0].node.text == "Test7"
-    assert nodes[1].node.text == "Test5"
-    assert nodes[2].node.text == "Test3"
+    result_nodes = llm_rerank.postprocess_nodes(
+        nodes_with_score, QueryBundle(query_str)
+    )
+    assert len(result_nodes) == 3
+    assert result_nodes[0].node.text == "Test7"
+    assert result_nodes[1].node.text == "Test5"
+    assert result_nodes[2].node.text == "Test3"
