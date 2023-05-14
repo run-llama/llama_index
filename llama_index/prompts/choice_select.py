@@ -1,6 +1,26 @@
 """Default choice select prompt."""
 
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.prompts.base import Prompt
+from llama_index.prompts.prompt_type import PromptType
+from typing import List
+
+
+class ChoiceSelectPrompt(Prompt):
+    """Choice Select prompt.
+
+    Prompt to return relevant context from `context_str` given a query `query_str`.
+
+    Required template variables: `context_str`, `query_str`
+
+    Args:
+        template (str): Template for the prompt.
+        **prompt_kwargs: Keyword arguments for the prompt.
+
+    """
+
+    prompt_type: PromptType = PromptType.CUSTOM
+    input_variables: List[str] = ["context_str", "query_str"]
+
 
 DEFAULT_CHOICE_SELECT_PROMPT_TMPL = (
     "A list of documents is shown below. Each document has a number next to it along "
@@ -25,4 +45,4 @@ DEFAULT_CHOICE_SELECT_PROMPT_TMPL = (
     "Question: {query_str}\n"
     "Answer:\n"
 )
-DEFAULT_CHOICE_SELECT_PROMPT = QuestionAnswerPrompt(DEFAULT_CHOICE_SELECT_PROMPT_TMPL)
+DEFAULT_CHOICE_SELECT_PROMPT = ChoiceSelectPrompt(DEFAULT_CHOICE_SELECT_PROMPT_TMPL)

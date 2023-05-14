@@ -7,6 +7,7 @@ from llama_index.indices.query.query_transform.prompts import (
     DecomposeQueryTransformPrompt,
 )
 from llama_index.prompts.base import Prompt
+from llama_index.prompts.choice_select import ChoiceSelectPrompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import mock_extract_keywords_response
 
@@ -125,6 +126,11 @@ def _mock_pandas(prompt_args: Dict) -> str:
     return f'df["{query_str}"].iloc[0]'
 
 
+def _mock_choice_select(prompt_args: Dict) -> str:
+    """Mock choice select prompt."""
+    return "Doc: 1, Relevance: 5"
+
+
 def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
     """Mock predict method of LLMPredictor.
 
@@ -162,6 +168,8 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
+        elif isinstance(prompt, ChoiceSelectPrompt):
+            response = _mock_choice_select(full_prompt_args)
         else:
             raise ValueError("Invalid prompt to use with mocks.")
     elif prompt.prompt_type == PromptType.PANDAS:
@@ -213,6 +221,8 @@ def patch_llmpredictor_predict(
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
+        elif isinstance(prompt, ChoiceSelectPrompt):
+            response = _mock_choice_select(full_prompt_args)
         else:
             raise ValueError("Invalid prompt to use with mocks.")
     elif prompt.prompt_type == PromptType.PANDAS:

@@ -10,12 +10,12 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.base_retriever import BaseRetriever
 from typing import Any, List, Optional, Callable, Tuple, Dict
 from llama_index.data_structs.node import Node, NodeWithScore
-from llama_index.prompts.prompts import QuestionAnswerPrompt
+from llama_index.prompts.choice_select import ChoiceSelectPrompt
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
 )
-from llama_index.prompts.default_choice_select import (
+from llama_index.prompts.choice_select import (
     DEFAULT_CHOICE_SELECT_PROMPT,
 )
 import logging
@@ -40,7 +40,7 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
     def __init__(
         self,
         index: GPTDocumentSummaryIndex,
-        choice_select_prompt: Optional[QuestionAnswerPrompt] = None,
+        choice_select_prompt: Optional[ChoiceSelectPrompt] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
