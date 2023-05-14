@@ -16,6 +16,7 @@ from llama_index.indices.postprocessor.pii import (
     PIINodePostprocessor,
     NERPIINodePostprocessor,
 )
+from llama_index.indices.postprocessor.llm_rerank import LLMRerank
 
 from llama_index.indices.postprocessor.cohere_rerank import CohereRerank
 
@@ -30,4 +31,5 @@ __all__ = [
     "PIINodePostprocessor",
     "NERPIINodePostprocessor",
     "CohereRerank",
+    "LLMRerank",
 ]
