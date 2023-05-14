@@ -8,6 +8,7 @@ from unittest.mock import patch
 from typing import List, Any, Tuple
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 from llama_index.indices.postprocessor.llm_rerank import LLMRerank
+from llama_index.indices.service_context import ServiceContext
 
 
 def mock_llmpredictor_predict(
@@ -47,7 +48,7 @@ def mock_format_node_batch_fn(nodes: List[Node]) -> str:
     "predict",
     mock_llmpredictor_predict,
 )
-def test_llm_rerank() -> None:
+def test_llm_rerank(mock_service_context: ServiceContext) -> None:
     """Test LLM rerank."""
     nodes = [
         Node("Test"),
@@ -67,6 +68,7 @@ def test_llm_rerank() -> None:
         format_node_batch_fn=mock_format_node_batch_fn,
         choice_batch_size=4,
         top_n=3,
+        service_context=mock_service_context,
     )
     query_str = "What is?"
     result_nodes = llm_rerank.postprocess_nodes(
