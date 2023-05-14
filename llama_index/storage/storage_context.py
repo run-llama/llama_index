@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 from pathlib import Path
+import fsspec
 from llama_index.constants import DOC_STORE_KEY, INDEX_STORE_KEY, VECTOR_STORE_KEY
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.storage.docstore.types import BaseDocumentStore
@@ -33,6 +34,7 @@ class StorageContext:
     docstore: BaseDocumentStore
     index_store: BaseIndexStore
     vector_store: VectorStore
+    fs: fsspec.AbstractFileSystem
 
     @classmethod
     def from_defaults(
@@ -41,6 +43,7 @@ class StorageContext:
         index_store: Optional[BaseIndexStore] = None,
         vector_store: Optional[VectorStore] = None,
         persist_dir: Optional[str] = None,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "StorageContext":
         """Create a StorageContext from defaults.
 
@@ -50,18 +53,23 @@ class StorageContext:
             vector_store (Optional[VectorStore]): vector store
 
         """
+        fs = fs or fsspec.filesystem("file")
         if persist_dir is None:
             docstore = docstore or SimpleDocumentStore()
             index_store = index_store or SimpleIndexStore()
             vector_store = vector_store or SimpleVectorStore()
         else:
-            docstore = docstore or SimpleDocumentStore.from_persist_dir(persist_dir)
-            index_store = index_store or SimpleIndexStore.from_persist_dir(persist_dir)
+            docstore = docstore or SimpleDocumentStore.from_persist_dir(
+                persist_dir, fs=fs
+            )
+            index_store = index_store or SimpleIndexStore.from_persist_dir(
+                persist_dir, fs=fs
+            )
             vector_store = vector_store or SimpleVectorStore.from_persist_dir(
-                persist_dir
+                persist_dir, fs=fs
             )
 
-        return cls(docstore, index_store, vector_store)
+        return cls(docstore, index_store, vector_store, fs)
 
     def persist(
         self,
@@ -69,6 +77,7 @@ class StorageContext:
         docstore_fname: str = DOCSTORE_FNAME,
         index_store_fname: str = INDEX_STORE_FNAME,
         vector_store_fname: str = VECTOR_STORE_FNAME,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the storage context.
 
@@ -76,12 +85,13 @@ class StorageContext:
             persist_dir (str): directory to persist the storage context
 
         """
+        fs = fs or self.fs
         docstore_path = str(Path(persist_dir) / docstore_fname)
         index_store_path = str(Path(persist_dir) / index_store_fname)
         vector_store_path = str(Path(persist_dir) / vector_store_fname)
-        self.docstore.persist(persist_path=docstore_path)
-        self.index_store.persist(persist_path=index_store_path)
-        self.vector_store.persist(persist_path=vector_store_path)
+        self.docstore.persist(persist_path=docstore_path, fs=fs)
+        self.index_store.persist(persist_path=index_store_path, fs=fs)
+        self.vector_store.persist(persist_path=vector_store_path, fs=fs)
 
     def to_dict(self) -> dict:
         all_simple = (
@@ -111,5 +121,8 @@ class StorageContext:
         vector_store = SimpleVectorStore.from_dict(save_dict[VECTOR_STORE_KEY])
         index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
         return cls(
-            docstore=docstore, index_store=index_store, vector_store=vector_store
+            docstore=docstore,
+            index_store=index_store,
+            vector_store=vector_store,
+            fs=fsspec.filesystem("file"),
         )

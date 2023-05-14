@@ -1,5 +1,5 @@
 """Vector store index types."""
-
+import fsspec
 
 from dataclasses import dataclass
 from enum import Enum
@@ -152,5 +152,7 @@ class VectorStore(Protocol):
         """Query vector store."""
         ...
 
-    def persist(self, persist_path: str) -> None:
+    def persist(
+        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem]
+    ) -> None:
         return None
