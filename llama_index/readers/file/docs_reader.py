@@ -18,32 +18,26 @@ class PDFReader(BaseReader):
     ) -> List[Document]:
         """Parse file."""
         try:
-            import pypdf
+            import PyPDF2
         except ImportError:
             raise ImportError(
-                "pypdf is required to read PDF files: `pip install pypdf`"
+                "PyPDF2 is required to read PDF files: `pip install PyPDF2`"
             )
-        output = []
+        text_list = []
         with open(file, "rb") as fp:
             # Create a PDF object
-            pdf = pypdf.PdfReader(fp)
+            pdf = PyPDF2.PdfReader(fp)
 
             # Get the number of pages in the PDF document
             num_pages = len(pdf.pages)
 
             # Iterate over every page
-            docs = []
             for page in range(num_pages):
                 # Extract the text from the page
                 page_text = pdf.pages[page].extract_text()
-                page_label = pdf.page_labels[page]
-
-                metadata = {"page_label": page_label}
-                if extra_info is not None:
-                    metadata.update(extra_info)
-
-                docs.append(Document(page_text, extra_info=metadata))
-            return docs
+                text_list.append(page_text)
+        text = "\n".join(text_list)
+        return [Document(text, extra_info=extra_info)]
 
 
 class DocxReader(BaseReader):
