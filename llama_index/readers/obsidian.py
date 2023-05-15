@@ -12,7 +12,7 @@ from typing import Any, List
 from langchain.docstore.document import Document as LCDocument
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.markdown_parser import MarkdownReader
+from llama_index.readers.file.markdown_reader import MarkdownReader
 from llama_index.readers.schema.base import Document
 
 

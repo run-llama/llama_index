@@ -4,15 +4,15 @@ from pathlib import Path
 from typing import Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.docs_parser import DocxReader, PDFReader
-from llama_index.readers.file.epub_parser import EpubReader
-from llama_index.readers.file.image_parser import ImageReader
-from llama_index.readers.file.ipynb_parser import IPYNBReader
-from llama_index.readers.file.markdown_parser import MarkdownReader
-from llama_index.readers.file.mbox_parser import MboxReader
-from llama_index.readers.file.slides_parser import PptxReader
-from llama_index.readers.file.tabular_parser import PandasCSVReader
-from llama_index.readers.file.video_audio import VideoAudioReader
+from llama_index.readers.file.docs_reader import DocxReader, PDFReader
+from llama_index.readers.file.epub_reader import EpubReader
+from llama_index.readers.file.image_reader import ImageReader
+from llama_index.readers.file.ipynb_reader import IPYNBReader
+from llama_index.readers.file.markdown_reader import MarkdownReader
+from llama_index.readers.file.mbox_reader import MboxReader
+from llama_index.readers.file.slides_reader import PptxReader
+from llama_index.readers.file.tabular_reader import PandasCSVReader
+from llama_index.readers.file.video_audio_reader import VideoAudioReader
 from llama_index.readers.schema.base import Document
 
 DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
