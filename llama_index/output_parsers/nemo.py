@@ -4,10 +4,13 @@ See https://github.com/NVIDIA/NeMo-Guardrails.
 
 """
 try:
-    from nemoguardrails.actions.hallucination import check_hallucination
-    from nemoguardrails.actions.fact_checking import check_facts
+    from nemoguardrails.actions.hallucination import (
+        check_hallucination as hallucination_check,
+    )
+    from nemoguardrails.actions.fact_checking import check_facts as fact_check
 except ImportError:
-    check_hallucination = None
+    hallucination_check = None
+    fact_check = None
 
 import asyncio
 from typing import Any, Optional
@@ -56,6 +59,12 @@ class NeMoGaurdrailsOutputParser(BaseOutputParser):
         hallucination_str: str = DEFAULT_HALLUCINATION_RESPONSE,
         fact_check_str: str = DEFAULT_FACT_CHECK_RESPONSE,
     ) -> None:
+        if hallucination_check is None:
+            raise ModuleNotFoundError(
+                "Please install nemo following their installation instructions: "
+                "https://github.com/NVIDIA/NeMo-Guardrails"
+            )
+
         self.llm = llm or OpenAI(model_name="text-davinci-003", temperature=0.0)
 
         self.check_hallucination = check_hallucination
