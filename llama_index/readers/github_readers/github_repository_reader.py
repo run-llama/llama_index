@@ -333,9 +333,11 @@ class GithubRepositoryReader(BaseReader):
         """
         file_extension = get_file_extension(file_path)
         if file_extension not in self._supported_suffix:
+            # skip
             return None
 
         if file_extension not in self._file_readers:
+            # initialize reader
             cls_ = DEFAULT_FILE_READER_CLS[file_extension]
             self._file_readers[file_extension] = cls_()
 
