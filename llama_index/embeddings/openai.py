@@ -6,11 +6,8 @@ from typing import Any, Dict, List, Optional, Tuple, Callable
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.base import BaseEmbedding, DEFAULT_EMBED_BATCH_SIZE
 from llama_index.callbacks.base import CallbackManager
-
-# Passed to the base embedding class
-DEFAULT_EMBED_BATCH_SIZE = 10
 
 
 class OpenAIEmbeddingMode(str, Enum):
@@ -227,7 +224,7 @@ class OpenAIEmbedding(BaseEmbedding):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        super()._init_(embed_batch_size, tokenizer, callback_manager)
+        super().__init__(embed_batch_size, tokenizer, callback_manager)
         self.deployment_name = deployment_name
         self.query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self.text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
