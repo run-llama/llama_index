@@ -74,7 +74,7 @@ class ImageReader(BaseReader):
         if self._parse_text:
             import torch
 
-            assert self.parser_config is not None
+            assert self._parser_config is not None
             model = self._parser_config["model"]
             processor = self._parser_config["processor"]
 
