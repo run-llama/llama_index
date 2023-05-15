@@ -54,7 +54,7 @@ class SimpleDirectoryReader(BaseReader):
             Default is None.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
             extension to a BaseReader class that specifies how to convert that file
-            to text. See DEFAULT_FILE_READER_CLS.
+            to text. If not specified, use default from DEFAULT_FILE_READER_CLS.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
         file_metadata (Optional[Callable[str, Dict]]): A function that takes
