@@ -9,9 +9,21 @@ TIMESTAMP_FORMAT = "%m/%d/%Y, %H:%M:%S"
 
 
 class CBEventType(str, Enum):
-    """Callback manager event types."""
+    """Callback manager event types.
+
+    Attributes:
+        CHUNKING: Logs for the before and after of text splitting.
+        NODE_PARSING: Logs for the documents and the nodes that they are parsed into.
+        EMBEDDING: Logs for the number of texts embedded.
+        LLM: Logs for the template and response of LLM calls.
+        QUERY: Keeps track of the start and end of each query.
+        RETRIEVE: Logs for the nodes retrieved for a query.
+        SYNTHESIZE: Logs for the result for synthesize calls.
+        TREE: Logs for the summary and level of summaries generated.
+    """
 
     CHUNKING = "chunking"
+    NODE_PARSING = "node_parsing"
     EMBEDDING = "embedding"
     LLM = "llm"
     QUERY = "query"

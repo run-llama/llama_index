@@ -1,7 +1,6 @@
 """Node PostProcessor module."""
 
 
-from llama_index.indices.postprocessor.base import BasePostprocessor
 from llama_index.indices.postprocessor.node import (
     SimilarityPostprocessor,
     KeywordNodePostprocessor,
@@ -17,9 +16,11 @@ from llama_index.indices.postprocessor.pii import (
     PIINodePostprocessor,
     NERPIINodePostprocessor,
 )
+from llama_index.indices.postprocessor.llm_rerank import LLMRerank
+
+from llama_index.indices.postprocessor.cohere_rerank import CohereRerank
 
 __all__ = [
-    "BasePostprocessor",
     "SimilarityPostprocessor",
     "KeywordNodePostprocessor",
     "PrevNextNodePostprocessor",
@@ -29,4 +30,6 @@ __all__ = [
     "TimeWeightedPostprocessor",
     "PIINodePostprocessor",
     "NERPIINodePostprocessor",
+    "CohereRerank",
+    "LLMRerank",
 ]

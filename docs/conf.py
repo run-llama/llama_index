@@ -39,7 +39,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_rtd_theme",
     "sphinx.ext.mathjax",
-    "myst_parser",
+    "myst_nb",
 ]
 
 myst_heading_anchors = 4
@@ -64,3 +64,5 @@ html_css_files = [
 html_js_files = [
     "js/mendablesearch.js",
 ]
+
+nb_execution_mode = "off"

@@ -166,6 +166,13 @@ print(str(eval_result))
 Take a look at this [notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/evaluation/TestNYC-Evaluation-Query.ipynb).
 
 
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
 
-
-
+../../examples/evaluation/TestNYC-Evaluation.ipynb
+../../examples/evaluation/TestNYC-Evaluation-Query.ipynb
+../../examples/evaluation/QuestionGeneration.ipynb
+```

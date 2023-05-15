@@ -90,7 +90,7 @@ Our vector store classes store embeddings and support lookup via similiarity sea
 These serve as the main data store and retrieval engine for our vector index.
 
 **Interface**:
-* `add` takes in a sequence of `NodeEmbeddingResults` and insert the embeddings (and possibly the node contents & metadata) into the vector store.
+* `add` takes in a sequence of `NodeWithEmbeddings` and insert the embeddings (and possibly the node contents & metadata) into the vector store.
 * `delete` removes entries given document IDs.
 * `query` retrieves top-k most similar entries given a query embedding.
 
@@ -207,7 +207,7 @@ Please feel free to open an issue and/or assign an issue to yourself.
 If you have applied LlamaIndex to a unique use-case (e.g. interesting dataset, customized index structure, complex query), we would love your contribution in the form of:
 1. a guide: e.g. [guide to LlamIndex + Structured Data](https://gpt-index.readthedocs.io/en/latest/guides/tutorials/sql_guide.html)
 Todo.
-2. an example notebook: e.g. [Composable Indices Demo](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/ComposableIndices-Prior.ipynb)
+2. an example notebook: e.g. [Composable Indices Demo](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/ComposableIndices-Prior.ipynb)
 
 ### 4. 🧪 Add Experimental Features
 If you have a crazy idea, make a PR for it! 

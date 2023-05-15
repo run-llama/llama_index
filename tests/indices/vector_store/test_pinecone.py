@@ -1,18 +1,14 @@
 """Test pinecone indexes."""
 
-import sys
 from typing import List
-from unittest.mock import MagicMock, Mock
 
 import pytest
+
+from llama_index.data_structs.node import Node
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
-
 from llama_index.readers.schema.base import Document
-from llama_index.storage.storage_context import StorageContext
-from llama_index.vector_stores.pinecone import PineconeVectorStore
-from tests.indices.vector_store.utils import MockPineconeIndex
-
+from tests.indices.vector_store.utils import get_pinecone_storage_context
 from tests.mock_utils.mock_utils import mock_tokenizer
 
 
@@ -34,13 +30,7 @@ def test_build_pinecone(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test build GPTVectorStoreIndex with PineconeVectorStore."""
-    # NOTE: mock pinecone import
-    sys.modules["pinecone"] = MagicMock()
-    # NOTE: mock pinecone index
-    pinecone_index = MockPineconeIndex()
-
-    vector_store = PineconeVectorStore(pinecone_index=pinecone_index, tokenizer=Mock())
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    storage_context = get_pinecone_storage_context()
     index = GPTVectorStoreIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
@@ -52,3 +42,21 @@ def test_build_pinecone(
     nodes = retriever.retrieve("What is?")
     assert len(nodes) == 1
     assert nodes[0].node.get_text() == "This is another test."
+
+
+def test_node_with_metadata(
+    mock_service_context: ServiceContext,
+) -> None:
+    storage_context = get_pinecone_storage_context()
+    input_nodes = [Node(text="test node text", extra_info={"key": "value"})]
+    index = GPTVectorStoreIndex(
+        input_nodes,
+        storage_context=storage_context,
+        service_context=mock_service_context,
+    )
+
+    retriever = index.as_retriever(similarity_top_k=1)
+    nodes = retriever.retrieve("What is?")
+    assert len(nodes) == 1
+    assert nodes[0].node.text == "test node text"
+    assert nodes[0].node.extra_info == {"key": "value"}

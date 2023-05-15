@@ -116,4 +116,13 @@ response = query_engine.query(
 ```
 
 
-[Here is an example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/cost_analysis/TokenPredictor.ipynb).
+[Here is an example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/analysis/TokenPredictor.ipynb).  
+
+
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+../../examples/analysis/TokenPredictor.ipynb
+```

@@ -1,4 +1,5 @@
 import pytest
+
 from llama_index.output_parsers.base import StructuredOutput
 from llama_index.output_parsers.selection import SelectionOutputParser
 
@@ -26,3 +27,24 @@ def test_parse(output_parser: SelectionOutputParser) -> None:
     assert len(parsed.parsed_output) == 2
     assert parsed.parsed_output[0].choice == 1
     assert parsed.parsed_output[0].reason == "just because"
+
+
+def test_parse_non_json_friendly_llm_output(
+    output_parser: SelectionOutputParser,
+) -> None:
+    # https://github.com/jerryjliu/llama_index/issues/3135
+    output = """
+    Output:
+    [
+      {
+        "choice": 1,
+        "reason": "Useful for questions"
+      }
+    ]
+    """
+    parsed = output_parser.parse(output)
+    assert isinstance(parsed, StructuredOutput)
+    assert isinstance(parsed.parsed_output, list)
+    assert len(parsed.parsed_output) == 1
+    assert parsed.parsed_output[0].choice == 1
+    assert parsed.parsed_output[0].reason == "Useful for questions"

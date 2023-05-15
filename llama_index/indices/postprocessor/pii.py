@@ -1,8 +1,9 @@
 """PII postprocessor."""
 
-from llama_index.indices.postprocessor.node import BaseNodePostprocessor
+from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
 from llama_index.data_structs.node import NodeWithScore
 from typing import List, Optional, Dict, Tuple, Callable
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 from copy import deepcopy
@@ -37,7 +38,7 @@ DEFAULT_PII_TMPL = (
 )
 
 
-class PIINodePostprocessor(BaseNodePostprocessor):
+class PIINodePostprocessor(BasePydanticNodePostprocessor):
     """PII Node processor.
 
     NOTE: the ServiceContext should contain a LOCAL model, not an external API.
@@ -72,7 +73,9 @@ class PIINodePostprocessor(BaseNodePostprocessor):
         return text_output, json_dict
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         # swap out text from nodes, with the original node mappings
@@ -89,7 +92,7 @@ class PIINodePostprocessor(BaseNodePostprocessor):
         return new_nodes
 
 
-class NERPIINodePostprocessor(BaseNodePostprocessor):
+class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
     """NER PII Node processor.
 
     Uses a HF transformers model.
@@ -110,7 +113,9 @@ class NERPIINodePostprocessor(BaseNodePostprocessor):
         return new_text, mapping
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         from transformers import pipeline

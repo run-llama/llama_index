@@ -9,7 +9,7 @@ Under the hood, LlamaIndex also supports swappable **storage components** that a
 
 - **Document stores**: where ingested documents (i.e., `Node` objects) are stored,
 - **Index stores**: where index metadata are stored,
-- **Vector tores**: where embedding vectors are stored.
+- **Vector stores**: where embedding vectors are stored.
 
 The Document/Index stores rely on a common Key-Value store abstraction, which is also detailed below.
 

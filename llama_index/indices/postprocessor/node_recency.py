@@ -1,10 +1,11 @@
 """Node recency post-processor."""
 
-from llama_index.indices.postprocessor.node import BaseNodePostprocessor
+from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.data_structs.node import NodeWithScore
 from pydantic import Field
-from typing import Optional, Dict, List, Set
+from typing import Optional, List, Set
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -39,7 +40,7 @@ from datetime import datetime
 #         raise ValueError(f"Invalid recency prediction: {pred}.")
 
 
-class FixedRecencyPostprocessor(BaseNodePostprocessor):
+class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
     """Recency post-processor.
 
     This post-processor does the following steps:
@@ -59,11 +60,13 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
     in_extra_info: bool = True
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
-        if extra_info is None or "query_bundle" not in extra_info:
+        if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
         # query_bundle = cast(QueryBundle, extra_info["query_bundle"])
@@ -100,7 +103,7 @@ DEFAULT_QUERY_EMBEDDING_TMPL = (
 )
 
 
-class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
+class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
     """Recency post-processor.
 
     This post-processor does the following steps:
@@ -123,11 +126,13 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
-        if extra_info is None or "query_bundle" not in extra_info:
+        if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
         # query_bundle = cast(QueryBundle, extra_info["query_bundle"])
@@ -187,7 +192,7 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
         ]
 
 
-class TimeWeightedPostprocessor(BaseNodePostprocessor):
+class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
     """Time-weighted post-processor.
 
     Reranks a set of nodes based on their recency.
@@ -202,10 +207,11 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
     top_k: int = 1
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        extra_info = extra_info or {}
         now = self.now or datetime.now().timestamp()
         # TODO: refactor with get_top_k_embeddings
 

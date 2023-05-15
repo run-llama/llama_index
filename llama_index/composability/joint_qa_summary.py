@@ -3,7 +3,6 @@
 
 from typing import Sequence, Optional
 
-from llama_index.callbacks.schema import CBEventType
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.list.base import GPTListIndex
 from llama_index.indices.vector_store import GPTVectorStoreIndex
@@ -59,13 +58,7 @@ class QASummaryQueryEngineBuilder:
         """Build query engine."""
 
         # parse nodes
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"documents": documents}
-        )
         nodes = self._service_context.node_parser.get_nodes_from_documents(documents)
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.CHUNKING, payload={"nodes": nodes}, event_id=event_id
-        )
 
         # ingest nodes
         self._storage_context.docstore.add_documents(nodes, allow_update=True)

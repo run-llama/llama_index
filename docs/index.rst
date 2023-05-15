@@ -53,6 +53,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started
+   :hidden:
 
    getting_started/installation.md
    getting_started/starter_example.md
@@ -61,15 +62,16 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
 .. toctree::
    :maxdepth: 2
    :caption: Guides
+   :hidden:
 
    guides/primer.rst
    guides/tutorials.rst
-   guides/notebooks.rst
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Use Cases
+   :hidden:
 
    use_cases/queries.md
    use_cases/apps.md
@@ -78,6 +80,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
 .. toctree::
    :maxdepth: 1
    :caption: Key Components
+   :hidden:
 
    how_to/data_connectors.md
    how_to/indices.rst
@@ -87,16 +90,19 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    how_to/output_parsing.md
    how_to/evaluation/evaluation.md
    how_to/integrations.rst
+   how_to/callbacks.rst
    how_to/storage.rst
 
 
 .. toctree::
    :maxdepth: 1
    :caption: Reference
+   :hidden:
 
    reference/indices.rst
    reference/query.rst
    reference/node.rst
+   reference/llm_predictor.rst
    reference/node_postprocessor.rst
    reference/storage.rst
    reference/composability.rst
@@ -116,5 +122,6 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
 .. toctree::
    :maxdepth: 1
    :caption: Gallery
+   :hidden:
 
    gallery/app_showcase.md

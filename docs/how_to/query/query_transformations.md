@@ -96,7 +96,7 @@ query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
 response = query_engine.query(query_str)
 ```
 
-Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) for a full walkthrough.
+Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) for a full walkthrough.
 
 
 
@@ -132,3 +132,13 @@ print(str(response))
 ```
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/vector_indices/SimpleIndexDemo-multistep.ipynb) for a full walkthrough.
+
+
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+../../examples/query_transformations/HyDEQueryTransformDemo.ipynb
+../../examples/query_transformations/SimpleIndexDemo-multistep.ipynb
+```

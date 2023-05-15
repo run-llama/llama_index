@@ -7,9 +7,10 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
+
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.vector_stores.types import (
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -139,11 +140,11 @@ class DeepLakeVectorStore(VectorStore):
         """Get client."""
         return self.ds
 
-    def add(self, embedding_results: List[NodeEmbeddingResult]) -> List[str]:
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
 
         Args:
-            embedding_results (List[NodeEmbeddingResult]): The embeddings and their data
+            embedding_results (List[NodeWithEmbedding]): The embeddings and their data
                 to insert.
 
         Raises:
@@ -162,7 +163,7 @@ class DeepLakeVectorStore(VectorStore):
         for result in embedding_results:
             embedding = result.embedding
             extra_info = result.node.extra_info or {}
-            metadata = {**extra_info, **{"document_id": result.doc_id}}
+            metadata = {**extra_info, **{"document_id": result.ref_doc_id}}
             id = result.id
             text = result.node.get_text()
 
@@ -217,13 +218,16 @@ class DeepLakeVectorStore(VectorStore):
             self.ds.commit(f"deleted {len(ids)} samples", allow_empty=True)
             self.ds.summary()
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
             similarity_top_k (int): top k most similar nodes
         """
+        if query.filters is not None:
+            raise ValueError("Metadata filters not implemented for DeepLake yet.")
+
         query_embedding = cast(List[float], query.query_embedding)
         embeddings = self.ds.embedding.numpy(fetch_chunks=True)
         embedding_ids = self.ds.ids.numpy(fetch_chunks=True)

@@ -95,9 +95,11 @@ class ResponseEvaluator:
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
+        raise_error: bool = False,
     ) -> None:
         """Init params."""
         self.service_context = service_context or ServiceContext.from_defaults()
+        self.raise_error = raise_error
 
     def get_context(self, response: Response) -> List[Document]:
         """Get context information from given Response object using source nodes.
@@ -149,10 +151,10 @@ class ResponseEvaluator:
 
         if "yes" in raw_response_txt.lower():
             response_txt = "YES"
-        elif "no" in raw_response_txt.lower():
-            response_txt = "NO"
         else:
-            raise ValueError("The response is invalid")
+            response_txt = "NO"
+            if self.raise_error:
+                raise ValueError("The response is invalid")
 
         return response_txt
 
@@ -192,10 +194,10 @@ class ResponseEvaluator:
 
             if "yes" in raw_response_txt.lower():
                 response_txt = "YES"
-            elif "no" in raw_response_txt.lower():
-                response_txt = "NO"
             else:
-                raise ValueError("The response is invalid")
+                response_txt = "NO"
+                if self.raise_error:
+                    raise ValueError("The response is invalid")
 
             response_texts.append(response_txt)
 
@@ -215,9 +217,11 @@ class QueryResponseEvaluator:
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
+        raise_error: bool = False,
     ) -> None:
         """Init params."""
         self.service_context = service_context or ServiceContext.from_defaults()
+        self.raise_error = raise_error
 
     def get_context(self, response: Response) -> List[Document]:
         """Get context information from given Response object using source nodes.
@@ -273,10 +277,10 @@ class QueryResponseEvaluator:
 
         if "yes" in raw_response_txt.lower():
             response_txt = "YES"
-        elif "no" in raw_response_txt.lower():
-            response_txt = "NO"
         else:
-            raise ValueError("The response is invalid")
+            response_txt = "NO"
+            if self.raise_error:
+                raise ValueError("The response is invalid")
 
         return response_txt
 
@@ -328,10 +332,10 @@ class QueryResponseEvaluator:
 
             if "yes" in raw_response_txt.lower():
                 response_txt = "YES"
-            elif "no" in raw_response_txt.lower():
-                response_txt = "NO"
             else:
-                raise ValueError("The response is invalid")
+                response_txt = "NO"
+                if self.raise_error:
+                    raise ValueError("The response is invalid")
 
             response_texts.append(response_txt)
 

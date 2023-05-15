@@ -1,9 +1,10 @@
 """Simple vector store index."""
 
-from dataclasses import dataclass, field
 import json
+import logging
 import os
-from typing import Any, Dict, List, cast, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, cast
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -14,14 +15,12 @@ from llama_index.indices.query.embedding_utils import (
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
-    NodeEmbeddingResult,
+    NodeWithEmbedding,
     VectorStore,
-    VectorStoreQueryResult,
     VectorStoreQuery,
     VectorStoreQueryMode,
+    VectorStoreQueryResult,
 )
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -85,13 +84,12 @@ class SimpleVectorStore(VectorStore):
 
     def add(
         self,
-        embedding_results: List[NodeEmbeddingResult],
+        embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
         """Add embedding_results to index."""
         for result in embedding_results:
-            text_id = result.id
-            self._data.embedding_dict[text_id] = result.embedding
-            self._data.text_id_to_doc_id[text_id] = result.doc_id
+            self._data.embedding_dict[result.id] = result.embedding
+            self._data.text_id_to_doc_id[result.id] = result.ref_doc_id
         return [result.id for result in embedding_results]
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
@@ -108,8 +106,14 @@ class SimpleVectorStore(VectorStore):
     def query(
         self,
         query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
+        if query.filters is not None:
+            raise ValueError(
+                "Metadata filters not implemented for SimpleVectorStore yet."
+            )
+
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()
         node_ids = [t[0] for t in items]
@@ -136,7 +140,10 @@ class SimpleVectorStore(VectorStore):
 
         return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
 
-    def persist(self, persist_path: str) -> None:
+    def persist(
+        self,
+        persist_path: str = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME),
+    ) -> None:
         """Persist the SimpleVectorStore to a directory."""
         dirpath = os.path.dirname(persist_path)
         if not os.path.exists(dirpath):
@@ -158,3 +165,11 @@ class SimpleVectorStore(VectorStore):
             data_dict = json.load(f)
             data = SimpleVectorStoreData.from_dict(data_dict)
         return cls(data)
+
+    @classmethod
+    def from_dict(cls, save_dict: dict) -> "SimpleVectorStore":
+        data = SimpleVectorStoreData.from_dict(save_dict)
+        return cls(data)
+
+    def to_dict(self) -> dict:
+        return self._data.to_dict()

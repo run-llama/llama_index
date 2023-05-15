@@ -7,19 +7,19 @@ from typing import Dict, List, Optional, cast
 from pydantic import BaseModel, Field, validator
 
 import logging
+from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.type import ResponseMode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.data_structs.node import DocumentRelationship, NodeWithScore
-from llama_index.indices.postprocessor.base import BasePostprocessor
 from llama_index.indices.response.response_builder import get_response_builder
 
 logger = logging.getLogger(__name__)
 
 
-class BaseNodePostprocessor(BasePostprocessor, BaseModel):
+class BasePydanticNodePostprocessor(BaseModel, BaseNodePostprocessor):
     """Node postprocessor."""
 
     class Config:
@@ -27,19 +27,23 @@ class BaseNodePostprocessor(BasePostprocessor, BaseModel):
 
     @abstractmethod
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
 
-class KeywordNodePostprocessor(BaseNodePostprocessor):
+class KeywordNodePostprocessor(BasePydanticNodePostprocessor):
     """Keyword-based Node processor."""
 
     required_keywords: List[str] = Field(default_factory=list)
     exclude_keywords: List[str] = Field(default_factory=list)
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         new_nodes = []
@@ -66,16 +70,17 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
         return new_nodes
 
 
-class SimilarityPostprocessor(BaseNodePostprocessor):
+class SimilarityPostprocessor(BasePydanticNodePostprocessor):
     """Similarity-based Node processor."""
 
     similarity_cutoff: float = Field(default=None)
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        extra_info = extra_info or {}
         sim_cutoff_exists = self.similarity_cutoff is not None
 
         new_nodes = []
@@ -136,7 +141,7 @@ def get_backward_nodes(
     return nodes
 
 
-class PrevNextNodePostprocessor(BaseNodePostprocessor):
+class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
     """Previous/Next Node post-processor.
 
     Allows users to fetch additional nodes from the document store,
@@ -164,7 +169,9 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
         return v
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
         all_nodes: Dict[str, NodeWithScore] = {}
@@ -226,7 +233,7 @@ DEFAULT_REFINE_INFER_PREV_NEXT_TMPL = (
 )
 
 
-class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
+class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
     """Previous/Next Node post-processor.
 
     Allows users to fetch additional nodes from the document store,
@@ -270,13 +277,13 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
         raise ValueError(f"Invalid prediction: {raw_pred}")
 
     def postprocess_nodes(
-        self, nodes: List[NodeWithScore], extra_info: Optional[Dict] = None
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        if extra_info is None or "query_bundle" not in extra_info:
-            raise ValueError("Missing query bundle in extra info.")
-
-        query_bundle = cast(QueryBundle, extra_info["query_bundle"])
+        if query_bundle is None:
+            raise ValueError("Missing query bundle.")
 
         infer_prev_next_prompt = QuestionAnswerPrompt(
             self.infer_prev_next_tmpl,

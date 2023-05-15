@@ -1,9 +1,7 @@
 """Test recursive queries."""
 
 import asyncio
-import sys
 from typing import Any, Dict, List
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -14,13 +12,8 @@ from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableI
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.readers.schema.base import Document
-from llama_index.storage.storage_context import StorageContext
-from llama_index.vector_stores.pinecone import PineconeVectorStore
-from tests.indices.vector_store.utils import MockPineconeIndex
-from tests.mock_utils.mock_prompts import (
-    MOCK_QUERY_KEYWORD_EXTRACT_PROMPT,
-)
-from tests.mock_utils.mock_utils import mock_tokenizer
+from tests.indices.vector_store.utils import get_pinecone_storage_context
+from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
 
 
 class MockEmbedding(BaseEmbedding):
@@ -289,16 +282,6 @@ def test_recursive_query_vector_vector(
     query_str = "Cat?"
     response = query_engine.query(query_str)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
-
-
-def get_pinecone_storage_context() -> StorageContext:
-    # NOTE: mock pinecone import
-    sys.modules["pinecone"] = MagicMock()
-    return StorageContext.from_defaults(
-        vector_store=PineconeVectorStore(
-            pinecone_index=MockPineconeIndex(), tokenizer=mock_tokenizer
-        )
-    )
 
 
 def test_recursive_query_pinecone_pinecone(
