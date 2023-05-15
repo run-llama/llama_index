@@ -28,7 +28,7 @@ from llama_index.readers.github_readers.utils import (
     get_file_extension,
     print_if_verbose,
 )
-from llama_index.readers.schema.base import Document, ImageDocument
+from llama_index.readers.schema.base import Document
 
 logger = logging.getLogger(__name__)
 
@@ -364,9 +364,7 @@ class GithubRepositoryReader(BaseReader):
                 tmpfile.close()
                 try:
                     docs = reader.load_data(pathlib.Path(tmpfile.name))
-                    if isinstance(parsed_file, ImageDocument):
-                        raise ValueError("Reader does not support ImageParserOutput")
-                    parsed_file = "\n\n".join([doc.text for doc in docs])
+                    parsed_file = "\n\n".join([doc.get_text() for doc in docs])
                 except Exception as e:
                     print_if_verbose(self._verbose, f"error while parsing {file_path}")
                     logger.error(

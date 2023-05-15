@@ -48,7 +48,7 @@ class CSVReader(BaseReader):
         if self._concat_rows:
             return [Document("\n".join(text_list), extra_info=extra_info)]
         else:
-            [Document(text, extra_info=extra_info) for text in text_list]
+            return [Document(text, extra_info=extra_info) for text in text_list]
 
 
 class PandasCSVReader(BaseReader):

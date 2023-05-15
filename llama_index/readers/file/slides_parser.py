@@ -36,8 +36,11 @@ class PptxReader(BaseReader):
                 "`pip install torch`"
             )
         try:
-            from transformers import (AutoTokenizer, VisionEncoderDecoderModel,
-                                      ViTFeatureExtractor)
+            from transformers import (
+                AutoTokenizer,
+                VisionEncoderDecoderModel,
+                ViTFeatureExtractor,
+            )
         except ImportError:
             raise ImportError(
                 "The package `transformers` is required to caption images: "

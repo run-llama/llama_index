@@ -5,7 +5,7 @@ Contains parser for md files.
 """
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.readers.base import BaseReader
 from llama_index.readers.schema.base import Document

@@ -54,13 +54,14 @@ class ImageVisionLLMReader(BaseReader):
             model = Blip2ForConditionalGeneration.from_pretrained(
                 "Salesforce/blip2-opt-2.7b", torch_dtype=dtype
             )
-            parse_config = {
+            parser_config = {
                 "processor": processor,
                 "model": model,
                 "device": device,
                 "dtype": dtype,
             }
 
+        assert parser_config is not None
         self._parser_config = parser_config
         self._keep_image = keep_image
         self._prompt = prompt
@@ -85,11 +86,11 @@ class ImageVisionLLMReader(BaseReader):
             image_str = img_2_b64(image)
 
         # Parse image into text
-        model = self.parser_config["model"]
-        processor = self.parser_config["processor"]
+        model = self._parser_config["model"]
+        processor = self._parser_config["processor"]
 
-        device = self.parser_config["device"]
-        dtype = self.parser_config["dtype"]
+        device = self._parser_config["device"]
+        dtype = self._parser_config["dtype"]
         model.to(device)
 
         # unconditional image captioning
@@ -99,8 +100,10 @@ class ImageVisionLLMReader(BaseReader):
         out = model.generate(**inputs)
         text_str = processor.decode(out[0], skip_special_tokens=True)
 
-        return ImageDocument(
-            text=text_str,
-            image=image_str,
-            extra_info=extra_info,
-        )
+        return [
+            ImageDocument(
+                text=text_str,
+                image=image_str,
+                extra_info=extra_info,
+            )
+        ]

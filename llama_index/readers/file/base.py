@@ -188,7 +188,7 @@ class SimpleDirectoryReader(BaseReader):
                     self.file_extractor[input_file.suffix] = reader_cls()
                 reader = self.file_extractor[input_file.suffix]
                 docs = reader.load_data(input_file, extra_info=metadata)
-                documents.append(docs)
+                documents.extend(docs)
             else:
                 # do standard read
                 with open(input_file, "r", errors=self.errors, encoding="utf8") as f:

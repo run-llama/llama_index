@@ -34,8 +34,7 @@ class ImageReader(BaseReader):
                     "install pytorch to use the model: " "`pip install torch`"
                 )
             try:
-                from transformers import (DonutProcessor,
-                                          VisionEncoderDecoderModel)
+                from transformers import DonutProcessor, VisionEncoderDecoderModel
             except ImportError:
                 raise ImportError(
                     "transformers is required for using DONUT model: "
@@ -63,6 +62,7 @@ class ImageReader(BaseReader):
             )
             parser_config = {"processor": processor, "model": model}
 
+        assert parser_config is not None
         self._parser_config = parser_config
         self._keep_image = keep_image
         self._parse_text = parse_text
@@ -90,8 +90,8 @@ class ImageReader(BaseReader):
         if self._parse_text:
             import torch
 
-            model = self.parser_config["model"]
-            processor = self.parser_config["processor"]
+            model = self._parser_config["model"]
+            processor = self._parser_config["processor"]
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
             model.to(device)
