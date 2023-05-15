@@ -13,10 +13,6 @@ from llama_index.readers.schema.base import Document
 class PDFReader(BaseReader):
     """PDF parser."""
 
-    def _init_parser(self) -> Dict:
-        """Init parser."""
-        return {}
-
     def load_data(
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:

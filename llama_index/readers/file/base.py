@@ -1,7 +1,7 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
 from pathlib import Path
-from typing import Callable, Dict, Generator, List, Optional
+from typing import Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.readers.base import BaseReader
 from llama_index.readers.file.docs_parser import DocxReader, PDFReader
@@ -15,20 +15,20 @@ from llama_index.readers.file.tabular_parser import PandasCSVReader
 from llama_index.readers.file.video_audio import VideoAudioReader
 from llama_index.readers.schema.base import Document
 
-DEFAULT_FILE_EXTRACTOR: Dict[str, BaseReader] = {
-    ".pdf": PDFReader(),
-    ".docx": DocxReader(),
-    ".pptx": PptxReader(),
-    ".jpg": ImageReader(),
-    ".png": ImageReader(),
-    ".jpeg": ImageReader(),
-    ".mp3": VideoAudioReader(),
-    ".mp4": VideoAudioReader(),
-    ".csv": PandasCSVReader(),
-    ".epub": EpubReader(),
-    ".md": MarkdownReader(),
-    ".mbox": MboxReader(),
-    ".ipynb": IPYNBReader(),
+DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
+    ".pdf": PDFReader,
+    ".docx": DocxReader,
+    ".pptx": PptxReader,
+    ".jpg": ImageReader,
+    ".png": ImageReader,
+    ".jpeg": ImageReader,
+    ".mp3": VideoAudioReader,
+    ".mp4": VideoAudioReader,
+    ".csv": PandasCSVReader,
+    ".epub": EpubReader,
+    ".md": MarkdownReader,
+    ".mbox": MboxReader,
+    ".ipynb": IPYNBReader,
 }
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ class SimpleDirectoryReader(BaseReader):
             Default is None.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
             extension to a BaseReader class that specifies how to convert that file
-            to text. See DEFAULT_FILE_EXTRACTOR.
+            to text. See DEFAULT_FILE_READER_CLS.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
         file_metadata (Optional[Callable[str, Dict]]): A function that takes
@@ -99,7 +99,13 @@ class SimpleDirectoryReader(BaseReader):
             self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
 
-        self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
+        if file_extractor:
+            self.file_extractor = file_extractor
+            self.supported_suffix = list(file_extractor.keys())
+        else:
+            self.file_extractor = {}
+            self.supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
+
         self.file_metadata = file_metadata
 
     def _add_files(self, input_dir: Path) -> List[Path]:
@@ -174,8 +180,12 @@ class SimpleDirectoryReader(BaseReader):
             if self.file_metadata is not None:
                 metadata = self.file_metadata(str(input_file))
 
-            if input_file.suffix.lower() in self.file_extractor:
+            if input_file.suffix.lower() in self.supported_suffix:
                 # use file readers
+                if input_file.suffix not in self.file_extractor:
+                    # instantiate file reader if not already
+                    reader_cls = DEFAULT_FILE_READER_CLS[input_file.suffix]
+                    self.file_extractor[input_file.suffix] = reader_cls()
                 reader = self.file_extractor[input_file.suffix]
                 docs = reader.load_data(input_file, extra_info=metadata)
                 documents.append(docs)
