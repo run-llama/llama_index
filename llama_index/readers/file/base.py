@@ -99,13 +99,12 @@ class SimpleDirectoryReader(BaseReader):
             self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
 
-        if file_extractor:
+        if file_extractor is not None:
             self.file_extractor = file_extractor
-            self.supported_suffix = list(file_extractor.keys())
         else:
             self.file_extractor = {}
-            self.supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
 
+        self.supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
         self.file_metadata = file_metadata
 
     def _add_files(self, input_dir: Path) -> List[Path]:
