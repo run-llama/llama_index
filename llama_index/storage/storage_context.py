@@ -88,7 +88,7 @@ class StorageContext:
         if log_to_wandb:
             try:
                 import wandb
-            except:
+            except ModuleNotFoundError:
                 raise ImportError(
                     "To persist on W&B, you need to have wandb installed. "
                     "Please install it with `pip install wandb`."
