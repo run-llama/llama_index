@@ -310,6 +310,9 @@ class MilvusVectorStore(VectorStore):
             assert self.collection is not None
             self.collection.load()
 
+        elif len(embedding_results) == 0:
+            return []
+
         ids = []
         doc_ids = []
         texts = []
