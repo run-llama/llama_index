@@ -87,7 +87,8 @@ class VectorIndexAutoRetriever(BaseRetriever):
         assert self._prompt.output_parser is not None
         try:
             structured_output = cast(
-                StructuredOutput, self._prompt.output_parser.parse(output, formatted_prompt)
+                StructuredOutput,
+                self._prompt.output_parser.parse(output, formatted_prompt),
             )
             query_spec = cast(VectorStoreQuerySpec, structured_output.parsed_output)
         except OutputParserException:
