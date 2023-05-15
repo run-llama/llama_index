@@ -22,6 +22,8 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
     Args:
         use_async (bool): Whether to use asynchronous calls. Defaults to False.
+        store_nodes_override (bool): set to True to always store Node objects in index
+            store and document store even if vector store keeps text. Defaults to False
     """
 
     index_struct_cls = IndexDict
@@ -33,10 +35,12 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
         use_async: bool = False,
+        store_nodes_override: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._use_async = use_async
+        self._store_nodes_override = store_nodes_override
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -138,10 +142,17 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store
-        if not self._vector_store.stores_text:
+        if not self._vector_store.stores_text or self._store_nodes_override:
             for result, new_id in zip(embedding_results, new_ids):
                 index_struct.add_node(result.node, text_id=new_id)
                 self._docstore.add_documents([result.node], allow_update=True)
+        else:
+            # NOTE: if the vector store keeps text,
+            # we only need to add image and index nodes
+            for result, new_id in zip(embedding_results, new_ids):
+                if isinstance(result.node, (ImageNode, IndexNode)):
+                    index_struct.add_node(result.node, text_id=new_id)
+                    self._docstore.add_documents([result.node], allow_update=True)
 
     def _add_nodes_to_index(
         self,
@@ -155,7 +166,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         embedding_results = self._get_node_embedding_results(nodes)
         new_ids = self._vector_store.add(embedding_results)
 
-        if not self._vector_store.stores_text:
+        if not self._vector_store.stores_text or self._store_nodes_override:
             # NOTE: if the vector store doesn't store text,
             # we need to add the nodes to the index struct and document store
             for result, new_id in zip(embedding_results, new_ids):
