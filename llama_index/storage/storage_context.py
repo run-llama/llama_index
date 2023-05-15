@@ -70,7 +70,7 @@ class StorageContext:
         index_store_fname: str = INDEX_STORE_FNAME,
         vector_store_fname: str = VECTOR_STORE_FNAME,
         log_to_wandb: bool = False,
-        artifact_name: str = "doc_index_vector_store"
+        artifact_name: str = "doc_index_vector_store",
     ) -> None:
         """Persist the storage context.
 
@@ -93,9 +93,9 @@ class StorageContext:
                     "To persist on W&B, you need to have wandb installed. "
                     "Please install it with `pip install wandb`."
                 )
-    
+
             if wandb.run is not None:
-                artifact = wandb.Artifact(artifact_name, type='storage_context')
+                artifact = wandb.Artifact(artifact_name, type="storage_context")
                 artifact.add_file(docstore_path)
                 artifact.add_file(index_store_path)
                 artifact.add_file(vector_store_path)
