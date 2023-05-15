@@ -155,24 +155,19 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         embedding_results = self._get_node_embedding_results(nodes)
         new_ids = self._vector_store.add(embedding_results)
 
-        # if not self._vector_store.stores_text:
-        #     # NOTE: if the vector store doesn't store text,
-        #     # we need to add the nodes to the index struct and document store
-        #     for result, new_id in zip(embedding_results, new_ids):
-        #         index_struct.add_node(result.node, text_id=new_id)
-        #         self._docstore.add_documents([result.node], allow_update=True)
-        # else:
-        #     # NOTE: if the vector store keeps text,
-        #     # we only need to add image and index nodes
-        #     for result, new_id in zip(embedding_results, new_ids):
-        #         if isinstance(result.node, (ImageNode, IndexNode)):
-        #             index_struct.add_node(result.node, text_id=new_id)
-        #             self._docstore.add_documents([result.node], allow_update=True)
-
-        # TODO: fix this
-        for result, new_id in zip(embedding_results, new_ids):
-            index_struct.add_node(result.node, text_id=new_id)
-            self._docstore.add_documents([result.node], allow_update=True)
+        if not self._vector_store.stores_text:
+            # NOTE: if the vector store doesn't store text,
+            # we need to add the nodes to the index struct and document store
+            for result, new_id in zip(embedding_results, new_ids):
+                index_struct.add_node(result.node, text_id=new_id)
+                self._docstore.add_documents([result.node], allow_update=True)
+        else:
+            # NOTE: if the vector store keeps text,
+            # we only need to add image and index nodes
+            for result, new_id in zip(embedding_results, new_ids):
+                if isinstance(result.node, (ImageNode, IndexNode)):
+                    index_struct.add_node(result.node, text_id=new_id)
+                    self._docstore.add_documents([result.node], allow_update=True)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
         """Build index from nodes."""
