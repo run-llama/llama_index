@@ -4,19 +4,18 @@ Contains parsers for epub files.
 """
 
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional
 
-from llama_index.readers.file.base_parser import BaseParser
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document
 
 
-class EpubParser(BaseParser):
+class EpubReader(BaseReader):
     """Epub Parser."""
 
-    def _init_parser(self) -> Dict:
-        """Init parser."""
-        return {}
-
-    def parse_file(self, file: Path, errors: str = "ignore") -> str:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         try:
             import ebooklib
@@ -44,4 +43,4 @@ class EpubParser(BaseParser):
                 )
 
         text = "\n".join(text_list)
-        return text
+        return [Document(text, extra_info=extra_info)]
