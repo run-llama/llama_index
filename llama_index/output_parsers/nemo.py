@@ -84,7 +84,7 @@ class NeMoGaurdrailsOutputParser(BaseOutputParser):
                 "_last_bot_prompt": formatted_prompt,
             }
             is_hallucinating = asyncio.run(
-                check_hallucination(hallucination_context, llm=self.llm)
+                hallucination_check(hallucination_context, llm=self.llm)
             )
             if is_hallucinating:
                 new_output = f"{new_output}\n{self.hallucination_str}"
@@ -94,7 +94,7 @@ class NeMoGaurdrailsOutputParser(BaseOutputParser):
                 "last_bot_message": output,
                 "relevant_chunks": formatted_prompt,
             }
-            is_contradiction = asyncio.run(check_facts(facts_context, llm=self.llm))
+            is_contradiction = asyncio.run(fact_check(facts_context, llm=self.llm))
             if is_contradiction is True and self.remove_failed_facts:
                 new_output = ""
             elif is_contradiction is True:
