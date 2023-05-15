@@ -28,30 +28,17 @@ class ImageReader(BaseReader):
         """Init parser."""
         if parser_config is None and parse_text:
             try:
+                import sentencepiece  # noqa: F401
                 import torch  # noqa: F401
-            except ImportError:
-                raise ImportError(
-                    "install pytorch to use the model: " "`pip install torch`"
-                )
-            try:
+                from PIL import Image  # noqa: F401
                 from transformers import DonutProcessor, VisionEncoderDecoderModel
             except ImportError:
                 raise ImportError(
-                    "transformers is required for using DONUT model: "
-                    "`pip install transformers`"
-                )
-            try:
-                import sentencepiece  # noqa: F401
-            except ImportError:
-                raise ImportError(
-                    "sentencepiece is required for using DONUT model: "
-                    "`pip install sentencepiece`"
-                )
-            try:
-                from PIL import Image  # noqa: F401
-            except ImportError:
-                raise ImportError(
-                    "PIL is required to read image files: " "`pip install Pillow`"
+                    "install pytorch to use the model: "
+                    "`pip install torch`"
+                    "Please install extra dependencies that are required for "
+                    "the ImageCaptionReader: "
+                    "`pip install torch transformers sentencepiece Pillow`"
                 )
 
             processor = DonutProcessor.from_pretrained(
