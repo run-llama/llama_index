@@ -26,11 +26,9 @@ class SimpleKVStore(BaseInMemoryKVStore):
     def __init__(
         self,
         data: Optional[DATA_TYPE] = None,
-        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Init a SimpleKVStore."""
         self._data: DATA_TYPE = data or {}
-        self._fs = fs or fsspec.filesystem("file")
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
         """Put a key-value pair into the store."""
@@ -63,7 +61,7 @@ class SimpleKVStore(BaseInMemoryKVStore):
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
         """Persist the store."""
-        fs = fs or self._fs
+        fs = fs or fsspec.filesystem("file")
         dirpath = os.path.dirname(persist_path)
         if not fs.exists(dirpath):
             fs.makedirs(dirpath)
@@ -80,7 +78,7 @@ class SimpleKVStore(BaseInMemoryKVStore):
         logger.debug(f"Loading {__name__} from {persist_path}.")
         with fs.open(persist_path, "rb") as f:
             data = json.load(f)
-        return cls(data, fs)
+        return cls(data)
 
     def to_dict(self) -> dict:
         """Save the store as dict."""

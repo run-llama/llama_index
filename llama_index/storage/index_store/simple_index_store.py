@@ -22,10 +22,9 @@ class SimpleIndexStore(KVIndexStore):
     def __init__(
         self,
         simple_kvstore: Optional[SimpleKVStore] = None,
-        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Init a SimpleIndexStore."""
-        simple_kvstore = simple_kvstore or SimpleKVStore(fs=fs)
+        simple_kvstore = simple_kvstore or SimpleKVStore()
         super().__init__(simple_kvstore)
 
     @classmethod

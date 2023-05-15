@@ -46,12 +46,22 @@ Here's the full [API Reference on saving and loading](/reference/storage/indices
 
 By default, LlamaIndex uses a local filesystem to load and save files. However, you can override this by passing a `fsspec.AbstractFileSystem` object.
 
+Here's a simple example, instantiating a vector store:
 ```python
 import dotenv
 import s3fs
 import os
 dotenv.load_dotenv("../../../.env")
 
+# load documents
+documents = SimpleDirectoryReader('../../../examples/paul_graham_essay/data/').load_data()
+print(len(documents))
+index = GPTVectorStoreIndex.from_documents(documents)
+```
+
+At this point, everything has been the same. Now - let's instantiate a S3 filesystem and save / load from there.
+
+```python
 # set up s3fs
 AWS_KEY = os.environ['AWS_ACCESS_KEY_ID']
 AWS_SECRET = os.environ['AWS_SECRET_ACCESS_KEY']
@@ -66,12 +76,9 @@ s3 = s3fs.S3FileSystem(
    s3_additional_kwargs={'ACL': 'public-read'}
 )
 
-# load documents
-documents = SimpleDirectoryReader('../../../examples/paul_graham_essay/data/').load_data()
-print(len(documents))
-index = GPTVectorStoreIndex.from_documents(documents, fs=s3)
-# save index to disk
+# save index to remote blob storage
 index.set_index_id("vector_index")
+# this is {bucket_name}/{index_name}
 index.storage_context.persist('llama-index/storage_demo', fs=s3)
 
 # load index from s3
@@ -79,4 +86,4 @@ sc = StorageContext.from_defaults(persist_dir='llama-index/storage_demo', fs=s3)
 index2 = load_index_from_storage(sc, 'vector_index')
 ```
 
-The behavior is that when you instantiate an Index with a `fs` argument, that will be the default. You can, however, override it. For example, if you want to use local by default, but save to s3 when done prototyping, that would be supported. Additionally, in production, this means that you can directly import from s3 without any additional code.
+By default, if you do not pass a filesystem, we will assume a local filesystem.
