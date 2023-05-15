@@ -1,3 +1,4 @@
+from typing import Generator
 import pytest
 from llama_index.storage.kvstore.s3_kvstore import S3DBKVStore
 
@@ -11,7 +12,7 @@ except ImportError:
 
 
 @pytest.fixture()
-def kvstore_from_mocked_bucket() -> S3DBKVStore:
+def kvstore_from_mocked_bucket() -> Generator[S3DBKVStore, None, None]:
     with mock_s3():
         s3 = boto3.resource("s3")
         bucket = s3.Bucket("test_bucket")
@@ -20,7 +21,7 @@ def kvstore_from_mocked_bucket() -> S3DBKVStore:
 
 
 @pytest.mark.skipif(not has_boto_libs, reason="boto3 and/or moto not installed")
-def test_put_get(kvstore_from_mocked_bucket: S3DBKVStore):
+def test_put_get(kvstore_from_mocked_bucket: S3DBKVStore) -> None:
     test_key = "test_key"
     test_blob = {"test_obj_key": "test_obj_val"}
     kvstore_from_mocked_bucket.put(test_key, test_blob)
@@ -29,14 +30,14 @@ def test_put_get(kvstore_from_mocked_bucket: S3DBKVStore):
 
 
 @pytest.mark.skipif(not has_boto_libs, reason="boto3 and/or moto not installed")
-def test_get_non_existent(kvstore_from_mocked_bucket: S3DBKVStore):
+def test_get_non_existent(kvstore_from_mocked_bucket: S3DBKVStore) -> None:
     test_key = "test_key"
     blob = kvstore_from_mocked_bucket.get(test_key)
     assert blob is None
 
 
 @pytest.mark.skipif(not has_boto_libs, reason="boto3 and/or moto not installed")
-def test_put_get_multiple_collections(kvstore_from_mocked_bucket: S3DBKVStore):
+def test_put_get_multiple_collections(kvstore_from_mocked_bucket: S3DBKVStore) -> None:
     test_key = "test_key"
     test_blob_collection_a = {"test_obj_key": "a"}
     test_blob_collection_b = {"test_obj_key": "b"}
@@ -57,7 +58,7 @@ def test_put_get_multiple_collections(kvstore_from_mocked_bucket: S3DBKVStore):
 
 
 @pytest.mark.skipif(not has_boto_libs, reason="boto3 and/or moto not installed")
-def test_delete(kvstore_from_mocked_bucket: S3DBKVStore):
+def test_delete(kvstore_from_mocked_bucket: S3DBKVStore) -> None:
     test_key = "test_key"
     test_blob = {"test_obj_key": "test_obj_val"}
     kvstore_from_mocked_bucket.put(test_key, test_blob)
@@ -67,7 +68,7 @@ def test_delete(kvstore_from_mocked_bucket: S3DBKVStore):
 
 
 @pytest.mark.skipif(not has_boto_libs, reason="boto3 and/or moto not installed")
-def test_delete_non_existent(kvstore_from_mocked_bucket: S3DBKVStore):
+def test_delete_non_existent(kvstore_from_mocked_bucket: S3DBKVStore) -> None:
     test_key = "test_key"
     test_blob = {"test_obj_key": "test_obj_val"}
     kvstore_from_mocked_bucket.put(test_key, test_blob)
@@ -75,7 +76,7 @@ def test_delete_non_existent(kvstore_from_mocked_bucket: S3DBKVStore):
 
 
 @pytest.mark.skipif(not has_boto_libs, reason="boto3 and/or moto not installed")
-def test_get_all(kvstore_from_mocked_bucket: S3DBKVStore):
+def test_get_all(kvstore_from_mocked_bucket: S3DBKVStore) -> None:
     test_key_a = "test_key_a"
     test_blob_a = {"test_obj_key": "test_obj_val_a"}
 

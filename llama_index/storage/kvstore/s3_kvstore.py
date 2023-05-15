@@ -15,13 +15,13 @@ class S3DBKVStore(BaseKVStore):
 
     Args:
         s3_bucket (Any): boto3 S3 Bucket instance
-        path (str): path to folder in S3 bucket where KV data is stored
+        path (Optional[str]): path to folder in S3 bucket where KV data is stored
     """
 
     def __init__(
         self,
         bucket: Any,
-        path: str = "./",
+        path: Optional[str] = "./",
     ) -> None:
         """Init a S3DBKVStore."""
         try:
@@ -29,9 +29,7 @@ class S3DBKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        s3 = boto3.resource("s3")
-        self._bucket = cast(s3.Bucket, bucket)
-
+        self._bucket = bucket
         self._path = path or "./"
 
     @classmethod
