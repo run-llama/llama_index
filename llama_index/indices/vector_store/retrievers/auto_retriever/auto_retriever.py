@@ -76,7 +76,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         schema_str = VectorStoreQuerySpec.schema_json(indent=4)
 
         # call LLM
-        output, _ = self._service_context.llm_predictor.predict(
+        output, formatted_prompt = self._service_context.llm_predictor.predict(
             self._prompt,
             schema_str=schema_str,
             info_str=info_str,
@@ -87,7 +87,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         assert self._prompt.output_parser is not None
         try:
             structured_output = cast(
-                StructuredOutput, self._prompt.output_parser.parse(output)
+                StructuredOutput, self._prompt.output_parser.parse(output, formatted_prompt)
             )
             query_spec = cast(VectorStoreQuerySpec, structured_output.parsed_output)
         except OutputParserException:

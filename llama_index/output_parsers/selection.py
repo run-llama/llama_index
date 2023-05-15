@@ -64,7 +64,7 @@ class SelectionOutputParser(BaseOutputParser):
         output = output[left : right + 1]
         return output
 
-    def parse(self, output: str) -> Any:
+    def parse(self, output: str, formatted_prompt: str) -> Any:
         output = self._marshal_llm_to_json(output)
         json_list = json.loads(output)
         answers = [Answer.from_dict(json_dict) for json_dict in json_list]

@@ -28,7 +28,7 @@ def test_output_parser() -> None:
     """
 
     parser = VectorStoreQueryOutputParser()
-    output = parser.parse(output_str)
+    output = parser.parse(output_str, formatted_prompt="")
     structured_output = cast(StructuredOutput, output)
     assert isinstance(structured_output.parsed_output, VectorStoreQuerySpec)
 

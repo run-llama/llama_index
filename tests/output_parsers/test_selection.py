@@ -42,7 +42,7 @@ def test_parse_non_json_friendly_llm_output(
       }
     ]
     """
-    parsed = output_parser.parse(output)
+    parsed = output_parser.parse(output, formatted_prompt="")
     assert isinstance(parsed, StructuredOutput)
     assert isinstance(parsed.parsed_output, list)
     assert len(parsed.parsed_output) == 1

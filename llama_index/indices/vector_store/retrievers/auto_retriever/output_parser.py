@@ -26,7 +26,7 @@ def parse_json_markdown(text: str) -> Any:
 
 
 class VectorStoreQueryOutputParser(BaseOutputParser):
-    def parse(self, output: str) -> Any:
+    def parse(self, output: str, formatted_prompt: str) -> Any:
         json_dict = parse_json_markdown(output)
 
         query_and_filters = VectorStoreQuerySpec.parse_obj(json_dict)
