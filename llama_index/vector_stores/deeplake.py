@@ -7,6 +7,7 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 
 import numpy as np
+
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
@@ -217,13 +218,16 @@ class DeepLakeVectorStore(VectorStore):
             self.ds.commit(f"deleted {len(ids)} samples", allow_empty=True)
             self.ds.summary()
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
             similarity_top_k (int): top k most similar nodes
         """
+        if query.filters is not None:
+            raise ValueError("Metadata filters not implemented for DeepLake yet.")
+
         query_embedding = cast(List[float], query.query_embedding)
         embeddings = self.ds.embedding.numpy(fetch_chunks=True)
         embedding_ids = self.ds.ids.numpy(fetch_chunks=True)

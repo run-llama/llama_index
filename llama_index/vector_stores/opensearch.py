@@ -6,8 +6,8 @@ from llama_index.data_structs import Node
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
-    VectorStoreQueryResult,
     VectorStoreQuery,
+    VectorStoreQueryResult,
 )
 
 
@@ -200,7 +200,7 @@ class OpensearchVectorStore(VectorStore):
         """
         self._client.delete_doc_id(doc_id)
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
@@ -208,5 +208,8 @@ class OpensearchVectorStore(VectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
+        if query.filters is not None:
+            raise ValueError("Metadata filters not implemented for OpenSearch yet.")
+
         query_embedding = cast(List[float], query.query_embedding)
         return self._client.do_approx_knn(query_embedding, query.similarity_top_k)

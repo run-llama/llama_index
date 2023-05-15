@@ -15,6 +15,7 @@ capabilities our indices/graphs provide.
    /guides/primer/index_guide.md
    index_structs/update.md
    index_structs/composability.md
+   index_structs/vector_store_guide.ipynb
 
 
 .. toctree::

@@ -13,7 +13,6 @@ from enum import Enum
 from typing import Any, Optional, Sequence, Set, Union
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.data_structs import KeywordTable
 from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseGPTIndex
@@ -187,36 +186,18 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.LLM,
-            payload={"template": self.keyword_extract_template, "text": text},
-        )
         response, formatted_prompt = self._service_context.llm_predictor.predict(
             self.keyword_extract_template,
             text=text,
         )
         keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM,
-            payload={"keywords": keywords, "formatted_prompt": formatted_prompt},
-            event_id=event_id,
-        )
         return keywords
 
     async def _async_extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.LLM,
-            payload={"template": self.keyword_extract_template, "text": text},
-        )
         response, formatted_prompt = await self._service_context.llm_predictor.apredict(
             self.keyword_extract_template,
             text=text,
         )
         keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM,
-            payload={"keywords": keywords, "formatted_prompt": formatted_prompt},
-            event_id=event_id,
-        )
         return keywords

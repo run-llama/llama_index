@@ -11,7 +11,6 @@ existing keywords in the table.
 import logging
 from typing import Any, List, Optional, Sequence, Tuple
 
-from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.data_structs import KG
 from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseGPTIndex
@@ -83,18 +82,9 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.LLM,
-            payload={"template": self.kg_triple_extract_template, "text": text},
-        )
-        response, formatted_prompt = self._service_context.llm_predictor.predict(
+        response, _ = self._service_context.llm_predictor.predict(
             self.kg_triple_extract_template,
             text=text,
-        )
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM,
-            payload={"response": response, "formatted_prompt": formatted_prompt},
-            event_id=event_id,
         )
         return self._parse_triplet_response(response)
 
@@ -123,21 +113,13 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 index_struct.add_node([subj, obj], n)
 
             if self.include_embeddings:
-                event_id = self._service_context.callback_manager.on_event_start(
-                    CBEventType.EMBEDDING
-                )
-                for i, triplet in enumerate(triplets):
+                for triplet in triplets:
                     self._service_context.embed_model.queue_text_for_embedding(
                         str(triplet), str(triplet)
                     )
 
                 embed_outputs = (
                     self._service_context.embed_model.get_queued_text_embeddings()
-                )
-                self._service_context.callback_manager.on_event_end(
-                    CBEventType.EMBEDDING,
-                    payload={"num_nodes": len(triplets)},
-                    event_id=event_id,
                 )
                 for rel_text, rel_embed in zip(*embed_outputs):
                     index_struct.add_to_embedding_dict(rel_text, rel_embed)
@@ -158,18 +140,10 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                     self.include_embeddings
                     and triplet_str not in self._index_struct.embedding_dict
                 ):
-                    event_id = self._service_context.callback_manager.on_event_start(
-                        CBEventType.EMBEDDING
-                    )
                     rel_embedding = (
                         self._service_context.embed_model.get_text_embedding(
                             triplet_str
                         )
-                    )
-                    self._service_context.callback_manager.on_event_end(
-                        CBEventType.EMBEDDING,
-                        payload={"num_nodes": 1},
-                        event_id=event_id,
                     )
                     self.index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
 
