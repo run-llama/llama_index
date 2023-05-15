@@ -19,16 +19,13 @@ class EpubReader(BaseReader):
         """Parse file."""
         try:
             import ebooklib
+            import html2text
             from ebooklib import epub
         except ImportError:
             raise ImportError(
-                "`EbookLib` is required to read Epub files: `pip install EbookLib`"
-            )
-        try:
-            import html2text
-        except ImportError:
-            raise ImportError(
-                "`html2text` is required to parse Epub files: `pip install html2text`"
+                "Please install extra dependencies that are required for "
+                "the EpubReader: "
+                "`pip install EbookLib html2text`"
             )
 
         text_list = []

@@ -28,8 +28,6 @@ class ImageCaptionReader(BaseReader):
                 from transformers import BlipForConditionalGeneration, BlipProcessor
             except ImportError:
                 raise ImportError(
-                    "install pytorch to use the model: "
-                    "`pip install torch`"
                     "Please install extra dependencies that are required for "
                     "the ImageCaptionReader: "
                     "`pip install torch transformers sentencepiece Pillow`"

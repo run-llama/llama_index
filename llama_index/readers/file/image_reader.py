@@ -34,8 +34,6 @@ class ImageReader(BaseReader):
                 from transformers import DonutProcessor, VisionEncoderDecoderModel
             except ImportError:
                 raise ImportError(
-                    "install pytorch to use the model: "
-                    "`pip install torch`"
                     "Please install extra dependencies that are required for "
                     "the ImageCaptionReader: "
                     "`pip install torch transformers sentencepiece Pillow`"
@@ -49,7 +47,6 @@ class ImageReader(BaseReader):
             )
             parser_config = {"processor": processor, "model": model}
 
-        assert parser_config is not None
         self._parser_config = parser_config
         self._keep_image = keep_image
         self._parse_text = parse_text
@@ -77,6 +74,7 @@ class ImageReader(BaseReader):
         if self._parse_text:
             import torch
 
+            assert self.parser_config is not None
             model = self._parser_config["model"]
             processor = self._parser_config["processor"]
 

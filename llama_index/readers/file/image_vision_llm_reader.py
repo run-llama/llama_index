@@ -28,8 +28,6 @@ class ImageVisionLLMReader(BaseReader):
                 from transformers import Blip2ForConditionalGeneration, Blip2Processor
             except ImportError:
                 raise ImportError(
-                    "install pytorch to use the model: "
-                    "`pip install torch`"
                     "Please install extra dependencies that are required for "
                     "the ImageCaptionReader: "
                     "`pip install torch transformers sentencepiece Pillow`"
@@ -48,7 +46,6 @@ class ImageVisionLLMReader(BaseReader):
                 "dtype": dtype,
             }
 
-        assert parser_config is not None
         self._parser_config = parser_config
         self._keep_image = keep_image
         self._prompt = prompt
