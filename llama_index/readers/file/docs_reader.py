@@ -4,19 +4,18 @@ Contains parsers for docx, pdf files.
 
 """
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional
 
-from llama_index.readers.file.base_parser import BaseParser
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document
 
 
-class PDFParser(BaseParser):
+class PDFReader(BaseReader):
     """PDF parser."""
 
-    def _init_parser(self) -> Dict:
-        """Init parser."""
-        return {}
-
-    def parse_file(self, file: Path, errors: str = "ignore") -> str:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         try:
             import PyPDF2
@@ -38,18 +37,15 @@ class PDFParser(BaseParser):
                 page_text = pdf.pages[page].extract_text()
                 text_list.append(page_text)
         text = "\n".join(text_list)
+        return [Document(text, extra_info=extra_info)]
 
-        return text
 
-
-class DocxParser(BaseParser):
+class DocxReader(BaseReader):
     """Docx parser."""
 
-    def _init_parser(self) -> Dict:
-        """Init parser."""
-        return {}
-
-    def parse_file(self, file: Path, errors: str = "ignore") -> str:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         try:
             import docx2txt
@@ -61,4 +57,4 @@ class DocxParser(BaseParser):
 
         text = docx2txt.process(file)
 
-        return text
+        return [Document(text, extra_info=extra_info)]

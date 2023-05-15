@@ -6,35 +6,25 @@ Contains parsers for .pptx files.
 
 import os
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional
 
-from llama_index.readers.file.base_parser import BaseParser
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document
 
 
-class PptxParser(BaseParser):
+class PptxReader(BaseReader):
     """Powerpoint parser.
 
     Extract text, caption images, and specify slides.
 
     """
 
-    def _init_parser(self) -> Dict:
+    def __init__(self) -> None:
         """Init parser."""
         try:
-            from pptx import Presentation  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "The package `python-pptx` is required to read Powerpoint files: "
-                "`pip install python-pptx`"
-            )
-        try:
             import torch  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "The package `pytorch` is required to caption images: "
-                "`pip install torch`"
-            )
-        try:
+            from PIL import Image  # noqa: F401
+            from pptx import Presentation  # noqa: F401
             from transformers import (
                 AutoTokenizer,
                 VisionEncoderDecoderModel,
@@ -42,14 +32,9 @@ class PptxParser(BaseParser):
             )
         except ImportError:
             raise ImportError(
-                "The package `transformers` is required to caption images: "
-                "`pip install transformers`"
-            )
-        try:
-            from PIL import Image  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "PIL is required to read image files: " "`pip install Pillow`"
+                "Please install extra dependencies that are required for "
+                "the PptxReader: "
+                "`pip install torch transformers python-pptx Pillow`"
             )
 
         model = VisionEncoderDecoderModel.from_pretrained(
@@ -62,7 +47,7 @@ class PptxParser(BaseParser):
             "nlpconnect/vit-gpt2-image-captioning"
         )
 
-        return {
+        self.parser_config = {
             "feature_extractor": feature_extractor,
             "model": model,
             "tokenizer": tokenizer,
@@ -98,7 +83,11 @@ class PptxParser(BaseParser):
         preds = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
         return preds[0].strip()
 
-    def parse_file(self, file: Path, errors: str = "ignore") -> str:
+    def load_data(
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+    ) -> List[Document]:
         """Parse file."""
         from pptx import Presentation
 
@@ -121,4 +110,4 @@ class PptxParser(BaseParser):
                 if hasattr(shape, "text"):
                     result += f"{shape.text}\n"
 
-        return result
+        return [Document(result, extra_info=extra_info)]

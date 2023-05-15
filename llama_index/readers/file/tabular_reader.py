@@ -4,14 +4,15 @@ Contains parsers for tabular data files.
 
 """
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from llama_index.readers.file.base_parser import BaseParser
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document
 
 
-class CSVParser(BaseParser):
+class CSVReader(BaseReader):
     """CSV parser.
 
     Args:
@@ -26,11 +27,9 @@ class CSVParser(BaseParser):
         super().__init__(*args, **kwargs)
         self._concat_rows = concat_rows
 
-    def _init_parser(self) -> Dict:
-        """Init parser."""
-        return {}
-
-    def parse_file(self, file: Path, errors: str = "ignore") -> Union[str, List[str]]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file.
 
         Returns:
@@ -47,12 +46,12 @@ class CSVParser(BaseParser):
             for row in csv_reader:
                 text_list.append(", ".join(row))
         if self._concat_rows:
-            return "\n".join(text_list)
+            return [Document("\n".join(text_list), extra_info=extra_info)]
         else:
-            return text_list
+            return [Document(text, extra_info=extra_info) for text in text_list]
 
 
-class PandasCSVParser(BaseParser):
+class PandasCSVReader(BaseReader):
     r"""Pandas-based CSV parser.
 
     Parses CSVs using the separator detection from Pandas `read_csv`function.
@@ -94,11 +93,9 @@ class PandasCSVParser(BaseParser):
         self._row_joiner = row_joiner
         self._pandas_config = pandas_config
 
-    def _init_parser(self) -> Dict:
-        """Init parser."""
-        return {}
-
-    def parse_file(self, file: Path, errors: str = "ignore") -> Union[str, List[str]]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         df = pd.read_csv(file, **self._pandas_config)
 
@@ -107,6 +104,6 @@ class PandasCSVParser(BaseParser):
         ).tolist()
 
         if self._concat_rows:
-            return (self._row_joiner).join(text_list)
+            return [Document((self._row_joiner).join(text_list), extra_info=extra_info)]
         else:
-            return text_list
+            return [Document(text, extra_info=extra_info) for text in text_list]
