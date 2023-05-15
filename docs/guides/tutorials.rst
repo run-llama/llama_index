@@ -25,4 +25,5 @@ Jupyter notebook to a chatbot to a full-stack web application.
    tutorials/terms_definitions_tutorial.md
    tutorials/unified_query.md
    SEC 10k Analysis <https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d>
+   Using LlamaIndex with Local Models <https://colab.research.google.com/drive/16QMQePkONNlDpgiltOi7oRQgmB8dU5fl?usp=sharing>
 
