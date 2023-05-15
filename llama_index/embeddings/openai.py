@@ -1,12 +1,13 @@
 """OpenAI embeddings file."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Callable
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.base import BaseEmbedding, DEFAULT_EMBED_BATCH_SIZE
+from llama_index.callbacks.base import CallbackManager
 
 
 class OpenAIEmbeddingMode(str, Enum):
@@ -217,30 +218,43 @@ class OpenAIEmbedding(BaseEmbedding):
         mode: str = OpenAIEmbeddingMode.TEXT_SEARCH_MODE,
         model: str = OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002,
         deployment_name: Optional[str] = None,
+        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        tokenizer: Optional[Callable] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        super().__init__(**kwargs)
+        super().__init__(embed_batch_size, tokenizer, callback_manager)
         self.deployment_name = deployment_name
         self.query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self.text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
+        self.openai_kwargs = kwargs
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return get_embedding(
-            query, engine=self.query_engine, deployment_id=self.deployment_name
+            query,
+            engine=self.query_engine,
+            deployment_id=self.deployment_name,
+            **self.openai_kwargs,
         )
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         return get_embedding(
-            text, engine=self.text_engine, deployment_id=self.deployment_name
+            text,
+            engine=self.text_engine,
+            deployment_id=self.deployment_name,
+            **self.openai_kwargs,
         )
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
         return await aget_embedding(
-            text, engine=self.text_engine, deployment_id=self.deployment_name
+            text,
+            engine=self.text_engine,
+            deployment_id=self.deployment_name,
+            **self.openai_kwargs,
         )
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
@@ -251,11 +265,17 @@ class OpenAIEmbedding(BaseEmbedding):
 
         """
         return get_embeddings(
-            texts, engine=self.text_engine, deployment_id=self.deployment_name
+            texts,
+            engine=self.text_engine,
+            deployment_id=self.deployment_name,
+            **self.openai_kwargs,
         )
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         return await aget_embeddings(
-            texts, engine=self.text_engine, deployment_id=self.deployment_name
+            texts,
+            engine=self.text_engine,
+            deployment_id=self.deployment_name,
+            **self.openai_kwargs,
         )
