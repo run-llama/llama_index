@@ -4,15 +4,15 @@ from pathlib import Path
 from typing import Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.docs_parser import DocxReader, PDFReader
-from llama_index.readers.file.epub_parser import EpubReader
-from llama_index.readers.file.image_parser import ImageReader
-from llama_index.readers.file.ipynb_parser import IPYNBReader
-from llama_index.readers.file.markdown_parser import MarkdownReader
-from llama_index.readers.file.mbox_parser import MboxReader
-from llama_index.readers.file.slides_parser import PptxReader
-from llama_index.readers.file.tabular_parser import PandasCSVReader
-from llama_index.readers.file.video_audio import VideoAudioReader
+from llama_index.readers.file.docs_reader import DocxReader, PDFReader
+from llama_index.readers.file.epub_reader import EpubReader
+from llama_index.readers.file.image_reader import ImageReader
+from llama_index.readers.file.ipynb_reader import IPYNBReader
+from llama_index.readers.file.markdown_reader import MarkdownReader
+from llama_index.readers.file.mbox_reader import MboxReader
+from llama_index.readers.file.slides_reader import PptxReader
+from llama_index.readers.file.tabular_reader import PandasCSVReader
+from llama_index.readers.file.video_audio_reader import VideoAudioReader
 from llama_index.readers.schema.base import Document
 
 DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
@@ -54,7 +54,7 @@ class SimpleDirectoryReader(BaseReader):
             Default is None.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
             extension to a BaseReader class that specifies how to convert that file
-            to text. See DEFAULT_FILE_READER_CLS.
+            to text. If not specified, use default from DEFAULT_FILE_READER_CLS.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
         file_metadata (Optional[Callable[str, Dict]]): A function that takes
@@ -99,13 +99,12 @@ class SimpleDirectoryReader(BaseReader):
             self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
 
-        if file_extractor:
+        if file_extractor is not None:
             self.file_extractor = file_extractor
-            self.supported_suffix = list(file_extractor.keys())
         else:
             self.file_extractor = {}
-            self.supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
 
+        self.supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
         self.file_metadata = file_metadata
 
     def _add_files(self, input_dir: Path) -> List[Path]:

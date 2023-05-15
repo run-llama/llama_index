@@ -22,30 +22,15 @@ class ImageCaptionReader(BaseReader):
         if parser_config is None:
             """Init parser."""
             try:
+                import sentencepiece  # noqa: F401
                 import torch  # noqa: F401
-            except ImportError:
-                raise ImportError(
-                    "install pytorch to use the model: " "`pip install torch`"
-                )
-            try:
+                from PIL import Image  # noqa: F401
                 from transformers import BlipForConditionalGeneration, BlipProcessor
             except ImportError:
                 raise ImportError(
-                    "transformers is required for using BLIP model: "
-                    "`pip install transformers`"
-                )
-            try:
-                import sentencepiece  # noqa: F401
-            except ImportError:
-                raise ImportError(
-                    "sentencepiece is required for using BLIP model: "
-                    "`pip install sentencepiece`"
-                )
-            try:
-                from PIL import Image  # noqa: F401
-            except ImportError:
-                raise ImportError(
-                    "PIL is required to read image files: " "`pip install Pillow`"
+                    "Please install extra dependencies that are required for "
+                    "the ImageCaptionReader: "
+                    "`pip install torch transformers sentencepiece Pillow`"
                 )
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
