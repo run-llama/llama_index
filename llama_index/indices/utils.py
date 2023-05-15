@@ -49,7 +49,11 @@ def log_vector_store_query_result(
 
     assert result.ids is not None
     assert result.nodes is not None
-    similarities = result.similarities or [1.0 for _ in result.ids]
+    similarities = (
+        result.similarities
+        if result.similarities is not None and len(result.similarities) > 0
+        else [1.0 for _ in result.ids]
+    )
 
     fmt_txts = []
     for node_idx, node_similarity, node in zip(result.ids, similarities, result.nodes):
