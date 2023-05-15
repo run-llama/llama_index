@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.base_parser import BaseParser
 from llama_index.readers.schema.base import Document
 
 

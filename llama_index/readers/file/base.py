@@ -52,8 +52,8 @@ class SimpleDirectoryReader(BaseReader):
             False by default.
         required_exts (Optional[List[str]]): List of required extensions.
             Default is None.
-        file_extractor (Optional[Dict[str, BaseParser]]): A mapping of file
-            extension to a BaseParser class that specifies how to convert that file
+        file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
+            extension to a BaseReader class that specifies how to convert that file
             to text. See DEFAULT_FILE_EXTRACTOR.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.

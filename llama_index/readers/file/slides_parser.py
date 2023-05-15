@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.base_parser import BaseParser
 from llama_index.readers.schema.base import Document
 
 
@@ -37,11 +36,8 @@ class PptxReader(BaseReader):
                 "`pip install torch`"
             )
         try:
-            from transformers import (
-                AutoTokenizer,
-                VisionEncoderDecoderModel,
-                ViTFeatureExtractor,
-            )
+            from transformers import (AutoTokenizer, VisionEncoderDecoderModel,
+                                      ViTFeatureExtractor)
         except ImportError:
             raise ImportError(
                 "The package `transformers` is required to caption images: "

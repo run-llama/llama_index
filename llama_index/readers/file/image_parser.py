@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.base_parser import BaseParser, ImageParserOutput
 from llama_index.readers.schema.base import Document, ImageDocument
 
 
