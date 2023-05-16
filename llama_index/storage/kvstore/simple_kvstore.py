@@ -20,7 +20,8 @@ class SimpleKVStore(BaseInMemoryKVStore):
 
     Args:
         data (Optional[DATA_TYPE]): data to initialize the store with
-        fs (Optional[fsspec.AbstractFileSystem]): filesystem to use. defaults to local storage
+        fs (Optional[fsspec.AbstractFileSystem]): filesystem to use. defaults to local
+            storage
     """
 
     def __init__(

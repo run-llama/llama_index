@@ -263,7 +263,8 @@ class RedisVectorStore(VectorStore):
         Args:
             persist_path (str): Path to persist the vector store to. (doesn't apply)
             in_background (bool, optional): Persist in background. Defaults to True.
-            fs (fsspec.AbstractFileSystem, optional): Filesystem to persist to. (doesn't apply)
+            fs (fsspec.AbstractFileSystem, optional): Filesystem to persist to.
+                (doesn't apply)
 
         Raises:
             redis.exceptions.RedisError: If there is an error
