@@ -10,3 +10,4 @@ class ResponseMode(str, Enum):
     TREE_SUMMARIZE = "tree_summarize"
     GENERATION = "generation"
     NO_TEXT = "no_text"
+    ACCUMULATE = "accumulate"

@@ -576,6 +576,72 @@ class Generation(BaseResponseBuilder):
             return stream_response
 
 
+class Accumulate(BaseResponseBuilder):
+    def __init__(
+        self,
+        service_context: ServiceContext,
+        text_qa_template: QuestionAnswerPrompt,
+        separator: str,
+        streaming: bool = False,
+    ) -> None:
+        super().__init__(service_context=service_context, streaming=streaming)
+        self.text_qa_template = text_qa_template
+        self.separator = separator
+
+    @llm_token_counter("aget_response")
+    async def aget_response(
+        self,
+        query_str: str,
+        text_chunks: Sequence[str],
+    ) -> RESPONSE_TEXT_TYPE:
+        return self.get_response(query_str, text_chunks)
+
+    @llm_token_counter("get_response")
+    def get_response(self, query_str: str, text_chunks: Sequence[str]) -> str:
+        """Apply the same prompt to text chunks and return responses"""
+
+        if self._streaming:
+            raise ValueError("Unable to stream in Accumulate response mode")
+
+        responses: List[str] = list()
+        for text_chunk in text_chunks:
+            chunk_responses = self._give_responses(
+                query_str,
+                text_chunk,
+            )
+            responses.extend(chunk_responses)
+        return self.separator.join(
+            [f"Response {index + 1}: {item}" for index, item in enumerate(responses)]
+        )
+
+    def _give_responses(
+        self,
+        query_str: str,
+        text_chunk: str,
+    ) -> List[str]:
+        """Give responses given a query and a corresponding text chunk."""
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        qa_text_splitter = (
+            self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                text_qa_template, 1
+            )
+        )
+        text_chunks = qa_text_splitter.split_text(text_chunk)
+
+        responses: List[str] = list()
+        for cur_text_chunk in text_chunks:
+            response: Optional[RESPONSE_TEXT_TYPE] = None
+            (response, formatted_prompt) = self._service_context.llm_predictor.predict(
+                text_qa_template,
+                context_str=cur_text_chunk,
+            )
+            self._log_prompt_and_response(
+                formatted_prompt, response, log_prefix="Initial"
+            )
+            responses.append(response or "Empty Response")
+        return responses
+
+
 def get_response_builder(
     service_context: ServiceContext,
     text_qa_template: Optional[QuestionAnswerPrompt] = None,
@@ -584,6 +650,7 @@ def get_response_builder(
     mode: ResponseMode = ResponseMode.COMPACT,
     use_async: bool = False,
     streaming: bool = False,
+    separator: str = "\n---------------------\n",
 ) -> BaseResponseBuilder:
     text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
     refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
@@ -621,6 +688,13 @@ def get_response_builder(
             service_context=service_context,
             simple_template=simple_template,
             streaming=streaming,
+        )
+    elif mode == ResponseMode.ACCUMULATE:
+        return Accumulate(
+            service_context=service_context,
+            text_qa_template=text_qa_template,
+            streaming=streaming,
+            separator=separator,
         )
     else:
         raise ValueError(f"Unknown mode: {mode}")
