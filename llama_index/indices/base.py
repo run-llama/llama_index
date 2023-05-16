@@ -144,7 +144,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     @property
     def summary(self) -> str:
-        return self._index_struct.summary
+        return str(self._index_struct.summary)
 
     @summary.setter
     def summary(self, new_summary) -> None:
