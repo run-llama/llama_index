@@ -141,11 +141,11 @@ class BaseGPTIndex(Generic[IS], ABC):
     @property
     def storage_context(self) -> StorageContext:
         return self._storage_context
-    
+
     @property
     def summary(self) -> str:
         return self._index_struct.summary
-    
+
     @summary.setter
     def summary(self, new_summary) -> None:
         self._index_struct.summary = new_summary
