@@ -7,6 +7,7 @@ An index that that is built on top of an existing vector store.
 import logging
 import os
 import fsspec
+from fsspec.implementations.local import LocalFileSystem
 from typing import Any, List, cast, Optional
 
 import numpy as np
@@ -62,7 +63,10 @@ class FaissVectorStore(VectorStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "FaissVectorStore":
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
-        return cls.from_persist_path(persist_path=persist_path, fs=fs)
+        # only support local storage for now
+        if fs and not isinstance(fs, LocalFileSystem):
+            raise NotImplementedError(f"FAISS only supports local storage for now.")
+        return cls.from_persist_path(persist_path=persist_path, fs=None)
 
     @classmethod
     def from_persist_path(
@@ -74,8 +78,8 @@ class FaissVectorStore(VectorStore):
 
         # I don't think FAISS supports fsspec, it requires a path in the SWIG interface
         # TODO: copy to a temp file and load into memory from there
-        if fs is not None:
-            raise NotImplementedError("FAISS does not support fsspec")
+        if fs and not isinstance(fs, LocalFileSystem):
+            raise NotImplementedError(f"FAISS only supports local storage for now.")
 
         if not os.path.exists(persist_path):
             raise ValueError(f"No existing {__name__} found at {persist_path}.")
@@ -125,8 +129,8 @@ class FaissVectorStore(VectorStore):
         """
         # I don't think FAISS supports fsspec, it requires a path in the SWIG interface
         # TODO: write to a temporary file and then copy to the final destination
-        if fs is not None:
-            raise NotImplementedError("FAISS does not support fsspec")
+        if fs and not isinstance(fs, LocalFileSystem):
+            raise NotImplementedError(f"FAISS only supports local storage for now.")
         import faiss
 
         dirpath = os.path.dirname(persist_path)
