@@ -581,23 +581,27 @@ class Accumulate(BaseResponseBuilder):
         self,
         service_context: ServiceContext,
         text_qa_template: QuestionAnswerPrompt,
-        separator: str,
         streaming: bool = False,
     ) -> None:
         super().__init__(service_context=service_context, streaming=streaming)
         self.text_qa_template = text_qa_template
-        self.separator = separator
 
     @llm_token_counter("aget_response")
     async def aget_response(
         self,
         query_str: str,
         text_chunks: Sequence[str],
+        **kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        return self.get_response(query_str, text_chunks)
+        return self.get_response(query_str, text_chunks, **kwargs)
 
     @llm_token_counter("get_response")
-    def get_response(self, query_str: str, text_chunks: Sequence[str]) -> str:
+    def get_response(
+        self,
+        query_str: str,
+        text_chunks: Sequence[str],
+        separator: str = "\n---------------------\n",
+    ) -> str:
         """Apply the same prompt to text chunks and return responses"""
 
         if self._streaming:
@@ -610,7 +614,7 @@ class Accumulate(BaseResponseBuilder):
                 text_chunk,
             )
             responses.extend(chunk_responses)
-        return self.separator.join(
+        return separator.join(
             [f"Response {index + 1}: {item}" for index, item in enumerate(responses)]
         )
 
@@ -650,7 +654,6 @@ def get_response_builder(
     mode: ResponseMode = ResponseMode.COMPACT,
     use_async: bool = False,
     streaming: bool = False,
-    separator: str = "\n---------------------\n",
 ) -> BaseResponseBuilder:
     text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
     refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
@@ -694,7 +697,6 @@ def get_response_builder(
             service_context=service_context,
             text_qa_template=text_qa_template,
             streaming=streaming,
-            separator=separator,
         )
     else:
         raise ValueError(f"Unknown mode: {mode}")
