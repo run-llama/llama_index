@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional
 
 from dataclasses_json import DataClassJsonMixin
 
-from llama_index.utils import get_new_id
 
 
 def _validate_is_flat_dict(metadata_dict: dict) -> None:
@@ -48,11 +47,10 @@ class BaseDocument(DataClassJsonMixin):
 
     def __post_init__(self) -> None:
         """Post init."""
-        # assign doc_id if not set
-        if self.doc_id is None:
-            self.doc_id = get_new_id(set())
         if self.doc_hash is None:
             self.doc_hash = self._generate_doc_hash()
+        if self.doc_id is None:
+            self.doc_id = self.doc_hash
 
         if self.extra_info is not None:
             _validate_is_flat_dict(self.extra_info)

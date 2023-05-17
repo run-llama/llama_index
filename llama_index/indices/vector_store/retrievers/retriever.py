@@ -81,7 +81,9 @@ class VectorIndexRetriever(BaseRetriever):
             alpha=self._alpha,
             filters=self._filters,
         )
-        query_result = self._vector_store.query(query, **self._kwargs)
+
+        existing_doc_ids = set(self._index.index_struct.nodes_dict.keys())
+        query_result = self._vector_store.query(query, existing_doc_ids, **self._kwargs)
 
         if query_result.nodes is None:
             # NOTE: vector store does not keep text and returns node indices.

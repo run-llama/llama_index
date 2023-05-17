@@ -4,7 +4,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Set, Optional, cast
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -106,6 +106,7 @@ class SimpleVectorStore(VectorStore):
     def query(
         self,
         query: VectorStoreQuery,
+        index_doc_ids: Set[str],
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Get nodes for response."""
@@ -116,8 +117,8 @@ class SimpleVectorStore(VectorStore):
 
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()
-        node_ids = [t[0] for t in items]
-        embeddings = [t[1] for t in items]
+        node_ids = [t[0] for t in items if t[0] in index_doc_ids]
+        embeddings = [t[1] for t in items if t[0] in index_doc_ids]
 
         query_embedding = cast(List[float], query.query_embedding)
 

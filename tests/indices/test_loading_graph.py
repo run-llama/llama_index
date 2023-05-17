@@ -25,7 +25,21 @@ def test_load_graph_from_storage_simple(
         service_context=mock_service_context,
     )
 
+    # construct secon vector index
+    vector_index = GPTVectorStoreIndex.from_documents(
+        documents=documents,
+        storage_context=storage_context,
+        service_context=mock_service_context,
+    )
+
     # construct index
+    list_index = GPTListIndex.from_documents(
+        documents=documents,
+        storage_context=storage_context,
+        service_context=mock_service_context,
+    )
+
+    # construct second list index
     list_index = GPTListIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
