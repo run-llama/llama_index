@@ -5,17 +5,14 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.data_structs.data_structs import IndexDict
-from llama_index.data_structs.node import NodeWithScore
+from llama_index.data_structs.node import ImageNode, IndexNode, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-)
+from llama_index.vector_stores.types import (MetadataFilters, VectorStoreQuery,
+                                             VectorStoreQueryMode)
 
 
 class VectorIndexRetriever(BaseRetriever):
@@ -101,9 +98,10 @@ class VectorIndexRetriever(BaseRetriever):
             # NOTE: vector store keeps text, returns nodes.
             # Only need to recover image or index nodes from docstore
             for i in range(len(query_result.nodes)):
-                node_id = query_result.nodes[i].get_doc_id()
-                if node_id in self._docstore.docs:
-                    query_result.nodes[i] = self._docstore.get_node(node_id)
+                if (not self._vector_store.stores_text) or isinstance(query_result.nodes[i], (ImageNode, IndexNode)):
+                    node_id = query_result.nodes[i].get_doc_id()
+                    if node_id in self._docstore.docs:
+                        query_result.nodes[i] = self._docstore.get_node(node_id)
 
         log_vector_store_query_result(query_result)
 
