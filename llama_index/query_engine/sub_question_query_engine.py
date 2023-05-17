@@ -53,10 +53,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
         if self._verbose:
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
-            colors = get_color_mapping(range(len(sub_questions)))
+            colors = get_color_mapping([str(i) for i in range(len(sub_questions))])
 
         tasks = [
-            self.aquery_subq(sub_q, color=colors[ind])
+            self.aquery_subq(sub_q, color=colors[str(ind)])
             for ind, sub_q in enumerate(sub_questions)
         ]
         nodes = run_async_tasks(tasks)
@@ -73,10 +73,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
         if self._verbose:
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
-            colors = get_color_mapping(range(len(sub_questions)))
+            colors = get_color_mapping([str(i) for i in range(len(sub_questions))])
 
         tasks = [
-            self.aquery_subq(sub_q, color=colors[ind])
+            self.aquery_subq(sub_q, color=colors[str(ind)])
             for ind, sub_q in enumerate(sub_questions)
         ]
         nodes = await asyncio.gather(*tasks)

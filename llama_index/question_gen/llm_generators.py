@@ -1,4 +1,3 @@
-import json
 from typing import List, Optional, Sequence
 
 from llama_index.indices.query.schema import QueryBundle
@@ -11,11 +10,11 @@ from llama_index.question_gen.prompts import (
     SubQuestionPrompt,
     build_tools_text,
 )
-from llama_index.question_gen.types import SubQuestion
+from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.tools.types import ToolMetadata
 
 
-class LLMQuestionGenerator:
+class LLMQuestionGenerator(BaseQuestionGenerator):
     def __init__(
         self,
         llm_predictor: LLMPredictor,

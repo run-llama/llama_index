@@ -7,7 +7,7 @@ from llama_index.question_gen.types import SubQuestion
 from llama_index.tools.types import ToolMetadata
 
 
-def build_tools_text(tools: Sequence[ToolMetadata]):
+def build_tools_text(tools: Sequence[ToolMetadata]) -> str:
     tools_dict = {}
     for tool in tools:
         tools_dict[tool.name] = tool.description
