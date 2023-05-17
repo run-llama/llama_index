@@ -89,11 +89,12 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
             response = await query_engine.aquery(question)
             response_text = str(response)
+            node_text = f"Sub question: {question}\nResponse: {response_text}"
 
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return NodeWithScore(Node(text=response_text))
+            return NodeWithScore(Node(text=node_text))
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
