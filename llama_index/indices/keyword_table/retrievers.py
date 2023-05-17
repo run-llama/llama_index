@@ -87,12 +87,15 @@ class BaseKeywordTableRetriever(BaseRetriever):
         chunk_indices_count: Dict[str, int] = defaultdict(int)
         keywords = [k for k in keywords if k in self._index_struct.keywords]
         logger.info(f"> Extracted keywords: {keywords}")
-        if (len(keywords) == 0):
-            node_id = self._index_struct.table[self._index_struct.keywords.pop()]
-            chunk_indices_count[node_id.pop()] += 1
         for k in keywords:
             for node_id in self._index_struct.table[k]:
                 chunk_indices_count[node_id] += 1
+        if (len(keywords) == 0):
+            # print(self._index_struct.table)
+            # print(self._index_struct.keywords)
+            node_id = self._index_struct.table[list(self._index_struct.keywords)[0]]
+            # print(node_id)
+            chunk_indices_count[list(node_id)[0]] += 1
         sorted_chunk_indices = sorted(
             list(chunk_indices_count.keys()),
             key=lambda x: chunk_indices_count[x],
