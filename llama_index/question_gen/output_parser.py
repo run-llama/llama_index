@@ -10,7 +10,7 @@ class SubQuestionOutputParser(BaseOutputParser):
         json_dict = parse_json_markdown(output)
         sub_questions = [SubQuestion.parse_obj(item) for item in json_dict]
         return StructuredOutput(raw_output=output, parsed_output=sub_questions)
-    
+
     def format(self, prompt_template: str) -> str:
         del prompt_template
         raise NotImplementedError()

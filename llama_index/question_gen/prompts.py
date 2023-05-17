@@ -1,7 +1,3 @@
-
-
-
-
 import json
 from typing import List, Sequence
 
@@ -24,28 +20,41 @@ class SubQuestionPrompt(Prompt):
     input_variables: List[str] = ["tools_str", "query_str"]
 
 
-PREFIX="""\
+PREFIX = """\
 Given a user question, and a list of tools, output a list of relevant sub-questions \
 that when composed can help answer the full question:
 
 """
 
 
-example_query_str = 'Compare and contrast the revenue growth and EBITDA of Uber and Lyft for year 2021'
+example_query_str = (
+    "Compare and contrast the revenue growth and EBITDA of Uber and Lyft for year 2021"
+)
 example_tools = [
-    ToolMetadata(name='uber_10k', description="Provides information about Uber financials for year 2021"),
-    ToolMetadata(name='lyft_10k', description="Provides information about Lyft financials for year 2021"),
+    ToolMetadata(
+        name="uber_10k",
+        description="Provides information about Uber financials for year 2021",
+    ),
+    ToolMetadata(
+        name="lyft_10k",
+        description="Provides information about Lyft financials for year 2021",
+    ),
 ]
 example_tools_str = build_tools_text(example_tools)
 example_output = [
-    SubQuestion(sub_question='What is the revenue growth of Uber', tool_name='uber_10k'),
-    SubQuestion(sub_question='What is the EBITDA of Uber', tool_name='uber_10k'),
-    SubQuestion(sub_question='What is the revenue growth of Lyft', tool_name='lyft_10k'),
-    SubQuestion(sub_question='What is the EBITDA of Lyft', tool_name='lyft_10k'),
+    SubQuestion(
+        sub_question="What is the revenue growth of Uber", tool_name="uber_10k"
+    ),
+    SubQuestion(sub_question="What is the EBITDA of Uber", tool_name="uber_10k"),
+    SubQuestion(
+        sub_question="What is the revenue growth of Lyft", tool_name="lyft_10k"
+    ),
+    SubQuestion(sub_question="What is the EBITDA of Lyft", tool_name="lyft_10k"),
 ]
 example_output_str = json.dumps([x.dict() for x in example_output], indent=4)
 
-EXAMPLES = """\
+EXAMPLES = (
+    """\
 # Example 1
 <Tools>
 ```json
@@ -62,10 +71,13 @@ EXAMPLES = """\
 ```
 
 """.format(
-    query_str=example_query_str,
-    tools_str=example_tools_str,
-    output_str = example_output_str
-).replace("{", "{{").replace("}", "}}")
+        query_str=example_query_str,
+        tools_str=example_tools_str,
+        output_str=example_output_str,
+    )
+    .replace("{", "{{")
+    .replace("}", "}}")
+)
 
 SUFFIX = """\
 # Example 2

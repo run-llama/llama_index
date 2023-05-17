@@ -1,6 +1,3 @@
-
-
-
 from typing import List, Sequence
 
 from pydantic import BaseModel
@@ -15,8 +12,12 @@ class SubQuestion(BaseModel):
 
 
 class BaseQuestionGenerator:
-    def generate(self, tools: Sequence[ToolMetadata], query: QueryBundle) -> List[SubQuestion]:
+    def generate(
+        self, tools: Sequence[ToolMetadata], query: QueryBundle
+    ) -> List[SubQuestion]:
         return []
 
-    async def agenerate(self, tools: Sequence[ToolMetadata], query: QueryBundle) -> List[SubQuestion]:
+    async def agenerate(
+        self, tools: Sequence[ToolMetadata], query: QueryBundle
+    ) -> List[SubQuestion]:
         return []

@@ -5,10 +5,12 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
 from llama_index.output_parsers.selection import Answer, SelectionOutputParser
-from llama_index.selectors.prompts import (DEFAULT_MULTI_SELECT_PROMPT_TMPL,
-                                           DEFAULT_SINGLE_SELECT_PROMPT_TMPL,
-                                           MultiSelectPrompt,
-                                           SingleSelectPrompt)
+from llama_index.selectors.prompts import (
+    DEFAULT_MULTI_SELECT_PROMPT_TMPL,
+    DEFAULT_SINGLE_SELECT_PROMPT_TMPL,
+    MultiSelectPrompt,
+    SingleSelectPrompt,
+)
 from llama_index.selectors.types import BaseSelector, SelectorResult
 from llama_index.tools.types import ToolMetadata
 

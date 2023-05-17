@@ -17,10 +17,9 @@ from llama_index.tools.query_engine import QueryEngineTool
 logger = logging.getLogger(__name__)
 
 
-
-
 class SubQuestionQueryEngine(BaseQueryEngine):
-    def __init__(self,
+    def __init__(
+        self,
         question_gen: BaseQuestionGenerator,
         response_synthesizer: ResponseSynthesizer,
         query_engine_tools: Sequence[QueryEngineTool],
@@ -56,7 +55,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
             colors = get_color_mapping(range(len(sub_questions)))
 
-        tasks = [self.aquery_subq(sub_q, color=colors[ind]) for ind, sub_q in enumerate(sub_questions)]
+        tasks = [
+            self.aquery_subq(sub_q, color=colors[ind])
+            for ind, sub_q in enumerate(sub_questions)
+        ]
         nodes = run_async_tasks(tasks)
 
         return self._response_synthesizer.synthesize(
@@ -65,13 +67,18 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         )
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        sub_questions = await self._question_gen.agenerate(self._metadatas, query_bundle)
+        sub_questions = await self._question_gen.agenerate(
+            self._metadatas, query_bundle
+        )
 
         if self._verbose:
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
             colors = get_color_mapping(range(len(sub_questions)))
 
-        tasks = [self.aquery_subq(sub_q, color=colors[ind]) for ind, sub_q in enumerate(sub_questions)]
+        tasks = [
+            self.aquery_subq(sub_q, color=colors[ind])
+            for ind, sub_q in enumerate(sub_questions)
+        ]
         nodes = await asyncio.gather(*tasks)
 
         return await self._response_synthesizer.asynthesize(
@@ -79,7 +86,9 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             nodes=nodes,
         )
 
-    async def aquery_subq(self, sub_q: SubQuestion, color: Optional[str] = None) -> Optional[NodeWithScore]:
+    async def aquery_subq(
+        self, sub_q: SubQuestion, color: Optional[str] = None
+    ) -> Optional[NodeWithScore]:
         try:
             question = sub_q.sub_question
             query_engine = self._query_engines[sub_q.tool_name]

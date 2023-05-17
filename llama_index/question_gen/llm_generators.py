@@ -1,4 +1,3 @@
-
 import json
 from typing import List, Optional, Sequence
 
@@ -7,15 +6,18 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.output_parsers.base import BaseOutputParser
 from llama_index.question_gen.output_parser import SubQuestionOutputParser
-from llama_index.question_gen.prompts import (DEFAULT_SUB_QUESTION_PROMPT_TMPL,
-                                              SubQuestionPrompt,
-                                              build_tools_text)
+from llama_index.question_gen.prompts import (
+    DEFAULT_SUB_QUESTION_PROMPT_TMPL,
+    SubQuestionPrompt,
+    build_tools_text,
+)
 from llama_index.question_gen.types import SubQuestion
 from llama_index.tools.types import ToolMetadata
 
 
 class LLMQuestionGenerator:
-    def __init__(self,
+    def __init__(
+        self,
         llm_predictor: LLMPredictor,
         prompt: SubQuestionPrompt,
     ) -> None:
@@ -27,7 +29,7 @@ class LLMQuestionGenerator:
 
     @classmethod
     def from_defaults(
-        cls, 
+        cls,
         service_context: Optional[ServiceContext] = None,
         prompt_template_str: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
@@ -43,7 +45,9 @@ class LLMQuestionGenerator:
         )
         return cls(service_context.llm_predictor, prompt)
 
-    def generate(self, tools: Sequence[ToolMetadata], query: QueryBundle) -> List[SubQuestion]:
+    def generate(
+        self, tools: Sequence[ToolMetadata], query: QueryBundle
+    ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
         prediction, _ = self._llm_predictor.predict(
@@ -56,7 +60,9 @@ class LLMQuestionGenerator:
         parse = self._prompt.output_parser.parse(prediction)
         return parse.parsed_output
 
-    async def agenerate(self, tools: Sequence[ToolMetadata], query: QueryBundle) -> List[SubQuestion]:
+    async def agenerate(
+        self, tools: Sequence[ToolMetadata], query: QueryBundle
+    ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
         prediction, _ = await self._llm_predictor.apredict(

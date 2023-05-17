@@ -11,8 +11,11 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.type import ResponseMode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
-from llama_index.prompts.prompts import (QuestionAnswerPrompt, RefinePrompt,
-                                         SimpleInputPrompt)
+from llama_index.prompts.prompts import (
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    SimpleInputPrompt,
+)
 from llama_index.response.schema import RESPONSE_TYPE
 
 
