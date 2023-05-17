@@ -18,6 +18,7 @@ from llama_index.indices.service_context import ServiceContext
 class ListRetrieverMode(str, Enum):
     DEFAULT = "default"
     EMBEDDING = "embedding"
+    LLM = "llm"
 
 
 class GPTListIndex(BaseGPTIndex[IndexList]):
@@ -63,12 +64,15 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
         from llama_index.indices.list.retrievers import (
             ListIndexEmbeddingRetriever,
             ListIndexRetriever,
+            ListIndexLLMRetriever,
         )
 
         if retriever_mode == ListRetrieverMode.DEFAULT:
             return ListIndexRetriever(self, **kwargs)
         elif retriever_mode == ListRetrieverMode.EMBEDDING:
             return ListIndexEmbeddingRetriever(self, **kwargs)
+        elif retriever_mode == ListRetrieverMode.LLM:
+            return ListIndexLLMRetriever(self, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 

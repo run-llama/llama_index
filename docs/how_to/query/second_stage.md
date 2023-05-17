@@ -160,4 +160,5 @@ maxdepth: 1
 ../../examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
 ../../examples/node_postprocessor/PII.ipynb
 ../../examples/node_postprocessor/CohereRerank.ipynb
+../../examples/node_postprocessor/LLMReranker-Gatsby.ipynb
 ```

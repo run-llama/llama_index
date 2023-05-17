@@ -189,7 +189,7 @@ class PineconeVectorStore(VectorStore):
             node = result.node
 
             metadata = {
-                "text": node.get_text(),
+                "text": node.text or "",
                 "id": node_id,
             }
 

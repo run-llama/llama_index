@@ -102,7 +102,7 @@ class MyScaleVectorStore(VectorStore):
             "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
                 "type": "String",
-                "extract_func": lambda x: escape_str(x.node.get_text()),
+                "extract_func": lambda x: escape_str(x.node.text or ""),
             },
             "vector": {
                 "type": "Array(Float32)",

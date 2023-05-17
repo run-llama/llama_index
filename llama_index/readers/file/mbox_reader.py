@@ -4,12 +4,13 @@ Contains simple parser for mbox files.
 
 """
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from llama_index.readers.file.base_parser import BaseParser
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document
 
 
-class MboxParser(BaseParser):
+class MboxReader(BaseReader):
     """Mbox parser.
 
     Extract messages from mailbox files.
@@ -34,21 +35,20 @@ class MboxParser(BaseParser):
         **kwargs: Any
     ) -> None:
         """Init params."""
-        super().__init__(*args, **kwargs)
-        self.max_count = max_count
-        self.message_format = message_format
-
-    def _init_parser(self) -> Dict:
-        """Initialize parser."""
         try:
             from bs4 import BeautifulSoup  # noqa: F401
         except ImportError:
             raise ImportError(
                 "`beautifulsoup4` package not found: `pip install beautifulsoup4`"
             )
-        return {}
 
-    def parse_file(self, filepath: Path, errors: str = "ignore") -> List[str]:
+        super().__init__(*args, **kwargs)
+        self.max_count = max_count
+        self.message_format = message_format
+
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file into string."""
         # Import required libraries
         import mailbox
@@ -61,7 +61,7 @@ class MboxParser(BaseParser):
         results: List[str] = []
         # Load file using mailbox
         bytes_parser = BytesParser(policy=default).parse
-        mbox = mailbox.mbox(filepath, factory=bytes_parser)  # type: ignore
+        mbox = mailbox.mbox(file, factory=bytes_parser)  # type: ignore
 
         # Iterate through all messages
         for _, _msg in enumerate(mbox):
@@ -95,4 +95,5 @@ class MboxParser(BaseParser):
             i += 1
             if self.max_count > 0 and i >= self.max_count:
                 break
-        return results
+
+        return [Document(result, extra_info=extra_info) for result in results]

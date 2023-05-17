@@ -4,32 +4,28 @@ Contains parsers for epub files.
 """
 
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional
 
-from llama_index.readers.file.base_parser import BaseParser
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document
 
 
-class EpubParser(BaseParser):
+class EpubReader(BaseReader):
     """Epub Parser."""
 
-    def _init_parser(self) -> Dict:
-        """Init parser."""
-        return {}
-
-    def parse_file(self, file: Path, errors: str = "ignore") -> str:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         try:
             import ebooklib
+            import html2text
             from ebooklib import epub
         except ImportError:
             raise ImportError(
-                "`EbookLib` is required to read Epub files: `pip install EbookLib`"
-            )
-        try:
-            import html2text
-        except ImportError:
-            raise ImportError(
-                "`html2text` is required to parse Epub files: `pip install html2text`"
+                "Please install extra dependencies that are required for "
+                "the EpubReader: "
+                "`pip install EbookLib html2text`"
             )
 
         text_list = []
@@ -44,4 +40,4 @@ class EpubParser(BaseParser):
                 )
 
         text = "\n".join(text_list)
-        return text
+        return [Document(text, extra_info=extra_info)]
