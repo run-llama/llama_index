@@ -45,8 +45,10 @@ class WandbCallbackHandler(BaseCallbackHandler):
         """Initialize the wandb handler."""
         try:
             import wandb
+            from wandb.sdk.data_types import trace_tree
 
             self._wandb = wandb
+            self._trace_tree = trace_tree
         except ImportError:
             raise ImportError(
                 "WandbCallbackHandler requires wandb. "
@@ -54,11 +56,12 @@ class WandbCallbackHandler(BaseCallbackHandler):
             )
 
         if self._wandb.run is None:
+            # TODO: pass wandb args
             run = self._wandb.init(project="llama_index", settings={"silent": True})
             print("W&b run URL: ", run.url)
 
         self._events: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
-        self._sequential_events: List[CBEvent] = []
+        self._events_by_id = {}
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )
@@ -84,8 +87,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
-        self._events[event.event_type].append(event)
-        self._sequential_events.append(event)
+        self._events_by_id[event.id_] = [event]
         return event.id_
 
     def on_event_end(
@@ -104,20 +106,24 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
-        self._events[event.event_type].append(event)
-        self._sequential_events.append(event)
+        self._events_by_id[event.id_].append(event)
 
-    def _get_event_pairs(self, events: List[CBEvent]) -> List[List[CBEvent]]:
-        """Helper function to pair events according to their ID."""
-        event_pairs: Dict[str, List[CBEvent]] = defaultdict(list)
-        for event in events:
-            event_pairs[event.id_].append(event)
+        assert len(self._events_by_id[event.id_]) == 2
+        assert self._events_by_id[event.id_][0].event_type == self._events_by_id[event.id_][1].event_type
 
-        sorted_events = sorted(
-            event_pairs.values(),
-            key=lambda x: datetime.strptime(x[0].time, TIMESTAMP_FORMAT),
-        )
-        return sorted_events
+        stats = self._get_time_stats(self._events_by_id[event.id_])
+        event_type = self._events_by_id[event.id_][0].event_type
+
+        # W&B Logic
+        if event_type == CBEventType.LLM:
+            agent_span = self._get_llm_trace_tree(event.id_, event_type, stats)
+            trace = self._trace_tree.WBTraceTree(agent_span)
+
+            if self._wandb.run is not None:
+                self._wandb.run.log({"trace": trace})
+
+            # Clear that event from the memory
+            self._events_by_id.pop(event.id_, None)
 
     def _get_time_stats(self, event_pair: List[CBEvent]) -> EventStats:
         """Calculate time-based stats for the given event pair."""
@@ -134,100 +140,23 @@ class WandbCallbackHandler(BaseCallbackHandler):
         )
 
         return stats
+    
+    def _get_llm_trace_tree(self, id_, event_type, stats):
+        events = self._events_by_id[id_]
+        agent_span = self._trace_tree.Span(
+            name=f"{event_type}-{id_}",
+            span_kind = self._trace_tree.SpanKind.LLM,
+            start_time_ms=int(datetime.strptime(events[0].time, TIMESTAMP_FORMAT).second*1000),
+            end_time_ms=int(datetime.strptime(events[0].time, TIMESTAMP_FORMAT).second*1000),
+        )
+        agent_span.add_named_result(
+            inputs=events[0].payload,
+            outputs=events[1].payload,
+        )
 
-    def get_event_pairs(
-        self, event_type: Optional[CBEventType] = None
-    ) -> List[List[CBEvent]]:
-        """Pair events by ID, either all events or a sepcific type."""
-        if event_type is not None:
-            return self._get_event_pairs(self._events[event_type])
+        return agent_span
 
-        return self._get_event_pairs(self._sequential_events)
 
-    def get_event_time_info_by_pair(
-        self, event_pairs: List[List[CBEvent]]
-    ) -> EventStats:
-        return self._get_time_stats_from_event_pairs(event_pairs)
-
-    def flush_event_logs(self) -> None:
-        """Clear all events from memory."""
-        self._events = defaultdict(list)
-        self._sequential_events = []
-
-    def log_events_to_wandb(self, flush_events=False) -> None:
-        """Log all events to wandb."""
-        if self._wandb.run is not None:
-            events_table = self._wandb.Table(
-                columns=[
-                    "event_type",
-                    "event_id",
-                    "event_start_time",
-                    "event_end_time",
-                    "event_total_time",
-                ]
-            )
-
-            llm_input_output_table = self._wandb.Table(
-                columns=[
-                    "event_type",
-                    "event_id",
-                    "input",
-                    "output",
-                ]
-            )
-
-        # Get all event pairs by ID sorted by time.
-        event_pairs = self.get_event_pairs()
-
-        for event_pair in event_pairs:
-            time_stat = self._get_time_stats(event_pair)
-
-            assert len(event_pair) == 2
-            event_pair[0].event_type == event_pair[1].event_type
-
-            events_table.add_data(
-                event_pair[0].event_type,
-                event_pair[0].id_,
-                time_stat.start_time,
-                time_stat.end_time,
-                time_stat.total_secs,
-            )
-
-            if event_pair[0].event_type == CBEventType.LLM:
-                event_start = event_pair[0]
-                event_end = event_pair[1]
-
-                # Handle event start
-                if event_start.payload is not None:
-                    payload_keys = list(event_start.payload.keys())
-                    assert (
-                        len(payload_keys) == 2
-                    )  # Handle two keys: <variable> and "template"
-
-                    payload_keys.remove("template")
-                    llm_input_output_table.add_data(
-                        event_start.event_type.name,
-                        event_start.id_,
-                        event_start.payload[payload_keys[0]],
-                        str(event_start.payload["template"]),
-                    )
-
-                # Handle event end
-                if event_end.payload is not None:
-                    llm_input_output_table.add_data(
-                        event_end.event_type.name,
-                        event_end.id_,
-                        event_end.payload["response"],
-                        event_end.payload["formatted_prompt"],
-                    )
-
-        if len(events_table.get_index()) > 0:
-            self._wandb.log({"event_table": events_table})
-
-        if len(llm_input_output_table.get_index()) > 0:
-            self._wandb.log({"llm_input_output_table": llm_input_output_table})
-
-        if flush_events:
-            self.flush_event_logs()
-
-        self._wandb.run.finish()
+    def finish(self) -> None:
+        """Finish the callback handler."""
+        self._wandb.finish()
