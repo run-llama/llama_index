@@ -10,5 +10,5 @@ __all__ = [
     "CBEventType",
     "LlamaDebugHandler",
     "AimCallback",
-    "WandbCallbackHandler"
+    "WandbCallbackHandler",
 ]

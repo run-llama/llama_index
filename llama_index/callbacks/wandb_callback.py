@@ -15,7 +15,7 @@ EVENTS = [
     CBEventType.EMBEDDING,
     CBEventType.CHUNKING,
     CBEventType.RETRIEVE,
-    CBEventType.SYNTHESIZE ,
+    CBEventType.SYNTHESIZE,
     CBEventType.TREE,
     CBEventType.QUERY,
 ]
@@ -45,6 +45,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         """Initialize the wandb handler."""
         try:
             import wandb
+
             self._wandb = wandb
         except ImportError:
             raise ImportError(
@@ -53,8 +54,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
             )
 
         if self._wandb.run is None:
-            self._wandb.init(project="llama_index", settings={"silent": True})
-            print("W&b run URL: ", self._wandb.run.settings.run_url)
+            run = self._wandb.init(project="llama_index", settings={"silent": True})
+            print("W&b run URL: ", run.url)
 
         self._events: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
         self._sequential_events: List[CBEvent] = []
@@ -106,10 +107,6 @@ class WandbCallbackHandler(BaseCallbackHandler):
         self._events[event.event_type].append(event)
         self._sequential_events.append(event)
 
-    def get_events(self, event_type: Optional[CBEventType] = None) -> List[CBEvent]:
-        """Get all events for a specific event type."""
-        return self._events[event_type]
-
     def _get_event_pairs(self, events: List[CBEvent]) -> List[List[CBEvent]]:
         """Helper function to pair events according to their ID."""
         event_pairs: Dict[str, List[CBEvent]] = defaultdict(list)
@@ -122,9 +119,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         )
         return sorted_events
 
-    def _get_time_stats(
-        self, event_pair: List[CBEvent]
-    ) -> EventStats:
+    def _get_time_stats(self, event_pair: List[CBEvent]) -> EventStats:
         """Calculate time-based stats for the given event pair."""
         start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
         end_time = datetime.strptime(event_pair[-1].time, TIMESTAMP_FORMAT)
@@ -135,7 +130,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             end_time=end_time,
             total_secs=total_secs,
             average_secs=None,
-            total_count=None
+            total_count=None,
         )
 
         return stats
@@ -205,7 +200,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 # Handle event start
                 if event_start.payload is not None:
                     payload_keys = list(event_start.payload.keys())
-                    assert len(payload_keys) == 2 # Handle two keys: <variable> and "template"
+                    assert (
+                        len(payload_keys) == 2
+                    )  # Handle two keys: <variable> and "template"
 
                     payload_keys.remove("template")
                     llm_input_output_table.add_data(
