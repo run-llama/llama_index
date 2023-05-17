@@ -65,7 +65,7 @@ class FaissVectorStore(VectorStore):
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         # only support local storage for now
         if fs and not isinstance(fs, LocalFileSystem):
-            raise NotImplementedError(f"FAISS only supports local storage for now.")
+            raise NotImplementedError("FAISS only supports local storage for now.")
         return cls.from_persist_path(persist_path=persist_path, fs=None)
 
     @classmethod
@@ -79,7 +79,7 @@ class FaissVectorStore(VectorStore):
         # I don't think FAISS supports fsspec, it requires a path in the SWIG interface
         # TODO: copy to a temp file and load into memory from there
         if fs and not isinstance(fs, LocalFileSystem):
-            raise NotImplementedError(f"FAISS only supports local storage for now.")
+            raise NotImplementedError("FAISS only supports local storage for now.")
 
         if not os.path.exists(persist_path):
             raise ValueError(f"No existing {__name__} found at {persist_path}.")
@@ -130,7 +130,7 @@ class FaissVectorStore(VectorStore):
         # I don't think FAISS supports fsspec, it requires a path in the SWIG interface
         # TODO: write to a temporary file and then copy to the final destination
         if fs and not isinstance(fs, LocalFileSystem):
-            raise NotImplementedError(f"FAISS only supports local storage for now.")
+            raise NotImplementedError("FAISS only supports local storage for now.")
         import faiss
 
         dirpath = os.path.dirname(persist_path)
