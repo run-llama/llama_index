@@ -1,7 +1,8 @@
-from typing import Any, Dict, Optional
 import json
-from pathlib import PurePath
 import os
+from pathlib import PurePath
+from typing import Any, Dict, Optional
+
 from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 
 IMPORT_ERROR_MSG = "`boto3` package not found, please run `pip install boto3`"
@@ -9,7 +10,8 @@ IMPORT_ERROR_MSG = "`boto3` package not found, please run `pip install boto3`"
 
 class S3DBKVStore(BaseKVStore):
     """S3 Key-Value store.
-    Stores key-value pairs in a S3 bucket. Can optionally specify a path to a folder where KV data is stored.
+    Stores key-value pairs in a S3 bucket. Can optionally specify a path to a folder
+        where KV data is stored.
     The KV data is further divided into collections, which are subfolders in the path.
     Each key-value pair is stored as a JSON file.
 
@@ -25,7 +27,7 @@ class S3DBKVStore(BaseKVStore):
     ) -> None:
         """Init a S3DBKVStore."""
         try:
-            import boto3
+            pass
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
