@@ -42,11 +42,12 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         question_gen: Optional[BaseQuestionGenerator] = None,
         response_synthesizer: Optional[ResponseSynthesizer] = None,
         verbose: bool = True,
+        use_async: bool = True,
     ) -> "SubQuestionQueryEngine":
         question_gen = question_gen or LLMQuestionGenerator.from_defaults()
         synth = response_synthesizer or ResponseSynthesizer.from_args()
 
-        return cls(question_gen, synth, query_engine_tools, verbose)
+        return cls(question_gen, synth, query_engine_tools, verbose, use_async)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         sub_questions = self._question_gen.generate(self._metadatas, query_bundle)
@@ -59,7 +60,11 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             self.aquery_subq(sub_q, color=colors[str(ind)])
             for ind, sub_q in enumerate(sub_questions)
         ]
+
         nodes = run_async_tasks(tasks)
+
+        # filter out sub questions that failed
+        nodes = filter(None, nodes)
 
         return self._response_synthesizer.synthesize(
             query_bundle=query_bundle,
@@ -80,6 +85,9 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             for ind, sub_q in enumerate(sub_questions)
         ]
         nodes = await asyncio.gather(*tasks)
+        
+        # filter out sub questions that failed
+        nodes = filter(None, nodes)
 
         return await self._response_synthesizer.asynthesize(
             query_bundle=query_bundle,
