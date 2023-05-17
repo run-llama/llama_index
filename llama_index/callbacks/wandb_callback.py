@@ -159,7 +159,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         self._events = defaultdict(list)
         self._sequential_events = []
 
-    def log_events_to_wb(self, flush_events=False) -> None:
+    def log_events_to_wandb(self, flush_events=False) -> None:
         """Log all events to wandb."""
         if self._wandb.run is not None:
             events_table = self._wandb.Table(
@@ -199,14 +199,30 @@ class WandbCallbackHandler(BaseCallbackHandler):
             )
 
             if event_pair[0].event_type == CBEventType.LLM:
-                for event in event_pair:
-                    if event.payload is not None:
-                        llm_input_output_table.add_data(
-                            event_pair[0].event_type,
-                            event_pair[0].id_,
-                            event.payload["response"],
-                            event.payload["formatted_prompt"],
-                        )
+                event_start = event_pair[0]
+                event_end = event_pair[1]
+
+                # Handle event start
+                if event_start.payload is not None:
+                    payload_keys = list(event_start.payload.keys())
+                    assert len(payload_keys) == 2 # Handle two keys: <variable> and "template"
+
+                    payload_keys.remove("template")
+                    llm_input_output_table.add_data(
+                        event_start.event_type.name,
+                        event_start.id_,
+                        event_start.payload[payload_keys[0]],
+                        str(event_start.payload["template"]),
+                    )
+
+                # Handle event end
+                if event_end.payload is not None:
+                    llm_input_output_table.add_data(
+                        event_end.event_type.name,
+                        event_end.id_,
+                        event_end.payload["response"],
+                        event_end.payload["formatted_prompt"],
+                    )
 
         if len(events_table.get_index()) > 0:
             self._wandb.log({"event_table": events_table})
