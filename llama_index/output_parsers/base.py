@@ -17,7 +17,7 @@ class BaseOutputParser(Protocol):
     """Output parser class."""
 
     @abstractmethod
-    def parse(self, output: str) -> Any:
+    def parse(self, output: str) -> StructuredOutput:
         """Parse, validate, and correct errors programmatically."""
 
     @abstractmethod

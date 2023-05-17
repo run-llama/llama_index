@@ -6,16 +6,13 @@ from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.type import ResponseMode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
-from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    SimpleInputPrompt,
-)
+from llama_index.prompts.prompts import (QuestionAnswerPrompt, RefinePrompt,
+                                         SimpleInputPrompt)
 from llama_index.response.schema import RESPONSE_TYPE
 
 

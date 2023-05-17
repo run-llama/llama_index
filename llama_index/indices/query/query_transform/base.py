@@ -7,13 +7,10 @@ from typing import Dict, Optional, cast
 from langchain.input import print_text
 
 from llama_index.indices.query.query_transform.prompts import (
-    DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
-    DEFAULT_IMAGE_OUTPUT_PROMPT,
+    DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT, DEFAULT_IMAGE_OUTPUT_PROMPT,
     DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
-    DecomposeQueryTransformPrompt,
-    ImageOutputQueryTransformPrompt,
-    StepDecomposeQueryTransformPrompt,
-)
+    DecomposeQueryTransformPrompt, ImageOutputQueryTransformPrompt,
+    StepDecomposeQueryTransformPrompt)
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.prompts.base import Prompt
