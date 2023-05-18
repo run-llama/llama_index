@@ -1,10 +1,9 @@
 """Vector store index types."""
-import fsspec
-
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, List, Optional, Protocol, Union, runtime_checkable
 
+import fsspec
 from pydantic import BaseModel
 
 from llama_index.data_structs.node import Node
@@ -153,6 +152,6 @@ class VectorStore(Protocol):
         ...
 
     def persist(
-        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem]
+        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
         return None

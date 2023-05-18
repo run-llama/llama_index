@@ -1,14 +1,12 @@
 import json
+import logging
 import os
 from typing import Dict, Optional
-import logging
+
 import fsspec
 
-from llama_index.storage.kvstore.types import (
-    DEFAULT_COLLECTION,
-    BaseInMemoryKVStore,
-)
-
+from llama_index.storage.kvstore.types import (DEFAULT_COLLECTION,
+                                               BaseInMemoryKVStore)
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +18,6 @@ class SimpleKVStore(BaseInMemoryKVStore):
 
     Args:
         data (Optional[DATA_TYPE]): data to initialize the store with
-        fs (Optional[fsspec.AbstractFileSystem]): filesystem to use. defaults to local
-            storage
     """
 
     def __init__(

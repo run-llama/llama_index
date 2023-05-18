@@ -1,18 +1,21 @@
 from dataclasses import dataclass
-from typing import Optional
 from pathlib import Path
-import fsspec
-from llama_index.constants import DOC_STORE_KEY, INDEX_STORE_KEY, VECTOR_STORE_KEY
-from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
-from llama_index.storage.docstore.types import BaseDocumentStore
-from llama_index.storage.docstore.types import DEFAULT_PERSIST_FNAME as DOCSTORE_FNAME
-from llama_index.storage.index_store.types import (
-    DEFAULT_PERSIST_FNAME as INDEX_STORE_FNAME,
-)
-from llama_index.vector_stores.simple import DEFAULT_PERSIST_FNAME as VECTOR_STORE_FNAME
+from typing import Optional
 
+import fsspec
+
+from llama_index.constants import (DOC_STORE_KEY, INDEX_STORE_KEY,
+                                   VECTOR_STORE_KEY)
+from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
+from llama_index.storage.docstore.types import \
+    DEFAULT_PERSIST_FNAME as DOCSTORE_FNAME
+from llama_index.storage.docstore.types import BaseDocumentStore
 from llama_index.storage.index_store.simple_index_store import SimpleIndexStore
+from llama_index.storage.index_store.types import \
+    DEFAULT_PERSIST_FNAME as INDEX_STORE_FNAME
 from llama_index.storage.index_store.types import BaseIndexStore
+from llama_index.vector_stores.simple import \
+    DEFAULT_PERSIST_FNAME as VECTOR_STORE_FNAME
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
 
@@ -34,7 +37,6 @@ class StorageContext:
     docstore: BaseDocumentStore
     index_store: BaseIndexStore
     vector_store: VectorStore
-    fs: fsspec.AbstractFileSystem
 
     @classmethod
     def from_defaults(
@@ -53,7 +55,6 @@ class StorageContext:
             vector_store (Optional[VectorStore]): vector store
 
         """
-        fs = fs or fsspec.filesystem("file")
         if persist_dir is None:
             docstore = docstore or SimpleDocumentStore()
             index_store = index_store or SimpleIndexStore()
@@ -69,7 +70,7 @@ class StorageContext:
                 persist_dir, fs=fs
             )
 
-        return cls(docstore, index_store, vector_store, fs)
+        return cls(docstore, index_store, vector_store)
 
     def persist(
         self,
@@ -85,7 +86,6 @@ class StorageContext:
             persist_dir (str): directory to persist the storage context
 
         """
-        fs = fs or self.fs
         docstore_path = str(Path(persist_dir) / docstore_fname)
         index_store_path = str(Path(persist_dir) / index_store_fname)
         vector_store_path = str(Path(persist_dir) / vector_store_fname)
@@ -124,5 +124,4 @@ class StorageContext:
             docstore=docstore,
             index_store=index_store,
             vector_store=vector_store,
-            fs=fsspec.filesystem("file"),
         )
