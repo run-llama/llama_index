@@ -15,14 +15,9 @@ def build_tools_text(tools: Sequence[ToolMetadata]) -> str:
     return tools_str
 
 
-class SubQuestionPrompt(Prompt):
-    prompt_type: PromptType = PromptType.SUB_QUESTION
-    input_variables: List[str] = ["tools_str", "query_str"]
-
-
 PREFIX = """\
 Given a user question, and a list of tools, output a list of relevant sub-questions \
-that when composed can help answer the full question:
+that when composed can help answer the full user question:
 
 """
 
@@ -93,3 +88,8 @@ SUFFIX = """\
 """
 
 DEFAULT_SUB_QUESTION_PROMPT_TMPL = PREFIX + EXAMPLES + SUFFIX
+
+
+class SubQuestionPrompt(Prompt):
+    prompt_type: PromptType = PromptType.SUB_QUESTION
+    input_variables: List[str] = ["tools_str", "query_str"]

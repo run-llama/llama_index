@@ -1,9 +1,9 @@
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, cast
 
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.output_parsers.base import BaseOutputParser
+from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
 from llama_index.question_gen.output_parser import SubQuestionOutputParser
 from llama_index.question_gen.prompts import (
     DEFAULT_SUB_QUESTION_PROMPT_TMPL,
@@ -57,6 +57,7 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
 
         assert self._prompt.output_parser is not None
         parse = self._prompt.output_parser.parse(prediction)
+        parse = cast(StructuredOutput, parse)
         return parse.parsed_output
 
     async def agenerate(
@@ -72,4 +73,5 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
 
         assert self._prompt.output_parser is not None
         parse = self._prompt.output_parser.parse(prediction)
+        parse = cast(StructuredOutput, parse)
         return parse.parsed_output

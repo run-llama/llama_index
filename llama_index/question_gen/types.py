@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import List, Sequence
 
 from pydantic import BaseModel
@@ -11,13 +12,15 @@ class SubQuestion(BaseModel):
     tool_name: str
 
 
-class BaseQuestionGenerator:
+class BaseQuestionGenerator(ABC):
+    @abstractmethod
     def generate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle
     ) -> List[SubQuestion]:
-        return []
+        pass
 
+    @abstractmethod
     async def agenerate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle
     ) -> List[SubQuestion]:
-        return []
+        pass

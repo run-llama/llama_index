@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Optional, Sequence
+from typing import List, Optional, Sequence, cast
 
 from langchain.input import get_color_mapping, print_text
 
@@ -61,10 +61,11 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             for ind, sub_q in enumerate(sub_questions)
         ]
 
-        nodes = run_async_tasks(tasks)
+        nodes_all = run_async_tasks(tasks)
+        nodes_all = cast(List[Optional[NodeWithScore]], nodes_all)
 
         # filter out sub questions that failed
-        nodes = filter(None, nodes)
+        nodes: List[NodeWithScore] = list(filter(None, nodes_all))
 
         return self._response_synthesizer.synthesize(
             query_bundle=query_bundle,
@@ -84,10 +85,11 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             self.aquery_subq(sub_q, color=colors[str(ind)])
             for ind, sub_q in enumerate(sub_questions)
         ]
-        nodes = await asyncio.gather(*tasks)
-        
+        nodes_all = await asyncio.gather(*tasks)
+        nodes_all = cast(List[Optional[NodeWithScore]], nodes_all)
+
         # filter out sub questions that failed
-        nodes = filter(None, nodes)
+        nodes = list(filter(None, nodes_all))
 
         return await self._response_synthesizer.asynthesize(
             query_bundle=query_bundle,
