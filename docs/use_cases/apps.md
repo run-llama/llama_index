@@ -8,7 +8,7 @@ Chatbots are an incredibly popular use case for LLM's. LlamaIndex gives you the 
 
 Relevant Resources:
 - [Building a Chatbot](/docs/guides/tutorials/building_a_chatbot.md)
-- [Using with a LangChain Agent](/how_to/integrations/using_with_langchain.md)
+- [Using with a LangChain Agent](/docs/how_to/integrations/using_with_langchain.md)
 
 ### Full-Stack Web Application
 
