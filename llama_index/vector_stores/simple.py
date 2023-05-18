@@ -161,7 +161,6 @@ class SimpleVectorStore(VectorStore):
             json.dump(self._data.to_dict(), f)
 
     @classmethod
-    @classmethod
     def from_persist_path(
         cls, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> "SimpleVectorStore":
