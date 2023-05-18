@@ -1,20 +1,13 @@
 """Mock prompt utils."""
 
-from llama_index.prompts.prompts import (
-    KeywordExtractPrompt,
-    KnowledgeGraphPrompt,
-    PandasPrompt,
-    QueryKeywordExtractPrompt,
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    SchemaExtractPrompt,
-    SimpleInputPrompt,
-    SummaryPrompt,
-    TableContextPrompt,
-    TextToSQLPrompt,
-    TreeInsertPrompt,
-    TreeSelectPrompt,
-)
+from llama_index.prompts.prompts import (KeywordExtractPrompt,
+                                         KnowledgeGraphPrompt, PandasPrompt,
+                                         QueryKeywordExtractPrompt,
+                                         QuestionAnswerPrompt, RefinePrompt,
+                                         SchemaExtractPrompt,
+                                         SimpleInputPrompt, SummaryPrompt,
+                                         TableContextPrompt, TextToSQLPrompt,
+                                         TreeInsertPrompt, TreeSelectPrompt)
 
 MOCK_SUMMARY_PROMPT_TMPL = "{context_str}\n"
 MOCK_SUMMARY_PROMPT = SummaryPrompt(MOCK_SUMMARY_PROMPT_TMPL)

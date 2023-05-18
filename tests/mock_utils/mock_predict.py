@@ -3,9 +3,8 @@
 import json
 from typing import Any, Dict, Tuple
 
-from llama_index.indices.query.query_transform.prompts import (
-    DecomposeQueryTransformPrompt,
-)
+from llama_index.indices.query.query_transform.prompts import \
+    DecomposeQueryTransformPrompt
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.choice_select import ChoiceSelectPrompt
 from llama_index.prompts.prompt_type import PromptType
@@ -69,6 +68,20 @@ def _mock_multi_select(prompt_args: Dict) -> str:
     answers = answers[:max_outputs]
 
     return json.dumps(answers)
+
+
+def _mock_sub_questions() -> str:
+    """Mock sub questions."""
+    json_str = json.dumps(
+        [
+            {
+                "sub_question": "mock question for source_1",
+                "tool_name": "source_1",
+            }
+        ],
+        indent=4
+    )
+    return f"```json\n{json_str}\n```"
 
 
 def _mock_answer(prompt_args: Dict) -> str:
@@ -165,6 +178,8 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
         response = _mock_single_select()
     elif prompt.prompt_type == PromptType.MULTI_SELECT:
         response = _mock_multi_select(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SUB_QUESTION:
+        response = _mock_sub_questions()
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
@@ -218,6 +233,8 @@ def patch_llmpredictor_predict(
         response = _mock_single_select()
     elif prompt.prompt_type == PromptType.MULTI_SELECT:
         response = _mock_multi_select(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SUB_QUESTION:
+        response = _mock_sub_questions()
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
