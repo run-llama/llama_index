@@ -17,6 +17,6 @@ LlamaIndex can be integrated into a downstream full-stack web application. It ca
 We provide tutorials and resources to help you get started in this area.
 
 Relevant Resources:
-- [Fullstack Application Guide](/docs/guides/tutorials/fzullstack_app_guide.md)
+- [Fullstack Application Guide](/docs/guides/tutorials/fullstack_app_guide.md)
 - [LlamaIndex Starter Pack](https://github.com/logan-markewich/llama_index_starter_pack)
 
