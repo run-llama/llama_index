@@ -7,7 +7,7 @@ LlamaIndex modules provide plug and play data loaders, data structures, and quer
 Chatbots are an incredibly popular use case for LLM's. LlamaIndex gives you the tools to build Knowledge-augmented chatbots and agents.
 
 Relevant Resources:
-- [Building a Chatbot](/guides/tutorials/building_a_chatbot.md)
+- [Building a Chatbot](/docs/guides/tutorials/building_a_chatbot.md)
 - [Using with a LangChain Agent](/how_to/integrations/using_with_langchain.md)
 
 ### Full-Stack Web Application
@@ -17,6 +17,6 @@ LlamaIndex can be integrated into a downstream full-stack web application. It ca
 We provide tutorials and resources to help you get started in this area.
 
 Relevant Resources:
-- [Fullstack Application Guide](/guides/tutorials/fullstack_app_guide.md)
+- [Fullstack Application Guide](/docs/guides/tutorials/fzullstack_app_guide.md)
 - [LlamaIndex Starter Pack](https://github.com/logan-markewich/llama_index_starter_pack)
 
