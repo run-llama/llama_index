@@ -18,6 +18,25 @@ logger = logging.getLogger(__name__)
 
 
 class SubQuestionQueryEngine(BaseQueryEngine):
+    """Sub question query engine.
+
+    A query engine that breaks down a complex query (e.g. compare and contrast) into
+        many sub questions and their target query engine for execution.
+        After executing all sub questions, all responses are gathered and sent to
+        response synthesizer to produce the final response. 
+
+    Args:
+        question_gen (BaseQuestionGenerator): A module for generating sub questions
+            given a complex question and tools.
+        response_synthesizer (ResponseSynthesizer): A response synthesizer for 
+            generating the final response
+        query_engine_tools (Sequence[QueryEngineTool]): Tools to answer the
+            sub questions.
+        verbose (bool): whether to print intermediate questions and answers. 
+            Defaults to True
+        use_async (bool): whether to execute the sub questions with asyncio.
+            Defaults to True
+    """
     def __init__(
         self,
         question_gen: BaseQuestionGenerator,
