@@ -1,4 +1,3 @@
-
 from typing import Any, Optional, Sequence
 
 from llama_index.indices.response.base_builder import BaseResponseBuilder
@@ -71,4 +70,3 @@ class Generation(BaseResponseBuilder):
                 query_str=query_str,
             )
             return stream_response
-

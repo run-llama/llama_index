@@ -1,5 +1,3 @@
-
-
 from typing import Optional
 
 from llama_index.indices.response.accumulate import Accumulate
@@ -11,12 +9,16 @@ from llama_index.indices.response.simple_summarize import SimpleSummarize
 from llama_index.indices.response.tree_summarize import TreeSummarize
 from llama_index.indices.response.type import ResponseMode
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_prompt_selectors import \
-    DEFAULT_REFINE_PROMPT_SEL
-from llama_index.prompts.default_prompts import (DEFAULT_SIMPLE_INPUT_PROMPT,
-                                                 DEFAULT_TEXT_QA_PROMPT)
-from llama_index.prompts.prompts import (QuestionAnswerPrompt, RefinePrompt,
-                                         SimpleInputPrompt)
+from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
+from llama_index.prompts.default_prompts import (
+    DEFAULT_SIMPLE_INPUT_PROMPT,
+    DEFAULT_TEXT_QA_PROMPT,
+)
+from llama_index.prompts.prompts import (
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    SimpleInputPrompt,
+)
 
 
 def get_response_builder(

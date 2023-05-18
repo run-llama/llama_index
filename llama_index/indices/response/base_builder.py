@@ -17,6 +17,7 @@ from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
 
+
 class BaseResponseBuilder(ABC):
     """Response builder class."""
 

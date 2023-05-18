@@ -1,4 +1,3 @@
-
 from typing import Any, Generator, Optional, Sequence, cast
 
 from llama_index.data_structs.node import Node

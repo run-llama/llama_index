@@ -1,6 +1,3 @@
-
-
-
 from typing import Any, Optional, Sequence
 
 from llama_index.indices.response.refine import Refine
@@ -61,5 +58,3 @@ class CompactAndRefine(Refine):
                 query_str=query_str, text_chunks=new_texts, prev_response=prev_response
             )
         return response
-
-

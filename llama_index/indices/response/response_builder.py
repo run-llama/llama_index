@@ -21,4 +21,3 @@ __all__ = [
     "Accumulate",
     "get_response_builder",
 ]
-

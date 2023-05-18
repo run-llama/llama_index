@@ -1,5 +1,3 @@
-
-
 import asyncio
 from typing import Any, List, Sequence
 
@@ -110,4 +108,3 @@ class Accumulate(BaseResponseBuilder):
             )
             for cur_text_chunk in text_chunks
         ]
-

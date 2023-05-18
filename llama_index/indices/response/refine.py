@@ -1,5 +1,4 @@
-
-
+import logging
 from typing import Any, Generator, Optional, Sequence, cast
 
 from llama_index.indices.response.base_builder import BaseResponseBuilder
@@ -9,6 +8,8 @@ from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.response.utils import get_response_text
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
+
+logger = logging.getLogger(__name__)
 
 
 class Refine(BaseResponseBuilder):
@@ -160,4 +161,3 @@ class Refine(BaseResponseBuilder):
                 formatted_prompt, response, log_prefix="Refined"
             )
         return response
-
