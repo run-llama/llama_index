@@ -330,13 +330,17 @@ query_engine = RetrieverQueryEngine.from_args(retriever, response_mode=<response
 
 Right now, we support the following options:
 - `default`: "create and refine" an answer by sequentially going through each retrieved `Node`; 
-    This make a separate LLM call per Node. Good for more detailed answers.
+    This makes a separate LLM call per Node. Good for more detailed answers.
 - `compact`: "compact" the prompt during each LLM call by stuffing as 
     many `Node` text chunks that can fit within the maximum prompt size. If there are 
     too many chunks to stuff in one prompt, "create and refine" an answer by going through
     multiple prompts.
 - `tree_summarize`: Given a set of `Node` objects and the query, recursively construct a tree 
     and return the root node as the response. Good for summarization purposes.
+- `accumulate`: Given a set of `Node` objects and the query, apply the query to each `Node` text
+    chunk while accumulating the responses into an array. Returns a concatenated string of all
+    responses. Good for when you need to run the same query separately against each text
+    chunk.
 
 ```python
 index = GPTListIndex.from_documents(documents)

@@ -9,7 +9,17 @@ Will support different modes, from 1) stuffing chunks into prompt,
 """
 from abc import ABC, abstractmethod
 import logging
-from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, cast
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
+import asyncio
 
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.data_structs.node import Node
@@ -33,6 +43,7 @@ from llama_index.response.utils import get_response_text
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
 from llama_index.utils import temp_set_attrs
+from llama_index.async_utils import run_async_tasks
 
 logger = logging.getLogger(__name__)
 
@@ -576,6 +587,107 @@ class Generation(BaseResponseBuilder):
             return stream_response
 
 
+class Accumulate(BaseResponseBuilder):
+    def __init__(
+        self,
+        service_context: ServiceContext,
+        text_qa_template: QuestionAnswerPrompt,
+        streaming: bool = False,
+        use_async: bool = False,
+    ) -> None:
+        super().__init__(service_context=service_context, streaming=streaming)
+        self.text_qa_template = text_qa_template
+        self._use_async = use_async
+
+    def flatten_list(self, md_array: List[List[Any]]) -> List[Any]:
+        return list(item for sublist in md_array for item in sublist)
+
+    def format_response(self, outputs: List[Any], separator: str) -> str:
+        responses: List[str] = []
+        for response, formatted_prompt in outputs:
+            self._log_prompt_and_response(
+                formatted_prompt, response, log_prefix="Initial"
+            )
+            responses.append(response or "Empty Response")
+
+        return separator.join(
+            [f"Response {index + 1}: {item}" for index, item in enumerate(responses)]
+        )
+
+    @llm_token_counter("aget_response")
+    async def aget_response(
+        self,
+        query_str: str,
+        text_chunks: Sequence[str],
+        separator: str = "\n---------------------\n",
+        **kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        """Apply the same prompt to text chunks and return async responses"""
+
+        if self._streaming:
+            raise ValueError("Unable to stream in Accumulate response mode")
+
+        tasks = [
+            self._give_responses(query_str, text_chunk, use_async=True)
+            for text_chunk in text_chunks
+        ]
+
+        flattened_tasks = self.flatten_list(tasks)
+        outputs = await asyncio.gather(*flattened_tasks)
+
+        return self.format_response(outputs, separator)
+
+    @llm_token_counter("get_response")
+    def get_response(
+        self,
+        query_str: str,
+        text_chunks: Sequence[str],
+        separator: str = "\n---------------------\n",
+    ) -> RESPONSE_TEXT_TYPE:
+        """Apply the same prompt to text chunks and return responses"""
+
+        if self._streaming:
+            raise ValueError("Unable to stream in Accumulate response mode")
+
+        tasks = [
+            self._give_responses(query_str, text_chunk, use_async=self._use_async)
+            for text_chunk in text_chunks
+        ]
+
+        outputs = self.flatten_list(tasks)
+
+        if self._use_async:
+            outputs = run_async_tasks(outputs)
+
+        return self.format_response(outputs, separator)
+
+    def _give_responses(
+        self, query_str: str, text_chunk: str, use_async: bool = False
+    ) -> List[Any]:
+        """Give responses given a query and a corresponding text chunk."""
+        text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
+        qa_text_splitter = (
+            self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                text_qa_template, 1
+            )
+        )
+        text_chunks = qa_text_splitter.split_text(text_chunk)
+
+        predictor = (
+            self._service_context.llm_predictor.apredict
+            if use_async
+            else self._service_context.llm_predictor.predict
+        )
+
+        return [
+            predictor(
+                text_qa_template,
+                context_str=cur_text_chunk,
+            )
+            for cur_text_chunk in text_chunks
+        ]
+
+
 def get_response_builder(
     service_context: ServiceContext,
     text_qa_template: Optional[QuestionAnswerPrompt] = None,
@@ -621,6 +733,13 @@ def get_response_builder(
             service_context=service_context,
             simple_template=simple_template,
             streaming=streaming,
+        )
+    elif mode == ResponseMode.ACCUMULATE:
+        return Accumulate(
+            service_context=service_context,
+            text_qa_template=text_qa_template,
+            streaming=streaming,
+            use_async=use_async,
         )
     else:
         raise ValueError(f"Unknown mode: {mode}")
