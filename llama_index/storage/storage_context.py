@@ -4,18 +4,16 @@ from typing import Optional
 
 import fsspec
 
-from llama_index.constants import (DOC_STORE_KEY, INDEX_STORE_KEY,
-                                   VECTOR_STORE_KEY)
+from llama_index.constants import DOC_STORE_KEY, INDEX_STORE_KEY, VECTOR_STORE_KEY
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
-from llama_index.storage.docstore.types import \
-    DEFAULT_PERSIST_FNAME as DOCSTORE_FNAME
+from llama_index.storage.docstore.types import DEFAULT_PERSIST_FNAME as DOCSTORE_FNAME
 from llama_index.storage.docstore.types import BaseDocumentStore
 from llama_index.storage.index_store.simple_index_store import SimpleIndexStore
-from llama_index.storage.index_store.types import \
-    DEFAULT_PERSIST_FNAME as INDEX_STORE_FNAME
+from llama_index.storage.index_store.types import (
+    DEFAULT_PERSIST_FNAME as INDEX_STORE_FNAME,
+)
 from llama_index.storage.index_store.types import BaseIndexStore
-from llama_index.vector_stores.simple import \
-    DEFAULT_PERSIST_FNAME as VECTOR_STORE_FNAME
+from llama_index.vector_stores.simple import DEFAULT_PERSIST_FNAME as VECTOR_STORE_FNAME
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
 
