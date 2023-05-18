@@ -5,9 +5,11 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
 from llama_index.question_gen.output_parser import SubQuestionOutputParser
-from llama_index.question_gen.prompts import (DEFAULT_SUB_QUESTION_PROMPT_TMPL,
-                                              SubQuestionPrompt,
-                                              build_tools_text)
+from llama_index.question_gen.prompts import (
+    DEFAULT_SUB_QUESTION_PROMPT_TMPL,
+    SubQuestionPrompt,
+    build_tools_text,
+)
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.tools.types import ToolMetadata
 
