@@ -7,25 +7,19 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import StructDatapoint
-from llama_index.indices.response.response_builder import get_response_builder
+from llama_index.indices.response import get_response_builder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.langchain_helpers.text_splitter import TextSplitter
-from llama_index.prompts.default_prompt_selectors import (
-    DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
-)
-from llama_index.prompts.default_prompts import (
-    DEFAULT_TABLE_CONTEXT_PROMPT,
-    DEFAULT_TABLE_CONTEXT_QUERY,
-)
-from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    RefineTableContextPrompt,
-    SchemaExtractPrompt,
-    TableContextPrompt,
-)
+from llama_index.prompts.default_prompt_selectors import \
+    DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL
+from llama_index.prompts.default_prompts import (DEFAULT_TABLE_CONTEXT_PROMPT,
+                                                 DEFAULT_TABLE_CONTEXT_QUERY)
+from llama_index.prompts.prompts import (QuestionAnswerPrompt, RefinePrompt,
+                                         RefineTableContextPrompt,
+                                         SchemaExtractPrompt,
+                                         TableContextPrompt)
 from llama_index.schema import BaseDocument
 from llama_index.utils import truncate_text
 

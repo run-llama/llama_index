@@ -8,24 +8,18 @@ from langchain.input import print_text
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.response.response_builder import get_response_builder
+from llama_index.indices.response import get_response_builder
 from llama_index.indices.tree.base import GPTTreeIndex
-from llama_index.indices.utils import (
-    extract_numbers_given_response,
-    get_sorted_node_list,
-)
-from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
-from llama_index.prompts.default_prompts import (
-    DEFAULT_QUERY_PROMPT,
-    DEFAULT_QUERY_PROMPT_MULTIPLE,
-    DEFAULT_TEXT_QA_PROMPT,
-)
-from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    TreeSelectMultiplePrompt,
-    TreeSelectPrompt,
-)
+from llama_index.indices.utils import (extract_numbers_given_response,
+                                       get_sorted_node_list)
+from llama_index.prompts.default_prompt_selectors import \
+    DEFAULT_REFINE_PROMPT_SEL
+from llama_index.prompts.default_prompts import (DEFAULT_QUERY_PROMPT,
+                                                 DEFAULT_QUERY_PROMPT_MULTIPLE,
+                                                 DEFAULT_TEXT_QA_PROMPT)
+from llama_index.prompts.prompts import (QuestionAnswerPrompt, RefinePrompt,
+                                         TreeSelectMultiplePrompt,
+                                         TreeSelectPrompt)
 from llama_index.response.schema import Response
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.utils import truncate_text

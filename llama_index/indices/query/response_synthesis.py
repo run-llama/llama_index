@@ -4,19 +4,14 @@ from typing import Any, Dict, Generator, List, Optional, Sequence
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.response.response_builder import (
-    BaseResponseBuilder,
-    ResponseMode,
-    get_response_builder,
-)
+from llama_index.indices.response import (BaseResponseBuilder, ResponseMode,
+                                          get_response_builder)
 from llama_index.indices.service_context import ServiceContext
 from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
-from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    SimpleInputPrompt,
-)
-from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
+from llama_index.prompts.prompts import (QuestionAnswerPrompt, RefinePrompt,
+                                         SimpleInputPrompt)
+from llama_index.response.schema import (RESPONSE_TYPE, Response,
+                                         StreamingResponse)
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
