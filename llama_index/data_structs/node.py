@@ -67,8 +67,8 @@ class Node(BaseDocument):
 
         if self.node_info is None:
             self.node_info = {}
-        if '_node_type' not in self.node_info:
-            self.node_info['_node_type'] = self.get_type()
+        if "_node_type" not in self.node_info:
+            self.node_info["_node_type"] = self.get_type()
 
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
@@ -142,10 +142,11 @@ class Node(BaseDocument):
         return NodeType.TEXT
 
     def get_origin_type(self) -> str:
-        """Get type."""
-        if self.node_info is None or '_node_type' not in self.node_info:
+        """Get origin type."""
+        if self.node_info is None or "_node_type" not in self.node_info:
             return self.get_type()
-        return self.node_info['_node_type']
+        return self.node_info["_node_type"]
+
 
 @dataclass
 class ImageNode(Node):
