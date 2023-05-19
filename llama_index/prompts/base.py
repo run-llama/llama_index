@@ -88,6 +88,17 @@ class Prompt:
 
         self.output_parser = output_parser
 
+        self._original_template = template
+
+    @property
+    def original_template(self) -> str:
+        """Return the originally specified template, if supplied."""
+
+        if not self._original_template:
+            raise ValueError("No original template specified.")
+
+        return self._original_template
+
     @classmethod
     def from_langchain_prompt(
         cls: Type[PMT], prompt: BaseLangchainPrompt, **kwargs: Any

@@ -169,9 +169,13 @@ class LLMPredictor(BaseLLMPredictor):
         retry_on_throttling: bool = True,
         cache: Optional[BaseCache] = None,
         callback_manager: Optional[CallbackManager] = None,
+        ensure_llm: bool = True,
     ) -> None:
         """Initialize params."""
-        self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
+        self._llm = llm
+        if not self._llm and ensure_llm:
+            self._llm = OpenAI(temperature=0, model_name="text-davinci-003")
+
         if cache is not None:
             langchain.llm_cache = cache
         self.callback_manager = callback_manager or CallbackManager([])
@@ -183,6 +187,10 @@ class LLMPredictor(BaseLLMPredictor):
     @property
     def llm(self) -> BaseLanguageModel:
         """Get LLM."""
+
+        if not self._llm:
+            raise ValueError("LLM is not initialized")
+
         return self._llm
 
     def get_llm_metadata(self) -> LLMMetadata:
@@ -192,6 +200,9 @@ class LLMPredictor(BaseLLMPredictor):
             return _get_llm_metadata(self._llm)
         else:
             return LLMMetadata()
+
+    def _get_formatted_prompt(self, prompt: Prompt, **prompt_args: Any) -> str:
+        return prompt.format(llm=self._llm, **prompt_args)
 
     def _predict(self, prompt: Prompt, **prompt_args: Any) -> str:
         """Inner predict function.
@@ -238,7 +249,7 @@ class LLMPredictor(BaseLLMPredictor):
             CBEventType.LLM,
             payload=llm_payload,
         )
-        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+        formatted_prompt = self._get_formatted_prompt(prompt, **prompt_args)
         llm_prediction = self._predict(prompt, **prompt_args)
         logger.debug(llm_prediction)
 
@@ -267,14 +278,15 @@ class LLMPredictor(BaseLLMPredictor):
             str: The predicted answer.
 
         """
-        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+        formatted_prompt = self._get_formatted_prompt(prompt, **prompt_args)
 
         handler = StreamingGeneratorCallbackHandler()
 
         if not hasattr(self._llm, "callbacks"):
             raise ValueError("LLM must support callbacks to use streaming.")
 
-        self._llm.callbacks = [handler]
+        if self._llm:
+            self._llm.callbacks = [handler]
 
         if not getattr(self._llm, "streaming", False):
             raise ValueError("LLM must support streaming and set streaming=True.")
@@ -340,7 +352,7 @@ class LLMPredictor(BaseLLMPredictor):
         event_id = self.callback_manager.on_event_start(
             CBEventType.LLM, payload=llm_payload
         )
-        formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
+        formatted_prompt = self._get_formatted_prompt(prompt, **prompt_args)
         llm_prediction = await self._apredict(prompt, **prompt_args)
         logger.debug(llm_prediction)
 
