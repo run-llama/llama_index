@@ -184,7 +184,7 @@ Creating an index, inserting to an index, and querying an index may use tokens. 
 token usage through the outputs of these operations. When running operations, 
 the token usage will be printed.
 You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
-See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
+See [Cost Predictor How-To](/docs/how_to/analysis/cost_analysis.md) for more details.
 
 
 ### [Optional] Save the index for future use
