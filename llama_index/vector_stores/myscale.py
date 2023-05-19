@@ -102,7 +102,7 @@ class MyScaleVectorStore(VectorStore):
             "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
                 "type": "String",
-                "extract_func": lambda x: escape_str(x.node.get_text()),
+                "extract_func": lambda x: escape_str(x.node.text or ""),
             },
             "vector": {
                 "type": "Array(Float32)",
@@ -209,13 +209,17 @@ class MyScaleVectorStore(VectorStore):
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
         )
 
-    def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
 
         """
+        if query.filters is not None:
+            raise ValueError(
+                "Metadata filters not implemented for SimpleVectorStore yet."
+            )
 
         query_embedding = cast(List[float], query.query_embedding)
         where_str = (

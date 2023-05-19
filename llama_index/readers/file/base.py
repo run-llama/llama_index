@@ -1,36 +1,34 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
-from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, Generator, List, Optional, Union, cast
+from typing import Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.base_parser import BaseParser, ImageParserOutput
-from llama_index.readers.file.docs_parser import DocxParser, PDFParser
-from llama_index.readers.file.epub_parser import EpubParser
-from llama_index.readers.file.image_parser import ImageParser
-from llama_index.readers.file.markdown_parser import MarkdownParser
-from llama_index.readers.file.mbox_parser import MboxParser
-from llama_index.readers.file.slides_parser import PptxParser
-from llama_index.readers.file.tabular_parser import PandasCSVParser
-from llama_index.readers.file.video_audio import VideoAudioParser
-from llama_index.readers.file.ipynb_parser import IPYNBParser
-from llama_index.readers.schema.base import Document, ImageDocument
+from llama_index.readers.file.docs_reader import DocxReader, PDFReader
+from llama_index.readers.file.epub_reader import EpubReader
+from llama_index.readers.file.image_reader import ImageReader
+from llama_index.readers.file.ipynb_reader import IPYNBReader
+from llama_index.readers.file.markdown_reader import MarkdownReader
+from llama_index.readers.file.mbox_reader import MboxReader
+from llama_index.readers.file.slides_reader import PptxReader
+from llama_index.readers.file.tabular_reader import PandasCSVReader
+from llama_index.readers.file.video_audio_reader import VideoAudioReader
+from llama_index.readers.schema.base import Document
 
-DEFAULT_FILE_EXTRACTOR: Dict[str, BaseParser] = {
-    ".pdf": PDFParser(),
-    ".docx": DocxParser(),
-    ".pptx": PptxParser(),
-    ".jpg": ImageParser(),
-    ".png": ImageParser(),
-    ".jpeg": ImageParser(),
-    ".mp3": VideoAudioParser(),
-    ".mp4": VideoAudioParser(),
-    ".csv": PandasCSVParser(),
-    ".epub": EpubParser(),
-    ".md": MarkdownParser(),
-    ".mbox": MboxParser(),
-    ".ipynb": IPYNBParser(),
+DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
+    ".pdf": PDFReader,
+    ".docx": DocxReader,
+    ".pptx": PptxReader,
+    ".jpg": ImageReader,
+    ".png": ImageReader,
+    ".jpeg": ImageReader,
+    ".mp3": VideoAudioReader,
+    ".mp4": VideoAudioReader,
+    ".csv": PandasCSVReader,
+    ".epub": EpubReader,
+    ".md": MarkdownReader,
+    ".mbox": MboxReader,
+    ".ipynb": IPYNBReader,
 }
 
 logger = logging.getLogger(__name__)
@@ -54,9 +52,9 @@ class SimpleDirectoryReader(BaseReader):
             False by default.
         required_exts (Optional[List[str]]): List of required extensions.
             Default is None.
-        file_extractor (Optional[Dict[str, BaseParser]]): A mapping of file
-            extension to a BaseParser class that specifies how to convert that file
-            to text. See DEFAULT_FILE_EXTRACTOR.
+        file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
+            extension to a BaseReader class that specifies how to convert that file
+            to text. If not specified, use default from DEFAULT_FILE_READER_CLS.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
         file_metadata (Optional[Callable[str, Dict]]): A function that takes
@@ -73,7 +71,7 @@ class SimpleDirectoryReader(BaseReader):
         errors: str = "ignore",
         recursive: bool = False,
         required_exts: Optional[List[str]] = None,
-        file_extractor: Optional[Dict[str, BaseParser]] = None,
+        file_extractor: Optional[Dict[str, BaseReader]] = None,
         num_files_limit: Optional[int] = None,
         file_metadata: Optional[Callable[[str], Dict]] = None,
     ) -> None:
@@ -101,7 +99,12 @@ class SimpleDirectoryReader(BaseReader):
             self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
 
-        self.file_extractor = file_extractor or DEFAULT_FILE_EXTRACTOR
+        if file_extractor is not None:
+            self.file_extractor = file_extractor
+        else:
+            self.file_extractor = {}
+
+        self.supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
         self.file_metadata = file_metadata
 
     def _add_files(self, input_dir: Path) -> List[Path]:
@@ -158,7 +161,7 @@ class SimpleDirectoryReader(BaseReader):
 
         return new_input_files
 
-    def load_data(self, concatenate: bool = False) -> List[Document]:
+    def load_data(self) -> List[Document]:
         """Load data from the input directory.
 
         Args:
@@ -170,50 +173,27 @@ class SimpleDirectoryReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        # TODO: refactor parser output interface
-        data: Union[str, List[str], ImageParserOutput] = ""
-        data_list: List[str] = []
-        metadata_list: List[Optional[dict]] = []
-        image_docs: List[ImageDocument] = []
+        documents = []
         for input_file in self.input_files:
-            if input_file.suffix.lower() in self.file_extractor:
-                parser = self.file_extractor[input_file.suffix]
-                if not parser.parser_config_set:
-                    parser.init_parser()
-                data = parser.parse_file(input_file, errors=self.errors)
+            metadata: Optional[dict] = None
+            if self.file_metadata is not None:
+                metadata = self.file_metadata(str(input_file))
+
+            if input_file.suffix.lower() in self.supported_suffix:
+                # use file readers
+                if input_file.suffix not in self.file_extractor:
+                    # instantiate file reader if not already
+                    reader_cls = DEFAULT_FILE_READER_CLS[input_file.suffix]
+                    self.file_extractor[input_file.suffix] = reader_cls()
+                reader = self.file_extractor[input_file.suffix]
+                docs = reader.load_data(input_file, extra_info=metadata)
+                documents.extend(docs)
             else:
                 # do standard read
                 with open(input_file, "r", errors=self.errors, encoding="utf8") as f:
                     data = f.read()
 
-            metadata: Optional[dict] = None
-            if self.file_metadata is not None:
-                metadata = self.file_metadata(str(input_file))
+                doc = Document(data, extra_info=metadata)
+                documents.append(doc)
 
-            if isinstance(data, ImageParserOutput):
-                # process image
-                image_docs.append(
-                    ImageDocument(text=data.text, extra_info=metadata, image=data.image)
-                )
-            elif isinstance(data, List):
-                # process list of str
-                data_list.extend(data)
-                repeated_metadata: List[Optional[dict]] = [
-                    deepcopy(metadata) for _ in range(len(data))
-                ]
-                metadata_list.extend(repeated_metadata)
-            else:
-                # process single str
-                data_list.append(str(data))
-                metadata_list.append(metadata)
-
-        if concatenate:
-            text_docs = [Document("\n".join(data_list))]
-        elif self.file_metadata is not None:
-            text_docs = [
-                Document(d, extra_info=m) for d, m in zip(data_list, metadata_list)
-            ]
-        else:
-            text_docs = [Document(d) for d in data_list]
-
-        return text_docs + cast(List[Document], image_docs)
+        return documents

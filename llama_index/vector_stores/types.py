@@ -1,12 +1,12 @@
 """Vector store index types."""
-
-
 from dataclasses import dataclass
-from typing import Any, List, Optional, Protocol, runtime_checkable
-
 from enum import Enum
-from llama_index.data_structs.node import Node
+from typing import Any, List, Optional, Protocol, Union, runtime_checkable
 
+import fsspec
+from pydantic import BaseModel
+
+from llama_index.data_structs.node import Node
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"
@@ -56,21 +56,72 @@ class VectorStoreQueryMode(str, Enum):
     LINEAR_REGRESSION = "linear_regression"
 
 
+class ExactMatchFilter(BaseModel):
+    """Exact match metadata filter for vector stores."""
+
+    key: str
+    value: Union[str, int, float]
+
+
+class MetadataFilters(BaseModel):
+    """Metadata filters for vector stores.
+
+    Currently only supports exact match filters.
+    TODO: support more advanced expressions.
+    """
+
+    filters: List[ExactMatchFilter]
+
+
+class VectorStoreQuerySpec(BaseModel):
+    """Schema for a structured request for vector store
+    (i.e. to be converted to a VectorStoreQuery).
+
+    Currently only used by VectorIndexAutoRetriever.
+    """
+
+    query: str
+    filters: List[ExactMatchFilter]
+    top_k: Optional[int] = None
+
+
+class MetadataInfo(BaseModel):
+    """Information about a metadata filter supported by a vector store.
+
+    Currently only used by VectorIndexAutoRetriever.
+    """
+
+    name: str
+    type: str
+    description: str
+
+
+class VectorStoreInfo(BaseModel):
+    """Information about a vector store (content and supported metadata filters).
+
+    Currently only used by VectorIndexAutoRetriever.
+    """
+
+    metadata_info: List[MetadataInfo]
+    content_info: str
+
+
 @dataclass
 class VectorStoreQuery:
     """Vector store query."""
 
-    # dense embedding
     query_embedding: Optional[List[float]] = None
     similarity_top_k: int = 1
     doc_ids: Optional[List[str]] = None
     query_str: Optional[str] = None
 
-    # NOTE: current mode
     mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT
 
     # NOTE: only for hybrid search (0 for bm25, 1 for vector search)
     alpha: Optional[float] = None
+
+    # metadata filters
+    filters: Optional[MetadataFilters] = None
 
 
 @runtime_checkable
@@ -96,12 +147,11 @@ class VectorStore(Protocol):
         """Delete doc."""
         ...
 
-    def query(
-        self,
-        query: VectorStoreQuery,
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
         ...
 
-    def persist(self, persist_path: str) -> None:
+    def persist(
+        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
+    ) -> None:
         return None

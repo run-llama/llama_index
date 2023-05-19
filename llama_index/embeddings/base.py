@@ -7,6 +7,8 @@ from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
 
+from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.schema import CBEventType
 from llama_index.utils import globals_helper
 
 # TODO: change to numpy array
@@ -52,11 +54,13 @@ class BaseEmbedding:
         self,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         tokenizer: Optional[Callable] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Init params."""
         self._total_tokens_used = 0
         self._last_token_usage: Optional[int] = None
         self._tokenizer = tokenizer or globals_helper.tokenizer
+        self.callback_manager = callback_manager or CallbackManager([])
         # list of tuples of id, text
         self._text_queue: List[Tuple[str, str]] = []
         if embed_batch_size <= 0:
@@ -69,9 +73,13 @@ class BaseEmbedding:
 
     def get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
+        event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
         query_embedding = self._get_query_embedding(query)
         query_tokens_count = len(self._tokenizer(query))
         self._total_tokens_used += query_tokens_count
+        self.callback_manager.on_event_end(
+            CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
+        )
         return query_embedding
 
     def get_agg_embedding_from_queries(
@@ -121,9 +129,13 @@ class BaseEmbedding:
 
     def get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
+        event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
         text_embedding = self._get_text_embedding(text)
         text_tokens_count = len(self._tokenizer(text))
         self._total_tokens_used += text_tokens_count
+        self.callback_manager.on_event_end(
+            CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
+        )
         return text_embedding
 
     def queue_text_for_embedding(self, text_id: str, text: str) -> None:

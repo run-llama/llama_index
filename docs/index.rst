@@ -90,6 +90,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    how_to/output_parsing.md
    how_to/evaluation/evaluation.md
    how_to/integrations.rst
+   how_to/callbacks.rst
    how_to/storage.rst
 
 
@@ -101,6 +102,7 @@ That's where the **LlamaIndex** comes in. LlamaIndex is a simple, flexible inter
    reference/indices.rst
    reference/query.rst
    reference/node.rst
+   reference/llm_predictor.rst
    reference/node_postprocessor.rst
    reference/storage.rst
    reference/composability.rst

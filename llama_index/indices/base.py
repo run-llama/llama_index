@@ -3,7 +3,6 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
 
-from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
@@ -89,13 +88,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         for doc in documents:
             docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
 
-        event_id = service_context.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"documents": documents}
-        )
         nodes = service_context.node_parser.get_nodes_from_documents(documents)
-        service_context.callback_manager.on_event_end(
-            CBEventType.CHUNKING, payload={"nodes": nodes}, event_id=event_id
-        )
 
         return cls(
             nodes=nodes,
@@ -149,6 +142,15 @@ class BaseGPTIndex(Generic[IS], ABC):
     def storage_context(self) -> StorageContext:
         return self._storage_context
 
+    @property
+    def summary(self) -> str:
+        return str(self._index_struct.summary)
+
+    @summary.setter
+    def summary(self, new_summary: str) -> None:
+        self._index_struct.summary = new_summary
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+
     @abstractmethod
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""
@@ -172,13 +174,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        event_id = self.service_context.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"documents": [document]}
-        )
         nodes = self.service_context.node_parser.get_nodes_from_documents([document])
-        self.service_context.callback_manager.on_event_end(
-            CBEventType.CHUNKING, payload={"nodes": nodes}, event_id=event_id
-        )
         self.insert_nodes(nodes, **insert_kwargs)
         self.docstore.set_document_hash(document.get_doc_id(), document.get_doc_hash())
 

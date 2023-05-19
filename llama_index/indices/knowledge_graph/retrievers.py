@@ -4,7 +4,6 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
@@ -94,26 +93,13 @@ class KGTableRetriever(BaseRetriever):
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.LLM,
-            payload={
-                "template": self.query_keyword_extract_template,
-                "question": query_str,
-                "max_keywords": self.max_keywords_per_query,
-            },
-        )
-        response, formatted_prompt = self._service_context.llm_predictor.predict(
+        response, _ = self._service_context.llm_predictor.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,
         )
         keywords = extract_keywords_given_response(
             response, start_token="KEYWORDS:", lowercase=False
-        )
-        self._service_context.callback_manager.on_event_end(
-            CBEventType.LLM,
-            payload={"keywords": keywords, "formatted_prompt": formatted_prompt},
-            event_id=event_id,
         )
         return list(keywords)
 
@@ -151,14 +137,8 @@ class KGTableRetriever(BaseRetriever):
             self._retriever_mode != KGRetrieverMode.KEYWORD
             and len(self._index_struct.embedding_dict) > 0
         ):
-            event_id = self._service_context.callback_manager.on_event_start(
-                CBEventType.EMBEDDING
-            )
             query_embedding = self._service_context.embed_model.get_text_embedding(
                 query_bundle.query_str
-            )
-            self._service_context.callback_manager.on_event_end(
-                CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
             )
             all_rel_texts = list(self._index_struct.embedding_dict.keys())
 

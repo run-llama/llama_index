@@ -1,15 +1,15 @@
 import logging
-from typing import Optional, Sequence
+from typing import Callable, Optional, Sequence
+
+from llama_index.data_structs.node import Node
+from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.types import BaseSelector
-from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.tools.query_engine import QueryEngineTool
-from llama_index.data_structs.node import Node
 from llama_index.tools.types import ToolMetadata
-from typing import Callable
 
 logger = logging.getLogger(__name__)
 

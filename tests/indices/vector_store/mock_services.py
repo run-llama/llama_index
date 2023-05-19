@@ -1,4 +1,5 @@
 from typing import List
+
 from llama_index.embeddings.base import BaseEmbedding
 
 
@@ -26,4 +27,4 @@ class MockEmbedding(BaseEmbedding):
             # this is used when "Hello world." is deleted.
             return [1, 0, 0, 0, 0]
         else:
-            raise ValueError("Invalid text for `_get_text_embedding`.")
+            return [0, 0, 0, 0, 0]

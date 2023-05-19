@@ -1,17 +1,10 @@
 import logging
-from typing import (
-    Any,
-    Dict,
-    Generator,
-    List,
-    Optional,
-    Sequence,
-)
+from typing import Any, Dict, Generator, List, Optional, Sequence
 
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.response.response_builder import (
+from llama_index.indices.response import (
     BaseResponseBuilder,
     ResponseMode,
     get_response_builder,
@@ -23,11 +16,7 @@ from llama_index.prompts.prompts import (
     RefinePrompt,
     SimpleInputPrompt,
 )
-from llama_index.response.schema import (
-    RESPONSE_TYPE,
-    Response,
-    StreamingResponse,
-)
+from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
@@ -149,7 +138,9 @@ class ResponseSynthesizer:
                 extra_info=response_extra_info,
             )
         else:
-            raise ValueError("Response must be a string or a generator.")
+            raise ValueError(
+                f"Response must be a string or a generator. Found {type(response_str)}"
+            )
 
     def synthesize(
         self,
