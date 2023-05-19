@@ -11,6 +11,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.token_counter.token_counter import llm_token_counter
+from llama_index.vector_stores import SimpleVectorStore
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
@@ -81,6 +82,11 @@ class VectorIndexRetriever(BaseRetriever):
             alpha=self._alpha,
             filters=self._filters,
         )
+
+        # check if need to align namespace
+        if isinstance(self._vector_store, SimpleVectorStore):
+            self._vector_store.namespace = self._index.index_struct.namespace
+
         query_result = self._vector_store.query(query, **self._kwargs)
 
         if query_result.nodes is None:

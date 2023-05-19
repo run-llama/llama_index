@@ -14,6 +14,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.token_counter import llm_token_counter
+from llama_index.vector_stores import SimpleVectorStore
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
 
 
@@ -183,6 +184,11 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
         """Build index from nodes."""
         index_struct = self.index_struct_cls()
+
+        # setup namespace for persisting, if needed
+        if isinstance(self._vector_store, SimpleVectorStore):
+            self._vector_store.namespace = index_struct.namespace
+
         if self._use_async:
             tasks = [self._async_add_nodes_to_index(index_struct, nodes)]
             run_async_tasks(tasks)

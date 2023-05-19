@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, cast
 
@@ -41,8 +42,8 @@ class SimpleVectorStoreData(DataClassJsonMixin):
 
     """
 
-    embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
-    text_id_to_doc_id: Dict[str, str] = field(default_factory=dict)
+    embedding_dict: Dict[str, Dict[str, List[float]]] = field(default_factory=dict)
+    text_id_to_doc_id: Dict[str, Dict[str, str]] = field(default_factory=dict)
 
 
 class SimpleVectorStore(VectorStore):
@@ -61,10 +62,16 @@ class SimpleVectorStore(VectorStore):
     def __init__(
         self,
         data: Optional[SimpleVectorStoreData] = None,
+        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._data = data or SimpleVectorStoreData()
+        self._namespace = namespace or str(uuid.uuid4())
+
+        if self._namespace not in self._data.embedding_dict:
+            self._data.embedding_dict[self._namespace] = {}
+            self._data.text_id_to_doc_id[self._namespace] = {}
 
     @classmethod
     def from_persist_dir(
@@ -78,9 +85,27 @@ class SimpleVectorStore(VectorStore):
         """Get client."""
         return None
 
+    @property
+    def namespace(self) -> str:
+        return self._namespace
+
+    @namespace.setter
+    def namespace(self, new_namespace) -> None:
+        # setup new namespace
+        if new_namespace not in self._data.embedding_dict:
+            self._data.embedding_dict[new_namespace] = {}
+            self._data.text_id_to_doc_id[new_namespace] = {}
+
+        # clean up old namespace if needed
+        if len(self._data.embedding_dict[self._namespace]) == 0:
+            del self._data.embedding_dict[self._namespace]
+            del self._data.text_id_to_doc_id[self._namespace]
+
+        self._namespace = new_namespace
+
     def get(self, text_id: str) -> List[float]:
         """Get embedding."""
-        return self._data.embedding_dict[text_id]
+        return self._data.embedding_dict[self._namespace][text_id]
 
     def add(
         self,
@@ -88,20 +113,20 @@ class SimpleVectorStore(VectorStore):
     ) -> List[str]:
         """Add embedding_results to index."""
         for result in embedding_results:
-            self._data.embedding_dict[result.id] = result.embedding
-            self._data.text_id_to_doc_id[result.id] = result.ref_doc_id
+            self._data.embedding_dict[self._namespace][result.id] = result.embedding
+            self._data.text_id_to_doc_id[self._namespace][result.id] = result.ref_doc_id
         return [result.id for result in embedding_results]
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         text_ids_to_delete = set()
-        for text_id, doc_id_ in self._data.text_id_to_doc_id.items():
+        for text_id, doc_id_ in self._data.text_id_to_doc_id[self._namespace].items():
             if doc_id == doc_id_:
                 text_ids_to_delete.add(text_id)
 
         for text_id in text_ids_to_delete:
-            del self._data.embedding_dict[text_id]
-            del self._data.text_id_to_doc_id[text_id]
+            del self._data.embedding_dict[self._namespace][text_id]
+            del self._data.text_id_to_doc_id[self._namespace][text_id]
 
     def query(
         self,
@@ -115,7 +140,7 @@ class SimpleVectorStore(VectorStore):
             )
 
         # TODO: consolidate with get_query_text_embedding_similarities
-        items = self._data.embedding_dict.items()
+        items = self._data.embedding_dict[self._namespace].items()
         node_ids = [t[0] for t in items]
         embeddings = [t[1] for t in items]
 

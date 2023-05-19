@@ -172,6 +172,11 @@ class IndexDict(IndexStruct):
     # this should be empty for all other indices
     embeddings_dict: Dict[str, List[float]] = field(default_factory=dict)
 
+    namespace: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        self.namespace = str(uuid.uuid4())
+
     def add_node(
         self,
         node: Node,
