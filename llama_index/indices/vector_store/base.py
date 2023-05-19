@@ -58,7 +58,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 
         return VectorIndexRetriever(
-            self, doc_ids=list(self.index_struct.doc_id_dict.keys()), **kwargs
+            self, doc_ids=list(self.index_struct.nodes_dict.values()), **kwargs
         )
 
     def _get_node_embedding_results(
