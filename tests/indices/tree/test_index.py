@@ -46,6 +46,7 @@ def test_build_tree(
     assert nodes[4].text == ("Hello world.\nThis is a test.")
     assert nodes[5].text == ("This is another test.\nThis is a test v2.")
 
+
 def test_build_tree_balance_nodes(
     documents: List[Document],
     mock_service_context: ServiceContext,
@@ -71,8 +72,7 @@ def test_build_tree_balance_nodes(
     assert nodes[3].text == "This is a test v2."
     assert nodes[4].text == ("Hello world.\nThis is a test.")
     assert nodes[5].text == ("This is another test.\nThis is a test v2.")
-    
-    
+
 
 def test_build_tree_with_embed(
     documents: List[Document],
