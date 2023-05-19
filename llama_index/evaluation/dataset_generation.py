@@ -140,7 +140,7 @@ class DatasetGenerator:
 
         questions = [question for question in questions if question != ""]
 
-        if num != None:
+        if num is not None:
             questions = questions[:num]
         return questions
 
