@@ -6,7 +6,6 @@ from llama_index.callbacks.base import BaseCallbackHandler
 from llama_index.callbacks.schema import (
     CBEvent,
     CBEventType,
-    EventStats,
     TIMESTAMP_FORMAT,
 )
 
@@ -111,12 +110,11 @@ class WandbCallbackHandler(BaseCallbackHandler):
         assert len(self._events_by_id[event.id_]) == 2
         assert self._events_by_id[event.id_][0].event_type == self._events_by_id[event.id_][1].event_type
 
-        stats = self._get_time_stats(self._events_by_id[event.id_])
         event_type = self._events_by_id[event.id_][0].event_type
 
         # W&B Logic
         if event_type == CBEventType.LLM:
-            agent_span = self._get_llm_trace_tree(event.id_, event_type, stats)
+            agent_span = self._get_llm_trace_tree(event.id_, event_type)
             trace = self._trace_tree.WBTraceTree(agent_span)
 
             if self._wandb.run is not None:
@@ -125,29 +123,16 @@ class WandbCallbackHandler(BaseCallbackHandler):
             # Clear that event from the memory
             self._events_by_id.pop(event.id_, None)
 
-    def _get_time_stats(self, event_pair: List[CBEvent]) -> EventStats:
-        """Calculate time-based stats for the given event pair."""
-        start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
-        end_time = datetime.strptime(event_pair[-1].time, TIMESTAMP_FORMAT)
-        total_secs = (end_time - start_time).total_seconds()
-
-        stats = EventStats(
-            start_time=start_time,
-            end_time=end_time,
-            total_secs=total_secs,
-            average_secs=None,
-            total_count=None,
-        )
-
-        return stats
-    
-    def _get_llm_trace_tree(self, id_, event_type, stats):
+    def _get_llm_trace_tree(self, id_, event_type):
         events = self._events_by_id[id_]
+
+        start_time, end_time = self._get_time_in_ms(events)
+
         agent_span = self._trace_tree.Span(
             name=f"{event_type}-{id_}",
             span_kind = self._trace_tree.SpanKind.LLM,
-            start_time_ms=int(datetime.strptime(events[0].time, TIMESTAMP_FORMAT).second*1000),
-            end_time_ms=int(datetime.strptime(events[0].time, TIMESTAMP_FORMAT).second*1000),
+            start_time_ms=start_time,
+            end_time_ms=end_time,
         )
         agent_span.add_named_result(
             inputs=events[0].payload,
@@ -155,7 +140,12 @@ class WandbCallbackHandler(BaseCallbackHandler):
         )
 
         return agent_span
+    
+    def _get_time_in_ms(self, events):
+        start_time = int((datetime.strptime(events[0].time, TIMESTAMP_FORMAT) - datetime(1970,1,1)).total_seconds()*1000)
+        end_time = int((datetime.strptime(events[1].time, TIMESTAMP_FORMAT) - datetime(1970,1,1)).total_seconds()*1000)
 
+        return start_time, end_time
 
     def finish(self) -> None:
         """Finish the callback handler."""

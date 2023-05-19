@@ -56,6 +56,3 @@ class EventStats:
     total_secs: float
     average_secs: float
     total_count: int
-    start_time: str
-    end_time: str
-    total_secs: str
