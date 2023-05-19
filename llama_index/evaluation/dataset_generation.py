@@ -119,7 +119,7 @@ class DatasetGenerator:
         questions = []
 
         for node in nodes:
-            if num != None and len(questions) >= num:
+            if num is not None and len(questions) >= num:
                 break
             index = GPTListIndex.from_documents([Document(node.get_text())])
 
