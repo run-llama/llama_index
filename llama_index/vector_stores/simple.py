@@ -122,8 +122,15 @@ class SimpleVectorStore(VectorStore):
 
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()
-        node_ids = [t[0] for t in items]
-        embeddings = [t[1] for t in items]
+
+        if query.doc_ids:
+            available_ids = set(query.doc_ids)
+
+            node_ids = [t[0] for t in items if t[0] in available_ids]
+            embeddings = [t[1] for t in items if t[0] in available_ids]
+        else:
+            node_ids = [t[0] for t in items]
+            embeddings = [t[1] for t in items]
 
         query_embedding = cast(List[float], query.query_embedding)
 
