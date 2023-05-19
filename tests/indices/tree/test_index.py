@@ -46,6 +46,33 @@ def test_build_tree(
     assert nodes[4].text == ("Hello world.\nThis is a test.")
     assert nodes[5].text == ("This is another test.\nThis is a test v2.")
 
+def test_build_tree_balance_nodes(
+    documents: List[Document],
+    mock_service_context: ServiceContext,
+    struct_kwargs: Dict,
+) -> None:
+    """Build tree, then check if root node count is balanced."""
+    index_kwargs, _ = struct_kwargs
+    index_kwargs.update({"num_children": 3})
+    # 3 children from 4 documents
+    # unbalanced rootnodes: rootnode #1 with doc 1,2,3, rootnode #2 with doc 4
+    # balanced rootnodes: rootnode #1 with docs 1,2, rootnode #2 with docs 3,4
+
+    tree = GPTTreeIndex.from_documents(
+        documents, service_context=mock_service_context, **index_kwargs
+    )
+    assert len(tree.index_struct.all_nodes) == 6
+    # check contents of nodes
+
+    nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
+    assert nodes[0].text == "Hello world."
+    assert nodes[1].text == "This is a test."
+    assert nodes[2].text == "This is another test."
+    assert nodes[3].text == "This is a test v2."
+    assert nodes[4].text == ("Hello world.\nThis is a test.")
+    assert nodes[5].text == ("This is another test.\nThis is a test v2.")
+    
+    
 
 def test_build_tree_with_embed(
     documents: List[Document],
