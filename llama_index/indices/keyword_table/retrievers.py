@@ -81,7 +81,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
         """Get nodes for response."""
         logger.info(f"> Starting query: {query_bundle.query_str}")
         keywords = self._get_keywords(query_bundle.query_str)
-        logger.info(f"query keywords: {keywords}")
+        logger.info(f"> Query keywords: {keywords}")
 
         # go through text chunks in order of most matching keywords
         chunk_indices_count: Dict[str, int] = defaultdict(int)

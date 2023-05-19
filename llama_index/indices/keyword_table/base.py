@@ -24,8 +24,10 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.prompts.prompts import KeywordExtractPrompt
+import logging
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
+logger = logging.getLogger(__name__)
 
 
 class KeywordTableRetrieverMode(str, Enum):
@@ -120,8 +122,9 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         self, index_struct: KeywordTable, nodes: Sequence[Node]
     ) -> None:
         """Add document to index."""
-        for n in nodes:
+        for idx, n in enumerate(nodes):
             keywords = self._extract_keywords(n.get_text())
+            logger.info(f"> Extracted keywords: {keywords}")
             index_struct.add_node(list(keywords), n)
 
     async def _async_add_nodes_to_index(
