@@ -142,6 +142,15 @@ class BaseGPTIndex(Generic[IS], ABC):
     def storage_context(self) -> StorageContext:
         return self._storage_context
 
+    @property
+    def summary(self) -> str:
+        return str(self._index_struct.summary)
+
+    @summary.setter
+    def summary(self, new_summary: str) -> None:
+        self._index_struct.summary = new_summary
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+
     @abstractmethod
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IS:
         """Build the index from nodes."""

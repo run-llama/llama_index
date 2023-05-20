@@ -184,8 +184,9 @@ For embedding-based indices, you can choose to pass in a custom embedding model.
 Creating an index, inserting to an index, and querying an index may use tokens. We can track 
 token usage through the outputs of these operations. When running operations, 
 the token usage will be printed.
-You can also fetch the token usage through `index.service_context.llm_predictor.last_token_usage`.
-See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
+
+You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
+See [Cost Predictor How-To](/docs/how_to/analysis/cost_analysis.md) for more details.
 
 
 ### [Optional] Save the index for future use
@@ -331,7 +332,7 @@ query_engine = RetrieverQueryEngine.from_args(retriever, response_mode=<response
 
 Right now, we support the following options:
 - `default`: "create and refine" an answer by sequentially going through each retrieved `Node`; 
-    This make a separate LLM call per Node. Good for more detailed answers.
+    This makes a separate LLM call per Node. Good for more detailed answers.
 - `compact`: "compact" the prompt during each LLM call by stuffing as 
     many `Node` text chunks that can fit within the maximum prompt size. If there are 
     too many chunks to stuff in one prompt, "create and refine" an answer by going through
@@ -341,6 +342,10 @@ Right now, we support the following options:
 - `no_text`: Only runs the retriever to fetch the nodes that would have been sent to the LLM, 
     without actually sending them. Then can be inspected by checking `response.source_nodes`.
     The response object is covered in more detail in Section 5.
+- `accumulate`: Given a set of `Node` objects and the query, apply the query to each `Node` text
+    chunk while accumulating the responses into an array. Returns a concatenated string of all
+    responses. Good for when you need to run the same query separately against each text
+    chunk.
 
 ```python
 index = GPTListIndex.from_documents(documents)

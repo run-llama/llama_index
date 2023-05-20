@@ -3,12 +3,10 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence
-from llama_index.data_structs.node import NodeWithScore
 
+from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.query.schema import QueryBundle, QueryType
-from llama_index.response.schema import (
-    RESPONSE_TYPE,
-)
+from llama_index.response.schema import RESPONSE_TYPE
 
 logger = logging.getLogger(__name__)
 

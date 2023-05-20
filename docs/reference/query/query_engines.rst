@@ -14,6 +14,7 @@ Below we show some general query engine classes.
    query_engines/retriever_query_engine.rst
    query_engines/transform_query_engine.rst
    query_engines/router_query_engine.rst
+   query_engines/sub_question_query_engine.rst
 
 
 We also show query engine classes specific to our structured indices.
