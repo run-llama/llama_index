@@ -181,7 +181,7 @@ Several example notebooks are also listed below:
 
 ## Example: Using a Custom LLM Model - Advanced
 
-To use a custom LLM model, you only need to implement the `LLM` class [from Langchain](https://langchain.readthedocs.io/en/latest/modules/llms/examples/custom_llm.html). You will be responsible for passing the text to the model and returning the newly generated tokens.
+To use a custom LLM model, you only need to implement the `LLM` class [from Langchain](https://python.langchain.com/en/latest/modules/models/llms/examples/custom_llm.html). You will be responsible for passing the text to the model and returning the newly generated tokens.
 
 Here is a small example using locally running facebook/OPT model and Huggingface's pipeline abstraction:
 
