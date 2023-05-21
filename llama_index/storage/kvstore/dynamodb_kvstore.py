@@ -147,4 +147,8 @@ class DynamoDBKVStore(BaseKVStore):
             Key={self._key_hash: collection, self._key_range: key},
             ReturnValues="ALL_OLD",
         )
-        return "Attributes" in resp
+
+        if (item := resp.get("Attributes")) is None:
+            return False
+        else:
+            return len(item) > 0
