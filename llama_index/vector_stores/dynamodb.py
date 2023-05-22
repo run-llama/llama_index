@@ -111,23 +111,17 @@ class DynamoDBVectorStore(VectorStore):
                 "Metadata filters not implemented for SimpleVectorStore yet."
             )
 
-        if query.doc_ids:
-            available_ids = set(query.doc_ids)
-        else:
-            available_ids = set()
-
-        is_nothing_available_ids = len(available_ids) == 0
-
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._kvstore.get_all(collection=self._collection_embedding).items()
 
-        node_ids = []
-        embeddings = []
+        if query.doc_ids:
+            available_ids = set(query.doc_ids)
 
-        for node_id, data in items:
-            if is_nothing_available_ids or node_id in available_ids:
-                node_ids.append(node_id)
-                embeddings.append(data[self._key_value])
+            node_ids = [k for k, _ in items if k in available_ids]
+            embeddings = [v[self._key_value] for k, v in items if k in available_ids]
+        else:
+            node_ids = [k for k, _ in items]
+            embeddings = [v[self._key_value] for k, v in items]
 
         query_embedding = cast(List[float], query.query_embedding)
         if query.mode in LEARNER_MODES:
@@ -147,4 +141,4 @@ class DynamoDBVectorStore(VectorStore):
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")
 
-        return VectorStoreQueryResult(similarities=top_similarities, ids=node_ids)
+        return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
