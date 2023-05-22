@@ -41,6 +41,8 @@ class DynamoDBVectorStore(VectorStore):
         namespace (Optional[str]): namespace
     """
 
+    stores_text: bool = False
+
     def __init__(
         self, dynamodb_kvstore: DynamoDBKVStore, namespace: Optional[str] = None
     ) -> None:
