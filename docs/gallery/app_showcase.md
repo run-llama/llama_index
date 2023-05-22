@@ -71,6 +71,10 @@ Ask questions about the Real Housewives of Beverly Hills.
 A journaling app that uses AI to uncover insights and patterns over time.
 [[Website]](https://mynd.so)
 
+###### CoFounder
+The First AI Co-Founder for Your Start-up 🙌
+[[Website]](https://co-founder.ai)
+
 ###### Al-X by OpenExO
 
 Your Digital Transformation Co-Pilot
