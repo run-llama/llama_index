@@ -51,6 +51,15 @@ def convert_decimal_to_int_or_float(obj: Any) -> Any:
 
 
 class DynamoDBKVStore(BaseKVStore):
+    """DynamoDB Key-Value store.
+    Stores key-value pairs in a DynamoDB Table.
+    The DynamoDB Table must have both a hash key and a range key,
+        and their types must be string.
+
+    Args:
+        table (Any): DynamoDB Table Service Resource
+    """
+
     def __init__(self, table: Any):
         """Init a DynamoDBKVStore."""
         try:
