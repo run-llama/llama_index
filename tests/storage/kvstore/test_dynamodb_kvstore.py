@@ -2,7 +2,6 @@ from typing import Generator
 import pytest
 from pytest import MonkeyPatch
 from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
-from mypy_boto3_dynamodb import DynamoDBClient  # todo: 後で消す
 
 try:
     import boto3
@@ -22,7 +21,7 @@ def kvstore_from_mocked_table(
 
     table_name = "test_table"
     with mock_dynamodb():
-        client: DynamoDBClient = boto3.client("dynamodb")
+        client = boto3.client("dynamodb")
         client.create_table(
             TableName=table_name,
             AttributeDefinitions=[
