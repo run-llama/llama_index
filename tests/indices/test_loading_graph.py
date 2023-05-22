@@ -19,7 +19,14 @@ def test_load_graph_from_storage_simple(
     storage_context = StorageContext.from_defaults()
 
     # construct index
-    vector_index = GPTVectorStoreIndex.from_documents(
+    vector_index_1 = GPTVectorStoreIndex.from_documents(
+        documents=documents,
+        storage_context=storage_context,
+        service_context=mock_service_context,
+    )
+
+    # construct second index, testing vector store overlap
+    vector_index_2 = GPTVectorStoreIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
         service_context=mock_service_context,
@@ -35,8 +42,8 @@ def test_load_graph_from_storage_simple(
     # construct graph
     graph = ComposableGraph.from_indices(
         GPTListIndex,
-        children_indices=[vector_index, list_index],
-        index_summaries=["vector index", "list index"],
+        children_indices=[vector_index_1, vector_index_2, list_index],
+        index_summaries=["vector index 1", "vector index 2", "list index"],
         storage_context=storage_context,
         service_context=mock_service_context,
     )
