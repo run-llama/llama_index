@@ -86,7 +86,7 @@ class HyDEQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
         hyde_prompt: Optional[Prompt] = None,
         include_original: bool = True,
     ) -> None:
@@ -220,7 +220,7 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
         step_decompose_query_prompt: Optional[StepDecomposeQueryTransformPrompt] = None,
         verbose: bool = False,
     ) -> None:
