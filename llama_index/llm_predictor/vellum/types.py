@@ -1,29 +1,17 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Optional
 
 
-@dataclass
-class VellumDeployment:
-    """Represents a Deployment in Vellum.
-
-    A Deployment is essentially an instance of an LLM Provider, Model,
-    Prompt Template, and set of parameters (e.g. temperature).
-
-    Monitoring in Vellum occurs at the Deployment level. You may have
-    two Deployments with the same configuration in the event that
-    you want to monitor traffic for each separately (i.e. if they serve
-    different purposes / use-cases).
-    """
-
-    deployment_id: Optional[str]
-    deployment_name: Optional[str]
+@dataclass(frozen=True, eq=True)
+class VellumRegisteredPrompt:
+    deployment_id: str
+    deployment_name: str
+    model_version_id: str
     sandbox_id: Optional[str] = None
-
-    def __post_init__(self) -> None:
-        if not self.deployment_id and not self.deployment_name:
-            raise ValueError(
-                "Either `deployment_id` or `deployment_name` must be provided."
-            )
+    sandbox_snapshot_id: Optional[str] = None
+    prompt_id: Optional[str] = None
 
     @property
     def deployment_url(self) -> Optional[str]:
@@ -37,7 +25,13 @@ class VellumDeployment:
         if not self.sandbox_id:
             return None
 
-        return f"https://vellum.ai/playground/sandbox/{self.sandbox_id}"
+        url = f"https://vellum.ai/playground/sandbox/{self.sandbox_id}"
+        if not self.sandbox_snapshot_id:
+            return url
+
+        url += f"?snapshotId={self.sandbox_snapshot_id}"
+
+        return url
 
 
 @dataclass
@@ -47,3 +41,4 @@ class VellumCompiledPrompt:
     """
 
     text: str
+    num_tokens: int

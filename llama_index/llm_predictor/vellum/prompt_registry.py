@@ -1,44 +1,99 @@
 from __future__ import annotations
 
-from typing import List, Any, Dict
+from typing import List, Any
 from uuid import uuid4
 
 from vellum.client import Vellum
 
 from llama_index import Prompt
-from llama_index.llm_predictor.vellum.types import VellumDeployment
+from llama_index.llm_predictor.vellum.types import (
+    VellumRegisteredPrompt,
+    VellumCompiledPrompt,
+)
 
 
 class VellumPromptRegistry:
     """Registers and retrieves prompts with Vellum.
 
-    A prompt within LlamaIndex should map to a Deployment within Vellum
-    at a minimum, and may optionally map to a Sandbox as well.
+    LlamaIndex Prompts can be registered within Vellum, at which point Vellum becomes
+    the source of truth for the prompt. From there, Vellum can be used for prompt/model
+    experimentation, request monitoring, and more.
     """
 
     def __init__(self, vellum_api_key: str) -> None:
         self._vellum_client = Vellum(api_key=vellum_api_key)
 
-    def from_prompt(self, prompt: Prompt) -> VellumDeployment:
-        """Retrieves a prompt from Vellum or registers a new one if needed."""
+    def from_prompt(self, initial_prompt: Prompt) -> VellumRegisteredPrompt:
+        """Accepts a LlamaIndex prompt and retrieves a corresponding registered prompt
+        from Vellum.
 
-        deployment_id = prompt.prompt_kwargs.get("vellum_deployment_id")
-        deployment_name = prompt.prompt_kwargs.get("vellum_deployment_name")
+        If the LlamaIndex prompt hasn't yet been registered, it'll be registered
+        automatically, after which point Vellum becomes the source-of-truth for the
+        prompt's definition.
+
+        In this way, the LlamaIndex prompt is treated as the initial value for the newly
+        registered prompt in Vellum.
+        """
+
+        deployment_id = initial_prompt.prompt_kwargs.get("vellum_deployment_id")
+        deployment_name = initial_prompt.prompt_kwargs.get("vellum_deployment_name")
+
+        registered_prompt: VellumRegisteredPrompt
 
         if deployment_id or deployment_name:
-            return VellumDeployment(
-                deployment_id=deployment_id, deployment_name=deployment_name
+            deployment_id_or_name: str = (
+                deployment_id or deployment_name  # type: ignore
             )
+            registered_prompt = self._get_registered_prompt(deployment_id_or_name)
+        else:
+            registered_prompt = self._register_prompt(initial_prompt)
 
-        registered_prompt = self._register_prompt(prompt)
+        return registered_prompt
 
-        return VellumDeployment(
-            deployment_id=registered_prompt["deployment"]["id"],
-            deployment_name=registered_prompt["deployment"]["name"],
-            sandbox_id=registered_prompt["sandbox"]["id"],
+    def get_compiled_prompt(
+        self, registered_prompt: VellumRegisteredPrompt, input_values: dict[str, Any]
+    ) -> VellumCompiledPrompt:
+        """Retrieves the fully-compiled prompt from Vellum, after all variable
+        substitutions, templating, etc.
+        """
+
+        result = self._vellum_client.model_versions.model_version_compile_prompt(
+            registered_prompt.model_version_id, input_values=input_values
+        )
+        return VellumCompiledPrompt(
+            text=result.prompt.text, num_tokens=result.prompt.num_tokens
         )
 
-    def _register_prompt(self, prompt: Prompt) -> Dict[str, Any]:
+    def _get_registered_prompt(
+        self, deployment_id_or_name: str
+    ) -> VellumRegisteredPrompt:
+        """Retrieves a prompt from Vellum, keying off of the deployment's id/name."""
+
+        deployment = self._vellum_client.deployments.retrieve(deployment_id_or_name)
+
+        # Assume that the deployment backing a registered prompt will always have a
+        # single model version. Note that this may not be true in the future once
+        # deployment-level A/B testing is supported and someone configures an A/B test.
+        model_version_id = deployment.active_model_version_ids[0]
+        model_version = self._vellum_client.model_versions.retrieve(model_version_id)
+
+        sandbox_snapshot_info = model_version.build_config.sandbox_snapshot
+        sandbox_snapshot_id = (
+            sandbox_snapshot_info.id if sandbox_snapshot_info else None
+        )
+        prompt_id = sandbox_snapshot_info.prompt_id if sandbox_snapshot_info else None
+        sandbox_id = sandbox_snapshot_info.sandbox_id if sandbox_snapshot_info else None
+
+        return VellumRegisteredPrompt(
+            deployment_id=deployment.id,
+            deployment_name=deployment.name,
+            model_version_id=model_version.id,
+            sandbox_id=sandbox_id,
+            sandbox_snapshot_id=sandbox_snapshot_id,
+            prompt_id=prompt_id,
+        )
+
+    def _register_prompt(self, prompt: Prompt) -> VellumRegisteredPrompt:
         """Registers a prompt with Vellum.
 
         Prompts should ideally have `vellum_label` and `vellum_name` properties
@@ -69,8 +124,12 @@ class VellumPromptRegistry:
             "prompt": self._construct_prompt_data(prompt),
         }
 
-        return {
+        response: dict = {
             "id": "6f7b18ba-83f4-4fff-baec-56bbbb9ff335",
+            "sandbox_snapshot": {
+                "id": "512f1a46-77e5-4721-8ae0-76a0c2888f29",
+                "prompt_id": "6f7b18ba-83f4-4fff-baec-56bbbb9ff335",
+            },
             "sandbox": {
                 "id": "c2fd5533-3932-454c-b5f1-80aa7a7f1491",
                 "label": label,
@@ -85,6 +144,14 @@ class VellumPromptRegistry:
                 "label": label,
             },
         }
+        return VellumRegisteredPrompt(
+            deployment_id=response["deployment"]["id"],
+            deployment_name=response["deployment"]["name"],
+            model_version_id=response["model_version"]["id"],
+            sandbox_id=response["sandbox"]["id"],
+            sandbox_snapshot_id=response["sandbox_snapshot"]["id"],
+            prompt_id=response["sandbox_snapshot"]["prompt_id"],
+        )
 
     def _construct_prompt_data(
         self, prompt: Prompt, for_chat_model: bool = False

@@ -12,8 +12,8 @@ from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.llm_predictor.vellum.exceptions import VellumGenerateException
 from llama_index.llm_predictor.vellum.prompt_registry import VellumPromptRegistry
 from llama_index.llm_predictor.vellum.types import (
-    VellumDeployment,
     VellumCompiledPrompt,
+    VellumRegisteredPrompt,
 )
 from llama_index.utils import globals_helper
 
@@ -37,12 +37,12 @@ class VellumPredictor(BaseLLMPredictor):
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Predict the answer to a query."""
 
-        deployment, compiled_prompt, event_id = self._prepare_generate_call(
+        registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
             prompt, **prompt_args
         )
 
         result = self._vellum_client.generate(
-            deployment_id=deployment.deployment_id,
+            deployment_id=registered_prompt.deployment_id,
             requests=[
                 vellum.GenerateRequest(
                     input_values=prompt.get_full_format_args(prompt_args)
@@ -59,13 +59,12 @@ class VellumPredictor(BaseLLMPredictor):
     def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
         """Stream the answer to a query."""
 
-        deployment, compiled_prompt, event_id = self._prepare_generate_call(
+        registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
             prompt, **prompt_args
         )
 
         responses = self._vellum_client.generate_stream(
-            deployment_id=deployment.deployment_id,
-            deployment_name=deployment.deployment_name,
+            deployment_id=registered_prompt.deployment_id,
             requests=[
                 vellum.GenerateRequest(
                     input_values=prompt.get_full_format_args(prompt_args)
@@ -112,12 +111,12 @@ class VellumPredictor(BaseLLMPredictor):
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Asynchronously predict the answer to a query."""
 
-        deployment, compiled_prompt, event_id = self._prepare_generate_call(
+        registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
             prompt, **prompt_args
         )
 
         result = await self._async_vellum_client.generate(
-            deployment_id=deployment.deployment_id,
+            deployment_id=registered_prompt.deployment_id,
             requests=[
                 vellum.GenerateRequest(
                     input_values=prompt.get_full_format_args(prompt_args)
@@ -154,32 +153,26 @@ class VellumPredictor(BaseLLMPredictor):
         """Set the last token usage."""
         self._last_token_usage = value
 
-    def _get_compiled_prompt(
-        self, deployment: VellumDeployment, **prompt_args: Any
-    ) -> VellumCompiledPrompt:
-        """Retrieve the final, compiled prompt used by Vellum."""
-
-        # TODO: Expose endpoint for retrieving a compiled prompt and
-        #  the number of tokens it uses
-        return VellumCompiledPrompt(text="")
-
     def _prepare_generate_call(
         self, prompt: Prompt, **prompt_args: Any
-    ) -> Tuple[VellumDeployment, VellumCompiledPrompt, str]:
+    ) -> Tuple[VellumRegisteredPrompt, VellumCompiledPrompt, str]:
         """Prepare a generate call."""
 
-        deployment = self._prompt_registry.from_prompt(prompt)
-        compiled_prompt = self._get_compiled_prompt(deployment, **prompt_args)
+        registered_prompt = self._prompt_registry.from_prompt(prompt)
+        compiled_prompt = self._prompt_registry.get_compiled_prompt(
+            registered_prompt, prompt_args
+        )
 
         cb_payload = {
             **prompt_args,
-            "deployment_id": deployment.deployment_id,
+            "deployment_id": registered_prompt.deployment_id,
+            "model_version_id": registered_prompt.model_version_id,
         }
         event_id = self.callback_manager.on_event_start(
             CBEventType.LLM,
             payload=cb_payload,
         )
-        return deployment, compiled_prompt, event_id
+        return registered_prompt, compiled_prompt, event_id
 
     def _process_generate_response(
         self,
@@ -191,7 +184,7 @@ class VellumPredictor(BaseLLMPredictor):
 
         completion_text = result.text
 
-        self._increment_token_usage(text=compiled_prompt.text)
+        self._increment_token_usage(num_tokens=compiled_prompt.num_tokens)
         self._increment_token_usage(text=completion_text)
 
         self.callback_manager.on_event_end(
