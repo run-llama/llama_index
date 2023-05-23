@@ -111,7 +111,7 @@ class RetryQueryEngine(BaseQueryEngine):
                 on node text.
             use_shrinking_percentile_cutoff (bool): Whether to use shrinking percentiles
                 cutoff on node text sentences on retry.
-            max_retries (int): Maximum number of retries. Will shrink by 1 on each retry.
+            max_retries (int): Maximum number of retries. Shrinks by 1 each time.
 
         """
         response_synthesizer = ResponseSynthesizer.from_args(
@@ -213,7 +213,8 @@ class RetryQueryEngine(BaseQueryEngine):
                     return response
                 else:
                     logger.debug(
-                        f">Binary evaluator returned NO, response: {typed_response.response}"
+                        f">Binary evaluator returned NO, response: \
+                        {typed_response.response}"
                     )
                 # else continue
 
@@ -270,7 +271,7 @@ class RetryQueryEngine(BaseQueryEngine):
         """Not supported."""
         return self._query(query_bundle)
 
-    def get_error_correcting_qa_tmpl(self, neg_ex: str) -> str:
+    def get_error_correcting_qa_tmpl(self, neg_ex: Optional[str]) -> str:
         return (
             "Context information is below. \n"
             "---------------------\n"
@@ -284,7 +285,7 @@ class RetryQueryEngine(BaseQueryEngine):
             "answer the question: {query_str}\n"
         )
 
-    def get_error_correcting_refine_tmpl(self, neg_ex: str) -> str:
+    def get_error_correcting_refine_tmpl(self, neg_ex: Optional[str]) -> str:
         return (
             "The original question is as follows: {query_str}\n"
             "We have provided an existing answer: {existing_answer}\n"
