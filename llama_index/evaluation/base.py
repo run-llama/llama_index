@@ -3,14 +3,11 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from llama_index import (
-    Document,
-    GPTListIndex,
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    Response,
-    ServiceContext,
-)
+from llama_index.indices.base import ServiceContext
+from llama_index.indices.list.base import GPTListIndex
+from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.readers.schema.base import Document
+from llama_index.response.schema import Response
 
 DEFAULT_EVAL_PROMPT = (
     "Please tell if a given piece of information "
@@ -114,7 +111,7 @@ class ResponseEvaluator:
         context = []
 
         for context_info in response.source_nodes:
-            context.append(Document(context_info.source_text))
+            context.append(Document(context_info.node.get_text()))
 
         return context
 
@@ -236,7 +233,7 @@ class QueryResponseEvaluator:
         context = []
 
         for context_info in response.source_nodes:
-            context.append(Document(context_info.source_text))
+            context.append(Document(context_info.node.get_text()))
 
         return context
 

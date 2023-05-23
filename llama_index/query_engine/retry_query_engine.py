@@ -1,24 +1,31 @@
+import logging
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index import Document
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import NodeWithScore
-from llama_index.evaluation import QueryResponseEvaluator
+from llama_index.evaluation.base import QueryResponseEvaluator
 from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.list.base import GPTListIndex
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.type import ResponseMode
 from llama_index.indices.service_context import ServiceContext
-from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
+from llama_index.optimization.optimizer import (
+    BaseTokenUsageOptimizer,
+    SentenceEmbeddingOptimizer,
+)
 from llama_index.prompts.prompts import (
     QuestionAnswerPrompt,
     RefinePrompt,
     SimpleInputPrompt,
 )
+from llama_index.readers.schema.base import Document
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
+
+logger = logging.getLogger(__name__)
 
 
 class RetryQueryEngine(BaseQueryEngine):
@@ -39,6 +46,7 @@ class RetryQueryEngine(BaseQueryEngine):
         callback_manager: Optional[CallbackManager] = None,
         check_source: bool = True,
         check_binary: bool = True,
+        percentile_cutoff: float = 0.7,
         use_shrinking_percentile_cutoff: bool = True,
         max_retries: int = 3,
     ) -> None:
@@ -52,6 +60,7 @@ class RetryQueryEngine(BaseQueryEngine):
         self.check_binary = check_binary
         self.use_shrinking_percentile_cutoff = use_shrinking_percentile_cutoff
         self.max_retries = max_retries
+        self.percentile_cutoff = percentile_cutoff
 
     @classmethod
     def from_args(
@@ -72,6 +81,7 @@ class RetryQueryEngine(BaseQueryEngine):
         # class-specific args
         check_source: bool = True,
         check_binary: bool = True,
+        percentile_cutoff: float = 0.7,
         use_shrinking_percentile_cutoff: bool = True,
         max_retries: int = 3,
         **kwargs: Any,
@@ -97,6 +107,8 @@ class RetryQueryEngine(BaseQueryEngine):
             check_source (bool): Whether to check source nodes for relevance
                 and discard irrelevant ones.
             check_binary (bool): Whether to check answer for correctness.
+            percentile_cutoff (float): Percentile cutoff for sentence optimization
+                on node text.
             use_shrinking_percentile_cutoff (bool): Whether to use shrinking percentiles
                 cutoff on node text sentences on retry.
             max_retries (int): Maximum number of retries. Will shrink by 1 on each retry.
@@ -129,6 +141,7 @@ class RetryQueryEngine(BaseQueryEngine):
             callback_manager=callback_manager,
             check_source=check_source,
             check_binary=check_binary,
+            percentile_cutoff=percentile_cutoff,
             use_shrinking_percentile_cutoff=use_shrinking_percentile_cutoff,
             max_retries=max_retries,
         )
@@ -182,7 +195,6 @@ class RetryQueryEngine(BaseQueryEngine):
         self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_id)
 
         # Insert retry here
-        # TODO: Add callbacks.
         if self.max_retries > 0:
             evaluator = QueryResponseEvaluator(service_context=self.service_context)
 
@@ -199,7 +211,13 @@ class RetryQueryEngine(BaseQueryEngine):
                 )
                 if response_eval == "YES":
                     return response
+                else:
+                    logger.debug(
+                        f">Binary evaluator returned NO, response: {typed_response.response}"
+                    )
                 # else continue
+
+            new_retriever = self._retriever
             if self.check_source:
                 source_node_evals = evaluator.evaluate_source_nodes(
                     query_bundle.query_str, typed_response
@@ -210,29 +228,73 @@ class RetryQueryEngine(BaseQueryEngine):
                 for i in range(len(source_node_evals)):
                     if eval == "YES":
                         new_source_docs.append(old_source_nodes[i])
+                    else:
+                        logger.debug(
+                            f">Source evaluator return NO, node: {old_source_nodes[i]}"
+                        )
                 if len(new_source_docs) == 0:
                     # TODO: Add context-less query.
-                    raise ValueError("No source nodes are relevant")
+                    logger.warn("No source nodes are relevant")
+                if new_source_docs:
+                    new_index = GPTListIndex.from_documents(new_source_docs)
+                    new_retriever = new_index.as_retriever(
+                        optimizer=SentenceEmbeddingOptimizer(
+                            percentile_cutoff=self.percentile_cutoff
+                        )
+                    )
+
+            if self.use_shrinking_percentile_cutoff:
+                new_percentile_cutoff = self.percentile_cutoff - 0.1
+            text_qa_template = QuestionAnswerPrompt(
+                self.get_error_correcting_qa_tmpl(typed_response.response)
+            )
+            refine_template = RefinePrompt(
+                self.get_error_correcting_refine_tmpl(typed_response.response)
+            )
+            new_query_engine = RetryQueryEngine.from_args(
+                text_qa_template=text_qa_template,
+                refine_template=refine_template,
+                retriever=new_retriever,
+                check_source=self.check_source,
+                check_binary=self.check_binary,
+                percentile_cutoff=new_percentile_cutoff,
+                use_shrinking_percentile_cutoff=self.use_shrinking_percentile_cutoff,
+                max_retries=self.max_retries - 1,
+            )
+            logger.debug(f">Retrying query. Retries left: {self.max_retries - 1}")
+            response = new_query_engine.query(query_bundle)
+
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """TODO: Answer a query."""
-        query_id = self.callback_manager.on_event_start(CBEventType.QUERY)
+        """Not supported."""
+        return self._query(query_bundle)
 
-        retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
-        nodes = self._retriever.retrieve(query_bundle)
-        self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id
+    def get_error_correcting_qa_tmpl(self, neg_ex: str) -> str:
+        return (
+            "Context information is below. \n"
+            "---------------------\n"
+            "{context_str}"
+            "\n---------------------\n"
+            "A previous bad answer is given below. \n"
+            "---------------------\n"
+            f"{neg_ex}"
+            "\n---------------------\n"
+            "Given the context information and not prior knowledge, "
+            "answer the question: {query_str}\n"
         )
 
-        synth_id = self.callback_manager.on_event_start(CBEventType.SYNTHESIZE)
-        response = await self._response_synthesizer.asynthesize(
-            query_bundle=query_bundle,
-            nodes=nodes,
+    def get_error_correcting_refine_tmpl(self, neg_ex: str) -> str:
+        return (
+            "The original question is as follows: {query_str}\n"
+            "We have provided an existing answer: {existing_answer}\n"
+            f"We also have a previous bad answer: {neg_ex}\n"
+            "We have the opportunity to refine the existing answer "
+            "(only if needed) with some more context below.\n"
+            "------------\n"
+            "{context_msg}\n"
+            "------------\n"
+            "Given the new context, refine the original answer to better "
+            "answer the question. "
+            "If the context isn't useful, return the original answer."
         )
-        self.callback_manager.on_event_end(
-            CBEventType.SYNTHESIZE, payload={"response": response}, event_id=synth_id
-        )
-
-        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_id)
-        return response
