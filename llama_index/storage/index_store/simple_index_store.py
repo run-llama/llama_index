@@ -34,7 +34,10 @@ class SimpleIndexStore(KVIndexStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleIndexStore":
         """Create a SimpleIndexStore from a persist directory."""
-        persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        if (fs != None):
+            persist_path = persist_dir + '/' + DEFAULT_PERSIST_FNAME
+        else:
+            persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)
 
     @classmethod
