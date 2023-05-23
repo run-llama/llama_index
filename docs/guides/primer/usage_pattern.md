@@ -61,6 +61,7 @@ node2 = Node(text="<text_chunk>", doc_id="<node_id>")
 # set relationships
 node1.relationships[DocumentRelationship.NEXT] = node2.get_doc_id()
 node2.relationships[DocumentRelationship.PREVIOUS] = node1.get_doc_id()
+nodes = [node1, node2]
 ```
 
 
@@ -183,6 +184,7 @@ For embedding-based indices, you can choose to pass in a custom embedding model.
 Creating an index, inserting to an index, and querying an index may use tokens. We can track 
 token usage through the outputs of these operations. When running operations, 
 the token usage will be printed.
+
 You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
 See [Cost Predictor How-To](/docs/how_to/analysis/cost_analysis.md) for more details.
 
@@ -337,6 +339,9 @@ Right now, we support the following options:
     multiple prompts.
 - `tree_summarize`: Given a set of `Node` objects and the query, recursively construct a tree 
     and return the root node as the response. Good for summarization purposes.
+- `no_text`: Only runs the retriever to fetch the nodes that would have been sent to the LLM, 
+    without actually sending them. Then can be inspected by checking `response.source_nodes`.
+    The response object is covered in more detail in Section 5.
 - `accumulate`: Given a set of `Node` objects and the query, apply the query to each `Node` text
     chunk while accumulating the responses into an array. Returns a concatenated string of all
     responses. Good for when you need to run the same query separately against each text
@@ -356,6 +361,10 @@ response = query_engine.query("What did the author do growing up?")
 
 # tree summarize
 query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='tree_summarize')
+response = query_engine.query("What did the author do growing up?")
+
+# no text
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='no_text')
 response = query_engine.query("What did the author do growing up?")
 ```
 

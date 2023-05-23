@@ -7,6 +7,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
+from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
@@ -37,7 +38,7 @@ class ServiceContext:
 
     The service context container is a utility container for LlamaIndex
     index and query classes. It contains the following:
-    - llm_predictor: LLMPredictor
+    - llm_predictor: BaseLLMPredictor
     - prompt_helper: PromptHelper
     - embed_model: BaseEmbedding
     - node_parser: NodeParser
@@ -47,7 +48,7 @@ class ServiceContext:
 
     """
 
-    llm_predictor: LLMPredictor
+    llm_predictor: BaseLLMPredictor
     prompt_helper: PromptHelper
     embed_model: BaseEmbedding
     node_parser: NodeParser
@@ -58,7 +59,7 @@ class ServiceContext:
     @classmethod
     def from_defaults(
         cls,
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[BaseEmbedding] = None,
         node_parser: Optional[NodeParser] = None,
@@ -71,7 +72,7 @@ class ServiceContext:
         parameter. If an argument is not specified, then use the default value.
 
         Args:
-            llm_predictor (Optional[LLMPredictor]): LLMPredictor
+            llm_predictor (Optional[BaseLLMPredictor]): LLMPredictor
             prompt_helper (Optional[PromptHelper]): PromptHelper
             embed_model (Optional[BaseEmbedding]): BaseEmbedding
             node_parser (Optional[NodeParser]): NodeParser
