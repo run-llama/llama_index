@@ -45,7 +45,6 @@ class RetryQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[ResponseSynthesizer] = None,
         callback_manager: Optional[CallbackManager] = None,
         check_source: bool = True,
-        check_binary: bool = True,
         percentile_cutoff: float = 0.7,
         use_shrinking_percentile_cutoff: bool = True,
         max_retries: int = 3,
@@ -57,7 +56,6 @@ class RetryQueryEngine(BaseQueryEngine):
         self.callback_manager = callback_manager or CallbackManager([])
         self.service_context = service_context
         self.check_source = check_source
-        self.check_binary = check_binary
         self.use_shrinking_percentile_cutoff = use_shrinking_percentile_cutoff
         self.max_retries = max_retries
         self.percentile_cutoff = percentile_cutoff
@@ -80,7 +78,6 @@ class RetryQueryEngine(BaseQueryEngine):
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         # class-specific args
         check_source: bool = True,
-        check_binary: bool = True,
         percentile_cutoff: float = 0.7,
         use_shrinking_percentile_cutoff: bool = True,
         max_retries: int = 3,
@@ -106,7 +103,6 @@ class RetryQueryEngine(BaseQueryEngine):
                 object.
             check_source (bool): Whether to check source nodes for relevance
                 and discard irrelevant ones.
-            check_binary (bool): Whether to check answer for correctness.
             percentile_cutoff (float): Percentile cutoff for sentence optimization
                 on node text.
             use_shrinking_percentile_cutoff (bool): Whether to use shrinking percentiles
@@ -140,7 +136,6 @@ class RetryQueryEngine(BaseQueryEngine):
             response_synthesizer=response_synthesizer,
             callback_manager=callback_manager,
             check_source=check_source,
-            check_binary=check_binary,
             percentile_cutoff=percentile_cutoff,
             use_shrinking_percentile_cutoff=use_shrinking_percentile_cutoff,
             max_retries=max_retries,
@@ -205,18 +200,14 @@ class RetryQueryEngine(BaseQueryEngine):
             else:
                 raise ValueError(f"Unexpected response type {type(response)}")
 
-            if self.check_binary:
-                response_eval = evaluator.evaluate(
-                    query_bundle.query_str, typed_response
+            response_eval = evaluator.evaluate(query_bundle.query_str, typed_response)
+            if response_eval == "YES":
+                return response
+            else:
+                logger.debug(
+                    f">Binary evaluator returned NO, response: \
+                    {typed_response.response}"
                 )
-                if response_eval == "YES":
-                    return response
-                else:
-                    logger.debug(
-                        f">Binary evaluator returned NO, response: \
-                        {typed_response.response}"
-                    )
-                # else continue
 
             new_retriever = self._retriever
             if self.check_source:
@@ -257,7 +248,6 @@ class RetryQueryEngine(BaseQueryEngine):
                 refine_template=refine_template,
                 retriever=new_retriever,
                 check_source=self.check_source,
-                check_binary=self.check_binary,
                 percentile_cutoff=new_percentile_cutoff,
                 use_shrinking_percentile_cutoff=self.use_shrinking_percentile_cutoff,
                 max_retries=self.max_retries - 1,
