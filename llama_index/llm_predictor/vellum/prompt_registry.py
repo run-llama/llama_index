@@ -66,7 +66,7 @@ class VellumPromptRegistry:
             "label": label,
             "provider": "OPENAI",
             "model": "text-davinci-003",
-            "prompt": self._contruct_prompt_data(prompt),
+            "prompt": self._construct_prompt_data(prompt),
         }
 
         return {
@@ -86,28 +86,44 @@ class VellumPromptRegistry:
             },
         }
 
-    def _contruct_prompt_data(self, prompt: Prompt) -> dict:
+    def _construct_prompt_data(
+        self, prompt: Prompt, for_chat_model: bool = False
+    ) -> dict:
+        """Converts a LlamaIndex prompt into Vellum's prompt representation."""
+
         prompt_template = prompt.original_template
         for input_variable in prompt.input_variables:
             prompt_template = prompt_template.replace(
                 input_variable, f"{{ {input_variable} }}"
             )
 
+        block: dict
+        jinja_block = {
+            "id": str(uuid4()),
+            "block_type": "JINJA",
+            "properties": {
+                "template": self._prepare_prompt_jinja_template(
+                    prompt.original_template, prompt.input_variables
+                ),
+            },
+        }
+        if for_chat_model:
+            block = {
+                "id": str(uuid4()),
+                "block_type": "CHAT_MESSAGE",
+                "properties": {
+                    "chat_role": "SYSTEM",
+                    "blocks": [jinja_block],
+                },
+            }
+        else:
+            block = jinja_block
+
         return {
             "syntax_version": 2,
             "block_data": {
                 "version": 1,
-                "blocks": [
-                    {
-                        "id": str(uuid4()),
-                        "block_type": "JINJA",
-                        "properties": {
-                            "template": self._prepare_prompt_jinja_template(
-                                prompt.original_template, prompt.input_variables
-                            ),
-                        },
-                    }
-                ],
+                "blocks": [block],
             },
         }
 
