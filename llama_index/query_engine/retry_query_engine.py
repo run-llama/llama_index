@@ -209,12 +209,12 @@ class RetryQueryEngine(BaseQueryEngine):
                     {typed_response.response}"
                 )
 
-            new_retriever = self._retriever
+            old_source_nodes = evaluator.get_context(typed_response)
+            new_index = GPTListIndex.from_documents(old_source_nodes)
             if self.check_source:
                 source_node_evals = evaluator.evaluate_source_nodes(
                     query_bundle.query_str, typed_response
                 )
-                old_source_nodes = evaluator.get_context(typed_response)
                 assert len(old_source_nodes) == len(source_node_evals)
                 new_source_docs: List[Document] = []
                 for i in range(len(source_node_evals)):
@@ -229,11 +229,12 @@ class RetryQueryEngine(BaseQueryEngine):
                     logger.warn("No source nodes are relevant")
                 if new_source_docs:
                     new_index = GPTListIndex.from_documents(new_source_docs)
-                    new_retriever = new_index.as_retriever(
-                        optimizer=SentenceEmbeddingOptimizer(
-                            percentile_cutoff=self.percentile_cutoff
-                        )
-                    )
+
+            new_retriever = new_index.as_retriever(
+                optimizer=SentenceEmbeddingOptimizer(
+                    percentile_cutoff=self.percentile_cutoff
+                )
+            )
 
             if self.use_shrinking_percentile_cutoff:
                 new_percentile_cutoff = self.percentile_cutoff - 0.1
