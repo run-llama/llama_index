@@ -29,6 +29,9 @@ class PDFReader(BaseReader):
 
             # Get the number of pages in the PDF document
             num_pages = len(pdf.pages)
+            
+            # Get the name of the PDF document 
+            file_name = file.name
 
             # Iterate over every page
             docs = []
@@ -37,7 +40,7 @@ class PDFReader(BaseReader):
                 page_text = pdf.pages[page].extract_text()
                 page_label = pdf.page_labels[page]
 
-                metadata = {"page_label": page_label, "file_name": file.name}
+                metadata = {"page_label": page_label, "file_name": file_name}
                 if extra_info is not None:
                     metadata.update(extra_info)
 
@@ -61,7 +64,8 @@ class DocxReader(BaseReader):
             )
 
         text = docx2txt.process(file)
-        metadata = {"file_name": file.name}
+        file_name = file.name
+        metadata = {"file_name": file_name}
         
         if extra_info is not None:
             metadata.update(extra_info)
