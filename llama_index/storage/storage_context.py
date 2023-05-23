@@ -84,9 +84,15 @@ class StorageContext:
             persist_dir (str): directory to persist the storage context
 
         """
-        docstore_path = str(Path(persist_dir) / docstore_fname)
-        index_store_path = str(Path(persist_dir) / index_store_fname)
-        vector_store_path = str(Path(persist_dir) / vector_store_fname)
+        if (fs != None):
+            docstore_path = str(f"{persist_dir}/{docstore_fname}")
+            index_store_path = str(f"{persist_dir}/{index_store_fname}")
+            vector_store_path = str(f"{persist_dir}/{vector_store_fname}")
+        else:
+            docstore_path = str(Path(persist_dir) / docstore_fname)
+            index_store_path = str(Path(persist_dir) / index_store_fname)
+            vector_store_path = str(Path(persist_dir) / vector_store_fname)
+            
         self.docstore.persist(persist_path=docstore_path, fs=fs)
         self.index_store.persist(persist_path=index_store_path, fs=fs)
         self.vector_store.persist(persist_path=vector_store_path, fs=fs)
