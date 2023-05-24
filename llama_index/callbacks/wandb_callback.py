@@ -132,8 +132,11 @@ class WandbCallbackHandler(BaseCallbackHandler):
             llm_usage_info = self._get_llm_usage_info(event.id_)
 
             llm_table = self._wandb.Table(
-                columns=["event_id", "event_start_time", "event_end_time", "inputs", "outputs", "total_token_count"]
+                columns=[
+                    "event_id", "event_start_time", "event_end_time", "inputs", "outputs", "formatted_prompt_tokens_count", "prediction_tokens_count", "total_token_count"]
             )
+
+            len(llm_usage_info)
             llm_table.add_data(*llm_usage_info)
             self._wandb.run.log({"llm_tracker": llm_table})
 
@@ -156,7 +159,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
             end_time,
             inputs,
             outputs,
-            len(outputs) #TODO: pass actual token count
+            event_pair[1].payload["formatted_prompt_tokens_count"],
+            event_pair[1].payload["prediction_tokens_count"],
+            event_pair[1].payload["total_tokens_used"],
         ]
 
     def _query_trace_tree(self, query_event_pairs):
