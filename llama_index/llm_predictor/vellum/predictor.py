@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Tuple, Generator, Optional
-
-import vellum
-from vellum.client import AsyncVellum, Vellum
+from typing import Any, Tuple, Generator, Optional, cast
 
 from llama_index import Prompt
 from llama_index.callbacks import CallbackManager, CBEventType
-from llama_index.constants import NUM_OUTPUTS, MAX_CHUNK_SIZE
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.llm_predictor.vellum.exceptions import VellumGenerateException
 from llama_index.llm_predictor.vellum.prompt_registry import VellumPromptRegistry
@@ -24,6 +20,14 @@ class VellumPredictor(BaseLLMPredictor):
         vellum_api_key: str,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
+        import_err_msg = (
+            "`vellum` package not found, please run `pip install vellum-ai`"
+        )
+        try:
+            from vellum.client import Vellum, AsyncVellum  # noqa: F401
+        except ImportError:
+            raise ImportError(import_err_msg)
+
         # Needed by BaseLLMPredictor
         self._total_tokens_used = 0
         self._last_token_usage: Optional[int] = None
@@ -37,6 +41,8 @@ class VellumPredictor(BaseLLMPredictor):
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Predict the answer to a query."""
 
+        from vellum import GenerateRequest
+
         registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
             prompt, **prompt_args
         )
@@ -44,9 +50,7 @@ class VellumPredictor(BaseLLMPredictor):
         result = self._vellum_client.generate(
             deployment_id=registered_prompt.deployment_id,
             requests=[
-                vellum.GenerateRequest(
-                    input_values=prompt.get_full_format_args(prompt_args)
-                )
+                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
             ],
         )
 
@@ -59,6 +63,8 @@ class VellumPredictor(BaseLLMPredictor):
     def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
         """Stream the answer to a query."""
 
+        from vellum import GenerateRequest, GenerateStreamResult
+
         registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
             prompt, **prompt_args
         )
@@ -66,9 +72,7 @@ class VellumPredictor(BaseLLMPredictor):
         responses = self._vellum_client.generate_stream(
             deployment_id=registered_prompt.deployment_id,
             requests=[
-                vellum.GenerateRequest(
-                    input_values=prompt.get_full_format_args(prompt_args)
-                )
+                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
             ],
         )
 
@@ -90,7 +94,7 @@ class VellumPredictor(BaseLLMPredictor):
                     )
                     break
 
-                result: vellum.GenerateStreamResult = stream_response.delta
+                result: GenerateStreamResult = stream_response.delta
 
                 if result.error:
                     raise VellumGenerateException(result.error.message)
@@ -111,6 +115,8 @@ class VellumPredictor(BaseLLMPredictor):
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Asynchronously predict the answer to a query."""
 
+        from vellum import GenerateRequest
+
         registered_prompt, compiled_prompt, event_id = self._prepare_generate_call(
             prompt, **prompt_args
         )
@@ -118,9 +124,7 @@ class VellumPredictor(BaseLLMPredictor):
         result = await self._async_vellum_client.generate(
             deployment_id=registered_prompt.deployment_id,
             requests=[
-                vellum.GenerateRequest(
-                    input_values=prompt.get_full_format_args(prompt_args)
-                )
+                GenerateRequest(input_values=prompt.get_full_format_args(prompt_args))
             ],
         )
 
@@ -133,8 +137,10 @@ class VellumPredictor(BaseLLMPredictor):
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
 
-        # TODO: Consider whether Vellum should use non-standard values
-        return LLMMetadata(max_input_size=MAX_CHUNK_SIZE, num_output=NUM_OUTPUTS)
+        # Note: We use default values here, but ideally we would retrieve this metadata
+        # via Vellum's API based on the LLM that backs the registered prompt's
+        # deployment. This is not currently possible, so we use default values.
+        return LLMMetadata()
 
     @property
     def total_tokens_used(self) -> int:
@@ -176,11 +182,15 @@ class VellumPredictor(BaseLLMPredictor):
 
     def _process_generate_response(
         self,
-        result: vellum.GenerateResponse,
+        result: Any,
         compiled_prompt: VellumCompiledPrompt,
         event_id: str,
     ) -> str:
         """Process the response from a generate call."""
+
+        from vellum import GenerateResponse
+
+        result = cast(GenerateResponse, result)
 
         completion_text = result.text
 

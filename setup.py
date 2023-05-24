@@ -22,7 +22,6 @@ install_requires = [
     "pandas",
     "requests<2.30.0",
     "fsspec>=2023.5.0",
-    "vellum-ai>=0.0.14",
 ]
 
 # NOTE: if python version >= 3.9, install tiktoken

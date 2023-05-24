@@ -3,8 +3,6 @@ from __future__ import annotations
 from typing import List, Any
 from uuid import uuid4
 
-from vellum.client import Vellum
-
 from llama_index import Prompt
 from llama_index.llm_predictor.vellum.types import (
     VellumRegisteredPrompt,
@@ -21,6 +19,14 @@ class VellumPromptRegistry:
     """
 
     def __init__(self, vellum_api_key: str) -> None:
+        import_err_msg = (
+            "`vellum` package not found, please run `pip install vellum-ai`"
+        )
+        try:
+            from vellum.client import Vellum  # noqa: F401
+        except ImportError:
+            raise ImportError(import_err_msg)
+
         self._vellum_client = Vellum(api_key=vellum_api_key)
 
     def from_prompt(self, initial_prompt: Prompt) -> VellumRegisteredPrompt:
@@ -33,6 +39,10 @@ class VellumPromptRegistry:
 
         In this way, the LlamaIndex prompt is treated as the initial value for the newly
         registered prompt in Vellum.
+
+        You can reference a previously registered prompt by providing either
+        `vellum_deployment_id` or `vellum_deployment_name` as keyword arguments
+        to `Prompt.prompt_kwargs`.
         """
 
         deployment_id = initial_prompt.prompt_kwargs.get("vellum_deployment_id")
@@ -105,13 +115,16 @@ class VellumPromptRegistry:
         2) Create a Deployment for the prompt.
         """
 
-        label = (
-            prompt.prompt_kwargs.get("vellum_label")
-            or f"LlamaIndex Demo: {prompt.prompt_type}"
-        )
-        name = (
-            prompt.prompt_kwargs.get("vellum_name")
-            or f"llama-index-demo-{prompt.prompt_type}"
+        # Label represents a human-friendly name that'll be used for all created
+        # entities within Vellum. If not provided, a default will be generated.
+        label = prompt.prompt_kwargs.get(
+            "vellum_label"
+        ) or self._generate_default_label(prompt)
+
+        # Name represents a kebab-cased unique identifier that'll be used for all
+        # created entities within Vellum. If not provided, a default will be generated.
+        name = prompt.prompt_kwargs.get("vellum_name") or self._generate_default_name(
+            prompt
         )
 
         # TODO: Pass this payload to an API that creates a sandbox,
@@ -152,6 +165,14 @@ class VellumPromptRegistry:
             sandbox_snapshot_id=response["sandbox_snapshot"]["id"],
             prompt_id=response["sandbox_snapshot"]["prompt_id"],
         )
+
+    @staticmethod
+    def _generate_default_label(prompt: Prompt) -> str:
+        return f"LlamaIndex Demo: {prompt.prompt_type}"
+
+    @staticmethod
+    def _generate_default_name(prompt: Prompt) -> str:
+        return f"llama-index-demo-{prompt.prompt_type}"
 
     def _construct_prompt_data(
         self, prompt: Prompt, for_chat_model: bool = False
