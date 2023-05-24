@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, List
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.mbox_parser import MboxParser
+from llama_index.readers.file.mbox_reader import MboxReader as MboxFileReader
 from llama_index.readers.schema.base import Document
 
 
@@ -30,7 +30,6 @@ class MboxReader(BaseReader):
             for filename in filenames:
                 if filename.endswith(".mbox"):
                     filepath = os.path.join(dirpath, filename)
-                    content = MboxParser(**load_kwargs).parse_file(Path(filepath))
-                    for msg in content:
-                        docs.append(Document(msg))
+                    file_docs = MboxFileReader(**load_kwargs).load_data(Path(filepath))
+                    docs.extend(file_docs)
         return docs

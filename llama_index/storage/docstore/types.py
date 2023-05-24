@@ -1,9 +1,10 @@
+import os
+import fsspec
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Sequence
 from llama_index.data_structs.node import Node
 
 from llama_index.schema import BaseDocument
-import os
 
 
 DEFAULT_PERSIST_FNAME = "docstore.json"
@@ -13,7 +14,12 @@ DEFAULT_PERSIST_PATH = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
 
 class BaseDocumentStore(ABC):
     # ===== Save/load =====
-    def persist(self, persist_path: str = DEFAULT_PERSIST_PATH) -> None:
+    def persist(
+        self,
+        persist_path: str = DEFAULT_PERSIST_PATH,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> None:
+        """Persist the docstore to a file."""
         pass
 
     # ===== Main interface =====

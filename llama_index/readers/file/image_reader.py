@@ -6,12 +6,13 @@ Contains parsers for image files.
 
 import re
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
-from llama_index.readers.file.base_parser import BaseParser, ImageParserOutput
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document, ImageDocument
 
 
-class ImageParser(BaseParser):
+class ImageReader(BaseReader):
     """Image parser.
 
     Extract text from images using DONUT.
@@ -24,52 +25,35 @@ class ImageParser(BaseParser):
         keep_image: bool = False,
         parse_text: bool = True,
     ):
-        """Init params."""
+        """Init parser."""
+        if parser_config is None and parse_text:
+            try:
+                import sentencepiece  # noqa: F401
+                import torch  # noqa: F401
+                from PIL import Image  # noqa: F401
+                from transformers import DonutProcessor, VisionEncoderDecoderModel
+            except ImportError:
+                raise ImportError(
+                    "Please install extra dependencies that are required for "
+                    "the ImageCaptionReader: "
+                    "`pip install torch transformers sentencepiece Pillow`"
+                )
+
+            processor = DonutProcessor.from_pretrained(
+                "naver-clova-ix/donut-base-finetuned-cord-v2"
+            )
+            model = VisionEncoderDecoderModel.from_pretrained(
+                "naver-clova-ix/donut-base-finetuned-cord-v2"
+            )
+            parser_config = {"processor": processor, "model": model}
+
         self._parser_config = parser_config
         self._keep_image = keep_image
         self._parse_text = parse_text
 
-    def _init_parser(self) -> Dict:
-        """Init parser."""
-        if not self._parse_text:
-            return {}
-
-        try:
-            import torch  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "install pytorch to use the model: " "`pip install torch`"
-            )
-        try:
-            from transformers import DonutProcessor, VisionEncoderDecoderModel
-        except ImportError:
-            raise ImportError(
-                "transformers is required for using DONUT model: "
-                "`pip install transformers`"
-            )
-        try:
-            import sentencepiece  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "sentencepiece is required for using DONUT model: "
-                "`pip install sentencepiece`"
-            )
-        try:
-            from PIL import Image  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "PIL is required to read image files: " "`pip install Pillow`"
-            )
-
-        processor = DonutProcessor.from_pretrained(
-            "naver-clova-ix/donut-base-finetuned-cord-v2"
-        )
-        model = VisionEncoderDecoderModel.from_pretrained(
-            "naver-clova-ix/donut-base-finetuned-cord-v2"
-        )
-        return {"processor": processor, "model": model}
-
-    def parse_file(self, file: Path, errors: str = "ignore") -> ImageParserOutput:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         from PIL import Image
 
@@ -90,8 +74,9 @@ class ImageParser(BaseParser):
         if self._parse_text:
             import torch
 
-            model = self.parser_config["model"]
-            processor = self.parser_config["processor"]
+            assert self._parser_config is not None
+            model = self._parser_config["model"]
+            processor = self._parser_config["processor"]
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
             model.to(device)
@@ -124,7 +109,4 @@ class ImageParser(BaseParser):
             # remove first task start token
             text_str = re.sub(r"<.*?>", "", sequence, count=1).strip()
 
-        return ImageParserOutput(
-            text=text_str,
-            image=image_str,
-        )
+        return [ImageDocument(text=text_str, image=image_str, extra_info=extra_info)]

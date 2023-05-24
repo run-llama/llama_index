@@ -1,13 +1,11 @@
 import json
+import logging
 import os
 from typing import Dict, Optional
-import logging
 
-from llama_index.storage.kvstore.types import (
-    DEFAULT_COLLECTION,
-    BaseInMemoryKVStore,
-)
+import fsspec
 
+from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseInMemoryKVStore
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +16,13 @@ class SimpleKVStore(BaseInMemoryKVStore):
     """Simple in-memory Key-Value store.
 
     Args:
-        persist_path (str): path to persist the store
-
+        data (Optional[DATA_TYPE]): data to initialize the store with
     """
 
-    def __init__(self, data: Optional[DATA_TYPE] = None) -> None:
+    def __init__(
+        self,
+        data: Optional[DATA_TYPE] = None,
+    ) -> None:
         """Init a SimpleKVStore."""
         self._data: DATA_TYPE = data or {}
 
@@ -53,23 +53,26 @@ class SimpleKVStore(BaseInMemoryKVStore):
         except KeyError:
             return False
 
-    def persist(self, persist_path: str) -> None:
+    def persist(
+        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
+    ) -> None:
         """Persist the store."""
+        fs = fs or fsspec.filesystem("file")
         dirpath = os.path.dirname(persist_path)
-        if not os.path.exists(dirpath):
-            os.makedirs(dirpath)
+        if not fs.exists(dirpath):
+            fs.makedirs(dirpath)
 
-        with open(persist_path, "w+") as f:
-            json.dump(self._data, f)
+        with fs.open(persist_path, "w") as f:
+            f.write(json.dumps(self._data))
 
     @classmethod
-    def from_persist_path(cls, persist_path: str) -> "SimpleKVStore":
-        """Load a SimpleKVStore from a persist path."""
-        if not os.path.exists(persist_path):
-            raise ValueError(f"No existing {__name__} found at {persist_path}.")
-
+    def from_persist_path(
+        cls, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
+    ) -> "SimpleKVStore":
+        """Load a SimpleKVStore from a persist path and filesystem."""
+        fs = fs or fsspec.filesystem("file")
         logger.debug(f"Loading {__name__} from {persist_path}.")
-        with open(persist_path, "r+") as f:
+        with fs.open(persist_path, "rb") as f:
             data = json.load(f)
         return cls(data)
 

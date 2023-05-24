@@ -21,6 +21,9 @@ install_requires = [
     "openai>=0.26.4",
     "pandas",
     "requests<2.30.0",
+    "fsspec>=2023.5.0",
+    "typing-inspect==0.8.0",
+    "typing_extensions==4.5.0",
 ]
 
 # NOTE: if python version >= 3.9, install tiktoken

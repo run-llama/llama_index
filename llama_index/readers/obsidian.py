@@ -12,7 +12,7 @@ from typing import Any, List
 from langchain.docstore.document import Document as LCDocument
 
 from llama_index.readers.base import BaseReader
-from llama_index.readers.file.markdown_parser import MarkdownParser
+from llama_index.readers.file.markdown_reader import MarkdownReader
 from llama_index.readers.schema.base import Document
 
 
@@ -30,15 +30,15 @@ class ObsidianReader(BaseReader):
 
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
-        docs: List[str] = []
+        docs: List[Document] = []
         for dirpath, dirnames, filenames in os.walk(self.input_dir):
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
             for filename in filenames:
                 if filename.endswith(".md"):
                     filepath = os.path.join(dirpath, filename)
-                    content = MarkdownParser().parse_file(Path(filepath))
+                    content = MarkdownReader().load_data(Path(filepath))
                     docs.extend(content)
-        return [Document(d) for d in docs]
+        return docs
 
     def load_langchain_documents(self, **load_kwargs: Any) -> List[LCDocument]:
         """Load data in LangChain document format."""
