@@ -13,25 +13,26 @@ with open(Path(__file__).absolute().parents[0] / "llama_index" / "VERSION") as _
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
-install_requires = [
-    "dataclasses_json",
-    "langchain>=0.0.154",
-    "numpy",
-    "tenacity>=8.2.0,<9.0.0",
-    "openai>=0.26.4",
-    "pandas",
-    "requests<2.30.0",
-    "fsspec>=2023.5.0",
-    "typing-inspect==0.8.0",
-    "typing_extensions==4.5.0",
-]
+install_requires = []
+#install_requires = [
+#    "dataclasses_json",
+#    "langchain>=0.0.154",
+#    "numpy",
+#    "tenacity>=8.2.0,<9.0.0",
+#    "openai>=0.26.4",
+#    "pandas",
+#    "requests<2.30.0",
+#    "fsspec>=2023.5.0",
+#    "typing-inspect==0.8.0",
+#    "typing_extensions==4.5.0",
+#]
 
 # NOTE: if python version >= 3.9, install tiktoken
 # else install transformers
-if sys.version_info >= (3, 9):
-    install_requires.extend(["tiktoken"])
-else:
-    install_requires.extend(["transformers"])
+#if sys.version_info >= (3, 9):
+#    install_requires.extend(["tiktoken"])
+#else:
+#    install_requires.extend(["transformers"])
 
 setup(
     author="Jerry Liu",
