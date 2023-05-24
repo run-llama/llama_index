@@ -16,6 +16,7 @@ from llama_index.indices.query.query_transform.prompts import (
 )
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
+from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.response.schema import Response
@@ -85,7 +86,7 @@ class HyDEQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
         hyde_prompt: Optional[Prompt] = None,
         include_original: bool = True,
     ) -> None:
@@ -134,7 +135,7 @@ class DecomposeQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
         decompose_query_prompt: Optional[DecomposeQueryTransformPrompt] = None,
         verbose: bool = False,
     ) -> None:
@@ -219,7 +220,7 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
         step_decompose_query_prompt: Optional[StepDecomposeQueryTransformPrompt] = None,
         verbose: bool = False,
     ) -> None:

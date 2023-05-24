@@ -4,12 +4,13 @@ Contains parsers for mp3, mp4 files.
 
 """
 from pathlib import Path
-from typing import Any, Dict, cast
+from typing import Any, Dict, List, Optional, cast
 
-from llama_index.readers.file.base_parser import BaseParser
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document
 
 
-class VideoAudioParser(BaseParser):
+class VideoAudioReader(BaseReader):
     """Video audio parser.
 
     Extract text from transcript of video/audio files.
@@ -17,12 +18,10 @@ class VideoAudioParser(BaseParser):
     """
 
     def __init__(self, *args: Any, model_version: str = "base", **kwargs: Any) -> None:
-        """Init params."""
+        """Init parser."""
         super().__init__(*args, **kwargs)
         self._model_version = model_version
 
-    def _init_parser(self) -> Dict:
-        """Init parser."""
         try:
             import whisper
         except ImportError:
@@ -34,9 +33,11 @@ class VideoAudioParser(BaseParser):
 
         model = whisper.load_model(self._model_version)
 
-        return {"model": model}
+        self.parser_config = {"model": model}
 
-    def parse_file(self, file: Path, errors: str = "ignore") -> str:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
         import whisper
 
@@ -60,4 +61,4 @@ class VideoAudioParser(BaseParser):
 
         transcript = result["text"]
 
-        return transcript
+        return [Document(transcript, extra_info=extra_info)]

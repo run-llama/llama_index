@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
+import fsspec
 
 DEFAULT_COLLECTION = "data"
 
@@ -28,7 +29,9 @@ class BaseInMemoryKVStore(BaseKVStore):
     """Base in-memory key-value store."""
 
     @abstractmethod
-    def persist(self, persist_path: str) -> None:
+    def persist(
+        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
+    ) -> None:
         pass
 
     @classmethod

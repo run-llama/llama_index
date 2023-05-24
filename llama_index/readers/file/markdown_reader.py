@@ -5,12 +5,13 @@ Contains parser for md files.
 """
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
-from llama_index.readers.file.base_parser import BaseParser
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document
 
 
-class MarkdownParser(BaseParser):
+class MarkdownReader(BaseReader):
     """Markdown parser.
 
     Extract text from markdown files.
@@ -98,16 +99,18 @@ class MarkdownParser(BaseParser):
         markdown_tups = self.markdown_to_tups(content)
         return markdown_tups
 
-    def parse_file(
-        self, filepath: Path, errors: str = "ignore"
-    ) -> Union[str, List[str]]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file into string."""
-        tups = self.parse_tups(filepath, errors=errors)
+        tups = self.parse_tups(file)
         results = []
         # TODO: don't include headers right now
         for header, value in tups:
             if header is None:
-                results.append(value)
+                results.append(Document(value, extra_info=extra_info))
             else:
-                results.append(f"\n\n{header}\n{value}")
+                results.append(
+                    Document(f"\n\n{header}\n{value}", extra_info=extra_info)
+                )
         return results

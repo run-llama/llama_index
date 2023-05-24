@@ -112,9 +112,9 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
       (is it temporal-related?)
     - If yes, sorts nodes by date.
     - For each node, look at subsequent nodes and filter out nodes
-        that have high embedding similarity with the current node.
-        (because this means )
-
+      that have high embedding similarity with the current node.
+      Because this means the subsequent node may have overlapping content
+      with the current node but is also out of date
     """
 
     service_context: ServiceContext

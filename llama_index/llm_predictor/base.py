@@ -86,6 +86,8 @@ def _get_response_gen(openai_response_stream: Generator) -> Generator:
 class BaseLLMPredictor(Protocol):
     """Base LLM Predictor."""
 
+    callback_manager: CallbackManager
+
     @abstractmethod
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""

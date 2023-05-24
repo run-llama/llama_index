@@ -1,25 +1,26 @@
 import re
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
 
-from llama_index.readers.file.base_parser import BaseParser
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document
 
 
-class IPYNBParser(BaseParser):
+class IPYNBReader(BaseReader):
     """Image parser."""
 
     def __init__(
         self,
         parser_config: Optional[Dict] = None,
+        concatenate: bool = False,
     ):
         """Init params."""
         self._parser_config = parser_config
+        self._concatenate = concatenate
 
-    def _init_parser(self) -> Dict:
-        """Init parser."""
-        return {}
-
-    def parse_file(self, file: Path, errors: str = "ignore") -> List[str]:
+    def load_data(
+        self, file: Path, extra_info: Optional[Dict] = None
+    ) -> List[Document]:
         """Parse file."""
 
         if file.name.endswith(".ipynb"):
@@ -29,7 +30,12 @@ class IPYNBParser(BaseParser):
                 raise ImportError("Please install nbconvert 'pip install nbconvert' ")
         string = nbconvert.exporters.ScriptExporter().from_file(file)[0]
         # split each In[] cell into a separate string
-        split = re.split(r"In\[\d+\]:", string)
+        splits = re.split(r"In\[\d+\]:", string)
         # remove the first element, which is empty
-        split.pop(0)
-        return split
+        splits.pop(0)
+
+        if self._concatenate:
+            docs = [Document(text="\n\n".join(splits), extra_info=extra_info)]
+        else:
+            docs = [Document(text=s, extra_info=extra_info) for s in splits]
+        return docs
