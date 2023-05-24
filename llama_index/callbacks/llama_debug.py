@@ -152,7 +152,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         self._event_pairs_by_id = defaultdict(list)
         self._sequential_events = []
 
-    def launch(self, run_id: str | None = None) -> None:
+    def launch(self, run_id: Optional[str] = None) -> None:
         """Launch a run."""
         self._trace_map = defaultdict(list)
         self._cur_run_id = run_id
