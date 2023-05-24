@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List, Optional, Sequence, cast
+from typing import Any, List, Optional, Sequence, cast
 
 from langchain.input import get_color_mapping, print_text
 
@@ -45,6 +45,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         query_engine_tools: Sequence[QueryEngineTool],
         verbose: bool = True,
         use_async: bool = True,
+        **kwargs: Any,
     ) -> None:
         self._question_gen = question_gen
         self._response_synthesizer = response_synthesizer
@@ -54,6 +55,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         }
         self._verbose = verbose
         self._use_async = use_async
+        super().__init__(**kwargs)
 
     @classmethod
     def from_defaults(

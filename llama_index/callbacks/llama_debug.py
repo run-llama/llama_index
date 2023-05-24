@@ -8,6 +8,7 @@ from llama_index.callbacks.schema import (
     CBEventType,
     EventStats,
     TIMESTAMP_FORMAT,
+    BASE_TRACE_ID
 )
 
 
@@ -34,8 +35,11 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
     ) -> None:
         """Initialize the llama debug handler."""
-        self._events: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
+        self._event_pairs_by_type: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
+        self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
         self._sequential_events: List[CBEvent] = []
+        self._cur_run_id = None
+        self._trace_map = defaultdict(list)
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )
@@ -61,7 +65,8 @@ class LlamaDebugHandler(BaseCallbackHandler):
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
-        self._events[event.event_type].append(event)
+        self._event_pairs_by_type[event.event_type].append(event)
+        self._event_pairs_by_id[event.id_].append(event)
         self._sequential_events.append(event)
         return event.id_
 
@@ -81,13 +86,15 @@ class LlamaDebugHandler(BaseCallbackHandler):
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
-        self._events[event.event_type].append(event)
+        self._event_pairs_by_type[event.event_type].append(event)
+        self._event_pairs_by_id[event.id_].append(event)
         self._sequential_events.append(event)
+        self._trace_map = defaultdict(list)
 
     def get_events(self, event_type: Optional[CBEventType] = None) -> List[CBEvent]:
         """Get all events for a specific event type."""
         if event_type is not None:
-            return self._events[event_type]
+            return self._event_pairs_by_type[event_type]
 
         return self._sequential_events
 
@@ -125,13 +132,13 @@ class LlamaDebugHandler(BaseCallbackHandler):
     ) -> List[List[CBEvent]]:
         """Pair events by ID, either all events or a sepcific type."""
         if event_type is not None:
-            return self._get_event_pairs(self._events[event_type])
+            return self._get_event_pairs(self._event_pairs_by_type[event_type])
 
         return self._get_event_pairs(self._sequential_events)
 
     def get_llm_inputs_outputs(self) -> List[List[CBEvent]]:
         """Get the exact LLM inputs and outputs."""
-        return self._get_event_pairs(self.events[CBEventType.LLM])
+        return self._get_event_pairs(self._event_pairs_by_type[CBEventType.LLM])
 
     def get_event_time_info(
         self, event_type: Optional[CBEventType] = None
@@ -141,12 +148,45 @@ class LlamaDebugHandler(BaseCallbackHandler):
 
     def flush_event_logs(self) -> None:
         """Clear all events from memory."""
-        self._events = defaultdict(list)
+        self._event_pairs_by_type = defaultdict(list)
+        self._event_pairs_by_id = defaultdict(list)
         self._sequential_events = []
 
+    def launch(self, run_id: str | None = None) -> None:
+        """Launch a run."""
+        self._trace_map = defaultdict(list)
+        self._cur_run_id = run_id
+
+    def shutdown(self, run_id: Optional[str] = None, trace_map: Optional[Dict[str, List[str]]] = None) -> None:
+        """Shutdown the current run."""
+        self._trace_map = trace_map or defaultdict(list)
+
+    def _print_trace_map(self, cur_event_id: str, level: int = 0) -> None:
+        """Recursively print trace map to terminal for debugging."""
+        event_pair = self._event_pairs_by_id[cur_event_id]
+        if event_pair:
+            time_stats = self._get_time_stats_from_event_pairs([event_pair])
+            indent = ' ' * level * 2
+            print(f"{indent}|_{event_pair[0].event_type} -> {time_stats.total_secs} seconds", flush=True)
+
+        child_event_ids = self._trace_map[cur_event_id]
+        for child_event_id in child_event_ids:
+            self._print_trace_map(child_event_id, level=level + 1)
+
+    def print_trace_map(self) -> None:
+        """Print simple trace map to terminal for debugging of the most recent run."""
+        print('*' * 10)
+        print(f"Run: {self._cur_run_id}")
+        self._print_trace_map(BASE_TRACE_ID, level=1)
+        print('*' * 10)
+
     @property
-    def events(self) -> Dict[CBEventType, List[CBEvent]]:
-        return self._events
+    def event_pairs_by_type(self) -> Dict[CBEventType, List[CBEvent]]:
+        return self._event_pairs_by_type
+
+    @property
+    def events_pairs_by_id(self) -> Dict[str, List[CBEvent]]:
+        return self._event_pairs_by_id
 
     @property
     def sequential_events(self) -> List[CBEvent]:

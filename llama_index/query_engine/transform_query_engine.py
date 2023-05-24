@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
@@ -25,10 +25,12 @@ class TransformQueryEngine(BaseQueryEngine):
         query_engine: BaseQueryEngine,
         query_transform: BaseQueryTransform,
         transform_extra_info: Optional[dict] = None,
+        **kwargs: Any,
     ) -> None:
         self._query_engine = query_engine
         self._query_transform = query_transform
         self._transform_extra_info = transform_extra_info
+        super().__init__(**kwargs)
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         query_bundle = self._query_transform.run(

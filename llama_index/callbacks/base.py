@@ -2,9 +2,11 @@ import sys
 from functools import wraps
 import uuid
 from abc import ABC, abstractmethod
+from collections import defaultdict
+from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, LEAF_EVENTS, BASE_TRACE_ID
 
 
 class BaseCallbackHandler(ABC):
@@ -38,57 +40,14 @@ class BaseCallbackHandler(ABC):
         **kwargs: Any
     ) -> None:
         """Run when an event ends."""
-
-
-leaf_events = [
-    CBEventType.CHUNKING,
-    CBEventType.LLM,
-    CBEventType.EMBEDDING
-]
-
-
-class TraceCalls(object):
-    """ Use as a decorator on functions that should be traced. Several
-        functions can be decorated - they will all be indented according
-        to their call depth.
-    """
-    def __init__(self, stream=sys.stdout, indent_step=2, show_ret=False, is_start=False, is_end=False):
-        self.stream = stream
-        self.indent_step = indent_step
-        self.show_ret = show_ret
-        self.is_start = is_start
-        self.is_end = is_end
-        self.parent_id = 'root'
-
-        # This is a class attribute since we want to share the indentation
-        # level between different traced functions, in case they call
-        # each other.
-        TraceCalls.cur_indent = 0
-        TraceCalls.run_map = {}
-
-    def __call__(self, fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            indent = ' ' * TraceCalls.cur_indent
-            argstr = ', '.join(
-                [repr(a) for a in args] +
-                ["%s=%s" % (a, repr(b)) for a, b in kwargs.items()])
-            
-            if self.is_start:
-                self.stream.write('%s%s(%s)\n' % (indent, fn.__name__, argstr.split(', ')[1]))
-
-            if self.is_start and args[1] not in leaf_events:
-                TraceCalls.cur_indent += self.indent_step
-            ret = fn(*args, **kwargs)
-
-            if self.is_end and args[1] not in leaf_events:
-                TraceCalls.cur_indent -= self.indent_step
-
-            if self.show_ret:
-                self.stream.write('%s--> %s\n' % (indent, ret))
-            return ret
-        return wrapper
-
+    
+    @abstractmethod
+    def launch(self, run_id: Optional[str] = None) -> None:
+        """Run when an overall run is launched."""
+    
+    @abstractmethod
+    def shutdown(self, run_id: Optional[str] = None, trace_map: Optional[Dict[str, List[str]]] = None) -> None:
+        """Run when an overall run is exited."""
 
 
 class CallbackManager(BaseCallbackHandler, ABC):
@@ -102,8 +61,10 @@ class CallbackManager(BaseCallbackHandler, ABC):
     def __init__(self, handlers: List[BaseCallbackHandler]):
         """Initialize the manager with a list of handlers."""
         self.handlers = handlers
+        self._trace_map = defaultdict(list)
+        self._trace_stack = [BASE_TRACE_ID]
+        self._running_id = None
 
-    @TraceCalls(is_start=True)
     def on_event_start(
         self,
         event_type: CBEventType,
@@ -113,12 +74,16 @@ class CallbackManager(BaseCallbackHandler, ABC):
     ) -> str:
         """Run handlers when an event starts and return id of event."""
         event_id = event_id or str(uuid.uuid4())
+        self._trace_map[self._trace_stack[-1]].append(event_id)
         for handler in self.handlers:
             if event_type not in handler.event_starts_to_ignore:
                 handler.on_event_start(event_type, payload, event_id=event_id, **kwargs)
+        
+        if event_type not in LEAF_EVENTS:
+            self._trace_stack.append(event_id)
+        
         return event_id
 
-    @TraceCalls(is_end=True)
     def on_event_end(
         self,
         event_type: CBEventType,
@@ -131,6 +96,9 @@ class CallbackManager(BaseCallbackHandler, ABC):
         for handler in self.handlers:
             if event_type not in handler.event_ends_to_ignore:
                 handler.on_event_end(event_type, payload, event_id=event_id, **kwargs)
+        
+        if event_type not in LEAF_EVENTS:
+            self._trace_stack.pop()
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""
@@ -143,3 +111,32 @@ class CallbackManager(BaseCallbackHandler, ABC):
     def set_handlers(self, handlers: List[BaseCallbackHandler]) -> None:
         """Set handlers as the only handlers on the callback manager."""
         self.handlers = handlers
+
+    @contextmanager
+    def as_trace(self, run_id):
+        """Context manager tracer for lanching and shutdown of runs."""
+        self.launch(run_id=run_id)
+        yield
+        self.shutdown(run_id=run_id)
+
+    def launch(self, run_id: Optional[str] = None) -> None:
+        """Run when an overall run is launched."""
+        if not self._running_id:
+            self._trace_map = defaultdict(list)
+            self._trace_stack = [BASE_TRACE_ID]
+
+            for handler in self.handlers:
+                handler.launch(run_id=run_id)
+            
+            self._running_id = run_id
+    
+    def shutdown(self, run_id: Optional[str] = None, trace_map: Optional[Dict[str, List[str]]] = None) -> None:
+        """Run when an overall run is exited."""
+        if run_id is not None and run_id == self._running_id:
+            for handler in self.handlers:
+                handler.shutdown(run_id=run_id, trace_map=self._trace_map)
+            self._running_id = None
+
+    @property
+    def trace_map(self) -> Dict[str, List[str]]:
+        return self._trace_map

@@ -33,13 +33,13 @@ class RetrieverQueryEngine(BaseQueryEngine):
         self,
         retriever: BaseRetriever,
         response_synthesizer: Optional[ResponseSynthesizer] = None,
-        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
         self._retriever = retriever
         self._response_synthesizer = (
             response_synthesizer or ResponseSynthesizer.from_args()
         )
-        self.callback_manager = callback_manager or CallbackManager([])
+        super().__init__(**kwargs)
 
     @classmethod
     def from_args(
