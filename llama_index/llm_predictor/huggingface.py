@@ -235,7 +235,8 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
                 "formatted_prompt": formatted_prompt,
                 "formatted_prompt_tokens_count": inputs["input_ids"].size(1),
                 "prediction_tokens_count": len(completion_tokens),
-                "total_tokens_used": len(completion_tokens) + inputs["input_ids"].size(1),
+                "total_tokens_used": len(completion_tokens)
+                + inputs["input_ids"].size(1),
             },
             event_id=event_id,
         )

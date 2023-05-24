@@ -69,7 +69,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """Store event start data by event type.
 
@@ -96,7 +96,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Store event end data by event type.
 
@@ -110,7 +110,10 @@ class WandbCallbackHandler(BaseCallbackHandler):
         self._events_by_id[event.id_].append(event)
 
         assert len(self._events_by_id[event.id_]) == 2
-        assert self._events_by_id[event.id_][0].event_type == self._events_by_id[event.id_][1].event_type
+        assert (
+            self._events_by_id[event.id_][0].event_type
+            == self._events_by_id[event.id_][1].event_type
+        )
 
         if self._is_query:
             self._cache_query_events.append(event)
@@ -122,7 +125,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
             if self._wandb.run is not None:
                 self._wandb.run.log({"query_trace": query_trace})
-    
+
             self._cache_query_events = []
             self._is_query = False
 
@@ -133,14 +136,22 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
             llm_table = self._wandb.Table(
                 columns=[
-                    "event_id", "event_start_time", "event_end_time", "inputs", "outputs", "formatted_prompt_tokens_count", "prediction_tokens_count", "total_token_count"]
+                    "event_id",
+                    "event_start_time",
+                    "event_end_time",
+                    "inputs",
+                    "outputs",
+                    "formatted_prompt_tokens_count",
+                    "prediction_tokens_count",
+                    "total_token_count",
+                ]
             )
 
             len(llm_usage_info)
             llm_table.add_data(*llm_usage_info)
             self._wandb.run.log({"llm_tracker": llm_table})
 
-    def _get_llm_usage_info(self, llm_id):
+    def _get_llm_usage_info(self, llm_id: str) -> List[Any]:
         event_pair = self._events_by_id[llm_id]
         start_time, end_time = event_pair[0].time, event_pair[1].time
 
@@ -164,7 +175,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             event_pair[1].payload["total_tokens_used"],
         ]
 
-    def _query_trace_tree(self, query_event_pairs):
+    def _query_trace_tree(self, query_event_pairs: List[List[CBEvent]]):
         query_span = None
         retrive_span = None
         synth_span = None
@@ -192,19 +203,19 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         return query_span
 
-    def _convert_event_to_wb_span(self, event_pair):
+    def _convert_event_to_wb_span(self, event_pair: List[CBEvent]):
         start_time_ms, end_time_ms = self._get_time_in_ms(event_pair)
 
         event_type = event_pair[0].event_type
 
         if event_type == CBEventType.QUERY:
-            span_kind = self._trace_tree.SpanKind.CHAIN # read QUERY
+            span_kind = self._trace_tree.SpanKind.CHAIN  # read QUERY
         elif event_type == CBEventType.RETRIEVE:
-            span_kind = self._trace_tree.SpanKind.AGENT # read RETRIEVE
+            span_kind = self._trace_tree.SpanKind.AGENT  # read RETRIEVE
         elif event_type == CBEventType.EMBEDDING:
-            span_kind = self._trace_tree.SpanKind.TOOL # read EMBEDDING
+            span_kind = self._trace_tree.SpanKind.TOOL  # read EMBEDDING
         elif event_type == CBEventType.SYNTHESIZE:
-            span_kind = self._trace_tree.SpanKind.AGENT # read SYNTHESIZE
+            span_kind = self._trace_tree.SpanKind.AGENT  # read SYNTHESIZE
         elif event_type == CBEventType.LLM:
             span_kind = self._trace_tree.SpanKind.LLM
 
@@ -217,12 +228,12 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         return wb_span
 
-    def _get_time_in_ms(self, event_pair):
+    def _get_time_in_ms(self, event_pair: List[CBEvent]):
         start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
         end_time = datetime.strptime(event_pair[1].time, TIMESTAMP_FORMAT)
 
-        start_time = int((start_time - datetime(1970,1,1)).total_seconds()*1000)
-        end_time = int((end_time - datetime(1970,1,1)).total_seconds()*1000)
+        start_time = int((start_time - datetime(1970, 1, 1)).total_seconds() * 1000)
+        end_time = int((end_time - datetime(1970, 1, 1)).total_seconds() * 1000)
 
         return start_time, end_time
 
