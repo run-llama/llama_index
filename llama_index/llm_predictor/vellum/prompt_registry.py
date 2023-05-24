@@ -110,13 +110,12 @@ class VellumPromptRegistry:
     def _register_prompt(self, prompt: Prompt) -> VellumRegisteredPrompt:
         """Registers a prompt with Vellum.
 
-        Prompts should ideally have `vellum_label` and `vellum_name` properties
-        within prompt_kwargs set. These are used to identify the entities
-        associated with the prompt within Vellum.
-
         By registering a prompt, Vellum will:
-        1) Create a Sandbox for the prompt.
-        2) Create a Deployment for the prompt.
+        1) Create a Sandbox for the prompt so that you can experiment with the
+              prompt, LLM provider, model, and parameters via Vellum's UI.
+        2) Deployment for the prompt so that you can monitor requests and
+            update the prompt, LLM provider, model, and parameters via Vellum's UI
+            without requiring code changes.
         """
 
         # Label represents a human-friendly name that'll be used for all created
