@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Callable, Optional, Sequence
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
@@ -39,7 +40,7 @@ class RouterQueryEngine(BaseQueryEngine):
         self._query_engines = [x.query_engine for x in query_engine_tools]
         self._metadatas = [x.metadata for x in query_engine_tools]
 
-        callback_manager = None
+        callback_manager = CallbackManager([])
         if len(query_engine_tools) > 0:
             callback_manager = query_engine_tools[0].query_engine.callback_manager
         super().__init__(callback_manager=callback_manager, **kwargs)

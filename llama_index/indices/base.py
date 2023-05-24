@@ -68,7 +68,6 @@ class BaseGPTIndex(Generic[IS], ABC):
             self._index_struct = index_struct
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
-
     @classmethod
     def from_documents(
         cls: Type[IndexType],
@@ -180,9 +179,13 @@ class BaseGPTIndex(Generic[IS], ABC):
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
         with self._service_context.callback_manager.as_trace("insert"):
-            nodes = self.service_context.node_parser.get_nodes_from_documents([document])
+            nodes = self.service_context.node_parser.get_nodes_from_documents(
+                [document]
+            )
             self.insert_nodes(nodes, **insert_kwargs)
-            self.docstore.set_document_hash(document.get_doc_id(), document.get_doc_hash())
+            self.docstore.set_document_hash(
+                document.get_doc_id(), document.get_doc_hash()
+            )
 
     @abstractmethod
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
@@ -228,7 +231,9 @@ class BaseGPTIndex(Generic[IS], ABC):
         with self._service_context.callback_manager.as_trace("refresh"):
             refreshed_documents = [False] * len(documents)
             for i, document in enumerate(documents):
-                existing_doc_hash = self._docstore.get_document_hash(document.get_doc_id())
+                existing_doc_hash = self._docstore.get_document_hash(
+                    document.get_doc_id()
+                )
                 if existing_doc_hash != document.get_doc_hash():
                     self.update(document, **update_kwargs)
                     refreshed_documents[i] = True

@@ -58,14 +58,16 @@ class ComposableGraph:
                 for index in children_indices:
                     if index.index_struct.summary is None:
                         raise ValueError(
-                            "Summary must be set for children indices. If the index does "
-                            "a summary (through index.index_struct.summary), then it must "
-                            "be specified with then `index_summaries` "
-                            "argument in this function."
-                            "We will support automatically setting the summary in the "
-                            "future."
+                            "Summary must be set for children indices. "
+                            "If the index does a summary "
+                            "(through index.index_struct.summary), then "
+                            "it must be specified with then `index_summaries` "
+                            "argument in this function. We will support "
+                            "automatically setting the summary in the future."
                         )
-                index_summaries = [index.index_struct.summary for index in children_indices]
+                index_summaries = [
+                    index.index_struct.summary for index in children_indices
+                ]
             else:
                 # set summaries for each index
                 for index, summary in zip(children_indices, index_summaries):
@@ -92,9 +94,9 @@ class ComposableGraph:
                 **kwargs,
             )
             # type: ignore
-            all_indices: List[BaseGPTIndex] = cast(List[BaseGPTIndex], children_indices) + [
-                root_index
-            ]
+            all_indices: List[BaseGPTIndex] = cast(
+                List[BaseGPTIndex], children_indices
+            ) + [root_index]
 
             return cls(
                 all_indices={index.index_id: index for index in all_indices},

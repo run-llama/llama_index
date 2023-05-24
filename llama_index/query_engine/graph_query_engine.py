@@ -59,10 +59,12 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
             query_engine = self._custom_query_engines[index_id]
         else:
             query_engine = self._graph.get_index(index_id).as_query_engine()
-        
+
         retrieve_event_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = query_engine.retrieve(query_bundle)
-        self.callback_manager.on_event_end(CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_event_id)
+        self.callback_manager.on_event_end(
+            CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_event_id
+        )
 
         if self._recursive:
             # do recursion here
@@ -74,15 +76,27 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
                 )
                 nodes_for_synthesis.append(node_with_score)
                 additional_source_nodes.extend(source_nodes)
-            synth_event_id = self.callback_manager.on_event_start(CBEventType.SYNTHESIZE)
+            synth_event_id = self.callback_manager.on_event_start(
+                CBEventType.SYNTHESIZE
+            )
             response = query_engine.synthesize(
                 query_bundle, nodes_for_synthesis, additional_source_nodes
             )
-            self.callback_manager.on_event_end(CBEventType.SYNTHESIZE, payload={"response": response}, event_id=synth_event_id)
+            self.callback_manager.on_event_end(
+                CBEventType.SYNTHESIZE,
+                payload={"response": response},
+                event_id=synth_event_id,
+            )
         else:
-            synth_event_id = self.callback_manager.on_event_start(CBEventType.SYNTHESIZE)
+            synth_event_id = self.callback_manager.on_event_start(
+                CBEventType.SYNTHESIZE
+            )
             response = query_engine.synthesize(query_bundle, nodes)
-            self.callback_manager.on_event_end(CBEventType.SYNTHESIZE, payload={"response": response}, event_id=synth_event_id)
+            self.callback_manager.on_event_end(
+                CBEventType.SYNTHESIZE,
+                payload={"response": response},
+                event_id=synth_event_id,
+            )
 
         self.callback_manager.on_event_end(CBEventType.QUERY, event_id=event_id)
         return response

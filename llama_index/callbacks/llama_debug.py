@@ -8,7 +8,7 @@ from llama_index.callbacks.schema import (
     CBEventType,
     EventStats,
     TIMESTAMP_FORMAT,
-    BASE_TRACE_ID
+    BASE_TRACE_ID,
 )
 
 
@@ -38,8 +38,8 @@ class LlamaDebugHandler(BaseCallbackHandler):
         self._event_pairs_by_type: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
         self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
         self._sequential_events: List[CBEvent] = []
-        self._cur_run_id = None
-        self._trace_map = defaultdict(list)
+        self._cur_run_id: Optional[str] = None
+        self._trace_map: Dict[str, List[str]] = defaultdict(list)
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )
@@ -54,7 +54,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """Store event start data by event type.
 
@@ -75,7 +75,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Store event end data by event type.
 
@@ -157,7 +157,11 @@ class LlamaDebugHandler(BaseCallbackHandler):
         self._trace_map = defaultdict(list)
         self._cur_run_id = run_id
 
-    def shutdown(self, run_id: Optional[str] = None, trace_map: Optional[Dict[str, List[str]]] = None) -> None:
+    def shutdown(
+        self,
+        run_id: Optional[str] = None,
+        trace_map: Optional[Dict[str, List[str]]] = None,
+    ) -> None:
         """Shutdown the current run."""
         self._trace_map = trace_map or defaultdict(list)
 
@@ -166,8 +170,12 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_pair = self._event_pairs_by_id[cur_event_id]
         if event_pair:
             time_stats = self._get_time_stats_from_event_pairs([event_pair])
-            indent = ' ' * level * 2
-            print(f"{indent}|_{event_pair[0].event_type} -> {time_stats.total_secs} seconds", flush=True)
+            indent = " " * level * 2
+            print(
+                f"{indent}|_{event_pair[0].event_type} -> ",
+                f"{time_stats.total_secs} seconds",
+                flush=True,
+            )
 
         child_event_ids = self._trace_map[cur_event_id]
         for child_event_id in child_event_ids:
@@ -175,10 +183,10 @@ class LlamaDebugHandler(BaseCallbackHandler):
 
     def print_trace_map(self) -> None:
         """Print simple trace map to terminal for debugging of the most recent run."""
-        print('*' * 10)
+        print("*" * 10)
         print(f"Run: {self._cur_run_id}")
         self._print_trace_map(BASE_TRACE_ID, level=1)
-        print('*' * 10)
+        print("*" * 10)
 
     @property
     def event_pairs_by_type(self) -> Dict[CBEventType, List[CBEvent]]:

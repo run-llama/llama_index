@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 TIMESTAMP_FORMAT = "%m/%d/%Y, %H:%M:%S.%f"
 
 # base trace_id for the tracemap in callback_manager
-BASE_TRACE_ID = 'root'
+BASE_TRACE_ID = "root"
 
 
 class CBEventType(str, Enum):
@@ -37,11 +37,7 @@ class CBEventType(str, Enum):
 
 
 # events that will never have children events
-LEAF_EVENTS = (
-    CBEventType.CHUNKING,
-    CBEventType.LLM,
-    CBEventType.EMBEDDING
-)
+LEAF_EVENTS = (CBEventType.CHUNKING, CBEventType.LLM, CBEventType.EMBEDDING)
 
 
 @dataclass

@@ -169,7 +169,9 @@ class BaseEmbedding:
                 result_ids.extend(cur_batch_ids)
                 result_embeddings.extend(embeddings)
                 self.callback_manager.on_event_end(
-                    CBEventType.EMBEDDING, payload={"num_nodes": len(embeddings)}, event_id=event_id
+                    CBEventType.EMBEDDING,
+                    payload={"num_nodes": len(embeddings)},
+                    event_id=event_id,
                 )
 
                 cur_batch = []
@@ -205,7 +207,9 @@ class BaseEmbedding:
                 )
                 result_ids.extend(cur_batch_ids)
                 self.callback_manager.on_event_end(
-                    CBEventType.EMBEDDING, payload={"num_nodes": len(cur_batch_ids)}, event_id=event_id
+                    CBEventType.EMBEDDING,
+                    payload={"num_nodes": len(cur_batch_ids)},
+                    event_id=event_id,
                 )
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists

@@ -66,7 +66,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         # num_steps must be provided if early_stopping is False
         if not self._early_stopping and self._num_steps is None:
             raise ValueError("Must specify num_steps if early_stopping is False.")
-        
+
         callback_manager = self._query_engine.callback_manager
         super().__init__(callback_manager=callback_manager, **kwargs)
 
@@ -81,7 +81,11 @@ class MultiStepQueryEngine(BaseQueryEngine):
             additional_source_nodes=source_nodes,
         )
         final_response.extra_info = extra_info
-        self.callback_manager.on_event_end(CBEventType.SYNTHESIZE, payload={"response": final_response}, event_id=synth_event_id)
+        self.callback_manager.on_event_end(
+            CBEventType.SYNTHESIZE,
+            payload={"response": final_response},
+            event_id=synth_event_id,
+        )
 
         self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_event_id)
         return final_response
@@ -97,7 +101,11 @@ class MultiStepQueryEngine(BaseQueryEngine):
             additional_source_nodes=source_nodes,
         )
         final_response.extra_info = extra_info
-        self.callback_manager.on_event_end(CBEventType.SYNTHESIZE, payload={"response": final_response}, event_id=synth_event_id)
+        self.callback_manager.on_event_end(
+            CBEventType.SYNTHESIZE,
+            payload={"response": final_response},
+            event_id=synth_event_id,
+        )
 
         self.callback_manager.on_event_end(CBEventType.QUERY, event_id=event_id)
         return final_response

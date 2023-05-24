@@ -1,10 +1,8 @@
-import sys
-from functools import wraps
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Generator
 
 from llama_index.callbacks.schema import CBEventType, LEAF_EVENTS, BASE_TRACE_ID
 
@@ -40,13 +38,17 @@ class BaseCallbackHandler(ABC):
         **kwargs: Any
     ) -> None:
         """Run when an event ends."""
-    
+
     @abstractmethod
     def launch(self, run_id: Optional[str] = None) -> None:
         """Run when an overall run is launched."""
-    
+
     @abstractmethod
-    def shutdown(self, run_id: Optional[str] = None, trace_map: Optional[Dict[str, List[str]]] = None) -> None:
+    def shutdown(
+        self,
+        run_id: Optional[str] = None,
+        trace_map: Optional[Dict[str, List[str]]] = None,
+    ) -> None:
         """Run when an overall run is exited."""
 
 
@@ -61,9 +63,9 @@ class CallbackManager(BaseCallbackHandler, ABC):
     def __init__(self, handlers: List[BaseCallbackHandler]):
         """Initialize the manager with a list of handlers."""
         self.handlers = handlers
-        self._trace_map = defaultdict(list)
-        self._trace_stack = [BASE_TRACE_ID]
-        self._running_id = None
+        self._trace_map: Dict[str, List[str]] = defaultdict(list)
+        self._trace_stack: List[str] = [BASE_TRACE_ID]
+        self._running_id: Optional[str] = None
 
     def on_event_start(
         self,
@@ -78,10 +80,10 @@ class CallbackManager(BaseCallbackHandler, ABC):
         for handler in self.handlers:
             if event_type not in handler.event_starts_to_ignore:
                 handler.on_event_start(event_type, payload, event_id=event_id, **kwargs)
-        
+
         if event_type not in LEAF_EVENTS:
             self._trace_stack.append(event_id)
-        
+
         return event_id
 
     def on_event_end(
@@ -96,7 +98,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         for handler in self.handlers:
             if event_type not in handler.event_ends_to_ignore:
                 handler.on_event_end(event_type, payload, event_id=event_id, **kwargs)
-        
+
         if event_type not in LEAF_EVENTS:
             self._trace_stack.pop()
 
@@ -113,7 +115,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         self.handlers = handlers
 
     @contextmanager
-    def as_trace(self, run_id):
+    def as_trace(self, run_id: str) -> Generator[None, None, None]:
         """Context manager tracer for lanching and shutdown of runs."""
         self.launch(run_id=run_id)
         yield
@@ -127,10 +129,14 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
             for handler in self.handlers:
                 handler.launch(run_id=run_id)
-            
+
             self._running_id = run_id
-    
-    def shutdown(self, run_id: Optional[str] = None, trace_map: Optional[Dict[str, List[str]]] = None) -> None:
+
+    def shutdown(
+        self,
+        run_id: Optional[str] = None,
+        trace_map: Optional[Dict[str, List[str]]] = None,
+    ) -> None:
         """Run when an overall run is exited."""
         if run_id is not None and run_id == self._running_id:
             for handler in self.handlers:
