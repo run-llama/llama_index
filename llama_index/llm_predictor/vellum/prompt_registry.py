@@ -45,12 +45,12 @@ class VellumPromptRegistry:
         registered prompt in Vellum.
 
         You can reference a previously registered prompt by providing either
-        `vellum_deployment_id` or `vellum_deployment_name` as keyword arguments
-        to `Prompt.prompt_kwargs`.
+        `vellum_deployment_id` or `vellum_deployment_name` as key/value pairs within
+        `Prompt.metadata`.
         """
 
-        deployment_id = initial_prompt.prompt_kwargs.get("vellum_deployment_id")
-        deployment_name = initial_prompt.prompt_kwargs.get("vellum_deployment_name")
+        deployment_id = initial_prompt.metadata.get("vellum_deployment_id")
+        deployment_name = initial_prompt.metadata.get("vellum_deployment_name")
 
         registered_prompt: VellumRegisteredPrompt
 
@@ -121,15 +121,13 @@ class VellumPromptRegistry:
 
         # Label represents a human-friendly name that'll be used for all created
         # entities within Vellum. If not provided, a default will be generated.
-        label = prompt.prompt_kwargs.get(
-            "vellum_label"
-        ) or self._generate_default_label(prompt)
+        label = prompt.metadata.get("vellum_label") or self._generate_default_label(
+            prompt
+        )
 
         # Name represents a kebab-cased unique identifier that'll be used for all
         # created entities within Vellum. If not provided, a default will be generated.
-        name = prompt.prompt_kwargs.get("vellum_name") or self._generate_default_name(
-            label
-        )
+        name = prompt.metadata.get("vellum_name") or self._generate_default_name(label)
 
         # Note: For now, the initial provider, model, and parameters used to register
         # the prompt are hard-coded. You can then update any of these from within

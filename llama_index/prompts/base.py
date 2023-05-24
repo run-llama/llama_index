@@ -34,6 +34,7 @@ class Prompt:
         langchain_prompt_selector: Optional[ConditionalPromptSelector] = None,
         stop_token: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **prompt_kwargs: Any,
     ) -> None:
         """Init params."""
@@ -89,6 +90,11 @@ class Prompt:
         self.output_parser = output_parser
 
         self._original_template = template
+
+        # Metadata is used to pass arbitrary information to other consumers of the
+        # prompt. For example, VellumPromptRegistry uses this to access vellum-specific
+        # identifiers that users can pass along with the prompt.
+        self.metadata = metadata or {}
 
     @property
     def original_template(self) -> str:
