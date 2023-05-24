@@ -50,10 +50,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
             print("W&b run URL: ", run.url)
 
         self._events_by_id: Dict[str, List[CBEvent]] = {}
-        self._llm_events = []
-
-        self._cache_query_events = []
-        self._is_query = False
+        self._cache_query_events: List[CBEvent] = []
+        self._is_query: bool = False
 
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
@@ -131,7 +129,6 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         # Log independent LLM events to trace view
         if event_type == CBEventType.LLM:
-            self._llm_events.append(event)
             llm_usage_info = self._get_llm_usage_info(event.id_)
 
             llm_table = self._wandb.Table(
