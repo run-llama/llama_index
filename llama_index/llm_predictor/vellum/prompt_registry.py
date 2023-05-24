@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Any
+from typing import Tuple, List, Any, TYPE_CHECKING
 from uuid import uuid4
 
 from llama_index import Prompt
@@ -8,6 +8,10 @@ from llama_index.llm_predictor.vellum.types import (
     VellumRegisteredPrompt,
     VellumCompiledPrompt,
 )
+from llama_index.llm_predictor.vellum.utils import convert_to_kebab_case
+
+if TYPE_CHECKING:
+    import vellum  # noqa: F401
 
 
 class VellumPromptRegistry:
@@ -124,46 +128,36 @@ class VellumPromptRegistry:
         # Name represents a kebab-cased unique identifier that'll be used for all
         # created entities within Vellum. If not provided, a default will be generated.
         name = prompt.prompt_kwargs.get("vellum_name") or self._generate_default_name(
-            prompt
+            label
         )
 
-        # TODO: Pass this payload to an API that creates a sandbox,
-        #  model version, and deployment.
-        payload = {  # noqa
-            "name": name,
-            "label": label,
-            "provider": "OPENAI",
-            "model": "text-davinci-003",
-            "prompt": self._construct_prompt_data(prompt),
-        }
+        # Note: For now, the initial provider, model, and parameters used to register
+        # the prompt are hard-coded. You can then update any of these from within
+        # Vellum's UI. As a future improvement, we could allow these to be specified
+        # upfront.
+        provider, model, params = self._get_default_llm_meta()
+        prompt_info = self._construct_prompt_info(prompt, for_chat_model=False)
 
-        response: dict = {
-            "id": "6f7b18ba-83f4-4fff-baec-56bbbb9ff335",
-            "sandbox_snapshot": {
-                "id": "512f1a46-77e5-4721-8ae0-76a0c2888f29",
-                "prompt_id": "6f7b18ba-83f4-4fff-baec-56bbbb9ff335",
+        resp = self._vellum_client.registered_prompts.register_prompt(
+            label=label,
+            name=name,
+            prompt=prompt_info,
+            provider=provider,
+            model=model,
+            parameters=params,
+            meta={
+                "source": "llamaindex",
+                "prompt_type": prompt.prompt_type,
             },
-            "sandbox": {
-                "id": "c2fd5533-3932-454c-b5f1-80aa7a7f1491",
-                "label": label,
-            },
-            "model_version": {
-                "id": "77aacc88-97cb-4b94-915c-7a90be4edd74",
-                "label": label,
-            },
-            "deployment": {
-                "id": "c0f934bd-2e5a-4939-98dc-c772a553a639",
-                "name": name,
-                "label": label,
-            },
-        }
+        )
+
         return VellumRegisteredPrompt(
-            deployment_id=response["deployment"]["id"],
-            deployment_name=response["deployment"]["name"],
-            model_version_id=response["model_version"]["id"],
-            sandbox_id=response["sandbox"]["id"],
-            sandbox_snapshot_id=response["sandbox_snapshot"]["id"],
-            prompt_id=response["sandbox_snapshot"]["prompt_id"],
+            deployment_id=resp.deployment.id,
+            deployment_name=resp.deployment.name,
+            model_version_id=resp.model_version.id,
+            sandbox_id=resp.sandbox.id,
+            sandbox_snapshot_id=resp.sandbox_snapshot.id,
+            prompt_id=resp.prompt.id,
         )
 
     @staticmethod
@@ -171,13 +165,15 @@ class VellumPromptRegistry:
         return f"LlamaIndex Demo: {prompt.prompt_type}"
 
     @staticmethod
-    def _generate_default_name(prompt: Prompt) -> str:
-        return f"llama-index-demo-{prompt.prompt_type}"
+    def _generate_default_name(prompt_label: str) -> str:
+        return convert_to_kebab_case(prompt_label)
 
-    def _construct_prompt_data(
-        self, prompt: Prompt, for_chat_model: bool = False
-    ) -> dict:
+    def _construct_prompt_info(
+        self, prompt: Prompt, for_chat_model: bool = True
+    ) -> vellum.RegisterPromptPromptInfoRequest:
         """Converts a LlamaIndex prompt into Vellum's prompt representation."""
+
+        import vellum
 
         prompt_template = prompt.original_template
         for input_variable in prompt.input_variables:
@@ -185,35 +181,36 @@ class VellumPromptRegistry:
                 input_variable, f"{{ {input_variable} }}"
             )
 
-        block: dict
-        jinja_block = {
-            "id": str(uuid4()),
-            "block_type": "JINJA",
-            "properties": {
-                "template": self._prepare_prompt_jinja_template(
+        block: vellum.PromptTemplateBlockRequest
+        jinja_block = vellum.PromptTemplateBlockRequest(
+            id=str(uuid4()),
+            block_type=vellum.BlockTypeEnum.JINJA,
+            properties=vellum.PromptTemplateBlockPropertiesRequest(
+                template=self._prepare_prompt_jinja_template(
                     prompt.original_template, prompt.input_variables
                 ),
-            },
-        }
+            ),
+        )
         if for_chat_model:
-            block = {
-                "id": str(uuid4()),
-                "block_type": "CHAT_MESSAGE",
-                "properties": {
-                    "chat_role": "SYSTEM",
-                    "blocks": [jinja_block],
-                },
-            }
+            block = vellum.PromptTemplateBlockRequest(
+                id=str(uuid4()),
+                block_type=vellum.BlockTypeEnum.CHAT_MESSAGE,
+                properties=vellum.PromptTemplateBlockPropertiesRequest(
+                    chat_role=vellum.ChatMessageRole.SYSTEM,
+                    blocks=[jinja_block],
+                ),
+            )
         else:
             block = jinja_block
 
-        return {
-            "syntax_version": 2,
-            "block_data": {
-                "version": 1,
-                "blocks": [block],
-            },
-        }
+        return vellum.RegisterPromptPromptInfoRequest(
+            prompt_syntax_version=2,
+            prompt_block_data=vellum.PromptTemplateBlockDataRequest(
+                version=1,
+                blocks=[block],
+            ),
+            input_variables=[],
+        )
 
     def _prepare_prompt_jinja_template(
         self, original_template: str, input_variables: List[str]
@@ -227,3 +224,23 @@ class VellumPromptRegistry:
             )
 
         return prompt_template
+
+    def _get_default_llm_meta(
+        self,
+    ) -> Tuple[vellum.ProviderEnum, str, vellum.RegisterPromptModelParametersRequest]:
+        import vellum
+
+        return (
+            vellum.ProviderEnum.OPENAI,
+            "text-davinci-003",
+            vellum.RegisterPromptModelParametersRequest(
+                temperature=0.0,
+                max_tokens=256,
+                stop=[],
+                top_p=1.0,
+                top_k=0.0,
+                frequency_penalty=0.0,
+                presence_penalty=0.0,
+                logit_bias=None,
+            ),
+        )
