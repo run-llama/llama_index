@@ -179,13 +179,14 @@ class SimpleDirectoryReader(BaseReader):
             if self.file_metadata is not None:
                 metadata = self.file_metadata(str(input_file))
 
-            if input_file.suffix.lower() in self.supported_suffix:
+            file_suffix = input_file.suffix.lower()
+            if file_suffix in self.supported_suffix:
                 # use file readers
-                if input_file.suffix not in self.file_extractor:
+                if file_suffix not in self.file_extractor:
                     # instantiate file reader if not already
-                    reader_cls = DEFAULT_FILE_READER_CLS[input_file.suffix]
-                    self.file_extractor[input_file.suffix] = reader_cls()
-                reader = self.file_extractor[input_file.suffix]
+                    reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
+                    self.file_extractor[file_suffix] = reader_cls()
+                reader = self.file_extractor[file_suffix]
                 docs = reader.load_data(input_file, extra_info=metadata)
                 documents.extend(docs)
             else:
