@@ -2,7 +2,7 @@ from typing import List, Optional, Sequence, cast
 
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.llm_predictor.base import LLMPredictor
+from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
 from llama_index.question_gen.output_parser import SubQuestionOutputParser
 from llama_index.question_gen.prompts import (
@@ -17,7 +17,7 @@ from llama_index.tools.types import ToolMetadata
 class LLMQuestionGenerator(BaseQuestionGenerator):
     def __init__(
         self,
-        llm_predictor: LLMPredictor,
+        llm_predictor: BaseLLMPredictor,
         prompt: SubQuestionPrompt,
     ) -> None:
         self._llm_predictor = llm_predictor

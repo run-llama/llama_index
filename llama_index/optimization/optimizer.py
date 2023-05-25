@@ -87,7 +87,7 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
             embeddings=text_embeddings,
             similarity_fn=self.embed_model.similarity,
             similarity_top_k=num_top_k,
-            embedding_ids=[i for i in range(len(text_embeddings))],
+            embedding_ids=list(range(len(text_embeddings))),
             similarity_cutoff=threshold,
         )
         net_embed_tokens = self.embed_model.total_tokens_used - start_embed_token_ct
