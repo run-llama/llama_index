@@ -102,13 +102,10 @@ Structured Request:
 DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL = PREFIX + EXAMPLES + SUFFIX
 
 
-class VectorStoreQueryPrompt(Prompt):
-    """Vector store query prompt."""
+# deprecated, kept for backwards compatibility
+VectorStoreQueryPrompt = Prompt
 
-    prompt_type: PromptType = PromptType.VECTOR_STORE_QUERY
-    input_variables: List[str] = ["schema_str", "info_str", "query_str"]
-
-
-DEFAULT_VECTOR_STORE_QUERY_PROMPT = VectorStoreQueryPrompt(
+DEFAULT_VECTOR_STORE_QUERY_PROMPT = Prompt(
     template=DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL,
+    prompt_type=PromptType.VECTOR_STORE_QUERY,
 )

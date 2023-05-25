@@ -3,6 +3,7 @@ from typing import List
 
 from llama_index.prompts.base import Prompt
 
+# deprecated, kept for backward compatibility
 SummaryPrompt = Prompt
 TreeInsertPrompt = Prompt
 TreeSelectPrompt = Prompt
