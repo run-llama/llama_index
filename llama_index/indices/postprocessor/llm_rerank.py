@@ -1,15 +1,15 @@
 """LLM reranker."""
-from typing import List, Optional, Callable
+from typing import Callable, List, Optional
+
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_choice_select import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
-
+from llama_index.prompts.choice_select import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.prompts.prompts import QuestionAnswerPrompt
 
 

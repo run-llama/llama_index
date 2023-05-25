@@ -27,5 +27,5 @@ DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL_LC = ConditionalPromptSelector(
 
 DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL = RefineTableContextPrompt(
     langchain_prompt_selector=DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL_LC,
-    prompt_type=PromptType.REFINE,
+    prompt_type=PromptType.TABLE_CONTEXT,
 )

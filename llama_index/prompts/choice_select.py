@@ -1,6 +1,7 @@
 """Default choice select prompt."""
 
 from llama_index.prompts.base import Prompt
+from llama_index.prompts.prompt_type import PromptType
 
 # deprecated, kept for backward compatibility
 ChoiceSelectPrompt = Prompt
@@ -28,4 +29,4 @@ DEFAULT_CHOICE_SELECT_PROMPT_TMPL = (
     "Question: {query_str}\n"
     "Answer:\n"
 )
-DEFAULT_CHOICE_SELECT_PROMPT = Prompt(DEFAULT_CHOICE_SELECT_PROMPT_TMPL)
+DEFAULT_CHOICE_SELECT_PROMPT = Prompt(DEFAULT_CHOICE_SELECT_PROMPT_TMPL, prompt_type=PromptType.QUESTION_ANSWER)

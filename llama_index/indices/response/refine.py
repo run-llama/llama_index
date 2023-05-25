@@ -24,9 +24,6 @@ class Refine(BaseResponseBuilder):
         self.text_qa_template = text_qa_template
         self._refine_template = refine_template
 
-        print(self.text_qa_template.prompt_type)
-        print(self._refine_template.prompt_type)
-
     @llm_token_counter("aget_response")
     async def aget_response(
         self,
