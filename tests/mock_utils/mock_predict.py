@@ -3,9 +3,8 @@
 import json
 from typing import Any, Dict, Tuple
 
-from llama_index.indices.query.query_transform.prompts import (
-    DecomposeQueryTransformPrompt,
-)
+from llama_index.indices.query.query_transform.prompts import \
+    DecomposeQueryTransformPrompt
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.choice_select import ChoiceSelectPrompt
 from llama_index.prompts.prompt_type import PromptType
@@ -151,6 +150,7 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
     Depending on the prompt, return response.
 
     """
+    print(prompt.prompt_type)
     formatted_prompt = prompt.format(**prompt_args)
     full_prompt_args = prompt.get_full_format_args(prompt_args)
     if prompt.prompt_type == PromptType.SUMMARY:
@@ -204,6 +204,7 @@ def patch_llmpredictor_predict(
     Depending on the prompt, return response.
 
     """
+    print(prompt.prompt_type)
     formatted_prompt = prompt.format(**prompt_args)
     full_prompt_args = prompt.get_full_format_args(prompt_args)
     if prompt.prompt_type == PromptType.SUMMARY:
