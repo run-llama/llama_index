@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseQueryEngine(ABC):
-    def __init__(self, callback_manager: CallbackManager) -> None:
+    def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
         self.callback_manager = callback_manager or CallbackManager([])
 
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:

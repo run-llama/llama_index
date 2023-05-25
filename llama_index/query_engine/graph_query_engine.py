@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import IndexNode, Node, NodeWithScore
@@ -27,7 +27,6 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         graph: ComposableGraph,
         custom_query_engines: Optional[Dict[str, BaseQueryEngine]] = None,
         recursive: bool = True,
-        **kwargs: Any,
     ) -> None:
         """Init params."""
         self._graph = graph
@@ -36,7 +35,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         # additional configs
         self._recursive = recursive
         callback_manager = self._graph.service_context.callback_manager
-        super().__init__(callback_manager=callback_manager, **kwargs)
+        super().__init__(callback_manager)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self._query_index(query_bundle, index_id=None, level=0)

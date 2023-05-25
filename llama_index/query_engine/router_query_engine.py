@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType
@@ -27,6 +27,7 @@ class RouterQueryEngine(BaseQueryEngine):
         query_engine_tools (Sequence[QueryEngineTool]): A sequence of candidate
             query engines. They must be wrapped as tools to expose metadata to
             the selector.
+        callback_manager (Optional[CallbackManager]): A callback manager.
 
     """
 
@@ -34,16 +35,15 @@ class RouterQueryEngine(BaseQueryEngine):
         self,
         selector: BaseSelector,
         query_engine_tools: Sequence[QueryEngineTool],
-        **kwargs: Any,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._selector = selector
         self._query_engines = [x.query_engine for x in query_engine_tools]
         self._metadatas = [x.metadata for x in query_engine_tools]
 
-        callback_manager = CallbackManager([])
         if len(query_engine_tools) > 0:
             callback_manager = query_engine_tools[0].query_engine.callback_manager
-        super().__init__(callback_manager=callback_manager, **kwargs)
+        super().__init__(callback_manager)
 
     @classmethod
     def from_defaults(
@@ -108,6 +108,7 @@ class RetrieverRouterQueryEngine(BaseQueryEngine):
         query_engine_tools (Sequence[QueryEngineTool]): A sequence of candidate
             query engines. They must be wrapped as tools to expose metadata to
             the selector.
+        callback_manager (Optional[CallbackManager]): A callback manager.
 
     """
 
@@ -115,11 +116,11 @@ class RetrieverRouterQueryEngine(BaseQueryEngine):
         self,
         retriever: BaseRetriever,
         node_to_query_engine_fn: Callable,
-        **kwargs: Any,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._retriever = retriever
         self._node_to_query_engine_fn = node_to_query_engine_fn
-        super().__init__(**kwargs)
+        super().__init__(callback_manager)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         nodes_with_score = self._retriever.retrieve(query_bundle)

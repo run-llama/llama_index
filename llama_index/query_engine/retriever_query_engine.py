@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType
@@ -26,20 +26,21 @@ class RetrieverQueryEngine(BaseQueryEngine):
         retriever (BaseRetriever): A retriever object.
         response_synthesizer (Optional[ResponseSynthesizer]): A ResponseSynthesizer
             object.
-
+        callback_manager (Optional[CallbackManager]): A callback manager.
     """
 
     def __init__(
         self,
         retriever: BaseRetriever,
         response_synthesizer: Optional[ResponseSynthesizer] = None,
-        **kwargs: Any,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._retriever = retriever
         self._response_synthesizer = (
-            response_synthesizer or ResponseSynthesizer.from_args()
+            response_synthesizer
+            or ResponseSynthesizer.from_args(callback_manager=callback_manager)
         )
-        super().__init__(**kwargs)
+        super().__init__(callback_manager)
 
     @classmethod
     def from_args(
@@ -57,8 +58,6 @@ class RetrieverQueryEngine(BaseQueryEngine):
         use_async: bool = False,
         streaming: bool = False,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
-        # class-specific args
-        **kwargs: Any,
     ) -> "RetrieverQueryEngine":
         """Initialize a RetrieverQueryEngine object."
 
@@ -141,13 +140,9 @@ class RetrieverQueryEngine(BaseQueryEngine):
             CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id
         )
 
-        synth_id = self.callback_manager.on_event_start(CBEventType.SYNTHESIZE)
         response = self._response_synthesizer.synthesize(
             query_bundle=query_bundle,
             nodes=nodes,
-        )
-        self.callback_manager.on_event_end(
-            CBEventType.SYNTHESIZE, payload={"response": response}, event_id=synth_id
         )
 
         self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_id)
@@ -163,13 +158,9 @@ class RetrieverQueryEngine(BaseQueryEngine):
             CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id
         )
 
-        synth_id = self.callback_manager.on_event_start(CBEventType.SYNTHESIZE)
         response = await self._response_synthesizer.asynthesize(
             query_bundle=query_bundle,
             nodes=nodes,
-        )
-        self.callback_manager.on_event_end(
-            CBEventType.SYNTHESIZE, payload={"response": response}, event_id=synth_id
         )
 
         self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_id)

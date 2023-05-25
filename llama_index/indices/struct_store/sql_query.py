@@ -35,7 +35,7 @@ class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
         self._sql_context_container = (
             sql_context_container or index.sql_context_container
         )
-        self.callback_manager = index.service_context.callback_manager
+        super().__init__(index.service_context.callback_manager)
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
@@ -76,7 +76,7 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
 
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._context_query_kwargs = context_query_kwargs or {}
-        self.callback_manager = index.service_context.callback_manager
+        super().__init__(index.service_context.callback_manager)
 
     def _parse_response_to_sql(self, response: str) -> str:
         """Parse response to SQL."""

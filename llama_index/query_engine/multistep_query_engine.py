@@ -50,12 +50,14 @@ class MultiStepQueryEngine(BaseQueryEngine):
         early_stopping: bool = True,
         index_summary: str = "None",
         stop_fn: Optional[Callable[[Dict], bool]] = None,
-        **kwargs: Any,
     ) -> None:
         self._query_engine = query_engine
         self._query_transform = query_transform
         self._response_synthesizer = (
-            response_synthesizer or ResponseSynthesizer.from_args()
+            response_synthesizer
+            or ResponseSynthesizer.from_args(
+                callback_manager=self._query_engine.callback_manager
+            )
         )
 
         self._index_summary = index_summary
@@ -68,24 +70,18 @@ class MultiStepQueryEngine(BaseQueryEngine):
             raise ValueError("Must specify num_steps if early_stopping is False.")
 
         callback_manager = self._query_engine.callback_manager
-        super().__init__(callback_manager=callback_manager, **kwargs)
+        super().__init__(callback_manager)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         query_event_id = self.callback_manager.on_event_start(CBEventType.QUERY)
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
 
-        synth_event_id = self.callback_manager.on_event_start(CBEventType.SYNTHESIZE)
         final_response = self._response_synthesizer.synthesize(
             query_bundle=query_bundle,
             nodes=nodes,
             additional_source_nodes=source_nodes,
         )
         final_response.extra_info = extra_info
-        self.callback_manager.on_event_end(
-            CBEventType.SYNTHESIZE,
-            payload={"response": final_response},
-            event_id=synth_event_id,
-        )
 
         self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_event_id)
         return final_response
@@ -94,18 +90,12 @@ class MultiStepQueryEngine(BaseQueryEngine):
         event_id = self.callback_manager.on_event_start(CBEventType.QUERY)
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
 
-        synth_event_id = self.callback_manager.on_event_start(CBEventType.SYNTHESIZE)
         final_response = await self._response_synthesizer.asynthesize(
             query_bundle=query_bundle,
             nodes=nodes,
             additional_source_nodes=source_nodes,
         )
         final_response.extra_info = extra_info
-        self.callback_manager.on_event_end(
-            CBEventType.SYNTHESIZE,
-            payload={"response": final_response},
-            event_id=synth_event_id,
-        )
 
         self.callback_manager.on_event_end(CBEventType.QUERY, event_id=event_id)
         return final_response
