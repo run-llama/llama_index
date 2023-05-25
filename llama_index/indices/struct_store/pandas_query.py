@@ -101,6 +101,7 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
         self._output_processor = output_processor or default_output_processor
         self._output_kwargs = output_kwargs or {}
         self._verbose = verbose
+        super().__init__(self._service_context.callback_manager)
 
     def _get_table_context(self) -> str:
         """Get table context."""

@@ -5,6 +5,7 @@ from typing import List, Optional, Sequence, cast
 from langchain.input import get_color_mapping, print_text
 
 from llama_index.async_utils import run_async_tasks
+from llama_index.callbacks.base import CallbackManager
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
@@ -43,6 +44,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         question_gen: BaseQuestionGenerator,
         response_synthesizer: ResponseSynthesizer,
         query_engine_tools: Sequence[QueryEngineTool],
+        callback_manager: Optional[CallbackManager] = None,
         verbose: bool = True,
         use_async: bool = True,
     ) -> None:
@@ -54,6 +56,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         }
         self._verbose = verbose
         self._use_async = use_async
+        super().__init__(callback_manager)
 
     @classmethod
     def from_defaults(
@@ -64,10 +67,23 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         verbose: bool = True,
         use_async: bool = True,
     ) -> "SubQuestionQueryEngine":
-        question_gen = question_gen or LLMQuestionGenerator.from_defaults()
-        synth = response_synthesizer or ResponseSynthesizer.from_args()
+        callback_manager = None
+        if len(query_engine_tools) > 0:
+            callback_manager = query_engine_tools[0].query_engine.callback_manager
 
-        return cls(question_gen, synth, query_engine_tools, verbose, use_async)
+        question_gen = question_gen or LLMQuestionGenerator.from_defaults()
+        synth = response_synthesizer or ResponseSynthesizer.from_args(
+            callback_manager=callback_manager
+        )
+
+        return cls(
+            question_gen,
+            synth,
+            query_engine_tools,
+            callback_manager=callback_manager,
+            verbose=verbose,
+            use_async=use_async,
+        )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         sub_questions = self._question_gen.generate(self._metadatas, query_bundle)

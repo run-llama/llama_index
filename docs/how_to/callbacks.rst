@@ -5,7 +5,11 @@ LlamaIndex provides callbacks to help debug, track, and trace the inner workings
 Using the callback manager, as many callbacks as needed can be added.
 
 In addition to logging data related to events, you can also track the duration and number of occurances
-of each event.
+of each event. 
+
+Furthermore, a trace map of events is also recorded, and callbacks can use this data
+however they want. For example, the :code:`LlamaDebugHandler` will, by default, print the trace of events
+after most operations.
 
 While each callback may not leverage each event type, the following events are available to be tracked:
 
@@ -18,14 +22,7 @@ While each callback may not leverage each event type, the following events are a
 - SYNTHESIZE -> Logs for the result for synthesize calls.
 - TREE -> Logs for the summary and level of summaries generated.
 
-You can implement your own callback to track these events, or use an existing callback.
-
-Complete examples can be found in the notebooks below:
-
-- [LlamaDebugHandler](../examples/callbacks/LlamaDebugHandler.ipynb)
-- [AimCallback](../examples/callbacks/AimCallback.ipynb)
-
-And the API reference can be found [here](../../reference/callbacks.rst).
+You can implement your own callback to track and trace these events, or use an existing callback.
 
 .. toctree::
    :maxdepth: 1
