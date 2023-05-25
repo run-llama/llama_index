@@ -3,8 +3,9 @@
 import json
 from typing import Any, Dict, Tuple
 
-from llama_index.indices.query.query_transform.prompts import \
-    DecomposeQueryTransformPrompt
+from llama_index.indices.query.query_transform.prompts import (
+    DecomposeQueryTransformPrompt,
+)
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.choice_select import ChoiceSelectPrompt
 from llama_index.prompts.prompt_type import PromptType

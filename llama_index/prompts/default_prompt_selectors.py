@@ -1,11 +1,14 @@
 """Prompt selectors."""
-from langchain.chains.prompt_selector import (ConditionalPromptSelector,
-                                              is_chat_model)
+from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
 
-from llama_index.prompts.chat_prompts import (CHAT_REFINE_PROMPT,
-                                              CHAT_REFINE_TABLE_CONTEXT_PROMPT)
+from llama_index.prompts.chat_prompts import (
+    CHAT_REFINE_PROMPT,
+    CHAT_REFINE_TABLE_CONTEXT_PROMPT,
+)
 from llama_index.prompts.default_prompts import (
-    DEFAULT_REFINE_PROMPT, DEFAULT_REFINE_TABLE_CONTEXT_PROMPT)
+    DEFAULT_REFINE_PROMPT,
+    DEFAULT_REFINE_TABLE_CONTEXT_PROMPT,
+)
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.prompts import RefinePrompt, RefineTableContextPrompt
 

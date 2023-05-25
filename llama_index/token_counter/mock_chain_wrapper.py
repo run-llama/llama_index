@@ -8,8 +8,10 @@ from llama_index.constants import NUM_OUTPUTS
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
-from llama_index.token_counter.utils import (mock_extract_keywords_response,
-                                             mock_extract_kg_triplets_response)
+from llama_index.token_counter.utils import (
+    mock_extract_keywords_response,
+    mock_extract_kg_triplets_response,
+)
 from llama_index.utils import globals_helper
 
 # TODO: consolidate with unit tests in tests/mock_utils/mock_predict.py

@@ -7,8 +7,10 @@ from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.question_gen.output_parser import SubQuestionOutputParser
-from llama_index.question_gen.prompts import (DEFAULT_SUB_QUESTION_PROMPT_TMPL,
-                                              build_tools_text)
+from llama_index.question_gen.prompts import (
+    DEFAULT_SUB_QUESTION_PROMPT_TMPL,
+    build_tools_text,
+)
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.tools.types import ToolMetadata
 

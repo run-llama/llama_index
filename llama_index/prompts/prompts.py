@@ -1,5 +1,4 @@
 """Subclasses from base prompt."""
-from typing import List
 
 from llama_index.prompts.base import Prompt
 
@@ -16,6 +15,6 @@ SchemaExtractPrompt = Prompt
 TextToSQLPrompt = Prompt
 TableContextPrompt = Prompt
 RefineTableContextPrompt = Prompt
-KnowledgeGraphPrompt = Prompt 
+KnowledgeGraphPrompt = Prompt
 SimpleInputPrompt = Prompt
 PandasPrompt = Prompt

@@ -94,14 +94,9 @@ def test_get_text_splitter() -> None:
 def test_get_text_splitter_partial() -> None:
     """Test get text splitter with a partially formatted prompt."""
 
-    class TestPromptFoo(Prompt):
-        """Test prompt class."""
-
-        input_variables: List[str] = ["foo", "text"]
-
     # test without partially formatting
     test_prompt_text = "This is the {foo} prompt{text}"
-    test_prompt = TestPromptFoo(test_prompt_text)
+    test_prompt = Prompt(test_prompt_text)
     prompt_helper = PromptHelper(
         max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
@@ -115,7 +110,7 @@ def test_get_text_splitter_partial() -> None:
     assert truncated_text == "Hello world"
 
     # test with partially formatting
-    test_prompt = TestPromptFoo(test_prompt_text)
+    test_prompt = Prompt(test_prompt_text)
     test_prompt = test_prompt.partial_format(foo="bar")
     prompt_helper = PromptHelper(
         max_input_size=12, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer

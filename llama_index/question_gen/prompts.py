@@ -1,8 +1,7 @@
 import json
-from typing import List, Sequence
+from typing import Sequence
 
 from llama_index.prompts.base import Prompt
-from llama_index.prompts.prompt_type import PromptType
 from llama_index.question_gen.types import SubQuestion
 from llama_index.tools.types import ToolMetadata
 

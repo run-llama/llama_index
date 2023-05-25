@@ -1,6 +1,6 @@
 """Base module for prompts."""
 from copy import deepcopy
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
 from langchain import BasePromptTemplate as BaseLangchainPrompt
 from langchain import PromptTemplate as LangchainPrompt

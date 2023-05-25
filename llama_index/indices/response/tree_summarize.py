@@ -7,8 +7,11 @@ from llama_index.indices.response.refine import Refine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import get_sorted_node_list
 from llama_index.prompts.prompt_type import PromptType
-from llama_index.prompts.prompts import (QuestionAnswerPrompt, RefinePrompt,
-                                         SummaryPrompt)
+from llama_index.prompts.prompts import (
+    QuestionAnswerPrompt,
+    RefinePrompt,
+    SummaryPrompt,
+)
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
