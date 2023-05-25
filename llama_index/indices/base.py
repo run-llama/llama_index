@@ -56,12 +56,11 @@ class BaseGPTIndex(Generic[IS], ABC):
                 raise ValueError("nodes must be a list of Node objects.")
 
         self._service_context = service_context or ServiceContext.from_defaults()
+        self._storage_context = storage_context or StorageContext.from_defaults()
+        self._docstore = self._storage_context.docstore
+        self._vector_store = self._storage_context.vector_store
 
         with self._service_context.callback_manager.as_trace("index_construction"):
-            self._storage_context = storage_context or StorageContext.from_defaults()
-            self._docstore = self._storage_context.docstore
-            self._vector_store = self._storage_context.vector_store
-
             if index_struct is None:
                 assert nodes is not None
                 index_struct = self.build_index_from_nodes(nodes)
