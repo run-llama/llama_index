@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType
@@ -58,6 +58,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
         use_async: bool = False,
         streaming: bool = False,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
+        # class-specific args
+        **kwargs: Any,
     ) -> "RetrieverQueryEngine":
         """Initialize a RetrieverQueryEngine object."
 
