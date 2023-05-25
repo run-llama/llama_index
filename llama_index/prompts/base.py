@@ -1,7 +1,6 @@
 """Base module for prompts."""
 from copy import deepcopy
-from string import Formatter
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Dict, Optional, Type, TypeVar
 
 from langchain import BasePromptTemplate as BaseLangchainPrompt
 from langchain import PromptTemplate as LangchainPrompt
@@ -46,18 +45,9 @@ class Prompt:
                 raise ValueError(
                     "`template` must be specified if `langchain_prompt` is None"
                 )
-            # validate
-            tmpl_vars = {
-                v for _, v, _, _ in Formatter().parse(template) if v is not None
-            }
-            if tmpl_vars != set(self.input_variables):
-                raise ValueError(
-                    f"Invalid template: {template}, variables do not match the "
-                    f"required input_variables: {self.input_variables}"
-                )
 
-            self.prompt = LangchainPrompt(
-                input_variables=self.input_variables, template=template, **prompt_kwargs
+            self.prompt = LangchainPrompt.from_template(
+                template=template, **prompt_kwargs
             )
             self.prompt_selector = ConditionalPromptSelector(default_prompt=self.prompt)
         # finally, check if langchain_prompt is provided
