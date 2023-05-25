@@ -1,4 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+
+from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import StepDecomposeQueryTransform
@@ -52,7 +54,10 @@ class MultiStepQueryEngine(BaseQueryEngine):
         self._query_engine = query_engine
         self._query_transform = query_transform
         self._response_synthesizer = (
-            response_synthesizer or ResponseSynthesizer.from_args()
+            response_synthesizer
+            or ResponseSynthesizer.from_args(
+                callback_manager=self._query_engine.callback_manager
+            )
         )
 
         self._index_summary = index_summary
@@ -64,24 +69,35 @@ class MultiStepQueryEngine(BaseQueryEngine):
         if not self._early_stopping and self._num_steps is None:
             raise ValueError("Must specify num_steps if early_stopping is False.")
 
+        callback_manager = self._query_engine.callback_manager
+        super().__init__(callback_manager)
+
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        query_event_id = self.callback_manager.on_event_start(CBEventType.QUERY)
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
+
         final_response = self._response_synthesizer.synthesize(
             query_bundle=query_bundle,
             nodes=nodes,
             additional_source_nodes=source_nodes,
         )
         final_response.extra_info = extra_info
+
+        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_event_id)
         return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        event_id = self.callback_manager.on_event_start(CBEventType.QUERY)
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
+
         final_response = await self._response_synthesizer.asynthesize(
             query_bundle=query_bundle,
             nodes=nodes,
             additional_source_nodes=source_nodes,
         )
         final_response.extra_info = extra_info
+
+        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=event_id)
         return final_response
 
     def _combine_queries(
