@@ -40,16 +40,16 @@ class BaseCallbackHandler(ABC):
         """Run when an event ends."""
 
     @abstractmethod
-    def launch(self, run_id: Optional[str] = None) -> None:
-        """Run when an overall run is launched."""
+    def start_trace(self, trace_id: Optional[str] = None) -> None:
+        """Run when an overall trace is launched."""
 
     @abstractmethod
-    def shutdown(
+    def end_trace(
         self,
-        run_id: Optional[str] = None,
+        trace_id: Optional[str] = None,
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
-        """Run when an overall run is exited."""
+        """Run when an overall trace is exited."""
 
 
 class CallbackManager(BaseCallbackHandler, ABC):
@@ -65,7 +65,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         self.handlers = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
         self._trace_stack: List[str] = [BASE_TRACE_ID]
-        self._running_id: Optional[str] = None
+        self._trace_id: Optional[str] = None
 
     def on_event_start(
         self,
@@ -115,33 +115,33 @@ class CallbackManager(BaseCallbackHandler, ABC):
         self.handlers = handlers
 
     @contextmanager
-    def as_trace(self, run_id: str) -> Generator[None, None, None]:
-        """Context manager tracer for lanching and shutdown of runs."""
-        self.launch(run_id=run_id)
+    def as_trace(self, trace_id: str) -> Generator[None, None, None]:
+        """Context manager tracer for lanching and shutdown of traces."""
+        self.start_trace(trace_id=trace_id)
         yield
-        self.shutdown(run_id=run_id)
+        self.end_trace(trace_id=trace_id)
 
-    def launch(self, run_id: Optional[str] = None) -> None:
-        """Run when an overall run is launched."""
-        if not self._running_id:
+    def start_trace(self, trace_id: Optional[str] = None) -> None:
+        """Run when an overall trace is launched."""
+        if not self._trace_id:
             self._trace_map = defaultdict(list)
             self._trace_stack = [BASE_TRACE_ID]
 
             for handler in self.handlers:
-                handler.launch(run_id=run_id)
+                handler.start_trace(trace_id=trace_id)
 
-            self._running_id = run_id
+            self._trace_id = trace_id
 
-    def shutdown(
+    def end_trace(
         self,
-        run_id: Optional[str] = None,
+        trace_id: Optional[str] = None,
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
-        """Run when an overall run is exited."""
-        if run_id is not None and run_id == self._running_id:
+        """Run when an overall trace is exited."""
+        if trace_id is not None and trace_id == self._trace_id:
             for handler in self.handlers:
-                handler.shutdown(run_id=run_id, trace_map=self._trace_map)
-            self._running_id = None
+                handler.end_trace(trace_id=trace_id, trace_map=self._trace_map)
+            self._trace_id = None
 
     @property
     def trace_map(self) -> Dict[str, List[str]]:

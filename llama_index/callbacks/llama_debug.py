@@ -39,7 +39,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         self._event_pairs_by_type: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
         self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
         self._sequential_events: List[CBEvent] = []
-        self._cur_run_id: Optional[str] = None
+        self._cur_trace_id: Optional[str] = None
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
         self.print_trace_on_end = print_trace_on_end
         event_starts_to_ignore = (
@@ -154,17 +154,17 @@ class LlamaDebugHandler(BaseCallbackHandler):
         self._event_pairs_by_id = defaultdict(list)
         self._sequential_events = []
 
-    def launch(self, run_id: Optional[str] = None) -> None:
-        """Launch a run."""
+    def start_trace(self, trace_id: Optional[str] = None) -> None:
+        """Launch a trace."""
         self._trace_map = defaultdict(list)
-        self._cur_run_id = run_id
+        self._cur_trace_id = trace_id
 
-    def shutdown(
+    def end_trace(
         self,
-        run_id: Optional[str] = None,
+        trace_id: Optional[str] = None,
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
-        """Shutdown the current run."""
+        """Shutdown the current trace."""
         self._trace_map = trace_map or defaultdict(list)
         if self.print_trace_on_end:
             self.print_trace_map()
@@ -186,11 +186,11 @@ class LlamaDebugHandler(BaseCallbackHandler):
             self._print_trace_map(child_event_id, level=level + 1)
 
     def print_trace_map(self) -> None:
-        """Print simple trace map to terminal for debugging of the most recent run."""
-        print("*" * 10)
-        print(f"Run: {self._cur_run_id}")
+        """Print simple trace map to terminal for debugging of the most recent trace."""
+        print("*" * 10, flush=True)
+        print(f"Trace: {self._cur_trace_id}", flush=True)
         self._print_trace_map(BASE_TRACE_ID, level=1)
-        print("*" * 10)
+        print("*" * 10, flush=True)
 
     @property
     def event_pairs_by_type(self) -> Dict[CBEventType, List[CBEvent]]:
