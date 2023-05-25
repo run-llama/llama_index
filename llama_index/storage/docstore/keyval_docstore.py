@@ -86,6 +86,9 @@ class KVDocumentStore(BaseDocumentStore):
                     "Set allow_update to True to overwrite."
                 )
             key = doc.get_doc_id()
+            # remove non-utf8 characters (e.g. mongodb cannot handle)
+            doc_text = str(doc.text)
+            doc.text = doc_text.encode("utf-8", "ignore").decode("utf-8")
             data = doc_to_json(doc)
             metadata = {"doc_hash": doc.get_doc_hash()}
             self._kvstore.put(key, data, collection=self._collection)
