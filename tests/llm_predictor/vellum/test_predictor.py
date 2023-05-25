@@ -13,7 +13,7 @@ from llama_index.llm_predictor.vellum import (
 
 
 def test_predict__basic(
-    mock_vellum_client_factory: Callable[..., mock.Mock],
+    mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_predictor_factory: Callable[..., VellumPredictor],
     dummy_prompt: Prompt,
 ) -> None:
@@ -35,14 +35,14 @@ def test_predict__basic(
 
 
 def test_predict__callback_manager(
-    mock_vellum_client_factory: Callable[..., mock.Mock],
+    mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_predictor_factory: Callable[..., VellumPredictor],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
     dummy_prompt: Prompt,
 ) -> None:
     """Ensure we invoke a callback manager, when provided"""
 
-    callback_manager = mock.Mock()
+    callback_manager = mock.MagicMock()
 
     vellum_client = mock_vellum_client_factory(
         compiled_prompt_text="What's you're favorite greeting?",
@@ -86,7 +86,7 @@ def test_predict__callback_manager(
 
 
 def test_stream__basic(
-    mock_vellum_client_factory: Callable[..., mock.Mock],
+    mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_predictor_factory: Callable[..., VellumPredictor],
     dummy_prompt: Prompt,
 ) -> None:
@@ -141,7 +141,7 @@ def test_stream__basic(
 
 
 def test_stream__callback_manager(
-    mock_vellum_client_factory: Callable[..., mock.Mock],
+    mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_predictor_factory: Callable[..., VellumPredictor],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
     dummy_prompt: Prompt,
@@ -150,7 +150,7 @@ def test_stream__callback_manager(
 
     import vellum
 
-    callback_manager = mock.Mock()
+    callback_manager = mock.MagicMock()
 
     vellum_client = mock_vellum_client_factory(
         compiled_prompt_text="What's you're favorite greeting?",

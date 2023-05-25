@@ -11,7 +11,7 @@ from llama_index.llm_predictor.vellum import (
 
 def test_from_prompt__new(
     dummy_prompt_class: Type[Prompt],
-    mock_vellum_client_factory: Callable[..., mock.Mock],
+    mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
 ) -> None:
     """We should register a new prompt if no deployment id or name are specified"""
@@ -28,7 +28,7 @@ def test_from_prompt__new(
 
 def test_from_prompt__existing(
     dummy_prompt_class: Type[Prompt],
-    mock_vellum_client_factory: Callable[..., mock.Mock],
+    mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
 ) -> None:
     """We shouldn't register a new prompt if a deployment id or name is provided"""
@@ -38,10 +38,10 @@ def test_from_prompt__existing(
         metadata={"vellum_deployment_id": "abc"},
     )
 
-    mock_deployment = mock.Mock(active_model_version_ids=["abc"])
+    mock_deployment = mock.MagicMock(active_model_version_ids=["abc"])
 
     vellum_client = mock_vellum_client_factory()
-    vellum_client.deployments = mock.Mock()
+    vellum_client.deployments = mock.MagicMock()
     vellum_client.deployments.retrieve.return_value = mock_deployment
 
     prompt_registry = vellum_prompt_registry_factory(vellum_client=vellum_client)
@@ -51,7 +51,7 @@ def test_from_prompt__existing(
 
 
 def test_get_compiled_prompt__basic(
-    mock_vellum_client_factory: Callable[..., mock.Mock],
+    mock_vellum_client_factory: Callable[..., mock.MagicMock],
     vellum_prompt_registry_factory: Callable[..., VellumPromptRegistry],
 ) -> None:
     """Verify that we can get a compiled prompt from the registry"""
@@ -63,7 +63,7 @@ def test_get_compiled_prompt__basic(
     )
 
     vellum_client = mock_vellum_client_factory()
-    mock_model_version_compile_prompt = mock.Mock()
+    mock_model_version_compile_prompt = mock.MagicMock()
     mock_model_version_compile_prompt.prompt.text = "What's your favorite greeting?"
     mock_model_version_compile_prompt.prompt.num_tokens = 5
 
