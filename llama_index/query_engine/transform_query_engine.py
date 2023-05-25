@@ -1,4 +1,6 @@
 from typing import List, Optional, Sequence
+
+from llama_index.callbacks.base import CallbackManager
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
@@ -17,6 +19,7 @@ class TransformQueryEngine(BaseQueryEngine):
         query_transform (BaseQueryTransform): A query transform object.
         transform_extra_info (Optional[dict]): Extra info to pass to the
             query transform.
+        callback_manager (Optional[CallbackManager]): A callback manager.
 
     """
 
@@ -25,10 +28,12 @@ class TransformQueryEngine(BaseQueryEngine):
         query_engine: BaseQueryEngine,
         query_transform: BaseQueryTransform,
         transform_extra_info: Optional[dict] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._query_engine = query_engine
         self._query_transform = query_transform
         self._transform_extra_info = transform_extra_info
+        super().__init__(callback_manager)
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         query_bundle = self._query_transform.run(
