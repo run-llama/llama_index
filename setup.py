@@ -34,6 +34,7 @@ else:
     install_requires.extend(["transformers"])
 
 setup(
+    author="Jerry Liu",
     name=PACKAGE_NAME,
     version=__version__,
     packages=find_packages(),
