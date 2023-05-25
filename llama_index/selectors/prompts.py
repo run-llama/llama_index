@@ -1,5 +1,3 @@
-from typing import List
-
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 
@@ -39,6 +37,6 @@ DEFAULT_MULTI_SELECT_PROMPT_TMPL = (
 )
 
 
-DEFAULT_MULTIPLE_SELECT_PROMPT = PromptType(
+DEFAULT_MULTIPLE_SELECT_PROMPT = Prompt(
     template=DEFAULT_MULTI_SELECT_PROMPT_TMPL, prompt_type=PromptType.MULTI_SELECT
 )

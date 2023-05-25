@@ -124,7 +124,9 @@ class PromptHelper:
 
         """
         fmt_dict = {
-            v: "" for v in prompt.input_variables if v not in prompt.partial_dict
+            v: ""
+            for v in prompt.get_langchain_prompt().input_variables
+            if v not in prompt.partial_dict
         }
         # TODO: change later from llm=None
         empty_prompt_txt = prompt.format(llm=None, **fmt_dict)

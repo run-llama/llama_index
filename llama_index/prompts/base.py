@@ -60,16 +60,6 @@ class Prompt:
             self.prompt = langchain_prompt
             self.prompt_selector = ConditionalPromptSelector(default_prompt=self.prompt)
 
-        # validate all prompts in prompt selector
-        all_lc_prompts = [self.prompt_selector.default_prompt]
-        for _, prompt in self.prompt_selector.conditionals:
-            all_lc_prompts.append(prompt)
-        for lc_prompt in all_lc_prompts:
-            if set(lc_prompt.input_variables) != set(self.input_variables):
-                raise ValueError(
-                    f"Invalid prompt: {langchain_prompt}, variables do not match the "
-                    f"required input_variables: {self.input_variables}"
-                )
         self.partial_dict: Dict[str, Any] = {}
         self.prompt_kwargs = prompt_kwargs
         self.stop_token = stop_token
@@ -97,11 +87,6 @@ class Prompt:
         Return an instance of itself.
 
         """
-        for k in kwargs.keys():
-            if k not in self.input_variables:
-                raise ValueError(
-                    f"Invalid input variable: {k}, not found in input_variables"
-                )
         try:
             # NOTE: this is a hack to get around deepcopy failing on output parser
             output_parser = self.output_parser
