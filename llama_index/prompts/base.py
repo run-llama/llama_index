@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from langchain import BasePromptTemplate as BaseLangchainPrompt
 from langchain import PromptTemplate as LangchainPrompt
-from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.base_language import BaseLanguageModel
+from langchain.chains.prompt_selector import ConditionalPromptSelector
 
 from llama_index.output_parsers.base import BaseOutputParser
 from llama_index.prompts.prompt_type import PromptType
@@ -24,9 +24,6 @@ class Prompt:
 
     """
 
-    input_variables: List[str]
-    prompt_type: str = PromptType.CUSTOM
-
     def __init__(
         self,
         template: Optional[str] = None,
@@ -34,6 +31,7 @@ class Prompt:
         langchain_prompt_selector: Optional[ConditionalPromptSelector] = None,
         stop_token: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
+        prompt_type: str = PromptType.CUSTOM,
         **prompt_kwargs: Any,
     ) -> None:
         """Init params."""
@@ -85,6 +83,7 @@ class Prompt:
         self.partial_dict: Dict[str, Any] = {}
         self.prompt_kwargs = prompt_kwargs
         self.stop_token = stop_token
+        self.prompt_type = prompt_type
 
         self.output_parser = output_parser
 
