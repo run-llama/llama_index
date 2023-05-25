@@ -33,6 +33,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         self,
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
+        print_trace_on_end: bool = True,
     ) -> None:
         """Initialize the llama debug handler."""
         self._event_pairs_by_type: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
@@ -40,6 +41,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         self._sequential_events: List[CBEvent] = []
         self._cur_run_id: Optional[str] = None
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
+        self.print_trace_on_end = print_trace_on_end
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )
@@ -164,6 +166,8 @@ class LlamaDebugHandler(BaseCallbackHandler):
     ) -> None:
         """Shutdown the current run."""
         self._trace_map = trace_map or defaultdict(list)
+        if self.print_trace_on_end:
+            self.print_trace_map()
 
     def _print_trace_map(self, cur_event_id: str, level: int = 0) -> None:
         """Recursively print trace map to terminal for debugging."""
