@@ -1,9 +1,6 @@
 """Default choice select prompt."""
 
-from typing import List
-
 from llama_index.prompts.base import Prompt
-from llama_index.prompts.prompt_type import PromptType
 
 # deprecated, kept for backward compatibility
 ChoiceSelectPrompt = Prompt
