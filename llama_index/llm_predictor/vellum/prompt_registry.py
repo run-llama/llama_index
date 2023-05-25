@@ -49,18 +49,25 @@ class VellumPromptRegistry:
         `Prompt.metadata`.
         """
 
+        from vellum.core import ApiError
+
         deployment_id = initial_prompt.metadata.get("vellum_deployment_id")
-        deployment_name = initial_prompt.metadata.get("vellum_deployment_name")
+        deployment_name = initial_prompt.metadata.get(
+            "vellum_deployment_name"
+        ) or self._generate_default_name(initial_prompt)
 
         registered_prompt: VellumRegisteredPrompt
-
-        if deployment_id or deployment_name:
-            deployment_id_or_name: str = (
-                deployment_id or deployment_name  # type: ignore
+        try:
+            deployment = self._vellum_client.deployments.retrieve(
+                deployment_id or deployment_name
             )
-            registered_prompt = self._get_registered_prompt(deployment_id_or_name)
+        except ApiError as e:
+            if e.status_code == 404:
+                registered_prompt = self._register_prompt(initial_prompt)
+            else:
+                raise
         else:
-            registered_prompt = self._register_prompt(initial_prompt)
+            registered_prompt = self._get_registered_prompt(deployment)
 
         return registered_prompt
 
@@ -79,11 +86,9 @@ class VellumPromptRegistry:
         )
 
     def _get_registered_prompt(
-        self, deployment_id_or_name: str
+        self, deployment: vellum.DeploymentRead
     ) -> VellumRegisteredPrompt:
         """Retrieves a prompt from Vellum, keying off of the deployment's id/name."""
-
-        deployment = self._vellum_client.deployments.retrieve(deployment_id_or_name)
 
         # Assume that the deployment backing a registered prompt will always have a
         # single model version. Note that this may not be true in the future once
@@ -120,20 +125,22 @@ class VellumPromptRegistry:
 
         # Label represents a human-friendly name that'll be used for all created
         # entities within Vellum. If not provided, a default will be generated.
-        label = prompt.metadata.get("vellum_label") or self._generate_default_label(
-            prompt
-        )
+        label = prompt.metadata.get(
+            "vellum_deployment_label"
+        ) or self._generate_default_label(prompt)
 
         # Name represents a kebab-cased unique identifier that'll be used for all
         # created entities within Vellum. If not provided, a default will be generated.
-        name = prompt.metadata.get("vellum_name") or self._generate_default_name(label)
+        name = prompt.metadata.get(
+            "vellum_deployment_name"
+        ) or self._generate_default_name(prompt)
 
         # Note: For now, the initial provider, model, and parameters used to register
         # the prompt are hard-coded. You can then update any of these from within
         # Vellum's UI. As a future improvement, we could allow these to be specified
         # upfront.
         provider, model, params = self._get_default_llm_meta()
-        prompt_info = self._construct_prompt_info(prompt, for_chat_model=False)
+        prompt_info = self._construct_prompt_info(prompt, for_chat_model=True)
 
         resp = self._vellum_client.registered_prompts.register_prompt(
             label=label,
@@ -157,13 +164,12 @@ class VellumPromptRegistry:
             prompt_id=resp.prompt.id,
         )
 
-    @staticmethod
-    def _generate_default_label(prompt: Prompt) -> str:
+    def _generate_default_label(self, prompt: Prompt) -> str:
         return f"LlamaIndex Demo: {prompt.prompt_type}"
 
-    @staticmethod
-    def _generate_default_name(prompt_label: str) -> str:
-        return convert_to_kebab_case(prompt_label)
+    def _generate_default_name(self, prompt: Prompt) -> str:
+        default_label = self._generate_default_label(prompt)
+        return convert_to_kebab_case(default_label)
 
     def _construct_prompt_info(
         self, prompt: Prompt, for_chat_model: bool = True
@@ -206,7 +212,9 @@ class VellumPromptRegistry:
                 version=1,
                 blocks=[block],
             ),
-            input_variables=[],
+            input_variables=[
+                {"key": input_var} for input_var in prompt.input_variables
+            ],
         )
 
     def _prepare_prompt_jinja_template(
@@ -217,7 +225,7 @@ class VellumPromptRegistry:
         prompt_template = original_template
         for input_variable in input_variables:
             prompt_template = prompt_template.replace(
-                input_variable, f"{{ {input_variable} }}"
+                ("{" + input_variable + "}"), ("{{ " + input_variable + " }}")
             )
 
         return prompt_template
@@ -229,7 +237,7 @@ class VellumPromptRegistry:
 
         return (
             vellum.ProviderEnum.OPENAI,
-            "text-davinci-003",
+            "gpt-3.5-turbo",
             vellum.RegisterPromptModelParametersRequest(
                 temperature=0.0,
                 max_tokens=256,

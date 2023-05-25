@@ -18,14 +18,14 @@ class VellumRegisteredPrompt:
         if not self.deployment_id:
             return None
 
-        return f"https://vellum.ai/deployments/{self.deployment_id}"
+        return f"https://app.vellum.ai/deployments/{self.deployment_id}"
 
     @property
     def sandbox_url(self) -> Optional[str]:
         if not self.sandbox_id:
             return None
 
-        url = f"https://vellum.ai/playground/sandbox/{self.sandbox_id}"
+        url = f"https://app.vellum.ai/playground/sandbox/{self.sandbox_id}"
         if not self.sandbox_snapshot_id:
             return url
 
