@@ -55,6 +55,18 @@ class BaseCallbackHandler(ABC):
 class CallbackManager(BaseCallbackHandler, ABC):
     """Callback manager that handles callbacks for events within LlamaIndex.
 
+    The callback manager provides a way to call handlers on event starts/ends.
+
+    Additionally, the callback manager traces the current stack of events.
+    It does this by using a few key attributes.
+    - trace_stack - The current stack of events that have not ended yet.
+                    When an event ends, it's remove from the stack.
+    - trace_map - A mapping of event ids to their children events.
+                  On the start of events, the bottom of the trace stack
+                  is used as the current parent event for the trace map.
+    - trace_id - A simple name for the current trace, usually denoting the
+                 entrypoint (query, index_construction, insert, etc.)
+
     Args:
         handlers (List[BaseCallbackHandler]): list of handlers to use.
 
@@ -124,8 +136,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         """Run when an overall trace is launched."""
         if not self._trace_id:
-            self._trace_map = defaultdict(list)
-            self._trace_stack = [BASE_TRACE_ID]
+            self._reset_trace_events()
 
             for handler in self.handlers:
                 handler.start_trace(trace_id=trace_id)
@@ -142,6 +153,11 @@ class CallbackManager(BaseCallbackHandler, ABC):
             for handler in self.handlers:
                 handler.end_trace(trace_id=trace_id, trace_map=self._trace_map)
             self._trace_id = None
+
+    def _reset_trace_events(self) -> None:
+        """Helper function to reset the current trace."""
+        self._trace_map = defaultdict(list)
+        self._trace_stack = [BASE_TRACE_ID]
 
     @property
     def trace_map(self) -> Dict[str, List[str]]:
