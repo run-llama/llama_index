@@ -10,8 +10,6 @@ from langchain.chains.prompt_selector import ConditionalPromptSelector
 from llama_index.output_parsers.base import BaseOutputParser
 from llama_index.prompts.prompt_type import PromptType
 
-PMT = TypeVar("PMT", bound="Prompt")
-
 
 class Prompt:
     """Prompt class for LlamaIndex.
@@ -63,25 +61,26 @@ class Prompt:
         self.partial_dict: Dict[str, Any] = {}
         self.prompt_kwargs = prompt_kwargs
         self.stop_token = stop_token
+        # NOTE: this is only used for token counting and testing
         self.prompt_type = prompt_type
 
         self.output_parser = output_parser
 
     @classmethod
     def from_langchain_prompt(
-        cls: Type[PMT], prompt: BaseLangchainPrompt, **kwargs: Any
-    ) -> PMT:
+        cls, prompt: BaseLangchainPrompt, **kwargs: Any
+    ) -> "Prompt":
         """Load prompt from LangChain prompt."""
         return cls(langchain_prompt=prompt, **kwargs)
 
     @classmethod
     def from_langchain_prompt_selector(
-        cls: Type[PMT], prompt_selector: ConditionalPromptSelector, **kwargs: Any
-    ) -> PMT:
+        cls, prompt_selector: ConditionalPromptSelector, **kwargs: Any
+    ) -> "Prompt":
         """Load prompt from LangChain prompt."""
         return cls(langchain_prompt_selector=prompt_selector, **kwargs)
 
-    def partial_format(self: PMT, **kwargs: Any) -> PMT:
+    def partial_format(self, **kwargs: Any) -> "Prompt":
         """Format the prompt partially.
 
         Return an instance of itself.
@@ -103,8 +102,11 @@ class Prompt:
 
     @classmethod
     def from_prompt(
-        cls: Type[PMT], prompt: "Prompt", llm: Optional[BaseLanguageModel] = None
-    ) -> PMT:
+        cls,
+        prompt: "Prompt",
+        llm: Optional[BaseLanguageModel] = None,
+        prompt_type: Optional[PromptType] = None,
+    ) -> "Prompt":
         """Create a prompt from an existing prompt.
 
         Use case: If the existing prompt is already partially filled,
@@ -121,7 +123,11 @@ class Prompt:
                 format_dict[var] = f"{{{var}}}"
 
         template_str = prompt.format(llm=llm, **format_dict)
-        cls_obj: PMT = cls(template_str, **prompt.prompt_kwargs)
+        cls_obj = cls(
+            template_str,
+            prompt_type=prompt_type or PromptType.CUSTOM,
+            **prompt.prompt_kwargs,
+        )
         return cls_obj
 
     def get_langchain_prompt(

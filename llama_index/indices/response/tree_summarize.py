@@ -6,11 +6,9 @@ from llama_index.indices.common_tree.base import GPTTreeIndexBuilder
 from llama_index.indices.response.refine import Refine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import get_sorted_node_list
-from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    SummaryPrompt,
-)
+from llama_index.prompts.prompt_type import PromptType
+from llama_index.prompts.prompts import (QuestionAnswerPrompt, RefinePrompt,
+                                         SummaryPrompt)
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -75,7 +73,9 @@ class TreeSummarize(Refine):
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
-        summary_template = SummaryPrompt.from_prompt(text_qa_template)
+        summary_template = SummaryPrompt.from_prompt(
+            text_qa_template, prompt_type=PromptType.SUMMARY
+        )
 
         index_builder, nodes = self._get_tree_index_builder_and_nodes(
             summary_template, query_str, text_chunks, num_children

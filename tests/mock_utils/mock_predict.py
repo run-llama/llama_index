@@ -150,7 +150,6 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
     Depending on the prompt, return response.
 
     """
-    print(prompt.prompt_type)
     formatted_prompt = prompt.format(**prompt_args)
     full_prompt_args = prompt.get_full_format_args(prompt_args)
     if prompt.prompt_type == PromptType.SUMMARY:
@@ -181,6 +180,8 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
         response = _mock_multi_select(full_prompt_args)
     elif prompt.prompt_type == PromptType.SUB_QUESTION:
         response = _mock_sub_questions()
+    elif prompt.prompt_type == PromptType.PANDAS:
+        response = _mock_pandas(full_prompt_args)
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
@@ -188,8 +189,6 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
             response = _mock_choice_select(full_prompt_args)
         else:
             raise ValueError("Invalid prompt to use with mocks.")
-    elif prompt.prompt_type == PromptType.PANDAS:
-        response = _mock_pandas(full_prompt_args)
     else:
         raise ValueError("Invalid prompt to use with mocks.")
 
@@ -204,7 +203,6 @@ def patch_llmpredictor_predict(
     Depending on the prompt, return response.
 
     """
-    print(prompt.prompt_type)
     formatted_prompt = prompt.format(**prompt_args)
     full_prompt_args = prompt.get_full_format_args(prompt_args)
     if prompt.prompt_type == PromptType.SUMMARY:
@@ -237,6 +235,8 @@ def patch_llmpredictor_predict(
         response = _mock_multi_select(full_prompt_args)
     elif prompt.prompt_type == PromptType.SUB_QUESTION:
         response = _mock_sub_questions()
+    elif prompt.prompt_type == PromptType.PANDAS:
+        response = _mock_pandas(full_prompt_args)
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
@@ -244,8 +244,6 @@ def patch_llmpredictor_predict(
             response = _mock_choice_select(full_prompt_args)
         else:
             raise ValueError("Invalid prompt to use with mocks.")
-    elif prompt.prompt_type == PromptType.PANDAS:
-        response = _mock_pandas(full_prompt_args)
     else:
         raise ValueError("Invalid prompt to use with mocks.")
 
