@@ -6,6 +6,9 @@ from llama_index.prompts.prompt_type import PromptType
 from llama_index.question_gen.types import SubQuestion
 from llama_index.tools.types import ToolMetadata
 
+# deprecated, kept for backward compatibility
+SubQuestionPrompt = Prompt
+
 
 def build_tools_text(tools: Sequence[ToolMetadata]) -> str:
     tools_dict = {}
@@ -88,8 +91,3 @@ SUFFIX = """\
 """
 
 DEFAULT_SUB_QUESTION_PROMPT_TMPL = PREFIX + EXAMPLES + SUFFIX
-
-
-class SubQuestionPrompt(Prompt):
-    prompt_type: PromptType = PromptType.SUB_QUESTION
-    input_variables: List[str] = ["tools_str", "query_str"]
