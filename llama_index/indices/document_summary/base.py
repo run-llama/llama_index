@@ -57,9 +57,9 @@ class GPTDocumentSummaryIndex(BaseGPTIndex[IndexDocumentSummary]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        print(response_synthesizer)
         self._response_synthesizer = (
-            response_synthesizer or ResponseSynthesizer.from_args()
+            response_synthesizer
+            or ResponseSynthesizer.from_args(service_context=service_context)
         )
         self._summary_query = summary_query or "summarize:"
         super().__init__(

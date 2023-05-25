@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, Tuple
 
+from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import IndexNode, Node, NodeWithScore
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.query.base import BaseQueryEngine
@@ -33,6 +34,8 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
 
         # additional configs
         self._recursive = recursive
+        callback_manager = self._graph.service_context.callback_manager
+        super().__init__(callback_manager)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self._query_index(query_bundle, index_id=None, level=0)
@@ -48,13 +51,19 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
     ) -> RESPONSE_TYPE:
         """Query a single index."""
         index_id = index_id or self._graph.root_id
+        event_id = self.callback_manager.on_event_start(CBEventType.QUERY)
 
         # get query engine
         if index_id in self._custom_query_engines:
             query_engine = self._custom_query_engines[index_id]
         else:
             query_engine = self._graph.get_index(index_id).as_query_engine()
+
+        retrieve_event_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = query_engine.retrieve(query_bundle)
+        self.callback_manager.on_event_end(
+            CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_event_id
+        )
 
         if self._recursive:
             # do recursion here
@@ -66,12 +75,29 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
                 )
                 nodes_for_synthesis.append(node_with_score)
                 additional_source_nodes.extend(source_nodes)
+            synth_event_id = self.callback_manager.on_event_start(
+                CBEventType.SYNTHESIZE
+            )
             response = query_engine.synthesize(
                 query_bundle, nodes_for_synthesis, additional_source_nodes
             )
+            self.callback_manager.on_event_end(
+                CBEventType.SYNTHESIZE,
+                payload={"response": response},
+                event_id=synth_event_id,
+            )
         else:
+            synth_event_id = self.callback_manager.on_event_start(
+                CBEventType.SYNTHESIZE
+            )
             response = query_engine.synthesize(query_bundle, nodes)
+            self.callback_manager.on_event_end(
+                CBEventType.SYNTHESIZE,
+                payload={"response": response},
+                event_id=synth_event_id,
+            )
 
+        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=event_id)
         return response
 
     def _fetch_recursive_nodes(

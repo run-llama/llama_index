@@ -5,7 +5,7 @@ pymongo
 slack_sdk
 discord.py
 boto3
-moto[s3]
+moto[s3,dynamodb]
 
 # google
 google-api-python-client
