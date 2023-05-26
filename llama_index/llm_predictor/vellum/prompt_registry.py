@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Tuple, List, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Tuple
 from uuid import uuid4
 
 from llama_index import Prompt
 from llama_index.llm_predictor.vellum.types import (
-    VellumRegisteredPrompt,
     VellumCompiledPrompt,
+    VellumRegisteredPrompt,
 )
 from llama_index.llm_predictor.vellum.utils import convert_to_kebab_case
 
@@ -179,7 +179,7 @@ class VellumPromptRegistry:
         import vellum
 
         prompt_template = prompt.original_template
-        for input_variable in prompt.input_variables:
+        for input_variable in prompt.get_langchain_prompt().input_variables:
             prompt_template = prompt_template.replace(
                 input_variable, f"{{ {input_variable} }}"
             )
@@ -190,7 +190,8 @@ class VellumPromptRegistry:
             block_type=vellum.BlockTypeEnum.JINJA,
             properties=vellum.PromptTemplateBlockPropertiesRequest(
                 template=self._prepare_prompt_jinja_template(
-                    prompt.original_template, prompt.input_variables
+                    prompt.original_template,
+                    prompt.get_langchain_prompt().input_variables,
                 ),
             ),
         )
@@ -213,7 +214,8 @@ class VellumPromptRegistry:
                 blocks=[block],
             ),
             input_variables=[
-                {"key": input_var} for input_var in prompt.input_variables
+                {"key": input_var}
+                for input_var in prompt.get_langchain_prompt().input_variables
             ],
         )
 

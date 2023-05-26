@@ -7,10 +7,11 @@ from llama_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.response import ResponseMode, get_response_builder
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.prompts.base import Prompt
+from llama_index.prompts.prompt_type import PromptType
 from llama_index.readers.schema.base import Document
-from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 from tests.indices.vector_store.mock_services import MockEmbedding
+from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 
 def mock_tokenizer(text: str) -> List[str]:
@@ -62,10 +63,10 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
     # test response with ResponseMode.COMPACT
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_refine_prompt_tmpl = "{query_str}{existing_answer}{context_msg}"
-    mock_refine_prompt = RefinePrompt(mock_refine_prompt_tmpl)
+    mock_refine_prompt = Prompt(mock_refine_prompt_tmpl, prompt_type=PromptType.REFINE)
 
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = QuestionAnswerPrompt(mock_qa_prompt_tmpl)
+    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
@@ -100,10 +101,10 @@ def test_tree_summarize_response(mock_service_context: ServiceContext) -> None:
     # test response with ResponseMode.TREE_SUMMARIZE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_refine_prompt_tmpl = "{query_str}{existing_answer}{context_msg}"
-    mock_refine_prompt = RefinePrompt(mock_refine_prompt_tmpl)
+    mock_refine_prompt = Prompt(mock_refine_prompt_tmpl, prompt_type=PromptType.REFINE)
 
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = QuestionAnswerPrompt(mock_qa_prompt_tmpl)
+    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
 
     # max input size is 12, prompt tokens is 2 (query_str)
     # --> 10 tokens for 2 chunks -->
@@ -143,7 +144,7 @@ def test_accumulate_response(
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = QuestionAnswerPrompt(mock_qa_prompt_tmpl)
+    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
@@ -193,7 +194,7 @@ def test_accumulate_response_async(
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = QuestionAnswerPrompt(mock_qa_prompt_tmpl)
+    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
@@ -244,7 +245,7 @@ def test_accumulate_response_aget(
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = QuestionAnswerPrompt(mock_qa_prompt_tmpl)
+    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
@@ -297,7 +298,7 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = QuestionAnswerPrompt(mock_qa_prompt_tmpl)
+    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl)
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens

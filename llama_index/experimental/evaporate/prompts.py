@@ -7,45 +7,31 @@ Full credits go to: https://github.com/HazyResearch/evaporate
 """
 
 from llama_index.prompts.prompts import Prompt
-from llama_index.prompts.prompt_type import PromptType
-from typing import List
 
+# deprecated, kept for backward compatibility
 
-class SchemaIDPrompt(Prompt):
-    """Pandas prompt. Convert query to python code.
+"""Pandas prompt. Convert query to python code.
 
-    Required template variables: `chunk`, `topic`.
+Required template variables: `chunk`, `topic`.
 
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
+Args:
+    template (str): Template for the prompt.
+    **prompt_kwargs: Keyword arguments for the prompt.
 
-    """
+"""
+SchemaIDPrompt = Prompt
 
-    prompt_type: PromptType = PromptType.CUSTOM
-    input_variables: List[str] = ["chunk", "topic"]
+"""Function generation prompt. Generate a function from existing text.
 
+Required template variables: `context_str`, `query_str`,
+    `attribute`, `function_field`.
 
-class FnGeneratePrompt(Prompt):
-    """Function generation prompt. Generate a function from existing text.
+Args:
+    template (str): Template for the prompt.
+    **prompt_kwargs: Keyword arguments for the prompt.
 
-    Required template variables: `context_str`, `query_str`,
-        `attribute`, `function_field`.
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    prompt_type: PromptType = PromptType.CUSTOM
-    input_variables: List[str] = [
-        "context_str",
-        "query_str",
-        "attribute",
-        "function_field",
-    ]
-
+"""
+FnGeneratePrompt = Prompt
 
 # used for schema identification
 SCHEMA_ID_PROMPT_TMPL = f"""Sample text:
@@ -95,7 +81,7 @@ Sample text:
 Question: List all relevant attributes about '{{topic:}}' that are exactly mentioned in this sample text if any. 
 Answer:"""  # noqa: E501, F541
 
-SCHEMA_ID_PROMPT = SchemaIDPrompt(SCHEMA_ID_PROMPT_TMPL)
+SCHEMA_ID_PROMPT = Prompt(SCHEMA_ID_PROMPT_TMPL)
 
 
 # used for function generation
@@ -117,4 +103,4 @@ def get_{{function_field:}}_field(text: str):
     \"""
     """  # noqa: E501, F541
 
-FN_GENERATION_PROMPT = FnGeneratePrompt(FN_GENERATION_PROMPT_TMPL)
+FN_GENERATION_PROMPT = Prompt(FN_GENERATION_PROMPT_TMPL)

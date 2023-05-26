@@ -1,22 +1,7 @@
 """Set of default prompts."""
 
-from llama_index.prompts.prompts import (
-    KeywordExtractPrompt,
-    KnowledgeGraphPrompt,
-    PandasPrompt,
-    QueryKeywordExtractPrompt,
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    RefineTableContextPrompt,
-    SchemaExtractPrompt,
-    SimpleInputPrompt,
-    SummaryPrompt,
-    TableContextPrompt,
-    TextToSQLPrompt,
-    TreeInsertPrompt,
-    TreeSelectMultiplePrompt,
-    TreeSelectPrompt,
-)
+from llama_index.prompts.base import Prompt
+from llama_index.prompts.prompt_type import PromptType
 
 ############################################
 # Tree
@@ -34,7 +19,9 @@ DEFAULT_SUMMARY_PROMPT_TMPL = (
     'SUMMARY:"""\n'
 )
 
-DEFAULT_SUMMARY_PROMPT = SummaryPrompt(DEFAULT_SUMMARY_PROMPT_TMPL)
+DEFAULT_SUMMARY_PROMPT = Prompt(
+    DEFAULT_SUMMARY_PROMPT_TMPL, prompt_type=PromptType.SUMMARY
+)
 
 # insert prompts
 DEFAULT_INSERT_PROMPT_TMPL = (
@@ -50,7 +37,9 @@ DEFAULT_INSERT_PROMPT_TMPL = (
     "The answer should be the number corresponding to the "
     "summary that is most relevant to the question.\n"
 )
-DEFAULT_INSERT_PROMPT = TreeInsertPrompt(DEFAULT_INSERT_PROMPT_TMPL)
+DEFAULT_INSERT_PROMPT = Prompt(
+    DEFAULT_INSERT_PROMPT_TMPL, prompt_type=PromptType.TREE_INSERT
+)
 
 
 # # single choice
@@ -66,7 +55,9 @@ DEFAULT_QUERY_PROMPT_TMPL = (
     "Provide choice in the following format: 'ANSWER: <number>' and explain why "
     "this summary was selected in relation to the question.\n"
 )
-DEFAULT_QUERY_PROMPT = TreeSelectPrompt(DEFAULT_QUERY_PROMPT_TMPL)
+DEFAULT_QUERY_PROMPT = Prompt(
+    DEFAULT_QUERY_PROMPT_TMPL, prompt_type=PromptType.TREE_SELECT
+)
 
 # multiple choice
 DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
@@ -82,8 +73,8 @@ DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL = (
     "Provide choices in the following format: 'ANSWER: <numbers>' and explain why "
     "these summaries were selected in relation to the question.\n"
 )
-DEFAULT_QUERY_PROMPT_MULTIPLE = TreeSelectMultiplePrompt(
-    DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL
+DEFAULT_QUERY_PROMPT_MULTIPLE = Prompt(
+    DEFAULT_QUERY_PROMPT_MULTIPLE_TMPL, prompt_type=PromptType.TREE_SELECT_MULTIPLE
 )
 
 
@@ -99,7 +90,9 @@ DEFAULT_REFINE_PROMPT_TMPL = (
     "answer the question. "
     "If the context isn't useful, return the original answer."
 )
-DEFAULT_REFINE_PROMPT = RefinePrompt(DEFAULT_REFINE_PROMPT_TMPL)
+DEFAULT_REFINE_PROMPT = Prompt(
+    DEFAULT_REFINE_PROMPT_TMPL, prompt_type=PromptType.REFINE
+)
 
 
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
@@ -110,7 +103,9 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
     "Given the context information and not prior knowledge, "
     "answer the question: {query_str}\n"
 )
-DEFAULT_TEXT_QA_PROMPT = QuestionAnswerPrompt(DEFAULT_TEXT_QA_PROMPT_TMPL)
+DEFAULT_TEXT_QA_PROMPT = Prompt(
+    DEFAULT_TEXT_QA_PROMPT_TMPL, prompt_type=PromptType.QUESTION_ANSWER
+)
 
 
 ############################################
@@ -125,8 +120,8 @@ DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
     "---------------------\n"
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
 )
-DEFAULT_KEYWORD_EXTRACT_TEMPLATE = KeywordExtractPrompt(
-    DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL
+DEFAULT_KEYWORD_EXTRACT_TEMPLATE = Prompt(
+    DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL, prompt_type=PromptType.KEYWORD_EXTRACT
 )
 
 
@@ -141,8 +136,9 @@ DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL = (
     "---------------------\n"
     "Provide keywords in the following comma-separated format: 'KEYWORDS: <keywords>'\n"
 )
-DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = QueryKeywordExtractPrompt(
-    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL
+DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE = Prompt(
+    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE_TMPL,
+    prompt_type=PromptType.QUERY_KEYWORD_EXTRACT,
 )
 
 
@@ -166,7 +162,9 @@ DEFAULT_SCHEMA_EXTRACT_TMPL = (
     "If no fields are present in the text, return a blank string.\n"
     "Fields: "
 )
-DEFAULT_SCHEMA_EXTRACT_PROMPT = SchemaExtractPrompt(DEFAULT_SCHEMA_EXTRACT_TMPL)
+DEFAULT_SCHEMA_EXTRACT_PROMPT = Prompt(
+    DEFAULT_SCHEMA_EXTRACT_TMPL, prompt_type=PromptType.SCHEMA_EXTRACT
+)
 
 # NOTE: taken from langchain and adapted
 # https://tinyurl.com/b772sd77
@@ -193,8 +191,10 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
     "SQLQuery: "
 )
 
-DEFAULT_TEXT_TO_SQL_PROMPT = TextToSQLPrompt(
-    DEFAULT_TEXT_TO_SQL_TMPL, stop_token="\nSQLResult:"
+DEFAULT_TEXT_TO_SQL_PROMPT = Prompt(
+    DEFAULT_TEXT_TO_SQL_TMPL,
+    stop_token="\nSQLResult:",
+    prompt_type=PromptType.TEXT_TO_SQL,
 )
 
 
@@ -222,7 +222,9 @@ DEFAULT_TABLE_CONTEXT_QUERY = (
     "...\n\n"
 )
 
-DEFAULT_TABLE_CONTEXT_PROMPT = TableContextPrompt(DEFAULT_TABLE_CONTEXT_TMPL)
+DEFAULT_TABLE_CONTEXT_PROMPT = Prompt(
+    DEFAULT_TABLE_CONTEXT_TMPL, prompt_type=PromptType.TABLE_CONTEXT
+)
 
 # NOTE: by partially filling schema, we can reduce to a RefinePrompt
 # that we can feed to ur table
@@ -241,8 +243,8 @@ DEFAULT_REFINE_TABLE_CONTEXT_TMPL = (
     "answer the question. "
     "If the context isn't useful, return the original answer."
 )
-DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = RefineTableContextPrompt(
-    DEFAULT_REFINE_TABLE_CONTEXT_TMPL
+DEFAULT_REFINE_TABLE_CONTEXT_PROMPT = Prompt(
+    DEFAULT_REFINE_TABLE_CONTEXT_TMPL, prompt_type=PromptType.TABLE_CONTEXT
 )
 
 
@@ -267,8 +269,8 @@ DEFAULT_KG_TRIPLET_EXTRACT_TMPL = (
     "Text: {text}\n"
     "Triplets:\n"
 )
-DEFAULT_KG_TRIPLET_EXTRACT_PROMPT = KnowledgeGraphPrompt(
-    DEFAULT_KG_TRIPLET_EXTRACT_TMPL
+DEFAULT_KG_TRIPLET_EXTRACT_PROMPT = Prompt(
+    DEFAULT_KG_TRIPLET_EXTRACT_TMPL, prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT
 )
 
 ############################################
@@ -286,7 +288,7 @@ HYDE_TMPL = (
     'Passage:"""\n'
 )
 
-DEFAULT_HYDE_PROMPT = SummaryPrompt(HYDE_TMPL)
+DEFAULT_HYDE_PROMPT = Prompt(HYDE_TMPL, prompt_type=PromptType.SUMMARY)
 
 
 ############################################
@@ -294,7 +296,9 @@ DEFAULT_HYDE_PROMPT = SummaryPrompt(HYDE_TMPL)
 ############################################
 
 DEFAULT_SIMPLE_INPUT_TMPL = "{query_str}"
-DEFAULT_SIMPLE_INPUT_PROMPT = SimpleInputPrompt(DEFAULT_SIMPLE_INPUT_TMPL)
+DEFAULT_SIMPLE_INPUT_PROMPT = Prompt(
+    DEFAULT_SIMPLE_INPUT_TMPL, prompt_type=PromptType.SIMPLE_INPUT
+)
 
 
 ############################################
@@ -313,4 +317,4 @@ DEFAULT_PANDAS_TMPL = (
     "Output:\n"
 )
 
-DEFAULT_PANDAS_PROMPT = PandasPrompt(DEFAULT_PANDAS_TMPL)
+DEFAULT_PANDAS_PROMPT = Prompt(DEFAULT_PANDAS_TMPL, prompt_type=PromptType.PANDAS)
