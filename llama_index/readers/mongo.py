@@ -48,6 +48,7 @@ class SimpleMongoReader(BaseReader):
         db_name: str,
         collection_name: str,
         field_names: List[str] = ["text"],
+        field_names_metadata: List[str] = [],
         query_dict: Optional[Dict] = None,
     ) -> List[Document]:
         """Load data from the input directory.
@@ -57,6 +58,9 @@ class SimpleMongoReader(BaseReader):
             collection_name (str): name of the collection.
             field_names(List[str]): names of the fields to be concatenated.
                 Defaults to ["text"]
+            field_names_metadata (List[str]): field names for 
+                metadata to be included in Document. e.g. "_id".
+                Defaults to []
             query_dict (Optional[Dict]): query to filter documents.
                 Defaults to None
 
@@ -80,6 +84,14 @@ class SimpleMongoReader(BaseReader):
                     )
                 text += item[field_name]
 
-            documents.append(Document(text))
+            # Metadata
+            extra_info = {
+                field_name: item[field_name] for field_name in field_names_metadata
+            }
+            # Convert mongodb id (ObjectId) to string representation
+            if "_id" in extra_info:
+                extra_info["_id"] = str(extra_info["_id"])
+
+            documents.append(Document(text, extra_info=extra_info))
 
         return documents
