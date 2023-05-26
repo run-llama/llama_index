@@ -174,7 +174,9 @@ class LLMPredictor(BaseLLMPredictor):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
-        self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
+        self._llm = llm or OpenAI(
+            temperature=0, model_name="text-davinci-003", max_tokens=-1
+        )
         if cache is not None:
             langchain.llm_cache = cache
         self.callback_manager = callback_manager or CallbackManager([])
