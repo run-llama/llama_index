@@ -77,6 +77,7 @@ class StreamingResponse:
             response_txt = ""
             for text in self.response_gen:
                 print(text, end="", flush=True)
+                response_txt += text
             self.response_txt = response_txt
         else:
             print(self.response_txt)
