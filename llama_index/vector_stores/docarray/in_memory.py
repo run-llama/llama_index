@@ -1,5 +1,4 @@
-from typing import Any, List, cast, Optional, Literal, Dict
-
+from typing import Literal, Optional
 
 from llama_index.vector_stores.docarray.base import DocArrayVectorStore
 
@@ -36,7 +35,7 @@ class DocArrayInMemoryVectorStore(DocArrayVectorStore):
 
     def _find_docs_to_be_removed(self, doc_id):
         query = {"metadata__doc_id": {"$eq": doc_id}}
-        docs =  self._index.filter(query)
+        docs = self._index.filter(query)
         return [doc.id for doc in docs]
 
     def persist(self, persist_path: str) -> None:

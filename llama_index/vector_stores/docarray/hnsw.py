@@ -1,9 +1,9 @@
-import os
 import json
-from typing import Any, List, cast, Optional, Literal, Dict
-
+import os
+from typing import Literal
 
 from llama_index.vector_stores.docarray.base import DocArrayVectorStore
+
 
 class DocArrayHnswVectorStore(DocArrayVectorStore):
     def __init__(
@@ -28,9 +28,9 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
             raise ImportError(import_err_msg)
 
         self._work_dir = work_dir
-        ref_docs_path = os.path.join(self._work_dir, 'ref_docs.json')
+        ref_docs_path = os.path.join(self._work_dir, "ref_docs.json")
         if os.path.exists(ref_docs_path):
-            with open(ref_docs_path, 'r') as f:
+            with open(ref_docs_path, "r") as f:
                 self._ref_docs = json.load(f)
         else:
             self._ref_docs = {}
@@ -59,12 +59,12 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
         return docs
 
     def _save_ref_docs(self):
-        with open(os.path.join(self._work_dir, 'ref_docs.json') , 'w') as f:
+        with open(os.path.join(self._work_dir, "ref_docs.json"), "w") as f:
             json.dump(self._ref_docs, f)
 
     def _update_ref_docs(self, docs):
         for doc in docs:
-            if doc.metadata['doc_id'] not in self._ref_docs:
-                self._ref_docs[doc.metadata['doc_id']] = []
-            self._ref_docs[doc.metadata['doc_id']].append(doc.id)
+            if doc.metadata["doc_id"] not in self._ref_docs:
+                self._ref_docs[doc.metadata["doc_id"]] = []
+            self._ref_docs[doc.metadata["doc_id"]].append(doc.id)
         self._save_ref_docs()

@@ -1,14 +1,16 @@
-from typing import List, cast
+from typing import List
 
 import pytest
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores import DocArrayInMemoryVectorStore, DocArrayHnswVectorStore
-from llama_index.vector_stores.docarray.base import DocArrayVectorStore
+from llama_index.vector_stores import (
+    DocArrayHnswVectorStore,
+    DocArrayInMemoryVectorStore,
+)
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
 
-
 docarray = pytest.importorskip("docarray")
+
 
 @pytest.fixture
 def node_embeddings() -> List[NodeWithEmbedding]:
@@ -38,6 +40,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
             ),
         ),
     ]
+
 
 def test_hnsw(node_embeddings: List[NodeWithEmbedding], tmp_path) -> None:
     docarray_vector_store = DocArrayHnswVectorStore(work_dir=tmp_path, dim=3)
@@ -74,9 +77,9 @@ def test_in_memory(node_embeddings: List[NodeWithEmbedding], tmp_path) -> None:
     docarray_vector_store.delete(doc_id="test-1")
     assert docarray_vector_store.num_docs() == 2
 
-    docarray_vector_store.persist(tmp_path/'index.bin')
+    docarray_vector_store.persist(tmp_path / "index.bin")
 
-    new_vector_store = DocArrayInMemoryVectorStore(index_path=tmp_path/'index.bin')
+    new_vector_store = DocArrayInMemoryVectorStore(index_path=tmp_path / "index.bin")
     assert new_vector_store.num_docs() == 2
 
     new_vector_store.delete(doc_id="test-0")
