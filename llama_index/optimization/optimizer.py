@@ -99,6 +99,7 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
         top_sentences = [split_text[i] for i in top_idxs]
 
         logger.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
-        for i in range(len(top_idxs)):
-            logger.debug(f"{i}. {top_sentences[i]} ({top_similarities[i]})")
+        if logger.isEnabledFor(logging.DEBUG):
+            for i in range(len(top_idxs)):
+                logger.debug(f"{i}. {top_sentences[i]} ({top_similarities[i]})")
         return " ".join(top_sentences)
