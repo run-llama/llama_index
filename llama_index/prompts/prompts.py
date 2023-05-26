@@ -78,11 +78,6 @@ Prompt to extract keywords from a query `query_str` with a maximum
 of `max_keywords` keywords.
 
 Required template variables: `query_str`, `max_keywords`
-
-Args:
-    template (str): Template for the prompt.
-    **prompt_kwargs: Keyword arguments for the prompt.
-
 """
 QueryKeywordExtractPrompt = Prompt
 

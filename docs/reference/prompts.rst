@@ -20,6 +20,15 @@ The list of ChatGPT refine prompts can be
 `found here <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py>`_.
 
 
+Prompts
+^^^^^^^
+
+.. automodule:: llama_index.prompts.prompts
+   :members:
+   :inherited-members:
+   :exclude-members: get_full_format_args
+
+
 Base Prompt Class
 ^^^^^^^^^^^^^^^^^
 
