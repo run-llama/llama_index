@@ -70,6 +70,7 @@ class SQLDatabase(LangchainSQLDatabase):
         stmt = insert(table).values(**data)
         with self._engine.connect() as connection:
             connection.execute(stmt)
+            connection.commit()
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """Execute a SQL statement and return a string representing the results.
