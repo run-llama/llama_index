@@ -25,7 +25,7 @@ qa_template = Prompt(template)
 
 > Note: you may see references to legacy prompt subclasses such as `QuestionAnswerPrompt`, `RefinePrompt`. These have been deprecated (and now are type aliases of `Prompt`). Now you can directly specify `Prompt(template)` to construct custom prompts. But you still have to make sure the template string contains the expected parameters (e.g. `{context_str}` and `{query_str}`) when replacing a default question answer prompt.
 
-## Passing in custom prompts into the pipeline
+## Passing custom prompts into the pipeline
 
 Since LlamaIndex is a multi-step pipeline, it's important to identify the operation that you want to modify and pass in the custom prompt at the right place.
 At a high-level, prompts are used in 1) index construction, and 2) query engine execution
@@ -85,20 +85,20 @@ from llama_index import Prompt, GPTVectorStoreIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
 
 # define custom Prompt
-QA_PROMPT_TMPL = (
+TEMPLATE_STR = (
     "We have provided context information below. \n"
     "---------------------\n"
     "{context_str}"
     "\n---------------------\n"
     "Given this information, please answer the question: {query_str}\n"
 )
-QA_PROMPT = Prompt(QA_PROMPT_TMPL)
+QA_TEMPLATE = Prompt(TEMPLATE_STR)
 
 # Build index 
 index = GPTVectorStoreIndex.from_documents(documents)
 
 # Configure query engine
-query_engine = index.as_query_engine(text_qa_template=QA_PROMPT)
+query_engine = index.as_query_engine(text_qa_template=QA_TEMPLATE)
 
 # Execute query
 response = query_engine.query("What did the author do growing up?")
