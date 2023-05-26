@@ -101,8 +101,8 @@ class SimpleVectorStore(VectorStore):
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
         text_ids_to_delete = set()
-        for text_id, doc_id_ in self._data.text_id_to_doc_id.items():
-            if doc_id == doc_id_:
+        for text_id, _ in self._data.text_id_to_doc_id.items():
+            if doc_id == text_id:
                 text_ids_to_delete.add(text_id)
 
         for text_id in text_ids_to_delete:
