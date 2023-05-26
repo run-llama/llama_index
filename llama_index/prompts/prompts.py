@@ -10,7 +10,6 @@ Prompt to summarize the provided `context_str`.
 
 Required template variables: `context_str`
 """
-
 SummaryPrompt = Prompt
 
 """Tree Insert prompt.
