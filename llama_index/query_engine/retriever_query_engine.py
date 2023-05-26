@@ -174,3 +174,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_id)
         return response
+
+    @property
+    def retriever(self) -> BaseRetriever:
+        """Get the retriever object."""
+        return self._retriever

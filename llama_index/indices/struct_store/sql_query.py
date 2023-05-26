@@ -12,6 +12,7 @@ from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.prompts import TextToSQLPrompt
 from llama_index.response.schema import Response
 from llama_index.token_counter.token_counter import llm_token_counter
+from llama_index.indices.service_context import ServiceContext
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,11 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
 
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._context_query_kwargs = context_query_kwargs or {}
+
+    @property
+    def service_context(self) -> ServiceContext:
+        """Get service context."""
+        return self._service_context
 
     def _parse_response_to_sql(self, response: str) -> str:
         """Parse response to SQL."""
