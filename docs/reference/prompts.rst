@@ -6,7 +6,6 @@ Prompt Templates
 These are the reference prompt templates. 
 
 We first show links to default prompts.
-We then document all core prompts, with their required variables.
 
 We then show the base prompt class, 
 derived from `Langchain <https://langchain.readthedocs.io/en/latest/modules/prompt.html>`_.
@@ -19,15 +18,6 @@ The list of default prompts can be `found here <https://github.com/jerryjliu/lla
 **NOTE**: we've also curated a set of refine prompts for ChatGPT use cases. 
 The list of ChatGPT refine prompts can be 
 `found here <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py>`_.
-
-
-Prompts
-^^^^^^^
-
-.. automodule:: llama_index.prompts.prompts
-   :members:
-   :inherited-members:
-   :exclude-members: get_full_format_args
 
 
 Base Prompt Class
