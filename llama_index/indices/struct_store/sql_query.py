@@ -10,10 +10,35 @@ from llama_index.indices.struct_store.container_builder import (
 from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.prompts import TextToSQLPrompt
+from llama_index.prompts.base import Prompt
 from llama_index.response.schema import Response
 from llama_index.token_counter.token_counter import llm_token_counter
+from typing import List
+from llama_index.prompts.prompt_type import PromptType
 
 logger = logging.getLogger(__name__)
+
+
+class ResponseSynthesisPrompt(Prompt):
+    """Response Synthesis Prompt for SQL.
+
+    This prompt is used to synthesize a response from the query results.
+
+    """
+
+    prompt_type: PromptType = PromptType.CUSTOM
+    input_variables: List[str] = ["query_str", "sql_query", "response_str"]
+
+
+DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
+    "Given an input question, synthesize a response from the query results.\n"
+    "Query: {query_str}\n"
+    "SQL: {sql_query}\n"
+    "Response: {response_str}\n"
+)
+DEFAULT_RESPONSE_SYNTHESIS_PROMPT = ResponseSynthesisPrompt(
+    DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL
+)
 
 
 class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
@@ -58,6 +83,18 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
     the SQL execution.
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
+
+    Args:
+        index (GPTSQLStructStoreIndex): A GPT SQL Struct Store Index
+        text_to_sql_prompt (Optional[TextToSQLPrompt]): A Text to SQL Prompt
+            to use for the query. Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
+        context_query_kwargs (Optional[dict]): Keyword arguments for the
+            context query. Defaults to {}.
+        synthesize_response (bool): Whether to synthesize a response from the
+            query results. Defaults to True.
+        response_synthesis_prompt (Optional[ResponseSynthesisPrompt]): A
+            Response Synthesis Prompt to use for the query. Defaults to
+            DEFAULT_RESPONSE_SYNTHESIS_PROMPT.
     """
 
     def __init__(
@@ -65,6 +102,8 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
         index: GPTSQLStructStoreIndex,
         text_to_sql_prompt: Optional[TextToSQLPrompt] = None,
         context_query_kwargs: Optional[dict] = None,
+        synthesize_response: bool = True,
+        response_synthesis_prompt: Optional[ResponseSynthesisPrompt] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -75,7 +114,11 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
         self._ref_doc_id_column = index.ref_doc_id_column
 
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
+        self._response_synthesis_prompt = (
+            response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT
+        )
         self._context_query_kwargs = context_query_kwargs or {}
+        self._synthesize_response = synthesize_response
         super().__init__(index.service_context.callback_manager)
 
     def _parse_response_to_sql(self, response: str) -> str:
@@ -123,8 +166,19 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        response_str, extra_info = self._sql_database.run_sql(sql_query_str)
+        raw_response_str, extra_info = self._sql_database.run_sql(sql_query_str)
         extra_info["sql_query"] = sql_query_str
+
+        if self._synthesize_response:
+            response_str, _ = self._service_context.llm_predictor.predict(
+                self._response_synthesis_prompt,
+                query_str=query_bundle.query_str,
+                sql_query=sql_query_str,
+                response_str=raw_response_str,
+            )
+        else:
+            response_str = raw_response_str
+
         response = Response(response=response_str, extra_info=extra_info)
         return response
 
