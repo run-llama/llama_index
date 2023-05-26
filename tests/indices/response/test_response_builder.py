@@ -10,8 +10,8 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.readers.schema.base import Document
-from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 from tests.indices.vector_store.mock_services import MockEmbedding
+from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 
 def mock_tokenizer(text: str) -> List[str]:
@@ -298,7 +298,7 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = QuestionAnswerPrompt(mock_qa_prompt_tmpl)
+    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl)
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
