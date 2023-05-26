@@ -6,24 +6,44 @@ import numpy as np
 from pydantic import Field
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
 from llama_index.vector_stores.utils import node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
 
 
 class DocArrayVectorStore(VectorStore, ABC):
-    """DocArray Vector Store base class."""
+    """DocArray Vector Store Base Class.
+
+
+    This is a abstract base class for creating a document array vector store.
+    The subclasses should implement _init_index and _find_docs_to_be_removed methods.
+    """
 
     stores_text: bool = True
 
     @abstractmethod
     def _init_index(self, **kwargs):
+        """Initializes the index.
+
+        This method should be overridden by the subclasses.
+        """
+        pass
+
+    @abstractmethod
+    def _find_docs_to_be_removed(self, doc_id):
+        """Finds the documents to be removed from the vector store.
+
+        Args:
+            doc_id (str): Document ID that should be removed.
+
+        Returns:
+            List[str]: List of document IDs to be removed.
+
+        This is an abstract method and needs to be implemented in any concrete subclass.
+        """
         pass
 
     @property
@@ -32,10 +52,24 @@ class DocArrayVectorStore(VectorStore, ABC):
         return None
 
     def num_docs(self) -> int:
+        """Retrieves the number of documents in the index.
+
+        Returns:
+            int: The number of documents in the index.
+        """
         return self._index.num_docs()
 
     @staticmethod
-    def _get_schema(**embeddings_params):
+    def _get_schema(**embeddings_params: Any):
+        """Fetches the schema for DocArray indices.
+
+        Args:
+            **embeddings_params: Variable length argument list for the embedding.
+
+        Returns:
+            DocArraySchema: Schema for a DocArray index.
+        """
+
         from docarray import BaseDoc
         from docarray.typing import NdArray
 
@@ -51,7 +85,15 @@ class DocArrayVectorStore(VectorStore, ABC):
         self,
         embedding_results: List[NodeWithEmbedding],
     ) -> List[str]:
-        """Add embedding results to vector store."""
+        """Adds embedding results to the vector store.
+
+        Args:
+            embedding_results (List[NodeWithEmbedding]): List of nodes
+            with corresponding embeddings.
+
+        Returns:
+            List[str]: List of document IDs added to the vector store.
+        """
         from docarray import DocList
 
         # check to see if empty document list was passed
@@ -74,10 +116,13 @@ class DocArrayVectorStore(VectorStore, ABC):
         return [doc.id for doc in docs]
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete doc."""
+        """Deletes a document from the vector store.
+
+        Args:
+            doc_id (str): Document ID to be deleted.
+            **delete_kwargs (Any): Additional arguments to pass to the delete method.
+        """
         docs_to_be_removed = self._find_docs_to_be_removed(doc_id)
-        print(docs_to_be_removed, "aaaa")
-        print(self._ref_docs)
         if not docs_to_be_removed:
             logger.warning(f"Document with doc_id {doc_id} not found")
             return
@@ -86,7 +131,14 @@ class DocArrayVectorStore(VectorStore, ABC):
         logger.info(f"Deleted {len(docs_to_be_removed)} documents from the index")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query vector store."""
+        """Queries the vector store and retrieves the results.
+
+        Args:
+            query (VectorStoreQuery): Query for the vector store.
+
+        Returns:
+            VectorStoreQueryResult: Result of the query from vector store.
+        """
         if query.filters:
             # only for ExactMatchFilters
             filter_query = {
