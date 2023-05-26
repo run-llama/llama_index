@@ -1,5 +1,6 @@
 import os
 from typing import Optional
+import fsspec
 from llama_index.storage.index_store.keyval_index_store import KVIndexStore
 from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
 from llama_index.storage.kvstore.types import BaseInMemoryKVStore
@@ -18,28 +19,43 @@ class SimpleIndexStore(KVIndexStore):
 
     """
 
-    def __init__(self, simple_kvstore: Optional[SimpleKVStore] = None) -> None:
+    def __init__(
+        self,
+        simple_kvstore: Optional[SimpleKVStore] = None,
+    ) -> None:
+        """Init a SimpleIndexStore."""
         simple_kvstore = simple_kvstore or SimpleKVStore()
         super().__init__(simple_kvstore)
 
     @classmethod
     def from_persist_dir(
-        cls, persist_dir: str = DEFAULT_PERSIST_DIR
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleIndexStore":
         """Create a SimpleIndexStore from a persist directory."""
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
-        return cls.from_persist_path(persist_path)
+        return cls.from_persist_path(persist_path, fs=fs)
 
     @classmethod
-    def from_persist_path(cls, persist_path: str) -> "SimpleIndexStore":
+    def from_persist_path(
+        cls,
+        persist_path: str,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> "SimpleIndexStore":
         """Create a SimpleIndexStore from a persist path."""
-        simple_kvstore = SimpleKVStore.from_persist_path(persist_path)
+        fs = fs or fsspec.filesystem("file")
+        simple_kvstore = SimpleKVStore.from_persist_path(persist_path, fs=fs)
         return cls(simple_kvstore)
 
-    def persist(self, persist_path: str = DEFAULT_PERSIST_PATH) -> None:
+    def persist(
+        self,
+        persist_path: str = DEFAULT_PERSIST_PATH,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> None:
         """Persist the store."""
         if isinstance(self._kvstore, BaseInMemoryKVStore):
-            self._kvstore.persist(persist_path)
+            self._kvstore.persist(persist_path, fs=fs)
 
     @classmethod
     def from_dict(cls, save_dict: dict) -> "SimpleIndexStore":

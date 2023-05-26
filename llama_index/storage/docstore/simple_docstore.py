@@ -1,4 +1,5 @@
 import os
+import fsspec
 from typing import Optional
 from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
@@ -35,42 +36,47 @@ class SimpleDocumentStore(KVDocumentStore):
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
         namespace: Optional[str] = None,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleDocumentStore":
         """Create a SimpleDocumentStore from a persist directory.
 
         Args:
             persist_dir (str): directory to persist the store
             namespace (Optional[str]): namespace for the docstore
+            fs (Optional[fsspec.AbstractFileSystem]): filesystem to use
 
         """
 
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
-        return cls.from_persist_path(persist_path, namespace=namespace)
+        return cls.from_persist_path(persist_path, namespace=namespace, fs=fs)
 
     @classmethod
     def from_persist_path(
         cls,
         persist_path: str,
         namespace: Optional[str] = None,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleDocumentStore":
         """Create a SimpleDocumentStore from a persist path.
 
         Args:
             persist_path (str): Path to persist the store
             namespace (Optional[str]): namespace for the docstore
+            fs (Optional[fsspec.AbstractFileSystem]): filesystem to use
 
         """
 
-        simple_kvstore = SimpleKVStore.from_persist_path(persist_path)
+        simple_kvstore = SimpleKVStore.from_persist_path(persist_path, fs=fs)
         return cls(simple_kvstore, namespace)
 
     def persist(
         self,
         persist_path: str = DEFAULT_PERSIST_PATH,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the store."""
         if isinstance(self._kvstore, BaseInMemoryKVStore):
-            self._kvstore.persist(persist_path)
+            self._kvstore.persist(persist_path, fs=fs)
 
     @classmethod
     def from_dict(

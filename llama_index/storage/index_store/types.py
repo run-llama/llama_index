@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from llama_index.data_structs.data_structs import IndexStruct
 import os
+import fsspec
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "index_store.json"
@@ -28,6 +29,10 @@ class BaseIndexStore(ABC):
     ) -> Optional[IndexStruct]:
         pass
 
-    def persist(self, persist_path: str = DEFAULT_PERSIST_PATH) -> None:
+    def persist(
+        self,
+        persist_path: str = DEFAULT_PERSIST_PATH,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> None:
         """Persist the index store to disk."""
         pass

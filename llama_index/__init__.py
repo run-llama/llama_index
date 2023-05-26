@@ -107,6 +107,9 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 
+# vellum
+from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
+
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
@@ -161,6 +164,8 @@ __all__ = [
     "TrafilaturaWebReader",
     "LLMPredictor",
     "MockLLMPredictor",
+    "VellumPredictor",
+    "VellumPromptRegistry",
     "MockEmbedding",
     "SQLDatabase",
     "GPTIndexMemory",

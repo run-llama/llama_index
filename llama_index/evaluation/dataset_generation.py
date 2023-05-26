@@ -112,11 +112,15 @@ class DatasetGenerator:
             question_gen_query=question_gen_query,
         )
 
-    def _node_question_generator(self, nodes: List[Node]) -> List[str]:
+    def _node_question_generator(
+        self, nodes: List[Node], num: Optional[int] = None
+    ) -> List[str]:
         """Node question generator."""
-        questions = []
+        questions: List[str] = []
 
         for node in nodes:
+            if num is not None and len(questions) >= num:
+                break
             index = GPTListIndex.from_documents([Document(node.get_text())])
 
             query_engine = index.as_query_engine(
@@ -136,8 +140,10 @@ class DatasetGenerator:
 
         questions = [question for question in questions if question != ""]
 
+        if num is not None:
+            questions = questions[:num]
         return questions
 
-    def generate_questions_from_nodes(self) -> List[str]:
+    def generate_questions_from_nodes(self, num: Optional[int] = None) -> List[str]:
         """Generates questions for each document."""
-        return self._node_question_generator(self.nodes)
+        return self._node_question_generator(self.nodes, num)

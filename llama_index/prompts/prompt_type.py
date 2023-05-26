@@ -49,5 +49,8 @@ class PromptType(str, Enum):
 
     VECTOR_STORE_QUERY = "vector_store_query"
 
+    # Sub question prompt
+    SUB_QUESTION = "sub_question"
+
     # custom (by default)
     CUSTOM = "custom"

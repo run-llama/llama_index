@@ -87,7 +87,7 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
             embeddings=text_embeddings,
             similarity_fn=self.embed_model.similarity,
             similarity_top_k=num_top_k,
-            embedding_ids=[i for i in range(len(text_embeddings))],
+            embedding_ids=list(range(len(text_embeddings))),
             similarity_cutoff=threshold,
         )
         net_embed_tokens = self.embed_model.total_tokens_used - start_embed_token_ct
@@ -99,6 +99,7 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
         top_sentences = [split_text[i] for i in top_idxs]
 
         logger.debug(f"> Top {len(top_idxs)} sentences with scores:\n")
-        for i in range(len(top_idxs)):
-            logger.debug(f"{i}. {top_sentences[i]} ({top_similarities[i]})")
+        if logger.isEnabledFor(logging.DEBUG):
+            for i in range(len(top_idxs)):
+                logger.debug(f"{i}. {top_sentences[i]} ({top_similarities[i]})")
         return " ".join(top_sentences)

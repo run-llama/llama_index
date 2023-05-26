@@ -71,6 +71,21 @@ Ask questions about the Real Housewives of Beverly Hills.
 A journaling app that uses AI to uncover insights and patterns over time.
 [[Website]](https://mynd.so)
 
+###### CoFounder
+The First AI Co-Founder for Your Start-up 🙌
+
+[CoFounder](https://co-founder.ai?utm_source=llama-index&utm_medium=gallary&utm_campaign=alpha) is a platform to revolutionize the start-up ecosystem by providing founders with unparalleled tools, resources, and support. We are changing how founders build their companies from 0-1—productizing the accelerator/incubator programs using AI.
+
+Current features:
+
+* AI Investor Matching and Introduction and Tracking
+* AI Pitch Deck creation
+* Real-time Pitch Deck practice/feedback
+* Automatic Competitive Analysis / Watchlist
+* More coming soon...
+
+[[Website]](https://co-founder.ai?utm_source=llama-index&utm_medium=gallary&utm_campaign=alpha)
+
 ###### Al-X by OpenExO
 
 Your Digital Transformation Co-Pilot

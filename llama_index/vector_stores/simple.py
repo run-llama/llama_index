@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import fsspec
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, cast
 
@@ -61,17 +62,22 @@ class SimpleVectorStore(VectorStore):
     def __init__(
         self,
         data: Optional[SimpleVectorStoreData] = None,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._data = data or SimpleVectorStoreData()
+        self._fs = fs or fsspec.filesystem("file")
 
     @classmethod
     def from_persist_dir(
-        cls, persist_dir: str = DEFAULT_PERSIST_DIR
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleVectorStore":
+        """Load from persist dir."""
         persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
-        return cls.from_persist_path(persist_path)
+        return cls.from_persist_path(persist_path, fs=fs)
 
     @property
     def client(self) -> None:
@@ -116,8 +122,15 @@ class SimpleVectorStore(VectorStore):
 
         # TODO: consolidate with get_query_text_embedding_similarities
         items = self._data.embedding_dict.items()
-        node_ids = [t[0] for t in items]
-        embeddings = [t[1] for t in items]
+
+        if query.doc_ids:
+            available_ids = set(query.doc_ids)
+
+            node_ids = [t[0] for t in items if t[0] in available_ids]
+            embeddings = [t[1] for t in items if t[0] in available_ids]
+        else:
+            node_ids = [t[0] for t in items]
+            embeddings = [t[1] for t in items]
 
         query_embedding = cast(List[float], query.query_embedding)
 
@@ -143,25 +156,30 @@ class SimpleVectorStore(VectorStore):
     def persist(
         self,
         persist_path: str = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME),
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the SimpleVectorStore to a directory."""
+        fs = fs or self._fs
         dirpath = os.path.dirname(persist_path)
-        if not os.path.exists(dirpath):
-            os.makedirs(dirpath)
+        if not fs.exists(dirpath):
+            fs.makedirs(dirpath)
 
-        with open(persist_path, "w+") as f:
+        with fs.open(persist_path, "w") as f:
             json.dump(self._data.to_dict(), f)
 
     @classmethod
-    def from_persist_path(cls, persist_path: str) -> "SimpleVectorStore":
+    def from_persist_path(
+        cls, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
+    ) -> "SimpleVectorStore":
         """Create a SimpleKVStore from a persist directory."""
-        if not os.path.exists(persist_path):
+        fs = fs or fsspec.filesystem("file")
+        if not fs.exists(persist_path):
             raise ValueError(
                 f"No existing {__name__} found at {persist_path}, skipping load."
             )
 
         logger.debug(f"Loading {__name__} from {persist_path}.")
-        with open(persist_path, "r+") as f:
+        with fs.open(persist_path, "rb") as f:
             data_dict = json.load(f)
             data = SimpleVectorStoreData.from_dict(data_dict)
         return cls(data)

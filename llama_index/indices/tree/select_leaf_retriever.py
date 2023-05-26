@@ -8,7 +8,7 @@ from langchain.input import print_text
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.response.response_builder import get_response_builder
+from llama_index.indices.response import get_response_builder
 from llama_index.indices.tree.base import GPTTreeIndex
 from llama_index.indices.utils import (
     extract_numbers_given_response,

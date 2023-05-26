@@ -3,6 +3,7 @@
 An index that that is built on top of an existing vector store.
 """
 import logging
+import fsspec
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
@@ -251,12 +252,19 @@ class RedisVectorStore(VectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
-    def persist(self, persist_path: str, in_background: bool = True) -> None:
+    def persist(
+        self,
+        persist_path: str,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+        in_background: bool = True,
+    ) -> None:
         """Persist the vector store to disk.
 
         Args:
             persist_path (str): Path to persist the vector store to. (doesn't apply)
             in_background (bool, optional): Persist in background. Defaults to True.
+            fs (fsspec.AbstractFileSystem, optional): Filesystem to persist to.
+                (doesn't apply)
 
         Raises:
             redis.exceptions.RedisError: If there is an error

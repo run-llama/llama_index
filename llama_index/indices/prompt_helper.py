@@ -9,8 +9,8 @@ from typing import Callable, List, Optional, Sequence
 
 from llama_index.constants import MAX_CHUNK_OVERLAP
 from llama_index.data_structs.node import Node
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
+from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.utils import globals_helper
 
@@ -55,7 +55,7 @@ class PromptHelper:
     @classmethod
     def from_llm_predictor(
         self,
-        llm_predictor: LLMPredictor,
+        llm_predictor: BaseLLMPredictor,
         max_chunk_overlap: Optional[int] = None,
         embedding_limit: Optional[int] = None,
         chunk_size_limit: Optional[int] = None,

@@ -4,7 +4,7 @@ import logging
 from abc import abstractmethod
 from dataclasses import dataclass
 from threading import Thread
-from typing import Any, Generator, Optional, Protocol, Tuple
+from typing import Any, Generator, Optional, Protocol, Tuple, runtime_checkable
 
 import langchain
 import openai
@@ -83,8 +83,11 @@ def _get_response_gen(openai_response_stream: Generator) -> Generator:
         yield response["choices"][0]["text"]
 
 
+@runtime_checkable
 class BaseLLMPredictor(Protocol):
     """Base LLM Predictor."""
+
+    callback_manager: CallbackManager
 
     @abstractmethod
     def get_llm_metadata(self) -> LLMMetadata:
