@@ -116,7 +116,7 @@ class DatasetGenerator:
         self, nodes: List[Node], num: Optional[int] = None
     ) -> List[str]:
         """Node question generator."""
-        questions = []
+        questions: List[str] = []
 
         for node in nodes:
             if num is not None and len(questions) >= num:
