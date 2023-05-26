@@ -170,7 +170,7 @@ class BaseGPTIndex(Generic[IS], ABC):
     @llm_token_counter("insert")
     def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert nodes."""
-        with self._service_context.callback_manager.as_trace("inser_nodes"):
+        with self._service_context.callback_manager.as_trace("insert_nodes"):
             self.docstore.add_documents(nodes, allow_update=True)
             self._insert(nodes, **insert_kwargs)
             self._storage_context.index_store.add_index_struct(self._index_struct)
