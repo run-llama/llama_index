@@ -8,6 +8,9 @@ from llama_index.indices.query.query_transform.prompts import (
 )
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.choice_select import ChoiceSelectPrompt
+from llama_index.indices.struct_store.sql_query import (
+    ResponseSynthesisPrompt as SQLResponseSynthesisPrompt,
+)
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import mock_extract_keywords_response
 
@@ -145,6 +148,11 @@ def _mock_choice_select(prompt_args: Dict) -> str:
     return "Doc: 1, Relevance: 5"
 
 
+def _mock_sql_response_synthesis(prompt_args: Dict) -> str:
+    """Mock sql response synthesis prompt."""
+    return prompt_args["response_str"]
+
+
 def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
     """Mock predict method of LLMPredictor.
 
@@ -186,6 +194,8 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
             response = _mock_decompose_query(full_prompt_args)
         elif isinstance(prompt, ChoiceSelectPrompt):
             response = _mock_choice_select(full_prompt_args)
+        elif isinstance(prompt, SQLResponseSynthesisPrompt):
+            response = _mock_sql_response_synthesis(full_prompt_args)
         else:
             raise ValueError("Invalid prompt to use with mocks.")
     elif prompt.prompt_type == PromptType.PANDAS:
@@ -241,6 +251,8 @@ def patch_llmpredictor_predict(
             response = _mock_decompose_query(full_prompt_args)
         elif isinstance(prompt, ChoiceSelectPrompt):
             response = _mock_choice_select(full_prompt_args)
+        elif isinstance(prompt, SQLResponseSynthesisPrompt):
+            response = _mock_sql_response_synthesis(full_prompt_args)
         else:
             raise ValueError("Invalid prompt to use with mocks.")
     elif prompt.prompt_type == PromptType.PANDAS:
