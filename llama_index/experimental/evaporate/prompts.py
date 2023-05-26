@@ -9,7 +9,28 @@ Full credits go to: https://github.com/HazyResearch/evaporate
 from llama_index.prompts.prompts import Prompt
 
 # deprecated, kept for backward compatibility
+
+"""Pandas prompt. Convert query to python code.
+
+Required template variables: `chunk`, `topic`.
+
+Args:
+    template (str): Template for the prompt.
+    **prompt_kwargs: Keyword arguments for the prompt.
+
+"""
 SchemaIDPrompt = Prompt
+
+"""Function generation prompt. Generate a function from existing text.
+
+Required template variables: `context_str`, `query_str`,
+    `attribute`, `function_field`.
+
+Args:
+    template (str): Template for the prompt.
+    **prompt_kwargs: Keyword arguments for the prompt.
+
+"""
 FnGeneratePrompt = Prompt
 
 # used for schema identification

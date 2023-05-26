@@ -1,7 +1,24 @@
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 
+"""Single select prompt.
+
+Prompt to select one out of `num_choices` options provided in `context_list`,
+given a query `query_str`.
+
+Required template variables: `num_chunks`, `context_list`, `query_str`
+
+"""
 SingleSelectPrompt = Prompt
+
+"""Multiple select prompt.
+
+Prompt to select multiple candidates (up to `max_outputs`) out of `num_choices`
+options provided in `context_list`, given a query `query_str`.
+
+Required template variables: `num_chunks`, `context_list`, `query_str`,
+    `max_outputs`
+"""
 MultiSelectPrompt = Prompt
 
 

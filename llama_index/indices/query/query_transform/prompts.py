@@ -4,8 +4,30 @@
 from llama_index.prompts.base import Prompt
 
 # deprecated, kept for backwards compatibility
+"""Decompose prompt for query transformation.
+
+Prompt to "decompose" a query into another query
+given the existing context.
+
+Required template variables: `context_str`, `query_str`
+"""
 DecomposeQueryTransformPrompt = Prompt
+
+"""Step Decompose prompt for query transformation.
+
+Prompt to "decompose" a query into another query
+given the existing context + previous reasoning (the previous steps).
+
+Required template variables: `context_str`, `query_str`, `prev_reasoning`
+"""
 StepDecomposeQueryTransformPrompt = Prompt
+
+"""Image output prompt for query transformation.
+
+Prompt to add instructions for formatting image output.
+
+Required template variables: `query_str`, `image_width`
+"""
 ImageOutputQueryTransformPrompt = Prompt
 
 
