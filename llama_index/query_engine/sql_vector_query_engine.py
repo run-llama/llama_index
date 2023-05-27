@@ -21,10 +21,6 @@ from llama_index.llm_predictor.base import BaseLLMPredictor
 logger = logging.getLogger(__name__)
 
 
-# TODO: define query transformation
-
-
-# TODO: define SQLVectorSynthesisPrompt
 DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL = (
     "The original question is given below.\n"
     "This question has been translated into a SQL query. Both the SQL "
