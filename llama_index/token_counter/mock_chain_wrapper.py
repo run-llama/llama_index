@@ -118,5 +118,8 @@ class MockLLMPredictor(LLMPredictor):
             return _mock_knowledge_graph_triplet_extract(
                 prompt_args, prompt.partial_dict.get("max_knowledge_triplets", 2)
             )
+        elif prompt_str == PromptType.CUSTOM:
+            # we don't know specific prompt type, return generic response
+            return ""
         else:
             raise ValueError("Invalid prompt type.")

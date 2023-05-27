@@ -44,3 +44,11 @@ class ResponseMode(str, Enum):
 
     ACCUMULATE = "accumulate"
     """Synthesize a response for each text chunk, and then return the concatenation."""
+
+    COMPACT_ACCUMULATE = "compact_accumulate"
+    """
+    Compact and accumulate mode first combine text chunks into larger consolidated \
+    chunks that more fully utilize the available context window, then accumulate \
+    answers for each of them and finally return the concatenation. 
+    This mode is faster than accumulate since we make fewer calls to the LLM.
+    """

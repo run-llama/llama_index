@@ -4,10 +4,11 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
+from llama_index.prompts.base import Prompt
+from llama_index.prompts.prompt_type import PromptType
 from llama_index.question_gen.output_parser import SubQuestionOutputParser
 from llama_index.question_gen.prompts import (
     DEFAULT_SUB_QUESTION_PROMPT_TMPL,
-    SubQuestionPrompt,
     build_tools_text,
 )
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
@@ -18,7 +19,7 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
     def __init__(
         self,
         llm_predictor: BaseLLMPredictor,
-        prompt: SubQuestionPrompt,
+        prompt: Prompt,
     ) -> None:
         self._llm_predictor = llm_predictor
         self._prompt = prompt
@@ -39,8 +40,10 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
         output_parser = output_parser or SubQuestionOutputParser()
 
         # construct prompt
-        prompt = SubQuestionPrompt(
-            template=prompt_template_str, output_parser=output_parser
+        prompt = Prompt(
+            template=prompt_template_str,
+            output_parser=output_parser,
+            prompt_type=PromptType.SUB_QUESTION,
         )
         return cls(service_context.llm_predictor, prompt)
 

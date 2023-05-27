@@ -2,6 +2,7 @@
 
 from llama_index.indices.response.accumulate import Accumulate
 from llama_index.indices.response.base_builder import BaseResponseBuilder
+from llama_index.indices.response.compact_and_accumulate import CompactAndAccumulate
 from llama_index.indices.response.compact_and_refine import CompactAndRefine
 from llama_index.indices.response.factory import get_response_builder
 from llama_index.indices.response.generation import Generation
@@ -18,6 +19,7 @@ __all__ = [
     "TreeSummarize",
     "Generation",
     "CompactAndRefine",
+    "CompactAndAccumulate",
     "Accumulate",
     "get_response_builder",
 ]
