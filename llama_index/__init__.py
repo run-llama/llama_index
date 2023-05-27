@@ -8,6 +8,7 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 import logging
 from logging import NullHandler
 
+from llama_index.chat_engine import QueryChatEngine, SimpleChatEngine
 from llama_index.data_structs.struct_type import IndexStructType
 
 # embeddings

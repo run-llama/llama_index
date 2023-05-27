@@ -3,6 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
 
+from llama_index.chat_engine.base import BaseChatEngine
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
@@ -244,3 +245,10 @@ class BaseGPTIndex(Generic[IS], ABC):
         if "service_context" not in kwargs:
             kwargs["service_context"] = self._service_context
         return RetrieverQueryEngine.from_args(**kwargs)
+
+    def as_query_engine(self, **kwargs: Any) -> BaseChatEngine:
+        # NOTE: lazy import
+        from llama_index.chat_engine import QueryChatEngine
+
+        query_engine = self.as_query_engine(**kwargs)
+        return QueryChatEngine.from_defaults(query_engine=query_engine)
