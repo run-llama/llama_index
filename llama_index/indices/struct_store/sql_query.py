@@ -13,6 +13,7 @@ from llama_index.prompts.base import Prompt
 from llama_index.response.schema import Response
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.prompts.prompt_type import PromptType
+from llama_index.indices.service_context import ServiceContext
 
 logger = logging.getLogger(__name__)
 

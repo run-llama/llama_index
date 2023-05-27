@@ -116,7 +116,7 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
         self,
         sql_query_tool: QueryEngineTool,
         vector_query_tool: QueryEngineTool,
-        selector: LLMSingleSelector,
+        selector: Optional[LLMSingleSelector] = None,
         service_context: Optional[ServiceContext] = None,
         sql_vector_synthesis_prompt: Optional[Prompt] = None,
         sql_augment_query_transform: Optional[SQLAugmentQueryTransform] = None,
@@ -146,7 +146,7 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
             GPTNLStructStoreQueryEngine, sql_query_tool.query_engine
         )
         self._service_context = service_context or sql_query_engine.service_context
-        self._selector = selector
+        self._selector = selector or LLMSingleSelector.from_defaults()
         self._sql_vector_synthesis_prompt = (
             sql_vector_synthesis_prompt or DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT
         )
@@ -186,7 +186,6 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
             name=vector_tool_name,
             description=vector_tool_description,
         )
-        selector = selector or LLMSingleSelector()
         return cls(sql_query_tool, vector_query_tool, selector, **kwargs)
 
     def _query_sql(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
@@ -196,7 +195,7 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
         if not self._use_sql_vector_synthesis:
             return response
 
-        sql_query = response.extra_info["sql_query"]
+        sql_query = response.extra_info["sql_query"] if response.extra_info else None
 
         # synthesize answer from vector db
         new_query = self._sql_augment_query_transform(query_bundle.query_str)
@@ -206,9 +205,9 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
             self._sql_vector_synthesis_prompt,
             query_str=query_bundle.query_str,
             sql_query_str=sql_query,
-            sql_response_str=response.response,
+            sql_response_str=str(response),
             vector_store_query_str=new_query.query_str,
-            vector_store_response_str=vector_response.response,
+            vector_store_response_str=str(vector_response),
         )
         response_extra_info = {**response.extra_info, **vector_response.extra_info}
         source_nodes = vector_response.source_nodes

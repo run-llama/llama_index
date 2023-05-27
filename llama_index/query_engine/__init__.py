@@ -7,6 +7,7 @@ from llama_index.query_engine.router_query_engine import (
 )
 from llama_index.query_engine.sub_question_query_engine import SubQuestionQueryEngine
 from llama_index.query_engine.transform_query_engine import TransformQueryEngine
+from llama_index.query_engine.sql_vector_query_engine import SQLAutoVectorQueryEngine
 
 __all__ = [
     "ComposableGraphQueryEngine",
@@ -16,4 +17,5 @@ __all__ = [
     "RouterQueryEngine",
     "RetrieverRouterQueryEngine",
     "SubQuestionQueryEngine",
+    "SQLAutoVectorQueryEngine",
 ]
