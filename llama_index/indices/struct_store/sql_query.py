@@ -12,7 +12,6 @@ from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import Response
 from llama_index.token_counter.token_counter import llm_token_counter
-from typing import List
 from llama_index.prompts.prompt_type import PromptType
 
 logger = logging.getLogger(__name__)
