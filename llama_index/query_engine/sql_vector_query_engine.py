@@ -1,6 +1,7 @@
 """SQL Vector query engine."""
 
-from typing import Optional, cast, List, Dict, Optional, Any
+from langchain.input import print_text
+from typing import Optional, cast, List, Dict, Optional, Any, Callable
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.struct_store.sql_query import GPTNLStructStoreQueryEngine
 from llama_index.indices.vector_store.retrievers.auto_retriever import (
@@ -17,6 +18,7 @@ from llama_index.indices.query.query_transform.base import BaseQueryTransform
 import logging
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.callbacks.base import CallbackManager
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +27,11 @@ DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL = (
     "The original question is given below.\n"
     "This question has been translated into a SQL query. Both the SQL "
     "query and the response are given below.\n"
-    "Given the SQL response, the question has also been translated into a vector store query.\n"
+    "Given the SQL response, the question has also been translated into a vector "
+    "store query.\n"
     "The vector store query and response is given below.\n"
-    "Given SQL query, SQL response, transformed vector store query, and vector store response, "
+    "Given SQL query, SQL response, transformed vector store query, "
+    "and vector store response, "
     "please synthesize a response to the original question.\n\n"
     "Original question: {query_str}\n"
     "SQL query: {sql_query_str}\n"
@@ -43,23 +47,47 @@ DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT_TMPL = (
     "The original question is given below.\n"
     "This question has been translated into a SQL query. Both the SQL "
     "query and the response are given below.\n"
-    "The SQL response should provide additional context that can be used "
-    "to make the question more specific. Please respond with the new question.\n"
+    "The SQL response either answers the question, or should provide additional context that can be used "
+    "to make the question more specific.\n"
+    "Your job is to come up with a more specific question that needs to be answered "
+    "to fully answer the original question, "
+    "or 'None' if the original question has already been fully answered from the "
+    "SQL response. Do not create a new question "
+    "that is irrelevant to the original question; in that case return None instead. \n\n"
     "Examples:\n\n"
-    "Original question: Please give more details about the city with the highest population. \n"
+    "Original question: Please give more details about the demographics of the city with the highest "
+    "population. \n"
     "SQL query: SELECT city, population FROM cities ORDER BY population DESC LIMIT 1\n"
     "SQL response: The city with the highest population is New York City.\n"
-    "New question: What is the population of New York City?\n\n"
-    "Original question: Please compare the sports environment of cities in North America.\n\n"
-    "SQL query: SELECT city, sports FROM cities WHERE continent = 'North America'\n"
-    "SQL response: The sports in North America are baseball, basketball, and football.\n"
-    "New question: What sports are played in North America?\n\n"
+    "New question: Can you tell me more about the demographics of New York City?\n\n"
+    "Original question: Please compare the sports environment of cities in North America.\n"
+    "SQL query: SELECT city_name FROM cities WHERE continent = 'North America' LIMIT 3\n"
+    "SQL response: The cities in North America are New York, San Francisco, and Toronto.\n"
+    "New question: What sports are played in New York, San Francisco, and Toronto?\n\n"
+    "Original question: What is the city with the highest population?\n"
+    "SQL query: SELECT city, population FROM cities ORDER BY population DESC LIMIT 1\n"
+    "SQL response: The city with the highest population is New York City.\n"
+    "New question: None\n\n"
+    "Original question: What countries are the top 3 ATP players from?\n"
+    "SQL query: SELECT country FROM players WHERE rank <= 3\n"
+    "SQL response: The top 3 ATP players are from Serbia, Russia, and Spain.\n"
+    "New question: None\n\n"
     "Original question: {query_str}\n"
     "SQL query: {sql_query_str}\n"
     "SQL response: {sql_response_str}\n"
     "New question: "
 )
 DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT = Prompt(DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT_TMPL)
+
+
+def _default_check_stop(query_bundle: QueryBundle) -> bool:
+    """Default check stop function."""
+    return query_bundle.query_str.lower() == "none"
+
+
+def _format_sql_query(sql_query: str) -> str:
+    """Format SQL query."""
+    return sql_query.replace("\n", " ").replace("\t", " ")
 
 
 class SQLAugmentQueryTransform(BaseQueryTransform):
@@ -76,6 +104,7 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
         self,
         llm_predictor: Optional[BaseLLMPredictor] = None,
         sql_augment_transform_prompt: Optional[Prompt] = None,
+        check_stop_parser: Optional[Callable[[str], bool]] = None,
     ) -> None:
         """Initialize params."""
         self._llm_predictor = llm_predictor or LLMPredictor()
@@ -83,13 +112,14 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
         self._sql_augment_transform_prompt = (
             sql_augment_transform_prompt or DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT
         )
+        self._check_stop_parser = check_stop_parser or _default_check_stop
 
     def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         """Run query transform."""
         query_str = query_bundle.query_str
         sql_query = extra_info["sql_query"]
         sql_query_response = extra_info["sql_query_response"]
-        new_query_str, _ = self._llm_predictor.predict(
+        new_query_str, formatted_prompt = self._llm_predictor.predict(
             self._sql_augment_transform_prompt,
             query_str=query_str,
             sql_query_str=sql_query,
@@ -98,6 +128,10 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
         return QueryBundle(
             new_query_str, custom_embedding_strs=query_bundle.custom_embedding_strs
         )
+
+    def check_stop(self, query_bundle: QueryBundle) -> bool:
+        """Check if query indicates stop."""
+        return self._check_stop_parser(query_bundle)
 
 
 class SQLAutoVectorQueryEngine(BaseQueryEngine):
@@ -121,8 +155,11 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
         sql_vector_synthesis_prompt: Optional[Prompt] = None,
         sql_augment_query_transform: Optional[SQLAugmentQueryTransform] = None,
         use_sql_vector_synthesis: bool = True,
+        callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = True,
     ) -> None:
         """Initialize params."""
+        super().__init__(callback_manager=callback_manager)
         # validate that the query engines are of the right type
         if not isinstance(sql_query_tool.query_engine, GPTNLStructStoreQueryEngine):
             raise ValueError(
@@ -157,6 +194,7 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
             )
         )
         self._use_sql_vector_synthesis = use_sql_vector_synthesis
+        self._verbose = verbose
 
     @classmethod
     def from_sql_and_vector_query_engines(
@@ -188,28 +226,57 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
         )
         return cls(sql_query_tool, vector_query_tool, selector, **kwargs)
 
-    def _query_sql(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Query SQL database."""
+    def _query_sql_vector(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Query SQL database + vector db in sequence."""
         # first query SQL database
-        response = self._sql_query_tool.query_engine.query(query_bundle)
+        sql_response = self._sql_query_tool.query_engine.query(query_bundle)
         if not self._use_sql_vector_synthesis:
-            return response
+            return sql_response
 
-        sql_query = response.extra_info["sql_query"] if response.extra_info else None
+        sql_query = (
+            sql_response.extra_info["sql_query"] if sql_response.extra_info else None
+        )
+        if self._verbose:
+            print_text(f"SQL query: {sql_query}\n", color="yellow")
+            print_text(f"SQL response: {sql_response}\n", color="yellow")
 
-        # synthesize answer from vector db
-        new_query = self._sql_augment_query_transform(query_bundle.query_str)
+        # given SQL db, transform query into new query
+        new_query = self._sql_augment_query_transform(
+            query_bundle.query_str,
+            extra_info={
+                "sql_query": _format_sql_query(sql_query),
+                "sql_query_response": str(sql_response),
+            },
+        )
+
+        if self._verbose:
+            print_text(
+                f"Transformed query given SQL response: {new_query.query_str}\n",
+                color="blue",
+            )
+        logger.info(f"> Transformed query given SQL response: {new_query.query_str}")
+        if self._sql_augment_query_transform.check_stop(new_query):
+            return sql_response
+
         vector_response = self._vector_query_tool.query_engine.query(new_query)
+        if self._verbose:
+            print_text(f"Vector DB response: {vector_response}\n", color="pink")
+        logger.info(f"> Vector DB response: {vector_response}")
 
         response_str, _ = self._service_context.llm_predictor.predict(
             self._sql_vector_synthesis_prompt,
             query_str=query_bundle.query_str,
             sql_query_str=sql_query,
-            sql_response_str=str(response),
+            sql_response_str=str(sql_response),
             vector_store_query_str=new_query.query_str,
             vector_store_response_str=str(vector_response),
         )
-        response_extra_info = {**response.extra_info, **vector_response.extra_info}
+        if self._verbose:
+            print_text(f"Final response: {response_str}\n", color="green")
+        response_extra_info = {
+            **(sql_response.extra_info or {}),
+            **(vector_response.extra_info or {}),
+        }
         source_nodes = vector_response.source_nodes
         return Response(
             response_str,
@@ -224,10 +291,21 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
         result = self._selector.select(metadatas, query_bundle)
         # pick sql query
         if result.ind == 0:
+            if self._verbose:
+                print_text(f"Querying SQL database: {result.reason}\n", color="blue")
             logger.info(f"> Querying SQL database: {result.reason}")
-            return self._query_sql(query_bundle)
+            return self._query_sql_vector(query_bundle)
         elif result.ind == 1:
+            if self._verbose:
+                print_text(f"Querying vector database: {result.reason}\n", color="blue")
             logger.info(f"> Querying vector database: {result.reason}")
-            return self._vector_query_tool.query_engine.query(query_bundle)
+            response = self._vector_query_tool.query_engine.query(query_bundle)
+            if self._verbose:
+                print_text(f"Vector DB response: {response}\n", color="pink")
+            return response
         else:
             raise ValueError(f"Invalid result.ind: {result.ind}")
+
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        # TODO: make async
+        return self._query(query_bundle)
