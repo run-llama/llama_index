@@ -145,6 +145,11 @@ def _mock_choice_select(prompt_args: Dict) -> str:
     return "Doc: 1, Relevance: 5"
 
 
+def _mock_sql_response_synthesis(prompt_args: Dict) -> str:
+    """Mock sql response synthesis prompt."""
+    return prompt_args["sql_response_str"]
+
+
 def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
     """Mock predict method of LLMPredictor.
 
@@ -183,6 +188,8 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
         response = _mock_sub_questions()
     elif prompt.prompt_type == PromptType.PANDAS:
         response = _mock_pandas(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SQL_RESPONSE_SYNTHESIS:
+        response = _mock_sql_response_synthesis(full_prompt_args)
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
@@ -238,6 +245,8 @@ def patch_llmpredictor_predict(
         response = _mock_sub_questions()
     elif prompt.prompt_type == PromptType.PANDAS:
         response = _mock_pandas(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SQL_RESPONSE_SYNTHESIS:
+        response = _mock_sql_response_synthesis(full_prompt_args)
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
