@@ -8,9 +8,6 @@ from llama_index.indices.query.query_transform.prompts import (
 )
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.choice_select import ChoiceSelectPrompt
-from llama_index.indices.struct_store.sql_query import (
-    ResponseSynthesisPrompt as SQLResponseSynthesisPrompt,
-)
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import mock_extract_keywords_response
 
@@ -150,7 +147,7 @@ def _mock_choice_select(prompt_args: Dict) -> str:
 
 def _mock_sql_response_synthesis(prompt_args: Dict) -> str:
     """Mock sql response synthesis prompt."""
-    return prompt_args["response_str"]
+    return prompt_args["sql_response_str"]
 
 
 def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
@@ -191,13 +188,13 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
         response = _mock_sub_questions()
     elif prompt.prompt_type == PromptType.PANDAS:
         response = _mock_pandas(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SQL_RESPONSE_SYNTHESIS:
+        response = _mock_sql_response_synthesis(full_prompt_args)
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
         elif isinstance(prompt, ChoiceSelectPrompt):
             response = _mock_choice_select(full_prompt_args)
-        elif isinstance(prompt, SQLResponseSynthesisPrompt):
-            response = _mock_sql_response_synthesis(full_prompt_args)
         else:
             raise ValueError("Invalid prompt to use with mocks.")
     else:
@@ -248,13 +245,13 @@ def patch_llmpredictor_predict(
         response = _mock_sub_questions()
     elif prompt.prompt_type == PromptType.PANDAS:
         response = _mock_pandas(full_prompt_args)
+    elif prompt.prompt_type == PromptType.SQL_RESPONSE_SYNTHESIS:
+        response = _mock_sql_response_synthesis(full_prompt_args)
     elif prompt.prompt_type == PromptType.CUSTOM:
         if isinstance(prompt, DecomposeQueryTransformPrompt):
             response = _mock_decompose_query(full_prompt_args)
         elif isinstance(prompt, ChoiceSelectPrompt):
             response = _mock_choice_select(full_prompt_args)
-        elif isinstance(prompt, SQLResponseSynthesisPrompt):
-            response = _mock_sql_response_synthesis(full_prompt_args)
         else:
             raise ValueError("Invalid prompt to use with mocks.")
     else:
