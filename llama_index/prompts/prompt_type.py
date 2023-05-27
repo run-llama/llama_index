@@ -52,5 +52,8 @@ class PromptType(str, Enum):
     # Sub question prompt
     SUB_QUESTION = "sub_question"
 
+    # SQL response synthesis prompt
+    SQL_RESPONSE_SYNTHESIS = "sql_response_synthesis"
+
     # custom (by default)
     CUSTOM = "custom"

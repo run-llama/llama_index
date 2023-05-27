@@ -102,6 +102,7 @@ DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL = PREFIX + EXAMPLES + SUFFIX
 
 
 # deprecated, kept for backwards compatibility
+"""Vector store query prompt."""
 VectorStoreQueryPrompt = Prompt
 
 DEFAULT_VECTOR_STORE_QUERY_PROMPT = Prompt(

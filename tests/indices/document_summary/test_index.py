@@ -21,7 +21,9 @@ def test_build_index(
     ]
 
     response_synthesizer = ResponseSynthesizer.from_args(
-        text_qa_template=MOCK_TEXT_QA_PROMPT, refine_template=MOCK_REFINE_PROMPT
+        text_qa_template=MOCK_TEXT_QA_PROMPT,
+        refine_template=MOCK_REFINE_PROMPT,
+        callback_manager=mock_service_context.callback_manager,
     )
     index = GPTDocumentSummaryIndex.from_documents(
         docs,
