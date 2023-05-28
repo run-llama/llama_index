@@ -55,7 +55,11 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         **kwargs: Any,
     ):
         return cls(
-            query_engine, condense_question_prompt, chat_history, service_context
+            query_engine,
+            condense_question_prompt,
+            chat_history,
+            service_context,
+            verbose=verbose,
         )
 
     def _condense_question(self, chat_history: List[str], last_message: str) -> str:
