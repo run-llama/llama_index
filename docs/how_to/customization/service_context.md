@@ -10,7 +10,6 @@ The following optional items can be set in the service context:
 - node_parser: The parser that converts documents into nodes.
 - chunk_size_limit: The maximum size of a node. Is used for the prompt helper and node parser when they aren't provided.
 - callback_managaer: The callback manager object that calls it's handlers on events. Provides basic logging and tracing capabilities.
-- is_global: A boolean that should be set when you are defining a global service context
 
 Here's a complete example that sets up all objects using their default settings:
 
@@ -38,15 +37,9 @@ You can specify a different set of defaults for the ServiceContext by setting up
 
 With a global service context, any attributes not provided when calling `ServiceContext.from_defaults()` will be pulled from your global service context. If you never define a service context anywhere else, then the global service context will always be used.
 
-You can define a global service context by following these steps:
+Here's a quick example of what a global service context might look like. This service context changes the LLM to `gpt-3.5-turbo`, changes the `chunk_size_limit`, and sets up a `callback_manager` to trace events using the `LlamaDebugHandler`.
 
-1. Create a standalone python file that defines a variable called `service_context` that is the `ServiceContext` object containing your desired global settings. The `ServiceContext` defined in this file should include the `is_global=True` keyword argument.
-2. Set an env varialbe called `LLAMA_SERVICE_CONTEXT` that points to a .py file. This can be set using `export LLAMA_SERVICE_CONTEXT="path/to/file.py"` or by setting in python directly using `os.environ['LLAMA_SERVICE_CONTEXT'] = "path/to/file.py"`. 
-3. Use LlamaIndex - the default settings will be automatically pulled from your default service context file!
-
-Here's a quick example of what a global service context file might look like. This service context changes the LLM to `gpt-3.5-turbo`, changes the `chunk_size_limit`, and sets up a `callback_manager` to trace events using the `LlamaDebugHandler`.
-
-The `ServiceContext` defined in this file should include the `is_global=True` keyword argument.
+First, define the service context:
 
 ```python
 from langchain.chat_models import ChatOpenAI
@@ -61,15 +54,9 @@ llm_predictor = LLMPredictor(llm=llm)
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, chunk_size_limit=512, callback_manager=callback_manager, is_global=True)
 ```
 
-Then, to use the global service context, set the variable in your terminal:
-
-```bash
-export LLAMA_SERVICE_CONTEXT="path/to/default_service_context.py"
-```
-
-Or set the environment variable directly in code:
+Then, set the global service context object
 
 ```python
-import os
-os.environ['LLAMA_SERVICE_CONTEXT'] = "path/to/default_service_context.py"
+import llama_index
+llama_index.global_service_context = service_context
 ```

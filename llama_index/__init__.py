@@ -7,6 +7,7 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 
 import logging
 from logging import NullHandler
+from typing import Optional
 
 from llama_index.data_structs.struct_type import IndexStructType
 
@@ -185,3 +186,6 @@ __all__ = [
 
 # NOTE: keep for backwards compatibility
 SQLContextBuilder = SQLDocumentContextBuilder
+
+# global service context for ServiceContext.from_defaults()
+global_service_context: Optional[ServiceContext] = None
