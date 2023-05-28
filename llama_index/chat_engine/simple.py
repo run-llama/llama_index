@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.chat_engine.utils import get_chat_history
@@ -17,13 +17,10 @@ Overall, Assistant is a powerful tool that can help with a wide range of tasks a
 
 {history}
 Human: {message}
-Assistant:"""
+Assistant: 
+"""
 
 DEFAULT_PROMPT = Prompt(DEFAULT_TMPL)
-
-
-def is_chat_model(llm_predictor: LLMPredictor):
-    return False
 
 
 class SimpleChatEngine(BaseChatEngine):
@@ -42,22 +39,23 @@ class SimpleChatEngine(BaseChatEngine):
         service_context: Optional[ServiceContext] = None,
         prompt: Optional[Prompt] = None,
     ):
-        service_context = service_context or ServiceContext.from_defaults()
-        prompt = prompt or DEFAULT_PROMPT
-        return cls(service_context.llm_predictor, prompt=prompt)
+        return cls(service_context=service_context, prompt=prompt)
 
     def chat(self, message: str) -> RESPONSE_TYPE:
-        if is_chat_model(self._service_context.llm_predictor):
-            # TODO: implement
-            raise NotImplementedError()
-        else:
-            history = get_chat_history(self._chat_history)
-            response, _ = self._service_context.llm_predictor.predict(
-                self._prompt,
-                history=history,
-                message=message,
-            )
-            return response
+        history = get_chat_history(self._chat_history)
+        response, _ = self._service_context.llm_predictor.predict(
+            self._prompt,
+            history=history,
+            message=message,
+        )
+
+        # Record response
+        self._chat_history.append((message, str(response)))
+
+        return response
 
     async def achat(self, message: str) -> RESPONSE_TYPE:
         return self.chat(message)
+
+    def reset(self) -> None:
+        self._chat_history = []

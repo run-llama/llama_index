@@ -1,8 +1,7 @@
 from typing import Any, Optional, cast
 
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.langchain_helpers.agents.tools import (IndexToolConfig,
-                                                        LlamaIndexTool)
+from llama_index.langchain_helpers.agents.tools import IndexToolConfig, LlamaIndexTool
 from llama_index.tools.types import BaseTool, ToolMetadata
 
 DEFAULT_NAME = "Query Engine Tool"
@@ -53,7 +52,7 @@ class QueryEngineTool(BaseTool):
         query_str = cast(str, input)
         response = self._query_engine.query(query_str)
         return str(response)
-    
+
     def as_langchain_tool(self):
         tool_config = IndexToolConfig(
             query_engine=self.query_engine,
@@ -61,5 +60,3 @@ class QueryEngineTool(BaseTool):
             description=self.metadata.description,
         )
         return LlamaIndexTool.from_tool_config(tool_config=tool_config)
-        
-

@@ -1,5 +1,3 @@
-
-
 from typing import List, Tuple
 
 
@@ -10,4 +8,3 @@ def get_chat_history(chat_history: List[Tuple[str, str]]) -> str:
         ai = "Assistant: " + ai_s
         buffer += "\n" + "\n".join([human, ai])
     return buffer
-

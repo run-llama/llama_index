@@ -23,8 +23,19 @@ class BaseChatEngine(ABC):
         """Async version of main chat interface."""
         pass
 
+    def chat_repl(self):
+        print("===== Entering Chat REPL =====")
+        print('Type "exit" to exit.\n')
+
+        self.reset()
+        message = input("Human: ")
+        while message != "exit":
+            response = self.chat(message)
+            print(f"Assistant: {response}\n")
+            message = input("Human: ")
+
 
 class ChatMode(str, Enum):
-    CONDENSE_QUESTION =  "condense_question"
+    CONDENSE_QUESTION = "condense_question"
     REACT = "react"
-    SIMPLE = 'simple'
+    SIMPLE = "simple"

@@ -12,13 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 DEFAULT_TEMPLATE = """\
-Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
+Given a conversation (between Human and Assistant) and a follow up message from Human, \
+rewrite the message to be a standalone question that captures all relevant context from the conversation.
 
-Chat History: {chat_history}
+<Chat History> 
+{chat_history}
 
-Follow Up Input: {question}
+<Follow Up Message>
+{question}
 
-Standalone question:"""
+<Standalone question>
+"""
 
 DEFAULT_PROMPT = Prompt(DEFAULT_TEMPLATE)
 
