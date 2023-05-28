@@ -36,11 +36,13 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         condense_question_prompt: Optional[str] = None,
         chat_history: List[Tuple[str, str]] = None,
         service_context: Optional[ServiceContext] = None,
+        verbose: bool = False,
     ) -> None:
         self._query_engine = query_engine
         self._condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
         self._chat_history = chat_history or []
         self._service_context = service_context or ServiceContext.from_defaults()
+        self._verbose = verbose
 
     @classmethod
     def from_defaults(
@@ -49,6 +51,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         condense_question_prompt: Optional[str] = None,
         chat_history: List[Tuple[str, str]] = None,
         service_context: Optional[ServiceContext] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ):
         return cls(
@@ -89,8 +92,12 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         # Generate standalone question from conversation context and last message
         condensed_question = self._condense_question(self._chat_history, message)
 
+        log_str = f"Querying with: {condensed_question}"
+        logger.info(log_str)
+        if self._verbose:
+            print(log_str)
+
         # Query with standalone question
-        logger.info(f"Querying with: {condensed_question}")
         response = self._query_engine.query(condensed_question)
 
         # Record response
@@ -101,8 +108,12 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(self._chat_history, message)
 
+        log_str = f"Querying with: {condensed_question}"
+        logger.info(log_str)
+        if self._verbose:
+            print(log_str)
+
         # Query with standalone question
-        logger.info(f"Querying with: {condensed_question}")
         response = await self._query_engine.aquery(condensed_question)
 
         # Record response
