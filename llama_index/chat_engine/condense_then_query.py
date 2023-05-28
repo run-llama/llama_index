@@ -24,6 +24,12 @@ DEFAULT_PROMPT = Prompt(DEFAULT_TEMPLATE)
 
 
 class CondenseQuestionChatEngine(BaseChatEngine):
+    """Condense question chat engine.
+
+    First generate a standalone question from conversation context and last message,
+    then query the query engine for a response.
+    """
+
     def __init__(
         self,
         query_engine: BaseQueryEngine,
@@ -38,13 +44,27 @@ class CondenseQuestionChatEngine(BaseChatEngine):
 
     def _condense_question(self, chat_history: List[str], last_message: str) -> str:
         """
-        Generate standalone question from conversation context and last message
+        Generate standalone question from conversation context and last message.
         """
 
         chat_history_str = get_chat_history(chat_history)
         logger.debug(chat_history_str)
 
         return self._service_context.llm_predictor.predict(
+            self._condense_question_prompt,
+            question=last_message,
+            chat_history=chat_history_str,
+        )
+
+    def _acondense_question(self, chat_history: List[str], last_message: str) -> str:
+        """
+        Generate standalone question from conversation context and last message.
+        """
+
+        chat_history_str = get_chat_history(chat_history)
+        logger.debug(chat_history_str)
+
+        return self._service_context.llm_predictor.apredict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,
@@ -63,4 +83,17 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         return response
 
     async def achat(self, message: str) -> RESPONSE_TYPE:
-        return self.chat(message)
+        # Generate standalone question from conversation context and last message
+        condensed_question = await self._acondense_question(self._chat_history, message)
+
+        # Query with standalone question
+        logger.info(f"Querying with: {condensed_question}")
+        response = await self._query_engine.aquery(condensed_question)
+
+        # Record response
+        self._chat_history.append((message, str(response)))
+        return response
+
+    def reset(self) -> None:
+        # Clear chat history
+        self._chat_history = []

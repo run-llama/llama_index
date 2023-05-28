@@ -29,11 +29,11 @@ def is_chat_model(llm_predictor: LLMPredictor):
 class SimpleChatEngine(BaseChatEngine):
     def __init__(
         self,
-        llm_predictor: LLMPredictor,
-        prompt: Prompt,
+        service_context: Optional[ServiceContext] = None,
+        prompt: Optional[Prompt] = None,
     ) -> None:
-        self._llm_predictor = llm_predictor
-        self._prompt = prompt
+        self._service_context = service_context or ServiceContext.from_defaults()
+        self._prompt = prompt or DEFAULT_PROMPT
         self._chat_history = []
 
     @classmethod
@@ -47,11 +47,12 @@ class SimpleChatEngine(BaseChatEngine):
         return cls(service_context.llm_predictor, prompt=prompt)
 
     def chat(self, message: str) -> RESPONSE_TYPE:
-        if is_chat_model(self._llm_predictor):
-            pass
+        if is_chat_model(self._service_context.llm_predictor):
+            # TODO: implement
+            raise NotImplementedError()
         else:
             history = get_chat_history(self._chat_history)
-            response, _ = self._llm_predictor.predict(
+            response, _ = self._service_context.llm_predictor.predict(
                 self._prompt,
                 history=history,
                 message=message,

@@ -1,7 +1,9 @@
 from typing import Any, Optional, cast
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.tools.types import BaseTool, ToolMetadata
 
+from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.langchain_helpers.agents.tools import (IndexToolConfig,
+                                                        LlamaIndexTool)
+from llama_index.tools.types import BaseTool, ToolMetadata
 
 DEFAULT_NAME = "Query Engine Tool"
 DEFAULT_DESCRIPTION = """Useful for running a natural language query
@@ -51,3 +53,12 @@ class QueryEngineTool(BaseTool):
         query_str = cast(str, input)
         response = self._query_engine.query(query_str)
         return str(response)
+    
+    def as_langchain_tool(self):
+        tool_config = IndexToolConfig(
+            query_engine=self._query_engine_tool.query_engine,
+            name=self._query_engine_tool.metadata.name,
+        )
+        return LlamaIndexTool.from_tool_config(tool_config=tool_config)
+        
+

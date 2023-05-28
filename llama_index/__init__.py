@@ -8,7 +8,6 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 import logging
 from logging import NullHandler
 
-from llama_index.chat_engine import QueryChatEngine, SimpleChatEngine
 from llama_index.data_structs.struct_type import IndexStructType
 
 # embeddings
@@ -54,6 +53,9 @@ from llama_index.indices.vector_store import GPTVectorStoreIndex
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+
+# vellum
+from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
 
 # prompts
 from llama_index.prompts.base import Prompt
@@ -107,9 +109,6 @@ from llama_index.storage.storage_context import StorageContext
 # token predictor
 from llama_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from llama_index.token_counter.mock_embed_model import MockEmbedding
-
-# vellum
-from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
 
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
