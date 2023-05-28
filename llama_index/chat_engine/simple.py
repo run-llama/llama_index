@@ -1,6 +1,6 @@
 from typing import Any, List, Optional, Tuple
 
-from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
 from llama_index.chat_engine.utils import get_chat_history
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt
@@ -29,7 +29,7 @@ class SimpleChatEngine(BaseChatEngine):
         self,
         service_context: Optional[ServiceContext] = None,
         prompt: Optional[Prompt] = None,
-        chat_history: Optional[List[Tuple[str, str]]] = None,
+        chat_history: Optional[ChatHistoryType] = None,
     ) -> None:
         self._service_context = service_context or ServiceContext.from_defaults()
         self._prompt = prompt or DEFAULT_PROMPT
@@ -40,7 +40,7 @@ class SimpleChatEngine(BaseChatEngine):
         cls,
         service_context: Optional[ServiceContext] = None,
         prompt: Optional[Prompt] = None,
-        chat_history: Optional[List[Tuple[str, str]]] = None,
+        chat_history: Optional[ChatHistoryType] = None,
         **kwargs: Any,
     ) -> "SimpleChatEngine":
         return cls(

@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List, Optional, Tuple
 
-from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
 from llama_index.chat_engine.utils import get_chat_history
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
@@ -39,7 +39,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         self,
         query_engine: BaseQueryEngine,
         condense_question_prompt: Optional[Prompt] = None,
-        chat_history: Optional[List[Tuple[str, str]]] = None,
+        chat_history: Optional[ChatHistoryType] = None,
         service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
     ) -> None:
@@ -54,7 +54,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         cls,
         query_engine: BaseQueryEngine,
         condense_question_prompt: Optional[Prompt] = None,
-        chat_history: Optional[List[Tuple[str, str]]] = None,
+        chat_history: Optional[ChatHistoryType] = None,
         service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -68,7 +68,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         )
 
     def _condense_question(
-        self, chat_history: List[Tuple[str, str]], last_message: str
+        self, chat_history: ChatHistoryType, last_message: str
     ) -> str:
         """
         Generate standalone question from conversation context and last message.
@@ -85,7 +85,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         return response
 
     async def _acondense_question(
-        self, chat_history: List[Tuple[str, str]], last_message: str
+        self, chat_history: ChatHistoryType, last_message: str
     ) -> str:
         """
         Generate standalone question from conversation context and last message.

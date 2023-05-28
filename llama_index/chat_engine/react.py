@@ -1,6 +1,7 @@
 from typing import Any, List, Optional, Tuple
 
-from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
+from llama_index.chat_engine.utils import to_langchain_chat_history
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.agents.agents import (
@@ -11,7 +12,7 @@ from llama_index.langchain_helpers.agents.agents import (
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory, ChatMessageHistory
 from langchain.memory.chat_memory import BaseChatMemory
 
 
@@ -27,17 +28,19 @@ class ReActChatEngine(BaseChatEngine):
         query_engine_tools: List[QueryEngineTool],
         service_context: Optional[ServiceContext] = None,
         memory: Optional[BaseChatMemory] = None,
-        chat_history: Optional[List[Tuple[str, str]]] = None,
+        chat_history: Optional[ChatHistoryType] = None,
         verbose: bool = False,
     ) -> None:
         self._query_engine_tools = query_engine_tools
         self._service_context = service_context or ServiceContext.from_defaults()
+        if chat_history is not None and memory is not None:
+            raise ValueError("Cannot specify both memory and chat_history.")
+
         if memory is None:
-            memory = ConversationBufferMemory(memory_key="chat_history")
-            if chat_history is not None:
-                for human_message, ai_message in chat_history:
-                    memory.chat_memory.add_user_message(human_message)
-                    memory.chat_memory.add_ai_message(ai_message)
+            history = to_langchain_chat_history(chat_history)
+            memory = ConversationBufferMemory(
+                memory_key="chat_history", chat_memory=history
+            )
 
         self._memory = memory
         self._verbose = verbose
@@ -52,7 +55,7 @@ class ReActChatEngine(BaseChatEngine):
         description: Optional[str] = None,
         service_context: Optional[ServiceContext] = None,
         memory: Optional[BaseChatMemory] = None,
-        chat_history: Optional[List[Tuple[str, str]]] = None,
+        chat_history: Optional[ChatHistoryType] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActChatEngine":
