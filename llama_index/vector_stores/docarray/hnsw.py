@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Literal
+from typing import Any, List, Literal, Type
 
 from llama_index.vector_stores.docarray.base import DocArrayVectorStore
 
@@ -72,7 +72,7 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
             num_threads=num_threads,
         )
 
-    def _init_index(self, **kwargs):
+    def _init_index(self, **kwargs: Any):  # type: ignore[no-untyped-def]
         """Initializes the HNSW document index.
 
         Args:
@@ -84,9 +84,9 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
         from docarray.index import HnswDocumentIndex
 
         schema = self._get_schema(**kwargs)
-        return HnswDocumentIndex[schema](work_dir=self._work_dir), schema
+        return HnswDocumentIndex[schema](work_dir=self._work_dir), schema  # type: ignore[valid-type]
 
-    def _find_docs_to_be_removed(self, doc_id):
+    def _find_docs_to_be_removed(self, doc_id: str) -> List[str]:
         """Finds the documents to be removed from the vector store.
 
         Args:
@@ -95,17 +95,17 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
         Returns:
             List[str]: List of document IDs to be removed.
         """
-        docs = self._ref_docs.get(doc_id)
+        docs = self._ref_docs.get(doc_id, [])
         del self._ref_docs[doc_id]
         self._save_ref_docs()
         return docs
 
-    def _save_ref_docs(self):
+    def _save_ref_docs(self) -> None:
         """Saves reference documents."""
         with open(os.path.join(self._work_dir, "ref_docs.json"), "w") as f:
             json.dump(self._ref_docs, f)
 
-    def _update_ref_docs(self, docs):
+    def _update_ref_docs(self, docs):  # type: ignore[no-untyped-def]
         """Updates reference documents.
 
         Args:

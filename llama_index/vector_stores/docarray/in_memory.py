@@ -1,4 +1,6 @@
-from typing import Literal, Optional
+from typing import Any, List, Literal, Optional
+
+import fsspec
 
 from llama_index.vector_stores.docarray.base import DocArrayVectorStore
 
@@ -33,11 +35,11 @@ class DocArrayInMemoryVectorStore(DocArrayVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
+        self._ref_docs = None  # type: ignore[assignment]
         self._index_file_path = index_path
-        self._ref_docs = None
         self._index, self._schema = self._init_index(metric=metric)
 
-    def _init_index(self, **kwargs):
+    def _init_index(self, **kwargs: Any):  # type: ignore[no-untyped-def]
         """Initializes the in-memory exact nearest neighbour index.
 
         Args:
@@ -51,11 +53,11 @@ class DocArrayInMemoryVectorStore(DocArrayVectorStore):
 
         schema = self._get_schema(**kwargs)
         return (
-            InMemoryExactNNIndex[schema](index_file_path=self._index_file_path),
+            InMemoryExactNNIndex[schema](index_file_path=self._index_file_path),  # type: ignore[valid-type]
             schema,
         )
 
-    def _find_docs_to_be_removed(self, doc_id):
+    def _find_docs_to_be_removed(self, doc_id: str) -> List[str]:
         """Finds the documents to be removed from the vector store.
 
         Args:
@@ -68,11 +70,15 @@ class DocArrayInMemoryVectorStore(DocArrayVectorStore):
         docs = self._index.filter(query)
         return [doc.id for doc in docs]
 
-    def persist(self, persist_path: str) -> None:
+    def persist(
+        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
+    ) -> None:
         """Persists the in-memory vector store to a file.
 
         Args:
             persist_path (str): The path to persist the index.
+            fs (fsspec.AbstractFileSystem, optional): Filesystem to persist to.
+                (doesn't apply)
         """
         index_path = persist_path or self._index_file_path
         self._index.persist(index_path)

@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Type, Union
 
 import numpy as np
 from pydantic import Field
@@ -9,7 +9,8 @@ from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
                                              VectorStoreQuery,
                                              VectorStoreQueryResult)
-from llama_index.vector_stores.utils import node_to_metadata_dict
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +19,27 @@ class DocArrayVectorStore(VectorStore, ABC):
     """DocArray Vector Store Base Class.
 
 
-    This is a abstract base class for creating a document array vector store.
+    This is an abstract base class for creating a DocArray vector store.
     The subclasses should implement _init_index and _find_docs_to_be_removed methods.
     """
 
+    from docarray import BaseDoc, DocList
+    from docarray.index import HnswDocumentIndex, InMemoryExactNNIndex
+
+    # will get initialized by child classes
+    _index: Any
+    _schema: Type["BaseDoc"]
+    _ref_docs: Dict[str, List[str]]
+
     stores_text: bool = True
 
+    def _update_ref_docs(self, docs: DocList) -> None:
+        pass
+
     @abstractmethod
-    def _init_index(self, **kwargs):
+    def _init_index(
+        self, **kwargs: Any
+    ) -> Union[HnswDocumentIndex, InMemoryExactNNIndex]:
         """Initializes the index.
 
         This method should be overridden by the subclasses.
@@ -33,7 +47,7 @@ class DocArrayVectorStore(VectorStore, ABC):
         pass
 
     @abstractmethod
-    def _find_docs_to_be_removed(self, doc_id):
+    def _find_docs_to_be_removed(self, doc_id: str) -> List[str]:
         """Finds the documents to be removed from the vector store.
 
         Args:
@@ -60,7 +74,7 @@ class DocArrayVectorStore(VectorStore, ABC):
         return self._index.num_docs()
 
     @staticmethod
-    def _get_schema(**embeddings_params: Any):
+    def _get_schema(**embeddings_params: Any) -> Type["BaseDoc"]:
         """Fetches the schema for DocArray indices.
 
         Args:
@@ -71,10 +85,10 @@ class DocArrayVectorStore(VectorStore, ABC):
         """
 
         from docarray import BaseDoc
-        from docarray.typing import NdArray
+        from docarray.typing import ID, NdArray
 
         class DocArraySchema(BaseDoc):
-            id: Optional[str] = None
+            id: Optional[ID] = None
             text: Optional[str] = None
             metadata: Optional[dict] = None
             embedding: NdArray = Field(**embeddings_params)
@@ -100,7 +114,7 @@ class DocArrayVectorStore(VectorStore, ABC):
         if len(embedding_results) == 0:
             return []
 
-        docs = DocList[self._schema](
+        docs = DocList[self._schema](  # type: ignore[name-defined]
             self._schema(
                 id=result.id,
                 metadata=node_to_metadata_dict(result.node),
@@ -164,18 +178,19 @@ class DocArrayVectorStore(VectorStore, ABC):
                 search_field="embedding",
                 limit=query.similarity_top_k,
             )
-        nodes = [
-            Node(
-                doc_id=doc.id,
-                text=doc.text,
-                embedding=None,
-                relationships={
-                    DocumentRelationship.SOURCE: doc.metadata["doc_id"],
-                },
+        nodes, ids = [], []
+        for doc in docs:
+            extra_info, node_info, relationships = metadata_dict_to_node(doc.metadata)
+            nodes.append(
+                Node(
+                    doc_id=doc.id,
+                    text=doc.text,
+                    extra_info=extra_info,
+                    node_info=node_info,
+                    relationships=relationships,
+                )
             )
-            for doc in docs
-        ]
-        ids = [node.doc_id for node in nodes]
+            ids.append(doc.id)
         logger.info(f"Found {len(nodes)} results for the query")
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
