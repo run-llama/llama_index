@@ -2,7 +2,7 @@ import logging
 from typing import Any, List, Optional, Tuple
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
-from llama_index.chat_engine.utils import get_chat_history
+from llama_index.chat_engine.utils import to_chat_buffer
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt
@@ -74,7 +74,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         Generate standalone question from conversation context and last message.
         """
 
-        chat_history_str = get_chat_history(chat_history)
+        chat_history_str = to_chat_buffer(chat_history)
         logger.debug(chat_history_str)
 
         response, _ = self._service_context.llm_predictor.predict(
@@ -91,7 +91,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         Generate standalone question from conversation context and last message.
         """
 
-        chat_history_str = get_chat_history(chat_history)
+        chat_history_str = to_chat_buffer(chat_history)
         logger.debug(chat_history_str)
 
         response, _ = await self._service_context.llm_predictor.apredict(

@@ -12,7 +12,7 @@ from llama_index.langchain_helpers.agents.agents import (
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
-from langchain.memory import ConversationBufferMemory, ChatMessageHistory
+from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_memory import BaseChatMemory
 
 

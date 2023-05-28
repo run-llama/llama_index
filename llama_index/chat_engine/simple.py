@@ -1,7 +1,7 @@
 from typing import Any, List, Optional, Tuple
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
-from llama_index.chat_engine.utils import get_chat_history
+from llama_index.chat_engine.utils import to_chat_buffer
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import RESPONSE_TYPE, Response
@@ -48,7 +48,7 @@ class SimpleChatEngine(BaseChatEngine):
         )
 
     def chat(self, message: str) -> RESPONSE_TYPE:
-        history = get_chat_history(self._chat_history)
+        history = to_chat_buffer(self._chat_history)
         response, _ = self._service_context.llm_predictor.predict(
             self._prompt,
             history=history,
@@ -61,7 +61,7 @@ class SimpleChatEngine(BaseChatEngine):
         return Response(response=response)
 
     async def achat(self, message: str) -> RESPONSE_TYPE:
-        history = get_chat_history(self._chat_history)
+        history = to_chat_buffer(self._chat_history)
         response, _ = await self._service_context.llm_predictor.apredict(
             self._prompt,
             history=history,
