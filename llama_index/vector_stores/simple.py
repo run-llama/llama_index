@@ -76,8 +76,8 @@ class SimpleVectorStore(VectorStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleVectorStore":
         """Load from persist dir."""
-        if (fs != None):
-            persist_path = persist_dir + '/' + DEFAULT_PERSIST_FNAME
+        if fs is not None:
+            persist_path = persist_dir + "/" + DEFAULT_PERSIST_FNAME
         else:
             persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)

@@ -69,7 +69,10 @@ class SimpleSummarize(BaseResponseBuilder):
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
-            (response, formatted_prompt,) = self._service_context.llm_predictor.predict(
+            (
+                response,
+                formatted_prompt,
+            ) = self._service_context.llm_predictor.predict(
                 text_qa_template,
                 context_str=node_text,
             )
