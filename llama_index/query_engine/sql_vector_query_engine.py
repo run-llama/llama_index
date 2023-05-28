@@ -23,64 +23,56 @@ from llama_index.callbacks.base import CallbackManager
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL = (
-    "The original question is given below.\n"
-    "This question has been translated into a SQL query. Both the SQL "
-    "query and the response are given below.\n"
-    "Given the SQL response, the question has also been translated into a vector "
-    "store query.\n"
-    "The vector store query and response is given below.\n"
-    "Given SQL query, SQL response, transformed vector store query, "
-    "and vector store response, "
-    "please synthesize a response to the original question.\n\n"
-    "Original question: {query_str}\n"
-    "SQL query: {sql_query_str}\n"
-    "SQL response: {sql_response_str}\n"
-    "Transformed vector store query: {vector_store_query_str}\n"
-    "Vector store response: {vector_store_response_str}\n"
-    "Response: "
-)
+DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL = """
+The original question is given below.
+This question has been translated into a SQL query. Both the SQL query and the response are given below.
+Given the SQL response, the question has also been translated into a vector store query.
+The vector store query and response is given below.
+Given SQL query, SQL response, transformed vector store query, and vector store response, please synthesize a response to the original question.
+
+Original question: {query_str}
+SQL query: {sql_query_str}
+SQL response: {sql_response_str}
+Transformed vector store query: {vector_store_query_str}
+Vector store response: {vector_store_response_str}
+Response: 
+"""  # noqa
 DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT = Prompt(DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL)
 
 
-DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT_TMPL = (
-    "The original question is given below.\n"
-    "This question has been translated into a SQL query. Both the SQL "
-    "query and the response are given below.\n"
-    "The SQL response either answers the question, "
-    "or should provide additional context that can be used "
-    "to make the question more specific.\n"
-    "Your job is to come up with a more specific question that needs to be answered "
-    "to fully answer the original question, "
-    "or 'None' if the original question has already been fully answered from the "
-    "SQL response. Do not create a new question "
-    "that is irrelevant to the original question; in that case return None instead.\n\n"
-    "Examples:\n\n"
-    "Original question: Please give more details about the demographics of the "
-    "city with the highest population. \n"
-    "SQL query: SELECT city, population FROM cities ORDER BY population DESC LIMIT 1\n"
-    "SQL response: The city with the highest population is New York City.\n"
-    "New question: Can you tell me more about the demographics of New York City?\n\n"
-    "Original question: Please compare the sports environment of cities in North "
-    "America.\n"
-    "SQL query: SELECT city_name FROM cities WHERE continent = 'North America' "
-    "LIMIT 3\n"
-    "SQL response: The cities in North America are New York, San Francisco, and "
-    "Toronto.\n"
-    "New question: What sports are played in New York, San Francisco, and Toronto?\n\n"
-    "Original question: What is the city with the highest population?\n"
-    "SQL query: SELECT city, population FROM cities ORDER BY population DESC LIMIT 1\n"
-    "SQL response: The city with the highest population is New York City.\n"
-    "New question: None\n\n"
-    "Original question: What countries are the top 3 ATP players from?\n"
-    "SQL query: SELECT country FROM players WHERE rank <= 3\n"
-    "SQL response: The top 3 ATP players are from Serbia, Russia, and Spain.\n"
-    "New question: None\n\n"
-    "Original question: {query_str}\n"
-    "SQL query: {sql_query_str}\n"
-    "SQL response: {sql_response_str}\n"
-    "New question: "
-)
+DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT_TMPL = """
+"The original question is given below.
+This question has been translated into a SQL query. Both the SQL query and the response are given below.
+The SQL response either answers the question, or should provide additional context that can be used to make the question more specific.
+Your job is to come up with a more specific question that needs to be answered to fully answer the original question, or 'None' if the original question has already been fully answered from the SQL response. Do not create a new question that is irrelevant to the original question; in that case return None instead.
+
+Examples:
+
+Original question: Please give more details about the demographics of the city with the highest population.
+SQL query: SELECT city, population FROM cities ORDER BY population DESC LIMIT 1
+SQL response: The city with the highest population is New York City.
+New question: Can you tell me more about the demographics of New York City?
+
+Original question: Please compare the sports environment of cities in North America.
+SQL query: SELECT city_name FROM cities WHERE continent = 'North America' LIMIT 3
+SQL response: The cities in North America are New York, San Francisco, and Toronto.
+New question: What sports are played in New York, San Francisco, and Toronto?
+
+Original question: What is the city with the highest population?
+SQL query: SELECT city, population FROM cities ORDER BY population DESC LIMIT 1
+SQL response: The city with the highest population is New York City.
+New question: None
+
+Original question: What countries are the top 3 ATP players from?
+SQL query: SELECT country FROM players WHERE rank <= 3
+SQL response: The top 3 ATP players are from Serbia, Russia, and Spain.
+New question: None
+
+Original question: {query_str}
+SQL query: {sql_query_str}
+SQL response: {sql_response_str}
+New question: "
+"""  # noqa
 DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT = Prompt(DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT_TMPL)
 
 
