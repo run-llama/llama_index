@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 class BaseChatEngine(ABC):
     """Base Chat Engine."""
+
     @abstractmethod
     def reset(self) -> None:
         """Reset conversation state."""
@@ -40,6 +41,7 @@ class BaseChatEngine(ABC):
 
 class ChatMode(str, Enum):
     """Chat Engine Models."""
+
     CONDENSE_QUESTION = "condense_question"
     REACT = "react"
     SIMPLE = "simple"

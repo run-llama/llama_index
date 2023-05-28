@@ -71,7 +71,7 @@ class SimpleChatEngine(BaseChatEngine):
         # Record response
         self._chat_history.append((message, str(response)))
 
-        return response
+        return Response(response=response)
 
     def reset(self) -> None:
         self._chat_history = []
