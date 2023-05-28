@@ -33,7 +33,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def __init__(
         self,
         query_engine: BaseQueryEngine,
-        condense_question_prompt: Optional[str] = None,
+        condense_question_prompt: Optional[Prompt] = None,
         chat_history: List[Tuple[str, str]] = None,
         service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
