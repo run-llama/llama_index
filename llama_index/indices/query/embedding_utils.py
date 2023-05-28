@@ -1,6 +1,6 @@
 """Embedding utils for queries."""
 import heapq
-from typing import Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 from llama_index.embeddings.base import similarity as default_similarity_fn
 import numpy as np
@@ -21,7 +21,7 @@ def get_top_k_embeddings(
 
     similarity_fn = similarity_fn or default_similarity_fn
 
-    similarity_heap = []
+    similarity_heap: List[Tuple[float, Any]] = []
     for i, emb in enumerate(embeddings):
         similarity = similarity_fn(query_embedding, emb)
         print(similarity)
