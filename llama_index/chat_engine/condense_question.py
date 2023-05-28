@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_TEMPLATE = """\
 Given a conversation (between Human and Assistant) and a follow up message from Human, \
-rewrite the message to be a standalone question that captures all relevant context from the conversation.
+rewrite the message to be a standalone question that captures all relevant context \
+from the conversation.
 
 <Chat History> 
 {chat_history}
