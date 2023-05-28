@@ -11,7 +11,8 @@ from llama_index.langchain_helpers.agents.agents import (
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.tools.query_engine import QueryEngineTool
-from llama_index.tools.types import ToolMetadata
+from langchain.memory import ConversationBufferMemory
+from langchain.schema import BaseMemory
 
 
 class ReActChatEngine(BaseChatEngine):
@@ -19,9 +20,14 @@ class ReActChatEngine(BaseChatEngine):
         self,
         query_engine_tool: QueryEngineTool,
         service_context: Optional[ServiceContext] = None,
+        memory: Optional[BaseMemory] = None,
+        verbose: bool = False,
     ) -> None:
         self._query_engine_tool = query_engine_tool
         self._service_context = service_context or ServiceContext.from_defaults()
+        self._memory = memory or ConversationBufferMemory(memory_key="chat_history")
+        self._verbose = verbose
+
         self._agent = self._create_agent()
 
     @classmethod
@@ -31,12 +37,17 @@ class ReActChatEngine(BaseChatEngine):
         name: Optional[str] = None,
         description: Optional[str] = None,
         service_context: Optional[ServiceContext] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ):
         query_engine_tool = QueryEngineTool.from_defaults(
             query_engine=query_engine, name=name, description=description
         )
-        return cls(query_engine_tool=query_engine_tool, service_context=service_context)
+        return cls(
+            query_engine_tool=query_engine_tool,
+            service_context=service_context,
+            verbose=verbose,
+        )
 
     def _create_agent(self) -> AgentExecutor:
         tools = [self._query_engine_tool.as_langchain_tool()]
@@ -45,6 +56,8 @@ class ReActChatEngine(BaseChatEngine):
             tools=tools,
             llm=self._service_context.llm_predictor.llm,
             agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
+            memory=self._memory,
+            verbose=self._verbose,
         )
 
     def chat(self, message: str) -> RESPONSE_TYPE:
