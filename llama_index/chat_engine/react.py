@@ -9,7 +9,7 @@ from llama_index.langchain_helpers.agents.agents import (
     initialize_agent,
 )
 from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import BaseMemory
@@ -62,10 +62,12 @@ class ReActChatEngine(BaseChatEngine):
         )
 
     def chat(self, message: str) -> RESPONSE_TYPE:
-        return self._agent.run(input=message)
+        response = self._agent.run(input=message)
+        return Response(response=response)
 
     async def achat(self, message: str) -> RESPONSE_TYPE:
-        return await self._agent.arun(input=message)
+        response = await self._agent.arun(input=message)
+        return Response(response=response)
 
     def reset(self) -> None:
         self._agent = self._create_agent()

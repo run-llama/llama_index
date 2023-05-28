@@ -23,7 +23,7 @@ class BaseChatEngine(ABC):
         """Async version of main chat interface."""
         pass
 
-    def chat_repl(self):
+    def chat_repl(self) -> None:
         print("===== Entering Chat REPL =====")
         print('Type "exit" to exit.\n')
 

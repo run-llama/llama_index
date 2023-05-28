@@ -38,7 +38,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         self,
         query_engine: BaseQueryEngine,
         condense_question_prompt: Optional[Prompt] = None,
-        chat_history: List[Tuple[str, str]] = None,
+        chat_history: Optional[List[Tuple[str, str]]] = None,
         service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
     ) -> None:
