@@ -16,6 +16,12 @@ from langchain.schema import BaseMemory
 
 
 class ReActChatEngine(BaseChatEngine):
+    """ReAct Chat Engine.
+
+
+    Use a ReAct agent loop with query engine tools. Implemented via LangChain agent.
+    """
+
     def __init__(
         self,
         query_engine_tools: List[QueryEngineTool],
