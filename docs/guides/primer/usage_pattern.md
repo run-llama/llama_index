@@ -166,6 +166,7 @@ index = GPTVectorStoreIndex.from_documents(
 
 See the [Custom LLM's How-To](/how_to/customization/custom_llms.md) for more details.
 
+For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/how_to/customization/service_context.md).
 
 ### Customizing Prompts
 
