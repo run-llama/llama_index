@@ -56,8 +56,8 @@ class QueryEngineTool(BaseTool):
     
     def as_langchain_tool(self):
         tool_config = IndexToolConfig(
-            query_engine=self._query_engine_tool.query_engine,
-            name=self._query_engine_tool.metadata.name,
+            query_engine=self.query_engine,
+            name=self.metadata.name,
         )
         return LlamaIndexTool.from_tool_config(tool_config=tool_config)
         

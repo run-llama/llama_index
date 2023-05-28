@@ -50,11 +50,12 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         chat_history_str = get_chat_history(chat_history)
         logger.debug(chat_history_str)
 
-        return self._service_context.llm_predictor.predict(
+        response, _ = self._service_context.llm_predictor.predict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,
         )
+        return response
 
     def _acondense_question(self, chat_history: List[str], last_message: str) -> str:
         """
@@ -64,11 +65,12 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         chat_history_str = get_chat_history(chat_history)
         logger.debug(chat_history_str)
 
-        return self._service_context.llm_predictor.apredict(
+        response, _ = self._service_context.llm_predictor.apredict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,
         )
+        return response
 
     def chat(self, message: str) -> RESPONSE_TYPE:
         # Generate standalone question from conversation context and last message
