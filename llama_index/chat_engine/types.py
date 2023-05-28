@@ -26,4 +26,5 @@ class BaseChatEngine(ABC):
 
 class ChatMode(str, Enum):
     CONDENSE_QUESTION =  "condense_question"
+    REACT = "react"
     SIMPLE = 'simple'

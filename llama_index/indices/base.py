@@ -249,8 +249,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.query_engine.retriever_query_engine import \
-            RetrieverQueryEngine
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
 
@@ -259,12 +258,22 @@ class BaseGPTIndex(Generic[IS], ABC):
             kwargs["service_context"] = self._service_context
         return RetrieverQueryEngine.from_args(**kwargs)
 
-    def as_chat_engine(self, chat_mode: ChatMode = ChatMode.CONDENSE_QUESTION, **kwargs: Any) -> BaseChatEngine:
+    def as_chat_engine(
+        self, chat_mode: ChatMode = ChatMode.CONDENSE_QUESTION, **kwargs: Any
+    ) -> BaseChatEngine:
         if chat_mode == ChatMode.CONDENSE_QUESTION:
             # NOTE: lazy import
             from llama_index.chat_engine import CondenseQuestionChatEngine
 
             query_engine = self.as_query_engine(**kwargs)
-            return CondenseQuestionChatEngine(query_engine=query_engine)
+            return CondenseQuestionChatEngine.from_defaults(
+                query_engine=query_engine, **kwargs
+            )
+        elif chat_mode == ChatMode.REACT:
+            # NOTE: lazy import
+            from llama_index.chat_engine import ReActChatEngine
+
+            query_engine = self.as_query_engine(**kwargs)
+            return ReActChatEngine.from_defaults(query_engine=query_engine, **kwargs)
         else:
             raise ValueError(f"Unknown chat mode: {chat_mode}")

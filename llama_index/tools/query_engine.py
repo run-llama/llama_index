@@ -58,6 +58,7 @@ class QueryEngineTool(BaseTool):
         tool_config = IndexToolConfig(
             query_engine=self.query_engine,
             name=self.metadata.name,
+            description=self.metadata.description,
         )
         return LlamaIndexTool.from_tool_config(tool_config=tool_config)
         

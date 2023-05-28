@@ -1,13 +1,17 @@
-from typing import Optional
+from typing import Any, Optional
 
 from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
-from llama_index.langchain_helpers.agents.agents import (AgentExecutor,
-                                                         AgentType,
-                                                         initialize_agent)
+from llama_index.langchain_helpers.agents.agents import (
+    AgentExecutor,
+    AgentType,
+    initialize_agent,
+)
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.tools.query_engine import QueryEngineTool
+from llama_index.tools.types import ToolMetadata
 
 
 class ReActChatEngine(BaseChatEngine):
@@ -20,17 +24,34 @@ class ReActChatEngine(BaseChatEngine):
         self._service_context = service_context or ServiceContext.from_defaults()
         self._agent = self._create_agent()
 
+    @classmethod
+    def from_defaults(
+        cls,
+        query_engine: BaseQueryEngine,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
+    ):
+        query_engine_tool = QueryEngineTool.from_defaults(
+            query_engine=query_engine, name=name, description=description
+        )
+        return cls(query_engine_tool=query_engine_tool, service_context=service_context)
+
     def _create_agent(self) -> AgentExecutor:
         tools = [self._query_engine_tool.as_langchain_tool()]
         assert isinstance(self._service_context.llm_predictor, LLMPredictor)
-        self._agent = initialize_agent(
+        return initialize_agent(
             tools=tools,
             llm=self._service_context.llm_predictor.llm,
             agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
         )
 
     def chat(self, message: str) -> RESPONSE_TYPE:
-        self._agent.run(input=message)
+        return self._agent.run(input=message)
 
     def achat(self, message: str) -> RESPONSE_TYPE:
-        self._agent.arun(input=message)
+        return self._agent.arun(input=message)
+
+    def reset(self) -> None:
+        self._agent = self._create_agent()

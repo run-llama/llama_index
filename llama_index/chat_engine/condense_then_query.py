@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.chat_engine.utils import get_chat_history
@@ -41,6 +41,19 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         self._condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
         self._chat_history = chat_history or []
         self._service_context = service_context or ServiceContext.from_defaults()
+
+    @classmethod
+    def from_defaults(
+        cls,
+        query_engine: BaseQueryEngine,
+        condense_question_prompt: Optional[str] = None,
+        chat_history: List[Tuple[str, str]] = None,
+        service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
+    ):
+        return cls(
+            query_engine, condense_question_prompt, chat_history, service_context
+        )
 
     def _condense_question(self, chat_history: List[str], last_message: str) -> str:
         """
