@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple
 
-from llama_index.chat_engine.base import BaseChatEngine
+from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.chat_engine.utils import get_chat_history
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor

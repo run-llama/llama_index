@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from enum import Enum
 
 from llama_index.response.schema import RESPONSE_TYPE
 
@@ -14,3 +15,7 @@ class BaseChatEngine(ABC):
     @abstractmethod
     async def achat(self, message: str) -> RESPONSE_TYPE:
         pass
+
+
+class ChatMode(str, Enum):
+    CONDENSE_QUESTION =  "condense_question"

@@ -3,7 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
 
-from llama_index.chat_engine.base import BaseChatEngine
+from llama_index.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
@@ -249,7 +249,8 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+        from llama_index.query_engine.retriever_query_engine import \
+            RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
 
@@ -258,9 +259,12 @@ class BaseGPTIndex(Generic[IS], ABC):
             kwargs["service_context"] = self._service_context
         return RetrieverQueryEngine.from_args(**kwargs)
 
-    def as_query_engine(self, **kwargs: Any) -> BaseChatEngine:
-        # NOTE: lazy import
-        from llama_index.chat_engine import QueryChatEngine
+    def as_chat_engine(self, chat_mode: ChatMode = ChatMode.CONDENSE_QUESTION, **kwargs: Any) -> BaseChatEngine:
+        if chat_mode == ChatMode.CONDENSE_QUESTION:
+            # NOTE: lazy import
+            from llama_index.chat_engine import CondenseQuestionChatEngine
 
-        query_engine = self.as_query_engine(**kwargs)
-        return QueryChatEngine.from_defaults(query_engine=query_engine)
+            query_engine = self.as_query_engine(**kwargs)
+            return CondenseQuestionChatEngine(query_engine=query_engine)
+        else:
+            raise ValueError(f"Unknown chat mode: {chat_mode}")
