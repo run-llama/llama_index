@@ -1,7 +1,7 @@
 """SQL Vector query engine."""
 
 from langchain.input import print_text
-from typing import Optional, cast, List, Dict, Optional, Any, Callable
+from typing import Optional, cast, Dict, Any, Callable
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.struct_store.sql_query import GPTNLStructStoreQueryEngine
 from llama_index.indices.vector_store.retrievers.auto_retriever import (
@@ -47,22 +47,26 @@ DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT_TMPL = (
     "The original question is given below.\n"
     "This question has been translated into a SQL query. Both the SQL "
     "query and the response are given below.\n"
-    "The SQL response either answers the question, or should provide additional context that can be used "
+    "The SQL response either answers the question, "
+    "or should provide additional context that can be used "
     "to make the question more specific.\n"
     "Your job is to come up with a more specific question that needs to be answered "
     "to fully answer the original question, "
     "or 'None' if the original question has already been fully answered from the "
     "SQL response. Do not create a new question "
-    "that is irrelevant to the original question; in that case return None instead. \n\n"
+    "that is irrelevant to the original question; in that case return None instead.\n\n"
     "Examples:\n\n"
-    "Original question: Please give more details about the demographics of the city with the highest "
-    "population. \n"
+    "Original question: Please give more details about the demographics of the "
+    "city with the highest population. \n"
     "SQL query: SELECT city, population FROM cities ORDER BY population DESC LIMIT 1\n"
     "SQL response: The city with the highest population is New York City.\n"
     "New question: Can you tell me more about the demographics of New York City?\n\n"
-    "Original question: Please compare the sports environment of cities in North America.\n"
-    "SQL query: SELECT city_name FROM cities WHERE continent = 'North America' LIMIT 3\n"
-    "SQL response: The cities in North America are New York, San Francisco, and Toronto.\n"
+    "Original question: Please compare the sports environment of cities in North "
+    "America.\n"
+    "SQL query: SELECT city_name FROM cities WHERE continent = 'North America' "
+    "LIMIT 3\n"
+    "SQL response: The cities in North America are New York, San Francisco, and "
+    "Toronto.\n"
     "New question: What sports are played in New York, San Francisco, and Toronto?\n\n"
     "Original question: What is the city with the highest population?\n"
     "SQL query: SELECT city, population FROM cities ORDER BY population DESC LIMIT 1\n"
@@ -98,13 +102,16 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
 
     Args:
         llm_predictor (LLMPredictor): LLM predictor to use for query transformation.
+        sql_augment_transform_prompt (Prompt): Prompt to use for query transformation.
+        check_stop_parser (Optional[Callable[[str], bool]]): Check stop function.
+
     """
 
     def __init__(
         self,
         llm_predictor: Optional[BaseLLMPredictor] = None,
         sql_augment_transform_prompt: Optional[Prompt] = None,
-        check_stop_parser: Optional[Callable[[str], bool]] = None,
+        check_stop_parser: Optional[Callable[[QueryBundle], bool]] = None,
     ) -> None:
         """Initialize params."""
         self._llm_predictor = llm_predictor or LLMPredictor()
@@ -144,6 +151,19 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
     whether to augment information with retrieved results from the vector store.
     We use the VectorIndexAutoRetriever to retrieve results.
 
+    Args:
+        sql_query_tool (QueryEngineTool): Query engine tool for SQL database.
+        vector_query_tool (QueryEngineTool): Query engine tool for vector database.
+        selector (Optional[LLMSingleSelector]): Selector to use.
+        service_context (Optional[ServiceContext]): Service context to use.
+        sql_vector_synthesis_prompt (Optional[Prompt]): Prompt to use for SQL vector
+            synthesis.
+        sql_augment_query_transform (Optional[SQLAugmentQueryTransform]): Query
+            transform to use for SQL augmentation.
+        use_sql_vector_synthesis (bool): Whether to use SQL vector synthesis.
+        callback_manager (Optional[CallbackManager]): Callback manager to use.
+        verbose (bool): Whether to print intermediate results.
+
     """
 
     def __init__(
@@ -163,11 +183,13 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
         # validate that the query engines are of the right type
         if not isinstance(sql_query_tool.query_engine, GPTNLStructStoreQueryEngine):
             raise ValueError(
-                "sql_query_tool.query_engine must be an instance of GPTNLStructStoreQueryEngine"
+                "sql_query_tool.query_engine must be an instance of "
+                "GPTNLStructStoreQueryEngine"
             )
         if not isinstance(vector_query_tool.query_engine, RetrieverQueryEngine):
             raise ValueError(
-                "vector_query_tool.query_engine must be an instance of RetrieverQueryEngine"
+                "vector_query_tool.query_engine must be an instance of "
+                "RetrieverQueryEngine"
             )
         if not isinstance(
             vector_query_tool.query_engine.retriever, VectorIndexAutoRetriever
