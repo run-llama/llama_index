@@ -168,7 +168,7 @@ See the [Custom LLM's How-To](/how_to/customization/custom_llms.md) for more det
 
 ### Global ServiceContext
 
-If you wanted the service context from the last section to always be the default, you can configure one like so
+If you wanted the service context from the last section to always be the default, you can configure one like so:
 
 ```python
 import llama_index
