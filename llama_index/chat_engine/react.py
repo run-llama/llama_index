@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
 from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.query.base import BaseQueryEngine
@@ -12,7 +12,7 @@ from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
 from langchain.memory import ConversationBufferMemory
-from langchain.schema import BaseMemory
+from langchain.memory.chat_memory import BaseChatMemory
 
 
 class ReActChatEngine(BaseChatEngine):
@@ -26,12 +26,20 @@ class ReActChatEngine(BaseChatEngine):
         self,
         query_engine_tools: List[QueryEngineTool],
         service_context: Optional[ServiceContext] = None,
-        memory: Optional[BaseMemory] = None,
+        memory: Optional[BaseChatMemory] = None,
+        chat_history: Optional[List[Tuple[str, str]]] = None,
         verbose: bool = False,
     ) -> None:
         self._query_engine_tools = query_engine_tools
         self._service_context = service_context or ServiceContext.from_defaults()
-        self._memory = memory or ConversationBufferMemory(memory_key="chat_history")
+        if memory is None:
+            memory = ConversationBufferMemory(memory_key="chat_history")
+            if chat_history is not None:
+                for human_message, ai_message in chat_history:
+                    memory.chat_memory.add_user_message(human_message)
+                    memory.chat_memory.add_ai_message(ai_message)
+
+        self._memory = memory
         self._verbose = verbose
 
         self._agent = self._create_agent()
@@ -43,6 +51,8 @@ class ReActChatEngine(BaseChatEngine):
         name: Optional[str] = None,
         description: Optional[str] = None,
         service_context: Optional[ServiceContext] = None,
+        memory: Optional[BaseChatMemory] = None,
+        chat_history: Optional[List[Tuple[str, str]]] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActChatEngine":
@@ -52,6 +62,8 @@ class ReActChatEngine(BaseChatEngine):
         return cls(
             query_engine_tools=[query_engine_tool],
             service_context=service_context,
+            memory=memory,
+            chat_history=chat_history,
             verbose=verbose,
         )
 
