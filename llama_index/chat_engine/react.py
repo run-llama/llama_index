@@ -39,7 +39,7 @@ class ReActChatEngine(BaseChatEngine):
         service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
         **kwargs: Any,
-    ):
+    ) -> "ReActChatEngine":
         query_engine_tool = QueryEngineTool.from_defaults(
             query_engine=query_engine, name=name, description=description
         )
@@ -64,8 +64,8 @@ class ReActChatEngine(BaseChatEngine):
     def chat(self, message: str) -> RESPONSE_TYPE:
         return self._agent.run(input=message)
 
-    def achat(self, message: str) -> RESPONSE_TYPE:
-        return self._agent.arun(input=message)
+    async def achat(self, message: str) -> RESPONSE_TYPE:
+        return await self._agent.arun(input=message)
 
     def reset(self) -> None:
         self._agent = self._create_agent()

@@ -52,12 +52,12 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def from_defaults(
         cls,
         query_engine: BaseQueryEngine,
-        condense_question_prompt: Optional[str] = None,
-        chat_history: List[Tuple[str, str]] = None,
+        condense_question_prompt: Optional[Prompt] = None,
+        chat_history: Optional[List[Tuple[str, str]]] = None,
         service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
         **kwargs: Any,
-    ):
+    ) -> "CondenseQuestionChatEngine":
         return cls(
             query_engine,
             condense_question_prompt,
@@ -66,7 +66,9 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             verbose=verbose,
         )
 
-    def _condense_question(self, chat_history: List[str], last_message: str) -> str:
+    def _condense_question(
+        self, chat_history: List[Tuple[str, str]], last_message: str
+    ) -> str:
         """
         Generate standalone question from conversation context and last message.
         """
@@ -81,7 +83,9 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         )
         return response
 
-    def _acondense_question(self, chat_history: List[str], last_message: str) -> str:
+    async def _acondense_question(
+        self, chat_history: List[Tuple[str, str]], last_message: str
+    ) -> str:
         """
         Generate standalone question from conversation context and last message.
         """
@@ -89,7 +93,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         chat_history_str = get_chat_history(chat_history)
         logger.debug(chat_history_str)
 
-        response, _ = self._service_context.llm_predictor.apredict(
+        response, _ = await self._service_context.llm_predictor.apredict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,
