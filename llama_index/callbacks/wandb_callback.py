@@ -223,7 +223,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         return wb_span
 
-    def _add_payload_to_span(self, span: "trace_tree.Span", event_pair: List[CBEvent]) -> None:
+    def _add_payload_to_span(
+        self, span: "trace_tree.Span", event_pair: List[CBEvent]
+    ) -> None:
         assert len(event_pair) == 2
         event_type = event_pair[0].event_type
         inputs = None
@@ -259,7 +261,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             self._llm_token_count += outputs.total_tokens_used
 
         return inputs, outputs
-                
+
     def _get_time_in_ms(self, event_pair: List[CBEvent]) -> List[int]:
         start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
         end_time = datetime.strptime(event_pair[1].time, TIMESTAMP_FORMAT)
@@ -269,7 +271,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         return start_time, end_time
 
-    def _ensure_run(self, should_print_url: bool=True) -> None:
+    def _ensure_run(self, should_print_url: bool = True) -> None:
         """Ensures an active W&B run exists.
 
         If not, will start a new run with the provided run_args.
