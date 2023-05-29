@@ -5,7 +5,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import TypedDict
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 from collections import defaultdict
 from datetime import datetime
 
@@ -14,7 +14,6 @@ from llama_index.callbacks.schema import (
     CBEvent,
     CBEventType,
     TIMESTAMP_FORMAT,
-    BASE_TRACE_ID
 )
 
 
@@ -80,7 +79,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 "WandbCallbackHandler requires wandb. "
                 "Please install it with `pip install wandb`."
             )
-        
+
         self._run_args = run_args
         self._ensure_run(should_print_url=(self._wandb.run is None))
 
@@ -153,29 +152,35 @@ class WandbCallbackHandler(BaseCallbackHandler):
         # We can control what trace ids we want to log here.
         self.log_trace_tree()
 
-    def _build_trace_tree(self):
+    def _build_trace_tree(self) -> "trace_tree.Span":
         id_to_wb_span_tmp = {}
         for root_node, child_nodes in self._trace_map.items():
             if root_node == "root":
                 # the first child node is the parent node
                 # ideally there should be 1 child node, if not make other child nodes part of the 1st node.
                 parent_node = child_nodes[0]
-                root_span = self._convert_event_pair_to_wb_span(self._event_pairs_by_id[parent_node])
+                root_span = self._convert_event_pair_to_wb_span(
+                    self._event_pairs_by_id[parent_node]
+                )
                 id_to_wb_span_tmp[parent_node] = root_span
                 if len(child_nodes) > 1:
                     for child_node in child_nodes[1:]:
-                        child_span = self._convert_event_pair_to_wb_span(self._event_pairs_by_id[child_node])
+                        child_span = self._convert_event_pair_to_wb_span(
+                            self._event_pairs_by_id[child_node]
+                        )
                         root_span.add_child_span(child_span)
                         id_to_wb_span_tmp[child_node] = child_span
             else:
                 for child_node in child_nodes:
-                    child_span = self._convert_event_pair_to_wb_span(self._event_pairs_by_id[child_node])
+                    child_span = self._convert_event_pair_to_wb_span(
+                        self._event_pairs_by_id[child_node]
+                    )
                     id_to_wb_span_tmp[root_node].add_child_span(child_span)
                     id_to_wb_span_tmp[child_node] = child_span
                 id_to_wb_span_tmp.pop(root_node)
         return root_span
 
-    def log_trace_tree(self):
+    def log_trace_tree(self) -> None:
         try:
             root_span = self._build_trace_tree()
             root_trace = self._trace_tree.WBTraceTree(root_span)
@@ -184,7 +189,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
             # Silently ignore errors to not break user code
             pass
 
-    def _convert_event_pair_to_wb_span(self, event_pair: List[CBEvent]):
+    def _convert_event_pair_to_wb_span(
+        self, event_pair: List[CBEvent]
+    ) -> "trace_tree.Span":
         start_time_ms, end_time_ms = self._get_time_in_ms(event_pair)
 
         event_type = event_pair[0].event_type
@@ -198,13 +205,13 @@ class WandbCallbackHandler(BaseCallbackHandler):
         elif event_type == CBEventType.LLM:
             span_kind = self._trace_tree.SpanKind.LLM  # read LLM
         elif event_type == CBEventType.QUERY:
-            span_kind = self._trace_tree.SpanKind.AGENT # read QUERY
+            span_kind = self._trace_tree.SpanKind.AGENT  # read QUERY
         elif event_type == CBEventType.RETRIEVE:
-            span_kind = self._trace_tree.SpanKind.TOOL # read QUERY
+            span_kind = self._trace_tree.SpanKind.TOOL  # read QUERY
         elif event_type == CBEventType.SYNTHESIZE:
-            span_kind = self._trace_tree.SpanKind.AGENT # read SYNTHESIZE
+            span_kind = self._trace_tree.SpanKind.AGENT  # read SYNTHESIZE
         elif event_type == CBEventType.TREE:
-            span_kind = self._trace_tree.SpanKind.AGENT # read TREE
+            span_kind = self._trace_tree.SpanKind.AGENT  # read TREE
         else:
             raise ValueError(f"Unknown event type: {event_type}")
 
@@ -222,7 +229,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         return wb_span
 
-    def _get_time_in_ms(self, event_pair: List[CBEvent]):
+    def _get_time_in_ms(self, event_pair: List[CBEvent]) -> List[int]:
         start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
         end_time = datetime.strptime(event_pair[1].time, TIMESTAMP_FORMAT)
 
@@ -230,8 +237,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
         end_time = int((end_time - datetime(1970, 1, 1)).total_seconds() * 1000)
 
         return start_time, end_time
-    
-    def _ensure_run(self, should_print_url=True) -> None:
+
+    def _ensure_run(self, should_print_url: bool=True) -> None:
         """Ensures an active W&B run exists.
 
         If not, will start a new run with the provided run_args.
@@ -259,7 +266,6 @@ class WandbCallbackHandler(BaseCallbackHandler):
             "Please report any issues to https://github.com/wandb/wandb/issues with the tag `llamaindex`."
         )
 
-    
     def finish(self) -> None:
         """Finish the callback handler."""
         self._wandb.finish()
