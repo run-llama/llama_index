@@ -45,7 +45,10 @@ from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
 
 # for composability
-from llama_index.indices.service_context import ServiceContext, set_global_service_context
+from llama_index.indices.service_context import (
+    ServiceContext,
+    set_global_service_context,
+)
 from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from llama_index.indices.tree import GPTTreeIndex
 from llama_index.indices.vector_store import GPTVectorStoreIndex
@@ -182,7 +185,7 @@ __all__ = [
     "load_indices_from_storage",
     "QueryBundle",
     "ResponseSynthesizer",
-    "set_global_service_context"
+    "set_global_service_context",
 ]
 
 # NOTE: keep for backwards compatibility
