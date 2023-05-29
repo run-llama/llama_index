@@ -77,10 +77,10 @@ class SimpleChatEngine(BaseChatEngine):
             assert isinstance(generation, ChatGeneration)
             response = generation.message.content
         else:
-            history = to_chat_buffer(self._chat_history)
+            history_buffer = to_chat_buffer(self._chat_history)
             response, _ = self._service_context.llm_predictor.predict(
                 self._prompt,
-                history=history,
+                history=history_buffer,
                 message=message,
             )
 
@@ -90,7 +90,6 @@ class SimpleChatEngine(BaseChatEngine):
         return Response(response=response)
 
     async def achat(self, message: str) -> RESPONSE_TYPE:
-        history = to_chat_buffer(self._chat_history)
         if is_chat_model(self._service_context):
             assert isinstance(self._service_context.llm_predictor, LLMPredictor)
             llm = self._service_context.llm_predictor.llm
@@ -102,9 +101,10 @@ class SimpleChatEngine(BaseChatEngine):
             assert isinstance(generation, ChatGeneration)
             response = generation.message.content
         else:
+            history_buffer = to_chat_buffer(self._chat_history)
             response, _ = await self._service_context.llm_predictor.apredict(
                 self._prompt,
-                history=history,
+                history=history_buffer,
                 message=message,
             )
 

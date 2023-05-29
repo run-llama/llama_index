@@ -32,4 +32,3 @@ def is_chat_model(service_context: ServiceContext) -> bool:
     if not isinstance(llm_predictor, LLMPredictor):
         return False
     return isinstance(llm_predictor.llm, BaseChatModel)
-

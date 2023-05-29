@@ -274,6 +274,8 @@ class BaseGPTIndex(Generic[IS], ABC):
             from llama_index.chat_engine import ReActChatEngine
 
             query_engine = self.as_query_engine(**kwargs)
-            return ReActChatEngine.from_query_engine(query_engine=query_engine, **kwargs)
+            return ReActChatEngine.from_query_engine(
+                query_engine=query_engine, **kwargs
+            )
         else:
             raise ValueError(f"Unknown chat mode: {chat_mode}")
