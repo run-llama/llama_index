@@ -298,7 +298,7 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl)
+    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
