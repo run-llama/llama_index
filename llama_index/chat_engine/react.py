@@ -20,7 +20,6 @@ from langchain.chat_models.base import BaseChatModel
 class ReActChatEngine(BaseChatEngine):
     """ReAct Chat Engine.
 
-
     Use a ReAct agent loop with query engine tools. Implemented via LangChain agent.
     """
 

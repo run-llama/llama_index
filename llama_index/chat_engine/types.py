@@ -40,11 +40,25 @@ class BaseChatEngine(ABC):
 
 
 class ChatMode(str, Enum):
-    """Chat Engine Models."""
+    """Chat Engine Modes."""
 
-    CONDENSE_QUESTION = "condense_question"
-    REACT = "react"
     SIMPLE = "simple"
+    """Corresponds to `SimpleChatEngine`.
+    
+    Chat with LLM, without making use of a knowledge base.
+    """
+    CONDENSE_QUESTION = "condense_question"
+    """Corresponds to `CondenseQuestionChatEngine`.
+    
+    First generate a standalone question from conversation context and last message,
+    then query the query engine for a response.
+    """
+    REACT = "react"
+    """Corresponds to `ReActChatEngine`.
+    
+    Use a ReAct agent loop with query engine tools. 
+    Implemented via LangChain agent.
+    """
 
 
 """
