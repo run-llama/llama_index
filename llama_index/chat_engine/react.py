@@ -1,7 +1,7 @@
 from typing import Any, Optional, Sequence
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
-from llama_index.chat_engine.utils import to_langchain_chat_history
+from llama_index.chat_engine.utils import is_chat_model, to_langchain_chat_history
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.langchain_helpers.agents.agents import (
@@ -14,6 +14,7 @@ from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_memory import BaseChatMemory
+from langchain.chat_models.base import BaseChatModel
 
 
 class ReActChatEngine(BaseChatEngine):
@@ -54,8 +55,11 @@ class ReActChatEngine(BaseChatEngine):
 
         if memory is None:
             history = to_langchain_chat_history(chat_history)
+
             memory = ConversationBufferMemory(
-                memory_key="chat_history", chat_memory=history
+                memory_key="chat_history",
+                chat_memory=history,
+                return_messages=is_chat_model(service_context=service_context),
             )
         return cls(
             query_engine_tools=query_engine_tools,
@@ -79,7 +83,7 @@ class ReActChatEngine(BaseChatEngine):
         query_engine_tool = QueryEngineTool.from_defaults(
             query_engine=query_engine, name=name, description=description
         )
-        return cls(
+        return cls.from_defaults(
             query_engine_tools=[query_engine_tool],
             service_context=service_context,
             memory=memory,
@@ -92,9 +96,11 @@ class ReActChatEngine(BaseChatEngine):
         tools = [qe_tool.as_langchain_tool() for qe_tool in self._query_engine_tools]
         if not isinstance(self._service_context.llm_predictor, LLMPredictor):
             raise ValueError("Currently only supports LangChain based LLMPredictor.")
-
         llm = self._service_context.llm_predictor.llm
-        agent_type = AgentType.CONVERSATIONAL_REACT_DESCRIPTION
+        if is_chat_model(service_context=self._service_context):
+            agent_type = AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION
+        else:
+            agent_type = AgentType.CONVERSATIONAL_REACT_DESCRIPTION
 
         return initialize_agent(
             tools=tools,

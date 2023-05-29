@@ -1,6 +1,10 @@
 from typing import Optional
 from llama_index.chat_engine.types import ChatHistoryType
 from langchain.memory import ChatMessageHistory
+from langchain.chat_models.base import BaseChatModel
+
+from llama_index.indices.service_context import ServiceContext
+from llama_index.llm_predictor.base import LLMPredictor
 
 
 def to_chat_buffer(chat_history: ChatHistoryType) -> str:
@@ -21,3 +25,11 @@ def to_langchain_chat_history(
             history.add_user_message(human_message)
             history.add_ai_message(ai_message)
     return history
+
+
+def is_chat_model(service_context: ServiceContext) -> bool:
+    llm_predictor = service_context.llm_predictor
+    if not isinstance(llm_predictor, LLMPredictor):
+        return False
+    return isinstance(llm_predictor.llm, BaseChatModel)
+
