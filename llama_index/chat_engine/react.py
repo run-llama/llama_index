@@ -119,4 +119,8 @@ class ReActChatEngine(BaseChatEngine):
         return Response(response=response)
 
     def reset(self) -> None:
+        self._memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            return_messages=is_chat_model(service_context=self._service_context),
+        )
         self._agent = self._create_agent()
