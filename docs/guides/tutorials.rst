@@ -4,12 +4,6 @@ Tutorials
 This section contains a list of in-depth tutorials on how to best utilize different capabilities
 of LlamaIndex within your end-user application.
 
-They include a broad range of LlamaIndex concepts:
-
-- Semantic search
-- Structured data support 
-- Composability/Query Transformation
-
 They also showcase a variety of application settings that LlamaIndex can be used, from a simple
 Jupyter notebook to a chatbot to a full-stack web application.
 
