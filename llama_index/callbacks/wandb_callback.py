@@ -1,13 +1,49 @@
+import sys
+
+if sys.version_info >= (3, 8):
+    from typing import TypedDict
+else:
+    from typing_extensions import TypedDict
+
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Any, Optional
 
 from llama_index.callbacks.base import BaseCallbackHandler
 from llama_index.callbacks.schema import (
     CBEvent,
     CBEventType,
     TIMESTAMP_FORMAT,
+    BASE_TRACE_ID
 )
+
+
+# remove this class
+class WandbRunArgs(TypedDict):
+    job_type: Optional[str]
+    dir: Optional[str]
+    config: Union[Dict, str, None]
+    project: Optional[str]
+    entity: Optional[str]
+    reinit: Optional[bool]
+    tags: Optional[Sequence]
+    group: Optional[str]
+    name: Optional[str]
+    notes: Optional[str]
+    magic: Optional[Union[dict, str, bool]]
+    config_exclude_keys: Optional[List[str]]
+    config_include_keys: Optional[List[str]]
+    anonymous: Optional[str]
+    mode: Optional[str]
+    allow_val_change: Optional[bool]
+    resume: Optional[Union[bool, str]]
+    force: Optional[bool]
+    tensorboard: Optional[bool]
+    sync_tensorboard: Optional[bool]
+    monitor_gym: Optional[bool]
+    save_code: Optional[bool]
+    id: Optional[str]
+    settings: Union["WBSettings", Dict[str, Any], None]
 
 
 class WandbCallbackHandler(BaseCallbackHandler):
@@ -28,6 +64,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
+        run_args: Optional[WandbRunArgs] = None,
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
     ) -> None:
@@ -43,15 +80,13 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 "WandbCallbackHandler requires wandb. "
                 "Please install it with `pip install wandb`."
             )
+        
+        self._run_args = run_args
+        self._ensure_run(should_print_url=(self._wandb.run is None))
 
-        if self._wandb.run is None:
-            # TODO: pass wandb args
-            run = self._wandb.init(project="llama_index", settings={"silent": True})
-            print("W&b run URL: ", run.url)
-
-        self._events_by_id: Dict[str, List[CBEvent]] = {}
-        self._cache_query_events: List[CBEvent] = []
-        self._is_query: bool = False
+        self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
+        self._cur_trace_id: Optional[str] = None
+        self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
@@ -78,15 +113,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
-        self._events_by_id[event.id_] = [event]
-
-        # Cache Query events
-        if event_type == CBEventType.QUERY:
-            self._is_query = True
-
-        if self._is_query:
-            self._cache_query_events.append(event)
-
+        self._event_pairs_by_id[event.id_].append(event)
         return event.id_
 
     def on_event_end(
@@ -105,122 +132,92 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
-        self._events_by_id[event.id_].append(event)
+        self._event_pairs_by_id[event.id_].append(event)
+        self._trace_map = defaultdict(list)
 
-        assert len(self._events_by_id[event.id_]) == 2
-        assert (
-            self._events_by_id[event.id_][0].event_type
-            == self._events_by_id[event.id_][1].event_type
-        )
+    def start_trace(self, trace_id: Optional[str] = None) -> None:
+        """Launch a trace."""
+        self._trace_map = defaultdict(list)
+        self._cur_trace_id = trace_id
 
-        if self._is_query:
-            self._cache_query_events.append(event)
+    def end_trace(
+        self,
+        trace_id: Optional[str] = None,
+        trace_map: Optional[Dict[str, List[str]]] = None,
+    ) -> None:
+        """Shutdown the current trace."""
+        self._trace_map = trace_map or defaultdict(list)
+        print(self._trace_map)
 
-        if event_type == CBEventType.QUERY:
-            query_event_pairs = self._get_event_pairs(self._cache_query_events)
-            query_span = self._query_trace_tree(query_event_pairs)
-            query_trace = self._trace_tree.WBTraceTree(query_span)
+        # Log the trace map to wandb
+        # We can control what trace ids we want to log here.
+        self.log_trace_tree()
 
-            if self._wandb.run is not None:
-                self._wandb.run.log({"query_trace": query_trace})
+    def _build_trace_tree(self):
+        id_to_wb_span_tmp = {}
+        for root_node, child_nodes in self._trace_map.items():
+            if root_node == "root":
+                # the first child node is the parent node
+                # ideally there should be 1 child node, if not make other child nodes part of the 1st node.
+                parent_node = child_nodes[0]
+                root_span = self._convert_event_pair_to_wb_span(self._event_pairs_by_id[parent_node])
+                id_to_wb_span_tmp[parent_node] = root_span
+                if len(child_nodes) > 1:
+                    for child_node in child_nodes[1:]:
+                        child_span = self._convert_event_pair_to_wb_span(self._event_pairs_by_id[child_node])
+                        root_span.add_child_span(child_span)
+                        id_to_wb_span_tmp[child_node] = child_span
+            else:
+                for child_node in child_nodes:
+                    child_span = self._convert_event_pair_to_wb_span(self._event_pairs_by_id[child_node])
+                    id_to_wb_span_tmp[root_node].add_child_span(child_span)
+                    id_to_wb_span_tmp[child_node] = child_span
+                id_to_wb_span_tmp.pop(root_node)
+        return root_span
 
-            self._cache_query_events = []
-            self._is_query = False
+    def log_trace_tree(self):
+        try:
+            root_span = self._build_trace_tree()
+            root_trace = self._trace_tree.WBTraceTree(root_span)
+            self._wandb.run.log({"trace": root_trace})
+        except:
+            # Silently ignore errors to not break user code
+            pass
 
-        # Log independent LLM events to trace view
-        if event_type == CBEventType.LLM:
-            llm_usage_info = self._get_llm_usage_info(event.id_)
-
-            llm_table = self._wandb.Table(
-                columns=[
-                    "event_id",
-                    "event_start_time",
-                    "event_end_time",
-                    "inputs",
-                    "outputs",
-                    "formatted_prompt_tokens_count",
-                    "prediction_tokens_count",
-                    "total_token_count",
-                ]
-            )
-
-            len(llm_usage_info)
-            llm_table.add_data(*llm_usage_info)
-            self._wandb.run.log({"llm_tracker": llm_table})
-
-    def _get_llm_usage_info(self, llm_id: str) -> List[Any]:
-        event_pair = self._events_by_id[llm_id]
-        start_time, end_time = event_pair[0].time, event_pair[1].time
-
-        # ["event_id", "event_start_time", "event_end_time", "inputs", "outputs", "total_token_count"]
-        inputs = event_pair[0].payload
-        inputs = [f"{k}\n******\n{v}" for k, v in inputs.items()]
-        inputs = "\n".join(inputs)
-
-        outputs = event_pair[1].payload
-        outputs = [f"{k}\n******\n{v}" for k, v in outputs.items()]
-        outputs = "\n".join(outputs)
-
-        return [
-            llm_id,
-            start_time,
-            end_time,
-            inputs,
-            outputs,
-            event_pair[1].payload["formatted_prompt_tokens_count"],
-            event_pair[1].payload["prediction_tokens_count"],
-            event_pair[1].payload["total_tokens_used"],
-        ]
-
-    def _query_trace_tree(self, query_event_pairs: List[List[CBEvent]]):
-        query_span = None
-        retrive_span = None
-        synth_span = None
-
-        for event_pair in query_event_pairs:
-            assert len(event_pair) == 2
-            span = self._convert_event_to_wb_span(event_pair)
-            span.add_named_result(
-                inputs=event_pair[0].payload,
-                outputs=event_pair[1].payload,
-            )
-
-            if event_pair[0].event_type == CBEventType.QUERY:
-                query_span = span
-            elif event_pair[0].event_type == CBEventType.RETRIEVE:
-                retrive_span = span
-                query_span.add_child_span(retrive_span)
-            elif event_pair[0].event_type == CBEventType.SYNTHESIZE:
-                synth_span = span
-                query_span.add_child_span(synth_span)
-            elif event_pair[0].event_type == CBEventType.EMBEDDING:
-                retrive_span.add_child_span(span)
-            elif event_pair[0].event_type == CBEventType.LLM:
-                synth_span.add_child_span(span)
-
-        return query_span
-
-    def _convert_event_to_wb_span(self, event_pair: List[CBEvent]):
+    def _convert_event_pair_to_wb_span(self, event_pair: List[CBEvent]):
         start_time_ms, end_time_ms = self._get_time_in_ms(event_pair)
 
         event_type = event_pair[0].event_type
 
-        if event_type == CBEventType.QUERY:
-            span_kind = self._trace_tree.SpanKind.CHAIN  # read QUERY
-        elif event_type == CBEventType.RETRIEVE:
-            span_kind = self._trace_tree.SpanKind.AGENT  # read RETRIEVE
+        if event_type == CBEventType.CHUNKING:
+            span_kind = self._trace_tree.SpanKind.TOOL  # read CHUNKING
+        elif event_type == CBEventType.NODE_PARSING:
+            span_kind = self._trace_tree.SpanKind.TOOL  # read NODE_PARSING
         elif event_type == CBEventType.EMBEDDING:
             span_kind = self._trace_tree.SpanKind.TOOL  # read EMBEDDING
-        elif event_type == CBEventType.SYNTHESIZE:
-            span_kind = self._trace_tree.SpanKind.AGENT  # read SYNTHESIZE
         elif event_type == CBEventType.LLM:
-            span_kind = self._trace_tree.SpanKind.LLM
+            span_kind = self._trace_tree.SpanKind.LLM  # read LLM
+        elif event_type == CBEventType.QUERY:
+            span_kind = self._trace_tree.SpanKind.AGENT # read QUERY
+        elif event_type == CBEventType.RETRIEVE:
+            span_kind = self._trace_tree.SpanKind.TOOL # read QUERY
+        elif event_type == CBEventType.SYNTHESIZE:
+            span_kind = self._trace_tree.SpanKind.AGENT # read SYNTHESIZE
+        elif event_type == CBEventType.TREE:
+            span_kind = self._trace_tree.SpanKind.AGENT # read TREE
+        else:
+            raise ValueError(f"Unknown event type: {event_type}")
 
         wb_span = self._trace_tree.Span(
             name=f"{event_type}",
             span_kind=span_kind,
             start_time_ms=start_time_ms,
             end_time_ms=end_time_ms,
+        )
+
+        wb_span.add_named_result(
+            inputs=event_pair[0].payload,
+            outputs=event_pair[-1].payload,
         )
 
         return wb_span
@@ -233,19 +230,36 @@ class WandbCallbackHandler(BaseCallbackHandler):
         end_time = int((end_time - datetime(1970, 1, 1)).total_seconds() * 1000)
 
         return start_time, end_time
+    
+    def _ensure_run(self, should_print_url=True) -> None:
+        """Ensures an active W&B run exists.
 
-    def _get_event_pairs(self, events: List[CBEvent]) -> List[List[CBEvent]]:
-        """Helper function to pair events according to their ID."""
-        event_pairs: Dict[str, List[CBEvent]] = defaultdict(list)
-        for event in events:
-            event_pairs[event.id_].append(event)
+        If not, will start a new run with the provided run_args.
+        """
+        if self._wandb.run is None:
+            # Make a shallow copy of the run args, so we don't modify the original
+            run_args = self._run_args or {}  # type: ignore
+            run_args: dict = {**run_args}  # type: ignore
 
-        sorted_events = sorted(
-            event_pairs.values(),
-            key=lambda x: datetime.strptime(x[0].time, TIMESTAMP_FORMAT),
+            # Prefer to run in silent mode since W&B has a lot of output
+            # which can be undesirable when dealing with text-based models.
+            if "settings" not in run_args:  # type: ignore
+                run_args["settings"] = {"silent": True}  # type: ignore
+
+            # Start the run and add the stream table
+            self._wandb.init(**run_args)
+
+            if should_print_url:
+                self._print_wandb_init_message(self._wandb.run.settings.run_url)
+
+    def _print_wandb_init_message(self, run_url: str) -> None:
+        self._wandb.termlog(
+            f"Streaming LlamaIndex events to W&B at {run_url}\n"
+            "`WandbCallbackHandler` is currently in beta.\n"
+            "Please report any issues to https://github.com/wandb/wandb/issues with the tag `llamaindex`."
         )
-        return sorted_events
 
+    
     def finish(self) -> None:
         """Finish the callback handler."""
         self._wandb.finish()
