@@ -1,11 +1,18 @@
 from typing import Any, Optional
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
-from llama_index.chat_engine.utils import to_chat_buffer
+from llama_index.chat_engine.utils import (
+    is_chat_model,
+    to_chat_buffer,
+    to_langchain_chat_history,
+)
 from llama_index.indices.service_context import ServiceContext
+from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import RESPONSE_TYPE, Response
+from langchain.chat_models.base import BaseChatModel
+from langchain.schema import ChatGeneration
 
 DEFAULT_TMPL = """\
 Assistant is a versatile language model that can assist with various tasks. \
@@ -52,12 +59,23 @@ class SimpleChatEngine(BaseChatEngine):
         )
 
     def chat(self, message: str) -> RESPONSE_TYPE:
-        history = to_chat_buffer(self._chat_history)
-        response, _ = self._service_context.llm_predictor.predict(
-            self._prompt,
-            history=history,
-            message=message,
-        )
+        if is_chat_model(self._service_context):
+            assert isinstance(self._service_context.llm_predictor, LLMPredictor)
+            llm = self._service_context.llm_predictor.llm
+            assert isinstance(llm, BaseChatModel)
+            history = to_langchain_chat_history(self._chat_history)
+            history.add_user_message(message=message)
+            result = llm.generate([history.messages])
+            generation = result.generations[0][0]
+            assert isinstance(generation, ChatGeneration)
+            response = generation.message.content
+        else:
+            history = to_chat_buffer(self._chat_history)
+            response, _ = self._service_context.llm_predictor.predict(
+                self._prompt,
+                history=history,
+                message=message,
+            )
 
         # Record response
         self._chat_history.append((message, str(response)))
@@ -66,11 +84,22 @@ class SimpleChatEngine(BaseChatEngine):
 
     async def achat(self, message: str) -> RESPONSE_TYPE:
         history = to_chat_buffer(self._chat_history)
-        response, _ = await self._service_context.llm_predictor.apredict(
-            self._prompt,
-            history=history,
-            message=message,
-        )
+        if is_chat_model(self._service_context):
+            assert isinstance(self._service_context.llm_predictor, LLMPredictor)
+            llm = self._service_context.llm_predictor.llm
+            assert isinstance(llm, BaseChatModel)
+            history = to_langchain_chat_history(self._chat_history)
+            history.add_user_message(message=message)
+            result = await llm.agenerate([history.messages])
+            generation = result.generations[0][0]
+            assert isinstance(generation, ChatGeneration)
+            response = generation.message.content
+        else:
+            response, _ = await self._service_context.llm_predictor.apredict(
+                self._prompt,
+                history=history,
+                message=message,
+            )
 
         # Record response
         self._chat_history.append((message, str(response)))
