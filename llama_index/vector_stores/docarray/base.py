@@ -6,11 +6,13 @@ import numpy as np
 from pydantic import Field
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
-from llama_index.vector_stores.utils import (metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
 
@@ -23,23 +25,18 @@ class DocArrayVectorStore(VectorStore, ABC):
     The subclasses should implement _init_index and _find_docs_to_be_removed methods.
     """
 
-    from docarray import BaseDoc, DocList
-    from docarray.index import HnswDocumentIndex, InMemoryExactNNIndex
-
-    # will get initialized by child classes
+    # for mypy. will get initialized by the subclass.
     _index: Any
-    _schema: Type["BaseDoc"]
+    _schema: Any
     _ref_docs: Dict[str, List[str]]
 
     stores_text: bool = True
 
-    def _update_ref_docs(self, docs: DocList) -> None:
+    def _update_ref_docs(self, docs) -> None:  # type: ignore[no-untyped-def]
         pass
 
     @abstractmethod
-    def _init_index(
-        self, **kwargs: Any
-    ) -> Union[HnswDocumentIndex, InMemoryExactNNIndex]:
+    def _init_index(self, **kwargs: Any):  # type: ignore[no-untyped-def]
         """Initializes the index.
 
         This method should be overridden by the subclasses.
@@ -74,7 +71,7 @@ class DocArrayVectorStore(VectorStore, ABC):
         return self._index.num_docs()
 
     @staticmethod
-    def _get_schema(**embeddings_params: Any) -> Type["BaseDoc"]:
+    def _get_schema(**embeddings_params: Any) -> Type:
         """Fetches the schema for DocArray indices.
 
         Args:
