@@ -79,15 +79,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
                 query_bundle, nodes_for_synthesis, additional_source_nodes
             )
         else:
-            synth_event_id = self.callback_manager.on_event_start(
-                CBEventType.SYNTHESIZE
-            )
             response = query_engine.synthesize(query_bundle, nodes)
-            self.callback_manager.on_event_end(
-                CBEventType.SYNTHESIZE,
-                payload={"response": response},
-                event_id=synth_event_id,
-            )
 
         self.callback_manager.on_event_end(CBEventType.QUERY, event_id=event_id)
         return response
