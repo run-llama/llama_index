@@ -13,6 +13,7 @@ from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
+from langchain.base_language import BaseLanguageModel
 
 
 logger = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ class ServiceContext:
     def from_defaults(
         cls,
         llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm: Optional[BaseLanguageModel] = None,
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[BaseEmbedding] = None,
         node_parser: Optional[NodeParser] = None,
@@ -102,6 +104,10 @@ class ServiceContext:
             )
 
         callback_manager = callback_manager or CallbackManager([])
+        if llm is not None:
+            if llm_predictor is not None:
+                raise ValueError("Cannot specify both llm and llm_predictor")
+            llm_predictor = LLMPredictor(llm=llm)
         llm_predictor = llm_predictor or LLMPredictor()
         llm_predictor.callback_manager = callback_manager
 
@@ -134,6 +140,7 @@ class ServiceContext:
         cls,
         service_context: "ServiceContext",
         llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm: Optional[BaseLanguageModel] = None,
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[BaseEmbedding] = None,
         node_parser: Optional[NodeParser] = None,
@@ -141,9 +148,14 @@ class ServiceContext:
         callback_manager: Optional[CallbackManager] = None,
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
-        """Instaniate a new serivce context using a previous as the defaults."""
+        """Instantiate a new service context using a previous as the defaults."""
 
         callback_manager = callback_manager or service_context.callback_manager
+        if llm is not None:
+            if llm_predictor is not None:
+                raise ValueError("Cannot specify both llm and llm_predictor")
+            llm_predictor = LLMPredictor(llm=llm)
+
         llm_predictor = llm_predictor or service_context.llm_predictor
         llm_predictor.callback_manager = callback_manager
 

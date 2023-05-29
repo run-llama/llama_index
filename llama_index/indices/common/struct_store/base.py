@@ -19,6 +19,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_TABLE_CONTEXT_PROMPT,
     DEFAULT_TABLE_CONTEXT_QUERY,
 )
+from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.prompts import (
     QuestionAnswerPrompt,
     RefinePrompt,
@@ -93,10 +94,12 @@ class SQLDocumentContextBuilder:
         """Build context from documents for a single table."""
         schema = self._sql_database.get_single_table_info(table_name)
         prompt_with_schema = QuestionAnswerPrompt.from_prompt(
-            self._table_context_prompt.partial_format(schema=schema)
+            self._table_context_prompt.partial_format(schema=schema),
+            prompt_type=PromptType.QUESTION_ANSWER,
         )
         refine_prompt_with_schema = RefinePrompt.from_prompt(
-            self._refine_table_context_prompt.partial_format(schema=schema)
+            self._refine_table_context_prompt.partial_format(schema=schema),
+            prompt_type=PromptType.REFINE,
         )
         text_splitter = (
             self._text_splitter
