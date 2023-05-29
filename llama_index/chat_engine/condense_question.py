@@ -38,15 +38,15 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def __init__(
         self,
         query_engine: BaseQueryEngine,
-        condense_question_prompt: Optional[Prompt] = None,
-        chat_history: Optional[ChatHistoryType] = None,
-        service_context: Optional[ServiceContext] = None,
+        condense_question_prompt: Prompt,
+        chat_history: ChatHistoryType,
+        service_context: ServiceContext,
         verbose: bool = False,
     ) -> None:
         self._query_engine = query_engine
-        self._condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
-        self._chat_history = chat_history or []
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._condense_question_prompt = condense_question_prompt
+        self._chat_history = chat_history
+        self._service_context = service_context
         self._verbose = verbose
 
     @classmethod
@@ -59,6 +59,10 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "CondenseQuestionChatEngine":
+        condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
+        chat_history = chat_history or []
+        service_context = service_context or ServiceContext.from_defaults()
+
         return cls(
             query_engine,
             condense_question_prompt,

@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional, Sequence
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
 from llama_index.chat_engine.utils import to_langchain_chat_history
@@ -25,14 +25,30 @@ class ReActChatEngine(BaseChatEngine):
 
     def __init__(
         self,
-        query_engine_tools: List[QueryEngineTool],
+        query_engine_tools: Sequence[QueryEngineTool],
+        service_context: ServiceContext,
+        memory: BaseChatMemory,
+        verbose: bool = False,
+    ) -> None:
+        self._query_engine_tools = query_engine_tools
+        self._service_context = service_context
+        self._memory = memory
+        self._verbose = verbose
+
+        self._agent = self._create_agent()
+
+    @classmethod
+    def from_defaults(
+        cls,
+        query_engine_tools: Sequence[QueryEngineTool],
         service_context: Optional[ServiceContext] = None,
         memory: Optional[BaseChatMemory] = None,
         chat_history: Optional[ChatHistoryType] = None,
         verbose: bool = False,
-    ) -> None:
-        self._query_engine_tools = query_engine_tools
-        self._service_context = service_context or ServiceContext.from_defaults()
+        **kwargs: Any,
+    ) -> "ReActChatEngine":
+        del kwargs  # Unused
+        service_context = service_context or ServiceContext.from_defaults()
         if chat_history is not None and memory is not None:
             raise ValueError("Cannot specify both memory and chat_history.")
 
@@ -41,14 +57,15 @@ class ReActChatEngine(BaseChatEngine):
             memory = ConversationBufferMemory(
                 memory_key="chat_history", chat_memory=history
             )
-
-        self._memory = memory
-        self._verbose = verbose
-
-        self._agent = self._create_agent()
+        return cls(
+            query_engine_tools=query_engine_tools,
+            service_context=service_context,
+            memory=memory,
+            verbose=verbose,
+        )
 
     @classmethod
-    def from_defaults(
+    def from_query_engine(
         cls,
         query_engine: BaseQueryEngine,
         name: Optional[str] = None,
@@ -58,7 +75,7 @@ class ReActChatEngine(BaseChatEngine):
         chat_history: Optional[ChatHistoryType] = None,
         verbose: bool = False,
         **kwargs: Any,
-    ) -> "ReActChatEngine":
+    ):
         query_engine_tool = QueryEngineTool.from_defaults(
             query_engine=query_engine, name=name, description=description
         )
@@ -68,6 +85,7 @@ class ReActChatEngine(BaseChatEngine):
             memory=memory,
             chat_history=chat_history,
             verbose=verbose,
+            **kwargs,
         )
 
     def _create_agent(self) -> AgentExecutor:

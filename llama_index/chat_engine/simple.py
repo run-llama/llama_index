@@ -27,13 +27,13 @@ DEFAULT_PROMPT = Prompt(DEFAULT_TMPL)
 class SimpleChatEngine(BaseChatEngine):
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
-        prompt: Optional[Prompt] = None,
-        chat_history: Optional[ChatHistoryType] = None,
+        service_context: ServiceContext,
+        prompt: Prompt,
+        chat_history: ChatHistoryType,
     ) -> None:
-        self._service_context = service_context or ServiceContext.from_defaults()
-        self._prompt = prompt or DEFAULT_PROMPT
-        self._chat_history = chat_history or []
+        self._service_context = service_context
+        self._prompt = prompt
+        self._chat_history = chat_history
 
     @classmethod
     def from_defaults(
@@ -43,6 +43,9 @@ class SimpleChatEngine(BaseChatEngine):
         chat_history: Optional[ChatHistoryType] = None,
         **kwargs: Any,
     ) -> "SimpleChatEngine":
+        service_context = service_context or ServiceContext.from_defaults()
+        prompt = prompt or DEFAULT_PROMPT
+        chat_history = chat_history or []
         return cls(
             service_context=service_context, prompt=prompt, chat_history=chat_history
         )
