@@ -190,6 +190,10 @@ def mock_llmpredictor_predict(prompt: Prompt, **prompt_args: Any) -> Tuple[str, 
         response = _mock_pandas(full_prompt_args)
     elif prompt.prompt_type == PromptType.SQL_RESPONSE_SYNTHESIS:
         response = _mock_sql_response_synthesis(full_prompt_args)
+    elif prompt.prompt_type == PromptType.DECOMPOSE:
+        response = _mock_decompose_query(full_prompt_args)
+    elif prompt.prompt_type == PromptType.CHOICE_SELECT:
+        response = _mock_choice_select(full_prompt_args)
     elif prompt.prompt_type == PromptType.CONVERSATION:
         response = _mock_conversation(full_prompt_args)
     else:
