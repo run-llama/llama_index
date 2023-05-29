@@ -16,7 +16,7 @@ through the `load_data` function, e.g.:
 ```python
 from llama_index import SimpleDirectoryReader
 
-documents = SimpleDirectoryReader('data').load_data()
+documents = SimpleDirectoryReader('./data').load_data()
 ```
 
 You can also choose to construct documents manually. LlamaIndex exposes the `Document` struct.
@@ -133,6 +133,22 @@ index.insert_nodes(nodes)
 ```
 
 See the [Update Index How-To](/how_to/index_structs/update.md) for details and an example notebook.
+
+### Customizing Documents
+
+When creating documents, you can also attach useful metadata. Any metadata added to a document will be copied to the nodes that get created from their respective source document.
+
+```python
+document = Document(
+    'text', 
+    extra_info={
+        'filename', '<doc_file_name>', 
+        'category': '<category>'
+    }
+)
+```
+
+More information and approaches to this are discussed in the section [Customizing Documents](/how_to/customization/custom_documents.md).
 
 ### Customizing LLM's
 
