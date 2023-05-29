@@ -48,6 +48,7 @@ class ReActChatEngine(BaseChatEngine):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActChatEngine":
+        """Initialize a ReActChatEngine from default parameters."""
         del kwargs  # Unused
         service_context = service_context or ServiceContext.from_defaults()
         if chat_history is not None and memory is not None:

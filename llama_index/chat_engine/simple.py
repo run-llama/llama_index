@@ -33,6 +33,12 @@ DEFAULT_PROMPT = Prompt(DEFAULT_TMPL, prompt_type=PromptType.CONVERSATION)
 
 
 class SimpleChatEngine(BaseChatEngine):
+    """Simple Chat Engine.
+
+    Have a conversation with the LLM.
+    This does not make use of a knowledge base.
+    """
+
     def __init__(
         self,
         service_context: ServiceContext,
@@ -51,6 +57,7 @@ class SimpleChatEngine(BaseChatEngine):
         chat_history: Optional[ChatHistoryType] = None,
         **kwargs: Any,
     ) -> "SimpleChatEngine":
+        """Initialize a SimpleChatEngine from default parameters."""
         service_context = service_context or ServiceContext.from_defaults()
         prompt = prompt or DEFAULT_PROMPT
         chat_history = chat_history or []
