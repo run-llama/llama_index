@@ -22,8 +22,10 @@ print(response)
 
 ```
 
-Relevant Resources:
+**Tutorials**
 - [Quickstart](/getting_started/starter_example.md)
+
+**Guides**
 - [Example](../examples/vector_stores/SimpleIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores/SimpleIndexDemo.ipynb))
 
 
@@ -53,14 +55,14 @@ LlamaIndex supports queries over structured data, whether that's a Pandas DataFr
 
 Here are some relevant resources:
 
-**Guides**
+**Tutorials**
 
 - [Guide on Text-to-SQL](/guides/tutorials/sql_guide.md)
 
-**Examples**
-- [SQL Demo 1](../examples/index_structs/struct_indices/SQLIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
-- [SQL Demo 2 (Context)](../examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb))
-- [SQL Demo 3 (Big tables)](../examples/index_structs/struct_indices//SQLIndexDemo-ManyTables.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-ManyTables.ipynb))
+**Guides**
+- [SQL Guide (Core)](../examples/index_structs/struct_indices/SQLIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
+- [SQL Guide (Setting Context)](../examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb))
+- [SQL Guide (Many Tables)](../examples/index_structs/struct_indices//SQLIndexDemo-ManyTables.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo-ManyTables.ipynb))
 - [Pandas Demo](../examples/index_structs/struct_indices/PandasIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/PandasIndexDemo.ipynb))
 
 
@@ -83,7 +85,7 @@ response = query_engine.query("<query_str>")
 
 ```
 
-Here are some relevant resources:
+**Guides**
 - [Composability](/how_to/index_structs/composability.md)
 - [City Analysis](../examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
@@ -135,26 +137,12 @@ response = query_engine.query(
 
 ```
 
-Here are some relevant resources:
-- [Router Query Engine Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb).
+**Guides**
+- [Router Query Engine Guide](../examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
 - [City Analysis Unified Query Interface](../examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
-
 ### Compare/Contrast Queries
-
-LlamaIndex can support compare/contrast queries as well. It can do this in the following fashion:
-- Composing a graph over your data
-- Adding in query transformations.
-
-
-You can perform compare/contrast queries by just composing a graph over your data.
-
-Here are some relevant resources:
-- [Composability](/how_to/index_structs/composability.md)
-- [SEC 10-k Analysis Example notebook](https://colab.research.google.com/drive/1uL1TdMbR4kqa0Ksrd_Of_jWSxWt1ia7o?usp=sharing).
-
-
-You can also perform compare/contrast queries with a **query transformation** module.
+You can explicitly perform compare/contrast queries with a **query transformation** module within a ComposableGraph.
 
 ```python
 from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
@@ -165,22 +153,79 @@ decompose_transform = DecomposeQueryTransform(
 
 This module will help break down a complex query into a simpler one over your existing index structure.
 
-Here are some relevant resources:
+**Guides**
 - [Query Transformations](/how_to/query/query_transformations.md)
 - [City Analysis Compare/Contrast Example](../examples//composable_indices/city_analysis/City_Analysis-Decompose.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb))
 
+You can also rely on the LLM to *infer* whether to perform compare/contrast queries (see Multi-Document Queries below).
+
+### Multi-Document Queries
+
+Besides the explicit synthesis/routing flows described above, LlamaIndex can support more general multi-document queries as well. 
+It can do this through our `SubQuestionQueryEngine` class. Given a query, this query engine will generate a "query plan" containing
+sub-queries against sub-documents before synthesizing the final answer.
+
+To do this, first define an index for each document/data source, and wrap it with a `QueryEngineTool` (similar to above):
+
+```python
+from llama_index.tools import QueryEngineTool, ToolMetadata
+
+query_engine_tools = [
+    QueryEngineTool(
+        query_engine=sept_engine, 
+        metadata=ToolMetadata(name='sept_22', description='Provides information about Uber quarterly financials ending September 2022')
+    ),
+    QueryEngineTool(
+        query_engine=june_engine, 
+        metadata=ToolMetadata(name='june_22', description='Provides information about Uber quarterly financials ending June 2022')
+    ),
+    QueryEngineTool(
+        query_engine=march_engine, 
+        metadata=ToolMetadata(name='march_22', description='Provides information about Uber quarterly financials ending March 2022')
+    ),
+]
+```
+
+Then, we define a `SubQuestionQueryEngine` over these tools:
+
+```python
+from llama_index.query_engine import SubQuestionQueryEngine
+
+query_engine = SubQuestionQueryEngine.from_defaults(query_engine_tools=query_engine_tools)
+
+```
+
+This query engine can execute any number of sub-queries against any subset of query engine tools before synthesizing the final answer.
+This makes it especially well-suited for compare/contrast queries across documents as well as queries pertaining to a specific document.
+
+**Guides**
+- [Sub Question Query Engine (Intro)](../examples/query_engine/sub_question_query_engine.ipynb)
+- [10Q Analysis (Uber)](../examples/usecases/10q_sub_question.ipynb)
+- [10K Analysis (Uber and Lyft)](../examples/usecases/10k_sub_question.ipynb)
+
+
 ### Multi-Step Queries
 
-LlamaIndex can also support multi-step queries. Given a complex query, break it down into subquestions.
+LlamaIndex can also support iterative multi-step queries. Given a complex query, break it down into an initial subquestions,
+and sequentially generate subquestions based on returned answers until the final answer is returned.
 
 For instance, given a question "Who was in the first batch of the accelerator program the author started?",
 the module will first decompose the query into a simpler initial question "What was the accelerator program the author started?",
 query the index, and then ask followup questions.
 
-Here are some relevant resources:
+**Guides**
 - [Query Transformations](/how_to/query/query_transformations.md)
 - [Multi-Step Query Decomposition](../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 
+### Temporal Queries
 
+LlamaIndex can support queries that require an understanding of time. It can do this in two ways:
+- Decide whether the query requires utilizing temporal relationships between nodes (prev/next relationships) in order to retrieve additional context to answer the question.
+- Sort by recency and filter outdated context.
+
+**Guides**
+- [Second-Stage Postprocessing Guide](/how_to/query/second_stage.md)
+- [Prev/Next Postprocessing](../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
+- [Recency Postprocessing](../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
 
