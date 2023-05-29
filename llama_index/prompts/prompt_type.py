@@ -59,10 +59,10 @@ class PromptType(str, Enum):
     CONVERSATION = "conversation"
 
     # Decompose query transform
-    DECOMPOSE = 'decompose'
+    DECOMPOSE = "decompose"
 
     # Choice select
-    CHOICE_SELECT = 'choice_select'
+    CHOICE_SELECT = "choice_select"
 
     # custom (by default)
     CUSTOM = "custom"
