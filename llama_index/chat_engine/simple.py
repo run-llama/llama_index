@@ -4,6 +4,7 @@ from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
 from llama_index.chat_engine.utils import to_chat_buffer
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt
+from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import RESPONSE_TYPE, Response
 
 DEFAULT_TMPL = """\
@@ -21,7 +22,7 @@ Human: {message}
 Assistant: 
 """
 
-DEFAULT_PROMPT = Prompt(DEFAULT_TMPL)
+DEFAULT_PROMPT = Prompt(DEFAULT_TMPL, prompt_type=PromptType.CONVERSATION)
 
 
 class SimpleChatEngine(BaseChatEngine):

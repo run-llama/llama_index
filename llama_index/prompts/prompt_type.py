@@ -55,5 +55,8 @@ class PromptType(str, Enum):
     # SQL response synthesis prompt
     SQL_RESPONSE_SYNTHESIS = "sql_response_synthesis"
 
+    # Conversation
+    CONVERSATION = "conversation"
+
     # custom (by default)
     CUSTOM = "custom"
