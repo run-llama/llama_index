@@ -4,7 +4,7 @@ from llama_index.indices.service_context import ServiceContext
 
 def test_simple_chat_engine(
     mock_service_context: ServiceContext,
-):
+) -> None:
     engine = SimpleChatEngine.from_defaults(service_context=mock_service_context)
 
     engine.reset()
@@ -24,7 +24,7 @@ def test_simple_chat_engine(
 
 def test_simple_chat_engine_with_init_history(
     mock_service_context: ServiceContext,
-):
+) -> None:
     engine = SimpleChatEngine.from_defaults(
         service_context=mock_service_context,
         chat_history=[("test human message", "test ai message")],

@@ -79,7 +79,7 @@ class ReActChatEngine(BaseChatEngine):
         chat_history: Optional[ChatHistoryType] = None,
         verbose: bool = False,
         **kwargs: Any,
-    ):
+    ) -> "ReActChatEngine":
         query_engine_tool = QueryEngineTool.from_defaults(
             query_engine=query_engine, name=name, description=description
         )

@@ -7,7 +7,7 @@ from llama_index.response.schema import Response
 
 def test_condense_question_chat_engine(
     mock_service_context: ServiceContext,
-):
+) -> None:
     query_engine = Mock(spec=BaseQueryEngine)
     query_engine.query.side_effect = lambda x: Response(response=x)
     engine = CondenseQuestionChatEngine.from_defaults(
@@ -32,7 +32,7 @@ def test_condense_question_chat_engine(
 
 def test_condense_question_chat_engine_with_init_history(
     mock_service_context: ServiceContext,
-):
+) -> None:
     query_engine = Mock(spec=BaseQueryEngine)
     query_engine.query.side_effect = lambda x: Response(response=x)
     engine = CondenseQuestionChatEngine.from_defaults(
