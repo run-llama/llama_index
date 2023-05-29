@@ -14,7 +14,6 @@ from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.chat_models.base import BaseChatModel
 
 
 class ReActChatEngine(BaseChatEngine):
@@ -93,15 +92,13 @@ class ReActChatEngine(BaseChatEngine):
         tools = [qe_tool.as_langchain_tool() for qe_tool in self._query_engine_tools]
         if not isinstance(self._service_context.llm_predictor, LLMPredictor):
             raise ValueError("Currently only supports LangChain based LLMPredictor.")
+
         llm = self._service_context.llm_predictor.llm
-        if isinstance(llm, BaseChatModel):
-            agent_type = AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
-        else:
-            agent_type = AgentType.CONVERSATIONAL_REACT_DESCRIPTION
+        agent_type = AgentType.CONVERSATIONAL_REACT_DESCRIPTION
 
         return initialize_agent(
             tools=tools,
-            llm=self._service_context.llm_predictor.llm,
+            llm=llm,
             agent=agent_type,
             memory=self._memory,
             verbose=self._verbose,
