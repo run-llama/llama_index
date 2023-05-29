@@ -166,6 +166,18 @@ index = GPTVectorStoreIndex.from_documents(
 
 See the [Custom LLM's How-To](/how_to/customization/custom_llms.md) for more details.
 
+### Global ServiceContext
+
+If you wanted the service context from the last section to always be the default, you can configure one like so:
+
+```python
+from llama_index import set_global_service_context
+set_global_service_context(service_context)
+```
+
+This service context will always be used as the default if not specified as a keyword argument in LlamaIndex functions.
+
+For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/how_to/customization/service_context.md).
 
 ### Customizing Prompts
 

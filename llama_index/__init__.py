@@ -7,6 +7,7 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 
 import logging
 from logging import NullHandler
+from typing import Optional
 
 from llama_index.data_structs.struct_type import IndexStructType
 
@@ -44,7 +45,10 @@ from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
 
 # for composability
-from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.service_context import (
+    ServiceContext,
+    set_global_service_context,
+)
 from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex
 from llama_index.indices.tree import GPTTreeIndex
 from llama_index.indices.vector_store import GPTVectorStoreIndex
@@ -107,6 +111,9 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 
+# vellum
+from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
+
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
@@ -161,6 +168,8 @@ __all__ = [
     "TrafilaturaWebReader",
     "LLMPredictor",
     "MockLLMPredictor",
+    "VellumPredictor",
+    "VellumPromptRegistry",
     "MockEmbedding",
     "SQLDatabase",
     "GPTIndexMemory",
@@ -176,7 +185,11 @@ __all__ = [
     "load_indices_from_storage",
     "QueryBundle",
     "ResponseSynthesizer",
+    "set_global_service_context",
 ]
 
 # NOTE: keep for backwards compatibility
 SQLContextBuilder = SQLDocumentContextBuilder
+
+# global service context for ServiceContext.from_defaults()
+global_service_context: Optional[ServiceContext] = None

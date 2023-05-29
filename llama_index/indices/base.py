@@ -3,6 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
 
+from llama_index.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
@@ -170,7 +171,7 @@ class BaseGPTIndex(Generic[IS], ABC):
     @llm_token_counter("insert")
     def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert nodes."""
-        with self._service_context.callback_manager.as_trace("inser_nodes"):
+        with self._service_context.callback_manager.as_trace("insert_nodes"):
             self.docstore.add_documents(nodes, allow_update=True)
             self._insert(nodes, **insert_kwargs)
             self._storage_context.index_store.add_index_struct(self._index_struct)
@@ -256,3 +257,25 @@ class BaseGPTIndex(Generic[IS], ABC):
         if "service_context" not in kwargs:
             kwargs["service_context"] = self._service_context
         return RetrieverQueryEngine.from_args(**kwargs)
+
+    def as_chat_engine(
+        self, chat_mode: ChatMode = ChatMode.CONDENSE_QUESTION, **kwargs: Any
+    ) -> BaseChatEngine:
+        if chat_mode == ChatMode.CONDENSE_QUESTION:
+            # NOTE: lazy import
+            from llama_index.chat_engine import CondenseQuestionChatEngine
+
+            query_engine = self.as_query_engine(**kwargs)
+            return CondenseQuestionChatEngine.from_defaults(
+                query_engine=query_engine, **kwargs
+            )
+        elif chat_mode == ChatMode.REACT:
+            # NOTE: lazy import
+            from llama_index.chat_engine import ReActChatEngine
+
+            query_engine = self.as_query_engine(**kwargs)
+            return ReActChatEngine.from_query_engine(
+                query_engine=query_engine, **kwargs
+            )
+        else:
+            raise ValueError(f"Unknown chat mode: {chat_mode}")

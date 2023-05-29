@@ -11,3 +11,6 @@ moto[s3,dynamodb]
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
+
+# vellum
+vellum-ai==0.0.15

@@ -1,276 +1,133 @@
 """Subclasses from base prompt."""
-from typing import List
 
 from llama_index.prompts.base import Prompt
-from llama_index.prompts.prompt_type import PromptType
 
+# deprecated, kept for backward compatibility
 
-class SummaryPrompt(Prompt):
-    """Summary prompt.
+"""Summary prompt.
 
-    Prompt to summarize the provided `context_str`.
+Prompt to summarize the provided `context_str`.
 
-    Required template variables: `context_str`
+Required template variables: `context_str`
+"""
+SummaryPrompt = Prompt
 
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
+"""Tree Insert prompt.
 
-    """
+Prompt to insert a new chunk of text `new_chunk_text` into the tree index.
+More specifically, this prompt has the LLM select the relevant candidate
+child node to continue tree traversal.
 
-    prompt_type: PromptType = PromptType.SUMMARY
-    input_variables: List[str] = ["context_str"]
+Required template variables: `num_chunks`, `context_list`, `new_chunk_text`
+"""
+TreeInsertPrompt = Prompt
 
+"""Tree select prompt.
 
-class TreeInsertPrompt(Prompt):
-    """Tree Insert prompt.
+Prompt to select a candidate child node out of all child nodes
+provided in `context_list`, given a query `query_str`. `num_chunks` is
+the number of child nodes in `context_list`.
 
-    Prompt to insert a new chunk of text `new_chunk_text` into the tree index.
-    More specifically, this prompt has the LLM select the relevant candidate
-    child node to continue tree traversal.
+Required template variables: `num_chunks`, `context_list`, `query_str`
 
-    Required template variables: `num_chunks`, `context_list`, `new_chunk_text`
+"""
+TreeSelectPrompt = Prompt
 
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
+"""Tree select multiple prompt.
 
-    """
+Prompt to select multiple candidate child nodes out of all
+child nodes provided in `context_list`, given a query `query_str`.
+`branching_factor` refers to the number of child nodes to select, and
+`num_chunks` is the number of child nodes in `context_list`.
 
-    prompt_type: PromptType = PromptType.TREE_INSERT
-    input_variables: List[str] = ["num_chunks", "context_list", "new_chunk_text"]
+Required template variables: `num_chunks`, `context_list`, `query_str`,
+    `branching_factor`
+"""
+TreeSelectMultiplePrompt = Prompt
 
+"""Refine prompt.
 
-class TreeSelectPrompt(Prompt):
-    """Tree select prompt.
+Prompt to refine an existing answer `existing_answer` given a context `context_msg`,
+and a query `query_str`.
 
-    Prompt to select a candidate child node out of all child nodes
-    provided in `context_list`, given a query `query_str`. `num_chunks` is
-    the number of child nodes in `context_list`.
+Required template variables: `query_str`, `existing_answer`, `context_msg`
+"""
+RefinePrompt = Prompt
 
-    Required template variables: `num_chunks`, `context_list`, `query_str`
+"""Question Answer prompt.
 
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
+Prompt to answer a question `query_str` given a context `context_str`.
 
-    """
+Required template variables: `context_str`, `query_str`
+"""
+QuestionAnswerPrompt = Prompt
 
-    prompt_type: PromptType = PromptType.TREE_SELECT
-    input_variables: List[str] = ["num_chunks", "context_list", "query_str"]
+"""Keyword extract prompt.
 
+Prompt to extract keywords from a text `text` with a maximum of
+`max_keywords` keywords.
 
-class TreeSelectMultiplePrompt(Prompt):
-    """Tree select multiple prompt.
+Required template variables: `text`, `max_keywords`
+"""
+KeywordExtractPrompt = Prompt
 
-    Prompt to select multiple candidate child nodes out of all
-    child nodes provided in `context_list`, given a query `query_str`.
-    `branching_factor` refers to the number of child nodes to select, and
-    `num_chunks` is the number of child nodes in `context_list`.
+"""Query keyword extract prompt.
 
-    Required template variables: `num_chunks`, `context_list`, `query_str`,
-        `branching_factor`
+Prompt to extract keywords from a query `query_str` with a maximum
+of `max_keywords` keywords.
 
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
+Required template variables: `query_str`, `max_keywords`
+"""
+QueryKeywordExtractPrompt = Prompt
 
-    """
+"""Schema extract prompt.
 
-    prompt_type = PromptType.TREE_SELECT_MULTIPLE
-    input_variables: List[str] = [
-        "num_chunks",
-        "context_list",
-        "query_str",
-        "branching_factor",
-    ]
+Prompt to extract schema from unstructured text `text`.
 
+Required template variables: `text`, `schema`
+"""
+SchemaExtractPrompt = Prompt
 
-class RefinePrompt(Prompt):
-    """Refine prompt.
+"""Text to SQL prompt.
 
-    Prompt to refine an existing answer `existing_answer` given a context `context_msg`,
-    and a query `query_str`.
+Prompt to translate a natural language query into SQL in the dialect
+`dialect` given a schema `schema`.
 
-    Required template variables: `query_str`, `existing_answer`, `context_msg`
+Required template variables: `query_str`, `schema`, `dialect`
+"""
+TextToSQLPrompt = Prompt
+"""Table context prompt.
 
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
+Prompt to generate a table context given a table schema `schema`,
+as well as unstructured text context `context_str`, and
+a task `query_str`.
+This includes both a high-level description of the table
+as well as a description of each column in the table.
+"""
+TableContextPrompt = Prompt
 
-    """
+"""Refine Table context prompt.
 
-    # TODO: rename context_msg to context_str
+Prompt to refine a table context given a table schema `schema`,
+as well as unstructured text context `context_msg`, and
+a task `query_str`.
+This includes both a high-level description of the table
+as well as a description of each column in the table.
 
-    prompt_type: PromptType = PromptType.REFINE
-    input_variables: List[str] = ["query_str", "existing_answer", "context_msg"]
+"""
+RefineTableContextPrompt = Prompt
 
+"""Define the knowledge graph triplet extraction prompt."""
+KnowledgeGraphPrompt = Prompt
 
-class QuestionAnswerPrompt(Prompt):
-    """Question Answer prompt.
+"""Simple Input prompt.
 
-    Prompt to answer a question `query_str` given a context `context_str`.
+Required template variables: `query_str`.
+"""
+SimpleInputPrompt = Prompt
 
-    Required template variables: `context_str`, `query_str`
+"""Pandas prompt. Convert query to python code.
 
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    prompt_type: PromptType = PromptType.QUESTION_ANSWER
-    input_variables: List[str] = ["context_str", "query_str"]
-
-
-class KeywordExtractPrompt(Prompt):
-    """Keyword extract prompt.
-
-    Prompt to extract keywords from a text `text` with a maximum of
-    `max_keywords` keywords.
-
-    Required template variables: `text`, `max_keywords`
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    prompt_type: PromptType = PromptType.KEYWORD_EXTRACT
-    input_variables: List[str] = ["text", "max_keywords"]
-
-
-class QueryKeywordExtractPrompt(Prompt):
-    """Query keyword extract prompt.
-
-    Prompt to extract keywords from a query `query_str` with a maximum
-    of `max_keywords` keywords.
-
-    Required template variables: `query_str`, `max_keywords`
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    prompt_type: PromptType = PromptType.QUERY_KEYWORD_EXTRACT
-    input_variables: List[str] = ["question", "max_keywords"]
-
-
-class SchemaExtractPrompt(Prompt):
-    """Schema extract prompt.
-
-    Prompt to extract schema from unstructured text `text`.
-
-    Required template variables: `text`, `schema`
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    prompt_type: PromptType = PromptType.SCHEMA_EXTRACT
-    input_variables: List[str] = ["text", "schema"]
-
-
-class TextToSQLPrompt(Prompt):
-    """Text to SQL prompt.
-
-    Prompt to translate a natural language query into SQL in the dialect
-    `dialect` given a schema `schema`.
-
-    Required template variables: `query_str`, `schema`, `dialect`
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    prompt_type: PromptType = PromptType.TEXT_TO_SQL
-    input_variables: List[str] = ["query_str", "schema", "dialect"]
-
-
-class TableContextPrompt(Prompt):
-    """Table context prompt.
-
-    Prompt to generate a table context given a table schema `schema`,
-    as well as unstructured text context `context_str`, and
-    a task `query_str`.
-    This includes both a high-level description of the table
-    as well as a description of each column in the table.
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    prompt_type: PromptType = PromptType.TABLE_CONTEXT
-    input_variables: List[str] = ["schema", "context_str", "query_str"]
-
-
-class RefineTableContextPrompt(Prompt):
-    """Refine Table context prompt.
-
-    Prompt to refine a table context given a table schema `schema`,
-    as well as unstructured text context `context_msg`, and
-    a task `query_str`.
-    This includes both a high-level description of the table
-    as well as a description of each column in the table.
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    # TODO: rename context_msg to context_str
-
-    prompt_type: PromptType = PromptType.TABLE_CONTEXT
-    input_variables: List[str] = [
-        "schema",
-        "context_msg",
-        "query_str",
-        "existing_answer",
-    ]
-
-
-class KnowledgeGraphPrompt(Prompt):
-    """Define the knowledge graph triplet extraction prompt."""
-
-    prompt_type: PromptType = PromptType.KNOWLEDGE_TRIPLET_EXTRACT
-    input_variables: List[str] = ["max_knowledge_triplets", "text"]
-
-
-class SimpleInputPrompt(Prompt):
-    """Simple Input prompt.
-
-    Required template variables: `query_str`.
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    prompt_type: PromptType = PromptType.SIMPLE_INPUT
-    input_variables: List[str] = ["query_str"]
-
-
-class PandasPrompt(Prompt):
-    """Pandas prompt. Convert query to python code.
-
-    Required template variables: `query_str`, `df_str`, `instruction_str`.
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    prompt_type: PromptType = PromptType.PANDAS
-    input_variables: List[str] = ["query_str", "df_str", "instruction_str"]
+Required template variables: `query_str`, `df_str`, `instruction_str`.
+"""
+PandasPrompt = Prompt

@@ -205,21 +205,22 @@ num_output = 256
 max_chunk_overlap = 20
 prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
+# store the pipeline/model outisde of the LLM class to avoid memory issues
+model_name = "facebook/opt-iml-max-30b"
+pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
 
 class CustomLLM(LLM):
-    model_name = "facebook/opt-iml-max-30b"
-    pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
-
+    
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         prompt_length = len(prompt)
-        response = self.pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
+        response = pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
 
         # only return newly generated tokens
         return response[prompt_length:]
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
-        return {"name_of_model": self.model_name}
+        return {"name_of_model": model_name}
 
     @property
     def _llm_type(self) -> str:

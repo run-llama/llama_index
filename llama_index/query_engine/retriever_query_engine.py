@@ -179,3 +179,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
             event_id=query_id,
         )
         return response
+
+    @property
+    def retriever(self) -> BaseRetriever:
+        """Get the retriever object."""
+        return self._retriever
