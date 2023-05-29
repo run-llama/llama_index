@@ -175,3 +175,8 @@ class ServiceContext:
             callback_manager=callback_manager,
             chunk_size_limit=chunk_size_limit,
         )
+
+
+def set_global_service_context(service_context: Optional[ServiceContext]) -> None:
+    """Helper function to set the global service context."""
+    llama_index.global_service_context = service_context

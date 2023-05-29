@@ -57,6 +57,6 @@ service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, chun
 Then, set the global service context object
 
 ```python
-import llama_index
-llama_index.global_service_context = service_context
+from llama_index import set_global_service_context
+set_global_service_context(service_context)
 ```
