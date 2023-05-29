@@ -141,6 +141,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Shutdown the current trace."""
         self._trace_map = trace_map or defaultdict(list)
+        self._llm_token_count = 0
 
         # Log the trace map to wandb
         # We can control what trace ids we want to log here.
@@ -172,6 +173,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                     id_to_wb_span_tmp[root_node].add_child_span(child_span)
                     id_to_wb_span_tmp[child_node] = child_span
                 id_to_wb_span_tmp.pop(root_node)
+
         return root_span
 
     def log_trace_tree(self) -> None:
@@ -193,13 +195,13 @@ class WandbCallbackHandler(BaseCallbackHandler):
         if event_type == CBEventType.CHUNKING:
             span_kind = self._trace_tree.SpanKind.TOOL  # read CHUNKING
         elif event_type == CBEventType.NODE_PARSING:
-            span_kind = self._trace_tree.SpanKind.TOOL  # read NODE_PARSING
+            span_kind = self._trace_tree.SpanKind.CHAIN  # read NODE_PARSING
         elif event_type == CBEventType.EMBEDDING:
             span_kind = self._trace_tree.SpanKind.TOOL  # read EMBEDDING
         elif event_type == CBEventType.LLM:
             span_kind = self._trace_tree.SpanKind.LLM  # read LLM
         elif event_type == CBEventType.QUERY:
-            span_kind = self._trace_tree.SpanKind.AGENT  # read QUERY
+            span_kind = self._trace_tree.SpanKind.CHAIN  # read QUERY
         elif event_type == CBEventType.RETRIEVE:
             span_kind = self._trace_tree.SpanKind.TOOL  # read QUERY
         elif event_type == CBEventType.SYNTHESIZE:
@@ -216,13 +218,48 @@ class WandbCallbackHandler(BaseCallbackHandler):
             end_time_ms=end_time_ms,
         )
 
-        wb_span.add_named_result(
-            inputs=event_pair[0].payload,
-            outputs=event_pair[-1].payload,
-        )
+        inputs, outputs = self._add_payload_to_span(wb_span, event_pair)
+        wb_span.add_named_result(inputs=inputs, outputs=outputs)
 
         return wb_span
 
+    def _add_payload_to_span(self, span: "trace_tree.Span", event_pair: List[CBEvent]) -> None:
+        assert len(event_pair) == 2
+        event_type = event_pair[0].event_type
+        inputs = None
+        outputs = None
+
+        if event_type == CBEventType.NODE_PARSING:
+            # parse input payload
+            input_payload = event_pair[0].payload
+            if input_payload:
+                documents = input_payload.get("documents", None)
+                if documents:
+                    input_str = ""
+                    for idx, document in enumerate(documents):
+                        input_str += f"Document: {idx}\n" + document.text
+                        input_str += "\n*************** \n"
+                inputs = {"documents": input_str, "len_documents": len(documents)}
+
+            # parse output payload
+            output_payload = event_pair[-1].payload
+            if output_payload:
+                nodes = output_payload.get("nodes", None)
+                if nodes:
+                    output_str = ""
+                    for idx, node in enumerate(nodes):
+                        output_str += f"Node: {idx}\n" + node.text
+                        output_str += "\n***************\n"
+                outputs = {"nodes": output_str, "len_nodes": len(nodes)}
+        else:
+            inputs = event_pair[0].payload
+            outputs = event_pair[-1].payload
+
+        if event_type == CBEventType.LLM:
+            self._llm_token_count += outputs.total_tokens_used
+
+        return inputs, outputs
+                
     def _get_time_in_ms(self, event_pair: List[CBEvent]) -> List[int]:
         start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
         end_time = datetime.strptime(event_pair[1].time, TIMESTAMP_FORMAT)
