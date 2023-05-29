@@ -245,15 +245,23 @@ query_str = "Which city has the highest population?"
 
 # query the table schema index using the helper method
 # to retrieve table context
-SQLContextContainerBuilder.query_index_for_context(
+context_builder.query_index_for_context(
     table_schema_index,
     query_str,
     store_context_str=True
 )
 
+context_container = context_builder.build_context_container()
+
+index = GPTSQLStructStoreIndex(
+    [],
+    sql_database=sql_database,
+    sql_context_container=context_container
+)
+
 # query the SQL index with the table context
 query_engine = index.as_query_engine()
-response = query_engine.query(query_str, sql_context_container=context_container)
+response = query_engine.query(query_str)
 print(response)
 
 ```
