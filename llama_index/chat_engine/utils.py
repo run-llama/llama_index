@@ -31,4 +31,8 @@ def is_chat_model(service_context: ServiceContext) -> bool:
     llm_predictor = service_context.llm_predictor
     if not isinstance(llm_predictor, LLMPredictor):
         return False
-    return isinstance(llm_predictor.llm, BaseChatModel)
+    try:
+        return isinstance(llm_predictor.llm, BaseChatModel)
+    except AttributeError:
+        # NOTE: in testing, our mock llm predictor doesn't have llm attribute
+        return False

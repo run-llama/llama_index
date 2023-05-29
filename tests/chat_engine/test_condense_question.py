@@ -20,9 +20,9 @@ def test_condense_question_chat_engine(
     assert str(response) == "{'question': 'Test message 1', 'chat_history': ''}"
 
     response = engine.chat("Test message 2")
-    assert (
-        str(response)
-        == "{'question': 'Test message 2', 'chat_history': \"\\nHuman: Test message 1\\nAssistant: {'question': 'Test message 1', 'chat_history': ''}\"}"
+    assert str(response) == (
+        "{'question': 'Test message 2', 'chat_history': \"\\nHuman: Test message 1"
+        "\\nAssistant: {'question': 'Test message 1', 'chat_history': ''}\"}"
     )
 
     engine.reset()
@@ -42,7 +42,7 @@ def test_condense_question_chat_engine_with_init_history(
     )
 
     response = engine.chat("new human message")
-    assert (
-        str(response)
-        == "{'question': 'new human message', 'chat_history': '\\nHuman: test human message\\nAssistant: test ai message'}"
+    assert str(response) == (
+        "{'question': 'new human message', 'chat_history': '\\nHuman: test human "
+        "message\\nAssistant: test ai message'}"
     )

@@ -14,7 +14,6 @@ from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools.query_engine import QueryEngineTool
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain.chat_models.base import BaseChatModel
 
 
 class ReActChatEngine(BaseChatEngine):
