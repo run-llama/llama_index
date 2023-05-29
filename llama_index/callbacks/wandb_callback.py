@@ -181,6 +181,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
             root_span = self._build_trace_tree()
             root_trace = self._trace_tree.WBTraceTree(root_span)
             self._wandb.run.log({"trace": root_trace})
+            self._wandb.termlog(
+                "Logged trace tree to W&B."
+            )
         except:
             # Silently ignore errors to not break user code
             pass
@@ -258,7 +261,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             outputs = event_pair[-1].payload
 
         if event_type == CBEventType.LLM:
-            self._llm_token_count += outputs.total_tokens_used
+            self._llm_token_count += outputs["total_tokens_used"]
 
         return inputs, outputs
 
