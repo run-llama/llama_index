@@ -146,7 +146,6 @@ class WandbCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Shutdown the current trace."""
         self._trace_map = trace_map or defaultdict(list)
-        print(self._trace_map)
 
         # Log the trace map to wandb
         # We can control what trace ids we want to log here.
