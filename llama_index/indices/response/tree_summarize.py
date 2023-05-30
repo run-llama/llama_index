@@ -106,17 +106,9 @@ class TreeSummarize(Refine):
         num_children: int = 10,
     ) -> Tuple[GPTTreeIndexBuilder, List[Node]]:
         """Get tree index builder."""
-        # first join all the text chunks into a single text
-        all_text = "\n\n".join(text_chunks)
-
-        # then get text splitter
-        text_splitter = (
-            self._service_context.prompt_helper.get_text_splitter_given_prompt(
-                summary_template, num_children
-            )
+        text_chunks = self._service_context.prompt_helper.repack(
+            summary_template, text_chunks=text_chunks
         )
-        text_chunks = text_splitter.split_text(all_text)
-
         new_nodes = [Node(text=t) for t in text_chunks]
 
         docstore = get_default_docstore()
