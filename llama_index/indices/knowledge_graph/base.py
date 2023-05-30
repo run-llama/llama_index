@@ -129,6 +129,31 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
         return index_struct
 
+    def _build_index_from_triplet(self, triplets: List[Tuple[str, str, str]]) -> KG:
+        """Build the index from triplets."""
+        index_struct = KG(table={})
+        self.nodes = []
+        for triplet in triplets:
+            subj, pred, obj = triplet
+            node = Node(subj)
+            self.nodes.append(node)
+            index_struct.add_node([subj, obj], node)
+            index_struct.upsert_triplet(triplet)
+
+            if self.include_embeddings:
+                for triplet in triplets:
+                    self._service_context.embed_model.queue_text_for_embedding(
+                        str(triplet), str(triplet)
+                    )
+
+                embed_outputs = (
+                    self._service_context.embed_model.get_queued_text_embeddings()
+                )
+                for rel_text, rel_embed in zip(*embed_outputs):
+                    index_struct.add_to_embedding_dict(rel_text, rel_embed)
+
+        return index_struct
+    
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         for n in nodes:
