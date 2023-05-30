@@ -178,7 +178,7 @@ def test_compact_text() -> None:
         separator="\n\n",
     )
     text_chunks = ["Hello", "world", "foo", "Hello", "world", "bar"]
-    compacted_chunks = prompt_helper.compact_text_chunks(test_prompt, text_chunks)
+    compacted_chunks = prompt_helper.repack(test_prompt, text_chunks)
     assert compacted_chunks == ["Hello\n\nworld\n\nfoo", "Hello\n\nworld\n\nbar"]
 
 

@@ -326,7 +326,7 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
         "is",
         "foo",
     ]
-    compacted_chunks = prompt_helper.compact_text_chunks(mock_qa_prompt, texts)
+    compacted_chunks = prompt_helper.repack(mock_qa_prompt, texts)
     assert compacted_chunks == ["This\n\nis\n\nbar\n\nThis", "is\n\nfoo"]
 
     builder = get_response_builder(
