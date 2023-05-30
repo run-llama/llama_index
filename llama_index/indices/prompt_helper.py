@@ -5,6 +5,7 @@ structs but keeping token limitations in mind.
 
 """
 
+import logging
 from typing import Callable, List, Optional, Sequence
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
@@ -13,6 +14,7 @@ from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.utils import get_empty_prompt_txt
 from llama_index.utils import globals_helper
+from warnings import warn
 
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
@@ -31,6 +33,12 @@ class PromptHelper:
         chunk_size_limit (Optional[int]):         Maximum chunk size to use.
         tokenizer (Optional[Callable[[str], List]]): Tokenizer to use.
         separator (str):                        Separator for text splitter
+
+    Deprecated Args:
+        max_input_size (int): now renamed to context_window
+        embedding_limit (int): now consolidated with chunk_size_limit
+        max_chunk_overlap (int): now configured via chunk_overlap_ratio
+
     """
 
     def __init__(
@@ -41,6 +49,10 @@ class PromptHelper:
         chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
         separator: str = " ",
+        # Deprecated kwargs
+        max_input_size: Optional[int] = None,
+        embedding_limit: Optional[int] = None,
+        max_chunk_overlap: Optional[int] = None,
     ) -> None:
         """Init params."""
         self.context_window = context_window
@@ -55,6 +67,41 @@ class PromptHelper:
         self._tokenizer = tokenizer or globals_helper.tokenizer
         self._separator = separator
 
+        self._handle_deprecated_kwargs(
+            max_input_size, embedding_limit, max_chunk_overlap
+        )
+
+    def _handle_deprecated_kwargs(
+        self,
+        max_input_size: Optional[int] = None,
+        embedding_limit: Optional[int] = None,
+        max_chunk_overlap: Optional[int] = None,
+    ):
+        if max_input_size is not None:
+            warn(
+                "max_input_size is deprecated, now renamed to context_window",
+                DeprecationWarning,
+            )
+            self.context_window = max_input_size
+        if embedding_limit is not None:
+            warn(
+                "max_input_size is deprecated, now consolidated with chunk_size_limit",
+                DeprecationWarning,
+            )
+            if self.chunk_size_limit is None:
+                self.chunk_size_limit = embedding_limit
+            else:
+                self.chunk_size_limit = min(self.chunk_size_limit, embedding_limit)
+        if max_chunk_overlap is not None:
+            warn(
+                "max_chunk_overlap is now deprecated, chunk overlap is now configured via chunk_overlap_ratio",
+                DeprecationWarning,
+            )
+            if self.chunk_size_limit is not None:
+                self.chunk_overlap_ratio = max_chunk_overlap / self.chunk_size_limit
+            else:
+                self.chunk_overlap_ratio = DEFAULT_CHUNK_OVERLAP_RATIO
+
     @classmethod
     def from_llm_predictor(
         cls,
@@ -63,6 +110,10 @@ class PromptHelper:
         chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
         separator: str = " ",
+        # Deprecated kwargs
+        max_input_size: Optional[int] = None,
+        embedding_limit: Optional[int] = None,
+        max_chunk_overlap: Optional[int] = None,
     ) -> "PromptHelper":
         """Create from llm predictor.
 
@@ -78,6 +129,10 @@ class PromptHelper:
             chunk_size_limit=chunk_size_limit,
             tokenizer=tokenizer,
             separator=separator,
+            # Deprecated kwargs
+            max_input_size=max_input_size,
+            embedding_limit=embedding_limit,
+            max_chunk_overlap=max_chunk_overlap,
         )
 
     def _get_available_context_size(self, prompt: Prompt) -> int:
