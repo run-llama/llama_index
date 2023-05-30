@@ -97,7 +97,7 @@ class ServiceContext:
             chunk_size_limit (Optional[int]): renamed to chunk_size
 
         """
-        if chunk_size_limit is not None:
+        if chunk_size_limit is not None and chunk_size is None:
             warn(
                 "chunk_size_limit is deprecated, please specify chunk_size instead",
                 DeprecationWarning,
@@ -163,7 +163,7 @@ class ServiceContext:
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
         """Instantiate a new service context using a previous as the defaults."""
-        if chunk_size_limit is not None:
+        if chunk_size_limit is not None and chunk_size is None:
             warn(
                 "chunk_size_limit is deprecated, please specify chunk_size",
                 DeprecationWarning,
