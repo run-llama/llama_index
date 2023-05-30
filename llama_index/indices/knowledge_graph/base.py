@@ -64,6 +64,9 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
             )
         )
         # allows for direct triplet initialization
+        if triplets is not None:
+            for triplet in triplets:
+                self.upsert_triplet(triplet)
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
