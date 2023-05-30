@@ -63,18 +63,17 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 max_knowledge_triplets=self.max_triplets_per_chunk
             )
         )
-        # allows for direct triplet initialization
         if triplets is not None:
-            for triplet in triplets:
-                self.upsert_triplet(triplet)
+            if nodes is not None or index_struct is not None:
+                raise ValueError(
+                    "You may only pass one of nodes, index_struct, or triplets"
+                )
+            index_struct = self._build_index_from_triplet(triplets=triplets)
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             **kwargs,
         )
-        if triplets is not None:
-            for triplet in triplets:
-                self.upsert_triplet(triplet)
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         from llama_index.indices.knowledge_graph.retrievers import (
@@ -178,6 +177,31 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         """
         self._index_struct.add_node(keywords, node)
         self._docstore.add_documents([node], allow_update=True)
+
+    def _build_index_from_triplet(self, triplets: List[Tuple[str, str, str]]) -> KG:
+        """Build the index from triplets."""
+        index_struct = KG(table={})
+        self.nodes = []
+        for triplet in triplets:
+            subj, pred, obj = triplet
+            node = Node(subj)
+            self.nodes.append(node)
+            index_struct.add_node([subj, obj], node)
+            index_struct.upsert_triplet(triplet)
+
+            if self.include_embeddings:
+                for triplet in triplets:
+                    self._service_context.embed_model.queue_text_for_embedding(
+                        str(triplet), str(triplet)
+                    )
+
+                embed_outputs = (
+                    self._service_context.embed_model.get_queued_text_embeddings()
+                )
+                for rel_text, rel_embed in zip(*embed_outputs):
+                    index_struct.add_to_embedding_dict(rel_text, rel_embed)
+
+        return index_struct
 
     def upsert_triplet_and_node(
         self, triplet: Tuple[str, str, str], node: Node
