@@ -1,0 +1,8 @@
+-e .
+sphinx>=4.3.0
+furo>=2023.3.27
+docutils<0.17
+myst-parser
+myst-nb
+sphinx-autobuild
+sphinx_rtd_theme
