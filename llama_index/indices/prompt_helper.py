@@ -59,7 +59,7 @@ class PromptHelper:
         self.num_output = num_output
 
         self.chunk_overlap_ratio = chunk_overlap_ratio
-        if self.chunk_overlap_ratio >= 1.0 or self.chunk_overlap_ratio <= 0.0:
+        if self.chunk_overlap_ratio > 1.0 or self.chunk_overlap_ratio < 0.0:
             raise ValueError("chunk_overlap_ratio must be a float between 0. and 1.")
         self.chunk_size_limit = chunk_size_limit
 
@@ -183,6 +183,8 @@ class PromptHelper:
         taking into account of given prompt, and desired number of chunks.
         """
         chunk_size = self._get_available_chunk_size(prompt, num_chunks, padding=padding)
+        if chunk_size == 0:
+            raise ValueError("Got 0 as available chunk size.")
         chunk_overlap = int(self.chunk_overlap_ratio * chunk_size)
         text_splitter = TokenTextSplitter(
             separator=self._separator,

@@ -134,7 +134,7 @@ class TreeSummarize(Refine):
         truncated_chunks = self._service_context.prompt_helper.truncate(
             prompt=text_qa_template, text_chunks=[node.get_text() for node in node_list]
         )
-        node_text = "\n".joint(truncated_chunks)
+        node_text = "\n".join(truncated_chunks)
         # NOTE: the final response could be a string or a stream
         response = super().get_response(
             query_str=query_str,
