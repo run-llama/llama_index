@@ -45,12 +45,12 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         raise ValueError("llm must be an instance of langchain.llms.base.LLM")
     if isinstance(llm, OpenAI):
         return LLMMetadata(
-            context_window=OpenAI.modelname_to_contextsize(llm.model_name),
+            context_window=OpenAI().modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens,
         )
     elif isinstance(llm, ChatOpenAI):
         return LLMMetadata(
-            context_window=OpenAI.modelname_to_contextsize(llm.model_name),
+            context_window=OpenAI().modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens,
         )
     elif isinstance(llm, Cohere):

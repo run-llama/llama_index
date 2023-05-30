@@ -47,13 +47,8 @@ class CompactAndRefine(Refine):
         refine_template = self._refine_template.partial_format(query_str=query_str)
 
         max_prompt = get_biggest_prompt([text_qa_template, refine_template])
-        with temp_set_attrs(
-            self._service_context.prompt_helper, use_chunk_size_limit=False
-        ):
-            new_texts = self._service_context.prompt_helper.repack(
-                max_prompt, text_chunks
-            )
-            response = super().get_response(
-                query_str=query_str, text_chunks=new_texts, prev_response=prev_response
-            )
+        new_texts = self._service_context.prompt_helper.repack(max_prompt, text_chunks)
+        response = super().get_response(
+            query_str=query_str, text_chunks=new_texts, prev_response=prev_response
+        )
         return response
