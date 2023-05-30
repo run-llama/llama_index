@@ -6,6 +6,7 @@ structs but keeping token limitations in mind.
 """
 
 from typing import Callable, List, Optional, Sequence
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.llm_predictor.base import BaseLLMPredictor
@@ -34,8 +35,8 @@ class PromptHelper:
 
     def __init__(
         self,
-        context_window: int,
-        num_output: int,
+        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        num_output: int = DEFAULT_NUM_OUTPUTS,
         chunk_overlap_ratio: float = DEFAULT_CHUNK_OVERLAP_RATIO,
         max_chunk_size: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
