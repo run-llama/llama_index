@@ -64,7 +64,7 @@ class PsychicReader(BaseReader):
         for resource in data:
             text = resource.get("content")
             doc_id = resource.get("uri")
-            docs.append(Document(text=text, doc_id=doc_id))
+            docs.append(Document(text=text, doc_id=doc_id, extra_info={"connector_id": connector_id, "account_id": account_id}))
 
         return docs
 
