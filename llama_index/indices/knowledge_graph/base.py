@@ -44,6 +44,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[KG] = None,
+        triplets: List[Tuple[str, str, str]] = None,
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
         include_embeddings: bool = False,
@@ -62,7 +63,10 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 max_knowledge_triplets=self.max_triplets_per_chunk
             )
         )
-
+        # allows for direct triplet initialization
+        if triplets is not None:
+            for triplet in triplets:
+                self.upsert_triplet(triplet)
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
