@@ -28,7 +28,7 @@ class PromptHelper:
         context_window (int):                   Context window for the LLM.
         num_output (int):                       Number of outputs for the LLM.
         chunk_overlap_ratio (float):            Chunk overlap as a ratio of chunk size
-        max_chunk_size (Optional[int]):         Maximum chunk size to use.
+        chunk_size_limit (Optional[int]):         Maximum chunk size to use.
         tokenizer (Optional[Callable[[str], List]]): Tokenizer to use.
         separator (str):                        Separator for text splitter
     """
@@ -38,7 +38,7 @@ class PromptHelper:
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         num_output: int = DEFAULT_NUM_OUTPUTS,
         chunk_overlap_ratio: float = DEFAULT_CHUNK_OVERLAP_RATIO,
-        max_chunk_size: Optional[int] = None,
+        chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
         separator: str = " ",
     ) -> None:
@@ -47,9 +47,9 @@ class PromptHelper:
         self.num_output = num_output
 
         self.chunk_overlap_ratio = chunk_overlap_ratio
-        if self.chunk_overlap_ratio >= 1. or self.chunk_overlap_ratio <= 0.:
-            raise ValueError('chunk_overlap_ratio must be a float between 0. and 1.')
-        self.max_chunk_size = max_chunk_size
+        if self.chunk_overlap_ratio >= 1.0 or self.chunk_overlap_ratio <= 0.0:
+            raise ValueError("chunk_overlap_ratio must be a float between 0. and 1.")
+        self.chunk_size_limit = chunk_size_limit
 
         # TODO: make configurable
         self._tokenizer = tokenizer or globals_helper.tokenizer
@@ -60,7 +60,7 @@ class PromptHelper:
         cls,
         llm_predictor: BaseLLMPredictor,
         chunk_overlap_ratio: float = DEFAULT_CHUNK_OVERLAP_RATIO,
-        max_chunk_size: Optional[int] = None,
+        chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
         separator: str = " ",
     ) -> "PromptHelper":
@@ -72,10 +72,10 @@ class PromptHelper:
         llm_metadata = llm_predictor.get_llm_metadata()
 
         return cls(
-            context_window=llm_metadata.max_input_size,
+            context_window=llm_metadata.context_window,
             num_output=llm_metadata.num_output,
             chunk_overlap_ratio=chunk_overlap_ratio,
-            max_chunk_size=max_chunk_size,
+            chunk_size_limit=chunk_size_limit,
             tokenizer=tokenizer,
             separator=separator,
         )
@@ -105,19 +105,19 @@ class PromptHelper:
                 - output (room reserved for response)
 
             available chunk size  = available context window  // number_chunks
-                - padding 
-        
+                - padding
+
         Note:
         - By default, we use padding of 5 (to save space for formatting needs).
-        - The available chunk size is further clamped to max_chunk_size if specified
+        - The available chunk size is further clamped to chunk_size_limit if specified
         """
         available_context_size = self._get_available_context_size(prompt)
 
         result = available_context_size // num_chunks
         result -= padding
 
-        if self.max_chunk_size is not None:
-            result = min(result, self.max_chunk_size)
+        if self.chunk_size_limit is not None:
+            result = min(result, self.chunk_size_limit)
 
         return result
 

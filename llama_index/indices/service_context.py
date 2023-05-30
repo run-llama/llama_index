@@ -50,7 +50,7 @@ class ServiceContext:
     - node_parser: NodeParser
     - llama_logger: LlamaLogger (deprecated)
     - callback_manager: CallbackManager
-    - chunk_size_limit: chunk size limit
+    - chunk_size: chunk size
 
     """
 
@@ -60,7 +60,7 @@ class ServiceContext:
     node_parser: NodeParser
     llama_logger: LlamaLogger
     callback_manager: CallbackManager
-    chunk_size_limit: Optional[int] = None
+    chunk_size: Optional[int] = None
 
     @classmethod
     def from_defaults(
@@ -72,7 +72,7 @@ class ServiceContext:
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
-        chunk_size_limit: Optional[int] = None,
+        chunk_size: Optional[int] = None,
     ) -> "ServiceContext":
         """Create a ServiceContext from defaults.
         If an argument is specified, then use the argument value provided for that
@@ -87,7 +87,7 @@ class ServiceContext:
             embed_model (Optional[BaseEmbedding]): BaseEmbedding
             node_parser (Optional[NodeParser]): NodeParser
             llama_logger (Optional[LlamaLogger]): LlamaLogger (deprecated)
-            chunk_size_limit (Optional[int]): chunk_size_limit
+            chunk_size (Optional[int]): chunk_size
             callback_manager (Optional[CallbackManager]): CallbackManager
 
         """
@@ -100,7 +100,7 @@ class ServiceContext:
                 node_parser=node_parser,
                 llama_logger=llama_logger,
                 callback_manager=callback_manager,
-                chunk_size_limit=chunk_size_limit,
+                chunk_size=chunk_size,
             )
 
         callback_manager = callback_manager or CallbackManager([])
@@ -115,12 +115,10 @@ class ServiceContext:
         embed_model = embed_model or OpenAIEmbedding()
         embed_model.callback_manager = callback_manager
 
-        prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(
-            llm_predictor, chunk_size_limit=chunk_size_limit
-        )
+        prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(llm_predictor)
 
         node_parser = node_parser or _get_default_node_parser(
-            chunk_size=chunk_size_limit, callback_manager=callback_manager
+            chunk_size=chunk_size, callback_manager=callback_manager
         )
 
         llama_logger = llama_logger or LlamaLogger()
@@ -132,7 +130,7 @@ class ServiceContext:
             node_parser=node_parser,
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
-            chunk_size_limit=chunk_size_limit,
+            chunk_size=chunk_size,
         )
 
     @classmethod
@@ -146,7 +144,7 @@ class ServiceContext:
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
-        chunk_size_limit: Optional[int] = None,
+        chunk_size: Optional[int] = None,
     ) -> "ServiceContext":
         """Instantiate a new service context using a previous as the defaults."""
 
@@ -165,15 +163,11 @@ class ServiceContext:
 
         # need to ensure chunk_size_limit can still be overwritten from the global
         prompt_helper = prompt_helper or service_context.prompt_helper
-        if chunk_size_limit:
-            prompt_helper = PromptHelper.from_llm_predictor(
-                llm_predictor, chunk_size_limit=chunk_size_limit
-            )
 
         node_parser = node_parser or service_context.node_parser
-        if chunk_size_limit:
+        if chunk_size:
             node_parser = _get_default_node_parser(
-                chunk_size=chunk_size_limit, callback_manager=callback_manager
+                chunk_size=chunk_size, callback_manager=callback_manager
             )
 
         llama_logger = llama_logger or service_context.llama_logger
@@ -185,7 +179,7 @@ class ServiceContext:
             node_parser=node_parser,
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
-            chunk_size_limit=chunk_size_limit,
+            chunk_size=chunk_size,
         )
 
 
