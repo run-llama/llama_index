@@ -3,7 +3,7 @@
 import asyncio
 from typing import List
 
-from llama_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.response import ResponseMode, get_response_builder
 from llama_index.indices.service_context import ServiceContext
@@ -27,7 +27,7 @@ def test_give_response(
     documents: List[Document],
 ) -> None:
     """Test give response."""
-    prompt_helper = PromptHelper(MAX_CHUNK_SIZE, NUM_OUTPUTS, MAX_CHUNK_OVERLAP)
+    prompt_helper = PromptHelper(DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS)
 
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper

@@ -15,7 +15,7 @@ from langchain.llms import AI21
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType
-from llama_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
@@ -38,8 +38,8 @@ class LLMMetadata:
 
     """
 
-    max_input_size: int = MAX_CHUNK_SIZE
-    num_output: int = NUM_OUTPUTS
+    max_input_size: int = DEFAULT_CONTEXT_WINDOW
+    num_output: int = DEFAULT_NUM_OUTPUTS
 
 
 def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
