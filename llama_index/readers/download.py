@@ -1,4 +1,9 @@
-"""Download loader from the Loader Hub."""
+"""Download loader from the Loader Hub.
+
+NOTE: using `download_loader` is now deprecated.
+Please do `pip install llama-hub` instead.
+
+"""
 
 import json
 import os
@@ -14,8 +19,8 @@ from pkg_resources import DistributionNotFound
 
 from llama_index.readers.base import BaseReader
 
-LLAMA_HUB_CONTENTS_URL = "https://raw.githubusercontent.com/emptycrown/loader-hub/main"
-LOADER_HUB_PATH = "/loader_hub"
+LLAMA_HUB_CONTENTS_URL = "https://raw.githubusercontent.com/emptycrown/llama-hub/main"
+LOADER_HUB_PATH = "/llama_hub"
 LOADER_HUB_URL = LLAMA_HUB_CONTENTS_URL + LOADER_HUB_PATH
 
 
