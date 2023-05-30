@@ -71,6 +71,7 @@ to fit their needs.
    :hidden:
 
    use_cases/queries.md
+   use_cases/agents.md
    use_cases/apps.md
 
 
