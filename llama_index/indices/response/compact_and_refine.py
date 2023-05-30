@@ -1,4 +1,5 @@
 from typing import Any, Optional, Sequence
+from llama_index.prompts.utils import get_biggest_prompt
 
 from llama_index.indices.response.refine import Refine
 from llama_index.indices.service_context import ServiceContext
@@ -45,9 +46,7 @@ class CompactAndRefine(Refine):
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         refine_template = self._refine_template.partial_format(query_str=query_str)
 
-        max_prompt = self._service_context.prompt_helper.get_biggest_prompt(
-            [text_qa_template, refine_template]
-        )
+        max_prompt = get_biggest_prompt([text_qa_template, refine_template])
         with temp_set_attrs(
             self._service_context.prompt_helper, use_chunk_size_limit=False
         ):

@@ -5,6 +5,7 @@ from langchain import PromptTemplate as LangchainPrompt
 
 from llama_index.data_structs.node import Node
 from llama_index.indices.prompt_helper import PromptHelper
+from llama_index.prompts.utils import get_biggest_prompt
 from llama_index.prompts.base import Prompt
 from tests.mock_utils.mock_utils import mock_tokenizer
 
@@ -180,12 +181,10 @@ def test_compact_text() -> None:
 
 def test_get_biggest_prompt() -> None:
     """Test get_biggest_prompt from PromptHelper."""
-    # NOTE: inputs don't matter
-    prompt_helper = PromptHelper(max_input_size=1, num_output=1, max_chunk_overlap=0)
     prompt1 = TestPrompt("This is the prompt{text}")
     prompt2 = TestPrompt("This is the longer prompt{text}")
     prompt3 = TestPrompt("This is the {text}")
-    biggest_prompt = prompt_helper.get_biggest_prompt([prompt1, prompt2, prompt3])
+    biggest_prompt = get_biggest_prompt([prompt1, prompt2, prompt3])
 
     lc_biggest_template = cast(LangchainPrompt, biggest_prompt.prompt).template
     prompt2_template = cast(LangchainPrompt, prompt2.prompt).template

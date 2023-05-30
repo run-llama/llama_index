@@ -20,18 +20,18 @@ logger = logging.getLogger(__name__)
 
 
 def _get_default_node_parser(
-    chunk_size_limit: Optional[int] = None,
+    chunk_size: Optional[int] = None,
     callback_manager: Optional[CallbackManager] = None,
 ) -> NodeParser:
     """Get default node parser."""
     callback_manager = callback_manager or CallbackManager([])
-    if chunk_size_limit is None:
+    if chunk_size is None:
         token_text_splitter = TokenTextSplitter(
             callback_manager=callback_manager
         )  # use default chunk size
     else:
         token_text_splitter = TokenTextSplitter(
-            chunk_size=chunk_size_limit, callback_manager=callback_manager
+            chunk_size=chunk_size, callback_manager=callback_manager
         )
     return SimpleNodeParser(
         text_splitter=token_text_splitter, callback_manager=callback_manager
@@ -120,7 +120,7 @@ class ServiceContext:
         )
 
         node_parser = node_parser or _get_default_node_parser(
-            chunk_size_limit=chunk_size_limit, callback_manager=callback_manager
+            chunk_size=chunk_size_limit, callback_manager=callback_manager
         )
 
         llama_logger = llama_logger or LlamaLogger()
@@ -173,7 +173,7 @@ class ServiceContext:
         node_parser = node_parser or service_context.node_parser
         if chunk_size_limit:
             node_parser = _get_default_node_parser(
-                chunk_size_limit=chunk_size_limit, callback_manager=callback_manager
+                chunk_size=chunk_size_limit, callback_manager=callback_manager
             )
 
         llama_logger = llama_logger or service_context.llama_logger
