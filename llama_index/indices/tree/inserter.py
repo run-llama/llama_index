@@ -67,9 +67,12 @@ class GPTTreeIndexInserter:
             half1 = cur_graph_node_list[: len(cur_graph_nodes) // 2]
             half2 = cur_graph_node_list[len(cur_graph_nodes) // 2 :]
 
-            text_chunk1 = self._service_context.prompt_helper.get_text_from_nodes(
-                half1, prompt=self.summary_prompt
+            truncated_chunks = self._service_context.prompt_helper.truncate(
+                prompt=self.summary_prompt,
+                text_chunks=[node.get_text() for node in half1],
             )
+            text_chunk1 = "\n".join(truncated_chunks)
+
             summary1, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk1
             )
@@ -78,9 +81,11 @@ class GPTTreeIndexInserter:
             )
             self.index_graph.insert(node1, children_nodes=half1)
 
-            text_chunk2 = self._service_context.prompt_helper.get_text_from_nodes(
-                half2, prompt=self.summary_prompt
+            truncated_chunks = self._service_context.prompt_helper.truncate(
+                prompt=self.summary_prompt,
+                text_chunks=[node.get_text() for node in half2],
             )
+            text_chunk2 = "\n".join(truncated_chunks)
             summary2, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk2
             )
@@ -153,9 +158,11 @@ class GPTTreeIndexInserter:
             cur_graph_node_ids = self.index_graph.get_children(parent_node)
             cur_graph_nodes = self._docstore.get_node_dict(cur_graph_node_ids)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
-            text_chunk = self._service_context.prompt_helper.get_text_from_nodes(
-                cur_graph_node_list, prompt=self.summary_prompt
+            truncated_chunks = self._service_context.prompt_helper.truncate(
+                prompt=self.summary_prompt,
+                text_chunks=[node.get_text() for node in cur_graph_node_list],
             )
+            text_chunk = "\n".join(truncated_chunks)
             new_summary, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk
             )

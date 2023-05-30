@@ -50,7 +50,7 @@ class CompactAndRefine(Refine):
         with temp_set_attrs(
             self._service_context.prompt_helper, use_chunk_size_limit=False
         ):
-            new_texts = self._service_context.prompt_helper.compact_text_chunks(
+            new_texts = self._service_context.prompt_helper.repack(
                 max_prompt, text_chunks
             )
             response = super().get_response(

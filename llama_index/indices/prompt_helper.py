@@ -118,15 +118,11 @@ class PromptHelper:
         return result
 
     def get_text_splitter_given_prompt(
-        self, prompt: Prompt, num_chunks: int, padding: Optional[int] = 5
+        self, prompt: Prompt, num_chunks: int = 1, padding: Optional[int] = 5
     ) -> TokenTextSplitter:
-        """Get text splitter given initial prompt.
-
-        Allows us to get the text splitter which will split up text according
-        to the desired chunk size.
-
+        """Get text splitter configured to maximally pack available context window,
+        taking into account of given prompt, and desired number of chunks.
         """
-        # generate empty_prompt_txt to compute initial tokens
         empty_prompt_txt = get_empty_prompt_txt(prompt)
         chunk_size = self._get_chunk_size_given_prompt(
             empty_prompt_txt, num_chunks, padding=padding
@@ -139,40 +135,21 @@ class PromptHelper:
         )
         return text_splitter
 
-    def get_text_from_nodes(
-        self, node_list: List[Node], prompt: Optional[Prompt] = None
-    ) -> str:
-        """Get text from nodes. Used by tree-structured indices."""
-        num_nodes = len(node_list)
-        text_splitter = None
-        if prompt is not None:
-            # add padding given the newline character
-            text_splitter = self.get_text_splitter_given_prompt(
-                prompt,
-                num_nodes,
-                padding=1,
-            )
-        results = []
-        for node in node_list:
-            text = (
-                text_splitter.truncate_text(node.get_text())
-                if text_splitter is not None
-                else node.get_text()
-            )
-            results.append(text)
+    def truncate(self, prompt: Prompt, text_chunks: Sequence[str]) -> List[str]:
+        """Truncate text chunks to fit available context window."""
+        text_splitter = self.get_text_splitter_given_prompt(
+            prompt,
+            num_chunks=len(text_chunks),
+        )
+        return [text_splitter.truncate_text(chunk) for chunk in text_chunks]
 
-        return "\n".join(results)
-
-    def compact_text_chunks(
-        self, prompt: Prompt, text_chunks: Sequence[str]
-    ) -> List[str]:
-        """Compact text chunks.
+    def repack(self, prompt: Prompt, text_chunks: Sequence[str]) -> List[str]:
+        """Repack text chunks to fit available context window.
 
         This will combine text chunks into consolidated chunks
         that more fully "pack" the prompt template given the max_input_size.
 
         """
+        text_splitter = self.get_text_splitter_given_prompt(prompt)
         combined_str = "\n\n".join([c.strip() for c in text_chunks if c.strip()])
-        # resplit based on self.max_chunk_overlap
-        text_splitter = self.get_text_splitter_given_prompt(prompt, 1, padding=1)
         return text_splitter.split_text(combined_str)
