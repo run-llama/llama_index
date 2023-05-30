@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, List, Literal, Type
+from typing import Any, List, Literal
 
 from llama_index.vector_stores.docarray.base import DocArrayVectorStore
 
@@ -84,7 +84,8 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
         from docarray.index import HnswDocumentIndex
 
         schema = self._get_schema(**kwargs)
-        return HnswDocumentIndex[schema](work_dir=self._work_dir), schema  # type: ignore[valid-type]
+        index = HnswDocumentIndex[schema]  # type: ignore[valid-type]
+        return index(work_dir=self._work_dir), schema
 
     def _find_docs_to_be_removed(self, doc_id: str) -> List[str]:
         """Finds the documents to be removed from the vector store.

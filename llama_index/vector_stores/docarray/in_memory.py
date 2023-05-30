@@ -52,10 +52,9 @@ class DocArrayInMemoryVectorStore(DocArrayVectorStore):
         from docarray.index import InMemoryExactNNIndex
 
         schema = self._get_schema(**kwargs)
-        return (
-            InMemoryExactNNIndex[schema](index_file_path=self._index_file_path),  # type: ignore[valid-type]
-            schema,
-        )
+        index = InMemoryExactNNIndex[schema]  # type: ignore[valid-type]
+        params = {"index_file_path": self._index_file_path}
+        return index(**params), schema  # type: ignore[arg-type]
 
     def _find_docs_to_be_removed(self, doc_id: str) -> List[str]:
         """Finds the documents to be removed from the vector store.

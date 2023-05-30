@@ -1,11 +1,11 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type
 
 import numpy as np
 from pydantic import Field
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.data_structs.node import Node
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,

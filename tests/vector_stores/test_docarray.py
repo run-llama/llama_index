@@ -69,7 +69,8 @@ def test_hnsw(node_embeddings: List[NodeWithEmbedding], tmp_path: Path) -> None:
     res = docarray_vector_store.query(query_emb)
 
     assert len(res.nodes) == 1  # type: ignore[arg-type]
-    assert res.nodes[0].relationships[DocumentRelationship.SOURCE] == "test-1"  # type: ignore[index]
+    rf = res.nodes[0].relationships[DocumentRelationship.SOURCE]  # type: ignore[index]
+    assert rf == "test-1"
 
     docarray_vector_store.delete(doc_id="test-1")
     assert docarray_vector_store.num_docs() == 2
@@ -90,7 +91,8 @@ def test_in_memory(node_embeddings: List[NodeWithEmbedding], tmp_path: Path) -> 
     res = docarray_vector_store.query(query_emb)
 
     assert len(res.nodes) == 1  # type: ignore[arg-type]
-    assert res.nodes[0].relationships[DocumentRelationship.SOURCE] == "test-1"  # type: ignore[index]
+    rf = res.nodes[0].relationships[DocumentRelationship.SOURCE]  # type: ignore[index]
+    assert rf == "test-1"
 
     docarray_vector_store.delete(doc_id="test-1")
     assert docarray_vector_store.num_docs() == 2
@@ -118,7 +120,8 @@ def test_in_memory_filters(node_embeddings: List[NodeWithEmbedding]) -> None:
 
     assert len(res.nodes) == 1  # type: ignore[arg-type]
     assert res.nodes[0].extra_info["theme"] == "Mafia"  # type: ignore[index]
-    assert res.nodes[0].relationships[DocumentRelationship.SOURCE] == "test-1"  # type: ignore[index]
+    rf = res.nodes[0].relationships[DocumentRelationship.SOURCE]  # type: ignore[index]
+    assert rf == "test-1"
 
 
 def test_hnsw_filters(node_embeddings: List[NodeWithEmbedding], tmp_path: Path) -> None:
@@ -133,4 +136,5 @@ def test_hnsw_filters(node_embeddings: List[NodeWithEmbedding], tmp_path: Path) 
 
     assert len(res.nodes) == 1  # type: ignore[arg-type]
     assert res.nodes[0].extra_info["theme"] == "Mafia"  # type: ignore[index]
-    assert res.nodes[0].relationships[DocumentRelationship.SOURCE] == "test-1"  # type: ignore[index]
+    rf = res.nodes[0].relationships[DocumentRelationship.SOURCE]  # type: ignore[index]
+    assert rf == "test-1"
