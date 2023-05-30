@@ -22,7 +22,7 @@ def test_get_chunk_size() -> None:
     prompt_helper = PromptHelper(
         max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
-    chunk_size = prompt_helper.get_chunk_size_given_prompt(
+    chunk_size = prompt_helper._get_chunk_size_given_prompt(
         empty_prompt_text, 1, padding=0
     )
     assert chunk_size == 6
@@ -31,7 +31,7 @@ def test_get_chunk_size() -> None:
     prompt_helper = PromptHelper(
         max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
-    chunk_size = prompt_helper.get_chunk_size_given_prompt(
+    chunk_size = prompt_helper._get_chunk_size_given_prompt(
         empty_prompt_text, 2, padding=0
     )
     assert chunk_size == 3
@@ -44,7 +44,7 @@ def test_get_chunk_size() -> None:
         tokenizer=mock_tokenizer,
         chunk_size_limit=2,
     )
-    chunk_size = prompt_helper.get_chunk_size_given_prompt(
+    chunk_size = prompt_helper._get_chunk_size_given_prompt(
         empty_prompt_text, 2, padding=0
     )
     assert chunk_size == 2
@@ -53,7 +53,7 @@ def test_get_chunk_size() -> None:
     prompt_helper = PromptHelper(
         max_input_size=11, num_output=1, max_chunk_overlap=0, tokenizer=mock_tokenizer
     )
-    chunk_size = prompt_helper.get_chunk_size_given_prompt(
+    chunk_size = prompt_helper._get_chunk_size_given_prompt(
         empty_prompt_text, 2, padding=1
     )
     assert chunk_size == 2

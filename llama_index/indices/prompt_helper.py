@@ -83,7 +83,7 @@ class PromptHelper:
             tokenizer=tokenizer,
         )
 
-    def get_chunk_size_given_prompt(
+    def _get_chunk_size_given_prompt(
         self, prompt_text: str, num_chunks: int, padding: Optional[int] = 1
     ) -> int:
         """Get chunk size making sure we can also fit the prompt in.
@@ -158,7 +158,7 @@ class PromptHelper:
         """
         # generate empty_prompt_txt to compute initial tokens
         empty_prompt_txt = self._get_empty_prompt_txt(prompt)
-        chunk_size = self.get_chunk_size_given_prompt(
+        chunk_size = self._get_chunk_size_given_prompt(
             empty_prompt_txt, num_chunks, padding=padding
         )
         text_splitter = TokenTextSplitter(

@@ -75,7 +75,7 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
     )
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper
-    cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
+    cur_chunk_size = prompt_helper._get_chunk_size_given_prompt("", 1, padding=1)
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
@@ -153,7 +153,7 @@ def test_accumulate_response(
     )
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper
-    cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
+    cur_chunk_size = prompt_helper._get_chunk_size_given_prompt("", 1, padding=1)
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
@@ -203,7 +203,7 @@ def test_accumulate_response_async(
     )
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper
-    cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
+    cur_chunk_size = prompt_helper._get_chunk_size_given_prompt("", 1, padding=1)
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
@@ -254,7 +254,7 @@ def test_accumulate_response_aget(
     )
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper
-    cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
+    cur_chunk_size = prompt_helper._get_chunk_size_given_prompt("", 1, padding=1)
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
@@ -312,7 +312,7 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     )
     service_context = ServiceContext.from_defaults(embed_model=MockEmbedding())
     service_context.prompt_helper = prompt_helper
-    cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
+    cur_chunk_size = prompt_helper._get_chunk_size_given_prompt("", 1, padding=1)
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
