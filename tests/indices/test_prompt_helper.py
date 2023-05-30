@@ -5,6 +5,7 @@ from langchain import PromptTemplate as LangchainPrompt
 
 from llama_index.data_structs.node import Node
 from llama_index.indices.prompt_helper import PromptHelper
+from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.prompts.utils import get_biggest_prompt
 from llama_index.prompts.base import Prompt
 from tests.mock_utils.mock_utils import mock_tokenizer
@@ -157,9 +158,11 @@ def test_get_numbered_text_from_nodes() -> None:
     node1 = Node(text="This is a test foo bar")
     node2 = Node(text="Hello world bar foo")
 
-    response = prompt_helper.get_numbered_text_from_nodes(
-        [node1, node2], prompt=test_prompt
+    text_splitter = prompt_helper.get_text_splitter_given_prompt(
+        prompt=test_prompt,
+        num_chunks=2,
     )
+    response = get_numbered_text_from_nodes([node1, node2], text_splitter=text_splitter)
     assert str(response) == ("(1) This is a\n\n(2) Hello world bar")
 
 

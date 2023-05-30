@@ -85,7 +85,7 @@ class PromptHelper:
         )
 
     def _get_chunk_size_given_prompt(
-        self, prompt_text: str, num_chunks: int, padding: Optional[int] = 1
+        self, prompt_text: str, num_chunks: int, padding: Optional[int] = 5
     ) -> int:
         """Get chunk size making sure we can also fit the prompt in.
 
@@ -93,7 +93,8 @@ class PromptHelper:
         the prompt length, the number of outputs, and the number of chunks.
 
         If padding is specified, then we subtract that from the chunk size.
-        By default we assume there is a padding of 1 (for the newline between chunks).
+        By default we assume there is a padding of 5 (for the newline between chunks
+        and other formatting needs).
 
         Limit by embedding_limit and chunk_size_limit if specified.
 
@@ -117,7 +118,7 @@ class PromptHelper:
         return result
 
     def get_text_splitter_given_prompt(
-        self, prompt: Prompt, num_chunks: int, padding: Optional[int] = 1
+        self, prompt: Prompt, num_chunks: int, padding: Optional[int] = 5
     ) -> TokenTextSplitter:
         """Get text splitter given initial prompt.
 
@@ -161,34 +162,6 @@ class PromptHelper:
             results.append(text)
 
         return "\n".join(results)
-
-    def get_numbered_text_from_nodes(
-        self, node_list: List[Node], prompt: Optional[Prompt] = None
-    ) -> str:
-        """Get text from nodes in the format of a numbered list.
-
-        Used by tree-structured indices.
-
-        """
-        num_nodes = len(node_list)
-        text_splitter = None
-        if prompt is not None:
-            # add padding given the number, and the newlines
-            text_splitter = self.get_text_splitter_given_prompt(
-                prompt,
-                num_nodes,
-                padding=5,
-            )
-        results = []
-        number = 1
-        for node in node_list:
-            node_text = " ".join(node.get_text().splitlines())
-            if text_splitter is not None:
-                node_text = text_splitter.truncate_text(node_text)
-            text = f"({number}) {node_text}"
-            results.append(text)
-            number += 1
-        return "\n\n".join(results)
 
     def compact_text_chunks(
         self, prompt: Prompt, text_chunks: Sequence[str]
