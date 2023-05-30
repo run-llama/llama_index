@@ -30,7 +30,7 @@ LlamaIndex provides core modules capable of automated reasoning for different us
 Some of these core modules are shown below along with example tutorials (not comprehensive, please click into the guides/how-tos for more details).
 
 **SubQuestionQueryEngine for Multi-Document Analysis**
-- [Usage](/use_cases/queries.md#multi-document-queries)
+- [Usage](queries.md#multi-document-queries)
 - [Sub Question Query Engine (Intro)](/examples/query_engine/sub_question_query_engine.ipynb)
 - [10Q Analysis (Uber)](/examples/usecases/10q_sub_question.ipynb)
 - [10K Analysis (Uber and Lyft)](/examples/usecases/10k_sub_question.ipynb)
@@ -41,7 +41,7 @@ Some of these core modules are shown below along with example tutorials (not com
 - [Multi-Step Query Decomposition](/examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 **Routing**
-- [Usage](/use_cases/queries.md#routing-over-heterogeneous-data)
+- [Usage](queries.md#routing-over-heterogeneous-data)
 - [Router Query Engine Guide](/examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
 
 **LLM Reranking**
@@ -59,11 +59,11 @@ LlamaIndex can be used as as Tool within an agent framework - including LangChai
 #### LangChain
 
 We have deep integrations with LangChain. 
-LlamaIndex query engines can be easily packaged as Tools to be used within a LangChain agent. Check out our guides/tutorials below!
+LlamaIndex query engines can be easily packaged as Tools to be used within a LangChain agent, and LlamaIndex can also be used as a memory module / retriever. Check out our guides/tutorials below!
 
 **Resources**
 - [LangChain integration guide](/how_to/integrations/using_with_langchain.md)
-- [Building a Chatbot Tutorial (LangChain + LlamaIndex)](/how_to/tutorials/building_a_chatbot.md)
+- [Building a Chatbot Tutorial (LangChain + LlamaIndex)](/guides/tutorials/building_a_chatbot.md)
 
 #### ChatGPT
 
