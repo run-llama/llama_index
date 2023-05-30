@@ -74,6 +74,8 @@ class ServiceContext:
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
         chunk_size: Optional[int] = None,
+        # deprecated kwargs
+        chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
         """Create a ServiceContext from defaults.
         If an argument is specified, then use the argument value provided for that
@@ -91,7 +93,17 @@ class ServiceContext:
             chunk_size (Optional[int]): chunk_size
             callback_manager (Optional[CallbackManager]): CallbackManager
 
+        Deprecated Args:
+            chunk_size_limit (Optional[int]): renamed to chunk_size
+
         """
+        if chunk_size_limit is not None:
+            warn(
+                "chunk_size_limit is deprecated, please specify chunk_size instead",
+                DeprecationWarning,
+            )
+            chunk_size = chunk_size_limit
+
         if llama_index.global_service_context is not None:
             return cls.from_service_context(
                 llama_index.global_service_context,
@@ -102,6 +114,7 @@ class ServiceContext:
                 llama_logger=llama_logger,
                 callback_manager=callback_manager,
                 chunk_size=chunk_size,
+                chunk_size_limit=chunk_size_limit,
             )
 
         callback_manager = callback_manager or CallbackManager([])
@@ -147,11 +160,14 @@ class ServiceContext:
         callback_manager: Optional[CallbackManager] = None,
         chunk_size: Optional[int] = None,
         # deprecated kwargs
-        chunk_size_limit: Optional[int] = None, 
+        chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
         """Instantiate a new service context using a previous as the defaults."""
         if chunk_size_limit is not None:
-            warn('chunk_size_limit is deprecated, please specify chunk_size', DeprecationWarning)
+            warn(
+                "chunk_size_limit is deprecated, please specify chunk_size",
+                DeprecationWarning,
+            )
             chunk_size = chunk_size_limit
 
         callback_manager = callback_manager or service_context.callback_manager
