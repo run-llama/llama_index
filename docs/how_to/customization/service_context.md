@@ -6,7 +6,7 @@ The following optional items can be set in the service context:
 
 - llm_predictor: The LLM used to generate natural language responses to queries.
 - embed_model: The embedding model used to generate vector representations of text.
-- prompt_helper: The PromptHelper object that defines settings for text sent to the LLM.
+- prompt_helper: The PromptHelper object that helps with truncating and repacking text chunks to fit in the LLM's context window.
 - node_parser: The parser that converts documents into nodes.
 - callback_managaer: The callback manager object that calls it's handlers on events. Provides basic logging and tracing capabilities.
 
@@ -19,11 +19,11 @@ Kwargs node parser:
 
 Kwargs for prompt helper:
 - context_window: The size of the context window of the LLM. Typically we set this 
-  automatically given the model. But we also allow explicit override via this parameter
+  automatically with the model metadata. But we also allow explicit override via this parameter
   for additional control (or in case the default is not available for certain latest
   models)
 - num_output: The number of maximum output from the LLM. Typically we set this
-  automatically given the model. This parameter does not actually limit the model
+  automatically given the model metadata. This parameter does not actually limit the model
   output, it affects the amount of "space" we save for the output, when computing 
   available context window size for packing text from retrieved Nodes.
 
@@ -35,7 +35,7 @@ from llama_index import ServiceContext, LLMPredictor, OpenAIEmbedding, PromptHel
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.node_parser import SimpleNodeParser
 
-llm_predictor = LLMPredictor(llm=OpenAI(model_name='text-davinci-003', temperature=0))
+llm_predictor = LLMPredictor(llm=OpenAI(model_name='text-davinci-003', temperature=0, max_tokens=256))
 embed_model = OpenAIEmbedding()
 node_parser = SimpleNodeParser(text_splitter=TokenTextSplitter(chunk_size=1024, chunk_overlap=20))
 prompt_helper = PromptHelper(context_window=4096, num_output=256, chunk_overlap_ratio=0.1, chunk_size_limit=None)
