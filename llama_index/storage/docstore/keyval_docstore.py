@@ -202,7 +202,7 @@ class KVDocumentStore(BaseDocumentStore):
                 raise ValueError(f"ref_doc_id {ref_doc_id} not found.")
             else:
                 return
-            
+
         for doc_id in ref_doc_info.doc_ids:
             self.delete_document(doc_id, raise_error=False, remove_ref_doc_node=False)
         self._kvstore.delete(ref_doc_id, collection=self._ref_doc_collection)
