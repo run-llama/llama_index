@@ -51,7 +51,6 @@ class ServiceContext:
     - node_parser: NodeParser
     - llama_logger: LlamaLogger (deprecated)
     - callback_manager: CallbackManager
-    - chunk_size: chunk size
 
     """
 
@@ -61,7 +60,6 @@ class ServiceContext:
     node_parser: NodeParser
     llama_logger: LlamaLogger
     callback_manager: CallbackManager
-    chunk_size: Optional[int] = None
 
     @classmethod
     def from_defaults(
@@ -144,7 +142,6 @@ class ServiceContext:
             node_parser=node_parser,
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
-            chunk_size=chunk_size,
         )
 
     @classmethod
@@ -201,7 +198,6 @@ class ServiceContext:
             node_parser=node_parser,
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
-            chunk_size=chunk_size,
         )
 
 
