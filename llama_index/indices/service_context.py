@@ -48,7 +48,6 @@ def _get_default_prompt_helper(
     num_output: Optional[int] = None,
 ) -> PromptHelper:
     """Get default prompt helper."""
-    llm_metadata = llm_metadata.copy()
     if context_window is not None:
         llm_metadata = dataclasses.replace(llm_metadata, context_window=context_window)
     if num_output is not None:
