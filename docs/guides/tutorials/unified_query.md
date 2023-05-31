@@ -73,7 +73,7 @@ from langchain.llms.openai import OpenAIChat
 # set service context
 llm_predictor_gpt4 = LLMPredictor(llm=OpenAIChat(temperature=0, model_name="gpt-4"))
 service_context = ServiceContext.from_defaults(
-    llm_predictor=llm_predictor_gpt4, chunk_size_limit=1024
+    llm_predictor=llm_predictor_gpt4, chunk_size=1024
 )
 
 # Build city document index

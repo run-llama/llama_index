@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.data_structs.node import Node
+from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.indices.service_context import ServiceContext
@@ -66,9 +67,12 @@ class GPTTreeIndexInserter:
             half1 = cur_graph_node_list[: len(cur_graph_nodes) // 2]
             half2 = cur_graph_node_list[len(cur_graph_nodes) // 2 :]
 
-            text_chunk1 = self._service_context.prompt_helper.get_text_from_nodes(
-                half1, prompt=self.summary_prompt
+            truncated_chunks = self._service_context.prompt_helper.truncate(
+                prompt=self.summary_prompt,
+                text_chunks=[node.get_text() for node in half1],
             )
+            text_chunk1 = "\n".join(truncated_chunks)
+
             summary1, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk1
             )
@@ -77,9 +81,11 @@ class GPTTreeIndexInserter:
             )
             self.index_graph.insert(node1, children_nodes=half1)
 
-            text_chunk2 = self._service_context.prompt_helper.get_text_from_nodes(
-                half2, prompt=self.summary_prompt
+            truncated_chunks = self._service_context.prompt_helper.truncate(
+                prompt=self.summary_prompt,
+                text_chunks=[node.get_text() for node in half2],
             )
+            text_chunk2 = "\n".join(truncated_chunks)
             summary2, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk2
             )
@@ -119,10 +125,14 @@ class GPTTreeIndexInserter:
             self._insert_under_parent_and_consolidate(node, parent_node)
         # else try to find the right summary node to insert under
         else:
-            numbered_text = (
-                self._service_context.prompt_helper.get_numbered_text_from_nodes(
-                    cur_graph_node_list, prompt=self.insert_prompt
+            text_splitter = (
+                self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                    prompt=self.insert_prompt,
+                    num_chunks=len(cur_graph_node_list),
                 )
+            )
+            numbered_text = get_numbered_text_from_nodes(
+                cur_graph_node_list, text_splitter=text_splitter
             )
             response, _ = self._service_context.llm_predictor.predict(
                 self.insert_prompt,
@@ -148,9 +158,11 @@ class GPTTreeIndexInserter:
             cur_graph_node_ids = self.index_graph.get_children(parent_node)
             cur_graph_nodes = self._docstore.get_node_dict(cur_graph_node_ids)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
-            text_chunk = self._service_context.prompt_helper.get_text_from_nodes(
-                cur_graph_node_list, prompt=self.summary_prompt
+            truncated_chunks = self._service_context.prompt_helper.truncate(
+                prompt=self.summary_prompt,
+                text_chunks=[node.get_text() for node in cur_graph_node_list],
             )
+            text_chunk = "\n".join(truncated_chunks)
             new_summary, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk
             )

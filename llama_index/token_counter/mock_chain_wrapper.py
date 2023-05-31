@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from langchain.llms.base import BaseLLM
 
-from llama_index.constants import NUM_OUTPUTS
+from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
@@ -85,7 +85,7 @@ class MockLLMPredictor(LLMPredictor):
     """Mock LLM Predictor."""
 
     def __init__(
-        self, max_tokens: int = NUM_OUTPUTS, llm: Optional[BaseLLM] = None
+        self, max_tokens: int = DEFAULT_NUM_OUTPUTS, llm: Optional[BaseLLM] = None
     ) -> None:
         """Initialize params."""
         super().__init__(llm)

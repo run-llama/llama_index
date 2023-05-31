@@ -13,8 +13,8 @@ the underlying abstraction. We introduce a wrapper class,
 
 We also introduce a [`PromptHelper` class](/reference/service_context/prompt_helper.rst), to
 allow the user to explicitly set certain constraint parameters, such as
-maximum input size (default is 4096 for davinci models), number of generated output
-tokens, maximum chunk overlap, and more.
+context window (default is 4096 for davinci models), number of generated output
+tokens, and more.
 
 By default, we use OpenAI's `text-davinci-003` model. But you may choose to customize
 the underlying LLM being used.
@@ -23,7 +23,7 @@ Below we show a few examples of LLM customization. This includes
 
 - changing the underlying LLM
 - changing the number of output tokens (for OpenAI, Cohere, or AI21)
-- having more fine-grained control over all parameters for any LLM, from input size to chunk overlap
+- having more fine-grained control over all parameters for any LLM, from context window to chunk overlap
 
 ## Example: Changing the underlying LLM
 
@@ -89,13 +89,10 @@ query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do after his time at Y Combinator?")
 
 ```
+ 
+## Example: Explicitly configure `context_window` and `num_output`
 
-If you are using other LLM classes from langchain, please see below.
-
-## Example: Fine-grained control over all parameters
-
-To have fine-grained control over all parameters, you will need to define
-a custom PromptHelper class.
+If you are using other LLM classes from langchain, you may need to explicitly configure the `context_window` and `num_output` via the `ServiceContext` since the information is not available by default.
 
 ```python
 
@@ -103,7 +100,6 @@ from llama_index import (
     GPTKeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
-    PromptHelper,
     ServiceContext
 )
 from langchain import OpenAI
@@ -111,19 +107,23 @@ from langchain import OpenAI
 documents = SimpleDirectoryReader('data').load_data()
 
 
-# define prompt helper
-# set maximum input size
-max_input_size = 4096
+# set context window
+context_window = 4096
 # set number of output tokens
 num_output = 256
-# set maximum chunk overlap
-max_chunk_overlap = 20
-prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
 # define LLM
-llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=num_output))
+llm_predictor = LLMPredictor(llm=OpenAI(
+    temperature=0, 
+    model_name="text-davinci-002", 
+    max_tokens=num_output)
+)
 
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+service_context = ServiceContext.from_defaults(
+    llm_predictor=llm_predictor, 
+    context_window=context_window,
+    num_output=num_output,
+)
 
 # build index
 index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
@@ -168,7 +168,10 @@ stablelm_predictor = HuggingFaceLLMPredictor(
     # uncomment this if using CUDA to reduce memory usage
     # model_kwargs={"torch_dtype": torch.float16}
 )
-service_context = ServiceContext.from_defaults(chunk_size_limit=1024, llm_predictor=stablelm_predictor)
+service_context = ServiceContext.from_defaults(
+    chunk_size=1024, 
+    llm_predictor=stablelm_predictor
+)
 ```
 
 An API reference can be found [here](../../reference/llm_predictor.rst).
@@ -190,20 +193,16 @@ Here is a small example using locally running facebook/OPT model and Huggingface
 ```python
 import torch
 from langchain.llms.base import LLM
-from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex, PromptHelper
+from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex
 from llama_index import LLMPredictor, ServiceContext
 from transformers import pipeline
 from typing import Optional, List, Mapping, Any
 
 
-# define prompt helper
-# set maximum input size
-max_input_size = 2048
+# set context window size
+context_window = 2048
 # set number of output tokens
 num_output = 256
-# set maximum chunk overlap
-max_chunk_overlap = 20
-prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
 # store the pipeline/model outisde of the LLM class to avoid memory issues
 model_name = "facebook/opt-iml-max-30b"
@@ -229,7 +228,11 @@ class CustomLLM(LLM):
 # define our LLM
 llm_predictor = LLMPredictor(llm=CustomLLM())
 
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+service_context = ServiceContext.from_defaults(
+    llm_predictor=llm_predictor, 
+    context_window=context_window, 
+    num_output=num_output
+)
 
 # Load the your data
 documents = SimpleDirectoryReader('./data').load_data()
