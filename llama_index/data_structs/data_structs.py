@@ -182,8 +182,8 @@ class IndexDict(IndexStruct):
         # self.nodes_dict[int_id] = node
         vector_id = text_id if text_id is not None else node.get_doc_id()
         self.nodes_dict[vector_id] = node.get_doc_id()
-        if node.ref_doc_id is not None:
-            if node.ref_doc_id not in self.doc_id_dict:
+        if node.doc_id is not None:
+            if node.doc_id not in self.doc_id_dict:
                 self.doc_id_dict[node.doc_id] = []
             self.doc_id_dict[node.doc_id].append(vector_id)
 
