@@ -1,8 +1,11 @@
-"""General prompt helper that can help deal with token limitations.
+"""General prompt helper that can help deal with LLM context window token limitations.
 
-The helper can split text. It can also concatenate text from Node
-structs but keeping token limitations in mind.
+At its core, it calculates available context size by starting with the context window 
+size of an LLM and reserve token space for the prompt template, and the output.
 
+It provides utility for "repacking" text chunks (retrieved from index) to maximally 
+make use of the available context window (and thereby reducing the number of LLM calls 
+needed), or truncating them so that they fit in a single LLM call.
 """
 
 from typing import Callable, List, Optional, Sequence
@@ -24,8 +27,15 @@ logger = logging.getLogger(__name__)
 class PromptHelper:
     """Prompt helper.
 
-    This utility helps us fill in the prompt, split the text,
-    and fill in context information according to necessary token limitations.
+    General prompt helper that can help deal with LLM context window token limitations.
+
+    At its core, it calculates available context size by starting with the context
+    window size of an LLM and reserve token space for the prompt template, and the
+    output.
+
+    It provides utility for "repacking" text chunks (retrieved from index) to maximally
+    make use of the available context window (and thereby reducing the number of LLM
+    calls needed), or truncating them so that they fit in a single LLM call.
 
     Args:
         context_window (int):                   Context window for the LLM.
