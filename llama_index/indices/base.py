@@ -191,21 +191,38 @@ class BaseGPTIndex(Generic[IS], ABC):
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
 
-    def delete(
-        self, doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
+    def delete_nodes(
+        self,
+        doc_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
     ) -> None:
-        """Delete a node from the index.
+        """Delete a list of nodes from the index.
 
         Args:
-            doc_id (str): doc_id from the node to delete
+            doc_ids (List[str]): A list of doc_ids from the nodes to delete
 
         """
-        logger.debug(f"> Deleting document: {doc_id}")
-        self._delete(doc_id, **delete_kwargs)
-        if delete_from_docstore:
-            self.docstore.delete_document(doc_id, raise_error=False)
+        for doc_id in doc_ids:
+            self._delete(doc_id, **delete_kwargs)
+            if delete_from_docstore:
+                self.docstore.delete_document(doc_id, raise_error=False)
 
         self._storage_context.index_store.add_index_struct(self._index_struct)
+
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a document from the index.
+        All nodes in the index related to the index will be deleted.
+
+        Args:
+            doc_id (str): A doc_id of the ingested document
+
+        """
+        logger.warning(
+            "delete() is now deprecated, please refer to delete_ref_doc() to delete "
+            "ingested documents+nodes or delete_nodes to delete a list of nodes."
+        )
+        self.delete_ref_doc(doc_id)
 
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
@@ -216,10 +233,11 @@ class BaseGPTIndex(Generic[IS], ABC):
             logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
             return
 
-        for doc_id in ref_doc_info.doc_ids:
-            self.delete(
-                doc_id, delete_from_docstore=delete_from_docstore, **delete_kwargs
-            )
+        self.delete_nodes(
+            ref_doc_info.doc_ids,
+            delete_from_docstore=delete_from_docstore,
+            **delete_kwargs,
+        )
 
         if delete_from_docstore:
             self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
