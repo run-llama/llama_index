@@ -155,13 +155,13 @@ class GPTDocumentSummaryIndex(BaseGPTIndex[IndexDocumentSummary]):
         self._add_nodes_to_index(self._index_struct, nodes)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+        """Delete a node."""
         if doc_id not in self._index_struct.doc_id_to_summary_id:
             raise ValueError(f"doc_id {doc_id} not in index")
         summary_id = self._index_struct.doc_id_to_summary_id[doc_id]
 
         # delete summary node from docstore
         self.docstore.delete_document(summary_id)
+        
         # delete from index struct
         self._index_struct.delete(doc_id)
-        # TODO: figure out whether to delete source nodes

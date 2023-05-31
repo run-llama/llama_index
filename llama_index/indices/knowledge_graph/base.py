@@ -192,7 +192,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         self._docstore.add_documents([node], allow_update=True)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+        """Delete a node."""
         raise NotImplementedError("Delete is not supported for KG index yet.")
 
     def get_networkx_graph(self) -> Any:

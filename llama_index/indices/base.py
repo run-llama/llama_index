@@ -189,23 +189,37 @@ class BaseGPTIndex(Generic[IS], ABC):
 
     @abstractmethod
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+        """Delete a node."""
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document from the index.
-
-        All nodes in the index related to the index will be deleted.
+    def delete(self, doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any) -> None:
+        """Delete a node from the index.
 
         Args:
-            doc_id (str): document id
+            doc_id (str): doc_id from the node to delete
 
         """
         logger.debug(f"> Deleting document: {doc_id}")
         self._delete(doc_id, **delete_kwargs)
+        if delete_from_docstore:
+            self.docstore.delete_document(doc_id, raise_error=False)
+
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
+    def delete_ref_doc(self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any) -> None:
+        """Delete a document and it's nodes by using ref_doc_id."""
+        ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+        if ref_doc_info is None:
+            logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
+            return
+        
+        for doc_id in ref_doc_info.doc_ids:
+            self.delete(doc_id, delete_from_docstore=delete_from_docstore, **delete_kwargs)
+        
+        if delete_from_docstore:
+            self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+
     def update(self, document: Document, **update_kwargs: Any) -> None:
-        """Update a document.
+        """Update a document and it's corresponding nodes.
 
         This is equivalent to deleting the document and then inserting it again.
 
@@ -216,7 +230,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         """
         with self._service_context.callback_manager.as_trace("update"):
-            self.delete(document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {}))
+            self.delete_ref_doc(document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {}))
             self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
 
     def refresh(

@@ -218,6 +218,6 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+        """Delete a node."""
         self._index_struct.delete(doc_id)
         self._vector_store.delete(doc_id)

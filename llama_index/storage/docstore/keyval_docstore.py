@@ -6,9 +6,7 @@ from llama_index.data_structs.node import Node
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.schema import BaseDocument
-from llama_index.storage.kvstore.types import (
-    BaseKVStore,
-)
+from llama_index.storage.kvstore.types import BaseKVStore
 
 DEFAULT_NAMESPACE = "docstore"
 
@@ -137,7 +135,7 @@ class KVDocumentStore(BaseDocumentStore):
         if ref_doc_infos is None:
             return None
         return {key: RefDocInfo(**val) for key, val in ref_doc_infos.items()}
-    
+
     def ref_doc_exists(self, ref_doc_id: str) -> bool:
         """Check if a ref_doc_id has been ingested."""
         return self.get_ref_doc_info(ref_doc_id) is not None
@@ -162,7 +160,12 @@ class KVDocumentStore(BaseDocumentStore):
         if ref_doc_info is not None:
             ref_doc_obj = RefDocInfo(**ref_doc_info)
             ref_doc_obj.doc_ids.remove(doc_id)
-            self._kvstore.put(ref_doc_id, ref_doc_obj.to_dict(), collection=self._ref_doc_collection)
+
+            # delete ref_doc from collection if it has no more doc_ids
+            if len(ref_doc_obj.doc_ids) > 0:
+                self._kvstore.put(ref_doc_id, ref_doc_obj.to_dict(), collection=self._ref_doc_collection)
+            else:
+                self._kvstore.delete(ref_doc_id, collection=self._ref_doc_collection)
 
     def delete_document(self, doc_id: str, raise_error: bool = True, remove_ref_doc_node: bool = True) -> None:
         """Delete a document from the store."""

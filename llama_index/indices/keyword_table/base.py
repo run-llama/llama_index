@@ -151,28 +151,16 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             self._index_struct.add_node(list(keywords), n)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
-        # get set of ids that correspond to node
-        node_idxs_to_delete = set()
-        node_id_list = list(self._index_struct.node_ids)
-        nodes = self._docstore.get_nodes(node_id_list)
-        for node_idx, node in zip(node_id_list, nodes):
-            if node.ref_doc_id != doc_id:
-                continue
-            node_idxs_to_delete.add(node_idx)
-        for node_idx in node_idxs_to_delete:
-            self._docstore.delete_document(node_idx)
-
-        # delete node_idxs from keyword to node idxs mapping
+        """Delete a node."""
+        # delete node from the keyword table
         keywords_to_delete = set()
-        for keyword, node_idxs in self._index_struct.table.items():
-            if node_idxs_to_delete.intersection(node_idxs):
-                self._index_struct.table[keyword] = node_idxs.difference(
-                    node_idxs_to_delete
-                )
-                if not self._index_struct.table[keyword]:
+        for keyword, node_ids in self._index_struct.table.items():
+            if doc_id in node_ids:
+                node_ids.remove(doc_id)
+                if len(node_ids) == 0:
                     keywords_to_delete.add(keyword)
 
+        # delete keywords that have zero nodes
         for keyword in keywords_to_delete:
             del self._index_struct.table[keyword]
 

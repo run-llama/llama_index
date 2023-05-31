@@ -97,8 +97,8 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             self._index_struct.add_node(n)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+        """Delete a node."""
         cur_node_ids = self._index_struct.nodes
         cur_nodes = self._docstore.get_nodes(cur_node_ids)
-        nodes_to_keep = [n for n in cur_nodes if n.ref_doc_id != doc_id]
+        nodes_to_keep = [n for n in cur_nodes if n.doc_id != doc_id]
         self._index_struct.nodes = [n.get_doc_id() for n in nodes_to_keep]
