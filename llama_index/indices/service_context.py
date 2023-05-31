@@ -2,7 +2,6 @@ import dataclasses
 import logging
 from dataclasses import dataclass
 from typing import Optional
-from warnings import warn
 
 import llama_index
 from llama_index.callbacks.base import CallbackManager
@@ -117,9 +116,8 @@ class ServiceContext:
 
         """
         if chunk_size_limit is not None and chunk_size is None:
-            warn(
-                "chunk_size_limit is deprecated, please specify chunk_size instead",
-                DeprecationWarning,
+            logger.warning(
+                "chunk_size_limit is deprecated, please specify chunk_size instead"
             )
             chunk_size = chunk_size_limit
 
@@ -193,7 +191,7 @@ class ServiceContext:
     ) -> "ServiceContext":
         """Instantiate a new service context using a previous as the defaults."""
         if chunk_size_limit is not None and chunk_size is None:
-            warn(
+            logger.warning(
                 "chunk_size_limit is deprecated, please specify chunk_size",
                 DeprecationWarning,
             )

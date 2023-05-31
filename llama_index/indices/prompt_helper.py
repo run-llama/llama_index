@@ -13,10 +13,12 @@ from llama_index.llm_predictor.base import LLMMetadata
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.utils import get_empty_prompt_txt
 from llama_index.utils import globals_helper
-from warnings import warn
+import logging
 
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
+
+logger = logging.getLogger(__name__)
 
 
 class PromptHelper:
@@ -77,25 +79,22 @@ class PromptHelper:
         max_chunk_overlap: Optional[int] = None,
     ) -> None:
         if max_input_size is not None:
-            warn(
-                "max_input_size is deprecated, now renamed to context_window",
-                DeprecationWarning,
+            logger.warning(
+                "max_input_size is deprecated, now renamed to context_window"
             )
             self.context_window = max_input_size
         if embedding_limit is not None:
-            warn(
-                "max_input_size is deprecated, now consolidated with chunk_size_limit",
-                DeprecationWarning,
+            logger.warning(
+                "max_input_size is deprecated, now consolidated with chunk_size_limit"
             )
             if self.chunk_size_limit is None:
                 self.chunk_size_limit = embedding_limit
             else:
                 self.chunk_size_limit = min(self.chunk_size_limit, embedding_limit)
         if max_chunk_overlap is not None:
-            warn(
+            logger.warning(
                 "max_chunk_overlap is now deprecated, chunk overlap is now configured \
-                    via chunk_overlap_ratio",
-                DeprecationWarning,
+                    via chunk_overlap_ratio"
             )
             if self.chunk_size_limit is not None:
                 self.chunk_overlap_ratio = max_chunk_overlap / self.chunk_size_limit
