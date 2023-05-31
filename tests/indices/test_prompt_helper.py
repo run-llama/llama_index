@@ -1,5 +1,5 @@
 """Test PromptHelper."""
-from typing import List, cast
+from typing import cast
 
 from langchain import PromptTemplate as LangchainPrompt
 
@@ -156,8 +156,8 @@ def test_get_numbered_text_from_nodes() -> None:
     assert str(response) == ("(1) This is a\n\n(2) Hello world bar")
 
 
-def test_compact_text() -> None:
-    """Test compact text."""
+def test_repack() -> None:
+    """Test repack."""
     test_prompt_text = "This is the prompt{text}"
     test_prompt = Prompt(test_prompt_text)
     prompt_helper = PromptHelper(
