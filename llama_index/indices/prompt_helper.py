@@ -5,7 +5,6 @@ structs but keeping token limitations in mind.
 
 """
 
-import logging
 from typing import Callable, List, Optional, Sequence
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
@@ -76,7 +75,7 @@ class PromptHelper:
         max_input_size: Optional[int] = None,
         embedding_limit: Optional[int] = None,
         max_chunk_overlap: Optional[int] = None,
-    ):
+    ) -> None:
         if max_input_size is not None:
             warn(
                 "max_input_size is deprecated, now renamed to context_window",
@@ -94,7 +93,8 @@ class PromptHelper:
                 self.chunk_size_limit = min(self.chunk_size_limit, embedding_limit)
         if max_chunk_overlap is not None:
             warn(
-                "max_chunk_overlap is now deprecated, chunk overlap is now configured via chunk_overlap_ratio",
+                "max_chunk_overlap is now deprecated, chunk overlap is now configured \
+                    via chunk_overlap_ratio",
                 DeprecationWarning,
             )
             if self.chunk_size_limit is not None:
@@ -122,9 +122,15 @@ class PromptHelper:
         """
         llm_metadata = llm_predictor.get_llm_metadata()
 
+        context_window = llm_metadata.context_window
+        if llm_metadata.num_output == -1:
+            num_output = DEFAULT_NUM_OUTPUTS
+        else:
+            num_output = llm_metadata.num_output
+
         return cls(
-            context_window=llm_metadata.context_window,
-            num_output=llm_metadata.num_output,
+            context_window=context_window,
+            num_output=num_output,
             chunk_overlap_ratio=chunk_overlap_ratio,
             chunk_size_limit=chunk_size_limit,
             tokenizer=tokenizer,

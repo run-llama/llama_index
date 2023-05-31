@@ -1,6 +1,5 @@
 from typing import Any, Generator, Optional, Sequence, cast
 
-from llama_index.data_structs.node import Node
 from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt

@@ -1,5 +1,3 @@
-
-
 from typing import List, Optional
 
 from llama_index.data_structs.node import Node

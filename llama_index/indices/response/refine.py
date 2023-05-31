@@ -72,7 +72,9 @@ class Refine(BaseResponseBuilder):
     ) -> RESPONSE_TEXT_TYPE:
         """Give response given a query and a corresponding text chunk."""
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
-        text_chunks = self._service_context.prompt_helper.repack(text_qa_template, [text_chunk])
+        text_chunks = self._service_context.prompt_helper.repack(
+            text_qa_template, [text_chunk]
+        )
 
         response: Optional[RESPONSE_TEXT_TYPE] = None
         # TODO: consolidate with loop in get_response_default
@@ -126,7 +128,9 @@ class Refine(BaseResponseBuilder):
         refine_template = self._refine_template.partial_format(
             query_str=query_str, existing_answer=response
         )
-        text_chunks = self._service_context.prompt_helper.repack(refine_template, text_chunks=[text_chunk])
+        text_chunks = self._service_context.prompt_helper.repack(
+            refine_template, text_chunks=[text_chunk]
+        )
 
         for cur_text_chunk in text_chunks:
             if not self._streaming:

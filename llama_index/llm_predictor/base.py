@@ -51,7 +51,7 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
     elif isinstance(llm, ChatOpenAI):
         return LLMMetadata(
             context_window=OpenAI().modelname_to_contextsize(llm.model_name),
-            num_output=llm.max_tokens,
+            num_output=llm.max_tokens or -1,
         )
     elif isinstance(llm, Cohere):
         # TODO: figure out max input size for cohere

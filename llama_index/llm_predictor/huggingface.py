@@ -117,7 +117,7 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            max_input_size=self._max_input_size, num_output=self._max_new_tokens
+            context_window=self._max_input_size, num_output=self._max_new_tokens
         )
 
     def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
