@@ -95,7 +95,7 @@ class KVDocumentStore(BaseDocumentStore):
                 ref_doc_info = self.get_ref_doc_info(doc.ref_doc_id) or RefDocInfo()
                 ref_doc_info.doc_ids.append(doc.get_doc_id())
                 if not ref_doc_info.extra_info:
-                    ref_doc_info.extra_info = doc.extra_info or None
+                    ref_doc_info.extra_info = doc.extra_info or {}
                 self._kvstore.put(
                     doc.ref_doc_id,
                     ref_doc_info.to_dict(),
