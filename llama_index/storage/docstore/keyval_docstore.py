@@ -156,9 +156,6 @@ class KVDocumentStore(BaseDocumentStore):
 
     def _remove_ref_doc_node(self, doc_id: str) -> None:
         """Helper function to remove node doc_id from ref_doc_collection."""
-        import pdb
-
-        pdb.set_trace()
         metadata = self._kvstore.get(doc_id, collection=self._metadata_collection)
         if metadata is None:
             return
