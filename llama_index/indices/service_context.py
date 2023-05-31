@@ -1,3 +1,4 @@
+import dataclasses
 import logging
 from dataclasses import dataclass
 from typing import Optional
@@ -11,7 +12,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
-from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
@@ -39,6 +40,20 @@ def _get_default_node_parser(
     return SimpleNodeParser(
         text_splitter=token_text_splitter, callback_manager=callback_manager
     )
+
+
+def _get_default_prompt_helper(
+    llm_metadata: LLMMetadata,
+    context_window: Optional[int] = None,
+    num_output: Optional[int] = None,
+) -> PromptHelper:
+    """Get default prompt helper."""
+    llm_metadata = llm_metadata.copy()
+    if context_window is not None:
+        llm_metadata = dataclasses.replace(llm_metadata, context_window=context_window)
+    if num_output is not None:
+        llm_metadata = dataclasses.replace(llm_metadata, num_output=num_output)
+    return PromptHelper.from_llm_metadata(llm_metadata=llm_metadata)
 
 
 @dataclass
@@ -73,8 +88,12 @@ class ServiceContext:
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
+        # node parser kwargs
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
+        # prompt helper kwargs
+        context_window: Optional[int] = None,
+        num_output: Optional[int] = None,
         # deprecated kwargs
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
@@ -130,7 +149,11 @@ class ServiceContext:
         embed_model = embed_model or OpenAIEmbedding()
         embed_model.callback_manager = callback_manager
 
-        prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(llm_predictor)
+        prompt_helper = prompt_helper or _get_default_prompt_helper(
+            llm_metadata=llm_predictor.get_llm_metadata(),
+            context_window=context_window,
+            num_output=num_output,
+        )
 
         node_parser = node_parser or _get_default_node_parser(
             chunk_size=chunk_size,
@@ -160,8 +183,12 @@ class ServiceContext:
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
+        # node parser kwargs
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
+        # prompt helper kwargs
+        context_window: Optional[int] = None,
+        num_output: Optional[int] = None,
         # deprecated kwargs
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
@@ -186,8 +213,11 @@ class ServiceContext:
         embed_model = embed_model or service_context.embed_model
         embed_model.callback_manager = callback_manager
 
-        # need to ensure chunk_size_limit can still be overwritten from the global
-        prompt_helper = prompt_helper or service_context.prompt_helper
+        prompt_helper = prompt_helper or _get_default_prompt_helper(
+            llm_metadata=llm_predictor.get_llm_metadata(),
+            context_window=context_window,
+            num_output=num_output,
+        )
 
         node_parser = node_parser or service_context.node_parser
         if chunk_size is not None or chunk_overlap is not None:

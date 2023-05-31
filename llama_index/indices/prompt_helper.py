@@ -9,7 +9,7 @@ from typing import Callable, List, Optional, Sequence
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
-from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llm_predictor.base import LLMMetadata
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.utils import get_empty_prompt_txt
 from llama_index.utils import globals_helper
@@ -103,9 +103,9 @@ class PromptHelper:
                 self.chunk_overlap_ratio = DEFAULT_CHUNK_OVERLAP_RATIO
 
     @classmethod
-    def from_llm_predictor(
+    def from_llm_metadata(
         cls,
-        llm_predictor: BaseLLMPredictor,
+        llm_metadata: LLMMetadata,
         chunk_overlap_ratio: float = DEFAULT_CHUNK_OVERLAP_RATIO,
         chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
@@ -120,8 +120,6 @@ class PromptHelper:
         This will autofill values like context_window and num_output.
 
         """
-        llm_metadata = llm_predictor.get_llm_metadata()
-
         context_window = llm_metadata.context_window
         if llm_metadata.num_output == -1:
             num_output = DEFAULT_NUM_OUTPUTS
