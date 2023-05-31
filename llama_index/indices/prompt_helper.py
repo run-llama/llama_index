@@ -44,11 +44,9 @@ class PromptHelper:
         chunk_size_limit (Optional[int]):         Maximum chunk size to use.
         tokenizer (Optional[Callable[[str], List]]): Tokenizer to use.
         separator (str):                        Separator for text splitter
-
-    Deprecated Args:
-        max_input_size (int): now renamed to context_window
-        embedding_limit (int): now consolidated with chunk_size_limit
-        max_chunk_overlap (int): now configured via chunk_overlap_ratio
+        max_input_size (int): deprecated, now renamed to context_window
+        embedding_limit (int): deprecated, now consolidated with chunk_size_limit
+        max_chunk_overlap (int): deprecated, now configured via chunk_overlap_ratio
 
     """
 
