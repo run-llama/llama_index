@@ -156,7 +156,7 @@ By default, we use OpenAI's `text-davinci-003` model. You may choose to use anot
 an index.
 
 ```python
-from llama_index import LLMPredictor, GPTVectorStoreIndex, PromptHelper, ServiceContext
+from llama_index import LLMPredictor, GPTVectorStoreIndex, ServiceContext
 from langchain import OpenAI
 
 ...

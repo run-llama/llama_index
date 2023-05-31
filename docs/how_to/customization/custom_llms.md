@@ -100,7 +100,6 @@ from llama_index import (
     GPTKeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
-    PromptHelper,
     ServiceContext
 )
 from langchain import OpenAI
@@ -194,7 +193,7 @@ Here is a small example using locally running facebook/OPT model and Huggingface
 ```python
 import torch
 from langchain.llms.base import LLM
-from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex, PromptHelper
+from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex
 from llama_index import LLMPredictor, ServiceContext
 from transformers import pipeline
 from typing import Optional, List, Mapping, Any
