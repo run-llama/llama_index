@@ -43,7 +43,7 @@ print(response)
 
 ```
 
-Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
+Check out our [example notebook](../../examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
 
 
 ### Single-Step Query Decomposition
