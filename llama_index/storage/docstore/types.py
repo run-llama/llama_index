@@ -13,9 +13,11 @@ DEFAULT_PERSIST_FNAME = "docstore.json"
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_PATH = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
 
+
 @dataclass
 class RefDocInfo(DataClassJsonMixin):
     """Dataclass to represent ingested documents."""
+
     doc_ids: List = field(default_factory=list)
     extra_info: Dict[str, Any] = field(default_factory=dict)
 
@@ -70,11 +72,11 @@ class BaseDocumentStore(ABC):
     @abstractmethod
     def get_all_ref_doc_info(self) -> Optional[Dict[str, RefDocInfo]]:
         """Get a mapping of ref_doc_id -> RefDocInfo for all ingested documents."""
-    
+
     @abstractmethod
     def get_ref_doc_info(self, ref_doc_id: str) -> Optional[RefDocInfo]:
         """Get the RefDocInfo for a given ref_doc_id."""
-    
+
     @abstractmethod
     def delete_ref_doc(self, ref_doc_id: str, raise_error: bool = True) -> None:
         """Delete a ref_doc and all it's associated nodes."""

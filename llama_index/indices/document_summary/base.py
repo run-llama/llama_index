@@ -162,6 +162,6 @@ class GPTDocumentSummaryIndex(BaseGPTIndex[IndexDocumentSummary]):
 
         # delete summary node from docstore
         self.docstore.delete_document(summary_id)
-        
+
         # delete from index struct
         self._index_struct.delete(doc_id)
