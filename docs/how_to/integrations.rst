@@ -12,3 +12,4 @@ Some of these integrations are provided in more detailed guides below.
    integrations/vector_stores.md
    integrations/chatgpt_plugins.md
    integrations/using_with_langchain.md
+   integrations/graphsignal.md

@@ -2,6 +2,7 @@
 
 
 from llama_index.prompts.base import Prompt
+from llama_index.prompts.prompt_type import PromptType
 
 # deprecated, kept for backwards compatibility
 """Decompose prompt for query transformation.
@@ -59,7 +60,7 @@ DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL = (
 )
 
 DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT = Prompt(
-    DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL
+    DEFAULT_DECOMPOSE_QUERY_TRANSFORM_TMPL, prompt_type=PromptType.DECOMPOSE
 )
 
 

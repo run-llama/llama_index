@@ -8,7 +8,7 @@ PyPI:
 
 Documentation: https://gpt-index.readthedocs.io/.
 
-Twitter: https://twitter.com/gpt_index.
+Twitter: https://twitter.com/llama_index.
 
 Discord: https://discord.gg/dGcwcsnxhU.
 

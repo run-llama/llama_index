@@ -52,5 +52,17 @@ class PromptType(str, Enum):
     # Sub question prompt
     SUB_QUESTION = "sub_question"
 
+    # SQL response synthesis prompt
+    SQL_RESPONSE_SYNTHESIS = "sql_response_synthesis"
+
+    # Conversation
+    CONVERSATION = "conversation"
+
+    # Decompose query transform
+    DECOMPOSE = "decompose"
+
+    # Choice select
+    CHOICE_SELECT = "choice_select"
+
     # custom (by default)
     CUSTOM = "custom"

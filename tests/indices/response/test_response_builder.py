@@ -3,7 +3,7 @@
 import asyncio
 from typing import List
 
-from llama_index.constants import MAX_CHUNK_OVERLAP, MAX_CHUNK_SIZE, NUM_OUTPUTS
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.response import ResponseMode, get_response_builder
 from llama_index.indices.service_context import ServiceContext
@@ -27,7 +27,9 @@ def test_give_response(
     documents: List[Document],
 ) -> None:
     """Test give response."""
-    prompt_helper = PromptHelper(MAX_CHUNK_SIZE, NUM_OUTPUTS, MAX_CHUNK_OVERLAP)
+    prompt_helper = PromptHelper(
+        context_window=DEFAULT_CONTEXT_WINDOW, num_output=DEFAULT_NUM_OUTPUTS
+    )
 
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper
@@ -71,11 +73,18 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        11, 0, 0, tokenizer=mock_tokenizer, separator="\n\n", chunk_size_limit=4
+        max_input_size=11,
+        num_output=0,
+        max_chunk_overlap=0,
+        tokenizer=mock_tokenizer,
+        separator="\n\n",
+        chunk_size_limit=4,
     )
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper
-    cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
+    cur_chunk_size = prompt_helper._get_available_chunk_size(
+        mock_qa_prompt, 1, padding=1
+    )
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
@@ -106,10 +115,16 @@ def test_tree_summarize_response(mock_service_context: ServiceContext) -> None:
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
     mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
 
-    # max input size is 12, prompt tokens is 2 (query_str)
-    # --> 10 tokens for 2 chunks -->
-    # 5 tokens per chunk, 1 is padding --> 4 tokens per chunk
-    prompt_helper = PromptHelper(12, 0, 0, tokenizer=mock_tokenizer, separator="\n\n")
+    # max input size is 20, prompt tokens is 2 (query_str)
+    # --> 18 tokens for 2 chunks -->
+    # 9 tokens per chunk, 5 is padding --> 4 tokens per chunk
+    prompt_helper = PromptHelper(
+        max_input_size=20,
+        num_output=0,
+        max_chunk_overlap=0,
+        tokenizer=mock_tokenizer,
+        separator="\n\n",
+    )
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper
 
@@ -149,11 +164,18 @@ def test_accumulate_response(
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        11, 0, 0, tokenizer=mock_tokenizer, separator="\n\n", chunk_size_limit=4
+        max_input_size=11,
+        num_output=0,
+        max_chunk_overlap=0,
+        tokenizer=mock_tokenizer,
+        separator="\n\n",
+        chunk_size_limit=4,
     )
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper
-    cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
+    cur_chunk_size = prompt_helper._get_available_chunk_size(
+        mock_qa_prompt, 1, padding=1
+    )
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
@@ -199,11 +221,18 @@ def test_accumulate_response_async(
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        11, 0, 0, tokenizer=mock_tokenizer, separator="\n\n", chunk_size_limit=4
+        max_input_size=11,
+        num_output=0,
+        max_chunk_overlap=0,
+        tokenizer=mock_tokenizer,
+        separator="\n\n",
+        chunk_size_limit=4,
     )
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper
-    cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
+    cur_chunk_size = prompt_helper._get_available_chunk_size(
+        mock_qa_prompt, 1, padding=1
+    )
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
@@ -250,11 +279,18 @@ def test_accumulate_response_aget(
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        11, 0, 0, tokenizer=mock_tokenizer, separator="\n\n", chunk_size_limit=4
+        max_input_size=11,
+        num_output=0,
+        max_chunk_overlap=0,
+        tokenizer=mock_tokenizer,
+        separator="\n\n",
+        chunk_size_limit=4,
     )
     service_context = mock_service_context
     service_context.prompt_helper = prompt_helper
-    cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
+    cur_chunk_size = prompt_helper._get_available_chunk_size(
+        mock_qa_prompt, 1, padding=1
+    )
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
@@ -298,7 +334,7 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarante that prompts have 0 extra tokens
     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl)
+    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
 
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
@@ -312,7 +348,9 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     )
     service_context = ServiceContext.from_defaults(embed_model=MockEmbedding())
     service_context.prompt_helper = prompt_helper
-    cur_chunk_size = prompt_helper.get_chunk_size_given_prompt("", 1, padding=1)
+    cur_chunk_size = prompt_helper._get_available_chunk_size(
+        mock_qa_prompt, 1, padding=1
+    )
     # outside of compact, assert that chunk size is 4
     assert cur_chunk_size == 4
 
@@ -326,7 +364,7 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
         "is",
         "foo",
     ]
-    compacted_chunks = prompt_helper.compact_text_chunks(mock_qa_prompt, texts)
+    compacted_chunks = prompt_helper.repack(mock_qa_prompt, texts)
     assert compacted_chunks == ["This\n\nis\n\nbar\n\nThis", "is\n\nfoo"]
 
     builder = get_response_builder(

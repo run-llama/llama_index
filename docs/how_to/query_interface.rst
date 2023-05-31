@@ -59,3 +59,4 @@ Resources
    /how_to/query/optimizers.md
    /how_to/query/response_synthesis.md
    /how_to/query/query_engines.md
+   /how_to/query/chat_engines.md

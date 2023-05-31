@@ -12,7 +12,7 @@ LlamaIndex (GPT Index) is a data framework for your LLM application.
 - PyPi:
    - LlamaIndex: https://pypi.org/project/llama-index/.
    - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
-- Twitter: https://twitter.com/gpt_index
+- Twitter: https://twitter.com/llama_index
 - Discord https://discord.gg/dGcwcsnxhU
 
 Ecosystem
@@ -71,6 +71,7 @@ to fit their needs.
    :hidden:
 
    use_cases/queries.md
+   use_cases/agents.md
    use_cases/apps.md
 
 

@@ -14,6 +14,7 @@ Querying an index involves a three main components:
 - **Retrievers**: A retriever class retrieves a set of Nodes from an index given a query.
 - **Response Synthesizer**: This class takes in a set of Nodes and synthesizes an answer given a query.
 - **Query Engine**: This class takes in a query and returns a Response object. It can make use of Retrievers and Response Synthesizer modules under the hood.
+- **Chat Engines**: This class enables conversation over a knowledge base. It is the stateful version of a query engine that keeps track of conversation history.
 
 
 .. toctree::
@@ -23,6 +24,7 @@ Querying an index involves a three main components:
    query/retrievers.rst
    query/response_synthesizer.rst
    query/query_engines.rst
+   query/chat_engines.rst
 
 
 Additional Query Classes
