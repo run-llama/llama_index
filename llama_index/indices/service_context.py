@@ -5,6 +5,7 @@ from warnings import warn
 
 import llama_index
 from llama_index.callbacks.base import CallbackManager
+from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.prompt_helper import PromptHelper
@@ -22,18 +23,19 @@ logger = logging.getLogger(__name__)
 
 def _get_default_node_parser(
     chunk_size: Optional[int] = None,
+    chunk_overlap: Optional[int] = None,
     callback_manager: Optional[CallbackManager] = None,
 ) -> NodeParser:
     """Get default node parser."""
     callback_manager = callback_manager or CallbackManager([])
-    if chunk_size is None:
-        token_text_splitter = TokenTextSplitter(
-            callback_manager=callback_manager
-        )  # use default chunk size
-    else:
-        token_text_splitter = TokenTextSplitter(
-            chunk_size=chunk_size, callback_manager=callback_manager
-        )
+    chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
+    chunk_overlap = chunk_overlap or DEFAULT_CHUNK_OVERLAP
+
+    token_text_splitter = TokenTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        callback_manager=callback_manager,
+    )
     return SimpleNodeParser(
         text_splitter=token_text_splitter, callback_manager=callback_manager
     )
@@ -72,6 +74,7 @@ class ServiceContext:
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
         chunk_size: Optional[int] = None,
+        chunk_overlap: Optional[int] = None,
         # deprecated kwargs
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
@@ -130,7 +133,9 @@ class ServiceContext:
         prompt_helper = prompt_helper or PromptHelper.from_llm_predictor(llm_predictor)
 
         node_parser = node_parser or _get_default_node_parser(
-            chunk_size=chunk_size, callback_manager=callback_manager
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            callback_manager=callback_manager,
         )
 
         llama_logger = llama_logger or LlamaLogger()
@@ -156,6 +161,7 @@ class ServiceContext:
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
         chunk_size: Optional[int] = None,
+        chunk_overlap: Optional[int] = None,
         # deprecated kwargs
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
@@ -184,9 +190,11 @@ class ServiceContext:
         prompt_helper = prompt_helper or service_context.prompt_helper
 
         node_parser = node_parser or service_context.node_parser
-        if chunk_size:
+        if chunk_size is not None or chunk_overlap is not None:
             node_parser = _get_default_node_parser(
-                chunk_size=chunk_size, callback_manager=callback_manager
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                callback_manager=callback_manager,
             )
 
         llama_logger = llama_logger or service_context.llama_logger
