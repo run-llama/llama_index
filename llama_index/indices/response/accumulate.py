@@ -88,12 +88,10 @@ class Accumulate(BaseResponseBuilder):
     ) -> List[Any]:
         """Give responses given a query and a corresponding text chunk."""
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
-        qa_text_splitter = (
-            self._service_context.prompt_helper.get_text_splitter_given_prompt(
-                text_qa_template, 1
-            )
+
+        text_chunks = self._service_context.prompt_helper.repack(
+            text_qa_template, [text_chunk]
         )
-        text_chunks = qa_text_splitter.split_text(text_chunk)
 
         predictor = (
             self._service_context.llm_predictor.apredict

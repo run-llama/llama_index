@@ -45,7 +45,7 @@ class CompactAndAccumulate(Accumulate):
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
 
         with temp_set_attrs(self._service_context.prompt_helper):
-            new_texts = self._service_context.prompt_helper.compact_text_chunks(
+            new_texts = self._service_context.prompt_helper.repack(
                 text_qa_template, text_chunks
             )
 
