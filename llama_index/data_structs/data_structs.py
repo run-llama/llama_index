@@ -163,9 +163,9 @@ class IndexList(IndexStruct):
 class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
-    # mapping from vector store id to node id
+    # mapping from vector store id to node doc_id
     nodes_dict: Dict[str, str] = field(default_factory=dict)
-    # mapping from doc_id to vector store id
+    # mapping from node doc_id to vector store id
     doc_id_dict: Dict[str, List[str]] = field(default_factory=dict)
 
     # TODO: temporary hack to store embeddings for simple vector index
@@ -184,8 +184,8 @@ class IndexDict(IndexStruct):
         self.nodes_dict[vector_id] = node.get_doc_id()
         if node.ref_doc_id is not None:
             if node.ref_doc_id not in self.doc_id_dict:
-                self.doc_id_dict[node.ref_doc_id] = []
-            self.doc_id_dict[node.ref_doc_id].append(vector_id)
+                self.doc_id_dict[node.doc_id] = []
+            self.doc_id_dict[node.doc_id].append(vector_id)
 
         return vector_id
 

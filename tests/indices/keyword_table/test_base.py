@@ -169,7 +169,7 @@ def test_delete(
     table = GPTSimpleKeywordTableIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
-    table.delete("test_id_1")
+    table.delete_ref_doc("test_id_1")
     assert len(table.index_struct.table.keys()) == 6
     print(table.index_struct.table.keys())
     assert len(table.index_struct.table["this"]) == 2
@@ -180,7 +180,7 @@ def test_delete(
     table = GPTSimpleKeywordTableIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
-    table.delete("test_id_2")
+    table.delete_ref_doc("test_id_2")
     assert len(table.index_struct.table.keys()) == 7
     assert len(table.index_struct.table["this"]) == 2
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))

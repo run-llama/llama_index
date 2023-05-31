@@ -84,7 +84,10 @@ def test_simple_delete(
     assert isinstance(index, GPTVectorStoreIndex)
 
     # test delete
-    index.delete("test_id_0")
+    import pdb
+    pdb.set_trace()
+
+    index.delete_ref_doc("test_id_0")
     assert len(index.index_struct.nodes_dict) == 3
     assert len(index.index_struct.doc_id_dict) == 3
     actual_node_tups = [

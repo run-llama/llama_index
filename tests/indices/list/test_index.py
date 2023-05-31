@@ -122,7 +122,7 @@ def test_list_delete(
     list_index = GPTListIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
-    list_index.delete("test_id_1")
+    list_index.delete_ref_doc("test_id_1")
     assert len(list_index.index_struct.nodes) == 2
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     assert nodes[0].ref_doc_id == "test_id_2"
@@ -136,7 +136,7 @@ def test_list_delete(
     list_index = GPTListIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
-    list_index.delete("test_id_2")
+    list_index.delete_ref_doc("test_id_2")
     assert len(list_index.index_struct.nodes) == 3
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     assert nodes[0].ref_doc_id == "test_id_1"
