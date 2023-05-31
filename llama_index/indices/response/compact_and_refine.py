@@ -1,10 +1,10 @@
 from typing import Any, Optional, Sequence
+from llama_index.prompts.utils import get_biggest_prompt
 
 from llama_index.indices.response.refine import Refine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.types import RESPONSE_TEXT_TYPE
-from llama_index.utils import temp_set_attrs
 
 
 class CompactAndRefine(Refine):
@@ -45,16 +45,9 @@ class CompactAndRefine(Refine):
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         refine_template = self._refine_template.partial_format(query_str=query_str)
 
-        max_prompt = self._service_context.prompt_helper.get_biggest_prompt(
-            [text_qa_template, refine_template]
+        max_prompt = get_biggest_prompt([text_qa_template, refine_template])
+        new_texts = self._service_context.prompt_helper.repack(max_prompt, text_chunks)
+        response = super().get_response(
+            query_str=query_str, text_chunks=new_texts, prev_response=prev_response
         )
-        with temp_set_attrs(
-            self._service_context.prompt_helper, use_chunk_size_limit=False
-        ):
-            new_texts = self._service_context.prompt_helper.compact_text_chunks(
-                max_prompt, text_chunks
-            )
-            response = super().get_response(
-                query_str=query_str, text_chunks=new_texts, prev_response=prev_response
-            )
         return response

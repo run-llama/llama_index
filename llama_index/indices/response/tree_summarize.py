@@ -106,17 +106,9 @@ class TreeSummarize(Refine):
         num_children: int = 10,
     ) -> Tuple[GPTTreeIndexBuilder, List[Node]]:
         """Get tree index builder."""
-        # first join all the text chunks into a single text
-        all_text = "\n\n".join(text_chunks)
-
-        # then get text splitter
-        text_splitter = (
-            self._service_context.prompt_helper.get_text_splitter_given_prompt(
-                summary_template, num_children
-            )
+        text_chunks = self._service_context.prompt_helper.repack(
+            summary_template, text_chunks=text_chunks
         )
-        text_chunks = text_splitter.split_text(all_text)
-
         new_nodes = [Node(text=t) for t in text_chunks]
 
         docstore = get_default_docstore()
@@ -139,9 +131,10 @@ class TreeSummarize(Refine):
     ) -> RESPONSE_TEXT_TYPE:
         """Get response from tree builder over root text_chunks."""
         node_list = get_sorted_node_list(root_nodes)
-        node_text = self._service_context.prompt_helper.get_text_from_nodes(
-            node_list, prompt=text_qa_template
+        truncated_chunks = self._service_context.prompt_helper.truncate(
+            prompt=text_qa_template, text_chunks=[node.get_text() for node in node_list]
         )
+        node_text = "\n".join(truncated_chunks)
         # NOTE: the final response could be a string or a stream
         response = super().get_response(
             query_str=query_str,
