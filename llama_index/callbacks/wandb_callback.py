@@ -157,20 +157,21 @@ class WandbCallbackHandler(BaseCallbackHandler):
         id_to_wb_span_tmp = {}
         for root_node, child_nodes in self._trace_map.items():
             if root_node == "root":
-                # the first child node is the parent node
-                # ideally there should be 1 child node, if not make other child nodes part of the 1st node.
-                parent_node = child_nodes[0]
+                # the payload for the first child node is the payload for the root_span
                 root_span = self._convert_event_pair_to_wb_span(
-                    self._event_pairs_by_id[parent_node]
+                    self._event_pairs_by_id[child_nodes[0]],
+                    trace_id=self._cur_trace_id if len(child_nodes) > 1 else None,
                 )
-                id_to_wb_span_tmp[parent_node] = root_span
+                # add the child nodes to the root_span
                 if len(child_nodes) > 1:
-                    for child_node in child_nodes[1:]:
+                    for child_node in child_nodes:
                         child_span = self._convert_event_pair_to_wb_span(
                             self._event_pairs_by_id[child_node]
                         )
                         root_span.add_child_span(child_span)
                         id_to_wb_span_tmp[child_node] = child_span
+                else:
+                    id_to_wb_span_tmp[child_nodes[0]] = root_span
             else:
                 for child_node in child_nodes:
                     child_span = self._convert_event_pair_to_wb_span(
@@ -195,12 +196,32 @@ class WandbCallbackHandler(BaseCallbackHandler):
             pass
 
     def _convert_event_pair_to_wb_span(
-        self, event_pair: List[CBEvent]
+        self, 
+        event_pair: List[CBEvent],
+        trace_id: Optional[str] = None,
     ) -> "trace_tree.Span":
         start_time_ms, end_time_ms = self._get_time_in_ms(event_pair)
 
-        event_type = event_pair[0].event_type
+        if trace_id is None:
+            event_type = event_pair[0].event_type
+            span_kind = self._map_event_type_to_span_kind(event_type)
+        else:
+            event_type = trace_id
+            span_kind = None
 
+        wb_span = self._trace_tree.Span(
+            name=f"{event_type}",
+            span_kind=span_kind,
+            start_time_ms=start_time_ms,
+            end_time_ms=end_time_ms,
+        )
+
+        inputs, outputs = self._add_payload_to_span(wb_span, event_pair)
+        wb_span.add_named_result(inputs=inputs, outputs=outputs)
+
+        return wb_span
+    
+    def _map_event_type_to_span_kind(self, event_type: CBEventType):
         if event_type == CBEventType.CHUNKING:
             span_kind = None
         elif event_type == CBEventType.NODE_PARSING:
@@ -220,18 +241,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
             span_kind = self._trace_tree.SpanKind.CHAIN
         else:
             raise ValueError(f"Unknown event type: {event_type}")
-
-        wb_span = self._trace_tree.Span(
-            name=f"{event_type}",
-            span_kind=span_kind,
-            start_time_ms=start_time_ms,
-            end_time_ms=end_time_ms,
-        )
-
-        inputs, outputs = self._add_payload_to_span(wb_span, event_pair)
-        wb_span.add_named_result(inputs=inputs, outputs=outputs)
-
-        return wb_span
+        
+        return span_kind
 
     def _add_payload_to_span(
         self, span: "trace_tree.Span", event_pair: List[CBEvent]
