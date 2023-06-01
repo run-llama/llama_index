@@ -198,7 +198,6 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        import torch
 
         llm_payload = {**prompt_args}
         llm_payload["template"] = prompt
@@ -212,10 +211,12 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
             full_prompt = f"{self._system_prompt} {full_prompt}"
 
         inputs = self.tokenizer(full_prompt, return_tensors="pt")
-        if "cuda" == self._device_map or (
-            "auto" == self._device_map and torch.cuda.is_available()
-        ):
-            inputs = inputs.to("cuda")
+        inputs = inputs.to(self.model.device)
+
+        # remove keys from the tokenizer if needed, to avoid HF errors
+        for key in self._tokenizer_outputs_to_remove:
+            if key in inputs:
+                inputs.pop(key, None)
 
         tokens = self.model.generate(
             **inputs,
