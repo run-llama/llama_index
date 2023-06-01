@@ -40,11 +40,11 @@ class GPTJSONIndex(BaseGPTStructStoreIndex[JSONStructDatapoint]):
         # NOTE: lazy import
         from llama_index.indices.struct_store.json_query import GPTNLJSONQueryEngine
 
-        return GPTNLJSONQueryEngine(self, **kwargs)
+        return GPTNLJSONQueryEngine(self, json_schema=self.json_schema, **kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> JSONStructDatapoint:
         """Build index from documents."""
-        index_struct = self.index_struct_cls(fields=self.json_value)
+        index_struct = self.index_struct_cls()
         return index_struct
 
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:

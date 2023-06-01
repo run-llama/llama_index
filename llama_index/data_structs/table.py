@@ -46,7 +46,7 @@ class PandasStructTable(BaseStructTable):
 
 
 @dataclass
-class JSONStructDatapoint(StructDatapoint):
+class JSONStructDatapoint(BaseStructTable):
     """JSON struct outputs."""
 
     @classmethod
