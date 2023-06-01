@@ -94,7 +94,7 @@ class GPTTreeIndexBuilder:
             cur_nodes_chunk = cur_node_list[pos : pos + num_nodes]
             truncated_chunks = self._service_context.prompt_helper.truncate(
                 prompt=self.summary_prompt,
-                text_chunks= cur_nodes_chunk,
+                text_chunks=[node.get_text() for node in cur_nodes_chunk],
             )
             text_chunk = "\n".join(truncated_chunks)
             indices.append(pos)
