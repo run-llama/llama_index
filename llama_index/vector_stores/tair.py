@@ -85,7 +85,7 @@ class TairVectorStore(VectorStore):
         # index identifiers
         self._index_name = index_name
         self._index_type = index_type
-        self._metric_type = "COSINE"
+        self._metric_type = "L2"
         self._overwrite = overwrite
         self._index_args = {}
         self._query_args = {}
