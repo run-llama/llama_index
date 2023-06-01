@@ -26,6 +26,7 @@ They mainly differ in 2 aspects:
 * Opensearch
 * DeepLake
 * MyScale
+* Tair
 
 ### Others
 * ChatGPTRetrievalPlugin
@@ -53,5 +54,6 @@ maxdepth: 1
 ../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
+../../examples/vector_stores/TairIndexDemo.ipynb
 ```
 
