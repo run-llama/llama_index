@@ -217,7 +217,43 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self._insert(nodes, **insert_kwargs)
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a node."""
-        self._index_struct.delete(doc_id)
-        self._vector_store.delete(doc_id)
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        pass
+
+    def delete_nodes(
+        self,
+        doc_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete a list of nodes from the index.
+
+        Args:
+            doc_ids (List[str]): A list of doc_ids from the nodes to delete
+
+        """
+        raise NotImplementedError(
+            "Vector indicies currently only support delete_ref_doc, which "
+            "deletes nodes using the ref_doc_id of ingested documents."
+        )
+
+    def delete_ref_doc(
+        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
+    ) -> None:
+        """Delete a document and it's nodes by using ref_doc_id."""
+        self._vector_store.delete(ref_doc_id)
+
+        # delete from index_struct only if needed
+        if not self._vector_store.stores_text or self._store_nodes_override:
+            ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
+            if ref_doc_info is not None:
+                for doc_id in ref_doc_info.doc_ids:
+                    self._index_struct.delete(doc_id)
+
+        # delete from docstore only if needed
+        if (
+            not self._vector_store.stores_text or self._store_nodes_override
+        ) and delete_from_docstore:
+            self._docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+
+        self._storage_context.index_store.add_index_struct(self._index_struct)

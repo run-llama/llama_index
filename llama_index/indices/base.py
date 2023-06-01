@@ -188,7 +188,7 @@ class BaseGPTIndex(Generic[IS], ABC):
             )
 
     @abstractmethod
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
 
     def delete_nodes(
@@ -204,7 +204,7 @@ class BaseGPTIndex(Generic[IS], ABC):
 
         """
         for doc_id in doc_ids:
-            self._delete(doc_id, **delete_kwargs)
+            self._delete_node(doc_id, **delete_kwargs)
             if delete_from_docstore:
                 self.docstore.delete_document(doc_id, raise_error=False)
 
@@ -253,6 +253,23 @@ class BaseGPTIndex(Generic[IS], ABC):
             delete_kwargs (Dict): kwargs to pass to delete
 
         """
+        logger.warning(
+            "update() is now deprecated, please refer to update_ref_doc() to update "
+            "ingested documents+nodes."
+        )
+        self.update(document, **update_kwargs)
+
+    def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
+        """Update a document and it's corresponding nodes.
+
+        This is equivalent to deleting the document and then inserting it again.
+
+        Args:
+            document (Union[BaseDocument, BaseGPTIndex]): document to update
+            insert_kwargs (Dict): kwargs to pass to insert
+            delete_kwargs (Dict): kwargs to pass to delete
+
+        """
         with self._service_context.callback_manager.as_trace("update"):
             self.delete_ref_doc(
                 document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {})
@@ -260,6 +277,21 @@ class BaseGPTIndex(Generic[IS], ABC):
             self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
 
     def refresh(
+        self, documents: Sequence[Document], **update_kwargs: Any
+    ) -> List[bool]:
+        """Refresh an index with documents that have changed.
+
+        This allows users to save LLM and Embedding model calls, while only
+        updating documents that have any changes in text or extra_info. It
+        will also insert any documents that previously were not stored.
+        """
+        logger.warning(
+            "refresh() is now deprecated, please refer to refresh_ref_docs() to "
+            "refresh ingested documents+nodes with an updated list of documents."
+        )
+        return self.refresh_ref_docs(documents, **update_kwargs)
+
+    def refresh_ref_docs(
         self, documents: Sequence[Document], **update_kwargs: Any
     ) -> List[bool]:
         """Refresh an index with documents that have changed.

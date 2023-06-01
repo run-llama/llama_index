@@ -91,14 +91,16 @@ class ChromaVectorStore(VectorStore):
         )
         return ids
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document.
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id and optionally return ids of deleted nodes
+        if the vector_store does not store text.
 
         Args:
-            doc_id (str): document id
+            ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self._collection.delete(where={"document_id": doc_id})
+        self._collection.delete(where={"document_id": ref_doc_id})
 
     @property
     def client(self) -> Any:

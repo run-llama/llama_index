@@ -96,7 +96,7 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
             # print("inserting node to index struct: ", n.get_doc_id())
             self._index_struct.add_node(n)
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
         cur_node_ids = self._index_struct.nodes
         cur_nodes = self._docstore.get_nodes(cur_node_ids)

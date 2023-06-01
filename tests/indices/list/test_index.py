@@ -44,7 +44,7 @@ def test_refresh_list(
     )
 
     # check that no documents are refreshed
-    refreshed_docs = list_index.refresh(more_documents)
+    refreshed_docs = list_index.refresh_ref_docs(more_documents)
     assert refreshed_docs[0] is False
     assert refreshed_docs[1] is False
 
@@ -54,7 +54,7 @@ def test_refresh_list(
         more_documents[i].doc_id = str(i)
 
     # second document should refresh
-    refreshed_docs = list_index.refresh(more_documents)
+    refreshed_docs = list_index.refresh_ref_docs(more_documents)
     assert refreshed_docs[0] is False
     assert refreshed_docs[1] is True
 

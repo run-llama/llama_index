@@ -65,6 +65,6 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
         del nodes  # Unused
         raise NotImplementedError("Cannot insert into an empty index.")
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
         raise NotImplementedError("Cannot delete from an empty index.")

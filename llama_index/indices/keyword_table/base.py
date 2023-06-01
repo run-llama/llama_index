@@ -150,7 +150,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             keywords = self._extract_keywords(n.get_text())
             self._index_struct.add_node(list(keywords), n)
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
         # delete node from the keyword table
         keywords_to_delete = set()

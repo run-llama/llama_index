@@ -29,7 +29,7 @@ class MockVectorStore(VectorStore):
         """Add embedding results to vector store."""
         raise NotImplementedError()
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete doc."""
         raise NotImplementedError()
 

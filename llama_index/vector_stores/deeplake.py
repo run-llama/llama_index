@@ -201,14 +201,18 @@ class DeepLakeVectorStore(VectorStore):
         self.ds.summary()
         return ids
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete the entities in the dataset
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id and optionally return ids of deleted nodes
+        if the vector_store does not store text.
+
         Args:
-            id (Optional[str], optional): The id to delete.
+            ref_doc_id (str): The doc_id of the document to delete.
+
         """
         view = None
-        if doc_id:
-            view = self.ds.filter(lambda x: x["ids"].numpy().tolist() == [doc_id])
+        if ref_doc_id:
+            view = self.ds.filter(lambda x: x["ids"].numpy().tolist() == [ref_doc_id])
             ids = list(view.sample_indices)
 
         with self.ds:

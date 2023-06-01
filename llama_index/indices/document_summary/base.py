@@ -154,7 +154,7 @@ class GPTDocumentSummaryIndex(BaseGPTIndex[IndexDocumentSummary]):
         """Insert a document."""
         self._add_nodes_to_index(self._index_struct, nodes)
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
         if doc_id not in self._index_struct.doc_id_to_summary_id:
             raise ValueError(f"doc_id {doc_id} not in index")

@@ -143,8 +143,10 @@ class VectorStore(Protocol):
         """Add embedding results to vector store."""
         ...
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete doc."""
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id and optionally return ids of deleted nodes
+        if the vector_store does not store text."""
         ...
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
