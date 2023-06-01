@@ -139,13 +139,19 @@ class WandbCallbackHandler(BaseCallbackHandler):
         trace_id: Optional[str] = None,
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
-        """Shutdown the current trace."""
+        # Ensure W&B run is initialized
+        self._ensure_run()
+
+        # Shutdown the current trace
         self._trace_map = trace_map or defaultdict(list)
         self._llm_token_count = 0
 
         # Log the trace map to wandb
         # We can control what trace ids we want to log here.
         self.log_trace_tree()
+
+        # Log the LLM token count to wandb
+        self._wandb.run.log({"llm_token_count": self._llm_token_count})
 
     def _build_trace_tree(self) -> "trace_tree.Span":
         id_to_wb_span_tmp = {}
@@ -196,21 +202,22 @@ class WandbCallbackHandler(BaseCallbackHandler):
         event_type = event_pair[0].event_type
 
         if event_type == CBEventType.CHUNKING:
-            span_kind = self._trace_tree.SpanKind.TOOL  # read CHUNKING
+            span_kind = None
         elif event_type == CBEventType.NODE_PARSING:
-            span_kind = self._trace_tree.SpanKind.CHAIN  # read NODE_PARSING
+            span_kind = None
         elif event_type == CBEventType.EMBEDDING:
-            span_kind = self._trace_tree.SpanKind.TOOL  # read EMBEDDING
+            # TODO: add span kind for EMBEDDING when it's available
+            span_kind = None
         elif event_type == CBEventType.LLM:
-            span_kind = self._trace_tree.SpanKind.LLM  # read LLM
+            span_kind = self._trace_tree.SpanKind.LLM
         elif event_type == CBEventType.QUERY:
-            span_kind = self._trace_tree.SpanKind.CHAIN  # read QUERY
+            span_kind = self._trace_tree.SpanKind.AGENT
         elif event_type == CBEventType.RETRIEVE:
-            span_kind = self._trace_tree.SpanKind.TOOL  # read QUERY
+            span_kind = self._trace_tree.SpanKind.TOOL
         elif event_type == CBEventType.SYNTHESIZE:
-            span_kind = self._trace_tree.SpanKind.AGENT  # read SYNTHESIZE
+            span_kind = self._trace_tree.SpanKind.CHAIN
         elif event_type == CBEventType.TREE:
-            span_kind = self._trace_tree.SpanKind.AGENT  # read TREE
+            span_kind = self._trace_tree.SpanKind.CHAIN
         else:
             raise ValueError(f"Unknown event type: {event_type}")
 
@@ -274,7 +281,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         return start_time, end_time
 
-    def _ensure_run(self, should_print_url: bool = True) -> None:
+    def _ensure_run(self, should_print_url: bool = False) -> None:
         """Ensures an active W&B run exists.
 
         If not, will start a new run with the provided run_args.
