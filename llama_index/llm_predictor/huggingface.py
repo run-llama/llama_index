@@ -35,8 +35,6 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         self,
         max_input_size: int = 4096,
         max_new_tokens: int = 256,
-        temperature: float = 0.7,
-        do_sample: bool = False,
         system_prompt: str = "",
         query_wrapper_prompt: SimpleInputPrompt = DEFAULT_SIMPLE_INPUT_PROMPT,
         tokenizer_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
@@ -48,6 +46,7 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
         model_kwargs: Optional[dict] = None,
+        generate_kwargs: Optional[dict] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
@@ -89,8 +88,8 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
 
         self._max_input_size = max_input_size
         self._max_new_tokens = max_new_tokens
-        self._temperature = temperature
-        self._do_sample = do_sample
+
+        self._generate_kwargs = generate_kwargs or {}
         self._device_map = device_map
         self._tokenizer_outputs_to_remove = tokenizer_outputs_to_remove or []
         self._system_prompt = system_prompt
@@ -158,9 +157,8 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
             inputs,
             streamer=streamer,
             max_new_tokens=self._max_new_tokens,
-            temperature=self._temperature,
-            do_sample=self._do_sample,
             stopping_criteria=self._stopping_criteria,
+            **self._generate_kwargs,
         )
 
         # generate in background thread
@@ -222,9 +220,8 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         tokens = self.model.generate(
             **inputs,
             max_new_tokens=self._max_new_tokens,
-            temperature=self._temperature,
-            do_sample=self._do_sample,
             stopping_criteria=self._stopping_criteria,
+            **self._generate_kwargs,
         )
         completion_tokens = tokens[0][inputs["input_ids"].size(1) :]
         self._total_tokens_used += len(completion_tokens) + inputs["input_ids"].size(1)
