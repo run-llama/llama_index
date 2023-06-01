@@ -10,7 +10,7 @@ existing keywords in the table.
 
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Optional, Sequence, Set, Union
+from typing import Any, Dict, Optional, Sequence, Set, Union
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import KeywordTable
@@ -24,6 +24,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.prompts.prompts import KeywordExtractPrompt
+from llama_index.storage.docstore.types import RefDocInfo
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -163,6 +164,26 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         # delete keywords that have zero nodes
         for keyword in keywords_to_delete:
             del self._index_struct.table[keyword]
+
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        node_doc_ids_sets = list(self._index_struct.table.values())
+        node_doc_ids = list(set().union(*node_doc_ids_sets))
+        nodes = self.docstore.get_nodes(node_doc_ids)
+
+        all_ref_doc_info = {}
+        for node in nodes:
+            ref_doc_id = node.ref_doc_id
+            if not ref_doc_id:
+                continue
+
+            ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+            if not ref_doc_info:
+                continue
+
+            all_ref_doc_info[ref_doc_id] = ref_doc_info
+        return all_ref_doc_info
 
 
 class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):

@@ -1,7 +1,7 @@
 """Base index classes."""
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.data_structs.data_structs import IndexStruct
@@ -10,7 +10,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.schema.base import Document
-from llama_index.storage.docstore.types import BaseDocumentStore
+from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.token_counter import llm_token_counter
 
@@ -316,6 +316,12 @@ class BaseGPTIndex(Generic[IS], ABC):
                     refreshed_documents[i] = True
 
             return refreshed_documents
+
+    @property
+    @abstractmethod
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        ...
 
     @abstractmethod
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:

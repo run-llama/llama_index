@@ -118,10 +118,16 @@ def test_list_delete(
         Document("This is a test v2.", doc_id="test_id_3"),
     ]
 
-    # delete from documents
     list_index = GPTListIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
+
+    # test ref doc info for three docs
+    all_ref_doc_info = list_index.ref_doc_info
+    for idx, ref_doc_id in enumerate(all_ref_doc_info.keys()):
+        assert new_documents[idx].doc_id == ref_doc_id
+
+    # delete from documents
     list_index.delete_ref_doc("test_id_1")
     assert len(list_index.index_struct.nodes) == 2
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)

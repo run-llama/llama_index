@@ -95,7 +95,7 @@ This is most useful when you are reading from a directory that is constantly upd
 Any index that uses the docstore (i.e. all indexes except for most vector store integrations), you can also see which documents you have inserted into the docstore. 
 
 ```python
-index.docstore.get_all_ref_doc_info()
+print(index.ref_doc_info)
 > {'doc_id_1': RefDocInfo(doc_ids=['071a66a8-3c47-49ad-84fa-7010c6277479'], extra_info={}), 
    'doc_id_2': RefDocInfo(doc_ids=['9563e84b-f934-41c3-acfd-22e88492c869'], extra_info={}), 
    'doc_id_0': RefDocInfo(doc_ids=['b53e6c2f-16f7-4024-af4c-42890e945f36'], extra_info={}), 
