@@ -3,6 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
 
+from llama_index.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
@@ -60,11 +61,12 @@ class BaseGPTIndex(Generic[IS], ABC):
         self._docstore = self._storage_context.docstore
         self._vector_store = self._storage_context.vector_store
 
-        if index_struct is None:
-            assert nodes is not None
-            index_struct = self.build_index_from_nodes(nodes)
-        self._index_struct = index_struct
-        self._storage_context.index_store.add_index_struct(self._index_struct)
+        with self._service_context.callback_manager.as_trace("index_construction"):
+            if index_struct is None:
+                assert nodes is not None
+                index_struct = self.build_index_from_nodes(nodes)
+            self._index_struct = index_struct
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     @classmethod
     def from_documents(
@@ -85,17 +87,18 @@ class BaseGPTIndex(Generic[IS], ABC):
         service_context = service_context or ServiceContext.from_defaults()
         docstore = storage_context.docstore
 
-        for doc in documents:
-            docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
+        with service_context.callback_manager.as_trace("index_construction"):
+            for doc in documents:
+                docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
 
-        nodes = service_context.node_parser.get_nodes_from_documents(documents)
+            nodes = service_context.node_parser.get_nodes_from_documents(documents)
 
-        return cls(
-            nodes=nodes,
-            storage_context=storage_context,
-            service_context=service_context,
-            **kwargs,
-        )
+            return cls(
+                nodes=nodes,
+                storage_context=storage_context,
+                service_context=service_context,
+                **kwargs,
+            )
 
     @property
     def index_struct(self) -> IS:
@@ -168,15 +171,21 @@ class BaseGPTIndex(Generic[IS], ABC):
     @llm_token_counter("insert")
     def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert nodes."""
-        self.docstore.add_documents(nodes, allow_update=True)
-        self._insert(nodes, **insert_kwargs)
-        self._storage_context.index_store.add_index_struct(self._index_struct)
+        with self._service_context.callback_manager.as_trace("insert_nodes"):
+            self.docstore.add_documents(nodes, allow_update=True)
+            self._insert(nodes, **insert_kwargs)
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        nodes = self.service_context.node_parser.get_nodes_from_documents([document])
-        self.insert_nodes(nodes, **insert_kwargs)
-        self.docstore.set_document_hash(document.get_doc_id(), document.get_doc_hash())
+        with self._service_context.callback_manager.as_trace("insert"):
+            nodes = self.service_context.node_parser.get_nodes_from_documents(
+                [document]
+            )
+            self.insert_nodes(nodes, **insert_kwargs)
+            self.docstore.set_document_hash(
+                document.get_doc_id(), document.get_doc_hash()
+            )
 
     @abstractmethod
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
@@ -206,8 +215,9 @@ class BaseGPTIndex(Generic[IS], ABC):
             delete_kwargs (Dict): kwargs to pass to delete
 
         """
-        self.delete(document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {}))
-        self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+        with self._service_context.callback_manager.as_trace("update"):
+            self.delete(document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {}))
+            self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
 
     def refresh(
         self, documents: Sequence[Document], **update_kwargs: Any
@@ -218,17 +228,20 @@ class BaseGPTIndex(Generic[IS], ABC):
         updating documents that have any changes in text or extra_info. It
         will also insert any documents that previously were not stored.
         """
-        refreshed_documents = [False] * len(documents)
-        for i, document in enumerate(documents):
-            existing_doc_hash = self._docstore.get_document_hash(document.get_doc_id())
-            if existing_doc_hash != document.get_doc_hash():
-                self.update(document, **update_kwargs)
-                refreshed_documents[i] = True
-            elif existing_doc_hash is None:
-                self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
-                refreshed_documents[i] = True
+        with self._service_context.callback_manager.as_trace("refresh"):
+            refreshed_documents = [False] * len(documents)
+            for i, document in enumerate(documents):
+                existing_doc_hash = self._docstore.get_document_hash(
+                    document.get_doc_id()
+                )
+                if existing_doc_hash != document.get_doc_hash():
+                    self.update(document, **update_kwargs)
+                    refreshed_documents[i] = True
+                elif existing_doc_hash is None:
+                    self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+                    refreshed_documents[i] = True
 
-        return refreshed_documents
+            return refreshed_documents
 
     @abstractmethod
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
@@ -244,3 +257,25 @@ class BaseGPTIndex(Generic[IS], ABC):
         if "service_context" not in kwargs:
             kwargs["service_context"] = self._service_context
         return RetrieverQueryEngine.from_args(**kwargs)
+
+    def as_chat_engine(
+        self, chat_mode: ChatMode = ChatMode.CONDENSE_QUESTION, **kwargs: Any
+    ) -> BaseChatEngine:
+        if chat_mode == ChatMode.CONDENSE_QUESTION:
+            # NOTE: lazy import
+            from llama_index.chat_engine import CondenseQuestionChatEngine
+
+            query_engine = self.as_query_engine(**kwargs)
+            return CondenseQuestionChatEngine.from_defaults(
+                query_engine=query_engine, **kwargs
+            )
+        elif chat_mode == ChatMode.REACT:
+            # NOTE: lazy import
+            from llama_index.chat_engine import ReActChatEngine
+
+            query_engine = self.as_query_engine(**kwargs)
+            return ReActChatEngine.from_query_engine(
+                query_engine=query_engine, **kwargs
+            )
+        else:
+            raise ValueError(f"Unknown chat mode: {chat_mode}")

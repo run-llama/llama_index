@@ -16,7 +16,7 @@ through the `load_data` function, e.g.:
 ```python
 from llama_index import SimpleDirectoryReader
 
-documents = SimpleDirectoryReader('data').load_data()
+documents = SimpleDirectoryReader('./data').load_data()
 ```
 
 You can also choose to construct documents manually. LlamaIndex exposes the `Document` struct.
@@ -61,6 +61,7 @@ node2 = Node(text="<text_chunk>", doc_id="<node_id>")
 # set relationships
 node1.relationships[DocumentRelationship.NEXT] = node2.get_doc_id()
 node2.relationships[DocumentRelationship.PREVIOUS] = node1.get_doc_id()
+nodes = [node1, node2]
 ```
 
 
@@ -133,13 +134,29 @@ index.insert_nodes(nodes)
 
 See the [Update Index How-To](/how_to/index_structs/update.md) for details and an example notebook.
 
+### Customizing Documents
+
+When creating documents, you can also attach useful metadata. Any metadata added to a document will be copied to the nodes that get created from their respective source document.
+
+```python
+document = Document(
+    'text', 
+    extra_info={
+        'filename', '<doc_file_name>', 
+        'category': '<category>'
+    }
+)
+```
+
+More information and approaches to this are discussed in the section [Customizing Documents](/how_to/customization/custom_documents.md).
+
 ### Customizing LLM's
 
 By default, we use OpenAI's `text-davinci-003` model. You may choose to use another LLM when constructing
 an index.
 
 ```python
-from llama_index import LLMPredictor, GPTVectorStoreIndex, PromptHelper, ServiceContext
+from llama_index import LLMPredictor, GPTVectorStoreIndex, ServiceContext
 from langchain import OpenAI
 
 ...
@@ -147,17 +164,10 @@ from langchain import OpenAI
 # define LLM
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-003"))
 
-# define prompt helper
-# set maximum input size
-max_input_size = 4096
-# set number of output tokens
-num_output = 256
-# set maximum chunk overlap
-max_chunk_overlap = 20
-prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
+# configure service context
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
-
+# build index
 index = GPTVectorStoreIndex.from_documents(
     documents, service_context=service_context
 )
@@ -165,6 +175,18 @@ index = GPTVectorStoreIndex.from_documents(
 
 See the [Custom LLM's How-To](/how_to/customization/custom_llms.md) for more details.
 
+### Global ServiceContext
+
+If you wanted the service context from the last section to always be the default, you can configure one like so:
+
+```python
+from llama_index import set_global_service_context
+set_global_service_context(service_context)
+```
+
+This service context will always be used as the default if not specified as a keyword argument in LlamaIndex functions.
+
+For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/how_to/customization/service_context.md).
 
 ### Customizing Prompts
 
@@ -183,8 +205,9 @@ For embedding-based indices, you can choose to pass in a custom embedding model.
 Creating an index, inserting to an index, and querying an index may use tokens. We can track 
 token usage through the outputs of these operations. When running operations, 
 the token usage will be printed.
+
 You can also fetch the token usage through `index.llm_predictor.last_token_usage`.
-See [Cost Predictor How-To](/how_to/analysis/cost_analysis.md) for more details.
+See [Cost Predictor How-To](/docs/how_to/analysis/cost_analysis.md) for more details.
 
 
 ### [Optional] Save the index for future use
@@ -337,6 +360,9 @@ Right now, we support the following options:
     multiple prompts.
 - `tree_summarize`: Given a set of `Node` objects and the query, recursively construct a tree 
     and return the root node as the response. Good for summarization purposes.
+- `no_text`: Only runs the retriever to fetch the nodes that would have been sent to the LLM, 
+    without actually sending them. Then can be inspected by checking `response.source_nodes`.
+    The response object is covered in more detail in Section 5.
 - `accumulate`: Given a set of `Node` objects and the query, apply the query to each `Node` text
     chunk while accumulating the responses into an array. Returns a concatenated string of all
     responses. Good for when you need to run the same query separately against each text
@@ -356,6 +382,10 @@ response = query_engine.query("What did the author do growing up?")
 
 # tree summarize
 query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='tree_summarize')
+response = query_engine.query("What did the author do growing up?")
+
+# no text
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='no_text')
 response = query_engine.query("What did the author do growing up?")
 ```
 

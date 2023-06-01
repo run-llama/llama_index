@@ -1,16 +1,35 @@
 """Evaluating the responses from an index."""
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import List, Optional
 
-from llama_index import (
-    Document,
-    GPTListIndex,
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    Response,
-    ServiceContext,
-)
+from llama_index.indices.base import ServiceContext
+from llama_index.indices.list.base import GPTListIndex
+from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.readers.schema.base import Document
+from llama_index.response.schema import Response
+
+
+@dataclass
+class Evaluation:
+    query: str  # The query
+    response: Response  # The response
+    passing: bool = False  # True if the response is correct, False otherwise
+    feedback: str = ""  # Feedback for the response
+
+
+class BaseEvaluator(ABC):
+    def __init__(self, service_context: Optional[ServiceContext] = None) -> None:
+        """Base class for evaluating responses"""
+        self.service_context = service_context or ServiceContext.from_defaults()
+
+    @abstractmethod
+    def evaluate_response(self, query: str, response: Response) -> Evaluation:
+        """Evaluate the response for a query and return an Evaluation."""
+        raise NotImplementedError
+
 
 DEFAULT_EVAL_PROMPT = (
     "Please tell if a given piece of information "
@@ -114,7 +133,7 @@ class ResponseEvaluator:
         context = []
 
         for context_info in response.source_nodes:
-            context.append(Document(context_info.source_text))
+            context.append(Document(context_info.node.get_text()))
 
         return context
 
@@ -204,7 +223,7 @@ class ResponseEvaluator:
         return response_texts
 
 
-class QueryResponseEvaluator:
+class QueryResponseEvaluator(BaseEvaluator):
     """Evaluate based on query and response from indices.
 
     NOTE: this is a beta feature, subject to change!
@@ -220,7 +239,7 @@ class QueryResponseEvaluator:
         raise_error: bool = False,
     ) -> None:
         """Init params."""
-        self.service_context = service_context or ServiceContext.from_defaults()
+        super().__init__(service_context)
         self.raise_error = raise_error
 
     def get_context(self, response: Response) -> List[Document]:
@@ -236,7 +255,7 @@ class QueryResponseEvaluator:
         context = []
 
         for context_info in response.source_nodes:
-            context.append(Document(context_info.source_text))
+            context.append(Document(context_info.node.get_text()))
 
         return context
 
@@ -252,13 +271,23 @@ class QueryResponseEvaluator:
             No -> If answer, context information are not matching \
                     or If Query, answer and context information are not matching.
         """
+        return self.evaluate_response(query, response).feedback
+
+    def evaluate_response(self, query: str, response: Response) -> Evaluation:
+        """Evaluate the response from an index.
+
+        Args:
+            query: Query for which response is generated from index.
+            response: Response object from an index based on the query.
+        Returns:
+            Evaluation object with passing boolean and feedback "YES" or "NO".
+        """
         answer = str(response)
 
         context = self.get_context(response)
         index = GPTListIndex.from_documents(
             context, service_context=self.service_context
         )
-        response_txt = ""
 
         QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
             QUERY_RESPONSE_EVAL_PROMPT
@@ -276,13 +305,11 @@ class QueryResponseEvaluator:
         raw_response_txt = str(response_obj)
 
         if "yes" in raw_response_txt.lower():
-            response_txt = "YES"
+            return Evaluation(query, response, True, "YES")
         else:
-            response_txt = "NO"
             if self.raise_error:
                 raise ValueError("The response is invalid")
-
-        return response_txt
+            return Evaluation(query, response, False, "NO")
 
     def evaluate_source_nodes(self, query: str, response: Response) -> List[str]:
         """Function to evaluate if each source node contains the answer \

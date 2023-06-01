@@ -293,7 +293,6 @@ class GithubRepositoryReader(BaseReader):
                 )
                 if document is not None:
                     documents.append(document)
-                else:
                     continue
 
             try:

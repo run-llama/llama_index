@@ -4,7 +4,7 @@ import logging
 from abc import abstractmethod
 from dataclasses import dataclass
 from threading import Thread
-from typing import Any, Generator, Optional, Protocol, Tuple
+from typing import Any, Generator, Optional, Protocol, Tuple, runtime_checkable
 
 import langchain
 import openai
@@ -15,7 +15,7 @@ from langchain.llms import AI21
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType
-from llama_index.constants import MAX_CHUNK_SIZE, NUM_OUTPUTS
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
@@ -26,9 +26,6 @@ from llama_index.utils import (
 
 logger = logging.getLogger(__name__)
 
-GPT4_CONTEXT_SIZE = 8192
-GPT4_32K_CONTEXT_SIZE = 32768
-
 
 @dataclass
 class LLMMetadata:
@@ -38,8 +35,8 @@ class LLMMetadata:
 
     """
 
-    max_input_size: int = MAX_CHUNK_SIZE
-    num_output: int = NUM_OUTPUTS
+    context_window: int = DEFAULT_CONTEXT_WINDOW
+    num_output: int = DEFAULT_NUM_OUTPUTS
 
 
 def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
@@ -48,28 +45,17 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         raise ValueError("llm must be an instance of langchain.llms.base.LLM")
     if isinstance(llm, OpenAI):
         return LLMMetadata(
-            max_input_size=llm.modelname_to_contextsize(llm.model_name),
+            context_window=OpenAI().modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens,
         )
     elif isinstance(llm, ChatOpenAI):
-        # TODO: remove hardcoded context size once available via langchain.
-        # NOTE: if max tokens isn't specified, set to 4096
-        max_tokens = llm.max_tokens or 4096
-        if llm.model_name == "gpt-4":
-            return LLMMetadata(max_input_size=GPT4_CONTEXT_SIZE, num_output=max_tokens)
-        elif llm.model_name == "gpt-4-32k":
-            return LLMMetadata(
-                max_input_size=GPT4_32K_CONTEXT_SIZE, num_output=max_tokens
-            )
-        else:
-            logger.warning(
-                "Unknown max input size for %s, using defaults.", llm.model_name
-            )
-            return LLMMetadata()
+        return LLMMetadata(
+            context_window=OpenAI().modelname_to_contextsize(llm.model_name),
+            num_output=llm.max_tokens or -1,
+        )
     elif isinstance(llm, Cohere):
-        max_tokens = llm.max_tokens or 2048
         # TODO: figure out max input size for cohere
-        return LLMMetadata(num_output=max_tokens)
+        return LLMMetadata(num_output=llm.max_tokens)
     elif isinstance(llm, AI21):
         # TODO: figure out max input size for AI21
         return LLMMetadata(num_output=llm.maxTokens)
@@ -77,14 +63,11 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         return LLMMetadata()
 
 
-def _get_response_gen(openai_response_stream: Generator) -> Generator:
-    """Get response generator from openai response stream."""
-    for response in openai_response_stream:
-        yield response["choices"][0]["text"]
-
-
+@runtime_checkable
 class BaseLLMPredictor(Protocol):
     """Base LLM Predictor."""
+
+    callback_manager: CallbackManager
 
     @abstractmethod
     def get_llm_metadata(self) -> LLMMetadata:
@@ -171,7 +154,9 @@ class LLMPredictor(BaseLLMPredictor):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
-        self._llm = llm or OpenAI(temperature=0, model_name="text-davinci-003")
+        self._llm = llm or OpenAI(
+            temperature=0, model_name="text-davinci-003", max_tokens=-1
+        )
         if cache is not None:
             langchain.llm_cache = cache
         self.callback_manager = callback_manager or CallbackManager([])

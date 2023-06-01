@@ -65,6 +65,11 @@ class Node(BaseDocument):
         if self.text is None:
             raise ValueError("text field not set.")
 
+        if self.node_info is None:
+            self.node_info = {}
+        if "_node_type" not in self.node_info:
+            self.node_info["_node_type"] = self.get_type()
+
     # extra node info
     node_info: Optional[Dict[str, Any]] = None
 
@@ -135,6 +140,12 @@ class Node(BaseDocument):
     def get_type(cls) -> str:
         """Get type."""
         return NodeType.TEXT
+
+    def get_origin_type(self) -> str:
+        """Get origin type."""
+        if self.node_info is None or "_node_type" not in self.node_info:
+            return self.get_type()
+        return self.node_info["_node_type"]
 
 
 @dataclass

@@ -169,3 +169,13 @@ class AimCallback(BaseCallbackHandler):
     def __del__(self) -> None:
         if self._run and self._run.active:
             self._run.close()
+
+    def start_trace(self, trace_id: Optional[str] = None) -> None:
+        pass
+
+    def end_trace(
+        self,
+        trace_id: Optional[str] = None,
+        trace_map: Optional[Dict[str, List[str]]] = None,
+    ) -> None:
+        pass
