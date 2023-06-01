@@ -88,7 +88,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
             payload={"response": final_response.response},
-            event_id=query_event_id
+            event_id=query_event_id,
         )
         return final_response
 
@@ -108,7 +108,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
             payload={"response": final_response.response},
-            event_id=event_id
+            event_id=event_id,
         )
         return final_response
 

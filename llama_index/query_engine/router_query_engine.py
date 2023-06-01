@@ -69,7 +69,7 @@ class RouterQueryEngine(BaseQueryEngine):
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
             payload={"response": response.response},
-            event_id=event_id
+            event_id=event_id,
         )
         return response
 

@@ -153,6 +153,22 @@ class WandbCallbackHandler(BaseCallbackHandler):
         # Log the LLM token count to wandb
         self._wandb.run.log({"llm_token_count": self._llm_token_count})
 
+    def log_trace_tree(self) -> None:
+        try:
+            root_span = self._build_trace_tree()
+            root_trace = self._trace_tree.WBTraceTree(root_span)
+            self._wandb.run.log({"trace": root_trace})
+            self._wandb.termlog("Logged trace tree to W&B.")
+        except:
+            # Silently ignore errors to not break user code
+            pass
+
+    def upload_index(self):
+        pass
+
+    def download_index(self):
+        pass
+
     def _build_trace_tree(self) -> "trace_tree.Span":
         id_to_wb_span_tmp = {}
         for root_node, child_nodes in self._trace_map.items():
@@ -183,20 +199,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         return root_span
 
-    def log_trace_tree(self) -> None:
-        try:
-            root_span = self._build_trace_tree()
-            root_trace = self._trace_tree.WBTraceTree(root_span)
-            self._wandb.run.log({"trace": root_trace})
-            self._wandb.termlog(
-                "Logged trace tree to W&B."
-            )
-        except:
-            # Silently ignore errors to not break user code
-            pass
-
     def _convert_event_pair_to_wb_span(
-        self, 
+        self,
         event_pair: List[CBEvent],
         trace_id: Optional[str] = None,
     ) -> "trace_tree.Span":
@@ -220,7 +224,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         wb_span.add_named_result(inputs=inputs, outputs=outputs)
 
         return wb_span
-    
+
     def _map_event_type_to_span_kind(self, event_type: CBEventType):
         if event_type == CBEventType.CHUNKING:
             span_kind = None
@@ -241,7 +245,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             span_kind = self._trace_tree.SpanKind.CHAIN
         else:
             raise ValueError(f"Unknown event type: {event_type}")
-        
+
         return span_kind
 
     def _add_payload_to_span(
