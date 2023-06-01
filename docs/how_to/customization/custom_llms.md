@@ -174,7 +174,16 @@ service_context = ServiceContext.from_defaults(
 )
 ```
 
-An API reference can be found [here](../../reference/llm_predictor.rst).
+Some models will raise errors if all the keys from the tokenizer are passed to the model. A common tokenizer output that causes issues is `token_type_ids`. Below is an example of configuring the predictor to remove this before passing the inputs to the model:
+
+```python
+HuggingFaceLLMPredictor(
+    ...
+    tokenizer_outputs_to_remove=["token_type_ids"]
+) 
+```
+
+A full API reference can be found [here](../../reference/llm_predictor.rst).
 
 Several example notebooks are also listed below:
 
