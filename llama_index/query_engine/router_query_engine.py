@@ -55,7 +55,9 @@ class RouterQueryEngine(BaseQueryEngine):
         return cls(selector, query_engine_tools)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        event_id = self.callback_manager.on_event_start(CBEventType.QUERY)
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+        )
         result = self._selector.select(self._metadatas, query_bundle)
         try:
             selected_query_engine = self._query_engines[result.ind]
@@ -64,7 +66,11 @@ class RouterQueryEngine(BaseQueryEngine):
             raise ValueError("Failed to select query engine") from e
 
         response = selected_query_engine.query(query_bundle)
-        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=event_id)
+        self.callback_manager.on_event_end(
+            CBEventType.QUERY,
+            payload={"response": response.response},
+            event_id=event_id
+        )
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:

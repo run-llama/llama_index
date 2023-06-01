@@ -51,7 +51,9 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
     ) -> RESPONSE_TYPE:
         """Query a single index."""
         index_id = index_id or self._graph.root_id
-        event_id = self.callback_manager.on_event_start(CBEventType.QUERY)
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+        )
 
         # get query engine
         if index_id in self._custom_query_engines:
@@ -81,7 +83,11 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         else:
             response = query_engine.synthesize(query_bundle, nodes)
 
-        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=event_id)
+        self.callback_manager.on_event_end(
+            CBEventType.QUERY,
+            payload={"response": response.response},
+            event_id=event_id
+        )
         return response
 
     def _fetch_recursive_nodes(
