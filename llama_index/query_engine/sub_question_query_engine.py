@@ -10,6 +10,7 @@ from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.response.schema import RESPONSE_TYPE
@@ -46,7 +47,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         query_engine_tools: Sequence[QueryEngineTool],
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = True,
-        use_async: bool = True,
+        use_async: bool = False,
     ) -> None:
         self._question_gen = question_gen
         self._response_synthesizer = response_synthesizer
@@ -64,6 +65,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         query_engine_tools: Sequence[QueryEngineTool],
         question_gen: Optional[BaseQuestionGenerator] = None,
         response_synthesizer: Optional[ResponseSynthesizer] = None,
+        service_context: Optional[ServiceContext] = None,
         verbose: bool = True,
         use_async: bool = True,
     ) -> "SubQuestionQueryEngine":
@@ -71,9 +73,12 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         if len(query_engine_tools) > 0:
             callback_manager = query_engine_tools[0].query_engine.callback_manager
 
-        question_gen = question_gen or LLMQuestionGenerator.from_defaults()
+        question_gen = question_gen or LLMQuestionGenerator.from_defaults(
+            service_context=service_context
+        )
         synth = response_synthesizer or ResponseSynthesizer.from_args(
-            callback_manager=callback_manager
+            callback_manager=callback_manager,
+            service_context=service_context,
         )
 
         return cls(
@@ -92,13 +97,19 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
             colors = get_color_mapping([str(i) for i in range(len(sub_questions))])
 
-        tasks = [
-            self.aquery_subq(sub_q, color=colors[str(ind)])
-            for ind, sub_q in enumerate(sub_questions)
-        ]
+        if self._use_async:
+            tasks = [
+                self._aquery_subq(sub_q, color=colors[str(ind)])
+                for ind, sub_q in enumerate(sub_questions)
+            ]
 
-        nodes_all = run_async_tasks(tasks)
-        nodes_all = cast(List[Optional[NodeWithScore]], nodes_all)
+            nodes_all = run_async_tasks(tasks)
+            nodes_all = cast(List[Optional[NodeWithScore]], nodes_all)
+        else:
+            nodes_all = [
+                self._query_subq(sub_q, color=colors[str(ind)])
+                for ind, sub_q in enumerate(sub_questions)
+            ]
 
         # filter out sub questions that failed
         nodes: List[NodeWithScore] = list(filter(None, nodes_all))
@@ -118,7 +129,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             colors = get_color_mapping([str(i) for i in range(len(sub_questions))])
 
         tasks = [
-            self.aquery_subq(sub_q, color=colors[str(ind)])
+            self._aquery_subq(sub_q, color=colors[str(ind)])
             for ind, sub_q in enumerate(sub_questions)
         ]
         nodes_all = await asyncio.gather(*tasks)
@@ -132,7 +143,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             nodes=nodes,
         )
 
-    async def aquery_subq(
+    async def _aquery_subq(
         self, sub_q: SubQuestion, color: Optional[str] = None
     ) -> Optional[NodeWithScore]:
         try:
@@ -143,6 +154,28 @@ class SubQuestionQueryEngine(BaseQueryEngine):
                 print_text(f"[{sub_q.tool_name}] Q: {question}\n", color=color)
 
             response = await query_engine.aquery(question)
+            response_text = str(response)
+            node_text = f"Sub question: {question}\nResponse: {response_text}"
+
+            if self._verbose:
+                print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
+
+            return NodeWithScore(Node(text=node_text))
+        except ValueError:
+            logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
+            return None
+
+    def _query_subq(
+        self, sub_q: SubQuestion, color: Optional[str] = None
+    ) -> Optional[NodeWithScore]:
+        try:
+            question = sub_q.sub_question
+            query_engine = self._query_engines[sub_q.tool_name]
+
+            if self._verbose:
+                print_text(f"[{sub_q.tool_name}] Q: {question}\n", color=color)
+
+            response = query_engine.query(question)
             response_text = str(response)
             node_text = f"Sub question: {question}\nResponse: {response_text}"
 
