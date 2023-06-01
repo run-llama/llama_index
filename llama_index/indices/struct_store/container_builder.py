@@ -45,10 +45,12 @@ class SQLContextContainerBuilder:
         if context_dict is not None:
             # validate context_dict keys are valid table names
             context_keys = set(context_dict.keys())
-            if not context_keys.issubset(set(self.sql_database.get_table_names())):
+            if not context_keys.issubset(
+                set(self.sql_database.get_usable_table_names())
+            ):
                 raise ValueError(
                     "Invalid context table names: "
-                    f"{context_keys - set(self.sql_database.get_table_names())}"
+                    f"{context_keys - set(self.sql_database.get_usable_table_names())}"
                 )
         self.context_dict = context_dict or {}
         # build full context from sql_database
@@ -79,7 +81,7 @@ class SQLContextContainerBuilder:
         """Get tables schema + optional context as a single string."""
         current_context = current_context or {}
         result_context = {}
-        for table_name in sql_database.get_table_names():
+        for table_name in sql_database.get_usable_table_names():
             table_desc = sql_database.get_single_table_info(table_name)
             table_text = f"Schema of table {table_name}:\n" f"{table_desc}\n"
             if table_name in current_context:

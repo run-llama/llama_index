@@ -1,6 +1,5 @@
 from typing import Any, Generator, Optional, Sequence, cast
 
-from llama_index.data_structs.node import Node
 from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt
@@ -27,9 +26,11 @@ class SimpleSummarize(BaseResponseBuilder):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
-        node_text = self._service_context.prompt_helper.get_text_from_nodes(
-            [Node(text=text) for text in text_chunks], prompt=text_qa_template
+        truncated_chunks = self._service_context.prompt_helper.truncate(
+            prompt=text_qa_template,
+            text_chunks=text_chunks,
         )
+        node_text = "\n".join(truncated_chunks)
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
@@ -63,9 +64,11 @@ class SimpleSummarize(BaseResponseBuilder):
         **kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
-        node_text = self._service_context.prompt_helper.get_text_from_nodes(
-            [Node(text=text) for text in text_chunks], prompt=text_qa_template
+        truncated_chunks = self._service_context.prompt_helper.truncate(
+            prompt=text_qa_template,
+            text_chunks=text_chunks,
         )
+        node_text = "\n".join(truncated_chunks)
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
