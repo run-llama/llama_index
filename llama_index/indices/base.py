@@ -257,7 +257,7 @@ class BaseGPTIndex(Generic[IS], ABC):
             "update() is now deprecated, please refer to update_ref_doc() to update "
             "ingested documents+nodes."
         )
-        self.update(document, **update_kwargs)
+        self.update_ref_doc(document, **update_kwargs)
 
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
         """Update a document and it's corresponding nodes.
@@ -307,7 +307,7 @@ class BaseGPTIndex(Generic[IS], ABC):
                     document.get_doc_id()
                 )
                 if existing_doc_hash != document.get_doc_hash():
-                    self.update(document, **update_kwargs)
+                    self.update(document, **update_kwargs.pop("update_kwargs", {}))
                     refreshed_documents[i] = True
                 elif existing_doc_hash is None:
                     self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
