@@ -318,3 +318,21 @@ DEFAULT_PANDAS_TMPL = (
 )
 
 DEFAULT_PANDAS_PROMPT = Prompt(DEFAULT_PANDAS_TMPL, prompt_type=PromptType.PANDAS)
+
+
+############################################
+# JSON Path
+############################################
+
+DEFAULT_JSON_PATH_TMPL = (
+    "We have provided a JSON schema below:\n"
+    "{schema}\n"
+    "Given a task, respond with a JSON Path query that "
+    "can retrieve data from a JSON value that matches the schema.\n"
+    "Task: {query_str}\n"
+    "JSONPath: "
+)
+
+DEFAULT_JSON_PATH_PROMPT = Prompt(
+    DEFAULT_JSON_PATH_TMPL, prompt_type=PromptType.JSON_PATH
+)

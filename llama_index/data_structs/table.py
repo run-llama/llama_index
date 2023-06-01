@@ -43,3 +43,13 @@ class PandasStructTable(BaseStructTable):
     def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.PANDAS
+
+
+@dataclass
+class JSONStructDatapoint(StructDatapoint):
+    """JSON struct outputs."""
+
+    @classmethod
+    def get_type(cls) -> IndexStructType:
+        """Get type."""
+        return IndexStructType.JSON
