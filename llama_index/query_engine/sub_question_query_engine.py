@@ -10,6 +10,7 @@ from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.response.schema import RESPONSE_TYPE
@@ -64,6 +65,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         query_engine_tools: Sequence[QueryEngineTool],
         question_gen: Optional[BaseQuestionGenerator] = None,
         response_synthesizer: Optional[ResponseSynthesizer] = None,
+        service_context: Optional[ServiceContext] = None,
         verbose: bool = True,
         use_async: bool = True,
     ) -> "SubQuestionQueryEngine":
@@ -71,9 +73,12 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         if len(query_engine_tools) > 0:
             callback_manager = query_engine_tools[0].query_engine.callback_manager
 
-        question_gen = question_gen or LLMQuestionGenerator.from_defaults()
+        question_gen = question_gen or LLMQuestionGenerator.from_defaults(
+            service_context=service_context
+        )
         synth = response_synthesizer or ResponseSynthesizer.from_args(
-            callback_manager=callback_manager
+            callback_manager=callback_manager,
+            service_context=service_context,
         )
 
         return cls(
