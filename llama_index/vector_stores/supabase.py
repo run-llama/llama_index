@@ -13,11 +13,11 @@ from llama_index.vector_stores.utils import node_to_metadata_dict
 
 
 class SupabaseVectorStore(VectorStore):
-    """Supbabase vector store.
+    """Supbabase Vector.
 
-    In this vector store, embeddings are stored within a pg-vector collection.
+    In this vector store, embeddings are stored in Postgres table using pgvector.
 
-    During query time, the index uses pg-vector/supabase to query for the top
+    During query time, the index uses pgvector/Supabase to query for the top
     k most similar nodes.
 
     Args:
