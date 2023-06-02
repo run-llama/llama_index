@@ -89,8 +89,7 @@ class LanceDBVectorStore(VectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using with ref_doc_id and optionally return ids of deleted nodes
-        if the vector_store does not store text.
+        Delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.

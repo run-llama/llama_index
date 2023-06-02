@@ -234,7 +234,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
 
         """
         raise NotImplementedError(
-            "Vector indicies currently only support delete_ref_doc, which "
+            "Vector indices currently only support delete_ref_doc, which "
             "deletes nodes using the ref_doc_id of ingested documents."
         )
 

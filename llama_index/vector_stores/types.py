@@ -145,8 +145,7 @@ class VectorStore(Protocol):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using with ref_doc_id and optionally return ids of deleted nodes
-        if the vector_store does not store text."""
+        Delete nodes using with ref_doc_id."""
         ...
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
