@@ -16,9 +16,7 @@ from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.prompts.default_prompts import (
-    DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
-    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
-)
+    DEFAULT_KG_TRIPLET_EXTRACT_PROMPT, DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE)
 from llama_index.prompts.prompts import KnowledgeGraphPrompt
 from llama_index.storage.docstore.types import RefDocInfo
 
@@ -45,6 +43,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         self,
         nodes: Optional[Sequence[Node]] = None,
         index_struct: Optional[KG] = None,
+        triplets: Optional[List[Tuple[str, str, str]]] = None,
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
         include_embeddings: bool = False,
@@ -63,7 +62,12 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 max_knowledge_triplets=self.max_triplets_per_chunk
             )
         )
-
+        if triplets is not None:
+            if nodes is not None or index_struct is not None:
+                raise ValueError(
+                    "You may only pass one of nodes, index_struct, or triplets"
+                )
+            index_struct = self._build_index_from_triplet(triplets=triplets)
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -72,9 +76,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         from llama_index.indices.knowledge_graph.retrievers import (
-            KGRetrieverMode,
-            KGTableRetriever,
-        )
+            KGRetrieverMode, KGTableRetriever)
 
         if len(self.index_struct.embedding_dict) > 0 and "retriever_mode" not in kwargs:
             kwargs["retriever_mode"] = KGRetrieverMode.HYBRID
@@ -112,6 +114,31 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 subj, _, obj = triplet
                 index_struct.upsert_triplet(triplet)
                 index_struct.add_node([subj, obj], n)
+
+            if self.include_embeddings:
+                for triplet in triplets:
+                    self._service_context.embed_model.queue_text_for_embedding(
+                        str(triplet), str(triplet)
+                    )
+
+                embed_outputs = (
+                    self._service_context.embed_model.get_queued_text_embeddings()
+                )
+                for rel_text, rel_embed in zip(*embed_outputs):
+                    index_struct.add_to_embedding_dict(rel_text, rel_embed)
+
+        return index_struct
+
+    def _build_index_from_triplet(self, triplets: List[Tuple[str, str, str]]) -> KG:
+        """Build the index from triplets."""
+        index_struct = KG(table={})
+        self.nodes = []
+        for triplet in triplets:
+            subj, pred, obj = triplet
+            node = Node(subj)
+            self.nodes.append(node)
+            index_struct.add_node([subj, obj], node)
+            index_struct.upsert_triplet(triplet)
 
             if self.include_embeddings:
                 for triplet in triplets:
@@ -190,7 +217,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         subj, _, obj = triplet
         self._index_struct.add_node([subj, obj], node)
         self._index_struct.upsert_triplet(triplet)
-        self._docstore.add_documents([node], allow_update=True)
 
     def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
