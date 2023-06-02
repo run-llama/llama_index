@@ -19,5 +19,4 @@ These are described in their respective guides below.
    customization/service_context.md
    storage/customization.md
    customization/streaming.md
-
-
+   customization/custom_documents.md
