@@ -9,6 +9,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.utils import node_to_metadata_dict
 
 
 class SupabaseVectorStore(VectorStore):
@@ -63,13 +64,18 @@ class SupabaseVectorStore(VectorStore):
             embedding_results: List[NodeWithEmbedding]: list of embedding results
 
         """
-        if not self._collection:
+        if self._collection is None:
             raise ValueError("Collection not initialized")
 
         data = []
         ids = []
+
         for result in embedding_results:
-            data.append((result.id, result.embedding, result.node.text))
+            metadata = {
+                "text": result.node.text,
+                "node_metadata": node_to_metadata_dict(result.node),
+            }
+            data.append((result.id, result.embedding, metadata))
             ids.append(result.id)
 
         self._collection.upsert(vectors=data)
@@ -80,7 +86,7 @@ class SupabaseVectorStore(VectorStore):
         """Delete a document.
 
         Args:
-            doc_id (str): document id
+            ref_doc_id (str): document id
 
         """
         raise NotImplementedError("Delete not yet implemented for vecs.")
@@ -100,7 +106,7 @@ class SupabaseVectorStore(VectorStore):
         if query.filters is not None:
             filters = self._to_vecs_filters(query.filters)
 
-        result = self._collection.query(
+        results = self._collection.query(
             query_vector=query.query_embedding,
             limit=query.similarity_top_k,
             filters=filters,
@@ -111,18 +117,15 @@ class SupabaseVectorStore(VectorStore):
         similarities = []
         ids = []
         nodes = []
-        for r in result:
-            """shape of the result is [(vector, distance)]"""
-            distance = r[1]
+        for id_, distance, metadata in results:
+            """shape of the result is [(vector, distance, metadata)]"""
             similarities.append(1.0 - math.exp(-distance))
-            metadata = r[2]
-
-            id = r[0]
-            ids.append(id)
+            ids.append(id_)
 
             node = Node(
-                doc_id=id,
-                text=metadata,
+                doc_id=id_,
+                text=metadata.get("text", None),
+                extra_info=metadata.get("node_metadata", None),
                 relationships={
                     DocumentRelationship.SOURCE: id,
                 },
