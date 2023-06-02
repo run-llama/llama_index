@@ -163,12 +163,15 @@ class IndexList(IndexStruct):
 class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
-    # mapping from vector store id to node id
+    # TODO: slightly deprecated, should likely be a list or set now
+    # mapping from vector store id to node doc_id
     nodes_dict: Dict[str, str] = field(default_factory=dict)
-    # mapping from doc_id to vector store id
+
+    # TODO: deprecated, not used
+    # mapping from node doc_id to vector store id
     doc_id_dict: Dict[str, List[str]] = field(default_factory=dict)
 
-    # TODO: temporary hack to store embeddings for simple vector index
+    # TODO: deprecated, not used
     # this should be empty for all other indices
     embeddings_dict: Dict[str, List[float]] = field(default_factory=dict)
 
@@ -182,20 +185,12 @@ class IndexDict(IndexStruct):
         # self.nodes_dict[int_id] = node
         vector_id = text_id if text_id is not None else node.get_doc_id()
         self.nodes_dict[vector_id] = node.get_doc_id()
-        if node.ref_doc_id is not None:
-            if node.ref_doc_id not in self.doc_id_dict:
-                self.doc_id_dict[node.ref_doc_id] = []
-            self.doc_id_dict[node.ref_doc_id].append(vector_id)
 
         return vector_id
 
     def delete(self, doc_id: str) -> None:
         """Delete a Node."""
-        if doc_id not in self.doc_id_dict:
-            return
-        for vector_id in self.doc_id_dict[doc_id]:
-            del self.nodes_dict[vector_id]
-        del self.doc_id_dict[doc_id]
+        del self.nodes_dict[doc_id]
 
     @classmethod
     def get_type(cls) -> IndexStructType:

@@ -6,8 +6,9 @@ LlamaIndex provides the ability to customize the following components:
 - LLM
 - Prompts
 - Embedding model
+- Documents
 
-These are described in their respective guides below.
+These components and related classes are described in their respective guides below.
 
 .. toctree::
    :maxdepth: 1
@@ -19,5 +20,4 @@ These are described in their respective guides below.
    customization/service_context.md
    storage/customization.md
    customization/streaming.md
-
-
+   customization/custom_documents.md

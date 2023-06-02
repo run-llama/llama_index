@@ -13,7 +13,7 @@ capabilities our indices/graphs provide.
    :caption: Guides
 
    /guides/primer/index_guide.md
-   index_structs/update.md
+   index_structs/document_management.md
    index_structs/composability.md
    index_structs/vector_store_guide.ipynb
 

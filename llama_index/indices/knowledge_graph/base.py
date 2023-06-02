@@ -9,7 +9,7 @@ existing keywords in the table.
 """
 
 import logging
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.data_structs.data_structs import KG
 from llama_index.data_structs.node import Node
@@ -20,6 +20,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.prompts.prompts import KnowledgeGraphPrompt
+from llama_index.storage.docstore.types import RefDocInfo
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -191,9 +192,29 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         self._index_struct.upsert_triplet(triplet)
         self._docstore.add_documents([node], allow_update=True)
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a node."""
         raise NotImplementedError("Delete is not supported for KG index yet.")
+
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        node_doc_ids_sets = list(self._index_struct.table.values())
+        node_doc_ids = list(set().union(*node_doc_ids_sets))
+        nodes = self.docstore.get_nodes(node_doc_ids)
+
+        all_ref_doc_info = {}
+        for node in nodes:
+            ref_doc_id = node.ref_doc_id
+            if not ref_doc_id:
+                continue
+
+            ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+            if not ref_doc_info:
+                continue
+
+            all_ref_doc_info[ref_doc_id] = ref_doc_info
+        return all_ref_doc_info
 
     def get_networkx_graph(self) -> Any:
         """Get networkx representation of the graph structure.

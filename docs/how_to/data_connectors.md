@@ -38,7 +38,7 @@ caption: Examples
 maxdepth: 1
 ---
 
-../examples/data_connectors/PsychicReader.ipynb
+../examples/data_connectors/PsychicDemo.ipynb
 ../examples/data_connectors/DeepLakeReader.ipynb
 ../examples/data_connectors/QdrantDemo.ipynb
 ../examples/data_connectors/DiscordDemo.ipynb

@@ -1,7 +1,7 @@
 """Tree-based index."""
 
 from enum import Enum
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 # from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.data_structs.data_structs import IndexGraph
@@ -10,6 +10,7 @@ from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.common_tree.base import GPTTreeIndexBuilder
 from llama_index.indices.service_context import ServiceContext
+from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.indices.tree.inserter import GPTTreeIndexInserter
 from llama_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
@@ -142,6 +143,25 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         )
         inserter.insert(nodes)
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a node."""
         raise NotImplementedError("Delete not implemented for tree index.")
+
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        node_doc_ids = list(self.index_struct.all_nodes.values())
+        nodes = self.docstore.get_nodes(node_doc_ids)
+
+        all_ref_doc_info = {}
+        for node in nodes:
+            ref_doc_id = node.ref_doc_id
+            if not ref_doc_id:
+                continue
+
+            ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+            if not ref_doc_info:
+                continue
+
+            all_ref_doc_info[ref_doc_id] = ref_doc_info
+        return all_ref_doc_info
