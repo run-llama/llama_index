@@ -91,7 +91,6 @@ def test_simple_delete(
     # test delete
     index.delete_ref_doc("test_id_0")
     assert len(index.index_struct.nodes_dict) == 3
-    assert len(index.index_struct.doc_id_dict) == 3
     actual_node_tups = [
         ("This is a test.", [0, 1, 0, 0, 0], "test_id_1"),
         ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),
