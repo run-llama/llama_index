@@ -10,8 +10,6 @@ from llama_index.vector_stores.types import (MetadataFilters,
 
 
 class SupabaseVectorStore(VectorStore): 
-
-
     """Supbabase vector store.
 
     In this vector store, embeddings are stored within a pg-vector collection. 
