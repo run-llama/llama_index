@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
+
 from llama_index.data_structs.node import Node
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
@@ -111,6 +112,24 @@ def test_build_kg_manual(
     nodes = [Node(str(tup)) for tup in tuples]
     for tup, node in zip(tuples, nodes):
         index.upsert_triplet_and_node(tup, node)
+
+    # NOTE: in these unit tests, document text == triplets
+    nodes = index.docstore.get_nodes(list(index.index_struct.node_ids))
+    table_chunks = {n.get_text() for n in nodes}
+    assert len(table_chunks) == 3
+    assert "('foo', 'is', 'bar')" in table_chunks
+    assert "('hello', 'is not', 'world')" in table_chunks
+    assert "('Jane', 'is mother of', 'Bob')" in table_chunks
+
+    # test initialization using triplets - calls _build_index_from_triplet
+    tuples = [
+        ("foo", "is", "bar"),
+        ("hello", "is not", "world"),
+        ("Jane", "is mother of", "Bob"),
+    ]
+    index = GPTKnowledgeGraphIndex(
+        triplets=tuples, service_context=mock_service_context
+    )
 
     # NOTE: in these unit tests, document text == triplets
     nodes = index.docstore.get_nodes(list(index.index_struct.node_ids))

@@ -16,9 +16,7 @@ from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.prompts.default_prompts import (
-    DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
-    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
-)
+    DEFAULT_KG_TRIPLET_EXTRACT_PROMPT, DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE)
 from llama_index.prompts.prompts import KnowledgeGraphPrompt
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -77,9 +75,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         from llama_index.indices.knowledge_graph.retrievers import (
-            KGRetrieverMode,
-            KGTableRetriever,
-        )
+            KGRetrieverMode, KGTableRetriever)
 
         if len(self.index_struct.embedding_dict) > 0 and "retriever_mode" not in kwargs:
             kwargs["retriever_mode"] = KGRetrieverMode.HYBRID
@@ -184,10 +180,10 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         self.nodes = []
         for triplet in triplets:
             subj, pred, obj = triplet
-            node = Node(subj)
+            node = Node()
             self.nodes.append(node)
-            index_struct.add_node([subj, obj], node)
-            index_struct.upsert_triplet(triplet)
+            self._index_struct.add_node([subj, obj], node)
+            self._index_struct.upsert_triplet(triplet)
 
             if self.include_embeddings:
                 for triplet in triplets:
@@ -220,7 +216,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         subj, _, obj = triplet
         self._index_struct.add_node([subj, obj], node)
         self._index_struct.upsert_triplet(triplet)
-        self._docstore.add_documents([node], allow_update=True)
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
