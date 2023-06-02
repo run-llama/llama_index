@@ -34,6 +34,7 @@ class GPTNLJSONQueryEngine(BaseQueryEngine):
         output_kwargs (dict): Additional output processor kwargs for the output_processor function.
         verbose (bool): Whether to print verbose output.
     """
+
     def __init__(
         self,
         index: GPTJSONIndex,
@@ -90,7 +91,9 @@ class GPTNLJSONQueryEngine(BaseQueryEngine):
             "json_path_response_str": json_path_response_str,
         }
 
-        return Response(response=json.dumps(json_path_output), extra_info=response_extra_info)
+        return Response(
+            response=json.dumps(json_path_output), extra_info=response_extra_info
+        )
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         return self._query(query_bundle)

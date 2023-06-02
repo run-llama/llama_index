@@ -24,6 +24,7 @@ class GPTJSONIndex(BaseGPTStructStoreIndex[JSONStructDatapoint]):
         json_value (JSONType): JSON value to query.
         json_schema (Dict[str, JSONType]): JSON schema that the JSON value conforms to.
     """
+
     index_struct_cls = JSONStructDatapoint
 
     def __init__(

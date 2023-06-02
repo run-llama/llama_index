@@ -23,7 +23,9 @@ def test_json_index(mock_service_context: ServiceContext) -> None:
     )
 
     test_llm_output = "test_llm_output"
-    mock_service_context.llm_predictor.predict = MagicMock(return_value=(test_llm_output, ""))
+    mock_service_context.llm_predictor.predict = MagicMock(
+        return_value=(test_llm_output, "")
+    )
     test_json_return_value = "test_json_return_value"
 
     def test_output_processor(llm_output, json_value: JSONType) -> JSONType:
@@ -32,9 +34,9 @@ def test_json_index(mock_service_context: ServiceContext) -> None:
         return [test_json_return_value]
 
     # the mock prompt just takes the first item in the given column
-    query_engine = GPTNLJSONQueryEngine(index=index,
-                                        output_processor=test_output_processor,
-                                        verbose=True)
+    query_engine = GPTNLJSONQueryEngine(
+        index=index, output_processor=test_output_processor, verbose=True
+    )
     response = query_engine.query(QueryBundle("test_nl_query"))
 
     assert response.response == json.dumps([test_json_return_value])
