@@ -10,14 +10,27 @@ JSONType = Union[Dict[str, "JSONType"], List["JSONType"], str, int, float, bool,
 
 
 class GPTJSONIndex(BaseGPTStructStoreIndex[JSONStructDatapoint]):
+    """GPT JSON Index.
+
+    The GPTJSONIndex is an index that stores
+    a JSON object and a JSON schema the object
+    conforms to under the hood.
+    Currently index "construction" is not supported.
+
+    During query time, the user can specify a natural
+    language query to retrieve their data.
+
+    Args:
+        json_value (JSONType): JSON value to query.
+        json_schema (Dict[str, JSONType]): JSON schema that the JSON value conforms to.
+    """
     index_struct_cls = JSONStructDatapoint
 
     def __init__(
         self,
         json_value: JSONType,
-        json_schema: JSONType,
+        json_schema: Dict[str, JSONType],
         nodes: Optional[Sequence[Node]] = None,
-        index_struct: Optional[JSONStructDatapoint] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -27,7 +40,6 @@ class GPTJSONIndex(BaseGPTStructStoreIndex[JSONStructDatapoint]):
         self.json_value = json_value
         self.json_schema = json_schema
 
-        # index_struct = index_struct or self.index_struct_cls(fields=self.json_value)
         super().__init__(
             nodes=[],
             **kwargs,
@@ -40,7 +52,7 @@ class GPTJSONIndex(BaseGPTStructStoreIndex[JSONStructDatapoint]):
         # NOTE: lazy import
         from llama_index.indices.struct_store.json_query import GPTNLJSONQueryEngine
 
-        return GPTNLJSONQueryEngine(self, json_schema=self.json_schema, **kwargs)
+        return GPTNLJSONQueryEngine(self, **kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> JSONStructDatapoint:
         """Build index from documents."""
