@@ -1,9 +1,10 @@
 
+import math
 from typing import Any, List
 
-from vecs.client import Client
-
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
                                              VectorStoreQuery,
                                              VectorStoreQueryResult)
 
@@ -29,6 +30,14 @@ class SupabaseVectorStore(VectorStore):
     def client(self) -> None:
         """Get client."""
         return None
+    
+    def _to_vecs_filters(self, filters: MetadataFilters) -> Any:
+        """Convert llama filters to vecs filters."""
+        vecs_filter = {}
+        for f in filters:
+            vecs_filter[f.metadata_key] = {"$eq": f.metadata_value}
+        return vecs_filter
+
 
     def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
         print("collection:", self._collection)
@@ -44,6 +53,57 @@ class SupabaseVectorStore(VectorStore):
         print(data)
 
         self._collection.upsert(vectors=data)
+
         return ids
     
+    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a document.
+
+        Args:
+            doc_id (str): document id
+
+        """
+        raise NotImplementedError("Delete not yet implemented for vecs.")
+    
+    def query(
+        self,
+        query: VectorStoreQuery,
+        **kwargs: Any,
+    ) -> VectorStoreQueryResult:
+        """Query the vector store."""
+        filters = None
+        if query.filters is not None:
+            filters = self._to_vecs_filters(query.filters)
+
+        result = self._collection.query(
+            query_vector = query.query_embedding, 
+            limit = query.similarity_top_k, 
+            filters = filters, 
+            include_value = True, 
+            include_metadata = True)
+        
+        similarities = []
+        ids = []
+        nodes = []
+        for r in result:
+            # shape of the result is [(vector, distance)]
+            
+            distance = r[1]
+            similarities.append(1.0 - math.exp(-distance))
+            metadata = r[2]
+            
+            id = r[0]
+            ids.append(id)
+            
+            node = Node(
+                doc_id=id,
+                text=metadata,
+                relationships={
+                    DocumentRelationship.SOURCE: id,
+                },
+            )
+
+            nodes.append(node)
+
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
