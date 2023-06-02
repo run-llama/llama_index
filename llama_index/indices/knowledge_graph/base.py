@@ -200,31 +200,6 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         self._index_struct.add_node(keywords, node)
         self._docstore.add_documents([node], allow_update=True)
 
-    def _build_index_from_triplet(self, triplets: List[Tuple[str, str, str]]) -> KG:
-        """Build the index from triplets."""
-        index_struct = KG(table={})
-        self.nodes = []
-        for triplet in triplets:
-            subj, pred, obj = triplet
-            node = Node()
-            self.nodes.append(node)
-            self._index_struct.add_node([subj, obj], node)
-            self._index_struct.upsert_triplet(triplet)
-
-            if self.include_embeddings:
-                for triplet in triplets:
-                    self._service_context.embed_model.queue_text_for_embedding(
-                        str(triplet), str(triplet)
-                    )
-
-                embed_outputs = (
-                    self._service_context.embed_model.get_queued_text_embeddings()
-                )
-                for rel_text, rel_embed in zip(*embed_outputs):
-                    index_struct.add_to_embedding_dict(rel_text, rel_embed)
-
-        return index_struct
-
     def upsert_triplet_and_node(
         self, triplet: Tuple[str, str, str], node: Node
     ) -> None:
