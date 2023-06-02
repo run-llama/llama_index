@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from llama_index.vector_stores.exc import CollectionNotFound
 
 if TYPE_CHECKING:
-    from llama_index.vector_stores.collection import Collection
+    from llama_index.vector_stores.supabase import Collection
 
 
 class Client:

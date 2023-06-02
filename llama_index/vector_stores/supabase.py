@@ -8,16 +8,32 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, Union
 
 from flupy import flu
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import (Column, MetaData, String, Table, and_, cast, delete,
-                        func, or_, select, text)
+from sqlalchemy import (
+    Column,
+    MetaData,
+    String,
+    Table,
+    and_,
+    cast,
+    delete,
+    func,
+    or_,
+    select,
+    text,
+)
 from sqlalchemy.dialects import postgresql
 
-from llama_index.vector_stores.exc import (ArgError, CollectionAlreadyExists,
-                                           CollectionNotFound, FilterError,
-                                           Unreachable)
+from llama_index.vector_stores.exc import (
+    ArgError,
+    CollectionAlreadyExists,
+    CollectionNotFound,
+    FilterError,
+    Unreachable,
+)
 
 if TYPE_CHECKING:
-    from vecs.client import Client
+    from llama_index.readers.supabase import Client
+    from llama_index.vector_stores.types import VectorStore
 
 
 MetadataValues = Union[str, int, float, bool, List[str]]
@@ -49,7 +65,7 @@ INDEX_MEASURE_TO_SQLA_ACC = {
 }
 
 
-class Collection:
+class SupabaseStore(VectorStore):
     def __init__(self, name: str, dimension: int, client: Client):
         self.client = client
         self.name = name
@@ -85,7 +101,6 @@ class Collection:
         return self
 
     def upsert(self, vectors: Iterable[Tuple[str, Iterable[Numeric], Metadata]]):
-
         chunk_size = 500
 
         with self.client.Session() as sess:
@@ -153,7 +168,6 @@ class Collection:
         include_value: bool = False,
         include_metadata: bool = False,
     ) -> Union[List[Record], List[str]]:
-
         if limit > 1000:
             raise ArgError("limit must be <= 1000")
 
