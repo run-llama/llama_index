@@ -11,9 +11,25 @@ from llama_index.vector_stores.types import (MetadataFilters,
 
 class SupabaseVectorStore(VectorStore): 
 
-    
+
+    """Supbabase vector store.
+
+    In this vector store, embeddings are stored within a pg-vector collection. 
+
+    During query time, the index uses pg-vector/supabase to query for the top
+    k most similar nodes.
+
+    Args:
+        postgres_connection_string (str): 
+            postgres connection string
+       
+        collection_name (str):
+            name of the collection to store the embeddings in
+
+    """    
     stores_text = True
     def __init__(self, postgres_connection_string: str, collection_name: str, **kwargs: Any) -> None:
+        """Init params."""
         import_err_msg = "`vecs` package not found, please run `pip install vecs`"
         try:
             import vecs
@@ -32,7 +48,7 @@ class SupabaseVectorStore(VectorStore):
         return None
     
     def _to_vecs_filters(self, filters: MetadataFilters) -> Any:
-        """Convert llama filters to vecs filters."""
+        """Convert llama filters to vecs filters. $eq is the only supported operator."""
         vecs_filter = {}
         for f in filters:
             vecs_filter[f.metadata_key] = {"$eq": f.metadata_value}
@@ -40,17 +56,20 @@ class SupabaseVectorStore(VectorStore):
 
 
     def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
-        print("collection:", self._collection)
-        # if not self._collection:
-        #     raise ValueError("Collection not initialized")
+        """Add embedding results to index.
+
+        Args
+            embedding_results: List[NodeWithEmbedding]: list of embedding results
+
+        """       
+        if not self._collection:
+            raise ValueError("Collection not initialized")
         
         data = []
         ids = []
         for result in embedding_results:
             data.append((result.id, result.embedding, result.node.text))
             ids.append(result.id)
-        print("supabase vector store class ...")
-        print(data)
 
         self._collection.upsert(vectors=data)
 
@@ -70,7 +89,12 @@ class SupabaseVectorStore(VectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query the vector store."""
+        """Query index for top k most similar nodes.
+
+        Args:
+            query (List[float]): query embedding
+
+        """
         filters = None
         if query.filters is not None:
             filters = self._to_vecs_filters(query.filters)
@@ -86,8 +110,7 @@ class SupabaseVectorStore(VectorStore):
         ids = []
         nodes = []
         for r in result:
-            # shape of the result is [(vector, distance)]
-            
+            """shape of the result is [(vector, distance)]"""
             distance = r[1]
             similarities.append(1.0 - math.exp(-distance))
             metadata = r[2]
