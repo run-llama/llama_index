@@ -30,7 +30,7 @@ Below we show a few examples of LLM customization. This includes
 An example snippet of customizing the LLM being used is shown below.
 In this example, we use `text-davinci-002` instead of `text-davinci-003`. Available models include `text-davinci-003`,`text-curie-001`,`text-babbage-001`,`text-ada-001`, `code-davinci-002`,`code-cushman-001`. Note that
 you may plug in any LLM shown on Langchain's
-[LLM](https://langchain.readthedocs.io/en/latest/modules/llms.html) page.
+[LLM](https://langchain.readthedocs.io/en/latest/modules/models/llms.html) page.
 
 ```python
 
