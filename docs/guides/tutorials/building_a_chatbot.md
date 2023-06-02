@@ -129,9 +129,7 @@ LlamaIndex provides some wrappers around indices and graphs so that they can be 
 
 ```python
 # do imports
-from langchain.agents import Tool
 from langchain.chains.conversation.memory import ConversationBufferMemory
-from langchain.chat_models import ChatOpenAI
 from langchain.agents import initialize_agent
 
 from llama_index.langchain_helpers.agents import LlamaToolkit, create_llama_chat_agent, IndexToolConfig
