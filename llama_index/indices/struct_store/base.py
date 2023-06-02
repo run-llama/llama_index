@@ -9,6 +9,7 @@ from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from llama_index.prompts.prompts import SchemaExtractPrompt
+from llama_index.storage.docstore.types import RefDocInfo
 
 BST = TypeVar("BST", bound=BaseStructTable)
 
@@ -59,6 +60,11 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
             **kwargs,
         )
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a node."""
         raise NotImplementedError("Delete not implemented for Struct Store Index.")
+
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        raise NotImplementedError("Struct Store Index does not support ref_doc_info.")

@@ -191,3 +191,9 @@ def test_build_kg(
         "Jane",
         "Bob",
     }
+
+    # test ref doc info for three nodes, single doc
+    all_ref_doc_info = index.ref_doc_info
+    assert len(all_ref_doc_info) == 1
+    for ref_doc_info in all_ref_doc_info.values():
+        assert len(ref_doc_info.doc_ids) == 3

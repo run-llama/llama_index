@@ -132,7 +132,7 @@ index = GPTVectorStoreIndex([])
 index.insert_nodes(nodes)
 ```
 
-See the [Update Index How-To](/how_to/index_structs/update.md) for details and an example notebook.
+See the [Document Management How-To](/how_to/index_structs/document_management.md) for more details on managing documents and an example notebook.
 
 ### Customizing Documents
 

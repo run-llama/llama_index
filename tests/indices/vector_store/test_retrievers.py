@@ -91,7 +91,7 @@ def test_simple_check_ids(
     assert nodes[0].node.doc_id == "node3"
     vector_store = cast(SimpleVectorStore, index._vector_store)
     assert "node3" in vector_store._data.embedding_dict
-    assert "node3" in vector_store._data.text_id_to_doc_id
+    assert "node3" in vector_store._data.text_id_to_ref_doc_id
 
 
 def test_faiss_check_ids(

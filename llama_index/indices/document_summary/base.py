@@ -5,19 +5,22 @@ the summary to the underlying Nodes.
 This summary can be used for retrieval.
 
 """
-
+from enum import Enum
+import logging
 from collections import defaultdict
+from typing import Optional, Sequence, Any, Dict, Union, cast
+
+
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.data_structs.node import Node, DocumentRelationship, NodeWithScore
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
-from typing import Optional, Sequence, Any, Union, cast
-import logging
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.response.schema import Response
-from enum import Enum
+from llama_index.storage.docstore.types import RefDocInfo
+
 
 logger = logging.getLogger(__name__)
 
@@ -154,14 +157,28 @@ class GPTDocumentSummaryIndex(BaseGPTIndex[IndexDocumentSummary]):
         """Insert a document."""
         self._add_nodes_to_index(self._index_struct, nodes)
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a node."""
         if doc_id not in self._index_struct.doc_id_to_summary_id:
             raise ValueError(f"doc_id {doc_id} not in index")
         summary_id = self._index_struct.doc_id_to_summary_id[doc_id]
 
         # delete summary node from docstore
         self.docstore.delete_document(summary_id)
+
         # delete from index struct
         self._index_struct.delete(doc_id)
-        # TODO: figure out whether to delete source nodes
+
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        ref_doc_ids = list(self._index_struct.doc_id_to_summary_id.keys())
+
+        all_ref_doc_info = {}
+        for ref_doc_id in ref_doc_ids:
+            ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+            if not ref_doc_info:
+                continue
+
+            all_ref_doc_info[ref_doc_id] = ref_doc_info
+        return all_ref_doc_info
