@@ -7,20 +7,14 @@ import json
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 
-from llama_index.indices.struct_store.json import GPTJSONIndex, JSONType
-from llama_index.indices.struct_store.json_query import GPTNLJSONQueryEngine
+from llama_index.indices.struct_store.json_query import GPTNLJSONQueryEngine, JSONType
 
 
-def test_json_index(mock_service_context: ServiceContext) -> None:
-    """Test GPTJSONIndex."""
+def test_json_query_engine(mock_service_context: ServiceContext) -> None:
+    """Test GPTNLJSONQueryEngine."""
     # Test on some sample data
     json_val = {}
     json_schema = {}
-    index = GPTJSONIndex(
-        json_value=json_val,
-        json_schema=json_schema,
-        service_context=mock_service_context,
-    )
 
     test_llm_output = "test_llm_output"
     mock_service_context.llm_predictor.predict = MagicMock(
@@ -35,7 +29,10 @@ def test_json_index(mock_service_context: ServiceContext) -> None:
 
     # the mock prompt just takes the first item in the given column
     query_engine = GPTNLJSONQueryEngine(
-        index=index, output_processor=test_output_processor, verbose=True
+        json_value=json_val, json_schema=json_schema,
+        service_context=mock_service_context,
+        output_processor=test_output_processor,
+        verbose=True
     )
     response = query_engine.query(QueryBundle("test_nl_query"))
 
