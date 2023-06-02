@@ -53,7 +53,7 @@ class SupabaseVectorStore(VectorStore):
         """Convert llama filters to vecs filters. $eq is the only supported operator."""
         vecs_filter = {}
         for f in filters:
-            vecs_filter[f.metadata_key] = {"$eq": f.metadata_value}
+            vecs_filter[f[0]] = {"$eq": f[1]}
         return vecs_filter
 
     def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
