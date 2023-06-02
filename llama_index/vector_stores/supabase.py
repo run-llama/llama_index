@@ -83,10 +83,10 @@ class SupabaseVectorStore(VectorStore):
         return ids
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document.
+        """Delete doc.
 
         Args:
-            ref_doc_id (str): document id
+            doc_id (str): document id
 
         """
         raise NotImplementedError("Delete not yet implemented for vecs.")
