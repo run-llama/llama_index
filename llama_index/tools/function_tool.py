@@ -49,9 +49,9 @@ class FunctionTool(BaseTool):
         """Function."""
         return self._fn
 
-    def __call__(self, input: Any) -> None:
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
         """Call."""
-        return self._fn(input)
+        return self._fn(*args, **kwargs)
 
     def to_langchain_tool(
         self,
