@@ -166,7 +166,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         self,
         trace_id: Optional[str] = None,
         trace_map: Optional[Dict[str, List[str]]] = None,
-    ) -> None:        
+    ) -> None:
         # Ensure W&B run is initialized
         self._ensure_run()
 
