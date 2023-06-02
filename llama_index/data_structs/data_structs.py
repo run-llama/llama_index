@@ -166,7 +166,7 @@ class IndexDict(IndexStruct):
     # TODO: slightly deprecated, should likely be a list or set now
     # mapping from vector store id to node doc_id
     nodes_dict: Dict[str, str] = field(default_factory=dict)
-    
+
     # TODO: deprecated, not used
     # mapping from node doc_id to vector store id
     doc_id_dict: Dict[str, List[str]] = field(default_factory=dict)
