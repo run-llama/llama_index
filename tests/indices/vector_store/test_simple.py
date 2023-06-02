@@ -38,6 +38,11 @@ def test_build_simple(
         embedding = index._vector_store.get(text_id)
         assert (node.text, embedding) in actual_node_tups
 
+    # test ref doc info
+    all_ref_doc_info = index.ref_doc_info
+    for idx, ref_doc_id in enumerate(all_ref_doc_info.keys()):
+        assert documents[idx].doc_id == ref_doc_id
+
 
 def test_simple_insert(
     documents: List[Document],
@@ -84,9 +89,8 @@ def test_simple_delete(
     assert isinstance(index, GPTVectorStoreIndex)
 
     # test delete
-    index.delete("test_id_0")
+    index.delete_ref_doc("test_id_0")
     assert len(index.index_struct.nodes_dict) == 3
-    assert len(index.index_struct.doc_id_dict) == 3
     actual_node_tups = [
         ("This is a test.", [0, 1, 0, 0, 0], "test_id_1"),
         ("This is another test.", [0, 0, 1, 0, 0], "test_id_2"),

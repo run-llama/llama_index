@@ -148,14 +148,15 @@ class MetalVectorStore(VectorStore):
 
         return ids
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete nodes from index.
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
-            doc_id (str): document id
+            ref_doc_id (str): The doc_id of the document to delete.
 
         """
         if not self.metal_client:
             raise ValueError("metal_client not initialized")
 
-        self.metal_client.deleteOne(doc_id)
+        self.metal_client.deleteOne(ref_doc_id)

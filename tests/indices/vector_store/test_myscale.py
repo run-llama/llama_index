@@ -66,7 +66,7 @@ def test_overall_workflow(documents: List[Document]) -> None:
 
     with pytest.raises(NotImplementedError):
         for doc in documents:
-            index.delete(doc_id=cast(str, doc.doc_id))
+            index.delete_ref_doc(ref_doc_id=cast(str, doc.doc_id))
 
     cast(MyScaleVectorStore, index._vector_store).drop()
 

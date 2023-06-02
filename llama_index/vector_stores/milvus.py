@@ -337,11 +337,12 @@ class MilvusVectorStore(VectorStore):
             raise e
         return ids
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document from Milvus.
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
-            doc_id (str): The document id to delete.
+            ref_doc_id (str): The doc_id of the document to delete.
 
         Raises:
             MilvusException: Failed to delete the doc.
@@ -353,10 +354,10 @@ class MilvusVectorStore(VectorStore):
 
         # Adds ability for multiple doc delete in future.
         doc_ids: List[str]
-        if type(doc_id) != list:
-            doc_ids = [doc_id]
+        if type(ref_doc_id) != list:
+            doc_ids = [ref_doc_id]
         else:
-            doc_ids = doc_id  # type: ignore
+            doc_ids = ref_doc_id  # type: ignore
 
         try:
             # Begin by querying for the primary keys to delete

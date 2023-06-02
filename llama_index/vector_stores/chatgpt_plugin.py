@@ -104,13 +104,19 @@ class ChatGPTRetrievalPluginClient(VectorStore):
 
         return [result.id for result in embedding_results]
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
         headers = {"Authorization": f"Bearer {self._bearer_token}"}
         self._s.post(
             f"{self._endpoint_url}/delete",
             headers=headers,
-            json={"ids": [doc_id]},
+            json={"ids": [ref_doc_id]},
         )
 
     def query(

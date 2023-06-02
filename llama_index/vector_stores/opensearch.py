@@ -214,14 +214,15 @@ class OpensearchVectorStore(VectorStore):
         self._client.index_results(embedding_results)
         return [result.id for result in embedding_results]
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document.
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
-            doc_id (str): document id
+            ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self._client.delete_doc_id(doc_id)
+        self._client.delete_doc_id(ref_doc_id)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.

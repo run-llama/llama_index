@@ -46,6 +46,11 @@ def test_build_tree(
     assert nodes[4].text == ("Hello world.\nThis is a test.")
     assert nodes[5].text == ("This is another test.\nThis is a test v2.")
 
+    # test ref doc info
+    all_ref_doc_info = tree.ref_doc_info
+    for idx, ref_doc_id in enumerate(all_ref_doc_info.keys()):
+        assert documents[idx].doc_id == ref_doc_id
+
 
 def test_build_tree_with_embed(
     documents: List[Document],
