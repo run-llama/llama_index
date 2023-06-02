@@ -1,6 +1,6 @@
 import sys
 from typing import TypedDict
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
 from collections import defaultdict
 from datetime import datetime
 
@@ -10,6 +10,34 @@ from llama_index.callbacks.schema import (
     CBEventType,
     TIMESTAMP_FORMAT,
 )
+from llama_index.storage.storage_context import StorageContext
+from llama_index import (
+    ComposableGraph,
+    GPTKeywordTableIndex,
+    GPTSimpleKeywordTableIndex,
+    GPTRAKEKeywordTableIndex,
+    GPTListIndex,
+    GPTEmptyIndex,
+    GPTTreeIndex,
+    GPTVectorStoreIndex,
+    GPTSQLStructStoreIndex,
+)
+
+IndexType = Union[
+    ComposableGraph,
+    GPTKeywordTableIndex,
+    GPTSimpleKeywordTableIndex,
+    GPTRAKEKeywordTableIndex,
+    GPTListIndex,
+    GPTEmptyIndex,
+    GPTTreeIndex,
+    GPTVectorStoreIndex,
+    GPTSQLStructStoreIndex,
+]
+
+if TYPE_CHECKING:
+    from wandb.sdk.data_types import trace_tree
+    from wandb import Settings as WBSettings
 
 
 # remove this class
@@ -138,7 +166,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         self,
         trace_id: Optional[str] = None,
         trace_map: Optional[Dict[str, List[str]]] = None,
-    ) -> None:
+    ) -> None:        
         # Ensure W&B run is initialized
         self._ensure_run()
 
@@ -156,20 +184,40 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def log_trace_tree(self) -> None:
         try:
             root_span = self._build_trace_tree()
-            root_trace = self._trace_tree.WBTraceTree(root_span)
-            self._wandb.run.log({"trace": root_trace})
-            self._wandb.termlog("Logged trace tree to W&B.")
+            if root_span:
+                root_trace = self._trace_tree.WBTraceTree(root_span)
+                self._wandb.run.log({"trace": root_trace})
+                self._wandb.termlog("Logged trace tree to W&B.")
         except:
             # Silently ignore errors to not break user code
             pass
 
-    def upload_index(self):
-        pass
+    def upload_index(self, index: IndexType, index_name: str) -> None:
+        """Upload an index to wandb."""
+        persist_dir = f"{self._wandb.run.dir}/storage"
+        if isinstance(index, IndexType.__args__):
+            try:
+                index.storage_context.persist(persist_dir)
+                self._upload_index_as_wb_artifact(persist_dir, index_name)
+            except Exception as e:
+                # Silently ignore errors to not break user code
+                self._print_upload_index_fail_message(e)
 
-    def download_index(self):
-        pass
+    def download_index(self, artifact_url: str) -> str:
+        """Download an index from wandb."""
+        artifact = self._wandb.use_artifact(artifact_url, type="storage_context")
+        artifact_dir = artifact.download()
+
+        storage_context = StorageContext.from_defaults(persist_dir=artifact_dir)
+        return storage_context, artifact_dir
+
+    def _upload_index_as_wb_artifact(self, dir_path: str, artifact_name: str) -> None:
+        artifact = self._wandb.Artifact(artifact_name, type="storage_context")
+        artifact.add_dir(dir_path)
+        self._wandb.run.log_artifact(artifact)
 
     def _build_trace_tree(self) -> "trace_tree.Span":
+        root_span = None
         id_to_wb_span_tmp = {}
         for root_node, child_nodes in self._trace_map.items():
             if root_node == "root":
@@ -266,7 +314,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                     for idx, document in enumerate(documents):
                         input_str += f"Document: {idx}\n" + document.text
                         input_str += "\n*************** \n"
-                inputs = {"documents": input_str, "len_documents": len(documents)}
+                    inputs = {"documents": input_str, "len_documents": len(documents)}
 
             # parse output payload
             output_payload = event_pair[-1].payload
@@ -277,7 +325,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                     for idx, node in enumerate(nodes):
                         output_str += f"Node: {idx}\n" + node.text
                         output_str += "\n***************\n"
-                outputs = {"nodes": output_str, "len_nodes": len(nodes)}
+                    outputs = {"nodes": output_str, "len_nodes": len(nodes)}
         else:
             inputs = event_pair[0].payload
             outputs = event_pair[-1].payload
@@ -322,6 +370,11 @@ class WandbCallbackHandler(BaseCallbackHandler):
             f"Streaming LlamaIndex events to W&B at {run_url}\n"
             "`WandbCallbackHandler` is currently in beta.\n"
             "Please report any issues to https://github.com/wandb/wandb/issues with the tag `llamaindex`."
+        )
+
+    def _print_upload_index_fail_message(self, e: Exception) -> None:
+        self._wandb_termlog(
+            f"Failed to upload index to W&B with the following error: {e}\n"
         )
 
     def finish(self) -> None:
