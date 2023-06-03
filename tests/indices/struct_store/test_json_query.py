@@ -21,15 +21,23 @@ TEST_PARAMS = [
 ]
 TEST_LLM_OUTPUT = "test_llm_output"
 
+
 @pytest.fixture
-def mock_json_service_ctx(mock_service_context: ServiceContext) -> Generator[ServiceContext, None, None]:
+def mock_json_service_ctx(
+    mock_service_context: ServiceContext,
+) -> Generator[ServiceContext, None, None]:
     with patch.object(mock_service_context, "llm_predictor") as mock_llm_predictor:
         mock_llm_predictor.apredict = AsyncMock(return_value=(TEST_LLM_OUTPUT, ""))
         mock_llm_predictor.predict = MagicMock(return_value=(TEST_LLM_OUTPUT, ""))
         yield mock_service_context
 
+
 @pytest.mark.parametrize("synthesize_response,call_apredict", TEST_PARAMS)
-def test_json_query_engine(synthesize_response: bool, call_apredict: bool, mock_json_service_ctx: ServiceContext) -> None:
+def test_json_query_engine(
+    synthesize_response: bool,
+    call_apredict: bool,
+    mock_json_service_ctx: ServiceContext,
+) -> None:
     """Test GPTNLJSONQueryEngine."""
     # Test on some sample data
     json_val = cast(JSONType, {})
@@ -44,7 +52,8 @@ def test_json_query_engine(synthesize_response: bool, call_apredict: bool, mock_
 
     # the mock prompt just takes the first item in the given column
     query_engine = GPTJSONQueryEngine(
-        json_value=json_val, json_schema=json_schema,
+        json_value=json_val,
+        json_schema=json_schema,
         service_context=mock_json_service_ctx,
         output_processor=test_output_processor,
         verbose=True,

@@ -13,7 +13,9 @@ from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 
 logger = logging.getLogger(__name__)
-IMPORT_ERROR_MSG = "`jsonpath_ng` package not found, please run `pip install jsonpath-ng`"
+IMPORT_ERROR_MSG = (
+    "`jsonpath_ng` package not found, please run `pip install jsonpath-ng`"
+)
 
 JSONType = Union[Dict[str, "JSONType"], List["JSONType"], str, int, float, bool, None]
 
@@ -133,9 +135,7 @@ class GPTJSONQueryEngine(BaseQueryEngine):
             "json_path_response_str": json_path_response_str,
         }
 
-        return Response(
-            response=response_str, extra_info=response_extra_info
-        )
+        return Response(response=response_str, extra_info=response_extra_info)
 
     @llm_token_counter("aquery")
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
@@ -180,6 +180,4 @@ class GPTJSONQueryEngine(BaseQueryEngine):
             "json_path_response_str": json_path_response_str,
         }
 
-        return Response(
-            response=response_str, extra_info=response_extra_info
-        )
+        return Response(response=response_str, extra_info=response_extra_info)
