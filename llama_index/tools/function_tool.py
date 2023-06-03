@@ -1,14 +1,8 @@
-from typing import Any, Optional, Callable
+from typing import Any, Optional, Callable, Type
 
+from pydantic import BaseModel
 from llama_index.tools.types import BaseTool, ToolMetadata
-from langchain.tools import Tool, StructuredTool
 from inspect import signature
-
-DEFAULT_NAME = "Function Tool"
-DEFAULT_DESCRIPTION = """Useful for running a natural language query
-against a function and getting back a response.
-
-"""
 
 
 class FunctionTool(BaseTool):
@@ -32,11 +26,12 @@ class FunctionTool(BaseTool):
         fn: Callable[..., Any],
         name: Optional[str] = None,
         description: Optional[str] = None,
+        fn_schema: Optional[Type[BaseModel]] = None,
     ) -> "FunctionTool":
         name = name or fn.__name__
         docstring = fn.__doc__
         description = description or f"{name}{signature(fn)}\n{docstring}"
-        metadata = ToolMetadata(name=name, description=description)
+        metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
         return cls(fn=fn, metadata=metadata)
 
     @property
@@ -49,30 +44,6 @@ class FunctionTool(BaseTool):
         """Function."""
         return self._fn
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Call."""
         return self._fn(*args, **kwargs)
-
-    def to_langchain_tool(
-        self,
-        **langchain_tool_kwargs: Any,
-    ) -> Tool:
-        """To langchain tool."""
-        return Tool.from_function(
-            fn=self.fn,
-            name=self.metadata.name or "",
-            description=self.metadata.description,
-            **langchain_tool_kwargs,
-        )
-
-    def to_langchain_structured_tool(
-        self,
-        **langchain_tool_kwargs: Any,
-    ) -> StructuredTool:
-        """To langchain structured tool."""
-        return StructuredTool.from_function(
-            fn=self.fn,
-            name=self.metadata.name,
-            description=self.metadata.description,
-            **langchain_tool_kwargs,
-        )
