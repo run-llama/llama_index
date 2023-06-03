@@ -8,20 +8,13 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import fsspec
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.readers.redis.utils import (
-    TokenEscaper,
-    array_to_buffer,
-    check_redis_modules_exist,
-    convert_bytes,
-    get_redis_query,
-)
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
+from llama_index.readers.redis.utils import (TokenEscaper, array_to_buffer,
+                                             check_redis_modules_exist,
+                                             convert_bytes, get_redis_query)
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
 from llama_index.vector_stores.utils import node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
@@ -303,7 +296,8 @@ class RedisVectorStore(VectorStore):
     def _create_index(self) -> None:
         # should never be called outside class and hence should not raise importerror
         from redis.commands.search.field import TagField, TextField
-        from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+        from redis.commands.search.indexDefinition import (IndexDefinition,
+                                                           IndexType)
 
         # Create Index
         default_fields = [
@@ -409,18 +403,6 @@ class RedisVectorStore(VectorStore):
             )
 
 
-def cast_metadata_types(mapping: Optional[MetadataFilters]) -> Dict[str, str]:
-    metadata = {}
-    if mapping:
-        for key, value in mapping.items():
-            try:
-                metadata[str(key)] = str(value)
-            except (TypeError, ValueError) as e:
-                # warn the user and continue
-                _logger.warning("Failed to cast metadata to string", e)
-    return metadata
-
-
 # currently only supports exact tag match - {} denotes a tag
 # must create the index with the correct metadata field before using a field as a filter, or it will return no results
 def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
@@ -429,7 +411,7 @@ def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
     filter_strings = []
     for filter in metadata_filters.filters:
         # adds quotes around the value to ensure that the filter is treated as an exact match
-        filter_string = "@%s:{%s}" % (filter.key, tokenizer.escape(filter.value))
+        filter_string = "@%s:{%s}" % (filter.key, tokenizer.escape(str(filter.value)))
         filter_strings.append(filter_string)
 
     joined_filter_strings = " & ".join(filter_strings)
