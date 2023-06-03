@@ -1,4 +1,4 @@
-🗃️ Index Structures
+🗃️ Data Index
 ================
 
 At the core of LlamaIndex is a set of index data structures. You can choose to use them on their own, 
@@ -13,9 +13,9 @@ capabilities our indices/graphs provide.
    :caption: Guides
 
    /guides/primer/index_guide.md
-   index_structs/document_management.md
-   index_structs/composability.md
-   index_structs/vector_store_guide.ipynb
+   document_management.md
+   composability.md
+   vector_store_guide.ipynb
 
 
 .. toctree::

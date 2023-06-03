@@ -43,5 +43,5 @@ Ignore all text chunks, make a single call to the LLM with just the query and no
 caption: Reference
 maxdepth: 1
 ---
-../../reference/query/response_synthesizer.rst
+/reference/query/response_synthesizer.rst
 ```

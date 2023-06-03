@@ -59,5 +59,5 @@ An API reference can be found [here](/reference/optimizers.rst).
 caption: Examples
 maxdepth: 1
 ---
-../../examples/node_postprocessor/OptimizerDemo.ipynb
+/examples/node_postprocessor/OptimizerDemo.ipynb
 ```

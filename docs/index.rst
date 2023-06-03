@@ -81,7 +81,7 @@ to fit their needs.
    :hidden:
 
    how_to/data_connectors.md
-   how_to/indices.rst
+   how_to/index/root.rst
    how_to/query_engine/root.md
    how_to/chat_engine/root.md
    how_to/customization.rst
