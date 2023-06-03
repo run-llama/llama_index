@@ -1,4 +1,5 @@
-## Modules
+# Modules
+
 
 ```{toctree}
 ---

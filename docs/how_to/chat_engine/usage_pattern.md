@@ -1,13 +1,33 @@
 # Usage Pattern
 
-We provide a few simple implementations to start, with more sophisticated modes coming soon!
-More specifically, the `SimpleChatEngine` does not make use of a knowledge base, 
-whereas `CondenseQuestionChatEngine` and `ReActChatEngine` make use of a query engine over knowledge base.
+## Get Started
 
+Build a chat engine from index:
+```python
+chat_engine = index.as_chat_engine()
+```
+
+Have a conversation with your data:
+```python
+response = chat_engine.chat("Tell me a joke.")
+```
+
+Reset chat history to start a new conversation:
+```python
+chat_engine.reset()
+```
+
+Enter an interactive chat REPL:
+```python
+chat_engine.chat_repl()
+```
+
+
+## Configuring a Chat Engine
 Configuring a chat engine is very similar to configuring a query engine.
 
-## High-Level API
-You can directly build a chat engine from an index in 1 line of code:
+### High-Level API
+You can directly build and configure a chat engine from an index in 1 line of code:
 ```python
 chat_engine = index.as_chat_engine(
     chat_mode='condense_question', 
@@ -16,25 +36,15 @@ chat_engine = index.as_chat_engine(
 ```
 > Note: you can access different chat engines by specifying the `chat_mode` as a kwarg. `condense_question` corresponds to `CondenseQuestionChatEngine`, `react` corresponds to `ReActChatEngine`.
 
-Call `chat` to have a conversation with your data:
-```python
-response = chat_engine.chat("Tell me a joke.")
-```
+> Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.  
 
-Call `reset` to start a new conversation:
-```python
-chat_engine.reset()
-```
+### Low-Level Composition API
 
+You can use the low-level composition API for need more granular control.
+Concretely speaking, you would explicitly construct `ChatEngine` object instead of calling `index.as_chat_engine(...)`.
+> Note: You may need to look at API references or example notebooks.
 
-## Low-Level Composition API
-While the high-level API optimizes for ease-of-use, it does not expose full range of configurability.  
-
-If you need more granular control, you can use the low-level composition API.
-Concretely speaking, you would explicitly construct `ChatEngine` object (you may need to look at API references or example notebooks) instead of calling `index.as_chat_engine(...)`.
-
-
-For example, you might want to:
+Here's an example where we configure the following:
 * configure the condense question prompt, 
 * initialize the conversation with some existing history,
 * print verbose debug message.
@@ -71,3 +81,4 @@ chat_engine = CondenseQuestionChatEngine.from_defaults(
     verbose=True
 )
 ```
+
