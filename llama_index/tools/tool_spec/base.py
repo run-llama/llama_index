@@ -1,7 +1,6 @@
 """Base tool spec class."""
 
-from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Dict
 from llama_index.tools.types import ToolMetadata
 from llama_index.tools.function_tool import FunctionTool
 from inspect import signature
@@ -15,7 +14,7 @@ class BaseToolSpec:
 
     def to_tool_list(
         self,
-        func_to_metadata_mapping: Optional[ToolMetadata] = None,
+        func_to_metadata_mapping: Optional[Dict[str, ToolMetadata]] = None,
     ) -> List[FunctionTool]:
         """Convert tool spec to list of tools."""
         func_to_metadata_mapping = func_to_metadata_mapping or {}
@@ -25,7 +24,7 @@ class BaseToolSpec:
             metadata = func_to_metadata_mapping.get(func_name, None)
             if metadata is None:
                 name = func_name
-                docstring = func.__doc__
+                docstring = func.__doc__ or ""
                 description = f"{name}{signature(func)}\n{docstring}"
                 metadata = ToolMetadata(name=name, description=description)
             tool = FunctionTool(fn=func, metadata=metadata)

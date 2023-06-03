@@ -1,9 +1,8 @@
 from typing import Any, Optional, cast, Callable
 
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.langchain_helpers.agents.tools import IndexToolConfig, LlamaIndexTool
 from llama_index.tools.types import BaseTool, ToolMetadata
 from langchain.tools import Tool, StructuredTool
+from inspect import signature
 
 DEFAULT_NAME = "Function Tool"
 DEFAULT_DESCRIPTION = """Useful for running a natural language query
@@ -34,8 +33,9 @@ class FunctionTool(BaseTool):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> "FunctionTool":
-        name = name or DEFAULT_NAME
-        description = description or DEFAULT_DESCRIPTION
+        name = name or fn.__name__
+        docstring = fn.__doc__
+        description = description or f"{name}{signature(fn)}\n{docstring}"
         metadata = ToolMetadata(name=name, description=description)
         return cls(fn=fn, metadata=metadata)
 
@@ -60,7 +60,7 @@ class FunctionTool(BaseTool):
         """To langchain tool."""
         return Tool.from_function(
             fn=self.fn,
-            name=self.metadata.name,
+            name=self.metadata.name or "",
             description=self.metadata.description,
             **langchain_tool_kwargs,
         )
