@@ -2,7 +2,7 @@
 
 from llama_index.tools.tool_spec.base import BaseToolSpec
 from llama_index.readers.notion import NotionPageReader
-from typing import Optional, List, Type
+from typing import Optional, List, Type, Dict, Any
 import requests
 from pydantic import BaseModel
 
@@ -55,12 +55,7 @@ class NotionToolSpec(BaseToolSpec):
     ) -> str:
         """Loads content from a set of page ids or a database id.
 
-        Args:
-            page_ids (List[str]): List of page ids to load.
-            database_id (str): Database id to load.
-
-        Returns:
-            str: Loaded data.
+        Don't use this endpoint if you don't know the page ids or database id.
 
         """
         page_ids = page_ids or []
@@ -76,12 +71,12 @@ class NotionToolSpec(BaseToolSpec):
         property: Optional[str] = None,
         page_size: int = 100,
     ) -> str:
-        """Returns a list of relevant pages.
+        """Search a list of relevant pages.
 
         Contains metadata for each page (but not the page content).
 
         """
-        payload = {
+        payload: Dict[str, Any] = {
             "query": query,
             "page_size": page_size,
         }
@@ -93,13 +88,11 @@ class NotionToolSpec(BaseToolSpec):
                 payload["sort"]["timestamp"] = timestamp
 
         if value is not None or property is not None:
-            if "filter" not in payload:
-                payload["filter"] = {}
+            payload["filter"] = {}
             if value is not None:
                 payload["filter"]["value"] = value
-
-        if filter is not None:
-            payload["filter"] = filter.dict()
+            if property is not None:
+                payload["filter"]["property"] = property
 
         response = requests.post(SEARCH_URL, json=payload, headers=self.reader.headers)
         response_json = response.json()

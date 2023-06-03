@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 from llama_index.tools.tool_spec.base import BaseToolSpec
+from llama_index.tools.types import ToolMetadata
 from typing import List, Type
 
 
@@ -61,6 +62,19 @@ def test_tool_spec() -> None:
     assert tools[2].metadata.name == "abc"
     assert tools[2].metadata.description == "abc(arg1: str) -> str\n"
     assert tools[2].metadata.fn_schema == AbcSchema
+
+    # test metadata mapping
+    tools = tool_spec.to_tool_list(
+        func_to_metadata_mapping={
+            "foo": ToolMetadata("foo_description", name="foo_name"),
+        }
+    )
+    assert len(tools) == 3
+    assert tools[0].metadata.name == "foo_name"
+    assert tools[0].metadata.description == "foo_description"
+    assert tools[0].metadata.fn_schema is None
+    assert tools[1].metadata.name == "bar"
+    assert tools[1].metadata.description == "bar(arg1: bool) -> str\nBar."
 
 
 def test_tool_spec_schema() -> None:

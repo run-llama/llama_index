@@ -1,7 +1,6 @@
 """Test tools."""
 
 from llama_index.tools.function_tool import FunctionTool
-from llama_index.tools.types import BaseTool
 from pydantic import BaseModel
 
 
@@ -35,6 +34,6 @@ def test_function_tool() -> None:
         fn_schema=TestSchema,
     )
     assert function_tool(1, 2) == "1,2"
-    langchain_tool = function_tool.to_langchain_structured_tool()
-    assert langchain_tool.run({"x": 1, "y": 2}) == "1,2"
-    assert langchain_tool.args_schema == TestSchema
+    langchain_tool2 = function_tool.to_langchain_structured_tool()
+    assert langchain_tool2.run({"x": 1, "y": 2}) == "1,2"
+    assert langchain_tool2.args_schema == TestSchema
