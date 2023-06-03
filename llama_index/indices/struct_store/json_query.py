@@ -21,7 +21,8 @@ JSONType = Union[Dict[str, "JSONType"], List["JSONType"], str, int, float, bool,
 
 
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
-    "Given an input question about a JSON value, synthesize a response from the query results.\n"
+    "Given an input question about a JSON value, synthesize a response "
+    "from the query results.\n"
     "Query: {query_str}\n"
     "JSON Schema: {json_schema}\n"
     "JSON Path: {json_path}\n"
@@ -54,8 +55,10 @@ class GPTJSONQueryEngine(BaseQueryEngine):
     Args:
         index (GPTJSONIndex): The index to query.
         json_path_prompt (Prompt): The JSON Path prompt to use.
-        output_processor (Callable): The output processor that executes the JSON Path query.
-        output_kwargs (dict): Additional output processor kwargs for the output_processor function.
+        output_processor (Callable): The output processor that executes the
+            JSON Path query.
+        output_kwargs (dict): Additional output processor kwargs for the
+            output_processor function.
         verbose (bool): Whether to print verbose output.
     """
 
