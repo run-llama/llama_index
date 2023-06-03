@@ -14,7 +14,7 @@ This video covers the `SubQuestionQueryEngine` and how it can be applied to fina
 
 This video covers managing documents from a source that is consantly updating (i.e Discord) and how you can avoid document duplication and save embedding tokens.
 
-[Youtube](TBD)
+[Youtube](https://www.youtube.com/watch?v=j6dJcODLd_c)
 
 [Notebook + Supplimentary Material](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/discover_llamaindex/document_management/)
 
