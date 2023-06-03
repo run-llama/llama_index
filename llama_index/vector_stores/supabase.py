@@ -1,7 +1,9 @@
+import logging
 import math
 from typing import Any, List
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.constants import DEFAULT_EMBEDDING_DIM
+from llama_index.data_structs.node import Node
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -9,7 +11,9 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+
+logger = logging.getLogger(__name__)
 
 
 class SupabaseVectorStore(VectorStore):
@@ -32,18 +36,32 @@ class SupabaseVectorStore(VectorStore):
     stores_text = True
 
     def __init__(
-        self, postgres_connection_string: str, collection_name: str, **kwargs: Any
+        self,
+        postgres_connection_string: str,
+        collection_name: str,
+        dimension: int = DEFAULT_EMBEDDING_DIM,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         import_err_msg = "`vecs` package not found, please run `pip install vecs`"
         try:
             import vecs
+            from vecs.collection import CollectionNotFound
         except ImportError:
             raise ImportError(import_err_msg)
 
         client = vecs.create_client(postgres_connection_string)
 
-        self._collection = client.get_collection(name=collection_name)
+        try:
+            self._collection = client.get_collection(name=collection_name)
+        except CollectionNotFound:
+            logger.info(
+                f"Collection {collection_name} does not exist, "
+                f"try creating one with dimension={dimension}"
+            )
+            self._collection = client.create_collection(
+                name=collection_name, dimension=dimension
+            )
 
     @property
     def client(self) -> None:
@@ -53,8 +71,8 @@ class SupabaseVectorStore(VectorStore):
     def _to_vecs_filters(self, filters: MetadataFilters) -> Any:
         """Convert llama filters to vecs filters. $eq is the only supported operator."""
         vecs_filter = {}
-        for f in filters:
-            vecs_filter[f[0]] = {"$eq": f[1]}
+        for f in filters.filters:
+            vecs_filter[f.key] = {"$eq": f.value}
         return vecs_filter
 
     def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
@@ -71,11 +89,11 @@ class SupabaseVectorStore(VectorStore):
         ids = []
 
         for result in embedding_results:
-            metadata = {
-                "text": result.node.text,
-                "node_metadata": node_to_metadata_dict(result.node),
-            }
-            data.append((result.id, result.embedding, metadata))
+            metadata_dict = node_to_metadata_dict(result.node)
+            # NOTE: keep text in metadata dict since there's no special field in
+            #       Supabase Vector.
+            metadata_dict["text"] = result.node.text
+            data.append((result.id, result.embedding, metadata_dict))
             ids.append(result.id)
 
         self._collection.upsert(vectors=data)
@@ -119,18 +137,19 @@ class SupabaseVectorStore(VectorStore):
         nodes = []
         for id_, distance, metadata in results:
             """shape of the result is [(vector, distance, metadata)]"""
-            similarities.append(1.0 - math.exp(-distance))
-            ids.append(id_)
 
+            text = metadata.pop("text", None)
+            extra_info, node_info, relationships = metadata_dict_to_node(metadata)
             node = Node(
                 doc_id=id_,
-                text=metadata.get("text", None),
-                extra_info=metadata.get("node_metadata", None),
-                relationships={
-                    DocumentRelationship.SOURCE: id,
-                },
+                text=text,
+                extra_info=extra_info,
+                node_info=node_info,
+                relationships=relationships,
             )
 
             nodes.append(node)
+            similarities.append(1.0 - math.exp(-distance))
+            ids.append(id_)
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
