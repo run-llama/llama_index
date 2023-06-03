@@ -39,6 +39,10 @@ class AdhocLoaderTool(BaseTool):
         self._metadata = metadata
         self._query_str_kwargs_key = query_str_kwargs_key
 
+    @property
+    def metadata(self) -> ToolMetadata:
+        return self._metadata
+
     @classmethod
     def from_defaults(
         cls,
@@ -54,7 +58,7 @@ class AdhocLoaderTool(BaseTool):
         """From defaults."""
         # NOTE: fn_schema should be specified if you want to use as langchain Tool
 
-        index = index or GPTVectorStoreIndex
+        index_cls = index_cls or GPTVectorStoreIndex
         index_kwargs = index_kwargs or {}
         metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
         return cls(
