@@ -29,10 +29,6 @@ class NotionToolSpec(BaseToolSpec):
     """
 
     spec_functions = ["load_data", "search_data"]
-    # spec_map = {
-    #     "load_data": {"fn": "load_data", "fn_schema": "load_data_schema"},
-    #     "search_data": {"fn": "search_data", "fn_schema": "search_data_schema"},
-    # }
 
     def __init__(self, integration_token: Optional[str] = None) -> None:
         """Initialize with parameters."""
