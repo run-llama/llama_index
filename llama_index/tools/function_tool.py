@@ -1,5 +1,6 @@
-from typing import Any, Optional, Callable
+from typing import Any, Optional, Callable, Type
 
+from pydantic import BaseModel
 from llama_index.tools.types import BaseTool, ToolMetadata
 from langchain.tools import Tool, StructuredTool
 from inspect import signature
@@ -26,11 +27,12 @@ class FunctionTool(BaseTool):
         fn: Callable[..., Any],
         name: Optional[str] = None,
         description: Optional[str] = None,
+        fn_schema: Optional[Type[BaseModel]] = None,
     ) -> "FunctionTool":
         name = name or fn.__name__
         docstring = fn.__doc__
         description = description or f"{name}{signature(fn)}\n{docstring}"
-        metadata = ToolMetadata(name=name, description=description)
+        metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
         return cls(fn=fn, metadata=metadata)
 
     @property

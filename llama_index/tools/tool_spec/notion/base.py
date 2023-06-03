@@ -9,14 +9,21 @@ from pydantic import BaseModel
 SEARCH_URL = "https://api.notion.com/v1/search"
 
 
+class NotionLoadDataSchema(BaseModel):
+    """Notion load data schema."""
+
+    page_ids: Optional[List[str]] = None
+    database_id: Optional[str] = None
+
+
 class NotionSearchDataSchema(BaseModel):
     """Notion search data schema."""
 
     query: str
-    direction: Optional[str] = (None,)
-    timestamp: Optional[str] = (None,)
-    value: Optional[str] = (None,)
-    property: Optional[str] = (None,)
+    direction: Optional[str] = None
+    timestamp: Optional[str] = None
+    value: Optional[str] = None
+    property: Optional[str] = None
     page_size: int = 100
 
 
@@ -37,7 +44,7 @@ class NotionToolSpec(BaseToolSpec):
     def get_fn_schema_from_fn_name(self, fn_name: str) -> Type[BaseModel]:
         """Return map from function name."""
         if fn_name == "load_data":
-            pass
+            return NotionLoadDataSchema
         elif fn_name == "search_data":
             return NotionSearchDataSchema
         else:
@@ -98,7 +105,3 @@ class NotionToolSpec(BaseToolSpec):
         response_json = response.json()
         response_results = response_json["results"]
         return response_results
-
-    def search_data_schema(self) -> BaseModel:
-        """Return search data schema."""
-        return NotionSearchDataSchema
