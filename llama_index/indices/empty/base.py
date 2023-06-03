@@ -5,13 +5,14 @@ pure LLM calls.
 
 """
 
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
 from llama_index.data_structs.data_structs import EmptyIndex
 from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
+from llama_index.storage.docstore.types import RefDocInfo
 
 
 class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
@@ -65,6 +66,11 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
         del nodes  # Unused
         raise NotImplementedError("Cannot insert into an empty index.")
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a node."""
         raise NotImplementedError("Cannot delete from an empty index.")
+
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        raise NotImplementedError("ref_doc_info not supported for an empty index.")

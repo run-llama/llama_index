@@ -44,7 +44,7 @@ def test_refresh_list(
     )
 
     # check that no documents are refreshed
-    refreshed_docs = list_index.refresh(more_documents)
+    refreshed_docs = list_index.refresh_ref_docs(more_documents)
     assert refreshed_docs[0] is False
     assert refreshed_docs[1] is False
 
@@ -54,7 +54,7 @@ def test_refresh_list(
         more_documents[i].doc_id = str(i)
 
     # second document should refresh
-    refreshed_docs = list_index.refresh(more_documents)
+    refreshed_docs = list_index.refresh_ref_docs(more_documents)
     assert refreshed_docs[0] is False
     assert refreshed_docs[1] is True
 
@@ -118,11 +118,17 @@ def test_list_delete(
         Document("This is a test v2.", doc_id="test_id_3"),
     ]
 
-    # delete from documents
     list_index = GPTListIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
-    list_index.delete("test_id_1")
+
+    # test ref doc info for three docs
+    all_ref_doc_info = list_index.ref_doc_info
+    for idx, ref_doc_id in enumerate(all_ref_doc_info.keys()):
+        assert new_documents[idx].doc_id == ref_doc_id
+
+    # delete from documents
+    list_index.delete_ref_doc("test_id_1")
     assert len(list_index.index_struct.nodes) == 2
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     assert nodes[0].ref_doc_id == "test_id_2"
@@ -136,7 +142,7 @@ def test_list_delete(
     list_index = GPTListIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
-    list_index.delete("test_id_2")
+    list_index.delete_ref_doc("test_id_2")
     assert len(list_index.index_struct.nodes) == 3
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     assert nodes[0].ref_doc_id == "test_id_1"

@@ -12,6 +12,7 @@ from llama_index.data_structs.node import ImageNode, IndexNode, Node
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
+from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
@@ -217,7 +218,68 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         self._insert(nodes, **insert_kwargs)
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
-        self._index_struct.delete(doc_id)
-        self._vector_store.delete(doc_id)
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        pass
+
+    def delete_nodes(
+        self,
+        doc_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete a list of nodes from the index.
+
+        Args:
+            doc_ids (List[str]): A list of doc_ids from the nodes to delete
+
+        """
+        raise NotImplementedError(
+            "Vector indices currently only support delete_ref_doc, which "
+            "deletes nodes using the ref_doc_id of ingested documents."
+        )
+
+    def delete_ref_doc(
+        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
+    ) -> None:
+        """Delete a document and it's nodes by using ref_doc_id."""
+        self._vector_store.delete(ref_doc_id)
+
+        # delete from index_struct only if needed
+        if not self._vector_store.stores_text or self._store_nodes_override:
+            ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
+            if ref_doc_info is not None:
+                for doc_id in ref_doc_info.doc_ids:
+                    self._index_struct.delete(doc_id)
+
+        # delete from docstore only if needed
+        if (
+            not self._vector_store.stores_text or self._store_nodes_override
+        ) and delete_from_docstore:
+            self._docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        if not self._vector_store.stores_text or self._store_nodes_override:
+            node_doc_ids = list(self.index_struct.nodes_dict.values())
+            nodes = self.docstore.get_nodes(node_doc_ids)
+
+            all_ref_doc_info = {}
+            for node in nodes:
+                ref_doc_id = node.ref_doc_id
+                if not ref_doc_id:
+                    continue
+
+                ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+                if not ref_doc_info:
+                    continue
+
+                all_ref_doc_info[ref_doc_id] = ref_doc_info
+            return all_ref_doc_info
+        else:
+            raise NotImplementedError(
+                "Vector store integrations that store text in the vector store are "
+                "not supported by ref_doc_info yet."
+            )
