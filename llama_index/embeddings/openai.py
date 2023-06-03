@@ -1,13 +1,13 @@
 """OpenAI embeddings file."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
-from llama_index.embeddings.base import BaseEmbedding, DEFAULT_EMBED_BATCH_SIZE
 from llama_index.callbacks.base import CallbackManager
+from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
 
 class OpenAIEmbeddingMode(str, Enum):
