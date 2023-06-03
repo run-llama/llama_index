@@ -82,7 +82,8 @@ to fit their needs.
 
    how_to/data_connectors.md
    how_to/indices.rst
-   how_to/query_interface.rst
+   how_to/query_engine.md
+   how_to/chat_engine.md
    how_to/customization.rst
    how_to/analysis.rst
    how_to/output_parsing.md
