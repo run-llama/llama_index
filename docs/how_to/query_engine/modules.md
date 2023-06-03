@@ -1,11 +1,19 @@
 # Modules
 
 
+## Basic
 ```{toctree}
 ---
 maxdepth: 1
 ---
-../../../examples/query_engine/CustomRetrievers.ipynb
+Retriever Query Engine <../../../examples/query_engine/CustomRetrievers.ipynb>
+```
+
+## Advanced
+```{toctree}
+---
+maxdepth: 1
+---
 ../../../examples/query_engine/RouterQueryEngine.ipynb
 ../../../examples/query_engine/RetrieverRouterQueryEngine.ipynb
 ../../../examples/query_engine/JointQASummary.ipynb
@@ -13,4 +21,6 @@ maxdepth: 1
 ../../../examples/query_transformations/SimpleIndexDemo-multistep.ipynb
 ../../../examples/query_engine/SQLRouterQueryEngine.ipynb
 ../../../examples/query_engine/SQLAutoVectorQueryEngine.ipynb
+<Retry Query Engine> ../../../examples/query_engine/RetryQueryEngine.ipynb
+<Retry Source Query Engine> ../../../examples/query_engine/RetryQueryEngine.ipynb
 ```

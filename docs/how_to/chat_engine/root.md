@@ -5,7 +5,7 @@ Chat engine is a high-level interface for having a conversation with your data
 (multiple back-and-forth instead of a single question & answer).  
 Think ChatGPT, but augmented with your knowledge base.  
 
-Conceptually, it is a **stateful** analogous of a query engine.  
+Conceptually, it is a **stateful** analogous of a [Query Engine](/how_to/query_engine/root.md). 
 By keeping track of the conversation history, it can answer questions with past context in mind.  
 
 ## Usage Pattern
@@ -21,7 +21,7 @@ Read more details:
 ---
 maxdepth: 2
 ---
-chat_engine/usage_pattern.md
+usage_pattern.md
 ```
 
 
@@ -32,5 +32,5 @@ Below you can find corresponding tutorials to see the available chat engines in 
 ---
 maxdepth: 2
 ---
-chat_engine/modules.md
+modules.md
 ```
