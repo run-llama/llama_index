@@ -46,27 +46,3 @@ class FunctionTool(BaseTool):
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Call."""
         return self._fn(*args, **kwargs)
-
-    def to_langchain_tool(
-        self,
-        **langchain_tool_kwargs: Any,
-    ) -> Tool:
-        """To langchain tool."""
-        return Tool.from_function(
-            fn=self.fn,
-            name=self.metadata.name or "",
-            description=self.metadata.description,
-            **langchain_tool_kwargs,
-        )
-
-    def to_langchain_structured_tool(
-        self,
-        **langchain_tool_kwargs: Any,
-    ) -> StructuredTool:
-        """To langchain structured tool."""
-        return StructuredTool.from_function(
-            fn=self.fn,
-            name=self.metadata.name,
-            description=self.metadata.description,
-            **langchain_tool_kwargs,
-        )

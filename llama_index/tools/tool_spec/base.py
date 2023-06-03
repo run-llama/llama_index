@@ -1,6 +1,8 @@
 """Base tool spec class."""
 
-from typing import List, Optional, Dict
+from abc import abstractmethod
+from typing import List, Optional, Dict, Type
+from pydantic import BaseModel
 from llama_index.tools.types import ToolMetadata
 from llama_index.tools.function_tool import FunctionTool
 from inspect import signature
@@ -11,6 +13,10 @@ class BaseToolSpec:
 
     # list of functions that you'd want to convert to spec
     spec_functions: List[str]
+
+    @abstractmethod
+    def get_fn_schema_from_fn_name(self, fn_name: str) -> Type[BaseModel]:
+        """Return map from function name."""
 
     def to_tool_list(
         self,
@@ -26,7 +32,10 @@ class BaseToolSpec:
                 name = func_name
                 docstring = func.__doc__ or ""
                 description = f"{name}{signature(func)}\n{docstring}"
-                metadata = ToolMetadata(name=name, description=description)
+                fn_schema = self.get_fn_schema_from_fn_name(func_name)
+                metadata = ToolMetadata(
+                    name=name, description=description, fn_schema=fn_schema
+                )
             tool = FunctionTool(fn=func, metadata=metadata)
             tool_list.append(tool)
         return tool_list
