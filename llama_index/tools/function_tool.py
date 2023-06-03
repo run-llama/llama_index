@@ -1,4 +1,4 @@
-from typing import Any, Optional, cast, Callable
+from typing import Any, Optional, Callable
 
 from llama_index.tools.types import BaseTool, ToolMetadata
 from langchain.tools import Tool, StructuredTool
