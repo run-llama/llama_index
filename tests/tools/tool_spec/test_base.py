@@ -38,12 +38,9 @@ class TestToolSpec(BaseToolSpec):
         """Return map from function name."""
         if fn_name == "foo":
             return FooSchema
-
         elif fn_name == "bar":
-
             return BarSchema
         elif fn_name == "abc":
-
             return AbcSchema
         else:
             raise ValueError(f"Invalid function name: {fn_name}")
