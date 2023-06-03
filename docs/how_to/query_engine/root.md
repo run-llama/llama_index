@@ -26,10 +26,10 @@ maxdepth: 3
 modules.md
 ```
 
-## Components
+## Advanced
 ```{toctree}
 ---
 maxdepth: 2
 ---
-components/root.md
+advanced/root.md
 ```

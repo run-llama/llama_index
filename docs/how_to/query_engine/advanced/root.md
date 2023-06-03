@@ -1,6 +1,7 @@
-# Components
+# Advanced
 
 
+## Components
 ```{toctree}
 ---
 maxdepth: 1
