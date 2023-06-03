@@ -1,6 +1,6 @@
 """Test json index."""
 
-from typing import Any, Dict, cast, Optional
+from typing import Any, Dict, cast, Generator
 from unittest.mock import MagicMock, AsyncMock, patch
 import pytest
 import asyncio
@@ -22,7 +22,7 @@ TEST_PARAMS = [
 TEST_LLM_OUTPUT = "test_llm_output"
 
 @pytest.fixture
-def mock_json_service_ctx(mock_service_context: ServiceContext) -> ServiceContext:
+def mock_json_service_ctx(mock_service_context: ServiceContext) -> Generator[ServiceContext, None, None]:
     with patch.object(mock_service_context, "llm_predictor") as mock_llm_predictor:
         mock_llm_predictor.apredict = AsyncMock(return_value=(TEST_LLM_OUTPUT, ""))
         mock_llm_predictor.predict = MagicMock(return_value=(TEST_LLM_OUTPUT, ""))
