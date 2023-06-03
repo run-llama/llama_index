@@ -9,26 +9,14 @@ from pydantic import BaseModel
 SEARCH_URL = "https://api.notion.com/v1/search"
 
 
-class NotionSort(BaseModel):
-    """Notion sort."""
-
-    direction: str
-    timestamp: str
-
-
-class NotionFilter(BaseModel):
-    """Notion filter."""
-
-    value: str
-    property: str
-
-
 class NotionSearchDataSchema(BaseModel):
     """Notion search data schema."""
 
     query: str
-    sort: Optional[NotionSort] = None
-    filter: Optional[NotionFilter] = None
+    direction: Optional[str] = (None,)
+    timestamp: Optional[str] = (None,)
+    value: Optional[str] = (None,)
+    property: Optional[str] = (None,)
     page_size: int = 100
 
 
@@ -79,8 +67,10 @@ class NotionToolSpec(BaseToolSpec):
     def search_data(
         self,
         query: str,
-        sort: Optional[NotionSort] = None,
-        filter: Optional[NotionFilter] = None,
+        direction: Optional[str] = None,
+        timestamp: Optional[str] = None,
+        value: Optional[str] = None,
+        property: Optional[str] = None,
         page_size: int = 100,
     ) -> str:
         """Returns a list of relevant pages.
@@ -92,8 +82,19 @@ class NotionToolSpec(BaseToolSpec):
             "query": query,
             "page_size": page_size,
         }
-        if sort is not None:
-            payload["sort"] = sort.dict()
+        if direction is not None or timestamp is not None:
+            payload["sort"] = {}
+            if direction is not None:
+                payload["sort"]["direction"] = direction
+            if timestamp is not None:
+                payload["sort"]["timestamp"] = timestamp
+
+        if value is not None or property is not None:
+            if "filter" not in payload:
+                payload["filter"] = {}
+            if value is not None:
+                payload["filter"]["value"] = value
+
         if filter is not None:
             payload["filter"] = filter.dict()
 
