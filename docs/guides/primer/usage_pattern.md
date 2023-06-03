@@ -142,7 +142,7 @@ When creating documents, you can also attach useful metadata. Any metadata added
 document = Document(
     'text', 
     extra_info={
-        'filename', '<doc_file_name>', 
+        'filename': '<doc_file_name>', 
         'category': '<category>'
     }
 )
