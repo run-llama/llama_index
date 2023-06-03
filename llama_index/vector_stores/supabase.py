@@ -100,7 +100,7 @@ class SupabaseVectorStore(VectorStore):
 
         return ids
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete doc.
 
         Args:
