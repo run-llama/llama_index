@@ -12,15 +12,16 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex also supports different vector stores
 as the storage backend for `GPTVectorStoreIndex`.
 
-- Chroma (`ChromaReader`) [Installation](https://docs.trychroma.com/getting-started)
-- DeepLake (`DeepLakeReader`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
-- Qdrant (`QdrantReader`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
-- Weaviate (`WeaviateReader`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
-- Pinecone (`PineconeReader`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
-- Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
-- Milvus (`MilvusReader`). [Installation](https://milvus.io/docs)
-- Zilliz (`MilvusReader`). [Quickstart](https://zilliz.com/doc/quick_start)
-- MyScale (`MyScaleReader`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
+- Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
+- DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
+- Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
+- Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
+- Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
+- Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Milvus (`MilvusVectorStore`). [Installation](https://milvus.io/docs)
+- Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
+- MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
+- Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
 
 A detailed API reference is [found here](/reference/indices/vector_store.rst).
 
