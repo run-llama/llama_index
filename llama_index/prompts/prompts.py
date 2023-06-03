@@ -131,9 +131,3 @@ SimpleInputPrompt = Prompt
 Required template variables: `query_str`, `df_str`, `instruction_str`.
 """
 PandasPrompt = Prompt
-
-"""JSON Path prompt. Convert query to JSONPath query.
-
-Required template variables: `query_str`.
-"""
-JSONPathPrompt = Prompt
