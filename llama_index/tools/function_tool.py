@@ -4,12 +4,6 @@ from llama_index.tools.types import BaseTool, ToolMetadata
 from langchain.tools import Tool, StructuredTool
 from inspect import signature
 
-DEFAULT_NAME = "Function Tool"
-DEFAULT_DESCRIPTION = """Useful for running a natural language query
-against a function and getting back a response.
-
-"""
-
 
 class FunctionTool(BaseTool):
     """Function Tool.
@@ -49,7 +43,7 @@ class FunctionTool(BaseTool):
         """Function."""
         return self._fn
 
-    def __call__(self, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Call."""
         return self._fn(*args, **kwargs)
 
