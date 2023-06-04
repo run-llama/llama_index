@@ -42,7 +42,7 @@ chat_engine = index.as_chat_engine(
 
 ### Low-Level Composition API
 
-You can use the low-level composition API for need more granular control.
+You can use the low-level composition API if you need more granular control.
 Concretely speaking, you would explicitly construct `ChatEngine` object instead of calling `index.as_chat_engine(...)`.
 > Note: You may need to look at API references or example notebooks.
 

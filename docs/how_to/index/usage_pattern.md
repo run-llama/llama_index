@@ -32,7 +32,7 @@ index = GPTVectorStoreIndex.from_documents(docs, service_context=service_context
 > Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.  
 
 ### Low-Level API
-You can use the low-level composition API for need more granular control.
+You can use the low-level composition API if you need more granular control.
 
 Here we show an example where you want to both modify the text chunk size, disable injecting metadata, and disable creating `Node` relationships.  
 The steps are:
