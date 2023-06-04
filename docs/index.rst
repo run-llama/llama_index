@@ -80,7 +80,7 @@ to fit their needs.
    :caption: Key Components
    :hidden:
 
-   how_to/data_connectors.md
+   how_to/connector/root.md
    how_to/index/root.md
    how_to/query_engine/root.md
    how_to/chat_engine/root.md

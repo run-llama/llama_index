@@ -11,9 +11,9 @@ capabilities our indices/graphs provide.
 
 ```{toctree}
 ---
-maxdepth: 1
+maxdepth: 2
 ---
-document_management.md
+usage_pattern.md
 ```
 
 
@@ -21,7 +21,7 @@ document_management.md
 
 ```{toctree}
 ---
-maxdepth: 1
+maxdepth: 2
 ---
 modules.md
 ```
