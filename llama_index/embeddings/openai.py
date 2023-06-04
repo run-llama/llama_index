@@ -107,8 +107,7 @@ def get_embedding(
         "embedding"
     ]
 
-
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+@retry(wait=wait_random_exponential(min=20, max=60), stop=stop_after_attempt(100))
 async def aget_embedding(
     text: str, engine: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
