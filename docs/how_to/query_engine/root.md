@@ -1,7 +1,7 @@
 # ❓ Query Engine
 
 ## Concept
-Query engine is a generic interface that allow you to ask question over your data.
+Query engine is a generic interface that allows you to ask question over your data.
 > If you want to have a conversation with your data (multiple back-and-forth instead of a single question & answer), take a look at [Chat Engine](/how_to/chat_engine/root.md)  
 
 A query engine takes in a natural language query, and returns a rich response.

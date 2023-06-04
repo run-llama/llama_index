@@ -27,8 +27,8 @@ query_engine = index.as_query_engine(
 
 ### Low-Level Composition API
 
-You can use the low-level composition API for need more granular control.
-Concretely speaking, you would explicitly construct a `QueryEngine` object instead of calling `index.as_chat_engine(...)`.
+You can use the low-level composition API if you need more granular control.
+Concretely speaking, you would explicitly construct a `QueryEngine` object instead of calling `index.as_query_engine(...)`.
 > Note: You may need to look at API references or example notebooks.
 
 
