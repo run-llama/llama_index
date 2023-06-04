@@ -18,7 +18,8 @@ from pydantic import BaseModel
 class AdhocLoaderTool(BaseTool):
     """Ad-hoc data loader tool.
 
-    Loads data, stores in index, and returns the relevant data.
+    Loads data with query interface, stores in index, and queries
+    for relevant data with a natural language query string.
 
     """
 
