@@ -173,7 +173,7 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
     "query to run, then look at the results of the query and return the answer. "
     "You can order the results by a relevant column to return the most "
     "interesting examples in the database.\n"
-    "Never query for all the columns from a specific table, only ask for a the "
+    "Never query for all the columns from a specific table, only ask for a "
     "few relevant columns given the question.\n"
     "Pay attention to use only the column names that you can see in the schema "
     "description. "
