@@ -6,6 +6,8 @@ Build a query engine from index:
 query_engine = index.as_query_engine()
 ```
 
+> Note: To learn how to build an index, see [Index](/how_to/index/root.md)
+
 Ask a question over your data
 ```python
 response = query_engine.query('Who is Paul Graham?')

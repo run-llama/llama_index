@@ -7,6 +7,8 @@ Build a chat engine from index:
 chat_engine = index.as_chat_engine()
 ```
 
+> Note: To learn how to build an index, see [Index](/how_to/index/root.md)
+
 Have a conversation with your data:
 ```python
 response = chat_engine.chat("Tell me a joke.")

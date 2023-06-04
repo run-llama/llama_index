@@ -15,5 +15,6 @@ The guides below are intended to help you get the most out of LlamaIndex. It giv
 
    primer/usage_pattern.md
    primer/index_guide.md
+   primer/query_interface.rst
    Architecture Overview <https://medium.com/better-programming/llamaindex-0-6-0-a-new-query-interface-over-your-data-331996d47e89>
 
