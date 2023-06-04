@@ -68,6 +68,7 @@ from the conversation.
 <Standalone question>
 """)
 
+# list of (human_message, ai_message) tuples
 custom_chat_history = [
     (
         'Hello assistant, we are having a insightful discussion about Paul Graham today.', 
