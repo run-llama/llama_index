@@ -1,16 +1,16 @@
 """Test json index."""
 
-from typing import Any, Dict, cast, Generator
-from unittest.mock import MagicMock, AsyncMock, patch
-import pytest
 import asyncio
-
 import json
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.response.schema import Response
-from llama_index.indices.service_context import ServiceContext
+from typing import Any, Dict, Generator, cast
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from llama_index.indices.struct_store.json_query import GPTJSONQueryEngine, JSONType
+import pytest
+
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.struct_store.json_query import JSONQueryEngine, JSONType
+from llama_index.response.schema import Response
 
 TEST_PARAMS = [
     # synthesize_response, call_apredict
@@ -51,7 +51,7 @@ def test_json_query_engine(
         return [test_json_return_value]
 
     # the mock prompt just takes the first item in the given column
-    query_engine = GPTJSONQueryEngine(
+    query_engine = JSONQueryEngine(
         json_value=json_val,
         json_schema=json_schema,
         service_context=mock_json_service_ctx,
