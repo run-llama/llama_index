@@ -1,6 +1,6 @@
 # Retriever Modes
 Here we show the mapping from `retriever_mode` configuration to the selected retriever class.
-> Note that `retriever_mode` is defined for each index class. 
+> Note that `retriever_mode` can mean different thing for different index classes. 
 
 ## Vector Index
 Specifying `retriever_mode` has no effect (silently ignored).

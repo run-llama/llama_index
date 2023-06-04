@@ -1,13 +1,40 @@
 # Modules
 
 ## Vector Index Retrievers
+* VectorIndexRetriever
 ```{toctree}
 ---
 maxdepth: 1
 ---
-VectorIndexRetriever </examples/query_engine/CustomRetrievers.ipynb>
 VectorIndexAutoRetriever </examples/vector_stores/chroma_auto_retriever.ipynb>
 ```
 
+## List Index
+* ListIndexRetriever 
+* ListIndexEmbeddingRetriever 
+* ListIndexLLMRetriever
 
-## List Index Retrievers
+## Tree Index
+* TreeSelectLeafRetriever
+* TreeSelectLeafEmbeddingRetriever
+* TreeAllLeafRetriever
+* TreeRootRetriever
+
+
+## Keyword Table Index
+* KeywordTableGPTRetriever
+* KeywordTableSimpleRetriever
+* KeywordTableRAKERetriever
+
+
+## Knowledge Graph Index
+* KGTableRetriever
+* KGTableRetriever
+* KGTableRetriever
+
+## Document Summary Index
+* DocumentSummaryIndexRetriever
+* DocumentSummaryIndexEmbeddingRetriever
+
+## Composed Retrievers
+* TransformRetriever
