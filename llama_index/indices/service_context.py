@@ -3,20 +3,18 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
+from langchain.base_language import BaseLanguageModel
+
 import llama_index
 from llama_index.callbacks.base import CallbackManager
-from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
-from langchain.base_language import BaseLanguageModel
-
 
 logger = logging.getLogger(__name__)
 
@@ -27,17 +25,10 @@ def _get_default_node_parser(
     callback_manager: Optional[CallbackManager] = None,
 ) -> NodeParser:
     """Get default node parser."""
-    callback_manager = callback_manager or CallbackManager([])
-    chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
-    chunk_overlap = chunk_overlap or DEFAULT_CHUNK_OVERLAP
-
-    token_text_splitter = TokenTextSplitter(
+    return SimpleNodeParser.from_defaults(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        callback_manager=callback_manager,
-    )
-    return SimpleNodeParser(
-        text_splitter=token_text_splitter, callback_manager=callback_manager
+        callback_manager=callback_manager, 
     )
 
 

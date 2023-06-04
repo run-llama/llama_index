@@ -12,7 +12,7 @@ You can compose multiple query engines to achieve more advanced capability.
 ## Usage Pattern
 ```{toctree}
 ---
-maxdepth: 1
+maxdepth: 2
 ---
 usage_pattern.md
 ```
