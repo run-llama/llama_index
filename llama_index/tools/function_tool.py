@@ -2,6 +2,7 @@ from typing import Any, Optional, Callable, Type
 
 from pydantic import BaseModel
 from llama_index.tools.types import BaseTool, ToolMetadata
+from langchain.tools import Tool, StructuredTool
 from inspect import signature
 
 
@@ -47,3 +48,29 @@ class FunctionTool(BaseTool):
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Call."""
         return self._fn(*args, **kwargs)
+
+    def to_langchain_tool(
+        self,
+        **langchain_tool_kwargs: Any,
+    ) -> Tool:
+        """To langchain tool."""
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
+            langchain_tool_kwargs
+        )
+        return Tool.from_function(
+            func=self.fn,
+            **langchain_tool_kwargs,
+        )
+
+    def to_langchain_structured_tool(
+        self,
+        **langchain_tool_kwargs: Any,
+    ) -> StructuredTool:
+        """To langchain structured tool."""
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
+            langchain_tool_kwargs
+        )
+        return StructuredTool.from_function(
+            func=self.fn,
+            **langchain_tool_kwargs,
+        )
