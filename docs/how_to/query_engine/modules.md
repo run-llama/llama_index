@@ -23,4 +23,5 @@ maxdepth: 1
 /examples/query_engine/SQLAutoVectorQueryEngine.ipynb
 <Retry Query Engine> /examples/query_engine/RetryQueryEngine.ipynb
 <Retry Source Query Engine> /examples/query_engine/RetryQueryEngine.ipynb
+/examples/query_engine/json_query_engine.ipynb
 ```

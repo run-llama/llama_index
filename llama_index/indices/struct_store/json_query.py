@@ -1,16 +1,17 @@
-import logging
-from typing import Any, Union, Optional, Dict, Callable, List
 import json
+import logging
+from typing import Any, Callable, Dict, List, Optional, Union
+
 from langchain.input import print_text
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.default_prompts import DEFAULT_JSON_PATH_PROMPT
-from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.response.schema import Response
 from llama_index.prompts.base import Prompt
+from llama_index.prompts.default_prompts import DEFAULT_JSON_PATH_PROMPT
 from llama_index.prompts.prompt_type import PromptType
+from llama_index.response.schema import Response
+from llama_index.token_counter.token_counter import llm_token_counter
 
 logger = logging.getLogger(__name__)
 IMPORT_ERROR_MSG = (
@@ -47,7 +48,7 @@ def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
     return [d.value for d in datum]
 
 
-class GPTJSONQueryEngine(BaseQueryEngine):
+class JSONQueryEngine(BaseQueryEngine):
     """GPT JSON Query Engine.
 
     Converts natural language to JSON Path queries.
