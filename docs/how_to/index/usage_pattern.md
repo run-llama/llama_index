@@ -10,7 +10,7 @@ index = GPTVectorStoreIndex.from_documents(docs)
 
 > Note: To learn how to load documents, see [Data Connectors](/how_to/connector/root.md)
 
-What is happening under the hood is the following:
+### What is happening under the hood?
 1. Documents are chunked up and parsed into `Node` objects (which are lightweight abstraction over text str that additional keep track of metadata and relationships).
 2. Additional computation is performed to add `Node` into index data structure
 > Note: the computation is index-specific. 
@@ -18,7 +18,7 @@ What is happening under the hood is the following:
 > * For a document summary index, this means calling an LLM to generate a summary
 
 ## Configuring Document Parsing
-The common configuration you might want to change is how to parse document into `Node` objects.
+The most common configuration you might want to change is how to parse document into `Node` objects.
 
 ### High-Level API
 We can configure our service context to use the desired chunk size.

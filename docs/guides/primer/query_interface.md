@@ -32,10 +32,10 @@ beginners while still providing the flexibility and power that experienced users
 
 ## Resources
 
-- The basic query interface over an index is found in our usage pattern guide. The guide
+- The basic query interface over an index is found in our [usage pattern guide](/guides/primer/usage_pattern.md). The guide
   details how to specify parameters for a retriever/synthesizer/query engine over a 
   single index structure.
-- A more advanced query interface is found in our composability guide. The guide
+- A more advanced query interface is found in our [composability guide](/how_to/index/composability.md). The guide
   describes how to specify a graph over multiple index structures.
 - We also provide a guide to some of our more [advanced components](/how_to/query_engine/advanced/root.md), which can be added 
   to a retriever or a query engine. See our [query transformations](/how_to/query_engine/advanced/query_transformations.md)

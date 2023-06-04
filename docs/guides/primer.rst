@@ -6,7 +6,8 @@ The guides below are intended to help you get the most out of LlamaIndex. It giv
 
 1. The general usage pattern of LlamaIndex (from data ingestion to data structures, to query interface)
 2. How Each Index Works
-3. Architecture Overview of LlamaIndex (as of 0.6.0)
+3. Query Interface 
+4. Architecture Overview of LlamaIndex (as of 0.6.0)
 
 
 .. toctree::
@@ -15,6 +16,6 @@ The guides below are intended to help you get the most out of LlamaIndex. It giv
 
    primer/usage_pattern.md
    primer/index_guide.md
-   primer/query_interface.rst
+   primer/query_interface.md
    Architecture Overview <https://medium.com/better-programming/llamaindex-0-6-0-a-new-query-interface-over-your-data-331996d47e89>
 

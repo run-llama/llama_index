@@ -31,7 +31,7 @@ maxdepth: 2
 modules.md
 ```
 
-## Advanced
+## Advanced Concepts
 
 ```{toctree}
 ---
