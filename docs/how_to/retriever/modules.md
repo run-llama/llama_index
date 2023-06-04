@@ -1,4 +1,6 @@
 # Module Guides
+We are adding more module guides soon!
+In the meanwhile, please take a look at the [API References](/reference/query/retrievers.rst).
 
 ## Vector Index Retrievers
 * VectorIndexRetriever
