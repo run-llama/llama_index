@@ -8,13 +8,20 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import fsspec
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.readers.redis.utils import (TokenEscaper, array_to_buffer,
-                                             check_redis_modules_exist,
-                                             convert_bytes, get_redis_query)
-from llama_index.vector_stores.types import (MetadataFilters,
-                                             NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.readers.redis.utils import (
+    TokenEscaper,
+    array_to_buffer,
+    check_redis_modules_exist,
+    convert_bytes,
+    get_redis_query,
+)
+from llama_index.vector_stores.types import (
+    MetadataFilters,
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 from llama_index.vector_stores.utils import node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
@@ -55,7 +62,8 @@ class RedisVectorStore(VectorStore):
             index_name (str): Name of the index.
             index_prefix (str): Prefix for the index. Defaults to "llama_index".
             index_args (Dict[str, Any]): Arguments for the index. Defaults to None.
-            metadata_fields (List[str]): List of metadata fields to store in the index (only supports TAG fields).
+            metadata_fields (List[str]): List of metadata fields to store in the index
+                (only supports TAG fields).
             redis_url (str): URL for the redis instance.
                 Defaults to "redis://localhost:6379".
             overwrite (bool): Whether to overwrite the index if it already exists.
@@ -238,7 +246,8 @@ class RedisVectorStore(VectorStore):
 
         if len(results.docs) == 0:
             raise ValueError(
-                f"No docs found on index '{self._index_name}' with prefix '{self._prefix}' and filters '{filters}'. "
+                f"No docs found on index '{self._index_name}' with "
+                f"prefix '{self._prefix}' and filters '{filters}'. "
                 "* Did you originally create the index with a different prefix? "
                 "* Did you index your metadata fields when you created the index?"
             )
@@ -296,8 +305,7 @@ class RedisVectorStore(VectorStore):
     def _create_index(self) -> None:
         # should never be called outside class and hence should not raise importerror
         from redis.commands.search.field import TagField, TextField
-        from redis.commands.search.indexDefinition import (IndexDefinition,
-                                                           IndexType)
+        from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 
         # Create Index
         default_fields = [
@@ -315,7 +323,8 @@ class RedisVectorStore(VectorStore):
         # add metadata fields to list of index fields or we won't be able to search them
         for metadata_field in self._metadata_fields:
             # TODO: allow addition of text fields as metadata
-            # TODO: make sure we're preventing overwriting other keys (e.g. text, doc_id, id, and other vector fields)
+            # TODO: make sure we're preventing overwriting other keys (e.g. text,
+            #   doc_id, id, and other vector fields)
             fields.append(TagField(metadata_field, sortable=False))
 
         _logger.info(f"Creating index {self._index_name}")
@@ -404,13 +413,15 @@ class RedisVectorStore(VectorStore):
 
 
 # currently only supports exact tag match - {} denotes a tag
-# must create the index with the correct metadata field before using a field as a filter, or it will return no results
+# must create the index with the correct metadata field before using a field as a
+#   filter, or it will return no results
 def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
     tokenizer = TokenEscaper()
 
     filter_strings = []
     for filter in metadata_filters.filters:
-        # adds quotes around the value to ensure that the filter is treated as an exact match
+        # adds quotes around the value to ensure that the filter is treated as an
+        #   exact match
         filter_string = "@%s:{%s}" % (filter.key, tokenizer.escape(str(filter.value)))
         filter_strings.append(filter_string)
 
