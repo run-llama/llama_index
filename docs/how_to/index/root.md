@@ -1,11 +1,16 @@
 # 🗃️ Data Index
 
 ## Concept
-At the core of LlamaIndex is a set of index data structures. You can choose to use them on their own, 
-or you can choose to compose a graph over these data structures.
+An `Index` is a data structure that allows us to quickly retrieve relevant context for a user query.
+For LlamaIndex, it's the core foundation for retrieval-augmented generation (RAG) use-cases.
 
-In the following sections, we detail how each index structure works, as well as some of the key
-capabilities our indices/graphs provide.
+
+At a high-level, `Indices` are built from [Documents](/how_to/connector/root.md).
+They are used to build [Query Engines](/how_to/query_engine/root.md) and [Chat Engines](/how_to/chat_engine/root.md)
+which enables question & answer and chat over your data.  
+
+Under the hood, `Indices` store data in `Node` objects (which represent chunks of the original documents), and expose an [Retriever](/how_to/retriever/root.md) interface that supports additional configuration and automation.
+
 
 ## Usage Pattern
 

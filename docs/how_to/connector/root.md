@@ -1,5 +1,8 @@
 # 🔌 Data Connectors (LlamaHub)
 
+# Concept
+A data connector (i.e. `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
+
 Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙. 
 LlamaHub is an open-source repository containing data loaders that you can easily plug and play into any LlamaIndex application.
 
