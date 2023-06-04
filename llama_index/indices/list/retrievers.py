@@ -8,10 +8,14 @@ from llama_index.indices.list.base import GPTListIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.utils import (default_format_node_batch_fn,
-                                       default_parse_choice_select_answer_fn)
-from llama_index.prompts.choice_select import (DEFAULT_CHOICE_SELECT_PROMPT,
-                                               ChoiceSelectPrompt)
+from llama_index.indices.utils import (
+    default_format_node_batch_fn,
+    default_parse_choice_select_answer_fn,
+)
+from llama_index.prompts.choice_select import (
+    DEFAULT_CHOICE_SELECT_PROMPT,
+    ChoiceSelectPrompt,
+)
 
 logger = logging.getLogger(__name__)
 

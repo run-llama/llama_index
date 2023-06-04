@@ -5,8 +5,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.data_structs.node import Node
-from llama_index.langchain_helpers.text_splitter import (TextSplitter,
-                                                         TokenTextSplitter)
+from llama_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.readers.schema.base import Document
@@ -46,7 +45,8 @@ class SimpleNodeParser(NodeParser):
         chunk_overlap: Optional[int] = None,
         include_extra_info: bool = True,
         include_prev_next_rel: bool = True,
-    ):
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> "SimpleNodeParser":
         callback_manager = callback_manager or CallbackManager([])
         chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
         chunk_overlap = chunk_overlap or DEFAULT_CHUNK_OVERLAP

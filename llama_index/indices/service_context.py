@@ -28,7 +28,7 @@ def _get_default_node_parser(
     return SimpleNodeParser.from_defaults(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        callback_manager=callback_manager, 
+        callback_manager=callback_manager,
     )
 
 
