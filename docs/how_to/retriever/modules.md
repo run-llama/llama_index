@@ -1,4 +1,4 @@
-# Modules
+# Module Guides
 
 ## Vector Index Retrievers
 * VectorIndexRetriever

@@ -1,6 +1,7 @@
-# Modules
+# Module Guides
 
-We provide a few simple implementations to start, with more sophisticated modes coming soon!
+We provide a few simple implementations to start, with more sophisticated modes coming soon!  
+
 More specifically, the `SimpleChatEngine` does not make use of a knowledge base, 
 whereas `CondenseQuestionChatEngine` and `ReActChatEngine` make use of a query engine over knowledge base.
 
