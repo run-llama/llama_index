@@ -24,6 +24,17 @@ query_engine = index.as_query_engine(
 ```
 > Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.  
 
+See [**Response Modes**](/how_to/query_engine/response_modes.md) for a full list of response modes and what they do.
+
+```{toctree}
+---
+maxdepth: 1
+hidden:
+---
+response_modes.md
+```
+
+
 
 ### Low-Level Composition API
 
