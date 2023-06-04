@@ -82,6 +82,7 @@ to fit their needs.
 
    how_to/connector/root.md
    how_to/index/root.md
+   how_to/retriever/root.md
    how_to/query_engine/root.md
    how_to/chat_engine/root.md
    how_to/customization.rst
