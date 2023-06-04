@@ -6,7 +6,7 @@ from llama_index.readers.schema.base import Document
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.tools.ondemand_loader_tool import (
-    AdhocLoaderTool,
+    OnDemandLoaderTool,
     create_schema_from_function,
 )
 
@@ -31,11 +31,11 @@ def test_create_schema_from_function() -> None:
     assert schema["properties"]["a"]["type"] == "boolean"
 
 
-def test_adhoc_loader_tool(
+def test_ondemand_loader_tool(
     mock_service_context: ServiceContext,
     documents: List[Document],
 ) -> None:
-    """Test adhoc loader."""
+    """Test ondemand loader."""
 
     class TestSchemaSpec(BaseModel):
         """Test schema spec."""
@@ -45,12 +45,12 @@ def test_adhoc_loader_tool(
 
     # import most basic string reader
     reader = StringIterableReader()
-    tool = AdhocLoaderTool.from_defaults(
+    tool = OnDemandLoaderTool.from_defaults(
         reader=reader,
         index_cls=GPTVectorStoreIndex,
         index_kwargs={"service_context": mock_service_context},
-        name="adhoc_loader_tool",
-        description="adhoc_loader_tool_desc",
+        name="ondemand_loader_tool",
+        description="ondemand_loader_tool_desc",
         fn_schema=TestSchemaSpec,
     )
     response = tool(["Hello world."], query_str="What is?")
