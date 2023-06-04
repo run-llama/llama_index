@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from llama_index.readers.schema.base import Document
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
-from llama_index.tools.adhoc_loader_tool import (
+from llama_index.tools.ondemand_loader_tool import (
     AdhocLoaderTool,
     create_schema_from_function,
 )

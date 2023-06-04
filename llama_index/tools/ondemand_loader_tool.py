@@ -37,8 +37,8 @@ def create_schema_from_function(
     return create_model(name, **fields)  # type: ignore
 
 
-class AdhocLoaderTool(BaseTool):
-    """Ad-hoc data loader tool.
+class OnDemandLoaderTool(BaseTool):
+    """On-demand data loader tool.
 
     Loads data with query interface, stores in index, and queries
     for relevant data with a natural language query string.
@@ -77,7 +77,7 @@ class AdhocLoaderTool(BaseTool):
         name: Optional[str] = None,
         description: Optional[str] = None,
         fn_schema: Optional[Type[BaseModel]] = None,
-    ) -> "AdhocLoaderTool":
+    ) -> "OnDemandLoaderTool":
         """From defaults."""
         # NOTE: fn_schema should be specified if you want to use as langchain Tool
 
