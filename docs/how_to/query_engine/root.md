@@ -10,6 +10,12 @@ You can compose multiple query engines to achieve more advanced capability.
 
 
 ## Usage Pattern
+Get started with:
+```python
+query_engine = index.as_query_engine()
+response = query_engine.query("Who is Paul Graham.")
+```
+
 ```{toctree}
 ---
 maxdepth: 2

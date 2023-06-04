@@ -12,6 +12,14 @@ LlamaHub is an open-source repository containing data loaders that you can easil
 
 
 ## Usage Pattern
+Get started with:
+```python
+from llama_index import download_loader
+
+GoogleDocsReader = download_loader('GoogleDocsReader')
+loader = GoogleDocsReader()
+documents = loader.load_data(document_ids=[...])
+```
 
 ```{toctree}
 ---
@@ -31,7 +39,7 @@ Some sample data connectors:
 - [Discord](https://discord.com/developers/docs/intro) (`DiscordReader`)
 - [Apify Actors](https://llamahub.ai/l/apify-actor) (`ApifyActor`). Can crawl the web, scrape webpages, extract text content, download files including `.pdf`, `.jpg`, `.png`, `.docx`, etc.
 
-See below for usage examples.
+See below for detailed guides.
 
 ```{toctree}
 ---

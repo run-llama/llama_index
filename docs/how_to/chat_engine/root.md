@@ -18,8 +18,6 @@ chat_engine = index.as_chat_engine()
 response = chat_engine.chat("Tell me a joke.")
 ```
 
-Read more details:
-
 ```{toctree}
 ---
 maxdepth: 2
