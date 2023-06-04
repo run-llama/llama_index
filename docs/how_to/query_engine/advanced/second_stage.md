@@ -155,10 +155,10 @@ The recency score is added to any score that the node already contains.
 caption: Examples
 maxdepth: 1
 ---
-../../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
-../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
-../../examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
-../../examples/node_postprocessor/PII.ipynb
-../../examples/node_postprocessor/CohereRerank.ipynb
-../../examples/node_postprocessor/LLMReranker-Gatsby.ipynb
+/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
+/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
+/examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
+/examples/node_postprocessor/PII.ipynb
+/examples/node_postprocessor/CohereRerank.ipynb
+/examples/node_postprocessor/LLMReranker-Gatsby.ipynb
 ```

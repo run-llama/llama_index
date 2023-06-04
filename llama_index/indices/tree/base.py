@@ -10,13 +10,13 @@ from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.common_tree.base import GPTTreeIndexBuilder
 from llama_index.indices.service_context import ServiceContext
-from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.indices.tree.inserter import GPTTreeIndexInserter
 from llama_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
 from llama_index.prompts.prompts import SummaryPrompt, TreeInsertPrompt
+from llama_index.storage.docstore.types import RefDocInfo
 
 
 class TreeRetrieverMode(str, Enum):
@@ -88,13 +88,13 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
         **kwargs: Any,
     ) -> BaseRetriever:
         # NOTE: lazy import
+        from llama_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
         from llama_index.indices.tree.select_leaf_embedding_retriever import (
             TreeSelectLeafEmbeddingRetriever,
         )
         from llama_index.indices.tree.select_leaf_retriever import (
             TreeSelectLeafRetriever,
         )
-        from llama_index.indices.tree.all_leaf_retriever import TreeAllLeafRetriever
         from llama_index.indices.tree.tree_root_retriever import TreeRootRetriever
 
         self._validate_build_tree_required(TreeRetrieverMode(retriever_mode))

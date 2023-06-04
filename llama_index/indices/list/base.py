@@ -64,8 +64,8 @@ class GPTListIndex(BaseGPTIndex[IndexList]):
     ) -> BaseRetriever:
         from llama_index.indices.list.retrievers import (
             ListIndexEmbeddingRetriever,
-            ListIndexRetriever,
             ListIndexLLMRetriever,
+            ListIndexRetriever,
         )
 
         if retriever_mode == ListRetrieverMode.DEFAULT:

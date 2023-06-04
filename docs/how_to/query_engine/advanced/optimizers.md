@@ -1,4 +1,4 @@
-# Optimizers
+# Token Optimizers
 
 **NOTE**: We'll be adding more to this section soon!
 
@@ -59,5 +59,5 @@ An API reference can be found [here](/reference/optimizers.rst).
 caption: Examples
 maxdepth: 1
 ---
-../../examples/node_postprocessor/OptimizerDemo.ipynb
+/examples/node_postprocessor/OptimizerDemo.ipynb
 ```

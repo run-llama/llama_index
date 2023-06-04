@@ -2,12 +2,14 @@
 
 from llama_index.indices.list.base import GPTListIndex
 from llama_index.indices.list.retrievers import (
-    ListIndexRetriever,
     ListIndexEmbeddingRetriever,
+    ListIndexLLMRetriever,
+    ListIndexRetriever,
 )
 
 __all__ = [
     "GPTListIndex",
     "ListIndexRetriever",
     "ListIndexEmbeddingRetriever",
+    "ListIndexLLMRetriever",
 ]

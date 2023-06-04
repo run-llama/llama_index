@@ -4,24 +4,23 @@ This module contains retrievers for document summary indices.
 
 """
 
-from llama_index.callbacks.schema import CBEventType
-from llama_index.indices.document_summary.base import GPTDocumentSummaryIndex
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.base_retriever import BaseRetriever
-from typing import Any, List, Optional, Callable, Tuple, Dict
-from llama_index.data_structs.node import Node, NodeWithScore
-from llama_index.prompts.choice_select import ChoiceSelectPrompt
-from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.query.embedding_utils import (
-    get_top_k_embeddings,
-)
-from llama_index.prompts.choice_select import (
-    DEFAULT_CHOICE_SELECT_PROMPT,
-)
 import logging
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from llama_index.callbacks.schema import CBEventType
+from llama_index.data_structs.node import Node, NodeWithScore
+from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.document_summary.base import GPTDocumentSummaryIndex
+from llama_index.indices.query.embedding_utils import get_top_k_embeddings
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
+)
+from llama_index.prompts.choice_select import (
+    DEFAULT_CHOICE_SELECT_PROMPT,
+    ChoiceSelectPrompt,
 )
 
 logger = logging.getLogger(__name__)

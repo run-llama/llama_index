@@ -36,12 +36,4 @@ Simply combine all text chunks into one, and make a single call to the LLM.
 ### Generation
 Ignore all text chunks, make a single call to the LLM with just the query and no additional context.  
 
-
-
-```{toctree}
----
-caption: Reference
-maxdepth: 1
----
-../../reference/query/response_synthesizer.rst
-```
+See [references](/reference/query/response_synthesizer.rst) for full details
