@@ -26,7 +26,7 @@ from llama_index.indices.keyword_table import (
     GPTRAKEKeywordTableIndex,
     GPTSimpleKeywordTableIndex,
 )
-from llama_index.indices.list import ListIndex
+from llama_index.indices.list import ListIndex, GPTListIndex
 
 # loading
 from llama_index.indices.loading import (
@@ -128,6 +128,7 @@ __all__ = [
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
     "ListIndex",
+    "GPTListIndex",
     "GPTEmptyIndex",
     "GPTTreeIndex",
     "GPTVectorStoreIndex",
