@@ -7,7 +7,7 @@ pure LLM calls.
 
 from typing import Any, Dict, Optional, Sequence
 
-from llama_index.data_structs.data_structs import EmptyIndex
+from llama_index.data_structs.data_structs import EmptyIndexStruct
 from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
@@ -15,7 +15,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 
 
-class EmptyIndex(BaseIndex[EmptyIndex]):
+class EmptyIndex(BaseIndex[EmptyIndexStruct]):
     """GPT Empty Index.
 
     An index that doesn't contain any documents. Used for
@@ -26,11 +26,11 @@ class EmptyIndex(BaseIndex[EmptyIndex]):
 
     """
 
-    index_struct_cls = EmptyIndex
+    index_struct_cls = EmptyIndexStruct
 
     def __init__(
         self,
-        index_struct: Optional[EmptyIndex] = None,
+        index_struct: Optional[EmptyIndexStruct] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
@@ -48,7 +48,7 @@ class EmptyIndex(BaseIndex[EmptyIndex]):
 
         return EmptyIndexRetriever(self)
 
-    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> EmptyIndex:
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> EmptyIndexStruct:
         """Build the index from documents.
 
         Args:

@@ -276,7 +276,7 @@ class KG(IndexStruct):
 
 
 @dataclass
-class EmptyIndex(IndexDict):
+class EmptyIndexStruct(IndexStruct):
     """Empty index."""
 
     @classmethod
