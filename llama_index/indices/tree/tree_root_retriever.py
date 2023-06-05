@@ -1,17 +1,18 @@
 """Retrieve query."""
 import logging
-from typing import Any, List
+from typing import List
 
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.utils import get_sorted_node_list
 
 logger = logging.getLogger(__name__)
 
 
 class TreeRootRetriever(BaseRetriever):
-    """GPT Tree Index retrieve query.
+    """Tree root retriever.
 
     This class directly retrieves the answer from the root nodes.
 
@@ -20,11 +21,7 @@ class TreeRootRetriever(BaseRetriever):
     attempt to parse information down the graph in order to synthesize an answer.
     """
 
-    def __init__(self, index: Any):
-        from llama_index.indices.tree.base import GPTTreeIndex
-
-        assert isinstance(index, GPTTreeIndex)
-
+    def __init__(self, index: TreeIndex):
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore

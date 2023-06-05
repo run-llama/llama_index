@@ -7,3 +7,7 @@ textarea{
   border: 0;
   padding: 0;
 }
+
+article p {
+  margin-bottom: 10px !important;
+}

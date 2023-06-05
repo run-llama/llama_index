@@ -5,11 +5,11 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.data_structs.data_structs import IndexDict
-from llama_index.data_structs.node import NodeWithScore
+from llama_index.data_structs.node import NodeType, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -22,7 +22,7 @@ class VectorIndexRetriever(BaseRetriever):
     """Vector index retriever.
 
     Args:
-        index (GPTVectorStoreIndex): vector store index.
+        index (VectorStoreIndex): vector store index.
         similarity_top_k (int): number of top k results to return.
         vector_store_query_mode (str): vector store query mode
             See reference for VectorStoreQueryMode for full list of supported modes.
@@ -37,7 +37,7 @@ class VectorIndexRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: GPTVectorStoreIndex,
+        index: VectorStoreIndex,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
         filters: Optional[MetadataFilters] = None,
@@ -101,9 +101,12 @@ class VectorIndexRetriever(BaseRetriever):
             # NOTE: vector store keeps text, returns nodes.
             # Only need to recover image or index nodes from docstore
             for i in range(len(query_result.nodes)):
-                node_id = query_result.nodes[i].get_doc_id()
-                if node_id in self._docstore.docs:
-                    query_result.nodes[i] = self._docstore.get_node(node_id)
+                if (not self._vector_store.stores_text) or query_result.nodes[
+                    i
+                ].get_origin_type() != NodeType.TEXT:
+                    node_id = query_result.nodes[i].get_doc_id()
+                    if node_id in self._docstore.docs:
+                        query_result.nodes[i] = self._docstore.get_node(node_id)
 
         log_vector_store_query_result(query_result)
 

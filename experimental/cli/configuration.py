@@ -4,11 +4,11 @@ from typing import Any, Type
 from llama_index.embeddings.openai import OpenAIEmbedding
 from langchain import OpenAI
 from langchain.base_language import BaseLanguageModel
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index import (
-    GPTVectorStoreIndex,
-    GPTSimpleKeywordTableIndex,
+    VectorStoreIndex,
+    SimpleKeywordTableIndex,
     ServiceContext,
     LLMPredictor,
 )
@@ -41,7 +41,7 @@ def save_config(config: ConfigParser, root: str = ".") -> None:
         config.write(fd)
 
 
-def load_index(root: str = ".") -> BaseGPTIndex[Any]:
+def load_index(root: str = ".") -> BaseIndex[Any]:
     """Load existing index file"""
     config = load_config(root)
     service_context = _load_service_context(config)
@@ -49,9 +49,9 @@ def load_index(root: str = ".") -> BaseGPTIndex[Any]:
     # Index type
     index_type: Type
     if config["index"]["type"] == "default" or config["index"]["type"] == "vector":
-        index_type = GPTVectorStoreIndex
+        index_type = VectorStoreIndex
     elif config["index"]["type"] == "keyword":
-        index_type = GPTSimpleKeywordTableIndex
+        index_type = SimpleKeywordTableIndex
     else:
         raise KeyError(f"Unknown index.type {config['index']['type']}")
 
@@ -68,7 +68,7 @@ def load_index(root: str = ".") -> BaseGPTIndex[Any]:
     return index
 
 
-def save_index(index: BaseGPTIndex[Any], root: str = ".") -> None:
+def save_index(index: BaseIndex[Any], root: str = ".") -> None:
     """Save index to file"""
     config = load_config(root)
     persist_dir = config["store"]["persist_dir"]

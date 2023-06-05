@@ -1,23 +1,21 @@
-"""Default query for GPTListIndex."""
+"""Retrievers for ListIndex."""
 import logging
-from typing import Any, List, Optional, Tuple, Callable
+from typing import Any, Callable, List, Optional, Tuple
 
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.embedding_utils import (
-    get_top_k_embeddings,
-)
+from llama_index.indices.list.base import ListIndex
+from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.list.base import GPTListIndex
-from llama_index.prompts.choice_select import (
-    DEFAULT_CHOICE_SELECT_PROMPT,
-    ChoiceSelectPrompt,
-)
+from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
-from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.choice_select import (
+    DEFAULT_CHOICE_SELECT_PROMPT,
+    ChoiceSelectPrompt,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +24,11 @@ class ListIndexRetriever(BaseRetriever):
     """Simple retriever for ListIndex that returns all nodes.
 
     Args:
-        index (GPTListIndex): The index to retrieve from.
+        index (ListIndex): The index to retrieve from.
 
     """
 
-    def __init__(self, index: GPTListIndex, **kwargs: Any) -> None:
+    def __init__(self, index: ListIndex, **kwargs: Any) -> None:
         self._index = index
 
     def _retrieve(
@@ -52,14 +50,14 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
     nodes that are traversed.
 
     Args:
-        index (GPTListIndex): The index to retrieve from.
+        index (ListIndex): The index to retrieve from.
         similarity_top_k (Optional[int]): The number of top nodes to return.
 
     """
 
     def __init__(
         self,
-        index: GPTListIndex,
+        index: ListIndex,
         similarity_top_k: Optional[int] = 1,
         **kwargs: Any,
     ) -> None:
@@ -124,7 +122,7 @@ class ListIndexLLMRetriever(BaseRetriever):
     """LLM retriever for ListIndex.
 
     Args:
-        index (GPTListIndex): The index to retrieve from.
+        index (ListIndex): The index to retrieve from.
         choice_select_prompt (Optional[ChoiceSelectPrompt]): A Choice-Select Prompt
            (see :ref:`Prompt-Templates`).)
         choice_batch_size (int): The number of nodes to query at a time.
@@ -138,7 +136,7 @@ class ListIndexLLMRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: GPTListIndex,
+        index: ListIndex,
         choice_select_prompt: Optional[ChoiceSelectPrompt] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,

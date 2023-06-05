@@ -1,7 +1,9 @@
 import os
 import fsspec
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Sequence
+from dataclasses import dataclass, field
+from dataclasses_json import DataClassJsonMixin
+from typing import Any, Dict, List, Optional, Sequence
 from llama_index.data_structs.node import Node
 
 from llama_index.schema import BaseDocument
@@ -10,6 +12,14 @@ from llama_index.schema import BaseDocument
 DEFAULT_PERSIST_FNAME = "docstore.json"
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_PATH = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
+
+
+@dataclass
+class RefDocInfo(DataClassJsonMixin):
+    """Dataclass to represent ingested documents."""
+
+    doc_ids: List = field(default_factory=list)
+    extra_info: Dict[str, Any] = field(default_factory=dict)
 
 
 class BaseDocumentStore(ABC):
@@ -57,6 +67,19 @@ class BaseDocumentStore(ABC):
     @abstractmethod
     def get_document_hash(self, doc_id: str) -> Optional[str]:
         ...
+
+    # ==== Ref Docs =====
+    @abstractmethod
+    def get_all_ref_doc_info(self) -> Optional[Dict[str, RefDocInfo]]:
+        """Get a mapping of ref_doc_id -> RefDocInfo for all ingested documents."""
+
+    @abstractmethod
+    def get_ref_doc_info(self, ref_doc_id: str) -> Optional[RefDocInfo]:
+        """Get the RefDocInfo for a given ref_doc_id."""
+
+    @abstractmethod
+    def delete_ref_doc(self, ref_doc_id: str, raise_error: bool = True) -> None:
+        """Delete a ref_doc and all it's associated nodes."""
 
     # ===== Nodes =====
     def get_nodes(self, node_ids: List[str], raise_error: bool = True) -> List[Node]:

@@ -126,16 +126,16 @@ class DocArrayVectorStore(VectorStore, ABC):
             self._update_ref_docs(docs)
         return [doc.id for doc in docs]
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Deletes a document from the vector store.
 
         Args:
-            doc_id (str): Document ID to be deleted.
+            ref_doc_id (str): Document ID to be deleted.
             **delete_kwargs (Any): Additional arguments to pass to the delete method.
         """
-        docs_to_be_removed = self._find_docs_to_be_removed(doc_id)
+        docs_to_be_removed = self._find_docs_to_be_removed(ref_doc_id)
         if not docs_to_be_removed:
-            logger.warning(f"Document with doc_id {doc_id} not found")
+            logger.warning(f"Document with doc_id {ref_doc_id} not found")
             return
 
         del self._index[docs_to_be_removed]

@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.schema.base import Document
 from tests.mock_utils.mock_utils import mock_extract_keywords
@@ -35,7 +35,7 @@ def test_build_table(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex.from_documents(
+    table = SimpleKeywordTableIndex.from_documents(
         documents, service_context=mock_service_context
     )
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
@@ -74,7 +74,7 @@ def test_build_table_async(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex.from_documents(
+    table = SimpleKeywordTableIndex.from_documents(
         documents, use_async=True, service_context=mock_service_context
     )
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
@@ -109,7 +109,7 @@ def test_insert(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test insert."""
-    table = GPTSimpleKeywordTableIndex([], service_context=mock_service_context)
+    table = SimpleKeywordTableIndex([], service_context=mock_service_context)
     assert len(table.index_struct.table.keys()) == 0
     table.insert(documents[0])
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
@@ -135,7 +135,7 @@ def test_insert(
     # test insert with doc_id
     document1 = Document("This is", doc_id="test_id1")
     document2 = Document("test v3", doc_id="test_id2")
-    table = GPTSimpleKeywordTableIndex([])
+    table = SimpleKeywordTableIndex([])
     table.insert(document1)
     table.insert(document2)
     chunk_index1_1 = list(table.index_struct.table["this"])[0]
@@ -166,23 +166,34 @@ def test_delete(
     ]
 
     # test delete
-    table = GPTSimpleKeywordTableIndex.from_documents(
+    table = SimpleKeywordTableIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
-    table.delete("test_id_1")
+    # test delete
+    table.delete_ref_doc("test_id_1")
     assert len(table.index_struct.table.keys()) == 6
-    print(table.index_struct.table.keys())
     assert len(table.index_struct.table["this"]) == 2
+
+    # test node contents after delete
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     node_texts = {n.get_text() for n in nodes}
     assert node_texts == {"This is another test.", "This is a test v2."}
 
-    table = GPTSimpleKeywordTableIndex.from_documents(
+    table = SimpleKeywordTableIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
-    table.delete("test_id_2")
+
+    # test ref doc info
+    all_ref_doc_info = table.ref_doc_info
+    for doc_id in all_ref_doc_info.keys():
+        assert doc_id in ("test_id_1", "test_id_2", "test_id_3")
+
+    # test delete
+    table.delete_ref_doc("test_id_2")
     assert len(table.index_struct.table.keys()) == 7
     assert len(table.index_struct.table["this"]) == 2
+
+    # test node contents after delete
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     node_texts = {n.get_text() for n in nodes}
     assert node_texts == {"Hello world.", "This is a test.", "This is a test v2."}

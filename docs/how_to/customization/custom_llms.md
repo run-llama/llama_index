@@ -13,8 +13,8 @@ the underlying abstraction. We introduce a wrapper class,
 
 We also introduce a [`PromptHelper` class](/reference/service_context/prompt_helper.rst), to
 allow the user to explicitly set certain constraint parameters, such as
-maximum input size (default is 4096 for davinci models), number of generated output
-tokens, maximum chunk overlap, and more.
+context window (default is 4096 for davinci models), number of generated output
+tokens, and more.
 
 By default, we use OpenAI's `text-davinci-003` model. But you may choose to customize
 the underlying LLM being used.
@@ -23,19 +23,19 @@ Below we show a few examples of LLM customization. This includes
 
 - changing the underlying LLM
 - changing the number of output tokens (for OpenAI, Cohere, or AI21)
-- having more fine-grained control over all parameters for any LLM, from input size to chunk overlap
+- having more fine-grained control over all parameters for any LLM, from context window to chunk overlap
 
 ## Example: Changing the underlying LLM
 
 An example snippet of customizing the LLM being used is shown below.
 In this example, we use `text-davinci-002` instead of `text-davinci-003`. Available models include `text-davinci-003`,`text-curie-001`,`text-babbage-001`,`text-ada-001`, `code-davinci-002`,`code-cushman-001`. Note that
 you may plug in any LLM shown on Langchain's
-[LLM](https://langchain.readthedocs.io/en/latest/modules/llms.html) page.
+[LLM](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) page.
 
 ```python
 
 from llama_index import (
-    GPTKeywordTableIndex,
+    KeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
     ServiceContext
@@ -49,7 +49,7 @@ llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # build index
-index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
+index = KeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 query_engine = index.as_query_engine()
@@ -68,7 +68,7 @@ For OpenAI, Cohere, AI21, you just need to set the `max_tokens` parameter
 ```python
 
 from llama_index import (
-    GPTKeywordTableIndex,
+    KeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
     ServiceContext
@@ -82,28 +82,24 @@ llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # build index
-index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
+index = KeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do after his time at Y Combinator?")
 
 ```
+ 
+## Example: Explicitly configure `context_window` and `num_output`
 
-If you are using other LLM classes from langchain, please see below.
-
-## Example: Fine-grained control over all parameters
-
-To have fine-grained control over all parameters, you will need to define
-a custom PromptHelper class.
+If you are using other LLM classes from langchain, you may need to explicitly configure the `context_window` and `num_output` via the `ServiceContext` since the information is not available by default.
 
 ```python
 
 from llama_index import (
-    GPTKeywordTableIndex,
+    KeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
-    PromptHelper,
     ServiceContext
 )
 from langchain import OpenAI
@@ -111,22 +107,26 @@ from langchain import OpenAI
 documents = SimpleDirectoryReader('data').load_data()
 
 
-# define prompt helper
-# set maximum input size
-max_input_size = 4096
+# set context window
+context_window = 4096
 # set number of output tokens
 num_output = 256
-# set maximum chunk overlap
-max_chunk_overlap = 20
-prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
 # define LLM
-llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-002", max_tokens=num_output))
+llm_predictor = LLMPredictor(llm=OpenAI(
+    temperature=0, 
+    model_name="text-davinci-002", 
+    max_tokens=num_output)
+)
 
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+service_context = ServiceContext.from_defaults(
+    llm_predictor=llm_predictor, 
+    context_window=context_window,
+    num_output=num_output,
+)
 
 # build index
-index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
+index = KeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 query_engine = index.as_query_engine()
@@ -137,6 +137,10 @@ response = query_engine.query("What did the author do after his time at Y Combin
 ## Example: Using a HuggingFace LLM
 
 LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model (example [here](./embeddings.md#custom-embeddings)).
+
+Many open-source models from HuggingFace require either some preamble before before each prompt, which is a `system_prompt`. Additionally, queries themselves may need an additional wrapper around the `query_str` itself. All this information is usually available from the HuggingFace model card for the model you are using.
+
+Below, this example uses both the `system_prompt` and `query_wrapper_prompt`, using specific prompts from the model card found [here](https://huggingface.co/stabilityai/stablelm-tuned-alpha-3b).
 
 ```python
 from llama_index.prompts.prompts import SimpleInputPrompt
@@ -156,8 +160,7 @@ from llama_index.llm_predictor import HuggingFaceLLMPredictor
 stablelm_predictor = HuggingFaceLLMPredictor(
     max_input_size=4096, 
     max_new_tokens=256,
-    temperature=0.7,
-    do_sample=False,
+    generate_kwargs={"temperature": 0.7, "do_sample": False}
     system_prompt=system_prompt,
     query_wrapper_prompt=query_wrapper_prompt,
     tokenizer_name="StabilityAI/stablelm-tuned-alpha-3b",
@@ -168,10 +171,22 @@ stablelm_predictor = HuggingFaceLLMPredictor(
     # uncomment this if using CUDA to reduce memory usage
     # model_kwargs={"torch_dtype": torch.float16}
 )
-service_context = ServiceContext.from_defaults(chunk_size_limit=1024, llm_predictor=stablelm_predictor)
+service_context = ServiceContext.from_defaults(
+    chunk_size=1024, 
+    llm_predictor=stablelm_predictor
+)
 ```
 
-An API reference can be found [here](../../reference/llm_predictor.rst).
+Some models will raise errors if all the keys from the tokenizer are passed to the model. A common tokenizer output that causes issues is `token_type_ids`. Below is an example of configuring the predictor to remove this before passing the inputs to the model:
+
+```python
+HuggingFaceLLMPredictor(
+    ...
+    tokenizer_outputs_to_remove=["token_type_ids"]
+) 
+```
+
+A full API reference can be found [here](../../reference/llm_predictor.rst).
 
 Several example notebooks are also listed below:
 
@@ -190,36 +205,33 @@ Here is a small example using locally running facebook/OPT model and Huggingface
 ```python
 import torch
 from langchain.llms.base import LLM
-from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex, PromptHelper
+from llama_index import SimpleDirectoryReader, LangchainEmbedding, ListIndex
 from llama_index import LLMPredictor, ServiceContext
 from transformers import pipeline
 from typing import Optional, List, Mapping, Any
 
 
-# define prompt helper
-# set maximum input size
-max_input_size = 2048
+# set context window size
+context_window = 2048
 # set number of output tokens
 num_output = 256
-# set maximum chunk overlap
-max_chunk_overlap = 20
-prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
+# store the pipeline/model outisde of the LLM class to avoid memory issues
+model_name = "facebook/opt-iml-max-30b"
+pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
 
 class CustomLLM(LLM):
-    model_name = "facebook/opt-iml-max-30b"
-    pipeline = pipeline("text-generation", model=model_name, device="cuda:0", model_kwargs={"torch_dtype":torch.bfloat16})
-
+    
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         prompt_length = len(prompt)
-        response = self.pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
+        response = pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
 
         # only return newly generated tokens
         return response[prompt_length:]
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
-        return {"name_of_model": self.model_name}
+        return {"name_of_model": model_name}
 
     @property
     def _llm_type(self) -> str:
@@ -228,11 +240,15 @@ class CustomLLM(LLM):
 # define our LLM
 llm_predictor = LLMPredictor(llm=CustomLLM())
 
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+service_context = ServiceContext.from_defaults(
+    llm_predictor=llm_predictor, 
+    context_window=context_window, 
+    num_output=num_output
+)
 
 # Load the your data
 documents = SimpleDirectoryReader('./data').load_data()
-index = GPTListIndex.from_documents(documents, service_context=service_context)
+index = ListIndex.from_documents(documents, service_context=service_context)
 
 # Query and print response
 query_engine = index.as_query_engine()

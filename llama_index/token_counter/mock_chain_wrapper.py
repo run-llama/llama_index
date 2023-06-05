@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from langchain.llms.base import BaseLLM
 
-from llama_index.constants import NUM_OUTPUTS
+from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
@@ -85,7 +85,7 @@ class MockLLMPredictor(LLMPredictor):
     """Mock LLM Predictor."""
 
     def __init__(
-        self, max_tokens: int = NUM_OUTPUTS, llm: Optional[BaseLLM] = None
+        self, max_tokens: int = DEFAULT_NUM_OUTPUTS, llm: Optional[BaseLLM] = None
     ) -> None:
         """Initialize params."""
         super().__init__(llm)
@@ -118,5 +118,8 @@ class MockLLMPredictor(LLMPredictor):
             return _mock_knowledge_graph_triplet_extract(
                 prompt_args, prompt.partial_dict.get("max_knowledge_triplets", 2)
             )
+        elif prompt_str == PromptType.CUSTOM:
+            # we don't know specific prompt type, return generic response
+            return ""
         else:
             raise ValueError("Invalid prompt type.")

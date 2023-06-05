@@ -13,6 +13,7 @@ from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.vector_stores.redis import RedisVectorStore
 from llama_index.vector_stores.simple import SimpleVectorStore
+from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.types import VectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
@@ -31,6 +32,7 @@ class VectorStoreType(str, Enum):
     MILVUS = "milvus"
     DEEPLAKE = "deeplake"
     MYSCALE = "myscale"
+    SUPABASE = "supabase"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -39,6 +41,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.WEAVIATE: WeaviateVectorStore,
     VectorStoreType.QDRANT: QdrantVectorStore,
     VectorStoreType.LANCEDB: LanceDBVectorStore,
+    VectorStoreType.SUPABASE: SupabaseVectorStore,
     VectorStoreType.MILVUS: MilvusVectorStore,
     VectorStoreType.PINECONE: PineconeVectorStore,
     VectorStoreType.OPENSEARCH: OpensearchVectorStore,

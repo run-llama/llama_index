@@ -89,13 +89,19 @@ class DynamoDBVectorStore(VectorStore):
             response.append(result.id)
         return response
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
         text_ids_to_delete = set()
         for text_id, item in self._kvstore.get_all(
             collection=self._collection_text_id_to_doc_id
         ).items():
-            if doc_id == item[self._key_value]:
+            if ref_doc_id == item[self._key_value]:
                 text_ids_to_delete.add(text_id)
 
         for text_id in text_ids_to_delete:

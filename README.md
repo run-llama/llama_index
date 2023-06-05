@@ -8,7 +8,7 @@ PyPI:
 
 Documentation: https://gpt-index.readthedocs.io/.
 
-Twitter: https://twitter.com/gpt_index.
+Twitter: https://twitter.com/llama_index.
 
 Discord: https://discord.gg/dGcwcsnxhU.
 
@@ -66,9 +66,9 @@ To build a simple vector store index:
 import os
 os.environ["OPENAI_API_KEY"] = 'YOUR_OPENAI_API_KEY'
 
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 ```
 
 

@@ -10,12 +10,12 @@ existing keywords in the table.
 
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Optional, Sequence, Set, Union
+from typing import Any, Dict, Optional, Sequence, Set, Union
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import KeywordTable
 from llama_index.data_structs.node import Node
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.service_context import ServiceContext
@@ -24,6 +24,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.prompts.prompts import KeywordExtractPrompt
+from llama_index.storage.docstore.types import RefDocInfo
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -34,8 +35,8 @@ class KeywordTableRetrieverMode(str, Enum):
     RAKE = "rake"
 
 
-class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
-    """GPT Keyword Table Index.
+class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
+    """Base Keyword Table Index.
 
     This index extracts keywords from the text, and maps each
     keyword to the node(s) that it corresponds to. In this sense it mimicks a
@@ -150,35 +151,43 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
             keywords = self._extract_keywords(n.get_text())
             self._index_struct.add_node(list(keywords), n)
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
-        # get set of ids that correspond to node
-        node_idxs_to_delete = set()
-        node_id_list = list(self._index_struct.node_ids)
-        nodes = self._docstore.get_nodes(node_id_list)
-        for node_idx, node in zip(node_id_list, nodes):
-            if node.ref_doc_id != doc_id:
-                continue
-            node_idxs_to_delete.add(node_idx)
-        for node_idx in node_idxs_to_delete:
-            self._docstore.delete_document(node_idx)
-
-        # delete node_idxs from keyword to node idxs mapping
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a node."""
+        # delete node from the keyword table
         keywords_to_delete = set()
-        for keyword, node_idxs in self._index_struct.table.items():
-            if node_idxs_to_delete.intersection(node_idxs):
-                self._index_struct.table[keyword] = node_idxs.difference(
-                    node_idxs_to_delete
-                )
-                if not self._index_struct.table[keyword]:
+        for keyword, node_ids in self._index_struct.table.items():
+            if doc_id in node_ids:
+                node_ids.remove(doc_id)
+                if len(node_ids) == 0:
                     keywords_to_delete.add(keyword)
 
+        # delete keywords that have zero nodes
         for keyword in keywords_to_delete:
             del self._index_struct.table[keyword]
 
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        node_doc_ids_sets = list(self._index_struct.table.values())
+        node_doc_ids = list(set().union(*node_doc_ids_sets))
+        nodes = self.docstore.get_nodes(node_doc_ids)
 
-class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
-    """GPT Keyword Table Index.
+        all_ref_doc_info = {}
+        for node in nodes:
+            ref_doc_id = node.ref_doc_id
+            if not ref_doc_id:
+                continue
+
+            ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+            if not ref_doc_info:
+                continue
+
+            all_ref_doc_info[ref_doc_id] = ref_doc_info
+        return all_ref_doc_info
+
+
+class KeywordTableIndex(BaseKeywordTableIndex):
+    """Keyword Table Index.
 
     This index uses a GPT model to extract keywords from the text.
 
@@ -201,3 +210,7 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
         )
         keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
         return keywords
+
+
+# legacy
+GPTKeywordTableIndex = KeywordTableIndex
