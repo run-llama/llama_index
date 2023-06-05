@@ -409,4 +409,5 @@ maxdepth: 1
 ../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
+../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 ```
