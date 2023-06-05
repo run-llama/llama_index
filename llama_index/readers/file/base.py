@@ -204,7 +204,7 @@ class SimpleDirectoryReader(BaseReader):
 
                 doc = Document(data, extra_info=metadata)
                 if self.filename_as_id:
-                    doc.doc_id = Path(input_file)
+                    doc.doc_id = str(Path(input_file))
 
                 documents.append(doc)
 
