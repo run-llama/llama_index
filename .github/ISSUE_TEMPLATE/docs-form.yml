@@ -1,5 +1,5 @@
-name: Feature Request
-description: Request a new feature
+name: Documentation Change Request
+description: Request a change to the documenation
 title: "[Documentation]: "
 labels: ["documentation", "triage"]
 body:
