@@ -1,5 +1,5 @@
-name: Feature Request
-description: Request a new feature
+name: General Question
+description: Ask a question
 title: "[Question]: "
 labels: ["question"]
 body:
