@@ -17,12 +17,11 @@ from llama_index.data_structs.data_structs import KeywordTable
 from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.keyword_table.utils import extract_keywords_given_response
+from llama_index.indices.keyword_table.utils import \
+    extract_keywords_given_response
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import (
-    DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
-    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
-)
+    DEFAULT_KEYWORD_EXTRACT_TEMPLATE, DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE)
 from llama_index.prompts.prompts import KeywordExtractPrompt
 from llama_index.storage.docstore.types import RefDocInfo
 
@@ -35,8 +34,8 @@ class KeywordTableRetrieverMode(str, Enum):
     RAKE = "rake"
 
 
-class BaseGPTKeywordTableIndex(BaseIndex[KeywordTable]):
-    """GPT Keyword Table Index.
+class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
+    """Base Keyword Table Index.
 
     This index extracts keywords from the text, and maps each
     keyword to the node(s) that it corresponds to. In this sense it mimicks a
@@ -94,10 +93,8 @@ class BaseGPTKeywordTableIndex(BaseIndex[KeywordTable]):
     ) -> BaseRetriever:
         # NOTE: lazy import
         from llama_index.indices.keyword_table.retrievers import (
-            KeywordTableGPTRetriever,
-            KeywordTableRAKERetriever,
-            KeywordTableSimpleRetriever,
-        )
+            KeywordTableGPTRetriever, KeywordTableRAKERetriever,
+            KeywordTableSimpleRetriever)
 
         if retriever_mode == KeywordTableRetrieverMode.DEFAULT:
             return KeywordTableGPTRetriever(self, **kwargs)
@@ -186,8 +183,8 @@ class BaseGPTKeywordTableIndex(BaseIndex[KeywordTable]):
         return all_ref_doc_info
 
 
-class KeywordTableIndex(BaseGPTKeywordTableIndex):
-    """GPT Keyword Table Index.
+class KeywordTableIndex(BaseKeywordTableIndex):
+    """Keyword Table Index.
 
     This index uses a GPT model to extract keywords from the text.
 

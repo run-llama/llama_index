@@ -7,14 +7,14 @@ technique that doesn't involve GPT - just uses regex.
 
 from typing import Set
 
-from llama_index.indices.keyword_table.base import BaseGPTKeywordTableIndex
+from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import simple_extract_keywords
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
-class SimpleKeywordTableIndex(BaseGPTKeywordTableIndex):
+class SimpleKeywordTableIndex(BaseKeywordTableIndex):
     """Simple Keyword Table Index.
 
     This index uses a simple regex extractor to extract keywords from the text.

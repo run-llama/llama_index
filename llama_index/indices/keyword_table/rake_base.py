@@ -6,12 +6,12 @@ Similar to KeywordTableIndex, but uses RAKE instead of GPT.
 
 from typing import Set
 
-from llama_index.indices.keyword_table.base import BaseGPTKeywordTableIndex
+from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import rake_extract_keywords
 
 
-class RAKEKeywordTableIndex(BaseGPTKeywordTableIndex):
-    """GPT RAKE Keyword Table Index.
+class RAKEKeywordTableIndex(BaseKeywordTableIndex):
+    """RAKE Keyword Table Index.
 
     This index uses a RAKE keyword extractor to extract keywords from the text.
 

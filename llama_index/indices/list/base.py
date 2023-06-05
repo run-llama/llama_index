@@ -23,7 +23,7 @@ class ListRetrieverMode(str, Enum):
 
 
 class ListIndex(BaseIndex[IndexList]):
-    """GPT List Index.
+    """List Index.
 
     The list index is a simple data structure where nodes are stored in
     a sequence. During index construction, the document texts are
@@ -63,10 +63,8 @@ class ListIndex(BaseIndex[IndexList]):
         **kwargs: Any,
     ) -> BaseRetriever:
         from llama_index.indices.list.retrievers import (
-            ListIndexEmbeddingRetriever,
-            ListIndexLLMRetriever,
-            ListIndexRetriever,
-        )
+            ListIndexEmbeddingRetriever, ListIndexLLMRetriever,
+            ListIndexRetriever)
 
         if retriever_mode == ListRetrieverMode.DEFAULT:
             return ListIndexRetriever(self, **kwargs)
