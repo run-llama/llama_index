@@ -55,4 +55,3 @@ maxdepth: 1
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
 ../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 ```
-
