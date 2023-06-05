@@ -399,6 +399,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
         inputs["formatted_prompt"] = outputs.get("formatted_prompt", None)
         outputs.pop("formatted_prompt", None)
 
+        # Get `original_template` from Prompt
+        inputs["template"] = inputs["template"].original_template
+
         # Make token counts part of span's `metadata`
         def filterByKey(keys: List[str]) -> Dict[str, int]:
             return {x: outputs[x] for x in keys}  # type: ignore
