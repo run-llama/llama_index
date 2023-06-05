@@ -15,6 +15,31 @@ from llama_index.callbacks.schema import (
 if TYPE_CHECKING:
     from wandb.sdk.data_types import trace_tree
     from wandb import Settings as WBSettings
+    from llama_index.storage.storage_context import StorageContext
+
+    from llama_index import (
+        ComposableGraph,
+        GPTKeywordTableIndex,
+        GPTSimpleKeywordTableIndex,
+        GPTRAKEKeywordTableIndex,
+        GPTListIndex,
+        GPTEmptyIndex,
+        GPTTreeIndex,
+        GPTVectorStoreIndex,
+        GPTSQLStructStoreIndex,
+    )
+
+    IndexType = Union[
+        ComposableGraph,
+        GPTKeywordTableIndex,
+        GPTSimpleKeywordTableIndex,
+        GPTRAKEKeywordTableIndex,
+        GPTListIndex,
+        GPTEmptyIndex,
+        GPTTreeIndex,
+        GPTVectorStoreIndex,
+        GPTSQLStructStoreIndex,
+    ]
 
 
 # remove this class
@@ -92,7 +117,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             GPTSQLStructStoreIndex,
         )
 
-        self._IndexType = Union[
+        self._IndexType = (
             ComposableGraph,
             GPTKeywordTableIndex,
             GPTSimpleKeywordTableIndex,
@@ -102,7 +127,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             GPTTreeIndex,
             GPTVectorStoreIndex,
             GPTSQLStructStoreIndex,
-        ]
+        )
 
         self._run_args = run_args
         self._ensure_run(should_print_url=(self._wandb.run is None))
@@ -185,25 +210,26 @@ class WandbCallbackHandler(BaseCallbackHandler):
             root_span = self._build_trace_tree()
             if root_span:
                 root_trace = self._trace_tree.WBTraceTree(root_span)
-                self._wandb.run.log({"trace": root_trace})
+                if self._wandb.run:
+                    self._wandb.run.log({"trace": root_trace})
                 self._wandb.termlog("Logged trace tree to W&B.")
         except:
             # Silently ignore errors to not break user code
             pass
 
     def persist_index(
-        self, index: Any, index_name: str, persist_dir: Union[str, None] = None
+        self, index: IndexType, index_name: str, persist_dir: Union[str, None] = None
     ) -> None:
         """Upload an index to wandb."""
         if persist_dir is None:
-            persist_dir = f"{self._wandb.run.dir}/storage"
+            persist_dir = f"{self._wandb.run.dir}/storage" # type: ignore
             _default_persist_dir = True
         if not os.path.exists(persist_dir):
             os.makedirs(persist_dir)
 
-        if isinstance(index, self._IndexType.__args__):
+        if isinstance(index, self._IndexType):
             try:
-                index.storage_context.persist(persist_dir)
+                index.storage_context.persist(persist_dir) # type: ignore
                 self._upload_index_as_wb_artifact(persist_dir, index_name)
             except Exception as e:
                 # Silently ignore errors to not break user code
@@ -215,7 +241,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
     def load_storage_context(
         self, artifact_url: str, index_download_dir: Union[str, None] = None
-    ) -> str:
+    ) -> "StorageContext":
         """Download an index from wandb and return a storage context."""
         from llama_index.storage.storage_context import StorageContext
 
@@ -228,9 +254,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def _upload_index_as_wb_artifact(self, dir_path: str, artifact_name: str) -> None:
         artifact = self._wandb.Artifact(artifact_name, type="storage_context")
         artifact.add_dir(dir_path)
-        self._wandb.run.log_artifact(artifact)
+        self._wandb.run.log_artifact(artifact) # type: ignore
 
-    def _build_trace_tree(self) -> "trace_tree.Span":
+    def _build_trace_tree(self) -> Union[None, "trace_tree.Span"]:
         root_span = None
         id_to_wb_span_tmp = {}
         for root_node, child_nodes in self._trace_map.items():
@@ -272,7 +298,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             event_type = event_pair[0].event_type
             span_kind = self._map_event_type_to_span_kind(event_type)
         else:
-            event_type = trace_id
+            event_type = trace_id # type: ignore
             span_kind = None
 
         wb_span = self._trace_tree.Span(
@@ -283,7 +309,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         )
 
         inputs, outputs, wb_span = self._add_payload_to_span(wb_span, event_pair)
-        wb_span.add_named_result(inputs=inputs, outputs=outputs)
+        wb_span.add_named_result(inputs=inputs, outputs=outputs) # type: ignore
 
         return wb_span
 
@@ -428,7 +454,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         )
 
     def _print_upload_index_fail_message(self, e: Exception) -> None:
-        self._wandb._wandb_termlog(  # type: ignore
+        self._wandb.termlog(
             f"Failed to upload index to W&B with the following error: {e}\n"
         )
 
