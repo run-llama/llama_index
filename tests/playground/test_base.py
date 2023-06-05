@@ -7,7 +7,7 @@ import pytest
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.playground import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
 from llama_index.readers.schema.base import Document
@@ -44,7 +44,7 @@ def test_get_set_compare(
             documents=documents, service_context=mock_service_context
         ),
         ListIndex.from_documents(documents, service_context=mock_service_context),
-        GPTTreeIndex.from_documents(
+        TreeIndex.from_documents(
             documents=documents, service_context=mock_service_context
         ),
     ]
@@ -98,7 +98,7 @@ def test_validation() -> None:
 
     with pytest.raises(ValueError):
         _ = Playground(
-            indices=[GPTVectorStoreIndex, ListIndex, GPTTreeIndex]  # type: ignore
+            indices=[GPTVectorStoreIndex, ListIndex, TreeIndex]  # type: ignore
         )
 
     with pytest.raises(ValueError):

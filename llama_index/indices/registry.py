@@ -11,11 +11,11 @@ from llama_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.struct_store.pandas import GPTPandasIndex
 from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex
-from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 
 INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
-    IndexStructType.TREE: GPTTreeIndex,
+    IndexStructType.TREE: TreeIndex,
     IndexStructType.LIST: ListIndex,
     IndexStructType.KEYWORD_TABLE: GPTKeywordTableIndex,
     IndexStructType.VECTOR_STORE: GPTVectorStoreIndex,

@@ -29,9 +29,9 @@ class TreeAllLeafRetriever(BaseRetriever):
     """
 
     def __init__(self, index: Any):
-        from llama_index.indices.tree.base import GPTTreeIndex
+        from llama_index.indices.tree.base import TreeIndex
 
-        assert isinstance(index, GPTTreeIndex)
+        assert isinstance(index, TreeIndex)
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore

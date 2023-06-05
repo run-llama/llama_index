@@ -33,7 +33,7 @@ REQUIRE_TREE_MODES = {
 }
 
 
-class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
+class TreeIndex(BaseGPTIndex[IndexGraph]):
     """GPT Tree Index.
 
     The tree index is a tree-structured index, where each node is a summary of
@@ -165,3 +165,6 @@ class GPTTreeIndex(BaseGPTIndex[IndexGraph]):
 
             all_ref_doc_info[ref_doc_id] = ref_doc_info
         return all_ref_doc_info
+
+# legacy
+GPTTreeIndex = TreeIndex

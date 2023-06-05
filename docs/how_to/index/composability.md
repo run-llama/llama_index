@@ -23,13 +23,13 @@ Now let's define a tree index for each document. In order to persist the graph l
 In Python, we have:
 
 ```python
-from llama_index import GPTTreeIndex
+from llama_index import TreeIndex
 
 storage_context = storage_context.from_defaults()
 
-index1 = GPTTreeIndex.from_documents(doc1, storage_context=storage_context)
-index2 = GPTTreeIndex.from_documents(doc2, storage_context=storage_context)
-index3 = GPTTreeIndex.from_documents(doc3, storage_context=storage_context)
+index1 = TreeIndex.from_documents(doc1, storage_context=storage_context)
+index2 = TreeIndex.from_documents(doc2, storage_context=storage_context)
+index3 = TreeIndex.from_documents(doc3, storage_context=storage_context)
 ```
 
 ![](/_static/composability/diagram_b1.png)

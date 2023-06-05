@@ -42,7 +42,7 @@ For the list index (`ListIndex`):
 - NOTE: the embedding-mode usage of the list index is roughly equivalent with the usage of our `GPTVectorStoreIndex`; the main
     difference is when embeddings are generated (during query-time for the list index vs. index construction for the simple vector index).
 
-For the tree index (`GPTTreeIndex`):
+For the tree index (`TreeIndex`):
 - We start with the root nodes, and traverse down the tree by picking the child node through embedding similarity.
 - See the [Tree Query API](/reference/query/retrievers/tree.rst) for more details.
 

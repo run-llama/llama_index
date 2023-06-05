@@ -101,7 +101,7 @@ To do this, first build the sub-indices over different data sources.
 Then construct the corresponding query engines, and give each query engine a description to obtain a `QueryEngineTool`.
 
 ```python
-from llama_index import GPTTreeIndex, GPTVectorStoreIndex
+from llama_index import TreeIndex, GPTVectorStoreIndex
 from llama_index.tools import QueryEngineTool
 
 ...

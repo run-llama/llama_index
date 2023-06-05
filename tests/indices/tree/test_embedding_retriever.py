@@ -12,7 +12,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.select_leaf_embedding_retriever import (
     TreeSelectLeafEmbeddingRetriever,
 )
-from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.langchain_helpers.chain_wrapper import (
     LLMChain,
     LLMMetadata,
@@ -82,7 +82,7 @@ def test_embedding_query(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test embedding query."""
-    tree = GPTTreeIndex.from_documents(
+    tree = TreeIndex.from_documents(
         documents, service_context=mock_service_context, **index_kwargs
     )
 
@@ -135,7 +135,7 @@ def test_query_and_count_tokens(
     llmchain_mock_resp_token_count = 4
     # build the tree
     # TMP
-    tree = GPTTreeIndex.from_documents(documents, **index_kwargs)
+    tree = TreeIndex.from_documents(documents, **index_kwargs)
     assert tree.service_context.llm_predictor.total_tokens_used == (
         first_block_count + llmchain_mock_resp_token_count
     ) + (second_block_count + llmchain_mock_resp_token_count)

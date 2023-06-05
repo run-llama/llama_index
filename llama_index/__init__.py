@@ -50,7 +50,7 @@ from llama_index.indices.service_context import (
     set_global_service_context,
 )
 from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex
-from llama_index.indices.tree import GPTTreeIndex
+from llama_index.indices.tree import TreeIndex, GPTTreeIndex
 from llama_index.indices.vector_store import GPTVectorStoreIndex
 
 # langchain helper
@@ -130,7 +130,7 @@ __all__ = [
     "ListIndex",
     "GPTListIndex",
     "GPTEmptyIndex",
-    "GPTTreeIndex",
+    "TreeIndex",
     "GPTVectorStoreIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",

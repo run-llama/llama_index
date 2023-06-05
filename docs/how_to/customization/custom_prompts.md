@@ -33,17 +33,17 @@ At a high-level, prompts are used in 1) index construction, and 2) query engine 
 
 ### Modify prompts used in index construction
 Different indices use different types of prompts during construction (some don't use prompts at all). 
-For instance, `GPTTreeIndex` uses a `SummaryPrompt` to hierarchically
+For instance, `TreeIndex` uses a `SummaryPrompt` to hierarchically
 summarize the nodes, and `GPTKeywordTableIndex` uses a `KeywordExtractPrompt` to extract keywords.
 
 There are two equivalent ways to override the prompts:
 1. via the default nodes constructor 
 ```python
-index = GPTTreeIndex(nodes, summary_template=<custom_prompt>)
+index = TreeIndex(nodes, summary_template=<custom_prompt>)
 ```
 2. via the documents constructor.
 ```python
-index = GPTTreeIndex.from_documents(docs, summary_template=<custom_prompt>)
+index = TreeIndex.from_documents(docs, summary_template=<custom_prompt>)
 ```
 
 For more details on which index uses which prompts, please visit

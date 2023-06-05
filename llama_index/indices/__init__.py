@@ -7,14 +7,15 @@ from llama_index.indices.keyword_table.rake_base import \
 from llama_index.indices.keyword_table.simple_base import \
     GPTSimpleKeywordTableIndex
 from llama_index.indices.list.base import GPTListIndex, ListIndex
-from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.indices.tree.base import TreeIndex, GPTTreeIndex
 
 __all__ = [
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
     "ListIndex",
-    "GPTTreeIndex",
+    "TreeIndex",
     # legacy
     "GPTListIndex",
+    "GPTTreeIndex", 
 ]

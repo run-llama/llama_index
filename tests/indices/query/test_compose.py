@@ -6,7 +6,7 @@ from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.readers.schema.base import Document
 
 
@@ -41,7 +41,7 @@ def test_recursive_query_list_tree(
     # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
     graph = ComposableGraph.from_indices(
-        GPTTreeIndex,
+        TreeIndex,
         [
             list1,
             list2,
@@ -73,10 +73,10 @@ def test_recursive_query_tree_list(
     tree_kwargs = index_kwargs["tree"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    tree1 = GPTTreeIndex.from_documents(
+    tree1 = TreeIndex.from_documents(
         documents[2:6], service_context=mock_service_context, **tree_kwargs
     )
-    tree2 = GPTTreeIndex.from_documents(
+    tree2 = TreeIndex.from_documents(
         documents[:2] + documents[6:],
         service_context=mock_service_context,
         **tree_kwargs

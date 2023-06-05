@@ -22,7 +22,7 @@ The following indices don't require LLM calls at all during building (0 cost):
 
 #### Indices with LLM calls
 The following indices do require LLM calls during build time:
-- `GPTTreeIndex` - use LLM to hierarchically summarize the text to build the tree
+- `TreeIndex` - use LLM to hierarchically summarize the text to build the tree
 - `GPTKeywordTableIndex` - use LLM to extract keywords from each document
 
 
@@ -35,7 +35,7 @@ call the LLM {math}`N` times.
 
 Here are some notes regarding each of the indices:
 - `ListIndex`: by default requires {math}`N` LLM calls, where N is the number of nodes.
-- `GPTTreeIndex`: by default requires {math}`\log (N)` LLM calls, where N is the number of leaf nodes. 
+- `TreeIndex`: by default requires {math}`\log (N)` LLM calls, where N is the number of leaf nodes. 
     - Setting `child_branch_factor=2` will be more expensive than the default `child_branch_factor=1` (polynomial vs logarithmic), because we traverse 2 children instead of just 1 for each parent node.
 - `GPTKeywordTableIndex`: by default requires an LLM call to extract query keywords.
     - Can do `index.as_retriever(retriever_mode="simple")` or `index.as_retriever(retriever_mode="rake")` to also use regex/RAKE keyword extractors on your query text.
@@ -60,14 +60,14 @@ You can then use this predictor during both index construction and querying. Exa
 
 **Index Construction**
 ```python
-from llama_index import GPTTreeIndex, MockLLMPredictor, SimpleDirectoryReader
+from llama_index import TreeIndex, MockLLMPredictor, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 # the "mock" llm predictor is our token counter
 llm_predictor = MockLLMPredictor(max_tokens=256)
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
-# pass the "mock" llm_predictor into GPTTreeIndex during index construction
-index = GPTTreeIndex.from_documents(documents, service_context=service_context)
+# pass the "mock" llm_predictor into TreeIndex during index construction
+index = TreeIndex.from_documents(documents, service_context=service_context)
 
 # get number of tokens used
 print(llm_predictor.last_token_usage)
