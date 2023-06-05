@@ -17,11 +17,12 @@ from llama_index.data_structs.data_structs import KeywordTable
 from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.keyword_table.utils import \
-    extract_keywords_given_response
+from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import (
-    DEFAULT_KEYWORD_EXTRACT_TEMPLATE, DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE)
+    DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
+    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
+)
 from llama_index.prompts.prompts import KeywordExtractPrompt
 from llama_index.storage.docstore.types import RefDocInfo
 
@@ -93,8 +94,10 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     ) -> BaseRetriever:
         # NOTE: lazy import
         from llama_index.indices.keyword_table.retrievers import (
-            KeywordTableGPTRetriever, KeywordTableRAKERetriever,
-            KeywordTableSimpleRetriever)
+            KeywordTableGPTRetriever,
+            KeywordTableRAKERetriever,
+            KeywordTableSimpleRetriever,
+        )
 
         if retriever_mode == KeywordTableRetrieverMode.DEFAULT:
             return KeywordTableGPTRetriever(self, **kwargs)

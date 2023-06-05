@@ -16,7 +16,9 @@ from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.prompts.default_prompts import (
-    DEFAULT_KG_TRIPLET_EXTRACT_PROMPT, DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE)
+    DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
+    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
+)
 from llama_index.prompts.prompts import KnowledgeGraphPrompt
 from llama_index.storage.docstore.types import RefDocInfo
 
@@ -70,7 +72,9 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         from llama_index.indices.knowledge_graph.retrievers import (
-            KGRetrieverMode, KGTableRetriever)
+            KGRetrieverMode,
+            KGTableRetriever,
+        )
 
         if len(self.index_struct.embedding_dict) > 0 and "retriever_mode" not in kwargs:
             kwargs["retriever_mode"] = KGRetrieverMode.HYBRID
