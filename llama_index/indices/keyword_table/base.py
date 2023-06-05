@@ -211,4 +211,5 @@ class KeywordTableIndex(BaseGPTKeywordTableIndex):
         keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
         return keywords
 
+
 GPTKeywordTableIndex = KeywordTableIndex

@@ -52,7 +52,10 @@ from llama_index.indices.service_context import (
     ServiceContext,
     set_global_service_context,
 )
-from llama_index.indices.struct_store.sql import SQLStructStoreIndex,  GPTSQLStructStoreIndex
+from llama_index.indices.struct_store.sql import (
+    SQLStructStoreIndex,
+    GPTSQLStructStoreIndex,
+)
 from llama_index.indices.tree import TreeIndex, GPTTreeIndex
 from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
 

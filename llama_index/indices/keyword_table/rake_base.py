@@ -21,4 +21,5 @@ class RAKEKeywordTableIndex(BaseGPTKeywordTableIndex):
         """Extract keywords from text."""
         return rake_extract_keywords(text, max_keywords=self.max_keywords_per_chunk)
 
+
 GPTRAKEKeywordTableIndex = RAKEKeywordTableIndex

@@ -58,7 +58,7 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
             IndexList: The created list index.
         """
         del nodes  # Unused
-        index_struct = EmptyIndex()
+        index_struct = EmptyIndexStruct()
         return index_struct
 
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
@@ -74,5 +74,6 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
         """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
         raise NotImplementedError("ref_doc_info not supported for an empty index.")
+
 
 GPTEmptyIndex = EmptyIndex

@@ -63,8 +63,10 @@ class ListIndex(BaseIndex[IndexList]):
         **kwargs: Any,
     ) -> BaseRetriever:
         from llama_index.indices.list.retrievers import (
-            ListIndexEmbeddingRetriever, ListIndexLLMRetriever,
-            ListIndexRetriever)
+            ListIndexEmbeddingRetriever,
+            ListIndexLLMRetriever,
+            ListIndexRetriever,
+        )
 
         if retriever_mode == ListRetrieverMode.DEFAULT:
             return ListIndexRetriever(self, **kwargs)
@@ -120,6 +122,7 @@ class ListIndex(BaseIndex[IndexList]):
 
             all_ref_doc_info[ref_doc_id] = ref_doc_info
         return all_ref_doc_info
+
 
 # Legacy
 GPTListIndex = ListIndex

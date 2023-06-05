@@ -11,5 +11,5 @@ __all__ = [
     "VectorIndexRetriever",
     "VectorIndexAutoRetriever",
     # legacy
-    "GPTVectorStoreIndex"
+    "GPTVectorStoreIndex",
 ]

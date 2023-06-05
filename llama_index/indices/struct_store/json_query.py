@@ -55,7 +55,7 @@ class JSONQueryEngine(BaseQueryEngine):
 
     Args:
         json_value (JSONType): JSON value
-        json_schema (JSONType): JSON schema 
+        json_schema (JSONType): JSON schema
         service_context (ServiceContext): ServiceContext
         json_path_prompt (Prompt): The JSON Path prompt to use.
         output_processor (Callable): The output processor that executes the

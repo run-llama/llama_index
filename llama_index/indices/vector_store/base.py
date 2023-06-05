@@ -284,4 +284,5 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 "not supported by ref_doc_info yet."
             )
 
+
 GPTVectorStoreIndex = VectorStoreIndex

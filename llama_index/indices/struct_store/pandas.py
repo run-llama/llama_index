@@ -65,5 +65,6 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
         """Insert a document."""
         raise NotImplementedError("We currently do not support inserting documents.")
 
+
 # legacy
 GPTPandasIndex = PandasIndex

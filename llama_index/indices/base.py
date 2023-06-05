@@ -360,5 +360,6 @@ class BaseIndex(Generic[IS], ABC):
         else:
             raise ValueError(f"Unknown chat mode: {chat_mode}")
 
+
 # legacy
 BaseGPTIndex = BaseIndex

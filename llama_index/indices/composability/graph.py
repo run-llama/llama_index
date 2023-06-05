@@ -94,9 +94,9 @@ class ComposableGraph:
                 **kwargs,
             )
             # type: ignore
-            all_indices: List[BaseIndex] = cast(
-                List[BaseIndex], children_indices
-            ) + [root_index]
+            all_indices: List[BaseIndex] = cast(List[BaseIndex], children_indices) + [
+                root_index
+            ]
 
             return cls(
                 all_indices={index.index_id: index for index in all_indices},

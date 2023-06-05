@@ -154,4 +154,5 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
         else:
             raise ValueError(f"Unknown query mode: {query_mode}")
 
+
 GPTSQLStructStoreIndex = SQLStructStoreIndex

@@ -183,4 +183,5 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             all_ref_doc_info[ref_doc_id] = ref_doc_info
         return all_ref_doc_info
 
+
 GPTDocumentSummaryIndex = DocumentSummaryIndex

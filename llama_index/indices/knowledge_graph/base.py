@@ -243,4 +243,5 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
         return g
 
+
 GPTKnowledgeGraphIndex = KnowledgeGraphIndex

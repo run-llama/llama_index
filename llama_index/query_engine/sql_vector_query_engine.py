@@ -193,9 +193,7 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
         self._sql_query_tool = sql_query_tool
         self._vector_query_tool = vector_query_tool
 
-        sql_query_engine = cast(
-            NLStructStoreQueryEngine, sql_query_tool.query_engine
-        )
+        sql_query_engine = cast(NLStructStoreQueryEngine, sql_query_tool.query_engine)
         self._service_context = service_context or sql_query_engine.service_context
         self._selector = selector or LLMSingleSelector.from_defaults()
         self._sql_vector_synthesis_prompt = (

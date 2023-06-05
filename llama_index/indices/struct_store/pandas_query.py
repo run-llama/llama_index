@@ -140,5 +140,6 @@ class NLPandasQueryEngine(BaseQueryEngine):
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         return self._query(query_bundle)
 
+
 # legacy
 GPTNLPandasQueryEngine = NLPandasQueryEngine
