@@ -37,7 +37,7 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
         """Initialize params."""
         super().__init__(
             nodes=None,
-            index_struct=index_struct or EmptyIndex(),
+            index_struct=index_struct or EmptyIndexStruct(),
             service_context=service_context,
             **kwargs,
         )
