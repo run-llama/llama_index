@@ -39,7 +39,7 @@ class DocumentSummaryRetrieverMode(str, Enum):
 DSRM = DocumentSummaryRetrieverMode
 
 
-class GPTDocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
+class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     """GPT Document Summary Index.
 
     Args:
@@ -182,3 +182,5 @@ class GPTDocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
             all_ref_doc_info[ref_doc_id] = ref_doc_info
         return all_ref_doc_info
+
+GPTDocumentSummaryIndex = DocumentSummaryIndex

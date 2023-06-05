@@ -4,8 +4,8 @@ from typing import Dict, Type
 
 from llama_index.data_structs.struct_type import IndexStructType
 from llama_index.indices.base import BaseIndex
-from llama_index.indices.document_summary.base import GPTDocumentSummaryIndex
-from llama_index.indices.empty.base import GPTEmptyIndex
+from llama_index.indices.document_summary.base import DocumentSummaryIndex
+from llama_index.indices.empty.base import EmptyIndex
 from llama_index.indices.keyword_table.base import KeywordTableIndex
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.list.base import ListIndex
@@ -22,6 +22,6 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseIndex]] = {
     IndexStructType.SQL: SQLStructStoreIndex,
     IndexStructType.PANDAS: PandasIndex,
     IndexStructType.KG: KnowledgeGraphIndex,
-    IndexStructType.EMPTY: GPTEmptyIndex,
-    IndexStructType.DOCUMENT_SUMMARY: GPTDocumentSummaryIndex,
+    IndexStructType.EMPTY: EmptyIndex,
+    IndexStructType.DOCUMENT_SUMMARY: DocumentSummaryIndex,
 }

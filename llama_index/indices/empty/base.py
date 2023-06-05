@@ -15,7 +15,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 
 
-class GPTEmptyIndex(BaseIndex[EmptyIndex]):
+class EmptyIndex(BaseIndex[EmptyIndex]):
     """GPT Empty Index.
 
     An index that doesn't contain any documents. Used for
@@ -74,3 +74,5 @@ class GPTEmptyIndex(BaseIndex[EmptyIndex]):
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
         """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
         raise NotImplementedError("ref_doc_info not supported for an empty index.")
+
+GPTEmptyIndex = EmptyIndex

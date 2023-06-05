@@ -18,7 +18,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 # structured
 from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 from llama_index.indices.composability.graph import ComposableGraph
-from llama_index.indices.empty import GPTEmptyIndex
+from llama_index.indices.empty import EmptyIndex
 
 # indices
 from llama_index.indices.keyword_table import (
@@ -141,7 +141,7 @@ __all__ = [
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
-    "GPTEmptyIndex",
+    "EmptyIndex",
     "GPTVectorStoreIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",
