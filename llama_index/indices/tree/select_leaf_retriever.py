@@ -9,7 +9,7 @@ from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response import get_response_builder
-from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.indices.utils import (
     extract_numbers_given_response,
@@ -72,7 +72,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: GPTTreeIndex,
+        index: TreeIndex,
         query_template: Optional[TreeSelectPrompt] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,

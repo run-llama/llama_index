@@ -173,7 +173,7 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
     "query to run, then look at the results of the query and return the answer. "
     "You can order the results by a relevant column to return the most "
     "interesting examples in the database.\n"
-    "Never query for all the columns from a specific table, only ask for a the "
+    "Never query for all the columns from a specific table, only ask for a "
     "few relevant columns given the question.\n"
     "Pay attention to use only the column names that you can see in the schema "
     "description. "
@@ -318,3 +318,21 @@ DEFAULT_PANDAS_TMPL = (
 )
 
 DEFAULT_PANDAS_PROMPT = Prompt(DEFAULT_PANDAS_TMPL, prompt_type=PromptType.PANDAS)
+
+
+############################################
+# JSON Path
+############################################
+
+DEFAULT_JSON_PATH_TMPL = (
+    "We have provided a JSON schema below:\n"
+    "{schema}\n"
+    "Given a task, respond with a JSON Path query that "
+    "can retrieve data from a JSON value that matches the schema.\n"
+    "Task: {query_str}\n"
+    "JSONPath: "
+)
+
+DEFAULT_JSON_PATH_PROMPT = Prompt(
+    DEFAULT_JSON_PATH_TMPL, prompt_type=PromptType.JSON_PATH
+)

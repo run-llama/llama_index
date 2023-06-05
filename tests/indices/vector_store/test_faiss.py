@@ -8,7 +8,7 @@ import pytest
 from llama_index.data_structs.node import Node
 
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 
 from llama_index.readers.schema.base import Document
 from llama_index.storage.storage_context import StorageContext
@@ -22,8 +22,8 @@ def test_build_faiss(
     faiss_storage_context: StorageContext,
     mock_service_context: ServiceContext,
 ) -> None:
-    """Test build GPTVectorStoreIndex with FaissVectoreStore."""
-    index = GPTVectorStoreIndex.from_documents(
+    """Test build VectorStoreIndex with FaissVectoreStore."""
+    index = VectorStoreIndex.from_documents(
         documents=documents,
         storage_context=faiss_storage_context,
         service_context=mock_service_context,
@@ -45,8 +45,8 @@ def test_faiss_insert(
     faiss_storage_context: StorageContext,
     mock_service_context: ServiceContext,
 ) -> None:
-    """Test insert GPTVectorStoreIndex with FaissVectoreStore."""
-    index = GPTVectorStoreIndex.from_documents(
+    """Test insert VectorStoreIndex with FaissVectoreStore."""
+    index = VectorStoreIndex.from_documents(
         documents=documents,
         storage_context=faiss_storage_context,
         service_context=mock_service_context,

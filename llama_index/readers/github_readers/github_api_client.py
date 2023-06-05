@@ -1,7 +1,7 @@
 """
-Github API client for the GPT-Index library.
+Github API client for the LlamaIndex library.
 
-This module contains the Github API client for the GPT-Index library.
+This module contains the Github API client for the LlamaIndex library.
 It is used by the Github readers to retrieve the data from Github.
 """
 

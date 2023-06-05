@@ -10,36 +10,37 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 ## Using a Vector Store as an Index
 
 LlamaIndex also supports different vector stores
-as the storage backend for `GPTVectorStoreIndex`.
+as the storage backend for `VectorStoreIndex`.
 
-- Chroma (`ChromaReader`) [Installation](https://docs.trychroma.com/getting-started)
-- DeepLake (`DeepLakeReader`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
-- Qdrant (`QdrantReader`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
-- Weaviate (`WeaviateReader`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
-- Pinecone (`PineconeReader`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
-- Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
-- Milvus (`MilvusReader`). [Installation](https://milvus.io/docs)
-- Zilliz (`MilvusReader`). [Quickstart](https://zilliz.com/doc/quick_start)
-- MyScale (`MyScaleReader`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
+- Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
+- DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
+- Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
+- Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
+- Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
+- Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Milvus (`MilvusVectorStore`). [Installation](https://milvus.io/docs)
+- Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
+- MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
+- Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
 
 A detailed API reference is [found here](/reference/indices/vector_store.rst).
 
-Similar to any other index within LlamaIndex (tree, keyword table, list), `GPTVectorStoreIndex` can be constructed upon any collection
+Similar to any other index within LlamaIndex (tree, keyword table, list), `VectorStoreIndex` can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.
 
 Once constructed, the index can be used for querying.
 
 **Default Vector Store Index Construction/Querying**
 
-By default, `GPTVectorStoreIndex` uses a in-memory `SimpleVectorStore`
+By default, `VectorStoreIndex` uses a in-memory `SimpleVectorStore`
 that's initialized as part of the default storage context.
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
 # Load documents and build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 
 # Query index
 query_engine = index.as_query_engine()
@@ -52,7 +53,7 @@ response = query_engine.query("What did the author do growing up?")
 We can query over a custom vector store as follows:
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader, StorageContext
+from llama_index import VectorStoreIndex, SimpleDirectoryReader, StorageContext
 from llama_index.vector_stores import DeepLakeVectorStore
 
 # construct vector store and customize storage context
@@ -62,7 +63,7 @@ storage_context = StorageContext.from_defaults(
 
 # Load documents and build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
 
 # Query index
 query_engine = index.as_query_engine()
@@ -89,7 +90,7 @@ vector_store = RedisVectorStore(
 )
 ```
 
-This can be used with the `GPTVectorStoreIndex` to provide a query interface for retrieval, querying, deleting, persisting the index, and more.
+This can be used with the `VectorStoreIndex` to provide a query interface for retrieval, querying, deleting, persisting the index, and more.
 
 **DeepLake**
 
@@ -293,7 +294,7 @@ Chroma stores both documents and vectors. This is an example of how to use Chrom
 ```python
 
 from llama_index.readers.chroma import ChromaReader
-from llama_index.indices import GPTListIndex
+from llama_index.indices import ListIndex
 
 # The chroma reader loads data from a persisted Chroma collection.
 # This requires a collection name and a persist directory.
@@ -305,7 +306,7 @@ reader = ChromaReader(
 query_vector=[n1, n2, n3, ...]
 
 documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
-index = GPTListIndex.from_documents(documents)
+index = ListIndex.from_documents(documents)
 
 query_engine = index.as_query_engine()
 response = query_engine.query("<query_text>")
@@ -408,4 +409,5 @@ maxdepth: 1
 ../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
+../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 ```

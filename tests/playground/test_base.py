@@ -3,12 +3,12 @@
 from typing import List
 
 import pytest
-from llama_index.embeddings.base import BaseEmbedding
 
-from llama_index.indices.list.base import GPTListIndex
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.tree.base import GPTTreeIndex
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.tree.base import TreeIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.playground import DEFAULT_INDEX_CLASSES, DEFAULT_MODES, Playground
 from llama_index.readers.schema.base import Document
 
@@ -40,11 +40,11 @@ def test_get_set_compare(
     documents = [Document("They're taking the Hobbits to Isengard!")]
 
     indices = [
-        GPTVectorStoreIndex.from_documents(
+        VectorStoreIndex.from_documents(
             documents=documents, service_context=mock_service_context
         ),
-        GPTListIndex.from_documents(documents, service_context=mock_service_context),
-        GPTTreeIndex.from_documents(
+        ListIndex.from_documents(documents, service_context=mock_service_context),
+        TreeIndex.from_documents(
             documents=documents, service_context=mock_service_context
         ),
     ]
@@ -58,7 +58,7 @@ def test_get_set_compare(
     assert len(results) <= 3 * len(DEFAULT_MODES)
 
     playground.indices = [
-        GPTVectorStoreIndex.from_documents(
+        VectorStoreIndex.from_documents(
             documents=documents, service_context=mock_service_context
         )
     ]
@@ -94,12 +94,10 @@ def test_from_docs(
 def test_validation() -> None:
     """Test validation of indices and modes."""
     with pytest.raises(ValueError):
-        _ = Playground(indices=["GPTVectorStoreIndex"])  # type: ignore
+        _ = Playground(indices=["VectorStoreIndex"])  # type: ignore
 
     with pytest.raises(ValueError):
-        _ = Playground(
-            indices=[GPTVectorStoreIndex, GPTListIndex, GPTTreeIndex]  # type: ignore
-        )
+        _ = Playground(indices=[VectorStoreIndex, ListIndex, TreeIndex])  # type: ignore
 
     with pytest.raises(ValueError):
         _ = Playground(indices=[])  # type: ignore

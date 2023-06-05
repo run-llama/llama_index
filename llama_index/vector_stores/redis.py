@@ -3,8 +3,9 @@
 An index that that is built on top of an existing vector store.
 """
 import logging
-import fsspec
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+import fsspec
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.readers.redis.utils import (
@@ -15,6 +16,7 @@ from llama_index.readers.redis.utils import (
     get_redis_query,
 )
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
@@ -41,6 +43,7 @@ class RedisVectorStore(VectorStore):
         index_name: str,
         index_prefix: str = "llama_index",
         index_args: Optional[Dict[str, Any]] = None,
+        metadata_fields: Optional[List[str]] = None,
         redis_url: str = "redis://localhost:6379",
         overwrite: bool = False,
         **kwargs: Any,
@@ -59,6 +62,8 @@ class RedisVectorStore(VectorStore):
             index_name (str): Name of the index.
             index_prefix (str): Prefix for the index. Defaults to "llama_index".
             index_args (Dict[str, Any]): Arguments for the index. Defaults to None.
+            metadata_fields (List[str]): List of metadata fields to store in the index
+                (only supports TAG fields).
             redis_url (str): URL for the redis instance.
                 Defaults to "redis://localhost:6379".
             overwrite (bool): Whether to overwrite the index if it already exists.
@@ -100,6 +105,7 @@ class RedisVectorStore(VectorStore):
         self._prefix = index_prefix
         self._index_name = index_name
         self._index_args = index_args if index_args is not None else {}
+        self._metadata_fields = metadata_fields if metadata_fields is not None else []
         self._overwrite = overwrite
         self._vector_field = str(self._index_args.get("vector_field", "vector"))
         self._vector_key = str(self._index_args.get("vector_key", "vector"))
@@ -156,23 +162,24 @@ class RedisVectorStore(VectorStore):
         _logger.info(f"Added {len(ids)} documents to index {self._index_name}")
         return ids
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a specific document from the index by doc_id
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
-            doc_id (str): The doc_id of the document to delete.
-            delete_kwargs (Any): Additional arguments to pass to the delete method.
+            ref_doc_id (str): The doc_id of the document to delete.
 
         """
         # use tokenizer to escape dashes in query
-        query_str = "@doc_id:{%s}" % self.tokenizer.escape(doc_id)
+        query_str = "@doc_id:{%s}" % self.tokenizer.escape(ref_doc_id)
         # find all documents that match a doc_id
         results = self._redis_client.ft(self._index_name).search(query_str)
         if len(results.docs) == 0:
             # don't raise an error but warn the user that document wasn't found
             # could be a result of eviction policy
             _logger.warning(
-                f"Document with doc_id {doc_id} not found in index {self._index_name}"
+                f"Document with doc_id {ref_doc_id} not found "
+                f"in index {self._index_name}"
             )
             return
 
@@ -200,21 +207,24 @@ class RedisVectorStore(VectorStore):
             ValueError: If query.query_embedding is None.
             redis.exceptions.RedisError: If there is an error querying the index.
             redis.exceptions.TimeoutError: If there is a timeout querying the index.
+            ValueError: If no documents are found when querying the index.
         """
         from redis.exceptions import RedisError
         from redis.exceptions import TimeoutError as RedisTimeoutError
 
-        # TODO: implement this
-        if query.filters is not None:
-            raise ValueError("Metadata filters not implemented for Redis yet.")
-
         return_fields = ["id", "doc_id", "text", self._vector_key, "vector_score"]
+
+        filters = _to_redis_filters(query.filters) if query.filters is not None else "*"
+
+        _logger.info(f"Using filters: {filters}")
 
         redis_query = get_redis_query(
             return_fields=return_fields,
             top_k=query.similarity_top_k,
             vector_field=self._vector_field,
+            filters=filters,
         )
+
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
 
@@ -233,6 +243,14 @@ class RedisVectorStore(VectorStore):
         except RedisError as e:
             _logger.error(f"Error querying {self._index_name}: {e}")
             raise e
+
+        if len(results.docs) == 0:
+            raise ValueError(
+                f"No docs found on index '{self._index_name}' with "
+                f"prefix '{self._prefix}' and filters '{filters}'. "
+                "* Did you originally create the index with a different prefix? "
+                "* Did you index your metadata fields when you created the index?"
+            )
 
         ids = []
         nodes = []
@@ -297,9 +315,17 @@ class RedisVectorStore(VectorStore):
         ]
         # add vector field to list of index fields. Create lazily to allow user
         # to specify index and search attributes in creation.
+
         fields = default_fields + [
             self._create_vector_field(self._vector_field, **self._index_args)
         ]
+
+        # add metadata fields to list of index fields or we won't be able to search them
+        for metadata_field in self._metadata_fields:
+            # TODO: allow addition of text fields as metadata
+            # TODO: make sure we're preventing overwriting other keys (e.g. text,
+            #   doc_id, id, and other vector fields)
+            fields.append(TagField(metadata_field, sortable=False))
 
         _logger.info(f"Creating index {self._index_name}")
         self._redis_client.ft(self._index_name).create_index(
@@ -386,13 +412,18 @@ class RedisVectorStore(VectorStore):
             )
 
 
-def cast_metadata_types(mapping: Optional[Dict[str, Any]]) -> Dict[str, str]:
-    metadata = {}
-    if mapping:
-        for key, value in mapping.items():
-            try:
-                metadata[str(key)] = str(value)
-            except (TypeError, ValueError) as e:
-                # warn the user and continue
-                _logger.warning("Failed to cast metadata to string", e)
-    return metadata
+# currently only supports exact tag match - {} denotes a tag
+# must create the index with the correct metadata field before using a field as a
+#   filter, or it will return no results
+def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
+    tokenizer = TokenEscaper()
+
+    filter_strings = []
+    for filter in metadata_filters.filters:
+        # adds quotes around the value to ensure that the filter is treated as an
+        #   exact match
+        filter_string = "@%s:{%s}" % (filter.key, tokenizer.escape(str(filter.value)))
+        filter_strings.append(filter_string)
+
+    joined_filter_strings = " & ".join(filter_strings)
+    return f"({joined_filter_strings})"

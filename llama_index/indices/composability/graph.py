@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Type, cast
 
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.data_structs.node import IndexNode, DocumentRelationship
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
@@ -15,7 +15,7 @@ class ComposableGraph:
 
     def __init__(
         self,
-        all_indices: Dict[str, BaseGPTIndex],
+        all_indices: Dict[str, BaseIndex],
         root_id: str,
         storage_context: Optional[StorageContext] = None,
     ) -> None:
@@ -29,11 +29,11 @@ class ComposableGraph:
         return self._root_id
 
     @property
-    def all_indices(self) -> Dict[str, BaseGPTIndex]:
+    def all_indices(self) -> Dict[str, BaseIndex]:
         return self._all_indices
 
     @property
-    def root_index(self) -> BaseGPTIndex:
+    def root_index(self) -> BaseIndex:
         return self._all_indices[self._root_id]
 
     @property
@@ -47,8 +47,8 @@ class ComposableGraph:
     @classmethod
     def from_indices(
         cls,
-        root_index_cls: Type[BaseGPTIndex],
-        children_indices: Sequence[BaseGPTIndex],
+        root_index_cls: Type[BaseIndex],
+        children_indices: Sequence[BaseIndex],
         index_summaries: Optional[Sequence[str]] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
@@ -99,9 +99,9 @@ class ComposableGraph:
                 **kwargs,
             )
             # type: ignore
-            all_indices: List[BaseGPTIndex] = cast(
-                List[BaseGPTIndex], children_indices
-            ) + [root_index]
+            all_indices: List[BaseIndex] = cast(List[BaseIndex], children_indices) + [
+                root_index
+            ]
 
             return cls(
                 all_indices={index.index_id: index for index in all_indices},
@@ -109,7 +109,7 @@ class ComposableGraph:
                 storage_context=storage_context,
             )
 
-    def get_index(self, index_struct_id: Optional[str] = None) -> BaseGPTIndex:
+    def get_index(self, index_struct_id: Optional[str] = None) -> BaseIndex:
         """Get index from index struct id."""
         if index_struct_id is None:
             index_struct_id = self._root_id
