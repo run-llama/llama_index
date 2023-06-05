@@ -41,7 +41,7 @@ class NotionToolSpec(BaseToolSpec):
         """Initialize with parameters."""
         self.reader = NotionPageReader(integration_token=integration_token)
 
-    def get_fn_schema_from_fn_name(self, fn_name: str) -> Type[BaseModel]:
+    def get_fn_schema_from_fn_name(self, fn_name: str) -> Optional[Type[BaseModel]]:
         """Return map from function name."""
         if fn_name == "load_data":
             return NotionLoadDataSchema
