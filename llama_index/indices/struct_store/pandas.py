@@ -11,7 +11,7 @@ from llama_index.indices.struct_store.base import BaseGPTStructStoreIndex
 import pandas as pd
 
 
-class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
+class PandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
     """Base GPT Pandas Index.
 
     The GPTPandasStructStoreIndex is an index that stores
@@ -64,3 +64,6 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         raise NotImplementedError("We currently do not support inserting documents.")
+
+# legacy
+GPTPandasIndex = PandasIndex
