@@ -5,6 +5,7 @@ from typing import Any, List
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.utils import get_sorted_node_list
 
 logger = logging.getLogger(__name__)
@@ -20,8 +21,7 @@ class TreeRootRetriever(BaseRetriever):
     attempt to parse information down the graph in order to synthesize an answer.
     """
 
-    def __init__(self, index: Any):
-        from llama_index.indices.tree.base import TreeIndex
+    def __init__(self, index: TreeIndex):
 
         assert isinstance(index, TreeIndex)
 
