@@ -359,6 +359,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 outputs = self._handle_node_parsing_payload(output_payload)
         elif event_type == CBEventType.LLM:
             inputs, outputs, span = self._handle_llm_payload(event_pair, span)
+        elif event_type == CBEventType.QUERY:
+            inputs, outputs = self._handle_query_payload(event_pair)
         else:
             inputs = event_pair[0].payload
             outputs = event_pair[-1].payload
@@ -415,6 +417,25 @@ class WandbCallbackHandler(BaseCallbackHandler):
         outputs = {"response": outputs["response"]}
 
         return inputs, outputs, span
+
+    def _handle_query_payload(
+        self, event_pair: List[CBEvent]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
+
+        response = outputs["response"]
+
+        if type(response).__name__ == "Response":
+            response = response.response
+        elif type(response).__name__ == "StreamingResponse":
+            response = response.get_response().response
+        else:
+            response = " "
+
+        outputs = {"response": response}
+
+        return inputs, outputs
 
     def _get_time_in_ms(self, event_pair: List[CBEvent]) -> Tuple[int, int]:
         start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
