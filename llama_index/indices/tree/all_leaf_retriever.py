@@ -1,7 +1,7 @@
 """Summarize query."""
 
 import logging
-from typing import Any, List, cast
+from typing import List, cast
 
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.data_structs.node import NodeWithScore

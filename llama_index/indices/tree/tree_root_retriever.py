@@ -1,6 +1,6 @@
 """Retrieve query."""
 import logging
-from typing import Any, List
+from typing import List
 
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
