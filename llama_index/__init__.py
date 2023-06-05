@@ -25,9 +25,9 @@ from llama_index.indices.keyword_table import (
     KeywordTableIndex,
     RAKEKeywordTableIndex,
     SimpleKeywordTableIndex,
-    GPTSimpleKeywordTableIndex,
-    GPTRAKEKeywordTableIndex,
     GPTKeywordTableIndex,
+    GPTRAKEKeywordTableIndex,
+    GPTSimpleKeywordTableIndex,
 )
 from llama_index.indices.list import ListIndex, GPTListIndex
 
@@ -54,15 +54,12 @@ from llama_index.indices.service_context import (
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex,  GPTSQLStructStoreIndex
 from llama_index.indices.tree import TreeIndex, GPTTreeIndex
-from llama_index.indices.vector_store import VectorStoreIndex
+from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
 
 # langchain helper
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
-
-# vellum
-from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
 
 # prompts
 from llama_index.prompts.base import Prompt
@@ -118,6 +115,9 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 
+# vellum
+from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
+
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
@@ -135,13 +135,14 @@ __all__ = [
     "RAKEKeywordTableIndex",
     "TreeIndex",
     "SQLStructStoreIndex",
+    "EmptyIndex",
     # indices - legacy names
-    "GPTTreeIndex",
-    "GPTListIndex",
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
-    "EmptyIndex",
+    "GPTListIndex",
+    "GPTEmptyIndex",
+    "GPTTreeIndex",
     "GPTVectorStoreIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",
