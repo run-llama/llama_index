@@ -24,6 +24,7 @@ from llama_index.indices.empty import GPTEmptyIndex
 from llama_index.indices.keyword_table import (
     GPTKeywordTableIndex,
     GPTRAKEKeywordTableIndex,
+    SimpleKeywordTableIndex,
     GPTSimpleKeywordTableIndex,
 )
 from llama_index.indices.list import ListIndex, GPTListIndex
@@ -124,13 +125,16 @@ __all__ = [
     "StorageContext",
     "ServiceContext",
     "ComposableGraph",
+    # indices
+    "SimpleKeywordTableIndex",
+    "ListIndex",
+    "TreeIndex",
+    # indices - legacy names
+    "GPTListIndex",
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
-    "ListIndex",
-    "GPTListIndex",
     "GPTEmptyIndex",
-    "TreeIndex",
     "GPTVectorStoreIndex",
     "GPTSQLStructStoreIndex",
     "Prompt",

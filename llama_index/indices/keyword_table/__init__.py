@@ -8,13 +8,15 @@ from llama_index.indices.keyword_table.retrievers import (
     KeywordTableSimpleRetriever,
 )
 from llama_index.indices.keyword_table.rake_base import GPTRAKEKeywordTableIndex
-from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableIndex, GPTSimpleKeywordTableIndex
 
 __all__ = [
     "GPTKeywordTableIndex",
-    "GPTSimpleKeywordTableIndex",
+    "SimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
     "KeywordTableGPTRetriever",
     "KeywordTableRAKERetriever",
     "KeywordTableSimpleRetriever",
+    # legacy
+    "GPTSimpleKeywordTableIndex"
 ]

@@ -3,7 +3,7 @@
 from typing import Dict, List
 
 from llama_index.indices.composability.graph import ComposableGraph
-from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
@@ -116,10 +116,10 @@ def test_recursive_query_table_list(
     table_kwargs = index_kwargs["table"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    table1 = GPTSimpleKeywordTableIndex.from_documents(
+    table1 = SimpleKeywordTableIndex.from_documents(
         documents[4:6], service_context=mock_service_context, **table_kwargs
     )
-    table2 = GPTSimpleKeywordTableIndex.from_documents(
+    table2 = SimpleKeywordTableIndex.from_documents(
         documents[2:3], service_context=mock_service_context, **table_kwargs
     )
     summaries = [
@@ -176,7 +176,7 @@ def test_recursive_query_list_table(
     ]
 
     graph = ComposableGraph.from_indices(
-        GPTSimpleKeywordTableIndex,
+        SimpleKeywordTableIndex,
         [list1, list2, list3, list4],
         index_summaries=summaries,
         service_context=mock_service_context,

@@ -14,7 +14,7 @@ from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TE
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
-class GPTSimpleKeywordTableIndex(BaseGPTKeywordTableIndex):
+class SimpleKeywordTableIndex(BaseGPTKeywordTableIndex):
     """GPT Simple Keyword Table Index.
 
     This index uses a simple regex extractor to extract keywords from the text.
@@ -24,3 +24,6 @@ class GPTSimpleKeywordTableIndex(BaseGPTKeywordTableIndex):
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
         return simple_extract_keywords(text, self.max_keywords_per_chunk)
+
+
+GPTSimpleKeywordTableIndex = SimpleKeywordTableIndex

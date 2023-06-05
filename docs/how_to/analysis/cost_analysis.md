@@ -17,7 +17,7 @@ The cost of building and querying each index is a TODO in the reference document
 #### Indices with no LLM calls
 The following indices don't require LLM calls at all during building (0 cost):
 - `ListIndex`
-- `GPTSimpleKeywordTableIndex` - uses a regex keyword extractor to extract keywords from each document
+- `SimpleKeywordTableIndex` - uses a regex keyword extractor to extract keywords from each document
 - `GPTRAKEKeywordTableIndex` - uses a RAKE keyword extractor to extract keywords from each document
 
 #### Indices with LLM calls

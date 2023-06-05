@@ -8,7 +8,7 @@ from llama_index.indices.base import BaseGPTIndex
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index import (
     GPTVectorStoreIndex,
-    GPTSimpleKeywordTableIndex,
+    SimpleKeywordTableIndex,
     ServiceContext,
     LLMPredictor,
 )
@@ -51,7 +51,7 @@ def load_index(root: str = ".") -> BaseGPTIndex[Any]:
     if config["index"]["type"] == "default" or config["index"]["type"] == "vector":
         index_type = GPTVectorStoreIndex
     elif config["index"]["type"] == "keyword":
-        index_type = GPTSimpleKeywordTableIndex
+        index_type = SimpleKeywordTableIndex
     else:
         raise KeyError(f"Unknown index.type {config['index']['type']}")
 

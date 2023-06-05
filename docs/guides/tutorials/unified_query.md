@@ -130,14 +130,14 @@ Next, we compose a keyword table on top of these vector indexes, with these inde
 from llama_index.indices.composability import ComposableGraph
 
 graph = ComposableGraph.from_indices(
-    GPTSimpleKeywordTableIndex,
+    SimpleKeywordTableIndex,
     [index for _, index in vector_indices.items()], 
     [summary for _, summary in index_summaries.items()],
     max_keywords_per_chunk=50
 )
 
 # get root index
-root_index = graph.get_index(graph.index_struct.root_id, GPTSimpleKeywordTableIndex)
+root_index = graph.get_index(graph.index_struct.root_id, SimpleKeywordTableIndex)
 # set id of root index
 root_index.set_index_id("compare_contrast")
 root_summary = (

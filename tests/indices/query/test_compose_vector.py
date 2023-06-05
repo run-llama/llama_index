@@ -8,7 +8,7 @@ import pytest
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.composability.graph import ComposableGraph
-from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
 from llama_index.readers.schema.base import Document
@@ -91,7 +91,7 @@ def test_recursive_query_vector_table(
     ]
 
     graph = ComposableGraph.from_indices(
-        GPTSimpleKeywordTableIndex,
+        SimpleKeywordTableIndex,
         indices,
         index_summaries=summaries,
         service_context=mock_service_context,
@@ -149,7 +149,7 @@ def test_recursive_query_vector_table_query_configs(
     ]
 
     graph = ComposableGraph.from_indices(
-        GPTSimpleKeywordTableIndex,
+        SimpleKeywordTableIndex,
         [vector1, vector2],
         index_summaries=summaries,
         service_context=mock_service_context,
@@ -207,7 +207,7 @@ def test_recursive_query_vector_table_async(
     ]
 
     graph = ComposableGraph.from_indices(
-        GPTSimpleKeywordTableIndex,
+        SimpleKeywordTableIndex,
         children_indices=indices,
         index_summaries=summaries,
         service_context=mock_service_context,
