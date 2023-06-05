@@ -218,18 +218,18 @@ class WandbCallbackHandler(BaseCallbackHandler):
             pass
 
     def persist_index(
-        self, index: IndexType, index_name: str, persist_dir: Union[str, None] = None
+        self, index: "IndexType", index_name: str, persist_dir: Union[str, None] = None
     ) -> None:
         """Upload an index to wandb."""
         if persist_dir is None:
-            persist_dir = f"{self._wandb.run.dir}/storage" # type: ignore
+            persist_dir = f"{self._wandb.run.dir}/storage"  # type: ignore
             _default_persist_dir = True
         if not os.path.exists(persist_dir):
             os.makedirs(persist_dir)
 
         if isinstance(index, self._IndexType):
             try:
-                index.storage_context.persist(persist_dir) # type: ignore
+                index.storage_context.persist(persist_dir)  # type: ignore
                 self._upload_index_as_wb_artifact(persist_dir, index_name)
             except Exception as e:
                 # Silently ignore errors to not break user code
@@ -254,7 +254,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def _upload_index_as_wb_artifact(self, dir_path: str, artifact_name: str) -> None:
         artifact = self._wandb.Artifact(artifact_name, type="storage_context")
         artifact.add_dir(dir_path)
-        self._wandb.run.log_artifact(artifact) # type: ignore
+        self._wandb.run.log_artifact(artifact)  # type: ignore
 
     def _build_trace_tree(self) -> Union[None, "trace_tree.Span"]:
         root_span = None
@@ -298,7 +298,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             event_type = event_pair[0].event_type
             span_kind = self._map_event_type_to_span_kind(event_type)
         else:
-            event_type = trace_id # type: ignore
+            event_type = trace_id  # type: ignore
             span_kind = None
 
         wb_span = self._trace_tree.Span(
@@ -309,7 +309,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         )
 
         inputs, outputs, wb_span = self._add_payload_to_span(wb_span, event_pair)
-        wb_span.add_named_result(inputs=inputs, outputs=outputs) # type: ignore
+        wb_span.add_named_result(inputs=inputs, outputs=outputs)  # type: ignore
 
         return wb_span
 
@@ -384,7 +384,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             return {"documents": tmp_str, "len_documents": len(stuffs)}
         else:
             return {}
-       
+
     def _handle_llm_payload(
         self, event_pair: List[CBEvent], span: "trace_tree.Span"
     ) -> Tuple[Dict[str, Any], Dict[str, Any], "trace_tree.Span"]:
@@ -444,7 +444,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             self._wandb.init(**run_args)
 
             if should_print_url:
-                self._print_wandb_init_message(self._wandb.run.settings.run_url) # type: ignore
+                self._print_wandb_init_message(self._wandb.run.settings.run_url)  # type: ignore
 
     def _print_wandb_init_message(self, run_url: str) -> None:
         self._wandb.termlog(
