@@ -10,30 +10,6 @@ from llama_index.callbacks.schema import (
     CBEventType,
     TIMESTAMP_FORMAT,
 )
-from llama_index.storage.storage_context import StorageContext
-from llama_index import (
-    ComposableGraph,
-    GPTKeywordTableIndex,
-    GPTSimpleKeywordTableIndex,
-    GPTRAKEKeywordTableIndex,
-    GPTListIndex,
-    GPTEmptyIndex,
-    GPTTreeIndex,
-    GPTVectorStoreIndex,
-    GPTSQLStructStoreIndex,
-)
-
-IndexType = Union[
-    ComposableGraph,
-    GPTKeywordTableIndex,
-    GPTSimpleKeywordTableIndex,
-    GPTRAKEKeywordTableIndex,
-    GPTListIndex,
-    GPTEmptyIndex,
-    GPTTreeIndex,
-    GPTVectorStoreIndex,
-    GPTSQLStructStoreIndex,
-]
 
 if TYPE_CHECKING:
     from wandb.sdk.data_types import trace_tree
@@ -102,6 +78,30 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 "WandbCallbackHandler requires wandb. "
                 "Please install it with `pip install wandb`."
             )
+        
+        from llama_index import (
+            ComposableGraph,
+            GPTKeywordTableIndex,
+            GPTSimpleKeywordTableIndex,
+            GPTRAKEKeywordTableIndex,
+            GPTListIndex,
+            GPTEmptyIndex,
+            GPTTreeIndex,
+            GPTVectorStoreIndex,
+            GPTSQLStructStoreIndex,
+        )
+
+        self._IndexType = Union[
+            ComposableGraph,
+            GPTKeywordTableIndex,
+            GPTSimpleKeywordTableIndex,
+            GPTRAKEKeywordTableIndex,
+            GPTListIndex,
+            GPTEmptyIndex,
+            GPTTreeIndex,
+            GPTVectorStoreIndex,
+            GPTSQLStructStoreIndex,
+        ]
 
         self._run_args = run_args
         self._ensure_run(should_print_url=(self._wandb.run is None))
@@ -192,10 +192,10 @@ class WandbCallbackHandler(BaseCallbackHandler):
             # Silently ignore errors to not break user code
             pass
 
-    def upload_index(self, index: IndexType, index_name: str) -> None:
+    def upload_index(self, index: Any, index_name: str) -> None:
         """Upload an index to wandb."""
         persist_dir = f"{self._wandb.run.dir}/storage"
-        if isinstance(index, IndexType.__args__):
+        if isinstance(index, self._IndexType.__args__):
             try:
                 index.storage_context.persist(persist_dir)
                 self._upload_index_as_wb_artifact(persist_dir, index_name)
@@ -205,6 +205,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
     def download_index(self, artifact_url: str) -> str:
         """Download an index from wandb."""
+        from llama_index.storage.storage_context import StorageContext
+
         artifact = self._wandb.use_artifact(artifact_url, type="storage_context")
         artifact_dir = artifact.download()
 
@@ -268,7 +270,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             end_time_ms=end_time_ms,
         )
 
-        inputs, outputs = self._add_payload_to_span(wb_span, event_pair)
+        inputs, outputs, wb_span = self._add_payload_to_span(wb_span, event_pair)
         wb_span.add_named_result(inputs=inputs, outputs=outputs)
 
         return wb_span
@@ -308,32 +310,62 @@ class WandbCallbackHandler(BaseCallbackHandler):
             # parse input payload
             input_payload = event_pair[0].payload
             if input_payload:
-                documents = input_payload.get("documents", None)
-                if documents:
-                    input_str = ""
-                    for idx, document in enumerate(documents):
-                        input_str += f"Document: {idx}\n" + document.text
-                        input_str += "\n*************** \n"
-                    inputs = {"documents": input_str, "len_documents": len(documents)}
-
+                inputs = self._handle_node_parsing_payload(input_payload)
             # parse output payload
             output_payload = event_pair[-1].payload
             if output_payload:
-                nodes = output_payload.get("nodes", None)
-                if nodes:
-                    output_str = ""
-                    for idx, node in enumerate(nodes):
-                        output_str += f"Node: {idx}\n" + node.text
-                        output_str += "\n***************\n"
-                    outputs = {"nodes": output_str, "len_nodes": len(nodes)}
+                outputs = self._handle_node_parsing_payload(output_payload)
+        elif event_type == CBEventType.LLM:
+            inputs, outputs, span = self._handle_llm_payload(event_pair, span)
         else:
             inputs = event_pair[0].payload
             outputs = event_pair[-1].payload
 
-        if event_type == CBEventType.LLM:
-            self._llm_token_count += outputs["total_tokens_used"]
+        return inputs, outputs, span
+    
+    def _handle_node_parsing_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        payload_keys = payload.keys()
+        assert "documents" or "nodes" in payload_keys
 
-        return inputs, outputs
+        documents = payload.get("documents", None)
+        if documents:
+            tmp_str = ""
+            for idx, document in enumerate(documents):
+                tmp_str += f"Document: {idx}\n" + document.text
+                tmp_str += "\n*************** \n"
+            return {"documents": tmp_str, "len_documents": len(documents)}
+
+        nodes = payload.get("nodes", None)
+        if nodes:
+            tmp_str = ""
+            for idx, node in enumerate(nodes):
+                tmp_str += f"Node: {idx}\n" + node.text
+                tmp_str += "\n***************\n"
+            return {"nodes": tmp_str, "len_nodes": len(nodes)}
+
+    def _handle_llm_payload(self, event_pair: List[CBEvent], span: "trace_tree.Span") -> Dict[str, Any]:
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
+
+        # Keep a count of the number of tokens used by LLM in the given trace map
+        self._llm_token_count += outputs["total_tokens_used"]
+
+        # Make `formatted_prompt` part of `inputs`
+        inputs["formatted_prompt"] = outputs.get("formatted_prompt", None)
+        outputs.pop("formatted_prompt", None)
+
+        # Make token counts part of span's `metadata`
+        filterByKey = lambda keys: {x: outputs[x] for x in keys}
+        metadata_keys = ["formatted_prompt_tokens_count", "prediction_tokens_count", "total_tokens_used"]
+        metadata = filterByKey(metadata_keys)
+        span.attributes = metadata
+        for meta_key in metadata_keys:
+            outputs.pop(meta_key, None)
+
+        # Make `response` part of `outputs`
+        outputs = {"response" : outputs["response"]}
+
+        return inputs, outputs, span
 
     def _get_time_in_ms(self, event_pair: List[CBEvent]) -> List[int]:
         start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
