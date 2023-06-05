@@ -18,6 +18,9 @@ def create_schema_from_function(
         param_default = params[param_name].default
         if param_default is params[param_name].empty:
             param_default = None
+
+        if param_type is params[param_name].empty:
+            param_type = Any
         fields[param_name] = (param_type, param_default)
 
     additional_fields = additional_fields or []

@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from llama_index.tools.types import BaseTool, ToolMetadata
 from langchain.tools import Tool, StructuredTool
 from inspect import signature
+from llama_index.tools.utils import create_schema_from_function
 
 
 class FunctionTool(BaseTool):
@@ -32,6 +33,10 @@ class FunctionTool(BaseTool):
         name = name or fn.__name__
         docstring = fn.__doc__
         description = description or f"{name}{signature(fn)}\n{docstring}"
+        if fn_schema is None:
+            fn_schema = create_schema_from_function(
+                f"{name}", fn, additional_fields=None
+            )
         metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
         return cls(fn=fn, metadata=metadata)
 
