@@ -1,0 +1,24 @@
+name: Feature Request
+description: Request a new feature
+title: "[Documentation]: "
+labels: ["documentation", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this documenation request!
+        Please complete the following form to help us assist you.
+  - type: textarea
+    id: doc-description
+    attributes:
+      label: Documentation Issue Description
+      description: Describe what is missing or broken in the documentation.
+    validations:
+      required: true
+  - type: input
+    id: docs-link
+    attributes:
+      label: Documenation Link
+      description: Please link to the section of documenation that is broken or missing information.
+    validations:
+      required: true
