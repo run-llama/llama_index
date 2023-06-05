@@ -213,7 +213,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 if self._wandb.run:
                     self._wandb.run.log({"trace": root_trace})
                 self._wandb.termlog("Logged trace tree to W&B.")
-        except:
+        except: # noqa
             # Silently ignore errors to not break user code
             pass
 
@@ -398,7 +398,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
         outputs.pop("formatted_prompt", None)
 
         # Make token counts part of span's `metadata`
-        filterByKey = lambda keys: {x: outputs[x] for x in keys}
+        def filterByKey(keys):
+            return {x: outputs[x] for x in keys}
         metadata_keys = [
             "formatted_prompt_tokens_count",
             "prediction_tokens_count",
@@ -444,13 +445,16 @@ class WandbCallbackHandler(BaseCallbackHandler):
             self._wandb.init(**run_args)
 
             if should_print_url:
-                self._print_wandb_init_message(self._wandb.run.settings.run_url)  # type: ignore
+                self._print_wandb_init_message(
+                    self._wandb.run.settings.run_url # type: ignore
+                )
 
     def _print_wandb_init_message(self, run_url: str) -> None:
         self._wandb.termlog(
             f"Streaming LlamaIndex events to W&B at {run_url}\n"
             "`WandbCallbackHandler` is currently in beta.\n"
-            "Please report any issues to https://github.com/wandb/wandb/issues with the tag `llamaindex`."
+            "Please report any issues to https://github.com/wandb/wandb/issues "
+            "with the tag `llamaindex`."
         )
 
     def _print_upload_index_fail_message(self, e: Exception) -> None:
