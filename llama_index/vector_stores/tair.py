@@ -11,14 +11,24 @@ from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    MetadataFilters,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
     from tair import Tair
+
+
+def _to_filter_expr(filters: MetadataFilters) -> str:
+    conditions = []
+    for f in filters.filters:
+        value = str(f.value)
+        if type(f.value) == str:
+            value = '"' + value + '"'
+        conditions.append("%s==%s" % (f.key, value))
+    return "&&".join(conditions)
 
 
 class TairVectorStore(VectorStore):
@@ -140,8 +150,8 @@ class TairVectorStore(VectorStore):
                 "doc_id": result.ref_doc_id,
                 "text": result.node.get_text(),
             }
-            additional_metadata = node_to_metadata_dict(result.node)
-            attributes.update(additional_metadata)
+            if result.node.node_info is not None:
+                attributes.update(result.node.node_info)
 
             ids.append(result.id)
             self._tair_client.tvs_hset(
@@ -183,9 +193,9 @@ class TairVectorStore(VectorStore):
         Raises:
             ValueError: If query.query_embedding is None.
         """
-        # TODO: implement this
+        filter_expr = None
         if query.filters is not None:
-            raise ValueError("Metadata filters not implemented for Tair yet.")
+            filter_expr = _to_filter_expr(query.filters)
 
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
@@ -201,7 +211,7 @@ class TairVectorStore(VectorStore):
             query.similarity_top_k,
             query.query_embedding,
             False,
-            filter_str=None,
+            filter_str=filter_expr,
             **query_args,
         )
         results = [(k.decode(), float(s)) for k, s in results]
