@@ -191,9 +191,9 @@ class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             else:
                 raise ValueError(f"Invalid mode: {self.mode}")
 
-        all_nodes: List[NodeWithScore] = list(all_nodes.values())
+        all_nodes_values: List[NodeWithScore] = list(all_nodes.values())
         sorted_nodes: List[NodeWithScore] = list()
-        for node in all_nodes:
+        for node in all_nodes_values:
             # variable to check if cand node is inserted
             node_inserted = False
             for i, cand in enumerate(sorted_nodes):
