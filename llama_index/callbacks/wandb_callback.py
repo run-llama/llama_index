@@ -420,16 +420,17 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
     def _handle_query_payload(
         self, event_pair: List[CBEvent]
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    ) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
         inputs = event_pair[0].payload
         outputs = event_pair[-1].payload
 
-        response = outputs["response"]
+        if outputs:
+            response = outputs["response"]
 
-        if type(response).__name__ == "Response":
-            response = response.response
-        elif type(response).__name__ == "StreamingResponse":
-            response = response.get_response().response
+            if type(response).__name__ == "Response":
+                response = response.response
+            elif type(response).__name__ == "StreamingResponse":
+                response = response.get_response().response
         else:
             response = " "
 
