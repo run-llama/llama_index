@@ -18,7 +18,7 @@ Below we show index-specific retriever classes.
    retrievers/tree.rst
    retrievers/vector_store.rst
 
-NOTE: our structured indices (e.g. GPTPandasIndex, GPTSQLStructStoreIndex) don't have
+NOTE: our structured indices (e.g. GPTPandasIndex, SQLStructStoreIndex) don't have
 any retrievers, since they are not designed to be used with the retriever API.
 Please see the :ref:`Query Engine <Ref-Query-Engines>` page for more details.
 

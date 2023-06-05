@@ -73,7 +73,7 @@ If the db is already populated with data, we can instantiate the SQL index
 with a blank documents list. Otherwise see the below section.
 
 ```python
-index = GPTSQLStructStoreIndex(
+index = SQLStructStoreIndex(
     [],
     sql_database=sql_database, 
     table_name="city_stats",
@@ -102,12 +102,12 @@ first input; these documents will be converted
 to structured datapoints and inserted into the db:
 
 ```python
-from llama_index import GPTSQLStructStoreIndex, SQLDatabase
+from llama_index import SQLStructStoreIndex, SQLDatabase
 
 sql_database = SQLDatabase(engine, include_tables=["city_stats"])
 # NOTE: the table_name specified here is the table that you
 # want to extract into from unstructured documents.
-index = GPTSQLStructStoreIndex.from_documents(
+index = SQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -177,7 +177,7 @@ context_builder = SQLContextContainerBuilder(sql_database, context_dict=table_co
 context_container = context_builder.build_context_container()
 
 # building the index
-index = GPTSQLStructStoreIndex.from_documents(
+index = SQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -204,7 +204,7 @@ context_builder = SQLContextContainerBuilder.from_documents(
 context_container = context_builder.build_context_container()
 
 # building the index
-index = GPTSQLStructStoreIndex.from_documents(
+index = SQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -230,7 +230,7 @@ stores the context on the generated context container.
 You can then build the context container, and pass it to the index during query-time!
 
 ```python
-from llama_index import GPTSQLStructStoreIndex, SQLDatabase, VectorStoreIndex
+from llama_index import SQLStructStoreIndex, SQLDatabase, VectorStoreIndex
 from llama_index.indices.struct_store import SQLContextContainerBuilder
 
 sql_database = SQLDatabase(engine)
@@ -253,7 +253,7 @@ context_builder.query_index_for_context(
 
 context_container = context_builder.build_context_container()
 
-index = GPTSQLStructStoreIndex(
+index = SQLStructStoreIndex(
     [],
     sql_database=sql_database,
     sql_context_container=context_container

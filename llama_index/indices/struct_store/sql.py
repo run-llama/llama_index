@@ -23,10 +23,10 @@ class SQLQueryMode(str, Enum):
     NL = "nl"
 
 
-class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
+class SQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
     """Base GPT SQL Struct Store Index.
 
-    The GPTSQLStructStoreIndex is an index that uses a SQL database
+    The SQLStructStoreIndex is an index that uses a SQL database
     under the hood. During index construction, the data can be inferred
     from unstructured documents given a schema extract prompt,
     or it can be pre-loaded in the database.
@@ -153,3 +153,5 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
             return GPTSQLStructStoreQueryEngine(self, **kwargs)
         else:
             raise ValueError(f"Unknown query mode: {query_mode}")
+
+GPTSQLStructStoreIndex = SQLStructStoreIndex

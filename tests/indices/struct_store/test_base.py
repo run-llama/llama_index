@@ -18,7 +18,7 @@ from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.sql import (
-    GPTSQLStructStoreIndex,
+    SQLStructStoreIndex,
     SQLContextContainerBuilder,
 )
 from llama_index.indices.struct_store.sql_query import GPTNLStructStoreQueryEngine
@@ -40,7 +40,7 @@ def test_sql_index(
     mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
-    """Test GPTSQLStructStoreIndex."""
+    """Test SQLStructStoreIndex."""
     engine = create_engine("sqlite:///:memory:")
     metadata_obj = MetaData()
     table_name = "test_table"
@@ -55,14 +55,14 @@ def test_sql_index(
     index_kwargs, _ = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     sql_database = SQLDatabase(engine, metadata=metadata_obj)
-    index = GPTSQLStructStoreIndex.from_documents(
+    index = SQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
         service_context=mock_service_context,
         **index_kwargs
     )
-    assert isinstance(index, GPTSQLStructStoreIndex)
+    assert isinstance(index, SQLStructStoreIndex)
 
     # test that the document is inserted
     stmt = select(test_table.c["user_id", "foo"])
@@ -75,10 +75,10 @@ def test_sql_index(
     # try with documents with more text chunks
     _delete_table_items(engine, test_table)
     docs = [Document(text="user_id:2,foo:bar\nuser_id:8,foo:hello")]
-    index = GPTSQLStructStoreIndex.from_documents(
+    index = SQLStructStoreIndex.from_documents(
         docs, sql_database=sql_database, table_name=table_name, **index_kwargs
     )
-    assert isinstance(index, GPTSQLStructStoreIndex)
+    assert isinstance(index, SQLStructStoreIndex)
     # test that the document is inserted
     stmt = select(test_table.c["user_id", "foo"])
     engine = index.sql_database.engine
@@ -92,7 +92,7 @@ def test_sql_index_nodes(
     mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
-    """Test GPTSQLStructStoreIndex with nodes."""
+    """Test SQLStructStoreIndex with nodes."""
     engine = create_engine("sqlite:///:memory:")
     metadata_obj = MetaData()
     table_name = "test_table"
@@ -118,14 +118,14 @@ def test_sql_index_nodes(
         ),
     ]
     sql_database = SQLDatabase(engine, metadata=metadata_obj)
-    index = GPTSQLStructStoreIndex(
+    index = SQLStructStoreIndex(
         nodes,
         sql_database=sql_database,
         table_name=table_name,
         service_context=mock_service_context,
         **index_kwargs
     )
-    assert isinstance(index, GPTSQLStructStoreIndex)
+    assert isinstance(index, SQLStructStoreIndex)
 
     # test that both nodes are inserted
     stmt = select(test_table.c["user_id", "foo"])
@@ -149,14 +149,14 @@ def test_sql_index_nodes(
         ),
     ]
     sql_database = SQLDatabase(engine, metadata=metadata_obj)
-    index = GPTSQLStructStoreIndex(
+    index = SQLStructStoreIndex(
         nodes,
         sql_database=sql_database,
         table_name=table_name,
         service_context=mock_service_context,
         **index_kwargs
     )
-    assert isinstance(index, GPTSQLStructStoreIndex)
+    assert isinstance(index, SQLStructStoreIndex)
 
     # test that only one node (the last one) is inserted
     stmt = select(test_table.c["user_id", "foo"])
@@ -171,7 +171,7 @@ def test_sql_index_with_context(
     mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
-    """Test GPTSQLStructStoreIndex."""
+    """Test SQLStructStoreIndex."""
     # test setting table_context_dict
     engine = create_engine("sqlite:///:memory:")
     metadata_obj = MetaData()
@@ -194,7 +194,7 @@ def test_sql_index_with_context(
         sql_database, context_dict=table_context_dict
     ).build_context_container(ignore_db_schema=True)
 
-    index = GPTSQLStructStoreIndex.from_documents(
+    index = SQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
@@ -202,7 +202,7 @@ def test_sql_index_with_context(
         service_context=mock_service_context,
         **index_kwargs
     )
-    assert isinstance(index, GPTSQLStructStoreIndex)
+    assert isinstance(index, SQLStructStoreIndex)
     assert index.sql_context_container.context_dict == table_context_dict
     _delete_table_items(engine, test_table)
 
@@ -212,14 +212,14 @@ def test_sql_index_with_context(
         sql_database, context_dict=table_context_dict
     ).build_context_container()
 
-    index = GPTSQLStructStoreIndex.from_documents(
+    index = SQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
         **index_kwargs
     )
-    assert isinstance(index, GPTSQLStructStoreIndex)
+    assert isinstance(index, SQLStructStoreIndex)
     for k, v in table_context_dict.items():
         context_dict = index.sql_context_container.context_dict
         assert context_dict is not None
@@ -242,14 +242,14 @@ def test_sql_index_with_context(
     sql_context_container = sql_context_builder.build_context_container(
         ignore_db_schema=True
     )
-    index = GPTSQLStructStoreIndex.from_documents(
+    index = SQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
         **index_kwargs
     )
-    assert isinstance(index, GPTSQLStructStoreIndex)
+    assert isinstance(index, SQLStructStoreIndex)
     assert index.sql_context_container.context_dict == {
         "test_table": "extract_test:test_table_context"
     }
@@ -292,7 +292,7 @@ def test_sql_index_with_index_context(
     mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
-    """Test GPTSQLStructStoreIndex."""
+    """Test SQLStructStoreIndex."""
     # test setting table_context_dict
     engine = create_engine("sqlite:///:memory:")
     metadata_obj = MetaData()
@@ -333,7 +333,7 @@ def test_sql_index_with_index_context(
     )
     assert sql_context_container.context_str == context_response
 
-    index = GPTSQLStructStoreIndex.from_documents(
+    index = SQLStructStoreIndex.from_documents(
         docs,
         sql_database=sql_database,
         table_name=table_name,

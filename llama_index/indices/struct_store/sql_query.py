@@ -1,4 +1,4 @@
-"""Default query for GPTSQLStructStoreIndex."""
+"""Default query for SQLStructStoreIndex."""
 import logging
 from typing import Any, Optional
 
@@ -7,7 +7,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
-from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex
+from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import Response
@@ -34,14 +34,14 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = Prompt(
 class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
     """GPT SQL query engine over a structured database.
 
-    Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made here.
+    Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made here.
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
     """
 
     def __init__(
         self,
-        index: GPTSQLStructStoreIndex,
+        index: SQLStructStoreIndex,
         sql_context_container: Optional[SQLContextContainerBuilder] = None,
         **kwargs: Any,
     ) -> None:
@@ -69,13 +69,13 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
     """GPT natural language query engine over a structured database.
 
     Given a natural language query, we will extract the query to SQL.
-    Runs raw SQL over a GPTSQLStructStoreIndex. No LLM calls are made during
+    Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made during
     the SQL execution.
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
 
     Args:
-        index (GPTSQLStructStoreIndex): A GPT SQL Struct Store Index
+        index (SQLStructStoreIndex): A GPT SQL Struct Store Index
         text_to_sql_prompt (Optional[Prompt]): A Text to SQL Prompt
             to use for the query. Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
         context_query_kwargs (Optional[dict]): Keyword arguments for the
@@ -89,7 +89,7 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
 
     def __init__(
         self,
-        index: GPTSQLStructStoreIndex,
+        index: SQLStructStoreIndex,
         text_to_sql_prompt: Optional[Prompt] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
