@@ -21,7 +21,7 @@ from llama_index.indices.struct_store.sql import (
     SQLStructStoreIndex,
     SQLContextContainerBuilder,
 )
-from llama_index.indices.struct_store.sql_query import GPTNLStructStoreQueryEngine
+from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.readers.schema.base import Document
 from llama_index.schema import BaseDocument
@@ -342,5 +342,5 @@ def test_sql_index_with_index_context(
         **index_kwargs
     )
     # just assert this runs
-    sql_query_engine = GPTNLStructStoreQueryEngine(index)
+    sql_query_engine = NLStructStoreQueryEngine(index)
     sql_query_engine.query(QueryBundle("test_table:foo"))

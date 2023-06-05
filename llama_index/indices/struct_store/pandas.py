@@ -52,9 +52,9 @@ class PandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.indices.struct_store.pandas_query import GPTNLPandasQueryEngine
+        from llama_index.indices.struct_store.pandas_query import NLPandasQueryEngine
 
-        return GPTNLPandasQueryEngine(self, **kwargs)
+        return NLPandasQueryEngine(self, **kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> PandasStructTable:
         """Build index from documents."""

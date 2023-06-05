@@ -31,7 +31,7 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = Prompt(
 )
 
 
-class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
+class SQLStructStoreQueryEngine(BaseQueryEngine):
     """GPT SQL query engine over a structured database.
 
     Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made here.
@@ -65,7 +65,7 @@ class GPTSQLStructStoreQueryEngine(BaseQueryEngine):
         return self._query(query_bundle)
 
 
-class GPTNLStructStoreQueryEngine(BaseQueryEngine):
+class NLStructStoreQueryEngine(BaseQueryEngine):
     """GPT natural language query engine over a structured database.
 
     Given a natural language query, we will extract the query to SQL.
@@ -201,3 +201,8 @@ class GPTNLStructStoreQueryEngine(BaseQueryEngine):
         extra_info["sql_query"] = sql_query_str
         response = Response(response=response_str, extra_info=extra_info)
         return response
+
+
+# legacy
+GPTNLStructStoreQueryEngine = NLStructStoreQueryEngine
+GPTSQLStructStoreQueryEngine = SQLStructStoreQueryEngine

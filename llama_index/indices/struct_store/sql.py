@@ -143,14 +143,14 @@ class SQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
     ) -> BaseQueryEngine:
         # NOTE: lazy import
         from llama_index.indices.struct_store.sql_query import (
-            GPTNLStructStoreQueryEngine,
-            GPTSQLStructStoreQueryEngine,
+            NLStructStoreQueryEngine,
+            SQLStructStoreQueryEngine,
         )
 
         if query_mode == SQLQueryMode.NL:
-            return GPTNLStructStoreQueryEngine(self, **kwargs)
+            return NLStructStoreQueryEngine(self, **kwargs)
         elif query_mode == SQLQueryMode.SQL:
-            return GPTSQLStructStoreQueryEngine(self, **kwargs)
+            return SQLStructStoreQueryEngine(self, **kwargs)
         else:
             raise ValueError(f"Unknown query mode: {query_mode}")
 

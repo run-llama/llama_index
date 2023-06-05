@@ -64,7 +64,7 @@ def default_output_processor(
         return err_string
 
 
-class GPTNLPandasQueryEngine(BaseQueryEngine):
+class NLPandasQueryEngine(BaseQueryEngine):
     """GPT Pandas query.
 
     Convert natural language to Pandas python code.
@@ -139,3 +139,6 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         return self._query(query_bundle)
+
+# legacy
+GPTNLPandasQueryEngine = NLPandasQueryEngine

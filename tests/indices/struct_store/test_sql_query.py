@@ -6,8 +6,8 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.base import default_output_parser
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.indices.struct_store.sql_query import (
-    GPTNLStructStoreQueryEngine,
-    GPTSQLStructStoreQueryEngine,
+    NLStructStoreQueryEngine,
+    SQLStructStoreQueryEngine,
 )
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.readers.schema.base import Document
@@ -42,12 +42,12 @@ def test_sql_index_query(
     )
 
     # query the index with SQL
-    sql_query_engine = GPTSQLStructStoreQueryEngine(index, **query_kwargs)
+    sql_query_engine = SQLStructStoreQueryEngine(index, **query_kwargs)
     response = sql_query_engine.query("SELECT user_id, foo FROM test_table")
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     # query the index with natural language
-    nl_query_engine = GPTNLStructStoreQueryEngine(index, **query_kwargs)
+    nl_query_engine = NLStructStoreQueryEngine(index, **query_kwargs)
     response = nl_query_engine.query("test_table:user_id,foo")
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
@@ -82,13 +82,13 @@ def test_sql_index_async_query(
     )
 
     # query the index with SQL
-    sql_query_engine = GPTSQLStructStoreQueryEngine(index, **query_kwargs)
+    sql_query_engine = SQLStructStoreQueryEngine(index, **query_kwargs)
     task = sql_query_engine.aquery("SELECT user_id, foo FROM test_table")
     response = asyncio.run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     # query the index with natural language
-    nl_query_engine = GPTNLStructStoreQueryEngine(index, **query_kwargs)
+    nl_query_engine = NLStructStoreQueryEngine(index, **query_kwargs)
     task = nl_query_engine.aquery("test_table:user_id,foo")
     response = asyncio.run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
