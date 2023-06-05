@@ -22,9 +22,6 @@ class TreeRootRetriever(BaseRetriever):
     """
 
     def __init__(self, index: TreeIndex):
-
-        assert isinstance(index, TreeIndex)
-
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore
