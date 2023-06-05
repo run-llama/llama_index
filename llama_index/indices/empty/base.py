@@ -16,7 +16,7 @@ from llama_index.storage.docstore.types import RefDocInfo
 
 
 class EmptyIndex(BaseIndex[EmptyIndexStruct]):
-    """GPT Empty Index.
+    """Empty Index.
 
     An index that doesn't contain any documents. Used for
     pure LLM calls.
