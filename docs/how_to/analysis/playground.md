@@ -12,7 +12,7 @@ A sample usage is given below.
 
 ```python
 from llama_index import download_loader
-from llama_index.indices.vector_store import GPTVectorStoreIndex
+from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.playground import Playground
 
@@ -22,7 +22,7 @@ loader = WikipediaReader()
 documents = loader.load_data(pages=['Berlin'])
 
 # define multiple index data structures (vector index, list index)
-indices = [GPTVectorStoreIndex(documents), TreeIndex(documents)]
+indices = [VectorStoreIndex(documents), TreeIndex(documents)]
 
 # initialize playground
 playground = Playground(indices=indices)

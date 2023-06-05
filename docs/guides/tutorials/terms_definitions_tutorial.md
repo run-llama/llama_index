@@ -128,7 +128,7 @@ Lastly, we do some minor post processing. We assume the model followed instructi
 
 ## Saving Extracted Terms
 
-Now that we can extract terms, we need to put them somewhere so that we can query for them later. A `GPTVectorStoreIndex` should be a perfect choice for now! But in addition, our app should also keep track of which terms are inserted into the index so that we can inspect them later. Using `st.session_state`, we can store the current list of terms in a session dict, unique to each user!
+Now that we can extract terms, we need to put them somewhere so that we can query for them later. A `VectorStoreIndex` should be a perfect choice for now! But in addition, our app should also keep track of which terms are inserted into the index so that we can inspect them later. Using `st.session_state`, we can store the current list of terms in a session dict, unique to each user!
 
 First things first though, let's add a feature to initialize a global vector index and another function to insert the extracted terms.
 
@@ -150,7 +150,7 @@ def initialize_index(llm_name, model_temperature, api_key):
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
 
-    index = GPTVectorStoreIndex([], service_context=service_context)
+    index = VectorStoreIndex([], service_context=service_context)
 
     return index
 

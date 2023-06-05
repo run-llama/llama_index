@@ -5,7 +5,7 @@ from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.loading import load_graph_from_storage
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.readers.schema.base import Document
 from llama_index.storage.storage_context import StorageContext
 
@@ -19,14 +19,14 @@ def test_load_graph_from_storage_simple(
     storage_context = StorageContext.from_defaults()
 
     # construct index
-    vector_index_1 = GPTVectorStoreIndex.from_documents(
+    vector_index_1 = VectorStoreIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
         service_context=mock_service_context,
     )
 
     # construct second index, testing vector store overlap
-    vector_index_2 = GPTVectorStoreIndex.from_documents(
+    vector_index_2 = VectorStoreIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
         service_context=mock_service_context,

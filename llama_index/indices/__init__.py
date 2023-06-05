@@ -1,22 +1,26 @@
 """LlamaIndex data structures."""
 
 # indices
-from llama_index.indices.keyword_table.base import GPTKeywordTableIndex
+from llama_index.indices.keyword_table.base import KeywordTableIndex, GPTKeywordTableIndex
 from llama_index.indices.keyword_table.rake_base import \
-    GPTRAKEKeywordTableIndex
+    RAKEKeywordTableIndex
 from llama_index.indices.keyword_table.simple_base import \
     SimpleKeywordTableIndex, GPTSimpleKeywordTableIndex
 from llama_index.indices.list.base import GPTListIndex, ListIndex
 from llama_index.indices.tree.base import TreeIndex, GPTTreeIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex, GPTVectorStoreIndex
 
 __all__ = [
-    "GPTKeywordTableIndex",
+    "VectorStoreIndex",
+    "KeywordTableIndex",
     "SimpleKeywordTableIndex",
-    "GPTRAKEKeywordTableIndex",
+    "RAKEKeywordTableIndex",
     "ListIndex",
     "TreeIndex",
     # legacy
     "GPTListIndex",
     "GPTTreeIndex", 
     "GPTSimpleKeywordTableIndex",
+    "GPTKeywordTableIndex",
+    "GPTVectorStoreIndex", 
 ]

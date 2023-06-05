@@ -1,6 +1,6 @@
 """Simple keyword-table based index.
 
-Similar to GPTKeywordTableIndex, but uses a simpler keyword extraction
+Similar to KeywordTableIndex, but uses a simpler keyword extraction
 technique that doesn't involve GPT - just uses regex.
 
 """

@@ -11,7 +11,7 @@ from llama_index.indices.loading import (
     load_indices_from_storage,
 )
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.readers.schema.base import Document
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.storage.index_store.simple_index_store import SimpleIndexStore
@@ -28,7 +28,7 @@ def test_load_index_from_storage_simple(
     storage_context = StorageContext.from_defaults()
 
     # construct index
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
         service_context=mock_service_context,
@@ -60,7 +60,7 @@ def test_load_index_from_storage_multiple(
     storage_context.docstore.add_documents(nodes)
 
     # construct multiple indices
-    vector_index = GPTVectorStoreIndex(
+    vector_index = VectorStoreIndex(
         nodes=nodes,
         storage_context=storage_context,
         service_context=mock_service_context,
@@ -111,7 +111,7 @@ def test_load_index_from_storage_retrieval_result_identical(
     storage_context = StorageContext.from_defaults()
 
     # construct index
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
         service_context=mock_service_context,
@@ -151,7 +151,7 @@ def test_load_index_from_storage_faiss_vector_store(
     )
 
     # construct index
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
         service_context=mock_service_context,

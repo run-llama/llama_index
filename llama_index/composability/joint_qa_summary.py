@@ -5,7 +5,7 @@ from typing import Optional, Sequence
 
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store import GPTVectorStoreIndex
+from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.query_engine.router_query_engine import RouterQueryEngine
 from llama_index.readers.schema.base import Document
 from llama_index.selectors.llm_selectors import LLMSingleSelector
@@ -63,7 +63,7 @@ class QASummaryQueryEngineBuilder:
         self._storage_context.docstore.add_documents(nodes, allow_update=True)
 
         # build indices
-        vector_index = GPTVectorStoreIndex(
+        vector_index = VectorStoreIndex(
             nodes,
             service_context=self._service_context,
             storage_context=self._storage_context,

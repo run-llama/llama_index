@@ -3,9 +3,9 @@
 ## Get Started
 Build an index from documents:
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 
-index = GPTVectorStoreIndex.from_documents(docs)
+index = VectorStoreIndex.from_documents(docs)
 ```
 
 > Note: To learn how to load documents, see [Data Connectors](/how_to/connector/root.md)
@@ -23,10 +23,10 @@ The most common configuration you might want to change is how to parse document 
 ### High-Level API
 We can configure our service context to use the desired chunk size.
 ```python
-from llama_index import ServiceContext, GPTVectorStoreIndex
+from llama_index import ServiceContext, VectorStoreIndex
 
 service_context = ServiceContext.from_defaults(chunk_size=512)
-index = GPTVectorStoreIndex.from_documents(docs, service_context=service_context)
+index = VectorStoreIndex.from_documents(docs, service_context=service_context)
 ```
 
 > Note: While the high-level API optimizes for ease-of-use, it does *NOT* expose full range of configurability.  
@@ -53,7 +53,7 @@ nodes = parser.get_nodes_from_documents(documents)
 ```
 3. build index from `Node` objects
 ```python
-index = GPTVectorStoreIndex(nodes)
+index = VectorStoreIndex(nodes)
 ```
 
 

@@ -9,7 +9,7 @@ from llama_index.tools.types import BaseTool, ToolMetadata
 from llama_index.readers.base import BaseReader
 from typing import Any, Optional, Dict, Type
 from llama_index.indices.base import BaseGPTIndex
-from llama_index.indices.vector_store import GPTVectorStoreIndex
+from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.tools.utils import create_schema_from_function
 from pydantic import BaseModel
 
@@ -58,7 +58,7 @@ class OnDemandLoaderTool(BaseTool):
         """From defaults."""
         # NOTE: fn_schema should be specified if you want to use as langchain Tool
 
-        index_cls = index_cls or GPTVectorStoreIndex
+        index_cls = index_cls or VectorStoreIndex
         index_kwargs = index_kwargs or {}
         if description is None:
             description = f"Tool to load data from {reader.__class__.__name__}"

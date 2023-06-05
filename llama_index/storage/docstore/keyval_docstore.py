@@ -28,7 +28,7 @@ class KVDocumentStore(BaseDocumentStore):
         storage_context = StorageContext.from_defaults(docstore=docstore)
 
         list_index = ListIndex(nodes, storage_context=storage_context)
-        vector_index = GPTVectorStoreIndex(nodes, storage_context=storage_context)
+        vector_index = VectorStoreIndex(nodes, storage_context=storage_context)
         keyword_table_index = SimpleKeywordTableIndex(
             nodes,
             storage_context=storage_context

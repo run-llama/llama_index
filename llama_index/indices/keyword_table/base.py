@@ -186,7 +186,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         return all_ref_doc_info
 
 
-class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
+class KeywordTableIndex(BaseGPTKeywordTableIndex):
     """GPT Keyword Table Index.
 
     This index uses a GPT model to extract keywords from the text.
@@ -210,3 +210,5 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
         )
         keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
         return keywords
+
+GPTKeywordTableIndex = KeywordTableIndex

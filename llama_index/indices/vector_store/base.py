@@ -18,7 +18,7 @@ from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
 
 
-class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
+class VectorStoreIndex(BaseGPTIndex[IndexDict]):
     """Base GPT Vector Store Index.
 
     Args:
@@ -198,7 +198,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         """Build the index from nodes.
 
         NOTE: Overrides BaseGPTIndex.build_index_from_nodes.
-            GPTVectorStoreIndex only stores nodes in document store
+            VectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
         return self._build_index_from_nodes(nodes)
@@ -212,7 +212,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         """Insert nodes.
 
         NOTE: overrides BaseGPTIndex.insert_nodes.
-            GPTVectorStoreIndex only stores nodes in document store
+            VectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
         self._insert(nodes, **insert_kwargs)
@@ -283,3 +283,5 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
                 "Vector store integrations that store text in the vector store are "
                 "not supported by ref_doc_info yet."
             )
+
+GPTVectorStoreIndex = VectorStoreIndex

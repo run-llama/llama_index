@@ -25,11 +25,11 @@ Use the popular RAKE keyword extractor.
 ### Usage
 
 ```python
-from llama_index import GPTKeywordTableIndex, SimpleDirectoryReader
+from llama_index import KeywordTableIndex, SimpleDirectoryReader
 
 # build index
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTKeywordTableIndex.from_documents(documents)
+index = KeywordTableIndex.from_documents(documents)
 # query
 query_engine = index.as_query_engine()
 response = query_engine.query("<question text>")

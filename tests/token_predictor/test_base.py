@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from langchain.llms.base import BaseLLM
 
-from llama_index.indices.keyword_table.base import GPTKeywordTableIndex
+from llama_index.indices.keyword_table.base import KeywordTableIndex
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
@@ -37,7 +37,7 @@ def test_token_predictor(mock_split: Any) -> None:
     query_engine.query("What is?")
 
     # test keyword table index
-    index_keyword = GPTKeywordTableIndex.from_documents(
+    index_keyword = KeywordTableIndex.from_documents(
         [document], service_context=service_context
     )
     query_engine = index_keyword.as_query_engine()

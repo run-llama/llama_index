@@ -34,7 +34,7 @@ At a high-level, prompts are used in 1) index construction, and 2) query engine 
 ### Modify prompts used in index construction
 Different indices use different types of prompts during construction (some don't use prompts at all). 
 For instance, `TreeIndex` uses a `SummaryPrompt` to hierarchically
-summarize the nodes, and `GPTKeywordTableIndex` uses a `KeywordExtractPrompt` to extract keywords.
+summarize the nodes, and `KeywordTableIndex` uses a `KeywordExtractPrompt` to extract keywords.
 
 There are two equivalent ways to override the prompts:
 1. via the default nodes constructor 
@@ -79,7 +79,7 @@ A corresponding snippet is below. We show how to define a custom prompt for ques
 requires both a `context_str` and `query_str` field. The prompt is passed in during query-time.
 
 ```python
-from llama_index import Prompt, GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import Prompt, VectorStoreIndex, SimpleDirectoryReader
 
 # load documents
 documents = SimpleDirectoryReader('data').load_data()
@@ -95,7 +95,7 @@ TEMPLATE_STR = (
 QA_TEMPLATE = Prompt(TEMPLATE_STR)
 
 # Build index 
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 
 # Configure query engine
 query_engine = index.as_query_engine(text_qa_template=QA_TEMPLATE)

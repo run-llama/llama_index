@@ -28,7 +28,7 @@ We have a direct integration with Unstructured through [LlamaHub](https://llamah
 
 ```python
 
-from llama_index import download_loader, GPTVectorStoreIndex, ServiceContext, StorageContext, load_index_from_storage
+from llama_index import download_loader, VectorStoreIndex, ServiceContext, StorageContext, load_index_from_storage
 from pathlib import Path
 
 years = [2022, 2021, 2020, 2019]
@@ -59,7 +59,7 @@ service_context = ServiceContext.from_defaults(chunk_size=512)
 index_set = {}
 for year in years:
     storage_context = StorageContext.from_defaults()
-    cur_index = GPTVectorStoreIndex.from_documents(
+    cur_index = VectorStoreIndex.from_documents(
         doc_set[year], 
         service_context=service_context,
         storage_context=storage_context,

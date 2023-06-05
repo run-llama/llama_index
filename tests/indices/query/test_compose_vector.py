@@ -10,7 +10,7 @@ from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.readers.schema.base import Document
 from tests.indices.vector_store.utils import get_pinecone_storage_context
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
@@ -69,16 +69,16 @@ def test_recursive_query_vector_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    vector1 = GPTVectorStoreIndex.from_documents(
+    vector1 = VectorStoreIndex.from_documents(
         documents[0:2], service_context=mock_service_context, **vector_kwargs
     )
-    vector2 = GPTVectorStoreIndex.from_documents(
+    vector2 = VectorStoreIndex.from_documents(
         documents[2:4], service_context=mock_service_context, **vector_kwargs
     )
-    list3 = GPTVectorStoreIndex.from_documents(
+    list3 = VectorStoreIndex.from_documents(
         documents[4:6], service_context=mock_service_context, **vector_kwargs
     )
-    list4 = GPTVectorStoreIndex.from_documents(
+    list4 = VectorStoreIndex.from_documents(
         documents[6:8], service_context=mock_service_context, **vector_kwargs
     )
     indices = [vector1, vector2, list3, list4]
@@ -133,10 +133,10 @@ def test_recursive_query_vector_table_query_configs(
     # try building a tre for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    vector1 = GPTVectorStoreIndex.from_documents(
+    vector1 = VectorStoreIndex.from_documents(
         documents[0:2], service_context=mock_service_context, **vector_kwargs
     )
-    vector2 = GPTVectorStoreIndex.from_documents(
+    vector2 = VectorStoreIndex.from_documents(
         documents[2:4], service_context=mock_service_context, **vector_kwargs
     )
     assert isinstance(vector1.index_struct, IndexStruct)
@@ -185,16 +185,16 @@ def test_recursive_query_vector_table_async(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    vector1 = GPTVectorStoreIndex.from_documents(
+    vector1 = VectorStoreIndex.from_documents(
         documents[0:2], service_context=mock_service_context, **vector_kwargs
     )
-    vector2 = GPTVectorStoreIndex.from_documents(
+    vector2 = VectorStoreIndex.from_documents(
         documents[2:4], service_context=mock_service_context, **vector_kwargs
     )
-    list3 = GPTVectorStoreIndex.from_documents(
+    list3 = VectorStoreIndex.from_documents(
         documents[4:6], service_context=mock_service_context, **vector_kwargs
     )
-    list4 = GPTVectorStoreIndex.from_documents(
+    list4 = VectorStoreIndex.from_documents(
         documents[6:8], service_context=mock_service_context, **vector_kwargs
     )
     indices = [vector1, vector2, list3, list4]
@@ -237,16 +237,16 @@ def test_recursive_query_vector_vector(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    vector1 = GPTVectorStoreIndex.from_documents(
+    vector1 = VectorStoreIndex.from_documents(
         documents[0:2], service_context=mock_service_context, **vector_kwargs
     )
-    vector2 = GPTVectorStoreIndex.from_documents(
+    vector2 = VectorStoreIndex.from_documents(
         documents[2:4], service_context=mock_service_context, **vector_kwargs
     )
-    list3 = GPTVectorStoreIndex.from_documents(
+    list3 = VectorStoreIndex.from_documents(
         documents[4:6], service_context=mock_service_context, **vector_kwargs
     )
-    list4 = GPTVectorStoreIndex.from_documents(
+    list4 = VectorStoreIndex.from_documents(
         documents[6:8], service_context=mock_service_context, **vector_kwargs
     )
 
@@ -259,7 +259,7 @@ def test_recursive_query_vector_vector(
     summaries = [summary1, summary2, summary3, summary4]
 
     graph = ComposableGraph.from_indices(
-        GPTVectorStoreIndex,
+        VectorStoreIndex,
         children_indices=indices,
         index_summaries=summaries,
         service_context=mock_service_context,
@@ -294,25 +294,25 @@ def test_recursive_query_pinecone_pinecone(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    pinecone1 = GPTVectorStoreIndex.from_documents(
+    pinecone1 = VectorStoreIndex.from_documents(
         documents[0:2],
         storage_context=get_pinecone_storage_context(),
         service_context=mock_service_context,
         **pinecone_kwargs
     )
-    pinecone2 = GPTVectorStoreIndex.from_documents(
+    pinecone2 = VectorStoreIndex.from_documents(
         documents[2:4],
         storage_context=get_pinecone_storage_context(),
         service_context=mock_service_context,
         **pinecone_kwargs
     )
-    pinecone3 = GPTVectorStoreIndex.from_documents(
+    pinecone3 = VectorStoreIndex.from_documents(
         documents[4:6],
         storage_context=get_pinecone_storage_context(),
         service_context=mock_service_context,
         **pinecone_kwargs
     )
-    pinecone4 = GPTVectorStoreIndex.from_documents(
+    pinecone4 = VectorStoreIndex.from_documents(
         documents[6:8],
         storage_context=get_pinecone_storage_context(),
         service_context=mock_service_context,
@@ -327,7 +327,7 @@ def test_recursive_query_pinecone_pinecone(
     summaries = [summary1, summary2, summary3, summary4]
 
     graph = ComposableGraph.from_indices(
-        GPTVectorStoreIndex,
+        VectorStoreIndex,
         children_indices=indices,
         index_summaries=summaries,
         storage_context=get_pinecone_storage_context(),

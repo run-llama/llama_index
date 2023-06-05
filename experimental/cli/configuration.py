@@ -7,7 +7,7 @@ from langchain.base_language import BaseLanguageModel
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index import (
-    GPTVectorStoreIndex,
+    VectorStoreIndex,
     SimpleKeywordTableIndex,
     ServiceContext,
     LLMPredictor,
@@ -49,7 +49,7 @@ def load_index(root: str = ".") -> BaseGPTIndex[Any]:
     # Index type
     index_type: Type
     if config["index"]["type"] == "default" or config["index"]["type"] == "vector":
-        index_type = GPTVectorStoreIndex
+        index_type = VectorStoreIndex
     elif config["index"]["type"] == "keyword":
         index_type = SimpleKeywordTableIndex
     else:

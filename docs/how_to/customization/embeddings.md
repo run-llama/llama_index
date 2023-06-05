@@ -2,7 +2,7 @@
 
 LlamaIndex provides support for embeddings in the following format:
 - Adding embeddings to Document objects
-- Using a Vector Store as an underlying index (e.g. `GPTVectorStoreIndex`)
+- Using a Vector Store as an underlying index (e.g. `VectorStoreIndex`)
 - Querying our list and tree indices with embeddings.
 
 ## Adding embeddings to Document objects
@@ -39,7 +39,7 @@ NOTE: Our [vector-store based indices](/how_to/integrations/vector_stores.md) ge
 For the list index (`ListIndex`):
 - We iterate through every node in the list, and identify the top k nodes through embedding similarity. We use these nodes to synthesize an answer.
 - See the [List Retriever API](/reference/query/retrievers/list.rst) for more details.
-- NOTE: the embedding-mode usage of the list index is roughly equivalent with the usage of our `GPTVectorStoreIndex`; the main
+- NOTE: the embedding-mode usage of the list index is roughly equivalent with the usage of our `VectorStoreIndex`; the main
     difference is when embeddings are generated (during query-time for the list index vs. index construction for the simple vector index).
 
 For the tree index (`TreeIndex`):
@@ -87,10 +87,10 @@ response = query_engine.query("<query_text>")
 print(response)
 ```
 
-Another example snippet is shown for GPTVectorStoreIndex.
+Another example snippet is shown for VectorStoreIndex.
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import LangchainEmbedding, ServiceContext
 
@@ -100,7 +100,7 @@ service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # load index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-new_index = GPTVectorStoreIndex.from_documents(
+new_index = VectorStoreIndex.from_documents(
     documents, 
     service_context=service_context,
 )

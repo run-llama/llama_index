@@ -4,7 +4,7 @@ from typing import List, cast
 
 import pytest
 
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.storage.storage_context import StorageContext
 
 try:
@@ -57,7 +57,7 @@ def test_overall_workflow(documents: List[Document]) -> None:
     )
     vector_store = MyScaleVectorStore(myscale_client=client)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents, storage_context=storage_context
     )
     query_engine = index.as_query_engine()
@@ -87,7 +87,7 @@ def test_init_without_documents(documents: List[Document]) -> None:
     )
     vector_store = MyScaleVectorStore(myscale_client=client)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents, storage_context=storage_context
     )
     for doc in documents:
@@ -117,7 +117,7 @@ def test_myscale_combine_search(
     )
     vector_store = MyScaleVectorStore(myscale_client=client)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents, storage_context=storage_context
     )
     query.query_embedding = index.service_context.embed_model.get_query_embedding(

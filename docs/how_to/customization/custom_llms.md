@@ -35,7 +35,7 @@ you may plug in any LLM shown on Langchain's
 ```python
 
 from llama_index import (
-    GPTKeywordTableIndex,
+    KeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
     ServiceContext
@@ -49,7 +49,7 @@ llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # build index
-index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
+index = KeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 query_engine = index.as_query_engine()
@@ -68,7 +68,7 @@ For OpenAI, Cohere, AI21, you just need to set the `max_tokens` parameter
 ```python
 
 from llama_index import (
-    GPTKeywordTableIndex,
+    KeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
     ServiceContext
@@ -82,7 +82,7 @@ llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # build index
-index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
+index = KeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 query_engine = index.as_query_engine()
@@ -97,7 +97,7 @@ If you are using other LLM classes from langchain, you may need to explicitly co
 ```python
 
 from llama_index import (
-    GPTKeywordTableIndex,
+    KeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
     ServiceContext
@@ -126,7 +126,7 @@ service_context = ServiceContext.from_defaults(
 )
 
 # build index
-index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
+index = KeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 query_engine = index.as_query_engine()

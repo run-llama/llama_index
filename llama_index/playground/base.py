@@ -10,11 +10,11 @@ from langchain.input import get_color_mapping, print_text
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.list.base import ListIndex, ListRetrieverMode
 from llama_index.indices.tree.base import TreeIndex, TreeRetrieverMode
-from llama_index.indices.vector_store import GPTVectorStoreIndex
+from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.readers.schema.base import Document
 
 DEFAULT_INDEX_CLASSES: List[Type[BaseGPTIndex]] = [
-    GPTVectorStoreIndex,
+    VectorStoreIndex,
     TreeIndex,
     ListIndex,
 ]
@@ -24,7 +24,7 @@ INDEX_SPECIFIC_QUERY_MODES_TYPE = Dict[Type[BaseGPTIndex], List[str]]
 DEFAULT_MODES: INDEX_SPECIFIC_QUERY_MODES_TYPE = {
     TreeIndex: [e.value for e in TreeRetrieverMode],
     ListIndex: [e.value for e in ListRetrieverMode],
-    GPTVectorStoreIndex: ["default"],
+    VectorStoreIndex: ["default"],
 }
 
 
