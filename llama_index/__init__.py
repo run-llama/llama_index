@@ -15,10 +15,6 @@ from llama_index.data_structs.struct_type import IndexStructType
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-# structured
-from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
-from llama_index.indices.composability.graph import ComposableGraph
-from llama_index.indices.empty import EmptyIndex
 
 # indices
 from llama_index.indices.keyword_table import (
@@ -30,6 +26,21 @@ from llama_index.indices.keyword_table import (
     GPTSimpleKeywordTableIndex,
 )
 from llama_index.indices.list import ListIndex, GPTListIndex
+from llama_index.indices.tree import TreeIndex, GPTTreeIndex
+from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
+from llama_index.indices.document_summary import DocumentSummaryIndex, GPTDocumentSummaryIndex
+from llama_index.indices.empty import EmptyIndex, GPTEmptyIndex
+from llama_index.indices.struct_store.pandas import PandasIndex, GPTPandasIndex
+from llama_index.indices.struct_store.sql import (
+    SQLStructStoreIndex,
+    GPTSQLStructStoreIndex,
+)
+
+# structured
+from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
+
+# for composability
+from llama_index.indices.composability.graph import ComposableGraph
 
 # loading
 from llama_index.indices.loading import (
@@ -47,17 +58,10 @@ from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 # QueryBundle
 from llama_index.indices.query.schema import QueryBundle
 
-# for composability
 from llama_index.indices.service_context import (
     ServiceContext,
     set_global_service_context,
 )
-from llama_index.indices.struct_store.sql import (
-    SQLStructStoreIndex,
-    GPTSQLStructStoreIndex,
-)
-from llama_index.indices.tree import TreeIndex, GPTTreeIndex
-from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
 
 # langchain helper
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
@@ -138,7 +142,9 @@ __all__ = [
     "RAKEKeywordTableIndex",
     "TreeIndex",
     "SQLStructStoreIndex",
+    "PandasIndex",
     "EmptyIndex",
+    "DocumentSummaryIndex",
     # indices - legacy names
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
@@ -147,7 +153,9 @@ __all__ = [
     "GPTEmptyIndex",
     "GPTTreeIndex",
     "GPTVectorStoreIndex",
+    "GPTPandasIndex",
     "GPTSQLStructStoreIndex",
+    "GPTDocumentSummaryIndex",
     "Prompt",
     "LangchainEmbedding",
     "OpenAIEmbedding",
