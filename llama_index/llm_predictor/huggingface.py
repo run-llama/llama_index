@@ -35,8 +35,6 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         self,
         max_input_size: int = 4096,
         max_new_tokens: int = 256,
-        temperature: float = 0.7,
-        do_sample: bool = False,
         system_prompt: str = "",
         query_wrapper_prompt: SimpleInputPrompt = DEFAULT_SIMPLE_INPUT_PROMPT,
         tokenizer_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
@@ -46,7 +44,9 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         device_map: str = "auto",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
+        tokenizer_outputs_to_remove: Optional[list] = None,
         model_kwargs: Optional[dict] = None,
+        generate_kwargs: Optional[dict] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize params."""
@@ -88,10 +88,10 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
 
         self._max_input_size = max_input_size
         self._max_new_tokens = max_new_tokens
-        self._temperature = temperature
-        self._do_sample = do_sample
-        self._device_map = device_map
 
+        self._generate_kwargs = generate_kwargs or {}
+        self._device_map = device_map
+        self._tokenizer_outputs_to_remove = tokenizer_outputs_to_remove or []
         self._system_prompt = system_prompt
         self._query_wrapper_prompt = query_wrapper_prompt
         self._total_tokens_used = 0
@@ -117,7 +117,7 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
     def get_llm_metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            max_input_size=self._max_input_size, num_output=self._max_new_tokens
+            context_window=self._max_input_size, num_output=self._max_new_tokens
         )
 
     def stream(self, prompt: Prompt, **prompt_args: Any) -> Tuple[Generator, str]:
@@ -133,7 +133,6 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
             str: The predicted answer.
 
         """
-        import torch
         from transformers import TextIteratorStreamer
 
         formatted_prompt = prompt.format(**prompt_args)
@@ -142,10 +141,12 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
             full_prompt = f"{self._system_prompt} {full_prompt}"
 
         inputs = self.tokenizer(full_prompt, return_tensors="pt")
-        if "cuda" == self._device_map or (
-            "auto" == self._device_map and torch.cuda.is_available()
-        ):
-            inputs = inputs.to("cuda")
+        inputs = inputs.to(self.model.device)
+
+        # remove keys from the tokenizer if needed, to avoid HF errors
+        for key in self._tokenizer_outputs_to_remove:
+            if key in inputs:
+                inputs.pop(key, None)
 
         streamer = TextIteratorStreamer(
             self.tokenizer,
@@ -156,9 +157,8 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
             inputs,
             streamer=streamer,
             max_new_tokens=self._max_new_tokens,
-            temperature=self._temperature,
-            do_sample=self._do_sample,
             stopping_criteria=self._stopping_criteria,
+            **self._generate_kwargs,
         )
 
         # generate in background thread
@@ -198,7 +198,6 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
             Tuple[str, str]: Tuple of the predicted answer and the formatted prompt.
 
         """
-        import torch
 
         llm_payload = {**prompt_args}
         llm_payload["template"] = prompt
@@ -212,17 +211,18 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
             full_prompt = f"{self._system_prompt} {full_prompt}"
 
         inputs = self.tokenizer(full_prompt, return_tensors="pt")
-        if "cuda" == self._device_map or (
-            "auto" == self._device_map and torch.cuda.is_available()
-        ):
-            inputs = inputs.to("cuda")
+        inputs = inputs.to(self.model.device)
+
+        # remove keys from the tokenizer if needed, to avoid HF errors
+        for key in self._tokenizer_outputs_to_remove:
+            if key in inputs:
+                inputs.pop(key, None)
 
         tokens = self.model.generate(
             **inputs,
             max_new_tokens=self._max_new_tokens,
-            temperature=self._temperature,
-            do_sample=self._do_sample,
             stopping_criteria=self._stopping_criteria,
+            **self._generate_kwargs,
         )
         completion_tokens = tokens[0][inputs["input_ids"].size(1) :]
         self._total_tokens_used += len(completion_tokens) + inputs["input_ids"].size(1)

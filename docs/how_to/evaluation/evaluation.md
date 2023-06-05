@@ -26,7 +26,7 @@ and also get a response list across sources to see which sources match.
 This mode of evaluation will return "YES"/"NO" if the synthesized response matches any source context.
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 from llama_index.evaluation import ResponseEvaluator
 
 # build service context
@@ -61,7 +61,7 @@ You'll get back either a `YES` or `NO` response.
 This mode of evaluation will return "YES"/"NO" for every source node.
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 from llama_index.evaluation import ResponseEvaluator
 
 # build service context
@@ -105,7 +105,7 @@ if it matches the query.
 This mode of evaluation will return "YES"/"NO" if the synthesized response matches the query + any source context.
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 from llama_index.evaluation import QueryResponseEvaluator
 
 # build service context
@@ -136,7 +136,7 @@ print(str(eval_result))
 This mode of evaluation will look at each source node, and see if each source node contains an answer to the query.
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 from llama_index.evaluation import QueryResponseEvaluator
 
 # build service context

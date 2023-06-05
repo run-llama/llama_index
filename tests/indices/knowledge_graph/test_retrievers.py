@@ -1,6 +1,6 @@
 from typing import Any, List
 from unittest.mock import patch
-from llama_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
+from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.knowledge_graph.retrievers import KGTableRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -13,7 +13,7 @@ from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
 
 
 @patch.object(
-    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_as_retriever(
     _patch_extract_triplets: Any,
@@ -21,7 +21,7 @@ def test_as_retriever(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test query."""
-    index = GPTKnowledgeGraphIndex.from_documents(
+    index = KnowledgeGraphIndex.from_documents(
         documents, service_context=mock_service_context
     )
     retriever = index.as_retriever()
@@ -40,7 +40,7 @@ def test_as_retriever(
 
 
 @patch.object(
-    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_retrievers(
     _patch_extract_triplets: Any,
@@ -48,7 +48,7 @@ def test_retrievers(
     mock_service_context: ServiceContext,
 ) -> None:
     # test specific retriever class
-    index = GPTKnowledgeGraphIndex.from_documents(
+    index = KnowledgeGraphIndex.from_documents(
         documents, service_context=mock_service_context
     )
     retriever = KGTableRetriever(
@@ -65,7 +65,7 @@ def test_retrievers(
 
 
 @patch.object(
-    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_retriever_no_text(
     _patch_extract_triplets: Any,
@@ -73,7 +73,7 @@ def test_retriever_no_text(
     mock_service_context: ServiceContext,
 ) -> None:
     # test specific retriever class
-    index = GPTKnowledgeGraphIndex.from_documents(
+    index = KnowledgeGraphIndex.from_documents(
         documents, service_context=mock_service_context
     )
     retriever = KGTableRetriever(
@@ -91,7 +91,7 @@ def test_retriever_no_text(
 
 
 @patch.object(
-    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_retrieve_similarity(
     _patch_extract_triplets: Any,
@@ -100,7 +100,7 @@ def test_retrieve_similarity(
 ) -> None:
     """Test query."""
     mock_service_context.embed_model = MockEmbedding()
-    index = GPTKnowledgeGraphIndex.from_documents(
+    index = KnowledgeGraphIndex.from_documents(
         documents, include_embeddings=True, service_context=mock_service_context
     )
     retriever = KGTableRetriever(index, similarity_top_k=2)

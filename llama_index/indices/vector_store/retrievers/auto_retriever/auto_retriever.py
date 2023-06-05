@@ -6,7 +6,7 @@ from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser import (
     VectorStoreQueryOutputParser,
@@ -32,7 +32,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
     vector store query parameters.
 
     Args:
-        index (GPTVectorStoreIndex): vector store index
+        index (VectorStoreIndex): vector store index
         vector_store_info (VectorStoreInfo): additional information information about
             vector store content and supported metadata filters. The natural language
             description is used by an LLM to automatically set vector store query
@@ -47,7 +47,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: GPTVectorStoreIndex,
+        index: VectorStoreIndex,
         vector_store_info: VectorStoreInfo,
         prompt_template_str: Optional[str] = None,
         service_context: Optional[ServiceContext] = None,

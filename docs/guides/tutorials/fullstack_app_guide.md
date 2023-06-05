@@ -47,7 +47,7 @@ Now, let's write some code to initialize our index:
 
 ```python
 import os
-from llama_index import SimpleDirectoryReader, GPTVectorStoreIndex, StorageContext
+from llama_index import SimpleDirectoryReader, VectorStoreIndex, StorageContext
 
 # NOTE: for local testing only, do NOT deploy with your key hardcoded
 os.environ['OPENAI_API_KEY'] = "your key here"
@@ -61,7 +61,7 @@ def initialize_index():
         index = load_index_from_storage(storage_context)
     else:
         documents = SimpleDirectoryReader("./documents").load_data()
-        index = GPTVectorStoreIndex.from_documents(documents, storage_context=storage_context)
+        index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
         storage_context.persist(index_dir)
 ```
 
@@ -110,7 +110,7 @@ Here's a basic example of what our `index_server.py` will look like after we've 
 import os
 from multiprocessing import Lock
 from multiprocessing.managers import BaseManager
-from llama_index import SimpleDirectoryReader, GPTVectorStoreIndex, Document
+from llama_index import SimpleDirectoryReader, VectorStoreIndex, Document
 
 # NOTE: for local testing only, do NOT deploy with your key hardcoded
 os.environ['OPENAI_API_KEY'] = "your key here"

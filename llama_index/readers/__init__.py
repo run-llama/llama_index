@@ -33,6 +33,7 @@ from llama_index.readers.myscale import MyScaleReader
 from llama_index.readers.notion import NotionPageReader
 from llama_index.readers.obsidian import ObsidianReader
 from llama_index.readers.pinecone import PineconeReader
+from llama_index.readers.psychic import PsychicReader
 from llama_index.readers.qdrant import QdrantReader
 from llama_index.readers.schema.base import Document
 from llama_index.readers.slack import SlackReader
@@ -62,6 +63,7 @@ __all__ = [
     "SlackReader",
     "WeaviateReader",
     "PineconeReader",
+    "PsychicReader",
     "QdrantReader",
     "MilvusReader",
     "ChromaReader",

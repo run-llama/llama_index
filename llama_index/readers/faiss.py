@@ -14,7 +14,7 @@ class FaissReader(BaseReader):
     Retrieves documents through an existing in-memory Faiss index.
     These documents can then be used in a downstream LlamaIndex data structure.
     If you wish use Faiss itself as an index to to organize documents,
-    insert documents, and perform queries on them, please use GPTVectorStoreIndex
+    insert documents, and perform queries on them, please use VectorStoreIndex
     with FaissVectorStore.
 
     Args:

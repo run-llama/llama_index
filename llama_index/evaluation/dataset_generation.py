@@ -1,20 +1,20 @@
 """Dataset generation from documents"""
 from __future__ import annotations
 
-from typing import List, Optional
 import re
+from typing import List, Optional
+
+from langchain.chat_models import ChatOpenAI
 
 from llama_index import (
     Document,
-    GPTListIndex,
+    ListIndex,
+    LLMPredictor,
     QuestionAnswerPrompt,
     ServiceContext,
-    LLMPredictor,
 )
-from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
 from llama_index.data_structs.node import Node, NodeWithScore
-
-from langchain.chat_models import ChatOpenAI
+from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """Context information is below.\n"
 "\n---------------------\n{context_str}\n---------------------\n"
@@ -121,7 +121,7 @@ class DatasetGenerator:
         for node in nodes:
             if num is not None and len(questions) >= num:
                 break
-            index = GPTListIndex.from_documents([Document(node.get_text())])
+            index = ListIndex.from_documents([Document(node.get_text())])
 
             query_engine = index.as_query_engine(
                 service_context=self.service_context,

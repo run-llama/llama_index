@@ -3,11 +3,12 @@ from typing import List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType
+from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.data_structs.node import Node
 from llama_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
+from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.readers.schema.base import Document
-from llama_index.node_parser.interface import NodeParser
 
 
 class SimpleNodeParser(NodeParser):
@@ -36,6 +37,31 @@ class SimpleNodeParser(NodeParser):
         )
         self._include_extra_info = include_extra_info
         self._include_prev_next_rel = include_prev_next_rel
+
+    @classmethod
+    def from_defaults(
+        cls,
+        chunk_size: Optional[int] = None,
+        chunk_overlap: Optional[int] = None,
+        include_extra_info: bool = True,
+        include_prev_next_rel: bool = True,
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> "SimpleNodeParser":
+        callback_manager = callback_manager or CallbackManager([])
+        chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
+        chunk_overlap = chunk_overlap or DEFAULT_CHUNK_OVERLAP
+
+        token_text_splitter = TokenTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            callback_manager=callback_manager,
+        )
+        return cls(
+            text_splitter=token_text_splitter,
+            include_extra_info=include_extra_info,
+            include_prev_next_rel=include_prev_next_rel,
+            callback_manager=callback_manager,
+        )
 
     def get_nodes_from_documents(
         self,

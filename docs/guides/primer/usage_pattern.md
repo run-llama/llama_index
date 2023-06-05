@@ -16,7 +16,7 @@ through the `load_data` function, e.g.:
 ```python
 from llama_index import SimpleDirectoryReader
 
-documents = SimpleDirectoryReader('data').load_data()
+documents = SimpleDirectoryReader('./data').load_data()
 ```
 
 You can also choose to construct documents manually. LlamaIndex exposes the `Document` struct.
@@ -70,17 +70,17 @@ nodes = [node1, node2]
 We can now build an index over these Document objects. The simplest high-level abstraction is to load-in the Document objects during index initialization (this is relevant if you came directly from step 1 and skipped step 2).
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 ```
 
 You can also choose to build an index over a set of Node objects directly (this is a continuation of step 2).
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 
-index = GPTVectorStoreIndex(nodes)
+index = VectorStoreIndex(nodes)
 ```
 
 Depending on which index you use, LlamaIndex may make LLM calls in order to build the index.
@@ -99,8 +99,8 @@ from llama_index import StorageContext
 storage_context = StorageContext.from_defaults()
 storage_context.docstore.add_documents(nodes)
 
-index1 = GPTVectorStoreIndex(nodes, storage_context=storage_context)
-index2 = GPTListIndex(nodes, storage_context=storage_context)
+index1 = VectorStoreIndex(nodes, storage_context=storage_context)
+index2 = ListIndex(nodes, storage_context=storage_context)
 ```
 
 **NOTE**: If the `storage_context` argument isn't specified, then it is implicitly
@@ -114,9 +114,9 @@ You can also take advantage of the `insert` capability of indices to insert Docu
 one at a time instead of during index construction. 
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 
-index = GPTVectorStoreIndex([])
+index = VectorStoreIndex([])
 for doc in documents:
     index.insert(doc)
 ```
@@ -125,14 +125,30 @@ If you want to insert nodes on directly you can use `insert_nodes` function
 instead.
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 
 # nodes: Sequence[Node]
-index = GPTVectorStoreIndex([])
+index = VectorStoreIndex([])
 index.insert_nodes(nodes)
 ```
 
-See the [Update Index How-To](/how_to/index_structs/update.md) for details and an example notebook.
+See the [Document Management How-To](/how_to/index_structs/document_management.md) for more details on managing documents and an example notebook.
+
+### Customizing Documents
+
+When creating documents, you can also attach useful metadata. Any metadata added to a document will be copied to the nodes that get created from their respective source document.
+
+```python
+document = Document(
+    'text', 
+    extra_info={
+        'filename': '<doc_file_name>', 
+        'category': '<category>'
+    }
+)
+```
+
+More information and approaches to this are discussed in the section [Customizing Documents](/how_to/customization/custom_documents.md).
 
 ### Customizing LLM's
 
@@ -140,7 +156,7 @@ By default, we use OpenAI's `text-davinci-003` model. You may choose to use anot
 an index.
 
 ```python
-from llama_index import LLMPredictor, GPTVectorStoreIndex, PromptHelper, ServiceContext
+from llama_index import LLMPredictor, VectorStoreIndex, ServiceContext
 from langchain import OpenAI
 
 ...
@@ -148,24 +164,29 @@ from langchain import OpenAI
 # define LLM
 llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-003"))
 
-# define prompt helper
-# set maximum input size
-max_input_size = 4096
-# set number of output tokens
-num_output = 256
-# set maximum chunk overlap
-max_chunk_overlap = 20
-prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
+# configure service context
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, prompt_helper=prompt_helper)
-
-index = GPTVectorStoreIndex.from_documents(
+# build index
+index = VectorStoreIndex.from_documents(
     documents, service_context=service_context
 )
 ```
 
 See the [Custom LLM's How-To](/how_to/customization/custom_llms.md) for more details.
 
+### Global ServiceContext
+
+If you wanted the service context from the last section to always be the default, you can configure one like so:
+
+```python
+from llama_index import set_global_service_context
+set_global_service_context(service_context)
+```
+
+This service context will always be used as the default if not specified as a keyword argument in LlamaIndex functions.
+
+For more details on the service context, including how to create a global service context, see the page [Customizing the ServiceContext](/how_to/customization/service_context.md).
 
 ### Customizing Prompts
 
@@ -219,7 +240,7 @@ ServiceContext during `load_index_from_storage`.
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # when first building the index
-index = GPTVectorStoreIndex.from_documents(
+index = VectorStoreIndex.from_documents(
     documents, service_context=service_context
 )
 
@@ -260,7 +281,7 @@ We also support a low-level composition API that gives you more granular control
 Below we highlight a few of the possible customizations.
 ```python
 from llama_index import (
-    GPTVectorStoreIndex,
+    VectorStoreIndex,
     ResponseSynthesizer,
 )
 from llama_index.retrievers import VectorIndexRetriever
@@ -268,7 +289,7 @@ from llama_index.query_engine import RetrieverQueryEngine
 from llama_index.indices.postprocessor import SimilarityPostprocessor
 
 # build index
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 
 # configure retriever
 retriever = VectorIndexRetriever(
@@ -348,7 +369,7 @@ Right now, we support the following options:
     chunk.
 
 ```python
-index = GPTListIndex.from_documents(documents)
+index = ListIndex.from_documents(documents)
 retriever = index.as_retriever()
 
 # default

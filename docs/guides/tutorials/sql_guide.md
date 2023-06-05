@@ -73,7 +73,7 @@ If the db is already populated with data, we can instantiate the SQL index
 with a blank documents list. Otherwise see the below section.
 
 ```python
-index = GPTSQLStructStoreIndex(
+index = SQLStructStoreIndex(
     [],
     sql_database=sql_database, 
     table_name="city_stats",
@@ -102,12 +102,12 @@ first input; these documents will be converted
 to structured datapoints and inserted into the db:
 
 ```python
-from llama_index import GPTSQLStructStoreIndex, SQLDatabase
+from llama_index import SQLStructStoreIndex, SQLDatabase
 
 sql_database = SQLDatabase(engine, include_tables=["city_stats"])
 # NOTE: the table_name specified here is the table that you
 # want to extract into from unstructured documents.
-index = GPTSQLStructStoreIndex.from_documents(
+index = SQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -177,7 +177,7 @@ context_builder = SQLContextContainerBuilder(sql_database, context_dict=table_co
 context_container = context_builder.build_context_container()
 
 # building the index
-index = GPTSQLStructStoreIndex.from_documents(
+index = SQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -204,7 +204,7 @@ context_builder = SQLContextContainerBuilder.from_documents(
 context_container = context_builder.build_context_container()
 
 # building the index
-index = GPTSQLStructStoreIndex.from_documents(
+index = SQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -230,14 +230,14 @@ stores the context on the generated context container.
 You can then build the context container, and pass it to the index during query-time!
 
 ```python
-from llama_index import GPTSQLStructStoreIndex, SQLDatabase, GPTVectorStoreIndex
+from llama_index import SQLStructStoreIndex, SQLDatabase, VectorStoreIndex
 from llama_index.indices.struct_store import SQLContextContainerBuilder
 
 sql_database = SQLDatabase(engine)
 # build a vector index from the table schema information
 context_builder = SQLContextContainerBuilder(sql_database)
 table_schema_index = context_builder.derive_index_from_context(
-    GPTVectorStoreIndex,
+    VectorStoreIndex,
     store_index=True
 )
 
@@ -245,15 +245,23 @@ query_str = "Which city has the highest population?"
 
 # query the table schema index using the helper method
 # to retrieve table context
-SQLContextContainerBuilder.query_index_for_context(
+context_builder.query_index_for_context(
     table_schema_index,
     query_str,
     store_context_str=True
 )
 
+context_container = context_builder.build_context_container()
+
+index = SQLStructStoreIndex(
+    [],
+    sql_database=sql_database,
+    sql_context_container=context_container
+)
+
 # query the SQL index with the table context
 query_engine = index.as_query_engine()
-response = query_engine.query(query_str, sql_context_container=context_container)
+response = query_engine.query(query_str)
 print(response)
 
 ```
