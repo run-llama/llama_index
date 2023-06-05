@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
-from llama_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
+from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -64,7 +64,7 @@ class KGTableRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: GPTKnowledgeGraphIndex,
+        index: KnowledgeGraphIndex,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
@@ -75,7 +75,7 @@ class KGTableRetriever(BaseRetriever):
     ) -> None:
         """Initialize params."""
 
-        assert isinstance(index, GPTKnowledgeGraphIndex)
+        assert isinstance(index, KnowledgeGraphIndex)
         self._index = index
         self._service_context = self._index.service_context
         self._index_struct = self._index.index_struct

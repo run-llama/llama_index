@@ -27,7 +27,7 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 logger = logging.getLogger(__name__)
 
 
-class GPTKnowledgeGraphIndex(BaseIndex[KG]):
+class KnowledgeGraphIndex(BaseIndex[KG]):
     """GPT Knowledge Graph Index.
 
     Build a KG by extracting triplets, and leveraging the KG during query-time.
@@ -242,3 +242,5 @@ class GPTKnowledgeGraphIndex(BaseIndex[KG]):
                 g.add_edge(keyword, obj, title=rel)
 
         return g
+
+GPTKnowledgeGraphIndex = KnowledgeGraphIndex
