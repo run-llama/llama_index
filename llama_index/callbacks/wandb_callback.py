@@ -1,6 +1,7 @@
-import sys
+import os
+import shutil
 from typing import TypedDict
-from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING, Tuple
 from collections import defaultdict
 from datetime import datetime
 
@@ -78,7 +79,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 "WandbCallbackHandler requires wandb. "
                 "Please install it with `pip install wandb`."
             )
-        
+
         from llama_index import (
             ComposableGraph,
             GPTKeywordTableIndex,
@@ -192,9 +193,16 @@ class WandbCallbackHandler(BaseCallbackHandler):
             # Silently ignore errors to not break user code
             pass
 
-    def upload_index(self, index: Any, index_name: str) -> None:
+    def persist_index(
+        self, index: Any, index_name: str, persist_dir: Union[str, None] = None
+    ) -> None:
         """Upload an index to wandb."""
-        persist_dir = f"{self._wandb.run.dir}/storage"
+        if persist_dir is None:
+            persist_dir = f"{self._wandb.run.dir}/storage"
+            _default_persist_dir = True
+        if not os.path.exists(persist_dir):
+            os.makedirs(persist_dir)
+
         if isinstance(index, self._IndexType.__args__):
             try:
                 index.storage_context.persist(persist_dir)
@@ -203,15 +211,21 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 # Silently ignore errors to not break user code
                 self._print_upload_index_fail_message(e)
 
-    def download_index(self, artifact_url: str) -> str:
-        """Download an index from wandb."""
+        # clear the default storage dir
+        if _default_persist_dir:
+            shutil.rmtree(persist_dir, ignore_errors=True)
+
+    def load_storage_context(
+        self, artifact_url: str, index_download_dir: Union[str, None] = None
+    ) -> str:
+        """Download an index from wandb and return a storage context."""
         from llama_index.storage.storage_context import StorageContext
 
         artifact = self._wandb.use_artifact(artifact_url, type="storage_context")
-        artifact_dir = artifact.download()
+        artifact_dir = artifact.download(root=index_download_dir)
 
         storage_context = StorageContext.from_defaults(persist_dir=artifact_dir)
-        return storage_context, artifact_dir
+        return storage_context
 
     def _upload_index_as_wb_artifact(self, dir_path: str, artifact_name: str) -> None:
         artifact = self._wandb.Artifact(artifact_name, type="storage_context")
@@ -275,7 +289,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         return wb_span
 
-    def _map_event_type_to_span_kind(self, event_type: CBEventType):
+    def _map_event_type_to_span_kind(
+        self, event_type: CBEventType
+    ) -> Union[None, "trace_tree.SpanKind"]:
         if event_type == CBEventType.CHUNKING:
             span_kind = None
         elif event_type == CBEventType.NODE_PARSING:
@@ -300,7 +316,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
     def _add_payload_to_span(
         self, span: "trace_tree.Span", event_pair: List[CBEvent]
-    ) -> None:
+    ) -> Tuple[
+        Union[None, Dict[str, Any]], Union[None, Dict[str, Any]], "trace_tree.Span"
+    ]:
         assert len(event_pair) == 2
         event_type = event_pair[0].event_type
         inputs = None
@@ -322,33 +340,37 @@ class WandbCallbackHandler(BaseCallbackHandler):
             outputs = event_pair[-1].payload
 
         return inputs, outputs, span
-    
+
     def _handle_node_parsing_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         payload_keys = payload.keys()
         assert "documents" or "nodes" in payload_keys
 
-        documents = payload.get("documents", None)
-        if documents:
+        if "documents" in payload_keys:
+            stuffs = payload.get("documents", None)
+            stuff_name = "documents"
+        elif "nodes" in payload_keys:
+            stuffs = payload.get("nodes", None)
+            stuff_name = "nodes"
+
+        if stuffs:
             tmp_str = ""
-            for idx, document in enumerate(documents):
-                tmp_str += f"Document: {idx}\n" + document.text
+            for idx, stuff in enumerate(stuffs):
+                tmp_str += f"**{stuff_name}**: {idx}\n" + stuff.text
                 tmp_str += "\n*************** \n"
-            return {"documents": tmp_str, "len_documents": len(documents)}
-
-        nodes = payload.get("nodes", None)
-        if nodes:
-            tmp_str = ""
-            for idx, node in enumerate(nodes):
-                tmp_str += f"Node: {idx}\n" + node.text
-                tmp_str += "\n***************\n"
-            return {"nodes": tmp_str, "len_nodes": len(nodes)}
-
-    def _handle_llm_payload(self, event_pair: List[CBEvent], span: "trace_tree.Span") -> Dict[str, Any]:
+            return {"documents": tmp_str, "len_documents": len(stuffs)}
+        else:
+            return {}
+       
+    def _handle_llm_payload(
+        self, event_pair: List[CBEvent], span: "trace_tree.Span"
+    ) -> Tuple[Dict[str, Any], Dict[str, Any], "trace_tree.Span"]:
         inputs = event_pair[0].payload
         outputs = event_pair[-1].payload
 
+        assert isinstance(inputs, dict) and isinstance(outputs, dict)
+
         # Keep a count of the number of tokens used by LLM in the given trace map
-        self._llm_token_count += outputs["total_tokens_used"]
+        self._llm_token_count += outputs.get("total_tokens_used", None)
 
         # Make `formatted_prompt` part of `inputs`
         inputs["formatted_prompt"] = outputs.get("formatted_prompt", None)
@@ -356,25 +378,31 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         # Make token counts part of span's `metadata`
         filterByKey = lambda keys: {x: outputs[x] for x in keys}
-        metadata_keys = ["formatted_prompt_tokens_count", "prediction_tokens_count", "total_tokens_used"]
+        metadata_keys = [
+            "formatted_prompt_tokens_count",
+            "prediction_tokens_count",
+            "total_tokens_used",
+        ]
         metadata = filterByKey(metadata_keys)
         span.attributes = metadata
         for meta_key in metadata_keys:
             outputs.pop(meta_key, None)
 
         # Make `response` part of `outputs`
-        outputs = {"response" : outputs["response"]}
+        outputs = {"response": outputs["response"]}
 
         return inputs, outputs, span
 
-    def _get_time_in_ms(self, event_pair: List[CBEvent]) -> List[int]:
+    def _get_time_in_ms(self, event_pair: List[CBEvent]) -> Tuple[int, int]:
         start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
         end_time = datetime.strptime(event_pair[1].time, TIMESTAMP_FORMAT)
 
-        start_time = int((start_time - datetime(1970, 1, 1)).total_seconds() * 1000)
-        end_time = int((end_time - datetime(1970, 1, 1)).total_seconds() * 1000)
+        start_time_in_ms = int(
+            (start_time - datetime(1970, 1, 1)).total_seconds() * 1000
+        )
+        end_time_in_ms = int((end_time - datetime(1970, 1, 1)).total_seconds() * 1000)
 
-        return start_time, end_time
+        return start_time_in_ms, end_time_in_ms
 
     def _ensure_run(self, should_print_url: bool = False) -> None:
         """Ensures an active W&B run exists.
@@ -395,7 +423,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             self._wandb.init(**run_args)
 
             if should_print_url:
-                self._print_wandb_init_message(self._wandb.run.settings.run_url)
+                self._print_wandb_init_message(self._wandb.run.settings.run_url) # type: ignore
 
     def _print_wandb_init_message(self, run_url: str) -> None:
         self._wandb.termlog(
@@ -405,7 +433,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         )
 
     def _print_upload_index_fail_message(self, e: Exception) -> None:
-        self._wandb_termlog(
+        self._wandb._wandb_termlog(  # type: ignore
             f"Failed to upload index to W&B with the following error: {e}\n"
         )
 
