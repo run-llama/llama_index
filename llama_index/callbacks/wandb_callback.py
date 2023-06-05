@@ -173,14 +173,12 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         # Shutdown the current trace
         self._trace_map = trace_map or defaultdict(list)
-        self._llm_token_count = 0
 
         # Log the trace map to wandb
         # We can control what trace ids we want to log here.
         self.log_trace_tree()
 
-        # Log the LLM token count to wandb
-        self._wandb.run.log({"llm_token_count": self._llm_token_count})
+        # TODO (ayulockin): Log the LLM token counts to wandb when weave is ready
 
     def log_trace_tree(self) -> None:
         try:
@@ -368,9 +366,6 @@ class WandbCallbackHandler(BaseCallbackHandler):
         outputs = event_pair[-1].payload
 
         assert isinstance(inputs, dict) and isinstance(outputs, dict)
-
-        # Keep a count of the number of tokens used by LLM in the given trace map
-        self._llm_token_count += outputs.get("total_tokens_used", None)
 
         # Make `formatted_prompt` part of `inputs`
         inputs["formatted_prompt"] = outputs.get("formatted_prompt", None)
