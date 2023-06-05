@@ -26,7 +26,7 @@ from llama_index.indices.keyword_table import (
     GPTRAKEKeywordTableIndex,
     GPTSimpleKeywordTableIndex,
 )
-from llama_index.indices.list import GPTListIndex
+from llama_index.indices.list import ListIndex
 
 # loading
 from llama_index.indices.loading import (
@@ -57,6 +57,9 @@ from llama_index.indices.vector_store import GPTVectorStoreIndex
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
+
+# vellum
+from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
 
 # prompts
 from llama_index.prompts.base import Prompt
@@ -112,9 +115,6 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 
-# vellum
-from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
-
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
@@ -127,7 +127,7 @@ __all__ = [
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
-    "GPTListIndex",
+    "ListIndex",
     "GPTEmptyIndex",
     "GPTTreeIndex",
     "GPTVectorStoreIndex",

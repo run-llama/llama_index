@@ -22,7 +22,7 @@ class ListRetrieverMode(str, Enum):
     LLM = "llm"
 
 
-class GPTListIndex(BaseGPTIndex[IndexList]):
+class ListIndex(BaseGPTIndex[IndexList]):
     """GPT List Index.
 
     The list index is a simple data structure where nodes are stored in

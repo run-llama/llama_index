@@ -2,7 +2,7 @@
 
 LlamaIndex offers a variety of different [query use cases](/use_cases/queries.md). 
 
-For simple queries, we may want to use a single index data structure, such as a `GPTVectorStoreIndex` for semantic search, or `GPTListIndex` for summarization.  
+For simple queries, we may want to use a single index data structure, such as a `GPTVectorStoreIndex` for semantic search, or `ListIndex` for summarization.  
 
 
 For more complex queries, we may want to use a composable graph. 

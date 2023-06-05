@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
-from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import GPTTreeIndex
 from llama_index.readers.schema.base import Document
@@ -19,16 +19,16 @@ def test_recursive_query_list_tree(
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
     # try building a list for every two, then a tree
-    list1 = GPTListIndex.from_documents(
+    list1 = ListIndex.from_documents(
         documents[0:2], service_context=mock_service_context, **list_kwargs
     )
-    list2 = GPTListIndex.from_documents(
+    list2 = ListIndex.from_documents(
         documents[2:4], service_context=mock_service_context, **list_kwargs
     )
-    list3 = GPTListIndex.from_documents(
+    list3 = ListIndex.from_documents(
         documents[4:6], service_context=mock_service_context, **list_kwargs
     )
-    list4 = GPTListIndex.from_documents(
+    list4 = ListIndex.from_documents(
         documents[6:8], service_context=mock_service_context, **list_kwargs
     )
 
@@ -89,7 +89,7 @@ def test_recursive_query_tree_list(
     # there are two root nodes in this tree: one containing [list1, list2]
     # and the other containing [list3, list4]
     graph = ComposableGraph.from_indices(
-        GPTListIndex,
+        ListIndex,
         [tree1, tree2],
         index_summaries=summaries,
         service_context=mock_service_context,
@@ -128,7 +128,7 @@ def test_recursive_query_table_list(
     ]
 
     graph = ComposableGraph.from_indices(
-        GPTListIndex,
+        ListIndex,
         [table1, table2],
         index_summaries=summaries,
         service_context=mock_service_context,
@@ -156,16 +156,16 @@ def test_recursive_query_list_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTListIndex.from_documents(
+    list1 = ListIndex.from_documents(
         documents[0:2], service_context=mock_service_context, **list_kwargs
     )
-    list2 = GPTListIndex.from_documents(
+    list2 = ListIndex.from_documents(
         documents[2:4], service_context=mock_service_context, **list_kwargs
     )
-    list3 = GPTListIndex.from_documents(
+    list3 = ListIndex.from_documents(
         documents[4:6], service_context=mock_service_context, **list_kwargs
     )
-    list4 = GPTListIndex.from_documents(
+    list4 = ListIndex.from_documents(
         documents[6:8], service_context=mock_service_context, **list_kwargs
     )
     summaries = [

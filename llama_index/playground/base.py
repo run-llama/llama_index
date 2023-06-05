@@ -8,7 +8,7 @@ import pandas as pd
 from langchain.input import get_color_mapping, print_text
 
 from llama_index.indices.base import BaseGPTIndex
-from llama_index.indices.list.base import GPTListIndex, ListRetrieverMode
+from llama_index.indices.list.base import ListIndex, ListRetrieverMode
 from llama_index.indices.tree.base import GPTTreeIndex, TreeRetrieverMode
 from llama_index.indices.vector_store import GPTVectorStoreIndex
 from llama_index.readers.schema.base import Document
@@ -16,14 +16,14 @@ from llama_index.readers.schema.base import Document
 DEFAULT_INDEX_CLASSES: List[Type[BaseGPTIndex]] = [
     GPTVectorStoreIndex,
     GPTTreeIndex,
-    GPTListIndex,
+    ListIndex,
 ]
 
 INDEX_SPECIFIC_QUERY_MODES_TYPE = Dict[Type[BaseGPTIndex], List[str]]
 
 DEFAULT_MODES: INDEX_SPECIFIC_QUERY_MODES_TYPE = {
     GPTTreeIndex: [e.value for e in TreeRetrieverMode],
-    GPTListIndex: [e.value for e in ListRetrieverMode],
+    ListIndex: [e.value for e in ListRetrieverMode],
     GPTVectorStoreIndex: ["default"],
 }
 

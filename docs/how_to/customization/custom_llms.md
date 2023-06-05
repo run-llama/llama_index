@@ -205,7 +205,7 @@ Here is a small example using locally running facebook/OPT model and Huggingface
 ```python
 import torch
 from langchain.llms.base import LLM
-from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex
+from llama_index import SimpleDirectoryReader, LangchainEmbedding, ListIndex
 from llama_index import LLMPredictor, ServiceContext
 from transformers import pipeline
 from typing import Optional, List, Mapping, Any
@@ -248,7 +248,7 @@ service_context = ServiceContext.from_defaults(
 
 # Load the your data
 documents = SimpleDirectoryReader('./data').load_data()
-index = GPTListIndex.from_documents(documents, service_context=service_context)
+index = ListIndex.from_documents(documents, service_context=service_context)
 
 # Query and print response
 query_engine = index.as_query_engine()

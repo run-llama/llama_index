@@ -294,7 +294,7 @@ Chroma stores both documents and vectors. This is an example of how to use Chrom
 ```python
 
 from llama_index.readers.chroma import ChromaReader
-from llama_index.indices import GPTListIndex
+from llama_index.indices import ListIndex
 
 # The chroma reader loads data from a persisted Chroma collection.
 # This requires a collection name and a persist directory.
@@ -306,7 +306,7 @@ reader = ChromaReader(
 query_vector=[n1, n2, n3, ...]
 
 documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
-index = GPTListIndex.from_documents(documents)
+index = ListIndex.from_documents(documents)
 
 query_engine = index.as_query_engine()
 response = query_engine.query("<query_text>")

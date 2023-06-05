@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List, Tuple
 
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -14,7 +13,8 @@ from sqlalchemy import (
     select,
 )
 
-from llama_index.indices.list.base import GPTListIndex
+from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.sql import (
@@ -25,10 +25,7 @@ from llama_index.indices.struct_store.sql_query import GPTNLStructStoreQueryEngi
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.readers.schema.base import Document
 from llama_index.schema import BaseDocument
-from tests.mock_utils.mock_prompts import (
-    MOCK_TABLE_CONTEXT_PROMPT,
-)
-from llama_index.data_structs.node import Node, DocumentRelationship
+from tests.mock_utils.mock_prompts import MOCK_TABLE_CONTEXT_PROMPT
 
 
 def _delete_table_items(engine: Any, table: Table) -> None:
@@ -282,10 +279,10 @@ def test_sql_index_with_derive_index(mock_service_context: ServiceContext) -> No
         sql_database, context_dict=table_context_dict
     )
     context_index_no_ignore = context_builder.derive_index_from_context(
-        GPTListIndex,
+        ListIndex,
     )
     context_index_with_ignore = context_builder.derive_index_from_context(
-        GPTListIndex, ignore_db_schema=True
+        ListIndex, ignore_db_schema=True
     )
     assert len(context_index_with_ignore.index_struct.nodes) == 1
     assert len(context_index_no_ignore.index_struct.nodes) > 1
@@ -317,7 +314,7 @@ def test_sql_index_with_index_context(
         sql_database, context_dict=table_context_dict
     )
     context_index = context_builder.derive_index_from_context(
-        GPTListIndex, ignore_db_schema=True
+        ListIndex, ignore_db_schema=True
     )
     # NOTE: the response only contains the first line (metadata), since
     # with the mock patch, newlines are treated as separate calls.

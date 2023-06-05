@@ -1,8 +1,8 @@
-## 🔗 GPTListIndex
+## 🔗 ListIndex
 
 ### Index Construction
 
-GPTListIndex is a simple list-based data structure. During index construction, GPTListIndex takes in a dataset of text documents as input, chunks them up into smaller document chunks, and concatenates them into a list. GPT is not called at all during index construction.
+ListIndex is a simple list-based data structure. During index construction, ListIndex takes in a dataset of text documents as input, chunks them up into smaller document chunks, and concatenates them into a list. GPT is not called at all during index construction.
 
 ### Query
 
@@ -11,11 +11,11 @@ During query-time, GPT List Index constructs an answer using the _create and ref
 **Usage**
 
 ```python
-from llama_index import GPTListIndex, SimpleDirectoryReader
+from llama_index import ListIndex, SimpleDirectoryReader
 
 # build index
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTListIndex.from_documents(documents)
+index = ListIndex.from_documents(documents)
 # query
 query_engine = index.as_query_engine()
 response = query_engine.query("<question text>")

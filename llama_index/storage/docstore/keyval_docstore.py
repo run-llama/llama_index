@@ -3,9 +3,9 @@
 from typing import Dict, Optional, Sequence
 
 from llama_index.data_structs.node import Node
+from llama_index.schema import BaseDocument
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.docstore.utils import doc_to_json, json_to_doc
-from llama_index.schema import BaseDocument
 from llama_index.storage.kvstore.types import BaseKVStore
 
 DEFAULT_NAMESPACE = "docstore"
@@ -27,7 +27,7 @@ class KVDocumentStore(BaseDocumentStore):
         docstore.add_documents(nodes)
         storage_context = StorageContext.from_defaults(docstore=docstore)
 
-        list_index = GPTListIndex(nodes, storage_context=storage_context)
+        list_index = ListIndex(nodes, storage_context=storage_context)
         vector_index = GPTVectorStoreIndex(nodes, storage_context=storage_context)
         keyword_table_index = GPTSimpleKeywordTableIndex(
             nodes,

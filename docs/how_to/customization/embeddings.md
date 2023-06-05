@@ -36,7 +36,7 @@ This design choice prevents the need to generate embeddings for all text chunks 
 NOTE: Our [vector-store based indices](/how_to/integrations/vector_stores.md) generate embeddings during index construction.
 
 #### Embedding Lookups
-For the list index (`GPTListIndex`):
+For the list index (`ListIndex`):
 - We iterate through every node in the list, and identify the top k nodes through embedding similarity. We use these nodes to synthesize an answer.
 - See the [List Retriever API](/reference/query/retrievers/list.rst) for more details.
 - NOTE: the embedding-mode usage of the list index is roughly equivalent with the usage of our `GPTVectorStoreIndex`; the main
@@ -62,10 +62,10 @@ Langchain's [embeddings](https://langchain.readthedocs.io/en/latest/reference/mo
 We introduce a wrapper class, 
 [`LangchainEmbedding`](/reference/service_context/embeddings.rst), for integration into LlamaIndex.
 
-An example snippet is shown below (to use Hugging Face embeddings) on the GPTListIndex:
+An example snippet is shown below (to use Hugging Face embeddings) on the ListIndex:
 
 ```python
-from llama_index import GPTListIndex, SimpleDirectoryReader
+from llama_index import ListIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import LangchainEmbedding, ServiceContext
 
@@ -75,7 +75,7 @@ service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-new_index = GPTListIndex.from_documents(documents)
+new_index = ListIndex.from_documents(documents)
 
 # query with embed_model specified
 query_engine = new_index.as_query_engine(

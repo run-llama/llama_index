@@ -1,9 +1,11 @@
 import os
 from pathlib import Path
 from typing import List
+
 import pytest
+
 from llama_index.data_structs.node import Node
-from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.list.base import ListIndex
 from llama_index.indices.loading import (
     load_index_from_storage,
     load_indices_from_storage,
@@ -65,7 +67,7 @@ def test_load_index_from_storage_multiple(
     )
     vector_id = vector_index.index_id
 
-    list_index = GPTListIndex(
+    list_index = ListIndex(
         nodes=nodes,
         storage_context=storage_context,
         service_context=mock_service_context,

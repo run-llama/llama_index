@@ -3,9 +3,9 @@
 from typing import List
 
 import pytest
-from llama_index.embeddings.base import BaseEmbedding
 
-from llama_index.indices.list.base import GPTListIndex
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index.indices.list.base import ListIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import GPTTreeIndex
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
@@ -43,7 +43,7 @@ def test_get_set_compare(
         GPTVectorStoreIndex.from_documents(
             documents=documents, service_context=mock_service_context
         ),
-        GPTListIndex.from_documents(documents, service_context=mock_service_context),
+        ListIndex.from_documents(documents, service_context=mock_service_context),
         GPTTreeIndex.from_documents(
             documents=documents, service_context=mock_service_context
         ),
@@ -98,7 +98,7 @@ def test_validation() -> None:
 
     with pytest.raises(ValueError):
         _ = Playground(
-            indices=[GPTVectorStoreIndex, GPTListIndex, GPTTreeIndex]  # type: ignore
+            indices=[GPTVectorStoreIndex, ListIndex, GPTTreeIndex]  # type: ignore
         )
 
     with pytest.raises(ValueError):

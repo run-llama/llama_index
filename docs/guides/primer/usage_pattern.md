@@ -100,7 +100,7 @@ storage_context = StorageContext.from_defaults()
 storage_context.docstore.add_documents(nodes)
 
 index1 = GPTVectorStoreIndex(nodes, storage_context=storage_context)
-index2 = GPTListIndex(nodes, storage_context=storage_context)
+index2 = ListIndex(nodes, storage_context=storage_context)
 ```
 
 **NOTE**: If the `storage_context` argument isn't specified, then it is implicitly
@@ -369,7 +369,7 @@ Right now, we support the following options:
     chunk.
 
 ```python
-index = GPTListIndex.from_documents(documents)
+index = ListIndex.from_documents(documents)
 retriever = index.as_retriever()
 
 # default
