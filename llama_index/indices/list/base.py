@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional, Sequence, Union
 
 from llama_index.data_structs.data_structs import IndexList
 from llama_index.data_structs.node import Node
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
@@ -22,7 +22,7 @@ class ListRetrieverMode(str, Enum):
     LLM = "llm"
 
 
-class ListIndex(BaseGPTIndex[IndexList]):
+class ListIndex(BaseIndex[IndexList]):
     """GPT List Index.
 
     The list index is a simple data structure where nodes are stored in

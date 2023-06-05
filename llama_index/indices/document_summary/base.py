@@ -12,7 +12,7 @@ from typing import Optional, Sequence, Any, Dict, Union, cast
 
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.data_structs.node import Node, DocumentRelationship, NodeWithScore
 from llama_index.indices.service_context import ServiceContext
@@ -39,7 +39,7 @@ class DocumentSummaryRetrieverMode(str, Enum):
 DSRM = DocumentSummaryRetrieverMode
 
 
-class GPTDocumentSummaryIndex(BaseGPTIndex[IndexDocumentSummary]):
+class GPTDocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     """GPT Document Summary Index.
 
     Args:

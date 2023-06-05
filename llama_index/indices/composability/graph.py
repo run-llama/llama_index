@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Type, cast
 
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.data_structs.node import IndexNode, DocumentRelationship
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 
@@ -14,7 +14,7 @@ class ComposableGraph:
 
     def __init__(
         self,
-        all_indices: Dict[str, BaseGPTIndex],
+        all_indices: Dict[str, BaseIndex],
         root_id: str,
     ) -> None:
         """Init params."""
@@ -26,11 +26,11 @@ class ComposableGraph:
         return self._root_id
 
     @property
-    def all_indices(self) -> Dict[str, BaseGPTIndex]:
+    def all_indices(self) -> Dict[str, BaseIndex]:
         return self._all_indices
 
     @property
-    def root_index(self) -> BaseGPTIndex:
+    def root_index(self) -> BaseIndex:
         return self._all_indices[self._root_id]
 
     @property
@@ -44,8 +44,8 @@ class ComposableGraph:
     @classmethod
     def from_indices(
         cls,
-        root_index_cls: Type[BaseGPTIndex],
-        children_indices: Sequence[BaseGPTIndex],
+        root_index_cls: Type[BaseIndex],
+        children_indices: Sequence[BaseIndex],
         index_summaries: Optional[Sequence[str]] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
@@ -94,8 +94,8 @@ class ComposableGraph:
                 **kwargs,
             )
             # type: ignore
-            all_indices: List[BaseGPTIndex] = cast(
-                List[BaseGPTIndex], children_indices
+            all_indices: List[BaseIndex] = cast(
+                List[BaseIndex], children_indices
             ) + [root_index]
 
             return cls(
@@ -103,7 +103,7 @@ class ComposableGraph:
                 root_id=root_index.index_id,
             )
 
-    def get_index(self, index_struct_id: Optional[str] = None) -> BaseGPTIndex:
+    def get_index(self, index_struct_id: Optional[str] = None) -> BaseIndex:
         """Get index from index struct id."""
         if index_struct_id is None:
             index_struct_id = self._root_id

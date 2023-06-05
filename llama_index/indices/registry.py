@@ -3,7 +3,7 @@
 from typing import Dict, Type
 
 from llama_index.data_structs.struct_type import IndexStructType
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.document_summary.base import GPTDocumentSummaryIndex
 from llama_index.indices.empty.base import GPTEmptyIndex
 from llama_index.indices.keyword_table.base import KeywordTableIndex
@@ -14,7 +14,7 @@ from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.vector_store.base import VectorStoreIndex
 
-INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseGPTIndex]] = {
+INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseIndex]] = {
     IndexStructType.TREE: TreeIndex,
     IndexStructType.LIST: ListIndex,
     IndexStructType.KEYWORD_TABLE: KeywordTableIndex,

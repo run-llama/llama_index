@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.data_structs.node import ImageNode, IndexNode, Node
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
@@ -18,7 +18,7 @@ from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
 
 
-class VectorStoreIndex(BaseGPTIndex[IndexDict]):
+class VectorStoreIndex(BaseIndex[IndexDict]):
     """Base GPT Vector Store Index.
 
     Args:
@@ -197,7 +197,7 @@ class VectorStoreIndex(BaseGPTIndex[IndexDict]):
     def build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
         """Build the index from nodes.
 
-        NOTE: Overrides BaseGPTIndex.build_index_from_nodes.
+        NOTE: Overrides BaseIndex.build_index_from_nodes.
             VectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
@@ -211,7 +211,7 @@ class VectorStoreIndex(BaseGPTIndex[IndexDict]):
     def insert_nodes(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert nodes.
 
-        NOTE: overrides BaseGPTIndex.insert_nodes.
+        NOTE: overrides BaseIndex.insert_nodes.
             VectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """

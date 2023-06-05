@@ -8,7 +8,7 @@ Tool that wraps any data loader, and is able to load data on-demand.
 from llama_index.tools.types import BaseTool, ToolMetadata
 from llama_index.readers.base import BaseReader
 from typing import Any, Optional, Dict, Type
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.tools.utils import create_schema_from_function
 from pydantic import BaseModel
@@ -25,7 +25,7 @@ class OnDemandLoaderTool(BaseTool):
     def __init__(
         self,
         reader: BaseReader,
-        index_cls: Type[BaseGPTIndex],
+        index_cls: Type[BaseIndex],
         index_kwargs: Dict,
         metadata: ToolMetadata,
         use_query_str_in_loader: bool = False,
@@ -47,7 +47,7 @@ class OnDemandLoaderTool(BaseTool):
     def from_defaults(
         cls,
         reader: BaseReader,
-        index_cls: Optional[Type[BaseGPTIndex]] = None,
+        index_cls: Optional[Type[BaseIndex]] = None,
         index_kwargs: Optional[Dict] = None,
         use_query_str_in_loader: bool = False,
         query_str_kwargs_key: str = "query_str",
