@@ -213,7 +213,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 if self._wandb.run:
                     self._wandb.run.log({"trace": root_trace})
                 self._wandb.termlog("Logged trace tree to W&B.")
-        except: # noqa
+        except:  # noqa
             # Silently ignore errors to not break user code
             pass
 
@@ -398,8 +398,9 @@ class WandbCallbackHandler(BaseCallbackHandler):
         outputs.pop("formatted_prompt", None)
 
         # Make token counts part of span's `metadata`
-        def filterByKey(keys):
-            return {x: outputs[x] for x in keys}
+        def filterByKey(keys: List[str]) -> Dict[str, int]:
+            return {x: outputs[x] for x in keys}  # type: ignore
+
         metadata_keys = [
             "formatted_prompt_tokens_count",
             "prediction_tokens_count",
@@ -446,7 +447,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
             if should_print_url:
                 self._print_wandb_init_message(
-                    self._wandb.run.settings.run_url # type: ignore
+                    self._wandb.run.settings.run_url  # type: ignore
                 )
 
     def _print_wandb_init_message(self, run_url: str) -> None:
