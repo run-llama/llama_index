@@ -182,4 +182,5 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         return all_ref_doc_info
 
 
+# legacy
 GPTDocumentSummaryIndex = DocumentSummaryIndex

@@ -1,4 +1,4 @@
-"""Default query for ListIndex."""
+"""Retrievers for ListIndex."""
 import logging
 from typing import Any, Callable, List, Optional, Tuple
 

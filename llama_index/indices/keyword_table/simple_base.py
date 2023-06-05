@@ -26,4 +26,5 @@ class SimpleKeywordTableIndex(BaseKeywordTableIndex):
         return simple_extract_keywords(text, self.max_keywords_per_chunk)
 
 
+# legacy
 GPTSimpleKeywordTableIndex = SimpleKeywordTableIndex

@@ -76,4 +76,5 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
         raise NotImplementedError("ref_doc_info not supported for an empty index.")
 
 
+# legacy
 GPTEmptyIndex = EmptyIndex

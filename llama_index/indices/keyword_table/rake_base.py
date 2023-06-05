@@ -22,4 +22,5 @@ class RAKEKeywordTableIndex(BaseKeywordTableIndex):
         return rake_extract_keywords(text, max_keywords=self.max_keywords_per_chunk)
 
 
+# legacy
 GPTRAKEKeywordTableIndex = RAKEKeywordTableIndex

@@ -212,4 +212,5 @@ class KeywordTableIndex(BaseKeywordTableIndex):
         return keywords
 
 
+# legacy
 GPTKeywordTableIndex = KeywordTableIndex
