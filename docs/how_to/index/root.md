@@ -15,9 +15,9 @@ Under the hood, `Indices` store data in `Node` objects (which represent chunks o
 ## Usage Pattern
 Get started with:
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 
-index = GPTVectorStoreIndex.from_documents(docs)
+index = VectorStoreIndex.from_documents(docs)
 ```
 
 ```{toctree}

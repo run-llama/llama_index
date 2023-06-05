@@ -8,7 +8,7 @@ exploring ways to expand optimization capabilities to other areas, such as perfo
 Here is a sample code snippet on comparing the outputs without optimization and with.
 
 ```python
-from llama_index import GPTVectorStoreIndex
+from llama_index import VectorStoreIndex
 from llama_index.optimization.optimizer import SentenceEmbeddingOptimizer
 print("Without optimization")
 start_time = time.time()

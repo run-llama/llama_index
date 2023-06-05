@@ -5,7 +5,7 @@ from llama_index.indices.loading import load_index_from_storage
 
 
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 
 from llama_index.readers.schema.base import Document
 from llama_index.storage.storage_context import StorageContext
@@ -16,12 +16,12 @@ def test_build_simple(
     mock_service_context: ServiceContext,
     documents: List[Document],
 ) -> None:
-    """Test build GPTVectorStoreIndex."""
+    """Test build VectorStoreIndex."""
 
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents=documents, service_context=mock_service_context
     )
-    assert isinstance(index, GPTVectorStoreIndex)
+    assert isinstance(index, VectorStoreIndex)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
     actual_node_tups = [
@@ -48,11 +48,11 @@ def test_simple_insert(
     documents: List[Document],
     mock_service_context: ServiceContext,
 ) -> None:
-    """Test insert GPTVectorStoreIndex."""
-    index = GPTVectorStoreIndex.from_documents(
+    """Test insert VectorStoreIndex."""
+    index = VectorStoreIndex.from_documents(
         documents=documents, service_context=mock_service_context
     )
-    assert isinstance(index, GPTVectorStoreIndex)
+    assert isinstance(index, VectorStoreIndex)
     # insert into index
     index.insert(Document(text="This is a test v3."))
 
@@ -76,17 +76,17 @@ def test_simple_insert(
 def test_simple_delete(
     mock_service_context: ServiceContext,
 ) -> None:
-    """Test delete GPTVectorStoreIndex."""
+    """Test delete VectorStoreIndex."""
     new_documents = [
         Document("Hello world.", doc_id="test_id_0"),
         Document("This is a test.", doc_id="test_id_1"),
         Document("This is another test.", doc_id="test_id_2"),
         Document("This is a test v2.", doc_id="test_id_3"),
     ]
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents=new_documents, service_context=mock_service_context
     )
-    assert isinstance(index, GPTVectorStoreIndex)
+    assert isinstance(index, VectorStoreIndex)
 
     # test delete
     index.delete_ref_doc("test_id_0")
@@ -129,10 +129,10 @@ def test_simple_async(
 ) -> None:
     """Test simple vector index with use_async."""
 
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents=documents, use_async=True, service_context=mock_service_context
     )
-    assert isinstance(index, GPTVectorStoreIndex)
+    assert isinstance(index, VectorStoreIndex)
     assert len(index.index_struct.nodes_dict) == 4
     # check contents of nodes
     actual_node_tups = [
@@ -154,20 +154,20 @@ def test_simple_insert_save(
     mock_service_context: ServiceContext,
 ) -> None:
     storage_context = StorageContext.from_defaults()
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents=documents,
         service_context=mock_service_context,
         storage_context=storage_context,
     )
-    assert isinstance(index, GPTVectorStoreIndex)
+    assert isinstance(index, VectorStoreIndex)
 
     loaded_index = load_index_from_storage(storage_context=storage_context)
-    assert isinstance(loaded_index, GPTVectorStoreIndex)
+    assert isinstance(loaded_index, VectorStoreIndex)
     assert index.index_struct == loaded_index.index_struct
 
     # insert into index
     index.insert(Document(text="This is a test v3."))
 
     loaded_index = load_index_from_storage(storage_context=storage_context)
-    assert isinstance(loaded_index, GPTVectorStoreIndex)
+    assert isinstance(loaded_index, VectorStoreIndex)
     assert index.index_struct == loaded_index.index_struct

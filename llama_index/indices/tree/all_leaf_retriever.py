@@ -1,13 +1,13 @@
 """Summarize query."""
 
 import logging
-from typing import Any, List, cast
-
+from typing import List, cast
 
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.utils import get_sorted_node_list
 
 logger = logging.getLogger(__name__)
@@ -28,10 +28,7 @@ class TreeAllLeafRetriever(BaseRetriever):
 
     """
 
-    def __init__(self, index: Any):
-        from llama_index.indices.tree.base import GPTTreeIndex
-
-        assert isinstance(index, GPTTreeIndex)
+    def __init__(self, index: TreeIndex):
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore

@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 from llama_index.data_structs.node import Node
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.indices.knowledge_graph.base import GPTKnowledgeGraphIndex
+from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.schema.base import Document
 from tests.mock_utils.mock_prompts import (
@@ -62,14 +62,14 @@ def mock_extract_triplets(text: str) -> List[Tuple[str, str, str]]:
 
 
 @patch.object(
-    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_build_kg_manual(
     _patch_extract_triplets: Any,
     mock_service_context: ServiceContext,
 ) -> None:
     """Test build knowledge graph."""
-    index = GPTKnowledgeGraphIndex([], service_context=mock_service_context)
+    index = KnowledgeGraphIndex([], service_context=mock_service_context)
     tuples = [
         ("foo", "is", "bar"),
         ("hello", "is not", "world"),
@@ -102,7 +102,7 @@ def test_build_kg_manual(
     }
 
     # test upsert_triplet_and_node
-    index = GPTKnowledgeGraphIndex([], service_context=mock_service_context)
+    index = KnowledgeGraphIndex([], service_context=mock_service_context)
     tuples = [
         ("foo", "is", "bar"),
         ("hello", "is not", "world"),
@@ -132,14 +132,14 @@ def test_build_kg_manual(
     }
 
     # try inserting same node twice
-    index = GPTKnowledgeGraphIndex([], service_context=mock_service_context)
+    index = KnowledgeGraphIndex([], service_context=mock_service_context)
     node = Node(str(("foo", "is", "bar")), doc_id="test_node")
     index.upsert_triplet_and_node(tup, node)
     index.upsert_triplet_and_node(tup, node)
 
 
 @patch.object(
-    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_build_kg_similarity(
     _patch_extract_triplets: Any,
@@ -149,7 +149,7 @@ def test_build_kg_similarity(
     """Test build knowledge graph."""
     mock_service_context.embed_model = MockEmbedding()
 
-    index = GPTKnowledgeGraphIndex.from_documents(
+    index = KnowledgeGraphIndex.from_documents(
         documents, include_embeddings=True, service_context=mock_service_context
     )
     # get embedding dict from KG index struct
@@ -162,7 +162,7 @@ def test_build_kg_similarity(
 
 
 @patch.object(
-    GPTKnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
+    KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_build_kg(
     _patch_extract_triplets: Any,
@@ -170,7 +170,7 @@ def test_build_kg(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test build knowledge graph."""
-    index = GPTKnowledgeGraphIndex.from_documents(
+    index = KnowledgeGraphIndex.from_documents(
         documents, service_context=mock_service_context
     )
     # NOTE: in these unit tests, document text == triplets

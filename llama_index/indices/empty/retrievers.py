@@ -1,16 +1,16 @@
-"""Default query for GPTEmptyIndex."""
+"""Default query for EmptyIndex."""
 from typing import Any, List, Optional
 
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.empty.base import GPTEmptyIndex
+from llama_index.indices.empty.base import EmptyIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.prompts.prompts import SimpleInputPrompt
 
 
 class EmptyIndexRetriever(BaseRetriever):
-    """GPTEmptyIndex query.
+    """EmptyIndex query.
 
     Passes the raw LLM call to the underlying LLM model.
 
@@ -22,7 +22,7 @@ class EmptyIndexRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: GPTEmptyIndex,
+        index: EmptyIndex,
         input_prompt: Optional[SimpleInputPrompt] = None,
         **kwargs: Any,
     ) -> None:

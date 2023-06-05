@@ -18,7 +18,7 @@ nodes = retriever.retrieve('Who is Paul Graham?')
 ### Selecting a Retriever
 
 You can select the index-specific retriever class via `retriever_mode`. 
-For example, with a `GPTListIndex`:
+For example, with a `ListIndex`:
 ```python
 retriever = list_index.as_retriever(
     retriever_mode='llm',

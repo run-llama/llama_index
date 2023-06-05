@@ -86,7 +86,7 @@ node_postprocessor = FixedRecencyPostprocessor(service_context=service_context)
 new_nodes = node_postprocessor.postprocess_nodes(resp_nodes)
 
 # use list index to synthesize answers
-list_index = GPTListIndex(new_nodes)
+list_index = ListIndex(new_nodes)
 query_engine = list_index.as_query_engine(
     node_postprocessors=[node_postprocessor]
 )

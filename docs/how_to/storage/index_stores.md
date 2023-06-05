@@ -24,7 +24,7 @@ index_store = MongoIndexStore.from_uri(uri="<mongodb+srv://...>")
 storage_context = StorageContext.from_defaults(index_store=index_store)
 
 # build index
-index = GPTVectorStoreIndex(nodes, storage_context=storage_context)
+index = VectorStoreIndex(nodes, storage_context=storage_context)
 
 # or alternatively, load index
 index = load_index_from_storage(storage_context)

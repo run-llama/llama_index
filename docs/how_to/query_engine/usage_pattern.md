@@ -45,14 +45,14 @@ Concretely speaking, you would explicitly construct a `QueryEngine` object inste
 
 ```python
 from llama_index import (
-    GPTVectorStoreIndex,
+    VectorStoreIndex,
     ResponseSynthesizer,
 )
 from llama_index.retrievers import VectorIndexRetriever
 from llama_index.query_engine import RetrieverQueryEngine
 
 # build index
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 
 # configure retriever
 retriever = VectorIndexRetriever(

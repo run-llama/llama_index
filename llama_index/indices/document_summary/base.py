@@ -5,22 +5,20 @@ the summary to the underlying Nodes.
 This summary can be used for retrieval.
 
 """
-from enum import Enum
 import logging
 from collections import defaultdict
-from typing import Optional, Sequence, Any, Dict, Union, cast
+from enum import Enum
+from typing import Any, Dict, Optional, Sequence, Union, cast
 
-
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.base import BaseGPTIndex
 from llama_index.data_structs.document_summary import IndexDocumentSummary
-from llama_index.data_structs.node import Node, DocumentRelationship, NodeWithScore
-from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
+from llama_index.data_structs.node import DocumentRelationship, Node, NodeWithScore
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.query.response_synthesis import ResponseSynthesizer
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.response.schema import Response
 from llama_index.storage.docstore.types import RefDocInfo
-
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +37,8 @@ class DocumentSummaryRetrieverMode(str, Enum):
 DSRM = DocumentSummaryRetrieverMode
 
 
-class GPTDocumentSummaryIndex(BaseGPTIndex[IndexDocumentSummary]):
-    """GPT Document Summary Index.
+class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
+    """Document Summary Index.
 
     Args:
         summary_template (Optional[SummaryPrompt]): A Summary Prompt
@@ -182,3 +180,7 @@ class GPTDocumentSummaryIndex(BaseGPTIndex[IndexDocumentSummary]):
 
             all_ref_doc_info[ref_doc_id] = ref_doc_info
         return all_ref_doc_info
+
+
+# legacy
+GPTDocumentSummaryIndex = DocumentSummaryIndex

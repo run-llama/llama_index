@@ -3,9 +3,9 @@
 from typing import Dict, List
 
 import pytest
-from llama_index.embeddings.base import BaseEmbedding
 
-from llama_index.indices.list.base import GPTListIndex
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.schema.base import Document
@@ -54,7 +54,7 @@ def test_embedding_query(
 ) -> None:
     """Test embedding query."""
     mock_service_context.embed_model = MockEmbedding()
-    index = GPTListIndex.from_documents(documents, service_context=mock_service_context)
+    index = ListIndex.from_documents(documents, service_context=mock_service_context)
 
     # test embedding query
     query_bundle = QueryBundle(

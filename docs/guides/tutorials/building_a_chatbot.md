@@ -28,7 +28,7 @@ We have a direct integration with Unstructured through [LlamaHub](https://llamah
 
 ```python
 
-from llama_index import download_loader, GPTVectorStoreIndex, ServiceContext, StorageContext, load_index_from_storage
+from llama_index import download_loader, VectorStoreIndex, ServiceContext, StorageContext, load_index_from_storage
 from pathlib import Path
 
 years = [2022, 2021, 2020, 2019]
@@ -59,7 +59,7 @@ service_context = ServiceContext.from_defaults(chunk_size=512)
 index_set = {}
 for year in years:
     storage_context = StorageContext.from_defaults()
-    cur_index = GPTVectorStoreIndex.from_documents(
+    cur_index = VectorStoreIndex.from_documents(
         doc_set[year], 
         service_context=service_context,
         storage_context=storage_context,
@@ -87,7 +87,7 @@ Since we have access to documents of 4 years, we may not only want to ask questi
 To address this, we compose a "graph" which consists of a list index defined over the 4 vector indices. Querying this graph would first retrieve information from each vector index, and combine information together via the list index.
 
 ```python
-from llama_index import GPTListIndex, LLMPredictor, ServiceContext, load_graph_from_storage
+from llama_index import ListIndex, LLMPredictor, ServiceContext, load_graph_from_storage
 from langchain import OpenAI
 from llama_index.indices.composability import ComposableGraph
 
@@ -102,7 +102,7 @@ storage_context = StorageContext.from_defaults()
 # define a list index over the vector indices
 # allows us to synthesize information across each index
 graph = ComposableGraph.from_indices(
-    GPTListIndex,
+    ListIndex,
     [index_set[y] for y in years], 
     index_summaries=index_summaries,
     service_context=service_context,

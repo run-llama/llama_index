@@ -3,7 +3,7 @@
 from langchain.input import print_text
 from typing import Optional, cast, Dict, Any, Callable
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.struct_store.sql_query import GPTNLStructStoreQueryEngine
+from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine
 from llama_index.indices.vector_store.retrievers.auto_retriever import (
     VectorIndexAutoRetriever,
 )
@@ -173,10 +173,10 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
         """Initialize params."""
         super().__init__(callback_manager=callback_manager)
         # validate that the query engines are of the right type
-        if not isinstance(sql_query_tool.query_engine, GPTNLStructStoreQueryEngine):
+        if not isinstance(sql_query_tool.query_engine, NLStructStoreQueryEngine):
             raise ValueError(
                 "sql_query_tool.query_engine must be an instance of "
-                "GPTNLStructStoreQueryEngine"
+                "NLStructStoreQueryEngine"
             )
         if not isinstance(vector_query_tool.query_engine, RetrieverQueryEngine):
             raise ValueError(
@@ -193,9 +193,7 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
         self._sql_query_tool = sql_query_tool
         self._vector_query_tool = vector_query_tool
 
-        sql_query_engine = cast(
-            GPTNLStructStoreQueryEngine, sql_query_tool.query_engine
-        )
+        sql_query_engine = cast(NLStructStoreQueryEngine, sql_query_tool.query_engine)
         self._service_context = service_context or sql_query_engine.service_context
         self._selector = selector or LLMSingleSelector.from_defaults()
         self._sql_vector_synthesis_prompt = (
@@ -213,7 +211,7 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
     @classmethod
     def from_sql_and_vector_query_engines(
         cls,
-        sql_query_engine: GPTNLStructStoreQueryEngine,
+        sql_query_engine: NLStructStoreQueryEngine,
         sql_tool_name: str,
         sql_tool_description: str,
         vector_auto_retriever: RetrieverQueryEngine,
@@ -225,7 +223,7 @@ class SQLAutoVectorQueryEngine(BaseQueryEngine):
         """From SQL and vector query engines.
 
         Args:
-            sql_query_engine (GPTNLStructStoreQueryEngine): SQL query engine.
+            sql_query_engine (NLStructStoreQueryEngine): SQL query engine.
             vector_query_engine (VectorIndexAutoRetriever): Vector retriever.
             selector (Optional[LLMSingleSelector]): Selector to use.
 

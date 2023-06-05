@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.document_summary.base import GPTDocumentSummaryIndex
+from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -32,13 +32,13 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
     By default, select relevant summaries from index using LLM calls.
 
     Args:
-        index (GPTDocumentSummaryIndex): The index to retrieve from.
+        index (DocumentSummaryIndex): The index to retrieve from.
 
     """
 
     def __init__(
         self,
-        index: GPTDocumentSummaryIndex,
+        index: DocumentSummaryIndex,
         choice_select_prompt: Optional[ChoiceSelectPrompt] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
@@ -101,12 +101,12 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
     NOTE: implementation is similar to ListIndexEmbeddingRetriever.
 
     Args:
-        index (GPTDocumentSummaryIndex): The index to retrieve from.
+        index (DocumentSummaryIndex): The index to retrieve from.
 
     """
 
     def __init__(
-        self, index: GPTDocumentSummaryIndex, similarity_top_k: int = 1, **kwargs: Any
+        self, index: DocumentSummaryIndex, similarity_top_k: int = 1, **kwargs: Any
     ) -> None:
         """Init params."""
         self._index = index

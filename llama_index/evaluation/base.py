@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from llama_index.indices.base import ServiceContext
-from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.list.base import ListIndex
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
 from llama_index.readers.schema.base import Document
 from llama_index.response.schema import Response
@@ -152,9 +152,7 @@ class ResponseEvaluator:
         answer = str(response)
 
         context = self.get_context(response)
-        index = GPTListIndex.from_documents(
-            context, service_context=self.service_context
-        )
+        index = ListIndex.from_documents(context, service_context=self.service_context)
         response_txt = ""
 
         EVAL_PROMPT_TMPL = QuestionAnswerPrompt(DEFAULT_EVAL_PROMPT)
@@ -196,7 +194,7 @@ class ResponseEvaluator:
         response_texts = []
 
         for context in context_list:
-            index = GPTListIndex.from_documents(
+            index = ListIndex.from_documents(
                 [context], service_context=self.service_context
             )
             response_txt = ""
@@ -285,9 +283,7 @@ class QueryResponseEvaluator(BaseEvaluator):
         answer = str(response)
 
         context = self.get_context(response)
-        index = GPTListIndex.from_documents(
-            context, service_context=self.service_context
-        )
+        index = ListIndex.from_documents(context, service_context=self.service_context)
 
         QUERY_RESPONSE_EVAL_PROMPT_TMPL = QuestionAnswerPrompt(
             QUERY_RESPONSE_EVAL_PROMPT
@@ -336,7 +332,7 @@ class QueryResponseEvaluator(BaseEvaluator):
         response_texts = []
 
         for context in context_list:
-            index = GPTListIndex.from_documents(
+            index = ListIndex.from_documents(
                 [context], service_context=self.service_context
             )
             response_txt = ""

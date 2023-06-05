@@ -3,7 +3,7 @@
 
 from typing import Any, Dict, List, Optional, Type
 
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 from llama_index.indices.common.struct_store.schema import SQLContextContainer
 from llama_index.indices.query.schema import QueryType
@@ -99,10 +99,10 @@ class SQLContextContainerBuilder:
 
     def derive_index_from_context(
         self,
-        index_cls: Type[BaseGPTIndex],
+        index_cls: Type[BaseIndex],
         ignore_db_schema: bool = False,
         **index_kwargs: Any,
-    ) -> BaseGPTIndex:
+    ) -> BaseIndex:
         """Derive index from context."""
         full_context_dict = self._get_context_dict(ignore_db_schema)
         context_docs = []
@@ -117,7 +117,7 @@ class SQLContextContainerBuilder:
 
     def query_index_for_context(
         self,
-        index: BaseGPTIndex,
+        index: BaseIndex,
         query_str: QueryType,
         query_tmpl: Optional[str] = DEFAULT_CONTEXT_QUERY_TMPL,
         store_context_str: bool = True,
@@ -130,7 +130,7 @@ class SQLContextContainerBuilder:
         and can store a context_str.
 
         Args:
-            index (BaseGPTIndex): index data structure
+            index (BaseIndex): index data structure
             query_str (QueryType): query string
             query_tmpl (Optional[str]): query template
             store_context_str (bool): store context_str

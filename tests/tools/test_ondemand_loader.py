@@ -4,7 +4,7 @@ from typing import List
 from pydantic import BaseModel
 from llama_index.readers.schema.base import Document
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.tools.ondemand_loader_tool import (
     OnDemandLoaderTool,
 )
@@ -28,7 +28,7 @@ def test_ondemand_loader_tool(
     reader = StringIterableReader()
     tool = OnDemandLoaderTool.from_defaults(
         reader=reader,
-        index_cls=GPTVectorStoreIndex,
+        index_cls=VectorStoreIndex,
         index_kwargs={"service_context": mock_service_context},
         name="ondemand_loader_tool",
         description="ondemand_loader_tool_desc",

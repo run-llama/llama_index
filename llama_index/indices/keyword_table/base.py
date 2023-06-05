@@ -15,7 +15,7 @@ from typing import Any, Dict, Optional, Sequence, Set, Union
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import KeywordTable
 from llama_index.data_structs.node import Node
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.service_context import ServiceContext
@@ -35,8 +35,8 @@ class KeywordTableRetrieverMode(str, Enum):
     RAKE = "rake"
 
 
-class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
-    """GPT Keyword Table Index.
+class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
+    """Base Keyword Table Index.
 
     This index extracts keywords from the text, and maps each
     keyword to the node(s) that it corresponds to. In this sense it mimicks a
@@ -186,8 +186,8 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         return all_ref_doc_info
 
 
-class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
-    """GPT Keyword Table Index.
+class KeywordTableIndex(BaseKeywordTableIndex):
+    """Keyword Table Index.
 
     This index uses a GPT model to extract keywords from the text.
 
@@ -210,3 +210,7 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
         )
         keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
         return keywords
+
+
+# legacy
+GPTKeywordTableIndex = KeywordTableIndex

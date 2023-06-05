@@ -7,7 +7,7 @@ from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.data_structs.node import Node
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.docstore import BaseDocumentStore
-from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.readers.schema.base import Document
 
 
@@ -32,7 +32,7 @@ def test_build_tree(
 ) -> None:
     """Test build tree."""
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex.from_documents(
+    tree = TreeIndex.from_documents(
         documents, service_context=mock_service_context, **index_kwargs
     )
     assert len(tree.index_struct.all_nodes) == 6
@@ -66,7 +66,7 @@ def test_build_tree_with_embed(
         "This is a test v2."
     )
     document = Document(doc_text, embedding=[0.1, 0.2, 0.3])
-    tree = GPTTreeIndex.from_documents(
+    tree = TreeIndex.from_documents(
         [document], service_context=mock_service_context, **index_kwargs
     )
     assert len(tree.index_struct.all_nodes) == 6
@@ -98,7 +98,7 @@ def test_build_tree_async(
 ) -> None:
     """Test build tree with use_async."""
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex.from_documents(
+    tree = TreeIndex.from_documents(
         documents, use_async=True, service_context=mock_service_context, **index_kwargs
     )
     assert len(tree.index_struct.all_nodes) == 6
@@ -122,7 +122,7 @@ def test_build_tree_multiple(
         Document("This is another test.\nThis is a test v2."),
     ]
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex.from_documents(
+    tree = TreeIndex.from_documents(
         new_docs, service_context=mock_service_context, **index_kwargs
     )
     assert len(tree.index_struct.all_nodes) == 6
@@ -141,7 +141,7 @@ def test_insert(
 ) -> None:
     """Test insert."""
     index_kwargs, _ = struct_kwargs
-    tree = GPTTreeIndex.from_documents(
+    tree = TreeIndex.from_documents(
         documents, service_context=mock_service_context, **index_kwargs
     )
 
@@ -174,7 +174,7 @@ def test_insert(
     assert right_root3.ref_doc_id == "new_doc"
 
     # test insert from empty (no_id)
-    tree = GPTTreeIndex.from_documents(
+    tree = TreeIndex.from_documents(
         [], service_context=mock_service_context, **index_kwargs
     )
     new_doc = Document("This is a new doc.")
@@ -184,7 +184,7 @@ def test_insert(
     assert nodes[0].text == "This is a new doc."
 
     # test insert from empty (with_id)
-    tree = GPTTreeIndex.from_documents(
+    tree = TreeIndex.from_documents(
         [], service_context=mock_service_context, **index_kwargs
     )
     new_doc = Document("This is a new doc.", doc_id="new_doc_test")
@@ -199,7 +199,7 @@ def test_twice_insert_empty(
     mock_service_context: ServiceContext,
 ) -> None:
     """# test twice insert from empty (with_id)"""
-    tree = GPTTreeIndex.from_documents([], service_context=mock_service_context)
+    tree = TreeIndex.from_documents([], service_context=mock_service_context)
 
     # test first insert
     new_doc = Document("This is a new doc.", doc_id="new_doc")

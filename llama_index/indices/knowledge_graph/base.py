@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.data_structs.data_structs import KG
 from llama_index.data_structs.node import Node
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
@@ -27,8 +27,8 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 logger = logging.getLogger(__name__)
 
 
-class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
-    """GPT Knowledge Graph Index.
+class KnowledgeGraphIndex(BaseIndex[KG]):
+    """Knowledge Graph Index.
 
     Build a KG by extracting triplets, and leveraging the KG during query-time.
 
@@ -242,3 +242,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                 g.add_edge(keyword, obj, title=rel)
 
         return g
+
+
+# legacy
+GPTKnowledgeGraphIndex = KnowledgeGraphIndex

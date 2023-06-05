@@ -1,6 +1,6 @@
 """Test document summary index.""" ""
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.document_summary.base import GPTDocumentSummaryIndex
+from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.readers.schema.base import Document
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from tests.mock_utils.mock_prompts import MOCK_TEXT_QA_PROMPT, MOCK_REFINE_PROMPT
@@ -25,7 +25,7 @@ def test_build_index(
         refine_template=MOCK_REFINE_PROMPT,
         callback_manager=mock_service_context.callback_manager,
     )
-    index = GPTDocumentSummaryIndex.from_documents(
+    index = DocumentSummaryIndex.from_documents(
         docs,
         service_context=mock_service_context,
         response_synthesizer=response_synthesizer,

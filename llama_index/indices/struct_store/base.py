@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar
 
 from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import BaseStructTable
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from llama_index.prompts.prompts import SchemaExtractPrompt
@@ -36,8 +36,8 @@ def default_output_parser(output: str) -> Optional[Dict[str, Any]]:
 OUTPUT_PARSER_TYPE = Callable[[str], Optional[Dict[str, Any]]]
 
 
-class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
-    """Base GPT Struct Store Index."""
+class BaseStructStoreIndex(BaseIndex[BST], Generic[BST]):
+    """Base Struct Store Index."""
 
     def __init__(
         self,

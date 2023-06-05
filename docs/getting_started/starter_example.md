@@ -35,10 +35,10 @@ This contains LlamaIndex examples around Paul Graham's essay, ["What I Worked On
 Create a new `.py` file with the following:
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 ```
 
 This builds an index over the documents in the `data` folder (which in this case just consists of the essay text). We then run the following
