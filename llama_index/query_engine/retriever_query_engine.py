@@ -151,7 +151,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
-            payload={"response": response.response},
+            payload={"response": response},
             event_id=query_id,
         )
         return response
@@ -175,7 +175,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
-            payload={"response": response.response},
+            payload={"response": response},
             event_id=query_id,
         )
         return response

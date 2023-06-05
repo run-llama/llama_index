@@ -68,7 +68,7 @@ class RouterQueryEngine(BaseQueryEngine):
         response = selected_query_engine.query(query_bundle)
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
-            payload={"response": response.response},
+            payload={"response": response},
             event_id=event_id,
         )
         return response
