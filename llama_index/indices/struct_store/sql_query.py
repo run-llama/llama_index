@@ -75,7 +75,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
     contains subindices, those subindices will not be queried.
 
     Args:
-        index (SQLStructStoreIndex): A GPT SQL Struct Store Index
+        index (SQLStructStoreIndex): A SQL Struct Store Index
         text_to_sql_prompt (Optional[Prompt]): A Text to SQL Prompt
             to use for the query. Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
         context_query_kwargs (Optional[dict]): Keyword arguments for the

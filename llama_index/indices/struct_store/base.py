@@ -36,8 +36,8 @@ def default_output_parser(output: str) -> Optional[Dict[str, Any]]:
 OUTPUT_PARSER_TYPE = Callable[[str], Optional[Dict[str, Any]]]
 
 
-class BaseGPTStructStoreIndex(BaseIndex[BST], Generic[BST]):
-    """Base GPT Struct Store Index."""
+class BaseStructStoreIndex(BaseIndex[BST], Generic[BST]):
+    """Base Struct Store Index."""
 
     def __init__(
         self,

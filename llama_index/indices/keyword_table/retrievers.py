@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseKeywordTableRetriever(BaseRetriever):
-    """Base GPT Keyword Table Index Query.
+    """Base Keyword Table Retriever.
 
     Arguments are shared among subclasses.
 

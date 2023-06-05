@@ -10,7 +10,7 @@ from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.common_tree.base import GPTTreeIndexBuilder
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.tree.inserter import GPTTreeIndexInserter
+from llama_index.indices.tree.inserter import TreeIndexInserter
 from llama_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
@@ -34,7 +34,7 @@ REQUIRE_TREE_MODES = {
 
 
 class TreeIndex(BaseIndex[IndexGraph]):
-    """GPT Tree Index.
+    """Tree Index.
 
     The tree index is a tree-structured index, where each node is a summary of
     the children nodes. During index construction, the tree is constructed
@@ -133,7 +133,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         # TODO: allow to customize insert prompt
-        inserter = GPTTreeIndexInserter(
+        inserter = TreeIndexInserter(
             self.index_struct,
             num_children=self.num_children,
             insert_prompt=self.insert_prompt,

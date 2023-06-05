@@ -6,15 +6,15 @@ from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import PandasStructTable
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.struct_store.base import BaseGPTStructStoreIndex
+from llama_index.indices.struct_store.base import BaseStructStoreIndex
 
 import pandas as pd
 
 
-class PandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
-    """Base GPT Pandas Index.
+class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
+    """Pandas Index.
 
-    The GPTPandasStructStoreIndex is an index that stores
+    The PandasIndex is an index that stores
     a Pandas dataframe under the hood.
     Currently index "construction" is not supported.
 

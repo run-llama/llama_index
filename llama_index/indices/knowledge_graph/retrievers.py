@@ -1,4 +1,4 @@
-"""Query for GPTKGTableIndex."""
+"""KGTable Retriever."""
 import logging
 from collections import defaultdict
 from enum import Enum
@@ -39,7 +39,7 @@ class KGRetrieverMode(str, Enum):
 
 
 class KGTableRetriever(BaseRetriever):
-    """Base GPT KG Table Index Query.
+    """KG Table Retriever.
 
     Arguments are shared among subclasses.
 

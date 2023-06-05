@@ -19,7 +19,7 @@ from llama_index.vector_stores.types import NodeWithEmbedding, VectorStore
 
 
 class VectorStoreIndex(BaseIndex[IndexDict]):
-    """Base GPT Vector Store Index.
+    """Vector Store Index.
 
     Args:
         use_async (bool): Whether to use asynchronous calls. Defaults to False.

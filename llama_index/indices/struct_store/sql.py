@@ -10,7 +10,7 @@ from llama_index.indices.common.struct_store.schema import SQLContextContainer
 from llama_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.struct_store.base import BaseGPTStructStoreIndex
+from llama_index.indices.struct_store.base import BaseStructStoreIndex
 from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
@@ -23,8 +23,8 @@ class SQLQueryMode(str, Enum):
     NL = "nl"
 
 
-class SQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
-    """Base GPT SQL Struct Store Index.
+class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
+    """SQL Struct Store Index.
 
     The SQLStructStoreIndex is an index that uses a SQL database
     under the hood. During index construction, the data can be inferred

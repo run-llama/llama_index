@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class TreeRootRetriever(BaseRetriever):
-    """GPT Tree Index retrieve query.
+    """Tree root retriever.
 
     This class directly retrieves the answer from the root nodes.
 
