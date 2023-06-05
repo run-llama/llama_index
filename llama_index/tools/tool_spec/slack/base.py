@@ -64,23 +64,6 @@ class SlackToolSpec(BaseToolSpec):
             logger.error(e)
             raise e
 
-    def send_message(
-        self,
-        channel_id: str,
-        message: str,
-    ) -> None:
-        """Send a message to a channel given the channel ID."""
-        slack_client = self.reader.client
-        try:
-            msg_result = slack_client.chat_postMessage(
-                channel=channel_id,
-                text=message,
-            )
-            logger.info(msg_result)
-        except Exception as e:
-            logger.error(e)
-            raise e
-
     def fetch_channels(
         self,
     ) -> List[str]:

@@ -12,9 +12,24 @@ def test_function_tool() -> None:
     )
     assert function_tool.metadata.name == "foo"
     assert function_tool.metadata.description == "bar"
+    assert function_tool.metadata.fn_schema is not None
+    actual_schema = function_tool.metadata.fn_schema.schema()
+    # note: no type
+    assert "x" in actual_schema["properties"]
 
     result = function_tool(1)
     assert result == "1"
+
+    # test adding typing to function
+    def tmp_function(x: int) -> str:
+        return str(x)
+
+    function_tool = FunctionTool.from_defaults(
+        tmp_function, name="foo", description="bar"
+    )
+    assert function_tool.metadata.fn_schema is not None
+    actual_schema = function_tool.metadata.fn_schema.schema()
+    assert actual_schema["properties"]["x"]["type"] == "integer"
 
     # test to langchain
     # NOTE: can't take in a function with int args
