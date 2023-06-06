@@ -76,8 +76,18 @@ class WandbCallbackHandler(BaseCallbackHandler):
     NOTE: this is a beta feature. The usage within our codebase, and the interface
     may change.
 
-    This handler simply keeps track of event starts/ends, separated by event types.
-    You can use this callback handler to keep track of and debug events.
+    Use the `WandbCallbackHandler` to log trace events to wandb. This handler is
+    useful for debugging and visualizing the trace events. It captures the payload of
+    the events and logs them to wandb. The handler also tracks the start and end of
+    events. This is particularly useful for debugging your LLM calls.
+
+    The `WandbCallbackHandler` can also be used to log the indices and graphs to wandb
+    using the `persist_index` method. This will save the indexes as artifacts in wandb.
+    The `load_storage_context` method can be used to load the indexes from wandb
+    artifacts. This method will return a `StorageContext` object that can be used to
+    build the index, using `load_index_from_storage`, `load_indices_from_storage` or
+    `load_graph_from_storage` functions.
+
 
     Args:
         event_starts_to_ignore (Optional[List[CBEventType]]): list of event types to
@@ -92,7 +102,6 @@ class WandbCallbackHandler(BaseCallbackHandler):
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
     ) -> None:
-        """Initialize the wandb handler."""
         try:
             import wandb
             from wandb.sdk.data_types import trace_tree
@@ -130,6 +139,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         )
 
         self._run_args = run_args
+        # Check if a W&B run is already initialized; if not, initialize one
         self._ensure_run(should_print_url=(self._wandb.run is None))
 
         self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
@@ -196,7 +206,6 @@ class WandbCallbackHandler(BaseCallbackHandler):
         # Ensure W&B run is initialized
         self._ensure_run()
 
-        # Shutdown the current trace
         self._trace_map = trace_map or defaultdict(list)
 
         # Log the trace map to wandb
@@ -206,6 +215,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         # TODO (ayulockin): Log the LLM token counts to wandb when weave is ready
 
     def log_trace_tree(self) -> None:
+        """Log the trace tree to wandb."""
         try:
             root_span = self._build_trace_tree()
             if root_span:
@@ -220,7 +230,18 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def persist_index(
         self, index: "IndexType", index_name: str, persist_dir: Union[str, None] = None
     ) -> None:
-        """Upload an index to wandb."""
+        """Upload an index to wandb as an artifact. You can learn more about W&B
+        artifacts here: https://docs.wandb.ai/guides/artifacts.
+
+        For the `ComposableGraph` index, the root id is stored as artifact metadata.
+
+        Args:
+            index (IndexType): index to upload.
+            index_name (str): name of the index. This will be used as the artifact name.
+            persist_dir (Union[str, None]): directory to persist the index. If None, a
+                temporary directory will be created and used.
+
+        """
         if persist_dir is None:
             persist_dir = f"{self._wandb.run.dir}/storage"  # type: ignore
             _default_persist_dir = True
@@ -230,7 +251,14 @@ class WandbCallbackHandler(BaseCallbackHandler):
         if isinstance(index, self._IndexType):
             try:
                 index.storage_context.persist(persist_dir)  # type: ignore
-                self._upload_index_as_wb_artifact(persist_dir, index_name)
+
+                metadata = None
+                # For the `ComposableGraph` index, store the root id as metadata
+                if isinstance(index, self._IndexType[0]):
+                    root_id = index.root_id
+                    metadata = {"root_id": root_id}
+
+                self._upload_index_as_wb_artifact(persist_dir, index_name, metadata)
             except Exception as e:
                 # Silently ignore errors to not break user code
                 self._print_upload_index_fail_message(e)
@@ -242,7 +270,18 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def load_storage_context(
         self, artifact_url: str, index_download_dir: Union[str, None] = None
     ) -> "StorageContext":
-        """Download an index from wandb and return a storage context."""
+        """Download an index from wandb and return a storage context.
+
+        Use this storage context to load the index into memory using
+        `load_index_from_storage`, `load_indices_from_storage` or
+        `load_graph_from_storage` functions.
+
+        Args:
+            artifact_url (str): url of the artifact to download. The artifact url will
+                be of the form: `entity/project/index_name:version` and can be found in
+                the W&B UI.
+            index_download_dir (Union[str, None]): directory to download the index to.
+        """
         from llama_index.storage.storage_context import StorageContext
 
         artifact = self._wandb.use_artifact(artifact_url, type="storage_context")
@@ -251,12 +290,20 @@ class WandbCallbackHandler(BaseCallbackHandler):
         storage_context = StorageContext.from_defaults(persist_dir=artifact_dir)
         return storage_context
 
-    def _upload_index_as_wb_artifact(self, dir_path: str, artifact_name: str) -> None:
+    def _upload_index_as_wb_artifact(
+        self, dir_path: str, artifact_name: str, metadata: Optional[Dict]
+    ) -> None:
+        """Utility function to upload a dir to W&B as an artifact."""
         artifact = self._wandb.Artifact(artifact_name, type="storage_context")
+
+        if metadata:
+            artifact.metadata = metadata
+
         artifact.add_dir(dir_path)
         self._wandb.run.log_artifact(artifact)  # type: ignore
 
     def _build_trace_tree(self) -> Union[None, "trace_tree.Span"]:
+        """Build the trace tree from the trace map."""
         root_span = None
         id_to_wb_span_tmp = {}
         for root_node, child_nodes in self._trace_map.items():
@@ -292,6 +339,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         event_pair: List[CBEvent],
         trace_id: Optional[str] = None,
     ) -> "trace_tree.Span":
+        """Convert a pair of events to a wandb trace tree span."""
         start_time_ms, end_time_ms = self._get_time_in_ms(event_pair)
 
         if trace_id is None:
@@ -316,6 +364,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def _map_event_type_to_span_kind(
         self, event_type: CBEventType
     ) -> Union[None, "trace_tree.SpanKind"]:
+        """Map a CBEventType to a wandb trace tree SpanKind."""
         if event_type == CBEventType.CHUNKING:
             span_kind = None
         elif event_type == CBEventType.NODE_PARSING:
@@ -343,6 +392,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
     ) -> Tuple[
         Union[None, Dict[str, Any]], Union[None, Dict[str, Any]], "trace_tree.Span"
     ]:
+        """Add the event's payload to the span."""
         assert len(event_pair) == 2
         event_type = event_pair[0].event_type
         inputs = None
@@ -368,6 +418,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         return inputs, outputs, span
 
     def _handle_node_parsing_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle the payload of a NODE_PARSING event."""
         payload_keys = payload.keys()
         assert "documents" or "nodes" in payload_keys
 
@@ -390,6 +441,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def _handle_llm_payload(
         self, event_pair: List[CBEvent], span: "trace_tree.Span"
     ) -> Tuple[Dict[str, Any], Dict[str, Any], "trace_tree.Span"]:
+        """Handle the payload of a LLM event."""
         inputs = event_pair[0].payload
         outputs = event_pair[-1].payload
 
@@ -424,6 +476,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def _handle_query_payload(
         self, event_pair: List[CBEvent]
     ) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+        """Handle the payload of a QUERY event."""
         inputs = event_pair[0].payload
         outputs = event_pair[-1].payload
 
@@ -442,6 +495,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         return inputs, outputs
 
     def _get_time_in_ms(self, event_pair: List[CBEvent]) -> Tuple[int, int]:
+        """Get the start and end time of an event pair in milliseconds."""
         start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)
         end_time = datetime.strptime(event_pair[1].time, TIMESTAMP_FORMAT)
 
@@ -476,6 +530,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 )
 
     def _print_wandb_init_message(self, run_url: str) -> None:
+        """Print a message to the terminal when W&B is initialized."""
         self._wandb.termlog(
             f"Streaming LlamaIndex events to W&B at {run_url}\n"
             "`WandbCallbackHandler` is currently in beta.\n"
@@ -484,6 +539,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         )
 
     def _print_upload_index_fail_message(self, e: Exception) -> None:
+        """Print a message to the terminal when uploading the index fails."""
         self._wandb.termlog(
             f"Failed to upload index to W&B with the following error: {e}\n"
         )
