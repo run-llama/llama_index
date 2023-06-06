@@ -193,8 +193,8 @@ class SimpleDirectoryReader(BaseReader):
 
                 # iterate over docs if needed
                 if self.filename_as_id:
-                    for i in range(len(docs)):
-                        docs[i].doc_id = f"{str(Path(input_file))}_part_{i}"
+                    for i, doc in enumerate(docs):
+                        doc.doc_id = f"{str(input_file)}_part_{i}"
 
                 documents.extend(docs)
             else:
@@ -204,7 +204,7 @@ class SimpleDirectoryReader(BaseReader):
 
                 doc = Document(data, extra_info=metadata)
                 if self.filename_as_id:
-                    doc.doc_id = str(Path(input_file))
+                    doc.doc_id = str(input_file)
 
                 documents.append(doc)
 
