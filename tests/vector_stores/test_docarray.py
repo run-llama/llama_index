@@ -72,13 +72,13 @@ def test_hnsw(node_embeddings: List[NodeWithEmbedding], tmp_path: Path) -> None:
     rf = res.nodes[0].relationships[DocumentRelationship.SOURCE]  # type: ignore[index]
     assert rf == "test-1"
 
-    docarray_vector_store.delete(doc_id="test-1")
+    docarray_vector_store.delete(ref_doc_id="test-1")
     assert docarray_vector_store.num_docs() == 2
 
     new_vector_store = DocArrayHnswVectorStore(work_dir=str(tmp_path), dim=3)
     assert new_vector_store.num_docs() == 2
 
-    new_vector_store.delete(doc_id="test-0")
+    new_vector_store.delete(ref_doc_id="test-0")
     assert new_vector_store.num_docs() == 1
 
 
@@ -94,7 +94,7 @@ def test_in_memory(node_embeddings: List[NodeWithEmbedding], tmp_path: Path) -> 
     rf = res.nodes[0].relationships[DocumentRelationship.SOURCE]  # type: ignore[index]
     assert rf == "test-1"
 
-    docarray_vector_store.delete(doc_id="test-1")
+    docarray_vector_store.delete(ref_doc_id="test-1")
     assert docarray_vector_store.num_docs() == 2
 
     docarray_vector_store.persist(os.path.join(str(tmp_path), "index.bin"))
@@ -104,7 +104,7 @@ def test_in_memory(node_embeddings: List[NodeWithEmbedding], tmp_path: Path) -> 
     )
     assert new_vector_store.num_docs() == 2
 
-    new_vector_store.delete(doc_id="test-0")
+    new_vector_store.delete(ref_doc_id="test-0")
     assert new_vector_store.num_docs() == 1
 
 
