@@ -6,14 +6,17 @@ from unittest.mock import patch
 
 import pytest
 
-from llama_index.data_structs.node import (DocumentRelationship, Node,
-                                           NodeWithScore)
+from llama_index.data_structs.node import DocumentRelationship, Node, NodeWithScore
 from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.indices.postprocessor.node import (KeywordNodePostprocessor,
-                                                    PrevNextNodePostprocessor)
+from llama_index.indices.postprocessor.node import (
+    KeywordNodePostprocessor,
+    PrevNextNodePostprocessor,
+)
 from llama_index.indices.postprocessor.node_recency import (
-    EmbeddingRecencyPostprocessor, FixedRecencyPostprocessor,
-    TimeWeightedPostprocessor)
+    EmbeddingRecencyPostprocessor,
+    FixedRecencyPostprocessor,
+    TimeWeightedPostprocessor,
+)
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor import LLMPredictor
@@ -139,7 +142,9 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=1, mode="both"
     )
-    processed_nodes = node_postprocessor.postprocess_nodes([nodes_with_scores[0], nodes_with_scores[4]])
+    processed_nodes = node_postprocessor.postprocess_nodes(
+        [nodes_with_scores[0], nodes_with_scores[4]]
+    )
     assert len(processed_nodes) == 4
     # nodes are sorted
     assert processed_nodes[0].node.get_doc_id() == "3"
@@ -151,12 +156,13 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     node_postprocessor = PrevNextNodePostprocessor(
         docstore=docstore, num_nodes=0, mode="both"
     )
-    processed_nodes = node_postprocessor.postprocess_nodes([nodes_with_scores[0], nodes_with_scores[4]])
+    processed_nodes = node_postprocessor.postprocess_nodes(
+        [nodes_with_scores[0], nodes_with_scores[4]]
+    )
     assert len(processed_nodes) == 2
     # nodes are sorted
     assert processed_nodes[0].node.get_doc_id() == "3"
     assert processed_nodes[1].node.get_doc_id() == "5"
-
 
     # check that raises value error for invalid mode
     with pytest.raises(ValueError):

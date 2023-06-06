@@ -199,14 +199,16 @@ class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             for i, cand in enumerate(sorted_nodes):
                 node_id = node.node.get_doc_id()
                 # prepend to current candidate
-                if node_id == cand.node.relationships.get(DocumentRelationship.PREVIOUS):
+                if node_id == cand.node.relationships.get(
+                    DocumentRelationship.PREVIOUS
+                ):
                     node_inserted = True
                     sorted_nodes.insert(i, node)
                     break
                 # append to current candidate
                 elif node_id == cand.node.relationships.get(DocumentRelationship.NEXT):
                     node_inserted = True
-                    sorted_nodes.insert(i+1, node)
+                    sorted_nodes.insert(i + 1, node)
                     break
 
             if not node_inserted:
