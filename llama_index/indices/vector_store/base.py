@@ -64,7 +64,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not vector_store.stores_text:
             raise ValueError('Cannot initialize from a vector store that does not store text.')
 
-        storage_context = StorageContext.from_defaults(vector_store)
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
         return cls(nodes=[], service_context=service_context, storage_context=storage_context)
 
 
