@@ -7,28 +7,9 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.tools.ondemand_loader_tool import (
     OnDemandLoaderTool,
-    create_schema_from_function,
 )
 
 from llama_index.readers.string_iterable import StringIterableReader
-
-
-def test_create_schema_from_function() -> None:
-    """Test create schema from function."""
-
-    def test_fn(x: int, y: int, z: List[str]) -> None:
-        """Test function."""
-        pass
-
-    SchemaCls = create_schema_from_function("test_schema", test_fn)
-    schema = SchemaCls.schema()
-    assert schema["properties"]["x"]["type"] == "integer"
-    assert schema["properties"]["y"]["type"] == "integer"
-    assert schema["properties"]["z"]["type"] == "array"
-
-    SchemaCls = create_schema_from_function("test_schema", test_fn, [("a", bool, 1)])
-    schema = SchemaCls.schema()
-    assert schema["properties"]["a"]["type"] == "boolean"
 
 
 def test_ondemand_loader_tool(

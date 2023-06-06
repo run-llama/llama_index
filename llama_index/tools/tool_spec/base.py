@@ -15,8 +15,13 @@ class BaseToolSpec:
     spec_functions: List[str]
 
     @abstractmethod
-    def get_fn_schema_from_fn_name(self, fn_name: str) -> Type[BaseModel]:
-        """Return map from function name."""
+    def get_fn_schema_from_fn_name(self, fn_name: str) -> Optional[Type[BaseModel]]:
+        """Return map from function name.
+
+        Return type is Optional, meaning that the schema can be None.
+        In this case, it's up to the downstream tool implementation to infer the schema.
+
+        """
 
     def to_tool_list(
         self,
@@ -36,6 +41,11 @@ class BaseToolSpec:
                 metadata = ToolMetadata(
                     name=name, description=description, fn_schema=fn_schema
                 )
-            tool = FunctionTool(fn=func, metadata=metadata)
+            tool = FunctionTool.from_defaults(
+                fn=func,
+                name=metadata.name,
+                description=metadata.description,
+                fn_schema=metadata.fn_schema,
+            )
             tool_list.append(tool)
         return tool_list
