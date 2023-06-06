@@ -164,16 +164,19 @@ custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
     verbose=True,
 )
 
+# construct query engine
+graph_query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
+
 # tool config
 graph_config = IndexToolConfig(
-    query_engine=query_engine,
+    query_engine=graph_query_engine,
     name=f"Graph Index",
     description="useful for when you want to answer queries that require analyzing multiple SEC 10-K documents for Uber.",
     tool_kwargs={"return_direct": True}
 )
 ```
 
-Besides the `GraphToolConfig` object, we also define an `IndexToolConfig` corresponding to each index:
+Besides the `IndexToolConfig` object for the graph, we also define an `IndexToolConfig` corresponding to each index:
 
 ```python
 # define toolkit
