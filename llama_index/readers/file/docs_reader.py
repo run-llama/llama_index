@@ -10,34 +10,49 @@ from llama_index.readers.base import BaseReader
 from llama_index.readers.schema.base import Document
 
 
-class PDFReader(BaseReader):
-    """PDF parser."""
+class PDFMinerReader(BaseReader):
+    """PDF parser based on pdfminer.six."""
 
     def load_data(
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """Parse file."""
         try:
-            import pypdf
+            from io import StringIO
+
+            from pdfminer.converter import TextConverter
+            from pdfminer.layout import LAParams
+            from pdfminer.pdfinterp import (PDFPageInterpreter,
+                                            PDFResourceManager)
+            from pdfminer.pdfpage import PDFPage as PDF_Page
+
+            def _extract_text_from_page(page):
+                resource_manager = PDFResourceManager()
+                output_string = StringIO()
+                codec = 'utf-8'
+                laparams = LAParams()
+                device = TextConverter(resource_manager, output_string, codec=codec, laparams=laparams)
+                interpreter = PDFPageInterpreter(resource_manager, device)
+                interpreter.process_page(page)
+                text = output_string.getvalue()
+                device.close()
+                output_string.close()
+                return text
+            
         except ImportError:
             raise ImportError(
-                "pypdf is required to read PDF files: `pip install pypdf`"
+                "pdfminer.six is required to read PDF files: `pip install pdfminer.six`"
             )
-        with open(file, "rb") as fp:
-            # Create a PDF object
-            pdf = pypdf.PdfReader(fp)
-
-            # Get the number of pages in the PDF document
-            num_pages = len(pdf.pages)
+        with open(file, 'rb') as fp:
+            reader = PDF_Page.get_pages(fp)
 
             # Iterate over every page
             docs = []
-            for page in range(num_pages):
+            for i, page in enumerate(reader):
                 # Extract the text from the page
-                page_text = pdf.pages[page].extract_text()
-                page_label = pdf.page_labels[page]
+                page_text = _extract_text_from_page(page)
 
-                metadata = {"page_label": page_label, "file_name": file.name}
+                metadata = {"page_label": i, "file_name": file.name}
                 if extra_info is not None:
                     metadata.update(extra_info)
 
