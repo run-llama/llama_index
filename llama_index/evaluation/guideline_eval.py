@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 
 from llama_index.evaluation.base import BaseEvaluator, Evaluation
 from llama_index.indices.base import ServiceContext
-from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import Response
 
