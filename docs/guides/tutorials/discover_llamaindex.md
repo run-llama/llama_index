@@ -18,4 +18,12 @@ This video covers managing documents from a source that is consantly updating (i
 
 [Notebook + Supplimentary Material](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/discover_llamaindex/document_management/)
 
-[Reference Docs](../../how_to/index_structs/document_management.md)
+[Reference Docs](../../how_to/index/document_management.md)
+
+## Joint Text to SQL and Semantic Search
+
+This video covers the tools built into LlamaIndex for combining SQL and semantic search into a single unified query interface.
+
+[Youtube](https://www.youtube.com/watch?v=ZIvcVJGtCrY)
+
+[Notebook](../../examples/query_engine/SQLAutoVectorQueryEngine.ipynb)
