@@ -107,6 +107,16 @@ class BaseLLMPredictor(Protocol):
 
     @property
     @abstractmethod
+    def total_prediction_tokens_used(self) -> int:
+        """Get the total tokens used so far."""
+
+    @property
+    @abstractmethod
+    def total_prompt_tokens_used(self) -> int:
+        """Get the total tokens used so far."""
+
+    @property
+    @abstractmethod
     def last_token_usage(self) -> int:
         """Get the last token usage."""
 
@@ -232,6 +242,10 @@ class LLMPredictor(BaseLLMPredictor):
         prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
+        self._total_prompt_tokens_used += prompt_tokens_count
+        self._total_prediction_tokens_used += prediction_tokens_count
+
+
         self.callback_manager.on_event_end(
             CBEventType.LLM,
             payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
@@ -276,6 +290,14 @@ class LLMPredictor(BaseLLMPredictor):
     def total_tokens_used(self) -> int:
         """Get the total tokens used so far."""
         return self._total_tokens_used
+
+    def total_prompt_tokens_used(self) -> int:
+        """Get the total prompt tokens used so far."""
+        return self._total_prompt_tokens_used
+
+    def total_prediction_tokens_used(self) -> int:
+        """Get the total prediction tokens used so far."""
+        return self._total_prediction_tokens_used
 
     def _count_tokens(self, text: str) -> int:
         tokens = globals_helper.tokenizer(text)

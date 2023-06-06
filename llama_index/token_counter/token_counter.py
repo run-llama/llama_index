@@ -47,18 +47,29 @@ def llm_token_counter(method_name_str: str) -> Callable:
             embed_model = service_context.embed_model
 
             start_token_ct = llm_predictor.total_tokens_used
+            start_prediction_token_ct = llm_predictor.total_prediction_tokens_used
+            start_prompt_token_ct = llm_predictor.total_prompt_tokens_used
             start_embed_token_ct = embed_model.total_tokens_used
 
             yield
 
             net_tokens = llm_predictor.total_tokens_used - start_token_ct
             llm_predictor.last_token_usage = net_tokens
+
+            net_prediction_tokens = llm_predictor.total_tokens_used - start_prediction_token_ct
+            llm_predictor.last_prediction_token_usage = net_prediction_tokens
+
+            net_prompt_tokens = llm_predictor.total_tokens_used - start_prompt_token_ct
+            llm_predictor.last_prompt_token_usage = net_prompt_tokens
+
             net_embed_tokens = embed_model.total_tokens_used - start_embed_token_ct
             embed_model.last_token_usage = net_embed_tokens
 
             # print outputs
             logger.info(
                 f"> [{method_name_str}] Total LLM token usage: {net_tokens} tokens"
+                f"> [{net_prompt_tokens} prompt tokens"
+                f"> [{net_prediction_tokens} prediction tokens"
             )
             logger.info(
                 f"> [{method_name_str}] Total embedding token usage: "
