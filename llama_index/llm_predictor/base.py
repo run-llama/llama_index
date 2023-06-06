@@ -172,6 +172,8 @@ class LLMPredictor(BaseLLMPredictor):
         self.callback_manager = callback_manager or CallbackManager([])
         self.retry_on_throttling = retry_on_throttling
         self._total_tokens_used = 0
+        self._total_prompt_tokens_used = 0
+        self._total_prediction_tokens_used = 0
         self.flag = True
         self._last_token_usage: Optional[int] = None
 
@@ -356,6 +358,8 @@ class LLMPredictor(BaseLLMPredictor):
         prompt_tokens_count = self._count_tokens(formatted_prompt)
         prediction_tokens_count = self._count_tokens(llm_prediction)
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
+        self._total_prompt_tokens_used += prompt_tokens_count
+        self._total_prediction_tokens_used += prediction_tokens_count
         self.callback_manager.on_event_end(
             CBEventType.LLM,
             payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},

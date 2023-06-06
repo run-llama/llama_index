@@ -56,10 +56,10 @@ def llm_token_counter(method_name_str: str) -> Callable:
             net_tokens = llm_predictor.total_tokens_used - start_token_ct
             llm_predictor.last_token_usage = net_tokens
 
-            net_prediction_tokens = llm_predictor.total_tokens_used - start_prediction_token_ct
+            net_prediction_tokens = llm_predictor.prediction_token_usage - start_prediction_token_ct
             llm_predictor.last_prediction_token_usage = net_prediction_tokens
 
-            net_prompt_tokens = llm_predictor.total_tokens_used - start_prompt_token_ct
+            net_prompt_tokens = llm_predictor.total_prompt_token_usage - start_prompt_token_ct
             llm_predictor.last_prompt_token_usage = net_prompt_tokens
 
             net_embed_tokens = embed_model.total_tokens_used - start_embed_token_ct
