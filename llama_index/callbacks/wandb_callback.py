@@ -523,6 +523,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
             # Start the run and add the stream table
             self._wandb.init(**run_args)
+            self._wandb.run._label(repo="llama_index")  # type: ignore
 
             if should_print_url:
                 self._print_wandb_init_message(
