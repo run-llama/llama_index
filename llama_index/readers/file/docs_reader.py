@@ -10,7 +10,7 @@ from llama_index.readers.base import BaseReader
 from llama_index.readers.schema.base import Document
 
 
-class PDFMinerReader(BaseReader):
+class PDFReader(BaseReader):
     """PDF parser based on pdfminer.six."""
 
     def load_data(
