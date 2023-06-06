@@ -107,7 +107,9 @@ This will filter out nodes that don't have required keywords, or contain exclude
 
 #### SimilarityPostprocessor
 
-A module where you are able to specify a `similarity_cutoff`.
+The SimilarityPostprocessor module allows you to filter nodes based on their similarity to a reference node using cosine similarity. By setting a `similarity_cutoff`, you can define a minimum similarity score that nodes must exceed to be considered relevant. This helps retrieve nodes that are closely related to the reference node in terms of their semantic meaning. Leveraging cosine similarity as a default, this postprocessor enhances the retrieval process by fine-tuning the relevance of the retrieved nodes based on their similarity to the reference node.
+
+For example, if you have a reference node and you want to retrieve nodes that are highly similar to it, you can set a high similarity cutoff. This will exclude nodes with low similarity scores and only retain nodes that have a similarity score above the specified cutoff.
 
 #### Previous/Next Postprocessors
 
