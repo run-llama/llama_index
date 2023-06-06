@@ -54,6 +54,20 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     def vector_store(self) -> VectorStore:
         return self._vector_store
 
+    @classmethod
+    def from_vector_store(
+        cls, 
+        vector_store: VectorStore,
+        service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
+    ):
+        if not vector_store.stores_text:
+            raise ValueError('Cannot initialize from a vector store that does not store text.')
+
+        storage_context = StorageContext.from_defaults(vector_store)
+        return cls(nodes=[], service_context=service_context, storage_context=storage_context)
+
+
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         # NOTE: lazy import
         from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
