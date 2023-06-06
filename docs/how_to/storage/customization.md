@@ -81,6 +81,8 @@ The vector stores that support this practice are:
 
 - ChatGPTRetrievalPluginClient
 - ChromaVectorStore
+- DocArrayHnswVectorStore
+- DocArrayInMemoryVectorStore
 - LanceDBVectorStore
 - MetalVectorStore
 - MilvusVectorStore
