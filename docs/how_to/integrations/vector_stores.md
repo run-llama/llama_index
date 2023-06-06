@@ -22,6 +22,7 @@ as the storage backend for `VectorStoreIndex`.
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
+- DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
 
 A detailed API reference is [found here](/reference/indices/vector_store.rst).
 
@@ -283,6 +284,21 @@ vector_store = MyScaleVectorStore(
 )
 ```
 
+**DocArray**
+
+```python
+from llama_index.vector_stores import (
+    DocArrayHnswVectorStore, 
+    DocArrayInMemoryVectorStore,
+)
+
+# construct vector store
+vector_store = DocArrayHnswVectorStore(work_dir='hnsw_index')
+
+# alternatively, construct the in-memory vector store
+vector_store = DocArrayInMemoryVectorStore()
+```
+
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
 
 ## Loading Data from Vector Stores using Data Connector
@@ -410,4 +426,6 @@ maxdepth: 1
 ../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
 ../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
+../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb
+../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 ```
