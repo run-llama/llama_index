@@ -63,7 +63,7 @@ class PGVectorStore(VectorStore):
 
     @classmethod
     def conn_str_from_params(
-            cls, host: str, port: int, database: str, user: str, password: str
+        cls, host: str, port: int, database: str, user: str, password: str
     ) -> str:
         """Return connection string from database parameters."""
         return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
@@ -107,7 +107,7 @@ class PGVectorStore(VectorStore):
         return ids
 
     def _query_with_score(
-            self, embedding: Optional[List[float]], limit: int = 10
+        self, embedding: Optional[List[float]], limit: int = 10
     ) -> List[Any]:
         from sqlalchemy.orm import Session
 
@@ -151,9 +151,8 @@ class PGVectorStore(VectorStore):
         import sqlalchemy
 
         with Session(self._conn) as session:
-            stmt = (
-                sqlalchemy.delete(self.table_class)
-                .where(self.table_class.doc_id == ref_doc_id)
+            stmt = sqlalchemy.delete(self.table_class).where(
+                self.table_class.doc_id == ref_doc_id
             )
             session.execute(stmt)
             session.commit()
