@@ -29,4 +29,4 @@ jobs:
         run: make lint
       - name: Ensure Changelog Updated
         run: |
-          for file in `ls`; do if [ "${file}" == CHANGELOG.md ]; then exit 0; fi; done; exit 1;
+          for file in ${{ steps.changed-files.outputs.changed_files }}; do if [ "${file}" == CHANGELOG.md ]; then exit 0; fi; done; exit 1;
