@@ -1,0 +1,151 @@
+from typing import List, Any, Type, Optional
+
+from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.vector_stores.types import (
+    VectorStore,
+    NodeWithEmbedding,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
+
+
+def get_data_model(base: Type, index_name: str) -> Any:
+    from pgvector.sqlalchemy import Vector
+    from sqlalchemy import Column
+    from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, JSON
+
+    class AbstractData(base):  # type: ignore
+        __abstract__ = True  # tShis line is necessary
+        id = Column(BIGINT, primary_key=True, autoincrement=True)
+        text = Column(VARCHAR, nullable=False)
+        extra_info = Column(JSON)
+        doc_id = Column(VARCHAR)
+        embedding = Column(Vector(1536))  # type: ignore
+
+    tablename = "data_%s" % index_name  # dynamic table name
+    class_name = "Data%s" % index_name  # dynamic class name
+    model = type(class_name, (AbstractData,), {"__tablename__": tablename})
+    return model
+
+
+class PGVectorStore(VectorStore):
+    stores_text = True
+
+    def __init__(self, connection_string: str, table_name: str) -> None:
+        try:
+            import sqlalchemy  # noqa: F401
+        except ImportError:
+            raise ImportError("`sqlalchemy` package not found")
+
+        try:
+            import pgvector  # noqa: F401
+        except ImportError:
+            raise ImportError("`pgvector` package not found")
+
+        try:
+            import psycopg2  # noqa: F401
+        except ImportError:
+            raise ImportError("`psycopg2-binary` package not found")
+
+        from sqlalchemy.orm import declarative_base
+
+        self.connection_string = connection_string
+        self.table_name: str = table_name.lower()
+        self._conn = self._connect()
+        self._base = declarative_base()
+        self.table_class = get_data_model(self._base, self.table_name)
+        self._create_extension()
+        self._create_tables_if_not_exists()
+
+    @classmethod
+    def conn_str_from_params(
+        cls, host: str, port: int, database: str, user: str, password: str
+    ) -> str:
+        """Return connection string from database parameters."""
+        return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+
+    def _connect(self) -> Any:
+        import sqlalchemy
+
+        engine = sqlalchemy.create_engine(self.connection_string)
+        conn: sqlalchemy.engine.Connection = engine.connect()
+        return conn
+
+    def _create_tables_if_not_exists(self) -> None:
+        with self._conn.begin():
+            self._base.metadata.create_all(self._conn)
+
+    def _create_extension(self) -> None:
+        from sqlalchemy.orm import Session
+        import sqlalchemy
+
+        with Session(self._conn) as session:
+            statement = sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector")
+            session.execute(statement)
+            session.commit()
+
+    def add(self, embedding_results: List[NodeWithEmbedding]) -> List[str]:
+        from sqlalchemy.orm import Session
+
+        ids = []
+        with Session(self._conn) as session:
+            for result in embedding_results:
+                ids.append(result.id)
+
+                item = self.table_class(
+                    doc_id=result.id,
+                    embedding=result.embedding,
+                    text=result.node.text,
+                    extra_info=result.node.extra_info,
+                )
+                session.add(item)
+            session.commit()
+        return ids
+
+    def _query_with_score(
+        self, embedding: Optional[List[float]], limit: int = 10
+    ) -> List[Any]:
+        from sqlalchemy.orm import Session
+
+        with Session(self._conn) as session:
+            res = (
+                session.query(
+                    self.table_class,
+                    self.table_class.embedding.l2_distance(embedding),  # type: ignore
+                )
+                .order_by(self.table_class.embedding.l2_distance(embedding))
+                .limit(limit)
+            )  # type: ignore
+        return res.all()
+
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        results = self._query_with_score(query.query_embedding, query.similarity_top_k)
+        nodes = []
+        similarities = []
+        ids = []
+        for item, sim in results:
+            similarities.append(sim)
+            ids.append(item.doc_id)
+            node = Node(
+                doc_id=item.doc_id,
+                text=item.text,
+                extra_info=item.extra_info,
+                relationships={
+                    DocumentRelationship.SOURCE: item.doc_id,
+                },
+            )
+            nodes.append(node)
+
+        return VectorStoreQueryResult(
+            nodes=nodes,
+            similarities=similarities,
+            ids=ids,
+        )
+
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        from sqlalchemy.orm import Session
+
+        with Session(self._conn) as session:
+            stmt = sqlalchemy.delete(self.table_class).where(self.table_class.doc_id == ref_doc_id)  # type: ignore
+            session.execute(stmt)
+            session.commit()
