@@ -50,6 +50,23 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             **kwargs,
         )
 
+    @classmethod
+    def from_vector_store(
+        cls,
+        vector_store: VectorStore,
+        service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
+    ) -> "VectorStoreIndex":
+        if not vector_store.stores_text:
+            raise ValueError(
+                "Cannot initialize from a vector store that does not store text."
+            )
+
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        return cls(
+            nodes=[], service_context=service_context, storage_context=storage_context
+        )
+
     @property
     def vector_store(self) -> VectorStore:
         return self._vector_store

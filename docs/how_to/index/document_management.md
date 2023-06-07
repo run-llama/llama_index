@@ -90,6 +90,8 @@ print(refreshed_docs)
 
 This is most useful when you are reading from a directory that is constantly updating with new information.
 
+To autmatically set the `doc_id` when using the `SimpleDirectoryReader`, you can set the `filename_as_id` flag. More details can be found [here](../customization/custom_documents.md).
+
 ## Document Tracking
 
 Any index that uses the docstore (i.e. all indexes except for most vector store integrations), you can also see which documents you have inserted into the docstore. 
