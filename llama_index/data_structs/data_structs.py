@@ -206,7 +206,7 @@ class KG(IndexStruct):
 
     # table of keywords to node ids
     table: Dict[str, Set[str]] = field(default_factory=dict)
-    
+
     # TODO: legacy attribute, remove in future releases
     rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
 
