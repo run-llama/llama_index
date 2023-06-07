@@ -2,147 +2,46 @@
 
 LlamaIndex offers multiple integration points with vector stores / vector databases:
 
-1. LlamaIndex can load data from vector stores, similar to any other data connector. This data can then be used within LlamaIndex data structures.
-2. LlamaIndex can use a vector store itself as an index. Like any other index, this index can store documents and be used to answer queries.
-
-## Loading Data from Vector Stores using Data Connector
-
-LlamaIndex supports loading data from the following sources. See [Data Connectors](/how_to/data_connectors.md) for more details and API documentation.
-
-- Chroma (`ChromaReader`) [Installation](https://docs.trychroma.com/getting-started)
-- DeepLake (`DeepLakeReader`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
-- Qdrant (`QdrantReader`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
-- Weaviate (`WeaviateReader`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
-- Pinecone (`PineconeReader`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
-- Faiss (`FaissReader`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
-- Milvus (`MilvusReader`). [Installation](https://milvus.io/docs)
-- Zilliz (`MilvusReader`). [Quickstart](https://zilliz.com/doc/quick_start)
-- MyScale (`MyScaleReader`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
-
-Chroma stores both documents and vectors. This is an example of how to use Chroma:
-
-```python
-
-from llama_index.readers.chroma import ChromaReader
-from llama_index.indices import GPTListIndex
-
-# The chroma reader loads data from a persisted Chroma collection.
-# This requires a collection name and a persist directory.
-reader = ChromaReader(
-    collection_name="chroma_collection",
-    persist_directory="examples/data_connectors/chroma_collection"
-)
-
-query_vector=[n1, n2, n3, ...]
-
-documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
-index = GPTListIndex.from_documents(documents)
-
-query_engine = index.as_query_engine()
-response = query_engine.query("<query_text>")
-display(Markdown(f"<b>{response}</b>"))
-```
-
-Qdrant also stores both documents and vectors. This is an example of how to use Qdrant:
-
-```python
-
-from llama_index.readers.qdrant import QdrantReader
-
-reader = QdrantReader(host="localhost")
-
-# the query_vector is an embedding representation of your query_vector
-# Example query_vector
-# query_vector = [0.3, 0.3, 0.3, 0.3, ...]
-
-query_vector = [n1, n2, n3, ...]
-
-# NOTE: Required args are collection_name, query_vector.
-# See the Python client: https;//github.com/qdrant/qdrant_client
-# for more details
-
-documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
-
-```
-
-NOTE: Since Weaviate can store a hybrid of document and vector objects, the user may either choose to explicitly specify `class_name` and `properties` in order to query documents, or they may choose to specify a raw GraphQL query. See below for usage.
-
-```python
-# option 1: specify class_name and properties
-
-# 1) load data using class_name and properties
-documents = reader.load_data(
-    class_name="<class_name>",
-    properties=["property1", "property2", "..."],
-    separate_documents=True
-)
-
-# 2) example GraphQL query
-query = """
-{
-    Get {
-        <class_name> {
-            <property1>
-            <property2>
-        }
-    }
-}
-"""
-
-documents = reader.load_data(graphql_query=query, separate_documents=True)
-```
-
-NOTE: Both Pinecone and Faiss data loaders assume that the respective data sources only store vectors; text content is stored elsewhere. Therefore, both data loaders require that the user specifies an `id_to_text_map` in the load_data call.
-
-For instance, this is an example usage of the Pinecone data loader `PineconeReader`:
-
-```python
-
-from llama_index.readers.pinecone import PineconeReader
-
-reader = PineconeReader(api_key=api_key, environment="us-west1-gcp")
-
-id_to_text_map = {
-    "id1": "text blob 1",
-    "id2": "text blob 2",
-}
-
-query_vector=[n1, n2, n3, ..]
-
-documents = reader.load_data(
-    index_name="quickstart", id_to_text_map=id_to_text_map, top_k=3, vector=query_vector, separate_documents=True
-)
-
-```
-
-[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/data_connectors).
+1. LlamaIndex can use a vector store itself as an index. Like any other index, this index can store documents and be used to answer queries.
+2. LlamaIndex can load data from vector stores, similar to any other data connector. This data can then be used within LlamaIndex data structures.
 
 (vector-store-index)=
 
 ## Using a Vector Store as an Index
 
 LlamaIndex also supports different vector stores
-as the storage backend for `GPTVectorStoreIndex`.
+as the storage backend for `VectorStoreIndex`.
+
+- Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
+- DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
+- Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
+- Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
+- Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
+- Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Milvus (`MilvusVectorStore`). [Installation](https://milvus.io/docs)
+- Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
+- MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
+- Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
+- DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
 
 A detailed API reference is [found here](/reference/indices/vector_store.rst).
 
-Similar to any other index within LlamaIndex (tree, keyword table, list), `GPTVectorStoreIndex` can be constructed upon any collection
-of documents.
-We use the vector store within the index to store embeddings for the input text chunks.
+Similar to any other index within LlamaIndex (tree, keyword table, list), `VectorStoreIndex` can be constructed upon any collection
+of documents. We use the vector store within the index to store embeddings for the input text chunks.
 
 Once constructed, the index can be used for querying.
 
 **Default Vector Store Index Construction/Querying**
 
-By default, `GPTVectorStoreIndex` uses a in-memory `SimpleVectorStore`
+By default, `VectorStoreIndex` uses a in-memory `SimpleVectorStore`
 that's initialized as part of the default storage context.
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
 # Load documents and build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 
 # Query index
 query_engine = index.as_query_engine()
@@ -155,7 +54,7 @@ response = query_engine.query("What did the author do growing up?")
 We can query over a custom vector store as follows:
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader, StorageContext
+from llama_index import VectorStoreIndex, SimpleDirectoryReader, StorageContext
 from llama_index.vector_stores import DeepLakeVectorStore
 
 # construct vector store and customize storage context
@@ -165,7 +64,7 @@ storage_context = StorageContext.from_defaults(
 
 # Load documents and build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
 
 # Query index
 query_engine = index.as_query_engine()
@@ -192,7 +91,7 @@ vector_store = RedisVectorStore(
 )
 ```
 
-This can be used with the `GPTVectorStoreIndex` to provide a query interface for retrieval, querying, deleting, persisting the index, and more.
+This can be used with the `VectorStoreIndex` to provide a query interface for retrieval, querying, deleting, persisting the index, and more.
 
 **DeepLake**
 
@@ -385,7 +284,125 @@ vector_store = MyScaleVectorStore(
 )
 ```
 
+**DocArray**
+
+```python
+from llama_index.vector_stores import (
+    DocArrayHnswVectorStore, 
+    DocArrayInMemoryVectorStore,
+)
+
+# construct vector store
+vector_store = DocArrayHnswVectorStore(work_dir='hnsw_index')
+
+# alternatively, construct the in-memory vector store
+vector_store = DocArrayInMemoryVectorStore()
+```
+
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
+
+## Loading Data from Vector Stores using Data Connector
+
+LlamaIndex supports oading data from the following sources. See [Data Connectors](/how_to/data_connectors.md) for more details and API documentation.
+
+Chroma stores both documents and vectors. This is an example of how to use Chroma:
+
+```python
+
+from llama_index.readers.chroma import ChromaReader
+from llama_index.indices import ListIndex
+
+# The chroma reader loads data from a persisted Chroma collection.
+# This requires a collection name and a persist directory.
+reader = ChromaReader(
+    collection_name="chroma_collection",
+    persist_directory="examples/data_connectors/chroma_collection"
+)
+
+query_vector=[n1, n2, n3, ...]
+
+documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
+index = ListIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("<query_text>")
+display(Markdown(f"<b>{response}</b>"))
+```
+
+Qdrant also stores both documents and vectors. This is an example of how to use Qdrant:
+
+```python
+
+from llama_index.readers.qdrant import QdrantReader
+
+reader = QdrantReader(host="localhost")
+
+# the query_vector is an embedding representation of your query_vector
+# Example query_vector
+# query_vector = [0.3, 0.3, 0.3, 0.3, ...]
+
+query_vector = [n1, n2, n3, ...]
+
+# NOTE: Required args are collection_name, query_vector.
+# See the Python client: https;//github.com/qdrant/qdrant_client
+# for more details
+
+documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
+
+```
+
+NOTE: Since Weaviate can store a hybrid of document and vector objects, the user may either choose to explicitly specify `class_name` and `properties` in order to query documents, or they may choose to specify a raw GraphQL query. See below for usage.
+
+```python
+# option 1: specify class_name and properties
+
+# 1) load data using class_name and properties
+documents = reader.load_data(
+    class_name="<class_name>",
+    properties=["property1", "property2", "..."],
+    separate_documents=True
+)
+
+# 2) example GraphQL query
+query = """
+{
+    Get {
+        <class_name> {
+            <property1>
+            <property2>
+        }
+    }
+}
+"""
+
+documents = reader.load_data(graphql_query=query, separate_documents=True)
+```
+
+NOTE: Both Pinecone and Faiss data loaders assume that the respective data sources only store vectors; text content is stored elsewhere. Therefore, both data loaders require that the user specifies an `id_to_text_map` in the load_data call.
+
+For instance, this is an example usage of the Pinecone data loader `PineconeReader`:
+
+```python
+
+from llama_index.readers.pinecone import PineconeReader
+
+reader = PineconeReader(api_key=api_key, environment="us-west1-gcp")
+
+id_to_text_map = {
+    "id1": "text blob 1",
+    "id2": "text blob 2",
+}
+
+query_vector=[n1, n2, n3, ..]
+
+documents = reader.load_data(
+    index_name="quickstart", id_to_text_map=id_to_text_map, top_k=3, vector=query_vector, separate_documents=True
+)
+
+```
+
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/data_connectors).
+
 
 ```{toctree}
 ---
@@ -408,4 +425,7 @@ maxdepth: 1
 ../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
+../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
+../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb
+../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 ```

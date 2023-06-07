@@ -1,24 +1,25 @@
-from typing import List
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 
+"""Single select prompt.
 
-class SingleSelectPrompt(Prompt):
-    """Single select prompt.
+Prompt to select one out of `num_choices` options provided in `context_list`,
+given a query `query_str`.
 
-    Prompt to select one out of `num_choices` options provided in `context_list`,
-    given a query `query_str`.
+Required template variables: `num_chunks`, `context_list`, `query_str`
 
-    Required template variables: `num_chunks`, `context_list`, `query_str`
+"""
+SingleSelectPrompt = Prompt
 
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
+"""Multiple select prompt.
 
-    """
+Prompt to select multiple candidates (up to `max_outputs`) out of `num_choices`
+options provided in `context_list`, given a query `query_str`.
 
-    prompt_type: PromptType = PromptType.SINGLE_SELECT
-    input_variables: List[str] = ["num_choices", "context_list", "query_str"]
+Required template variables: `num_chunks`, `context_list`, `query_str`,
+    `max_outputs`
+"""
+MultiSelectPrompt = Prompt
 
 
 # single select
@@ -34,33 +35,9 @@ DEFAULT_SINGLE_SELECT_PROMPT_TMPL = (
 )
 
 
-DEFAULT_SINGLE_SELECT_PROMPT = SingleSelectPrompt(
-    template=DEFAULT_SINGLE_SELECT_PROMPT_TMPL
+DEFAULT_SINGLE_SELECT_PROMPT = Prompt(
+    template=DEFAULT_SINGLE_SELECT_PROMPT_TMPL, prompt_type=PromptType.SINGLE_SELECT
 )
-
-
-class MultiSelectPrompt(Prompt):
-    """Multiple select prompt.
-
-    Prompt to select multiple candidates (up to `max_outputs`) out of `num_choices`
-    options provided in `context_list`, given a query `query_str`.
-
-    Required template variables: `num_chunks`, `context_list`, `query_str`,
-        `max_outputs`
-
-    Args:
-        template (str): Template for the prompt.
-        **prompt_kwargs: Keyword arguments for the prompt.
-
-    """
-
-    prompt_type: PromptType = PromptType.MULTI_SELECT
-    input_variables: List[str] = [
-        "num_choices",
-        "context_list",
-        "query_str",
-        "max_outputs",
-    ]
 
 
 # multiple select
@@ -77,6 +54,6 @@ DEFAULT_MULTI_SELECT_PROMPT_TMPL = (
 )
 
 
-DEFAULT_MULTIPLE_SELECT_PROMPT = MultiSelectPrompt(
-    template=DEFAULT_MULTI_SELECT_PROMPT_TMPL
+DEFAULT_MULTIPLE_SELECT_PROMPT = Prompt(
+    template=DEFAULT_MULTI_SELECT_PROMPT_TMPL, prompt_type=PromptType.MULTI_SELECT
 )

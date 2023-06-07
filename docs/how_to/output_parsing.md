@@ -16,7 +16,7 @@ Guardrails is an open-source Python package for specification/validation/correct
 
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.output_parsers import GuardrailsOutputParser
 from llama_index.llm_predictor import StructuredLLMPredictor
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
@@ -25,7 +25,7 @@ from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT_TMPL, DEF
 
 # load documents, build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex(documents, chunk_size_limit=512)
+index = VectorStoreIndex(documents, chunk_size=512)
 llm_predictor = StructuredLLMPredictor()
 
 
@@ -95,7 +95,7 @@ Output:
 Langchain also offers output parsing modules that you can use within LlamaIndex.
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.output_parsers import LangchainOutputParser
 from llama_index.llm_predictor import StructuredLLMPredictor
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
@@ -105,7 +105,7 @@ from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
 # load documents, build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex(documents, chunk_size_limit=512)
+index = VectorStoreIndex.from_documents(documents)
 llm_predictor = StructuredLLMPredictor()
 
 # define output schema
@@ -129,7 +129,7 @@ query_engine = index.as_query_engine(
     service_context=ServiceContext.from_defaults(
         llm_predictor=llm_predictor
     ),
-    text_qa_temjlate=qa_prompt, 
+    text_qa_template=qa_prompt, 
     refine_template=refine_prompt, 
 )
 response = query_engine.query(

@@ -76,7 +76,8 @@ class StreamingResponse:
         if self.response_txt is None and self.response_gen is not None:
             response_txt = ""
             for text in self.response_gen:
-                print(text, end="")
+                print(text, end="", flush=True)
+                response_txt += text
             self.response_txt = response_txt
         else:
             print(self.response_txt)

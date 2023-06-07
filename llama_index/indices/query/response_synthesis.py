@@ -1,10 +1,12 @@
 import logging
 from typing import Any, Dict, Generator, List, Optional, Sequence
 
+from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.response.response_builder import (
+from llama_index.indices.response import (
     BaseResponseBuilder,
     ResponseMode,
     get_response_builder,
@@ -35,6 +37,7 @@ class ResponseSynthesizer:
         optimizer (Optional[BaseTokenUsageOptimizer]): A token usage optimizer.
         node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of node
             postprocessors.
+        callback_manager (Optional[CallbackManager]): A callback manager.
         verbose (bool): Whether to print debug statements.
 
     """
@@ -46,6 +49,7 @@ class ResponseSynthesizer:
         response_kwargs: Optional[Dict] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
     ) -> None:
         self._response_builder = response_builder
@@ -53,6 +57,7 @@ class ResponseSynthesizer:
         self._response_kwargs = response_kwargs or {}
         self._optimizer = optimizer
         self._node_postprocessors = node_postprocessors or []
+        self._callback_manager = callback_manager or CallbackManager([])
         self._verbose = verbose
 
     @classmethod
@@ -67,6 +72,7 @@ class ResponseSynthesizer:
         response_mode: ResponseMode = ResponseMode.COMPACT,
         response_kwargs: Optional[Dict] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        callback_manager: Optional[CallbackManager] = None,
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         verbose: bool = False,
     ) -> "ResponseSynthesizer":
@@ -83,11 +89,18 @@ class ResponseSynthesizer:
             response_kwargs (Optional[Dict]): A dictionary of response kwargs.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of node
                 postprocessors.
+            callback_manager (Optional[CallbackManager]): A callback manager.
             optimizer (Optional[BaseTokenUsageOptimizer]): A token usage optimizer.
             verbose (bool): Whether to print debug statements.
 
         """
-        service_context = service_context or ServiceContext.from_defaults()
+        service_context = service_context or ServiceContext.from_defaults(
+            callback_manager=callback_manager
+        )
+
+        # fallback to callback manager from service context
+        callback_manager = callback_manager or service_context.callback_manager
+
         response_builder: Optional[BaseResponseBuilder] = None
         if response_mode != ResponseMode.NO_TEXT:
             response_builder = get_response_builder(
@@ -105,6 +118,7 @@ class ResponseSynthesizer:
             response_kwargs,
             optimizer,
             node_postprocessors,
+            callback_manager,
             verbose,
         )
 
@@ -148,6 +162,7 @@ class ResponseSynthesizer:
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
+        event_id = self._callback_manager.on_event_start(CBEventType.SYNTHESIZE)
         for node_processor in self._node_postprocessors:
             nodes = node_processor.postprocess_nodes(nodes, query_bundle)
 
@@ -171,7 +186,14 @@ class ResponseSynthesizer:
         additional_source_nodes = additional_source_nodes or []
         source_nodes = list(nodes) + list(additional_source_nodes)
 
-        return self._prepare_response_output(response_str, source_nodes)
+        response = self._prepare_response_output(response_str, source_nodes)
+        self._callback_manager.on_event_end(
+            CBEventType.SYNTHESIZE,
+            payload={"response": response},
+            event_id=event_id,
+        )
+
+        return response
 
     async def asynthesize(
         self,
@@ -179,6 +201,7 @@ class ResponseSynthesizer:
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
+        event_id = self._callback_manager.on_event_start(CBEventType.SYNTHESIZE)
         for node_processor in self._node_postprocessors:
             nodes = node_processor.postprocess_nodes(nodes, query_bundle)
 
@@ -202,4 +225,11 @@ class ResponseSynthesizer:
         additional_source_nodes = additional_source_nodes or []
         source_nodes = list(nodes) + list(additional_source_nodes)
 
-        return self._prepare_response_output(response_str, source_nodes)
+        response = self._prepare_response_output(response_str, source_nodes)
+        self._callback_manager.on_event_end(
+            CBEventType.SYNTHESIZE,
+            payload={"response": response},
+            event_id=event_id,
+        )
+
+        return response

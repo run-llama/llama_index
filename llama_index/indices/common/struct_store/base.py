@@ -7,11 +7,11 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import StructDatapoint
-from llama_index.indices.response.response_builder import get_response_builder
+from llama_index.indices.response import get_response_builder
 from llama_index.indices.service_context import ServiceContext
-from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.langchain_helpers.text_splitter import TextSplitter
+from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
 )
@@ -19,6 +19,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_TABLE_CONTEXT_PROMPT,
     DEFAULT_TABLE_CONTEXT_QUERY,
 )
+from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.prompts import (
     QuestionAnswerPrompt,
     RefinePrompt,
@@ -37,7 +38,7 @@ class SQLDocumentContextBuilder:
 
     Args:
         sql_database (Optional[SQLDatabase]): SQL database to use,
-        llm_predictor (Optional[LLMPredictor]): LLM Predictor to use.
+        llm_predictor (Optional[BaseLLMPredictor]): LLM Predictor to use.
         prompt_helper (Optional[PromptHelper]): Prompt Helper to use.
         text_splitter (Optional[TextSplitter]): Text Splitter to use.
         table_context_prompt (Optional[TableContextPrompt]): A
@@ -79,7 +80,7 @@ class SQLDocumentContextBuilder:
     ) -> Dict[str, str]:
         """Build context for all tables in the database."""
         context_dict = {}
-        for table_name in self._sql_database.get_table_names():
+        for table_name in self._sql_database.get_usable_table_names():
             context_dict[table_name] = self.build_table_context_from_documents(
                 documents_dict[table_name], table_name
             )
@@ -93,15 +94,17 @@ class SQLDocumentContextBuilder:
         """Build context from documents for a single table."""
         schema = self._sql_database.get_single_table_info(table_name)
         prompt_with_schema = QuestionAnswerPrompt.from_prompt(
-            self._table_context_prompt.partial_format(schema=schema)
+            self._table_context_prompt.partial_format(schema=schema),
+            prompt_type=PromptType.QUESTION_ANSWER,
         )
         refine_prompt_with_schema = RefinePrompt.from_prompt(
-            self._refine_table_context_prompt.partial_format(schema=schema)
+            self._refine_table_context_prompt.partial_format(schema=schema),
+            prompt_type=PromptType.REFINE,
         )
         text_splitter = (
             self._text_splitter
             or self._service_context.prompt_helper.get_text_splitter_given_prompt(
-                prompt_with_schema, 1
+                prompt_with_schema
             )
         )
         # we use the ResponseBuilder to iteratively go through all texts
@@ -136,7 +139,7 @@ class BaseStructDatapointExtractor:
 
     def __init__(
         self,
-        llm_predictor: LLMPredictor,
+        llm_predictor: BaseLLMPredictor,
         schema_extract_prompt: SchemaExtractPrompt,
         output_parser: OUTPUT_PARSER_TYPE,
     ) -> None:

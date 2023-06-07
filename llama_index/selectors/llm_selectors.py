@@ -1,14 +1,11 @@
 from typing import Any, List, Optional, Sequence, cast
+
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-
-
-from llama_index.llm_predictor.base import LLMPredictor
+from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.output_parsers.base import BaseOutputParser, StructuredOutput
-from llama_index.output_parsers.selection import (
-    Answer,
-    SelectionOutputParser,
-)
+from llama_index.output_parsers.selection import Answer, SelectionOutputParser
+from llama_index.prompts.prompt_type import PromptType
 from llama_index.selectors.prompts import (
     DEFAULT_MULTI_SELECT_PROMPT_TMPL,
     DEFAULT_SINGLE_SELECT_PROMPT_TMPL,
@@ -44,13 +41,13 @@ class LLMSingleSelector(BaseSelector):
     LLM-based selector that chooses one out of many options.
 
     Args:
-        llm_predictor (LLMPredictor): An LLM predictor.
+        llm_predictor (BaseLLMPredictor): An LLM predictor.
         prompt (SingleSelectPrompt): A LLM prompt for selecting one out of many options.
     """
 
     def __init__(
         self,
-        llm_predictor: LLMPredictor,
+        llm_predictor: BaseLLMPredictor,
         prompt: SingleSelectPrompt,
     ) -> None:
         self._llm_predictor = llm_predictor
@@ -76,7 +73,9 @@ class LLMSingleSelector(BaseSelector):
 
         # construct prompt
         prompt = SingleSelectPrompt(
-            template=prompt_template_str, output_parser=output_parser
+            template=prompt_template_str,
+            output_parser=output_parser,
+            prompt_type=PromptType.SINGLE_SELECT,
         )
         return cls(service_context.llm_predictor, prompt)
 
@@ -132,7 +131,7 @@ class LLMMultiSelector(BaseSelector):
 
     def __init__(
         self,
-        llm_predictor: LLMPredictor,
+        llm_predictor: BaseLLMPredictor,
         prompt: MultiSelectPrompt,
         max_outputs: Optional[int] = None,
     ) -> None:
@@ -160,7 +159,9 @@ class LLMMultiSelector(BaseSelector):
 
         # construct prompt
         prompt = MultiSelectPrompt(
-            template=prompt_template_str, output_parser=output_parser
+            template=prompt_template_str,
+            output_parser=output_parser,
+            prompt_type=PromptType.MULTI_SELECT,
         )
         return cls(service_context.llm_predictor, prompt, max_outputs)
 

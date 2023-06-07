@@ -5,7 +5,11 @@ LlamaIndex provides callbacks to help debug, track, and trace the inner workings
 Using the callback manager, as many callbacks as needed can be added.
 
 In addition to logging data related to events, you can also track the duration and number of occurances
-of each event.
+of each event. 
+
+Furthermore, a trace map of events is also recorded, and callbacks can use this data
+however they want. For example, the :code:`LlamaDebugHandler` will, by default, print the trace of events
+after most operations.
 
 While each callback may not leverage each event type, the following events are available to be tracked:
 
@@ -18,19 +22,19 @@ While each callback may not leverage each event type, the following events are a
 - SYNTHESIZE -> Logs for the result for synthesize calls.
 - TREE -> Logs for the summary and level of summaries generated.
 
-You can implement your own callback to track these events, or use an existing callback.
+You can implement your own callback to track and trace these events, or use an existing callback.
 
-Complete examples can be found in the notebooks below:
+Currently supported callbacks are as follows:
 
-- [LlamaDebugHandler](../examples/callbacks/LlamaDebugHandler.ipynb)
-- [AimCallback](../examples/callbacks/AimCallback.ipynb)
-
-And the API reference can be found [here](../../reference/callbacks.rst).
+- LlamaDebugHanlder -> Basic tracking and tracing for events. Example usage can be found in the notebook below.
+- WandbCallbackHandler -> Tracking of events and traces using the Wandb Prompts frontend. More details are in the notebook below or at `Wandb <https://docs.wandb.ai/guides/prompts/quickstart>`_
+- AimCallback -> Tracking of LLM inputs and outputs. Example usage can be found in the notebook below.
 
 .. toctree::
    :maxdepth: 1
    :caption: Callbacks
 
    ../examples/callbacks/LlamaDebugHandler.ipynb
+   ../examples/callbacks/WandbCallbackHandler.ipynb
    ../examples/callbacks/AimCallback.ipynb
    ../../reference/callbacks.rst

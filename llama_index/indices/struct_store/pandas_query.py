@@ -1,4 +1,4 @@
-"""Default query for GPTPandasIndex."""
+"""Default query for PandasIndex."""
 
 import logging
 from typing import Any, Callable, Optional
@@ -8,7 +8,7 @@ from langchain.input import print_text
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.struct_store.pandas import GPTPandasIndex
+from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.prompts import PandasPrompt
 from llama_index.response.schema import Response
@@ -64,7 +64,7 @@ def default_output_processor(
         return err_string
 
 
-class GPTNLPandasQueryEngine(BaseQueryEngine):
+class NLPandasQueryEngine(BaseQueryEngine):
     """GPT Pandas query.
 
     Convert natural language to Pandas python code.
@@ -82,7 +82,7 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
 
     def __init__(
         self,
-        index: GPTPandasIndex,
+        index: PandasIndex,
         instruction_str: Optional[str] = None,
         output_processor: Optional[Callable] = None,
         pandas_prompt: Optional[PandasPrompt] = None,
@@ -101,6 +101,7 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
         self._output_processor = output_processor or default_output_processor
         self._output_kwargs = output_kwargs or {}
         self._verbose = verbose
+        super().__init__(self._service_context.callback_manager)
 
     def _get_table_context(self) -> str:
         """Get table context."""
@@ -138,3 +139,7 @@ class GPTNLPandasQueryEngine(BaseQueryEngine):
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         return self._query(query_bundle)
+
+
+# legacy
+GPTNLPandasQueryEngine = NLPandasQueryEngine

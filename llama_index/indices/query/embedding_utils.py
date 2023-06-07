@@ -1,6 +1,6 @@
 """Embedding utils for queries."""
-
-from typing import Callable, List, Optional, Tuple
+import heapq
+from typing import Any, Callable, List, Optional, Tuple
 
 from llama_index.embeddings.base import similarity as default_similarity_fn
 import numpy as np
@@ -21,20 +21,16 @@ def get_top_k_embeddings(
 
     similarity_fn = similarity_fn or default_similarity_fn
 
-    similarities = []
-    for emb in embeddings:
+    similarity_heap: List[Tuple[float, Any]] = []
+    for i, emb in enumerate(embeddings):
         similarity = similarity_fn(query_embedding, emb)
-        similarities.append(similarity)
-
-    sorted_tups = sorted(
-        zip(similarities, embedding_ids), key=lambda x: x[0], reverse=True
-    )
-
-    if similarity_cutoff is not None:
-        sorted_tups = [tup for tup in sorted_tups if tup[0] > similarity_cutoff]
-
-    similarity_top_k = similarity_top_k or len(sorted_tups)
-    result_tups = sorted_tups[:similarity_top_k]
+        if similarity_cutoff is None or similarity > similarity_cutoff:
+            heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
+            if similarity_top_k and len(similarity_heap) > similarity_top_k:
+                heapq.heappop(similarity_heap)
+    result_tups = [
+        (s, id) for s, id in sorted(similarity_heap, key=lambda x: x[0], reverse=True)
+    ]
 
     result_similarities = [s for s, _ in result_tups]
     result_ids = [n for _, n in result_tups]

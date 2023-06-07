@@ -41,6 +41,9 @@ class PromptType(str, Enum):
     # Pandas prompt
     PANDAS = "pandas"
 
+    # JSON path prompt
+    JSON_PATH = "json_path"
+
     # Single select prompt
     SINGLE_SELECT = "single_select"
 
@@ -48,6 +51,21 @@ class PromptType(str, Enum):
     MULTI_SELECT = "multi_select"
 
     VECTOR_STORE_QUERY = "vector_store_query"
+
+    # Sub question prompt
+    SUB_QUESTION = "sub_question"
+
+    # SQL response synthesis prompt
+    SQL_RESPONSE_SYNTHESIS = "sql_response_synthesis"
+
+    # Conversation
+    CONVERSATION = "conversation"
+
+    # Decompose query transform
+    DECOMPOSE = "decompose"
+
+    # Choice select
+    CHOICE_SELECT = "choice_select"
 
     # custom (by default)
     CUSTOM = "custom"

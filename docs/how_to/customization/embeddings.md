@@ -2,7 +2,7 @@
 
 LlamaIndex provides support for embeddings in the following format:
 - Adding embeddings to Document objects
-- Using a Vector Store as an underlying index (e.g. `GPTVectorStoreIndex`)
+- Using a Vector Store as an underlying index (e.g. `VectorStoreIndex`)
 - Querying our list and tree indices with embeddings.
 
 ## Adding embeddings to Document objects
@@ -36,13 +36,13 @@ This design choice prevents the need to generate embeddings for all text chunks 
 NOTE: Our [vector-store based indices](/how_to/integrations/vector_stores.md) generate embeddings during index construction.
 
 #### Embedding Lookups
-For the list index (`GPTListIndex`):
+For the list index (`ListIndex`):
 - We iterate through every node in the list, and identify the top k nodes through embedding similarity. We use these nodes to synthesize an answer.
 - See the [List Retriever API](/reference/query/retrievers/list.rst) for more details.
-- NOTE: the embedding-mode usage of the list index is roughly equivalent with the usage of our `GPTVectorStoreIndex`; the main
+- NOTE: the embedding-mode usage of the list index is roughly equivalent with the usage of our `VectorStoreIndex`; the main
     difference is when embeddings are generated (during query-time for the list index vs. index construction for the simple vector index).
 
-For the tree index (`GPTTreeIndex`):
+For the tree index (`TreeIndex`):
 - We start with the root nodes, and traverse down the tree by picking the child node through embedding similarity.
 - See the [Tree Query API](/reference/query/retrievers/tree.rst) for more details.
 
@@ -62,10 +62,10 @@ Langchain's [embeddings](https://langchain.readthedocs.io/en/latest/reference/mo
 We introduce a wrapper class, 
 [`LangchainEmbedding`](/reference/service_context/embeddings.rst), for integration into LlamaIndex.
 
-An example snippet is shown below (to use Hugging Face embeddings) on the GPTListIndex:
+An example snippet is shown below (to use Hugging Face embeddings) on the ListIndex:
 
 ```python
-from llama_index import GPTListIndex, SimpleDirectoryReader
+from llama_index import ListIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import LangchainEmbedding, ServiceContext
 
@@ -75,7 +75,7 @@ service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # build index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-new_index = GPTListIndex.from_documents(documents)
+new_index = ListIndex.from_documents(documents)
 
 # query with embed_model specified
 query_engine = new_index.as_query_engine(
@@ -87,10 +87,10 @@ response = query_engine.query("<query_text>")
 print(response)
 ```
 
-Another example snippet is shown for GPTVectorStoreIndex.
+Another example snippet is shown for VectorStoreIndex.
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import LangchainEmbedding, ServiceContext
 
@@ -100,7 +100,7 @@ service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # load index
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-new_index = GPTVectorStoreIndex.from_documents(
+new_index = VectorStoreIndex.from_documents(
     documents, 
     service_context=service_context,
 )

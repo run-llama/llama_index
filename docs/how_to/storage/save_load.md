@@ -7,6 +7,8 @@ storage_context.persist(persist_dir="<persist_dir>")
 ```
 This will persist data to disk, under the specified `persist_dir` (or `./storage` by default).
 
+Multiple indexes can be persisted and loaded from the same directory, assuming you keep track of index ID's for loading.
+
 User can also configure alternative storage backends (e.g. `MongoDB`) that persist data by default.
 In this case, calling `storage_context.persist()` will do nothing.
 
@@ -28,16 +30,18 @@ We can then load specific indices from the `StorageContext` through some conveni
 from llama_index import load_index_from_storage, load_indices_from_storage, load_graph_from_storage
 
 # load a single index
-index = load_index_from_storage(storage_context, index_id="<index_id>") # need to specify index_id if it's ambiguous
-index = load_index_from_storage(storage_context) # don't need to specify index_id if there's only one index in storage context
+# need to specify index_id if multiple indexes are persisted to the same directory
+index = load_index_from_storage(storage_context, index_id="<index_id>") 
+
+# don't need to specify index_id if there's only one index in storage context
+index = load_index_from_storage(storage_context) 
 
 # load multiple indices
 indices = load_indices_from_storage(storage_context) # loads all indices
-indices = load_indices_from_storage(storage_context, index_ids=<index_ids>) # loads specific indices
+indices = load_indices_from_storage(storage_context, index_ids=[index_id1, ...]) # loads specific indices
 
 # load composable graph
 graph = load_graph_from_storage(storage_context, root_id="<root_id>") # loads graph with the specified root_id
-
 ```
 
 Here's the full [API Reference on saving and loading](/reference/storage/indices_save_load.rst).
@@ -56,7 +60,7 @@ dotenv.load_dotenv("../../../.env")
 # load documents
 documents = SimpleDirectoryReader('../../../examples/paul_graham_essay/data/').load_data()
 print(len(documents))
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 ```
 
 At this point, everything has been the same. Now - let's instantiate a S3 filesystem and save / load from there.

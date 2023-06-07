@@ -3,7 +3,7 @@
 
 from typing import Any, Dict, List, Optional, Type
 
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 from llama_index.indices.common.struct_store.schema import SQLContextContainer
 from llama_index.indices.query.schema import QueryType
@@ -45,10 +45,12 @@ class SQLContextContainerBuilder:
         if context_dict is not None:
             # validate context_dict keys are valid table names
             context_keys = set(context_dict.keys())
-            if not context_keys.issubset(set(self.sql_database.get_table_names())):
+            if not context_keys.issubset(
+                set(self.sql_database.get_usable_table_names())
+            ):
                 raise ValueError(
                     "Invalid context table names: "
-                    f"{context_keys - set(self.sql_database.get_table_names())}"
+                    f"{context_keys - set(self.sql_database.get_usable_table_names())}"
                 )
         self.context_dict = context_dict or {}
         # build full context from sql_database
@@ -79,7 +81,7 @@ class SQLContextContainerBuilder:
         """Get tables schema + optional context as a single string."""
         current_context = current_context or {}
         result_context = {}
-        for table_name in sql_database.get_table_names():
+        for table_name in sql_database.get_usable_table_names():
             table_desc = sql_database.get_single_table_info(table_name)
             table_text = f"Schema of table {table_name}:\n" f"{table_desc}\n"
             if table_name in current_context:
@@ -97,10 +99,10 @@ class SQLContextContainerBuilder:
 
     def derive_index_from_context(
         self,
-        index_cls: Type[BaseGPTIndex],
+        index_cls: Type[BaseIndex],
         ignore_db_schema: bool = False,
         **index_kwargs: Any,
-    ) -> BaseGPTIndex:
+    ) -> BaseIndex:
         """Derive index from context."""
         full_context_dict = self._get_context_dict(ignore_db_schema)
         context_docs = []
@@ -115,7 +117,7 @@ class SQLContextContainerBuilder:
 
     def query_index_for_context(
         self,
-        index: BaseGPTIndex,
+        index: BaseIndex,
         query_str: QueryType,
         query_tmpl: Optional[str] = DEFAULT_CONTEXT_QUERY_TMPL,
         store_context_str: bool = True,
@@ -128,7 +130,7 @@ class SQLContextContainerBuilder:
         and can store a context_str.
 
         Args:
-            index (BaseGPTIndex): index data structure
+            index (BaseIndex): index data structure
             query_str (QueryType): query string
             query_tmpl (Optional[str]): query template
             store_context_str (bool): store context_str

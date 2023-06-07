@@ -6,7 +6,6 @@ Prompt Templates
 These are the reference prompt templates. 
 
 We first show links to default prompts.
-We then document all core prompts, with their required variables.
 
 We then show the base prompt class, 
 derived from `Langchain <https://langchain.readthedocs.io/en/latest/modules/prompt.html>`_.

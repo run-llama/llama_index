@@ -319,10 +319,10 @@ To load the collection model, the `load_collection_model` function is used, whic
 in [`delphic/utils/collections.py`](https://github.com/JSv4/Delphic/blob/main/delphic/utils/collections.py). This
 function retrieves the collection object with the given collection ID, checks if a JSON file for the collection model
 exists, and if not, creates one. Then, it sets up the `LLMPredictor` and `ServiceContext` before loading
-the `GPTVectorStoreIndex` using the cache file.
+the `VectorStoreIndex` using the cache file.
 
 ```python
-async def load_collection_model(collection_id: str | int) -> GPTVectorStoreIndex:
+async def load_collection_model(collection_id: str | int) -> VectorStoreIndex:
     """
     Load the Collection model from cache or the database, and return the index.
 
@@ -330,14 +330,14 @@ async def load_collection_model(collection_id: str | int) -> GPTVectorStoreIndex
         collection_id (Union[str, int]): The ID of the Collection model instance.
 
     Returns:
-        GPTVectorStoreIndex: The loaded index.
+        VectorStoreIndex: The loaded index.
 
     This function performs the following steps:
     1. Retrieve the Collection object with the given collection_id.
     2. Check if a JSON file with the name '/cache/model_{collection_id}.json' exists.
     3. If the JSON file doesn't exist, load the JSON from the Collection.model FileField and save it to
        '/cache/model_{collection_id}.json'.
-    4. Call GPTVectorStoreIndex.load_from_disk with the cache_file_path.
+    4. Call VectorStoreIndex.load_from_disk with the cache_file_path.
     """
     # Retrieve the Collection object
     collection = await Collection.objects.aget(id=collection_id)
@@ -366,9 +366,9 @@ async def load_collection_model(collection_id: str | int) -> GPTVectorStoreIndex
         )
         service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
-        # Call GPTVectorStoreIndex.load_from_disk
+        # Call VectorStoreIndex.load_from_disk
         logger.info("load_collection_model() - Load llama index")
-        index = GPTVectorStoreIndex.load_from_disk(
+        index = VectorStoreIndex.load_from_disk(
             cache_file_path, service_context=service_context
         )
         logger.info(
