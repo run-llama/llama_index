@@ -7,7 +7,7 @@ Nodes are decoupled from the indices.
 import uuid
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional, Sequence, Set
+from typing import Dict, List, Optional, Sequence, Set
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -208,7 +208,7 @@ class KG(IndexStruct):
     table: Dict[str, Set[str]] = field(default_factory=dict)
 
     # TODO: legacy attribute, remove in future releases
-    rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
+    rel_map: Dict[str, List[List[str]]] = field(default_factory=dict)
 
     # TBD, should support vector store, now we just persist the embedding memory
     # maybe chainable abstractions for *_stores could be designed
