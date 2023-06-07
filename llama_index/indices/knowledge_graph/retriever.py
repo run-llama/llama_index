@@ -78,7 +78,7 @@ class KGTableRetriever(BaseRetriever):
         similarity_top_k: int = 2,
         graph_store: Optional[GraphStore] = None,
         graph_store_query_depth: int = 2,
-        explore_global_knowledge: bool = False,
+        use_global_node_triplets: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -100,7 +100,7 @@ class KGTableRetriever(BaseRetriever):
             raise ValueError("Must provide a graph store for KG queries.")
         self._graph_store = graph_store
         self.graph_store_query_depth = graph_store_query_depth
-        self.explore_global_knowledge = explore_global_knowledge
+        self.use_global_node_triplets = use_global_node_triplets
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -139,7 +139,7 @@ class KGTableRetriever(BaseRetriever):
         if self._retriever_mode != KGRetrieverMode.EMBEDDING:
             for keyword in keywords:
                 subjs = set((keyword,))
-                if self.explore_global_knowledge:
+                if self.use_global_node_triplets:
                     # Get nodes from keyword search, and add them to the subjs set.
                     # This helps introduce more global knowledge into the query.
                     # While it's more expensive, thus to be turned off by default,
