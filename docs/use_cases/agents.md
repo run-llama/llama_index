@@ -64,6 +64,7 @@ LlamaIndex query engines can be easily packaged as Tools to be used within a Lan
 **Resources**
 - [LangChain integration guide](/how_to/integrations/using_with_langchain.md)
 - [Building a Chatbot Tutorial (LangChain + LlamaIndex)](/guides/tutorials/building_a_chatbot.md)
+- [OnDemandLoaderTool Tutorial](/examples/tools/OnDemandLoaderTool.ipynb)
 
 #### ChatGPT
 

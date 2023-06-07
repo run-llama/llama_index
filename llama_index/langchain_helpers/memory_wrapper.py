@@ -8,7 +8,7 @@ from langchain.schema import BaseMemory as Memory
 from langchain.schema import BaseMessage, HumanMessage
 from pydantic import Field
 
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.readers.schema.base import Document
 from llama_index.utils import get_new_id
 
@@ -34,7 +34,7 @@ class GPTIndexMemory(Memory):
         human_prefix (str): Prefix for human input. Defaults to "Human".
         ai_prefix (str): Prefix for AI output. Defaults to "AI".
         memory_key (str): Key for memory. Defaults to "history".
-        index (BaseGPTIndex): LlamaIndex instance.
+        index (BaseIndex): LlamaIndex instance.
         query_kwargs (Dict[str, Any]): Keyword arguments for LlamaIndex query.
         input_key (Optional[str]): Input key. Defaults to None.
         output_key (Optional[str]): Output key. Defaults to None.
@@ -44,7 +44,7 @@ class GPTIndexMemory(Memory):
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
     memory_key: str = "history"
-    index: BaseGPTIndex
+    index: BaseIndex
     query_kwargs: Dict = Field(default_factory=dict)
     output_key: Optional[str] = None
     input_key: Optional[str] = None
@@ -104,7 +104,7 @@ class GPTIndexChatMemory(BaseChatMemory):
         human_prefix (str): Prefix for human input. Defaults to "Human".
         ai_prefix (str): Prefix for AI output. Defaults to "AI".
         memory_key (str): Key for memory. Defaults to "history".
-        index (BaseGPTIndex): LlamaIndex instance.
+        index (BaseIndex): LlamaIndex instance.
         query_kwargs (Dict[str, Any]): Keyword arguments for LlamaIndex query.
         input_key (Optional[str]): Input key. Defaults to None.
         output_key (Optional[str]): Output key. Defaults to None.
@@ -114,7 +114,7 @@ class GPTIndexChatMemory(BaseChatMemory):
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
     memory_key: str = "history"
-    index: BaseGPTIndex
+    index: BaseIndex
     query_kwargs: Dict = Field(default_factory=dict)
     output_key: Optional[str] = None
     input_key: Optional[str] = None

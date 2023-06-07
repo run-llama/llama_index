@@ -2,10 +2,10 @@
 
 By default, LlamaIndex hides away the complexities and let you query your data in under 5 lines of code:
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()
 response = query_engine.query("Summarize the documents.")
 ```
@@ -18,7 +18,7 @@ Under the hood, LlamaIndex also supports a swappable **storage layer** that allo
 ### Low-Level API
 To do this, instead of the high-level API,
 ```python
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 ```
 we use a lower-level API that gives more granular control:
 ```python
@@ -42,7 +42,7 @@ storage_context = StorageContext.from_defaults(
 storage_context.docstore.add_documents(nodes)
 
 # build index
-index = GPTVectorStoreIndex(nodes, storage_context=storage_context)
+index = VectorStoreIndex(nodes, storage_context=storage_context)
 
 # save index
 index.storage_context.persist(persist_dir="<persist_dir>")
@@ -81,6 +81,8 @@ The vector stores that support this practice are:
 
 - ChatGPTRetrievalPluginClient
 - ChromaVectorStore
+- DocArrayHnswVectorStore
+- DocArrayInMemoryVectorStore
 - LanceDBVectorStore
 - MetalVectorStore
 - MilvusVectorStore
@@ -95,7 +97,7 @@ A small example using Pinecone is below:
 
 ```python
 import pinecone
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.vector_stores import PineconeVectorStore
 
 # Creating a Pinecone index
@@ -126,8 +128,8 @@ storage_context = StorageContext.from_defaults(vector_store=vector_store)
 documents = SimpleDirectoryReader("./data").load_data()
 
 # create index, which will insert documents/vectors to pinecone
-index = GPTVectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
 
 # re-build/load the index by conntect to the same vector store
-loaded_index = GPTVectorStoreIndex([], storage_context=storage_context)
+loaded_index = VectorStoreIndex([], storage_context=storage_context)
 ```

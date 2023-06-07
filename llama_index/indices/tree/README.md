@@ -1,10 +1,10 @@
 ## 🌲 Tree Index
 
-Currently the tree index refers to the `GPTTreeIndex` class. It organizes external data into a tree structure that can be queried.
+Currently the tree index refers to the `TreeIndex` class. It organizes external data into a tree structure that can be queried.
 
 ### Index Construction
 
-The `GPTTreeIndex` first takes in a set of text documents as input. It then builds up a tree-index in a bottom-up fashion; each parent node is able to summarize the children nodes using a general **summarization prompt**; each intermediate node contains text summarizing the components below. Once the index is built, it can be saved to disk as a JSON and loaded for future use.
+The `TreeIndex` first takes in a set of text documents as input. It then builds up a tree-index in a bottom-up fashion; each parent node is able to summarize the children nodes using a general **summarization prompt**; each intermediate node contains text summarizing the components below. Once the index is built, it can be saved to disk as a JSON and loaded for future use.
 
 ### Query
 
@@ -12,7 +12,7 @@ There are two query modes: `default` and `retrieve`.
 
 **Default (GPTTreeIndexLeafQuery)**
 
-Using a **query prompt template**, the GPTTreeIndex will be able to recursively perform tree traversal in a top-down fashion in order to answer a question. For example, in the very beginning GPT-3 is tasked with selecting between _n_ top-level nodes which best answers a provided query, by outputting a number as a multiple-choice problem. The GPTTreeIndex then uses the number to select the corresponding node, and the process repeats recursively among the children nodes until a leaf node is reached.
+Using a **query prompt template**, the TreeIndex will be able to recursively perform tree traversal in a top-down fashion in order to answer a question. For example, in the very beginning GPT-3 is tasked with selecting between _n_ top-level nodes which best answers a provided query, by outputting a number as a multiple-choice problem. The TreeIndex then uses the number to select the corresponding node, and the process repeats recursively among the children nodes until a leaf node is reached.
 
 **Retrieve (GPTTreeIndexRetQuery)**
 
@@ -21,11 +21,11 @@ Simply use the root nodes as context to synthesize an answer to the query. This 
 ### Usage
 
 ```python
-from llama_index import GPTTreeIndex, SimpleDirectoryReader
+from llama_index import TreeIndex, SimpleDirectoryReader
 
 # build index
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTTreeIndex.from_documents(documents)
+index = TreeIndex.from_documents(documents)
 # query
 query_engine = index.as_query_engine()
 response = query_engine.query("<question text>")

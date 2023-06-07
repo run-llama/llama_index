@@ -2,7 +2,7 @@
 
 LlamaIndex offers a variety of different [query use cases](/use_cases/queries.md). 
 
-For simple queries, we may want to use a single index data structure, such as a `GPTVectorStoreIndex` for semantic search, or `GPTListIndex` for summarization.  
+For simple queries, we may want to use a single index data structure, such as a `VectorStoreIndex` for semantic search, or `ListIndex` for summarization.  
 
 
 For more complex queries, we may want to use a composable graph. 
@@ -67,7 +67,7 @@ that solves a distinct use case.
 We will first define a vector index over the documents of each city.
 
 ```python
-from llama_index import GPTVectorStoreIndex, ServiceContext, StorageContext
+from llama_index import VectorStoreIndex, ServiceContext, StorageContext
 from langchain.llms.openai import OpenAIChat
 
 # set service context
@@ -81,7 +81,7 @@ vector_indices = {}
 for wiki_title in wiki_titles:
     storage_context = StorageContext.from_defaults()
     # build vector index
-    vector_indices[wiki_title] = GPTVectorStoreIndex.from_documents(
+    vector_indices[wiki_title] = VectorStoreIndex.from_documents(
         city_docs[wiki_title], 
         service_context=service_context,
         storage_context=storage_context,
@@ -130,14 +130,14 @@ Next, we compose a keyword table on top of these vector indexes, with these inde
 from llama_index.indices.composability import ComposableGraph
 
 graph = ComposableGraph.from_indices(
-    GPTSimpleKeywordTableIndex,
+    SimpleKeywordTableIndex,
     [index for _, index in vector_indices.items()], 
     [summary for _, summary in index_summaries.items()],
     max_keywords_per_chunk=50
 )
 
 # get root index
-root_index = graph.get_index(graph.index_struct.root_id, GPTSimpleKeywordTableIndex)
+root_index = graph.get_index(graph.index_struct.root_id, SimpleKeywordTableIndex)
 # set id of root index
 root_index.set_index_id("compare_contrast")
 root_summary = (

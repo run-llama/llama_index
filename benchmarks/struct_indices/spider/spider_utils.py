@@ -8,7 +8,7 @@ from langchain import OpenAI
 from langchain.chat_models import ChatOpenAI
 from sqlalchemy import create_engine, text
 
-from llama_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
+from llama_index import SQLStructStoreIndex, LLMPredictor, SQLDatabase
 
 
 def load_examples(spider_dir: str) -> Tuple[list, list]:
@@ -24,7 +24,7 @@ def load_examples(spider_dir: str) -> Tuple[list, list]:
 
 def create_indexes(
     spider_dir: str, llm: Union[ChatOpenAI, OpenAI]
-) -> Dict[str, GPTSQLStructStoreIndex]:
+) -> Dict[str, SQLStructStoreIndex]:
     """Create indexes for all databases."""
     # Create all necessary SQL database objects.
     databases = {}
@@ -43,7 +43,7 @@ def create_indexes(
     llm_predictor = LLMPredictor(llm=llm)
     llm_indexes = {}
     for db_name, db in databases.items():
-        llm_indexes[db_name] = GPTSQLStructStoreIndex(
+        llm_indexes[db_name] = SQLStructStoreIndex(
             llm_predictor=llm_predictor,
             sql_database=db,
         )

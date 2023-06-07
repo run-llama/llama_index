@@ -7,24 +7,24 @@ from typing import Any, Dict, List, Optional, Type, Union
 import pandas as pd
 from langchain.input import get_color_mapping, print_text
 
-from llama_index.indices.base import BaseGPTIndex
-from llama_index.indices.list.base import GPTListIndex, ListRetrieverMode
-from llama_index.indices.tree.base import GPTTreeIndex, TreeRetrieverMode
-from llama_index.indices.vector_store import GPTVectorStoreIndex
+from llama_index.indices.base import BaseIndex
+from llama_index.indices.list.base import ListIndex, ListRetrieverMode
+from llama_index.indices.tree.base import TreeIndex, TreeRetrieverMode
+from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.readers.schema.base import Document
 
-DEFAULT_INDEX_CLASSES: List[Type[BaseGPTIndex]] = [
-    GPTVectorStoreIndex,
-    GPTTreeIndex,
-    GPTListIndex,
+DEFAULT_INDEX_CLASSES: List[Type[BaseIndex]] = [
+    VectorStoreIndex,
+    TreeIndex,
+    ListIndex,
 ]
 
-INDEX_SPECIFIC_QUERY_MODES_TYPE = Dict[Type[BaseGPTIndex], List[str]]
+INDEX_SPECIFIC_QUERY_MODES_TYPE = Dict[Type[BaseIndex], List[str]]
 
 DEFAULT_MODES: INDEX_SPECIFIC_QUERY_MODES_TYPE = {
-    GPTTreeIndex: [e.value for e in TreeRetrieverMode],
-    GPTListIndex: [e.value for e in ListRetrieverMode],
-    GPTVectorStoreIndex: ["default"],
+    TreeIndex: [e.value for e in TreeRetrieverMode],
+    ListIndex: [e.value for e in ListRetrieverMode],
+    VectorStoreIndex: ["default"],
 }
 
 
@@ -33,13 +33,13 @@ class Playground:
 
     def __init__(
         self,
-        indices: List[BaseGPTIndex],
+        indices: List[BaseIndex],
         retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE = DEFAULT_MODES,
     ):
         """Initialize with indices to experiment with.
 
         Args:
-            indices: A list of BaseGPTIndex's to experiment with
+            indices: A list of BaseIndex's to experiment with
             retriever_modes: A list of retriever_modes that specify which nodes are
                 chosen from the index when a query is made. A full list of
                 retriever_modes available to each index can be found here:
@@ -57,7 +57,7 @@ class Playground:
     def from_docs(
         cls,
         documents: List[Document],
-        index_classes: List[Type[BaseGPTIndex]] = DEFAULT_INDEX_CLASSES,
+        index_classes: List[Type[BaseIndex]] = DEFAULT_INDEX_CLASSES,
         retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE = DEFAULT_MODES,
         **kwargs: Any,
     ) -> Playground:
@@ -77,23 +77,23 @@ class Playground:
         ]
         return cls(indices, retriever_modes)
 
-    def _validate_indices(self, indices: List[BaseGPTIndex]) -> None:
+    def _validate_indices(self, indices: List[BaseIndex]) -> None:
         """Validate a list of indices."""
         if len(indices) == 0:
             raise ValueError("Playground must have a non-empty list of indices.")
         for index in indices:
-            if not isinstance(index, BaseGPTIndex):
+            if not isinstance(index, BaseIndex):
                 raise ValueError(
-                    "Every index in Playground should be an instance of BaseGPTIndex."
+                    "Every index in Playground should be an instance of BaseIndex."
                 )
 
     @property
-    def indices(self) -> List[BaseGPTIndex]:
+    def indices(self) -> List[BaseIndex]:
         """Get Playground's indices."""
         return self._indices
 
     @indices.setter
-    def indices(self, indices: List[BaseGPTIndex]) -> None:
+    def indices(self, indices: List[BaseIndex]) -> None:
         """Set Playground's indices."""
         self._validate_indices(indices)
         self._indices = indices

@@ -1,4 +1,4 @@
-"""GPT Tree Index inserter."""
+"""Tree Index inserter."""
 
 from typing import Optional, Sequence
 
@@ -19,7 +19,7 @@ from llama_index.prompts.default_prompts import (
 )
 
 
-class GPTTreeIndexInserter:
+class TreeIndexInserter:
     """LlamaIndex inserter."""
 
     def __init__(

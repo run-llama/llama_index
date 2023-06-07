@@ -1,4 +1,4 @@
-.. GPT Index documentation master file, created by
+.. LlamaIndex documentation master file, created by
    sphinx-quickstart on Sun Dec 11 14:30:34 2022.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -80,9 +80,11 @@ to fit their needs.
    :caption: Key Components
    :hidden:
 
-   how_to/data_connectors.md
-   how_to/indices.rst
-   how_to/query_interface.rst
+   how_to/connector/root.md
+   how_to/index/root.md
+   how_to/retriever/root.md
+   how_to/query_engine/root.md
+   how_to/chat_engine/root.md
    how_to/customization.rst
    how_to/analysis.rst
    how_to/output_parsing.md
