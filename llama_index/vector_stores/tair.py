@@ -7,12 +7,13 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
+    MetadataFilters,
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    MetadataFilters,
 )
+from llama_index.vector_stores.utils import node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 
@@ -73,7 +74,8 @@ class TairVectorStore(VectorStore):
             >>> from llama_index.vector_stores.tair import TairVectorStore
             >>> # Create a TairVectorStore
             >>> vector_store = TairVectorStore(
-            >>>     tair_url="redis://{username}:{password}@r-bp****************.redis.rds.aliyuncs.com:{port}",
+            >>>     tair_url="redis://{username}:{password}@r-bp****************.\
+                redis.rds.aliyuncs.com:{port}",
             >>>     index_name="my_index",
             >>>     index_type="HNSW",
             >>>     index_args={"M": 16, "ef_construct": 200},
@@ -150,8 +152,8 @@ class TairVectorStore(VectorStore):
                 "doc_id": result.ref_doc_id,
                 "text": result.node.get_text(),
             }
-            if result.node.node_info is not None:
-                attributes.update(result.node.node_info)
+            metadata_dict = node_to_metadata_dict(result.node)
+            attributes.update(metadata_dict)
 
             ids.append(result.id)
             self._tair_client.tvs_hset(
@@ -165,14 +167,14 @@ class TairVectorStore(VectorStore):
         _logger.info(f"Added {len(ids)} documents to index {self._index_name}")
         return ids
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document.
 
         Args:
             doc_id (str): document id
 
         """
-        iter = self._tair_client.tvs_scan(self._index_name, "%s#*" % doc_id)
+        iter = self._tair_client.tvs_scan(self._index_name, "%s#*" % ref_doc_id)
         for k in iter:
             self._tair_client.tvs_del(self._index_name, k)
 

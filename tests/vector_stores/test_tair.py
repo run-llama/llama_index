@@ -1,5 +1,5 @@
-from typing import List
 from os import environ
+from typing import List
 
 import pytest
 
@@ -11,10 +11,10 @@ except ImportError:
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores import TairVectorStore
 from llama_index.vector_stores.types import (
+    ExactMatchFilter,
+    MetadataFilters,
     NodeWithEmbedding,
     VectorStoreQuery,
-    MetadataFilters,
-    ExactMatchFilter,
 )
 
 
@@ -27,7 +27,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
                 text="lorem ipsum",
                 doc_id="AF3BE6C4-5F43-4D74-B075-6B0E07900DE8",
                 relationships={DocumentRelationship.SOURCE: "test-0"},
-                node_info={"weight": 1.0, "rank": "a"},
+                extra_info={"weight": 1.0, "rank": "a"},
             ),
         ),
         NodeWithEmbedding(
@@ -36,7 +36,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
                 text="lorem ipsum",
                 doc_id="7D9CD555-846C-445C-A9DD-F8924A01411D",
                 relationships={DocumentRelationship.SOURCE: "test-1"},
-                node_info={"weight": 2.0, "rank": "c"},
+                extra_info={"weight": 2.0, "rank": "c"},
             ),
         ),
         NodeWithEmbedding(
@@ -45,7 +45,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
                 text="lorem ipsum",
                 doc_id="452D24AB-F185-414C-A352-590B4B9EE51B",
                 relationships={DocumentRelationship.SOURCE: "test-1"},
-                node_info={"weight": 3.0, "rank": "b"},
+                extra_info={"weight": 3.0, "rank": "b"},
             ),
         ),
     ]
