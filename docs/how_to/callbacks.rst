@@ -27,7 +27,7 @@ You can implement your own callback to track and trace these events, or use an e
 Currently supported callbacks are as follows:
 
 - LlamaDebugHanlder -> Basic tracking and tracing for events. Example usage can be found in the notebook below.
-- WandbCallbackHandler -> Tracking of events and traces using the Wandb Prompts frontend. More details are in the notebook below or at `Wandb <https://docs.wandb.ai/tutorials>`_
+- WandbCallbackHandler -> Tracking of events and traces using the Wandb Prompts frontend. More details are in the notebook below or at `Wandb <https://docs.wandb.ai/guides/prompts/quickstart>`_
 - AimCallback -> Tracking of LLM inputs and outputs. Example usage can be found in the notebook below.
 
 .. toctree::
