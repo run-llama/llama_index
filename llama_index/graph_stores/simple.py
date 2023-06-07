@@ -24,11 +24,9 @@ class SimpleGraphStoreData(DataClassJsonMixin):
 
     Args:
         graph_dict (Optional[dict]): dict mapping subject to
-        index_struct (Optional[dict]): index struct only for loading from lagcacy json
     """
 
     graph_dict: Dict[str, List[List[str]]] = field(default_factory=dict)
-    index_struct: Dict[str, Any] = field(default_factory=dict)
 
     def get_rel_map(
         self, subjs: Optional[List[str]] = None, depth: int = 2
@@ -137,30 +135,15 @@ class SimpleGraphStore(GraphStore):
         """Create a SimpleGraphStore from a persist directory."""
         fs = fs or fsspec.filesystem("file")
         if not fs.exists(persist_path):
-            raise ValueError(
-                f"No existing {__name__} found at {persist_path}, skipping load."
+            logger.warning(
+                f"No existing {__name__} found at {persist_path}. "
+                "Initializing a new graph_store from scratch. "
             )
+            return cls()
 
         logger.debug(f"Loading {__name__} from {persist_path}.")
         with fs.open(persist_path, "rb") as f:
             data_dict = json.load(f)
-            # handle lagacy json file with index_struct
-            if "docstore" in data_dict and "graph_dict" not in data_dict:
-                docs = data_dict.get("docstore", {}).get("docs", {})
-                index_struct = {}
-                rel_map = {}
-                for doc in docs.keys():
-                    if docs[doc].get("__type__", None) == "kg":
-                        index_struct["table"] = docs[doc].get("table", {})
-                        index_struct["embedding_dict"] = docs[doc].get(
-                            "embedding_dict", {}
-                        )
-                        rel_map = docs[doc].get("rel_map", {})
-                data_dict = {
-                    "graph_dict": rel_map,
-                    "index_struct": index_struct,
-                }
-
             data = SimpleGraphStoreData.from_dict(data_dict)
         return cls(data)
 

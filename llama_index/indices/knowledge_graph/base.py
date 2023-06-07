@@ -85,6 +85,14 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             **kwargs,
         )
 
+        # TODO: legacy conversion - remove in next release
+        if len(self.index_struct.table) > 0 and isinstance(self.graph_store, SimpleGraphStore) and len(self.graph_store._data.graph_dict) == 0:
+            logger.warning(
+                "Upgrading previously saved KG index to new storage format."
+            )
+            self.graph_store._data.graph_dict = self.index_struct.rel_map
+
+
     @property
     def graph_store(self) -> GraphStore:
         return self._graph_store
