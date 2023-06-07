@@ -15,31 +15,39 @@ from llama_index.data_structs.struct_type import IndexStructType
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-# structured
-from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 
-# for composability
-from llama_index.indices.composability.graph import ComposableGraph
+# indices
+from llama_index.indices.keyword_table import (
+    KeywordTableIndex,
+    RAKEKeywordTableIndex,
+    SimpleKeywordTableIndex,
+    GPTKeywordTableIndex,
+    GPTRAKEKeywordTableIndex,
+    GPTSimpleKeywordTableIndex,
+)
+from llama_index.indices.knowledge_graph import (
+    KnowledgeGraphIndex,
+    GPTKnowledgeGraphIndex,
+)
+from llama_index.indices.list import ListIndex, GPTListIndex
+from llama_index.indices.tree import TreeIndex, GPTTreeIndex
+from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
 from llama_index.indices.document_summary import (
     DocumentSummaryIndex,
     GPTDocumentSummaryIndex,
 )
 from llama_index.indices.empty import EmptyIndex, GPTEmptyIndex
+from llama_index.indices.struct_store.pandas import PandasIndex, GPTPandasIndex
+from llama_index.indices.struct_store.sql import (
+    SQLStructStoreIndex,
+    GPTSQLStructStoreIndex,
+)
 
-# indices
-from llama_index.indices.keyword_table import (
-    GPTKeywordTableIndex,
-    GPTRAKEKeywordTableIndex,
-    GPTSimpleKeywordTableIndex,
-    KeywordTableIndex,
-    RAKEKeywordTableIndex,
-    SimpleKeywordTableIndex,
-)
-from llama_index.indices.knowledge_graph import (
-    GPTKnowledgeGraphIndex,
-    KnowledgeGraphIndex,
-)
-from llama_index.indices.list import GPTListIndex, ListIndex
+# structured
+from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
+
+# for composability
+from llama_index.indices.composability.graph import ComposableGraph
 
 # loading
 from llama_index.indices.loading import (
@@ -56,25 +64,16 @@ from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 
 # QueryBundle
 from llama_index.indices.query.schema import QueryBundle
+
 from llama_index.indices.service_context import (
     ServiceContext,
     set_global_service_context,
 )
-from llama_index.indices.struct_store.pandas import GPTPandasIndex, PandasIndex
-from llama_index.indices.struct_store.sql import (
-    GPTSQLStructStoreIndex,
-    SQLStructStoreIndex,
-)
-from llama_index.indices.tree import GPTTreeIndex, TreeIndex
-from llama_index.indices.vector_store import GPTVectorStoreIndex, VectorStoreIndex
 
 # langchain helper
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
-
-# vellum
-from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
 
 # prompts
 from llama_index.prompts.base import Prompt
@@ -129,6 +128,9 @@ from llama_index.storage.storage_context import StorageContext
 # token predictor
 from llama_index.token_counter.mock_chain_wrapper import MockLLMPredictor
 from llama_index.token_counter.mock_embed_model import MockEmbedding
+
+# vellum
+from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
 
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library

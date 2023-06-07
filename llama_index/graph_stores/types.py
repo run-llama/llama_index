@@ -10,15 +10,18 @@ DEFAULT_PERSIST_FNAME = "graph_store.json"
 class GraphStore(Protocol):
     """Abstract graph store protocol.
 
-    This protocol defines the interface for a graph store, which is responsible for storing and retrieving knowledge graph data.
+    This protocol defines the interface for a graph store, which is responsible
+    for storing and retrieving knowledge graph data.
 
     Attributes:
         client: Any: The client used to connect to the graph store.
         get: Callable[[str], List[List[str]]]: Get triplets for a given subject.
-        get_rel_map: Callable[[Optional[List[str]], int], Dict[str, List[List[str]]]]: Get subjects' rel map in max depth.
+        get_rel_map: Callable[[Optional[List[str]], int], Dict[str, List[List[str]]]]:
+            Get subjects' rel map in max depth.
         upsert_triplet: Callable[[str, str, str], None]: Upsert a triplet.
         delete: Callable[[str, str, str], None]: Delete a triplet.
-        persist: Callable[[str, Optional[fsspec.AbstractFileSystem]], None]: Persist the graph store to a file.
+        persist: Callable[[str, Optional[fsspec.AbstractFileSystem]], None]:
+            Persist the graph store to a file.
     """
 
     @property
