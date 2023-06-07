@@ -3,10 +3,10 @@
 import json
 import logging
 import os
-import fsspec
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, cast
 
+import fsspec
 from dataclasses_json import DataClassJsonMixin
 
 from llama_index.indices.query.embedding_utils import (
