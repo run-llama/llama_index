@@ -61,17 +61,17 @@ class FeedbackQueryTransformation(BaseQueryTransform):
             new_query = (
                 orig_query_str
                 + "\n----------------\n"
-                + self.construct_feedback(response=self.evaluation.response.response)
+                + self._construct_feedback(response=self.evaluation.response.response)
             )
         else:
             if self.should_resynthesize_query:
-                new_query_str = self.resynthesize_query(
+                new_query_str = self._resynthesize_query(
                     orig_query_str, self.evaluation.response, self.evaluation.feedback
                 )
             else:
                 new_query_str = orig_query_str
             new_query = (
-                self.construct_feedback(response=self.evaluation.response.response)
+                self._construct_feedback(response=self.evaluation.response.response)
                 + "\n"
                 + "Here is some feedback from the evaluator about the response given.\n"
                 + self.evaluation.feedback
@@ -81,14 +81,14 @@ class FeedbackQueryTransformation(BaseQueryTransform):
             )
         return QueryBundle(new_query, custom_embedding_strs=[orig_query_str])
 
-    def construct_feedback(self, response: Optional[str]) -> str:
+    def _construct_feedback(self, response: Optional[str]) -> str:
         """Construct feedback from response."""
         if response is None:
             return ""
         else:
             return "Here is a previous bad answer.\n" + response
 
-    def resynthesize_query(
+    def _resynthesize_query(
         self, query_str: str, response: Response, feedback: Optional[str]
     ) -> str:
         """Resynthesize query given feedback."""
