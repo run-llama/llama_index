@@ -14,9 +14,9 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from llama_index.constants import GRAPH_STORE_KEY
 from llama_index.data_structs.data_structs import KG
 from llama_index.data_structs.node import Node
-from llama_index.indices.base import BaseIndex
 from llama_index.graph_stores.simple import SimpleGraphStore
 from llama_index.graph_stores.types import GraphStore
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import (
@@ -90,7 +90,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         return self._graph_store
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        from llama_index.indices.knowledge_graph.retrievers import (
+        from llama_index.indices.knowledge_graph.retriever import (
             KGRetrieverMode,
             KGTableRetriever,
         )
@@ -125,7 +125,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> KG:
         """Build the index from nodes."""
         # do simple concatenation
-        index_struct = self.index_struct_cls(table={})
+        index_struct = self.index_struct_cls()
         for n in nodes:
             triplets = self._extract_triplets(n.get_text())
             logger.debug(f"> Extracted triplets: {triplets}")

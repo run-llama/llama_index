@@ -207,11 +207,6 @@ class KG(IndexStruct):
     # table of keywords to node ids
     table: Dict[str, Set[str]] = field(default_factory=dict)
 
-    # text_chunks: Dict[str, Node] = field(default_factory=dict)
-
-    # map of sub to (obj, relationship)
-    # rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
-
     # TBD, should support vector store, now we just persist the embedding memory
     # maybe chainable abstractions for *_stores could be designed
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
@@ -232,7 +227,6 @@ class KG(IndexStruct):
             if keyword not in self.table:
                 self.table[keyword] = set()
             self.table[keyword].add(node_id)
-        # self.text_chunks[node_id] = node
 
     def search_node_by_keyword(self, keyword: str) -> List[str]:
         """Search for nodes by keyword."""

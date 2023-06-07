@@ -207,11 +207,11 @@ class NebulaGraphStore(GraphStore):
             "session_pool_kwargs": self._session_pool_kwargs,
         }
 
-    def get(self, sub: str) -> List[List[str]]:
+    def get(self, subj: str) -> List[List[str]]:
         """Get triplets.
 
         Args:
-            sub: Subject.
+            subj: Subject.
 
         Returns:
             Triplets.
@@ -222,7 +222,7 @@ class NebulaGraphStore(GraphStore):
             # GO FROM "player100" OVER `follow``
             # YIELD `follow`.`degree`` AS rel, dst(edge) AS obj
             query = (
-                f"GO FROM {QUOTE}{sub}{QUOTE} OVER `{self._edge_types[0]}`"
+                f"GO FROM {QUOTE}{subj}{QUOTE} OVER `{self._edge_types[0]}`"
                 f"YIELD `{self._edge_types[0]}`.`{self._rel_prop_names[0]}` AS rel, "
                 f"dst(edge) AS obj"
             )
@@ -233,7 +233,7 @@ class NebulaGraphStore(GraphStore):
             # YIELD [value IN [follow.degree,serve.start_year]
             # WHERE value IS NOT EMPTY ][0] AS rel, dst(edge) AS obj
             query = (
-                f"GO FROM {QUOTE}{sub}{QUOTE} OVER "
+                f"GO FROM {QUOTE}{subj}{QUOTE} OVER "
                 f"`{'`, `'.join(self._edge_types)}` "
                 f"YIELD "
                 f"[value IN [{', '.join(self._edge_dot_rel)}] "
@@ -255,7 +255,7 @@ class NebulaGraphStore(GraphStore):
     ) -> Dict[str, List[List[str]]]:
         """Get flat rel map."""
         # The flat means for multi-hop relation path, we could get
-        # knowledge like: sub -> rel -> obj -> rel -> obj -> rel -> obj.
+        # knowledge like: subj -> rel -> obj -> rel -> obj -> rel -> obj.
         # This type of knowledge is useful for some tasks.
         # +-------------+------------------------------------+
         # | subj        | flattened_rels                     |
@@ -328,12 +328,12 @@ class NebulaGraphStore(GraphStore):
         rels_ = result.column_values("flattened_rels") or []
 
         rel_map: Dict[Any, List[Any]] = {}
-        for sub, rel in zip(subjs_, rels_):
-            sub_ = sub.cast()
+        for subj, rel in zip(subjs_, rels_):
+            subj_ = subj.cast()
             rel_ = rel.cast()
-            if sub_ not in rel_map:
-                rel_map[sub_] = []
-            rel_map[sub_].append(rel_)
+            if subj_ not in rel_map:
+                rel_map[subj_] = []
+            rel_map[subj_].append(rel_)
         return rel_map
 
     def get_rel_map(
@@ -345,11 +345,11 @@ class NebulaGraphStore(GraphStore):
         # But this makes more sense for multi-hop relation path.
 
         # lower case subjs
-        subjs = [sub.lower() for sub in subjs] if subjs else None
+        subjs = [subj.lower() for subj in subjs] if subjs else None
 
         return self.get_flat_rel_map(subjs, depth)
 
-    def upsert_triplet(self, sub: str, rel: str, obj: str) -> None:
+    def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
         # Note, to enable leveraging existing knowledge graph,
         # the (triplet -- property graph) mapping
@@ -357,10 +357,10 @@ class NebulaGraphStore(GraphStore):
         # thus we have to assume rel to be the first edge_type.prop_name
         # here in upsert_triplet().
         # This applies to the type of entity(tags) with subject and object, too,
-        # thus we have to assume sub to be the first entity.tag_name
+        # thus we have to assume subj to be the first entity.tag_name
 
-        # lower case sub, rel, obj
-        sub = sub.lower()
+        # lower case subj, rel, obj
+        subj = subj.lower()
         rel = rel.lower()
         obj = obj.lower()
 
@@ -370,31 +370,31 @@ class NebulaGraphStore(GraphStore):
         rel_hash = hash_string_to_rank(rel)
         dml_query = (
             f"INSERT VERTEX `{entity_type}`() "
-            f"  VALUES {QUOTE}{sub}{QUOTE}:();"
+            f"  VALUES {QUOTE}{subj}{QUOTE}:();"
             f"INSERT VERTEX `{entity_type}`() "
             f"  VALUES {QUOTE}{obj}{QUOTE}:();"
             f"INSERT EDGE `{edge_type}`(`{rel_prop_name}`) "
             f"  VALUES "
-            f"{QUOTE}{sub}{QUOTE}->{QUOTE}{obj}{QUOTE}"
+            f"{QUOTE}{subj}{QUOTE}->{QUOTE}{obj}{QUOTE}"
             f"@{rel_hash}:({QUOTE}{rel}{QUOTE});"
         )
         logger.debug(f"upsert_triplet() DML query: {dml_query}")
         result = self.execute(dml_query)
         assert (
             result.is_succeeded()
-        ), f"Failed to upsert triplet: {sub} {rel} {obj}, query: {dml_query}"
+        ), f"Failed to upsert triplet: {subj} {rel} {obj}, query: {dml_query}"
 
-    def delete(self, sub: str, rel: str, obj: str) -> None:
+    def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet.
         1. Similar to upsert_triplet(),
            we have to assume rel to be the first edge_type.prop_name.
-        2. After edge being deleted, we need to check if the sub or
+        2. After edge being deleted, we need to check if the subj or
            obj are isolated vertices,
            if so, delete them, too.
         """
 
-        # lower case sub, rel, obj
-        sub = sub.lower()
+        # lower case subj, rel, obj
+        subj = subj.lower()
         rel = rel.lower()
         obj = obj.lower()
 
@@ -404,19 +404,19 @@ class NebulaGraphStore(GraphStore):
         rel_hash = hash_string_to_rank(rel)
         dml_query = (
             f"DELETE EDGE `{edge_type}`"
-            f"  {QUOTE}{sub}{QUOTE}->{QUOTE}{obj}{QUOTE}@{rel_hash};"
+            f"  {QUOTE}{subj}{QUOTE}->{QUOTE}{obj}{QUOTE}@{rel_hash};"
         )
         logger.debug(f"delete() DML query: {dml_query}")
         result = self.execute(dml_query)
         assert (
             result.is_succeeded()
-        ), f"Failed to delete triplet: {sub} {rel} {obj}, query: {dml_query}"
+        ), f"Failed to delete triplet: {subj} {rel} {obj}, query: {dml_query}"
         # Get isolated vertices to be deleted
         # MATCH (s) WHERE id(s) IN ["player700"] AND NOT (s)-[]-()
         # RETURN id(s) AS isolated
         query = (
             f"MATCH (s) "
-            f"  WHERE id(s) IN [{QUOTE}{sub}{QUOTE}, {QUOTE}{obj}{QUOTE}] "
+            f"  WHERE id(s) IN [{QUOTE}{subj}{QUOTE}, {QUOTE}{obj}{QUOTE}] "
             f"  AND NOT (s)-[]-() "
             f"RETURN id(s) AS isolated"
         )

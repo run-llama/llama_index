@@ -23,7 +23,7 @@ class SimpleGraphStoreData(DataClassJsonMixin):
     """Simple Graph Store Data container.
 
     Args:
-        graph_dict (Optional[dict]): dict mapping subjects to
+        graph_dict (Optional[dict]): dict mapping subject to
     """
 
     graph_dict: Dict[str, List[List[str]]] = field(default_factory=dict)
@@ -89,9 +89,9 @@ class SimpleGraphStore(GraphStore):
         """
         return None
 
-    def get(self, sub: str) -> List[List[str]]:
+    def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
-        return self._data.graph_dict.get(sub, [])
+        return self._data.graph_dict.get(subj, [])
 
     def get_rel_map(
         self, subjs: Optional[List[str]] = None, depth: int = 2
@@ -99,20 +99,20 @@ class SimpleGraphStore(GraphStore):
         """Get depth-aware rel map."""
         return self._data.get_rel_map(subjs=subjs, depth=depth)
 
-    def upsert_triplet(self, sub: str, rel: str, obj: str) -> None:
+    def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
-        if sub not in self._data.graph_dict:
-            self._data.graph_dict[sub] = []
-        if (rel, obj) not in self._data.graph_dict[sub]:
-            self._data.graph_dict[sub].append([rel, obj])
+        if subj not in self._data.graph_dict:
+            self._data.graph_dict[subj] = []
+        if (rel, obj) not in self._data.graph_dict[subj]:
+            self._data.graph_dict[subj].append([rel, obj])
 
-    def delete(self, sub: str, rel: str, obj: str) -> None:
+    def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
-        if sub in self._data.graph_dict:
-            if (rel, obj) in self._data.graph_dict[sub]:
-                self._data.graph_dict[sub].remove([rel, obj])
-                if len(self._data.graph_dict[sub]) == 0:
-                    del self._data.graph_dict[sub]
+        if subj in self._data.graph_dict:
+            if (rel, obj) in self._data.graph_dict[subj]:
+                self._data.graph_dict[subj].remove([rel, obj])
+                if len(self._data.graph_dict[subj]) == 0:
+                    del self._data.graph_dict[subj]
 
     def persist(
         self,

@@ -17,6 +17,8 @@ from llama_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 DEFAULT_NODE_SCORE = 1000.0
+GLOBAL_EXPLORE_NODE_LIMIT = 3
+REL_TEXT_LIMIT = 30
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +145,7 @@ class KGTableRetriever(BaseRetriever):
                     # While it's more expensive, thus to be turned off by default,
                     # it can be useful for some applications.
                     node_ids = self._index_struct.search_node_by_keyword(keyword)
-                    for node_id in node_ids:
+                    for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
                         if node_id in node_visited:
                             continue
                         extended_subjs = self._get_keywords(
@@ -210,6 +212,17 @@ class KGTableRetriever(BaseRetriever):
         # remove any duplicates from keyword + embedding queries
         if self._retriever_mode == KGRetrieverMode.HYBRID:
             rel_texts = list(set(rel_texts))
+
+            # remove shorter rel_texts that are substrings of longer rel_texts
+            rel_texts.sort(key=len, reverse=True)
+            for i in range(len(rel_texts)):
+                for j in range(i + 1, len(rel_texts)):
+                    if rel_texts[j] in rel_texts[i]:
+                        rel_texts[j] = ""
+            rel_texts = [rel_text for rel_text in rel_texts if rel_text != ""]
+
+            # truncate rel_texts to REL_TEXT_LIMIT
+            rel_texts = rel_texts[:REL_TEXT_LIMIT]
 
         sorted_chunk_indices = sorted(
             list(chunk_indices_count.keys()),
