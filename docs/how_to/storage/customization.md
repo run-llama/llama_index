@@ -109,15 +109,8 @@ pinecone.create_index(
 )
 index = pinecone.Index("quickstart")
 
-# can define filters specific to this vector index (so you can
-# reuse pinecone indexes)
-metadata_filters = {"title": "paul_graham_essay"}
-
 # construct vector store
-vector_store = PineconeVectorStore(
-    pinecone_index=index,
-    metadata_filters=metadata_filters
-)
+vector_store = PineconeVectorStore(pinecone_index=index)
 
 # create storage context
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
@@ -127,7 +120,13 @@ documents = SimpleDirectoryReader("./data").load_data()
 
 # create index, which will insert documents/vectors to pinecone
 index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+```
 
-# re-build/load the index by conntect to the same vector store
-loaded_index = VectorStoreIndex([], storage_context=storage_context)
+If you have an existing vector store with data already loaded in, 
+you can connect to it and directly create a `VectorStoreIndex` as follows:
+
+```python
+index = pinecone.Index("quickstart")
+vector_store = PineconeVectorStore(pinecone_index=index)
+loaded_index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
 ```
