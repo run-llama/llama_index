@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from llama_index.data_structs.node import Node, NodeWithScore
-from llama_index.graph_stores.types import GraphStore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
@@ -63,7 +62,6 @@ class KGTableRetriever(BaseRetriever):
             "embedding", or "hybrid".
         similarity_top_k (int): The number of top embeddings to use
             (if embeddings are used).
-        graph_store (Optional[GraphStore]): The graph store to use for queries.
         graph_store_query_depth (int): The depth of the graph store query.
     """
 
@@ -76,7 +74,6 @@ class KGTableRetriever(BaseRetriever):
         include_text: bool = True,
         retriever_mode: Optional[KGRetrieverMode] = KGRetrieverMode.KEYWORD,
         similarity_top_k: int = 2,
-        graph_store: Optional[GraphStore] = None,
         graph_store_query_depth: int = 2,
         use_global_node_triplets: bool = False,
         **kwargs: Any,
@@ -96,9 +93,7 @@ class KGTableRetriever(BaseRetriever):
         self._include_text = include_text
         self._retriever_mode = KGRetrieverMode(retriever_mode)
 
-        if graph_store is None:
-            raise ValueError("Must provide a graph store for KG queries.")
-        self._graph_store = graph_store
+        self._graph_store = index.graph_store
         self.graph_store_query_depth = graph_store_query_depth
         self.use_global_node_triplets = use_global_node_triplets
 

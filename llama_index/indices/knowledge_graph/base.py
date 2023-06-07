@@ -58,7 +58,6 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         storage_context: Optional[StorageContext] = None,
         kg_triple_extract_template: Optional[KnowledgeGraphPrompt] = None,
         max_triplets_per_chunk: int = 10,
-        graph_store: Optional[GraphStore] = None,
         include_embeddings: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -75,7 +74,6 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                 max_knowledge_triplets=self.max_triplets_per_chunk
             )
         )
-        self._graph_store = graph_store or SimpleGraphStore()
 
         super().__init__(
             nodes=nodes,
@@ -106,8 +104,6 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
         if len(self.index_struct.embedding_dict) > 0 and "retriever_mode" not in kwargs:
             kwargs["retriever_mode"] = KGRetrieverMode.HYBRID
-        if "graph_store" not in kwargs:
-            kwargs["graph_store"] = self._graph_store
 
         return KGTableRetriever(self, **kwargs)
 
