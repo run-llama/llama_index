@@ -10,6 +10,9 @@ from llama_index.vector_stores.types import (
 
 
 def get_data_model(base: Type, index_name: str) -> Any:
+    """
+    This part create a dynamic sqlalchemy model with a new table
+    """
     from pgvector.sqlalchemy import Vector
     from sqlalchemy import Column
     from sqlalchemy.dialects.postgresql import BIGINT, VARCHAR, JSON
@@ -53,6 +56,7 @@ class PGVectorStore(VectorStore):
         self.table_name: str = table_name.lower()
         self._conn = self._connect()
         self._base = declarative_base()
+        # sqlalchemy model
         self.table_class = get_data_model(self._base, self.table_name)
         self._create_extension()
         self._create_tables_if_not_exists()
