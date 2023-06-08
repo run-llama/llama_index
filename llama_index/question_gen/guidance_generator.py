@@ -1,20 +1,21 @@
-from typing import List, Optional, Sequence
+import re
+from typing import TYPE_CHECKING, List, Optional, Sequence
 
-from guidance import Program
-from guidance.llms import LLM, OpenAI
+from llama_index.prompts.utils import convert_to_handlebars
+
+if TYPE_CHECKING:
+    from guidance import Program
+    from guidance.llms import LLM
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.question_gen.prompts import (DEFAULT_SUB_QUESTION_PROMPT_TMPL,
-                                              build_tools_text)
+from llama_index.question_gen.prompts import (
+    DEFAULT_SUB_QUESTION_PROMPT_TMPL,
+    build_tools_text,
+)
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.tools.types import ToolMetadata
 
-
-def _convert_fstring_to_guidance_template(prompt_template: str) -> str:
-    pass
-
-
-DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL = _convert_fstring_to_guidance_template(
+DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL = convert_to_handlebars(
     DEFAULT_SUB_QUESTION_PROMPT_TMPL
 )
 
@@ -24,7 +25,6 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
         self,
         guidance_program: Program,
     ) -> None:
-        # construct guidance program
         self._guidance_program = guidance_program
 
     @classmethod
@@ -33,8 +33,18 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
         prompt_template_str: str = DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL,
         llm: Optional[LLM] = None,
     ):
+        try:
+            from guidance import Program
+            from guidance.llms import OpenAI
+        except ImportError as e:
+            raise ImportError(
+                "guidance package not found." "please run `pip install guidance`"
+            )
+
+        # construct guidance program
         llm = llm or OpenAI("text-davinci-003")
         guidance_program = Program(prompt_template_str, llm=llm)
+
         return cls(guidance_program)
 
     def generate(
@@ -54,4 +64,5 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
     async def agenerate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle
     ) -> List[SubQuestion]:
-        pass
+        # TODO: implement async version
+        return self.generate(tools=tools, query=query)
