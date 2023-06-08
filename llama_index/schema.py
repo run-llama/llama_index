@@ -18,7 +18,8 @@ def _validate_is_flat_dict(metadata_dict: dict) -> None:
         if not isinstance(key, str):
             raise ValueError("Metadata key must be str!")
         if not isinstance(val, (str, int, float)):
-            raise ValueError("Value must be one of (str, int, float)")
+            if val is not None:
+                raise ValueError("Value must be one of (str, int, float)")
 
 
 @dataclass
