@@ -26,12 +26,12 @@ def connection_check() -> None:
 
 
 try:
-    from psycopg2 import OperationalError  # noqa: F401
+
     import psycopg2
 
     connection_check()
     postgres_not_available = False
-except (ImportError, OperationalError):
+except (ImportError, Exception):
     postgres_not_available = True
 
 
