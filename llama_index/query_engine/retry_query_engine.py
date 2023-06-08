@@ -54,8 +54,8 @@ class RetryQueryEngine(BaseQueryEngine):
             new_query_engine = RetryQueryEngine(
                 self._query_engine, self._evaluator, self.max_retries - 1
             )
-            query_transformer = FeedbackQueryTransformation(eval)
-            new_query = query_transformer.run(query_bundle)
+            query_transformer = FeedbackQueryTransformation()
+            new_query = query_transformer.run(query_bundle, {"evaluation": eval})
             return new_query_engine.query(new_query)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
@@ -115,8 +115,7 @@ class RetryGuidelineQueryEngine(BaseQueryEngine):
                 self.max_retries - 1,
                 self.callback_manager,
             )
-            self.query_transformer.set_eval(eval)
-            new_query = self.query_transformer.run(query_bundle)
+            new_query = self.query_transformer.run(query_bundle, {"evaluation": eval})
             logger.debug("New query: %s", new_query.query_str)
             return new_query_engine.query(new_query)
 
