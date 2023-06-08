@@ -131,7 +131,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             
         return response
 
-    async def achat(self, message: str, user_id: str = None) -> RESPONSE_TYPE:
+    async def achat(self, message: str, user_id: str = '') -> RESPONSE_TYPE:
         # Retrieves specific chat history
         user_chat_history = get_user_chat_history(self._chat_history, user_id)
 
@@ -147,23 +147,23 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         response = await self._query_engine.aquery(condensed_question)
 
         # Adding new user query and response
-        user_chat_history = user_chat_history + '\nHuman: ' + message + ' \nAssistant: ' + str(response)
+        user_chat_history = user_chat_history + '\nHuman: ' + message + '\nAssistant: ' + str(response)
 
         # Updating chat history
-        if user_id:
+        if user_id != '':
             self._chat_history[user_id] = user_chat_history
         else:
             self._chat_history["default"] = user_chat_history
 
         return response
 
-    def reset(self, user_id: str = None, reset_all: bool = False) -> None:
+    def reset(self, user_id: str = '', reset_all: bool = False) -> None:
         # Clear chat history for particular user_id or default chat history
         # from the dict. If reset_all is set to True, delete every conversation. 
         if reset_all:
             self._chat_history = {"default":""}
         
-        elif user_id and self._chat_history.get(user_id):
+        elif user_id != '' and self._chat_history.get(user_id):
             del self._chat_history[user_id]
         
         else:
