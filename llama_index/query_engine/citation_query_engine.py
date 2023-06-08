@@ -155,9 +155,6 @@ class CitaitonQueryEngine(RetrieverQueryEngine):
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
-        import pdb
-
-        pdb.set_trace()
         nodes = self._create_citation_nodes(nodes)
         response = self._response_synthesizer.synthesize(
             query_bundle=query_bundle,
@@ -192,9 +189,6 @@ class CitaitonQueryEngine(RetrieverQueryEngine):
             CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_id
         )
 
-        import pdb
-
-        pdb.set_trace()
         response = self._response_synthesizer.synthesize(
             query_bundle=query_bundle,
             nodes=nodes,
