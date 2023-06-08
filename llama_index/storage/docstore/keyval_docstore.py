@@ -172,6 +172,8 @@ class KVDocumentStore(BaseDocumentStore):
         if ref_doc_info is not None:
             ref_doc_obj = RefDocInfo(**ref_doc_info)
 
+            ref_doc_obj.doc_ids.remove(doc_id)
+
             # delete ref_doc from collection if it has no more doc_ids
             if len(ref_doc_obj.doc_ids) > 0:
                 self._kvstore.put(
@@ -180,10 +182,7 @@ class KVDocumentStore(BaseDocumentStore):
                     collection=self._ref_doc_collection,
                 )
 
-            ref_doc_obj.doc_ids.remove(doc_id)
-
-            if len(ref_doc_obj.doc_ids) == 0:
-                self._kvstore.delete(ref_doc_id, collection=self._metadata_collection)
+            self._kvstore.delete(ref_doc_id, collection=self._metadata_collection)
 
     def delete_document(
         self, doc_id: str, raise_error: bool = True, remove_ref_doc_node: bool = True
