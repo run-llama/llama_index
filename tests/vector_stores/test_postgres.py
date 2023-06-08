@@ -16,19 +16,15 @@ TEST_DB = "test_vector_db"
 TEST_TABLE_NAME = "lorem_ipsum"
 
 
-def connection_check() -> None:
+try:
     import sqlalchemy  # noqa: F401
     import pgvector  # noqa: F401
     import psycopg2  # noqa: F401
 
+    # connection check
     conn = psycopg2.connect(**PARAMS)  # type: ignore
     conn.close()
 
-
-try:
-    import psycopg2  # noqa: F811
-
-    connection_check()
     postgres_not_available = False
 except (ImportError, Exception):
     postgres_not_available = True
