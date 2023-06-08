@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### New Features
-- None
+- Added support for graph stores under the hood, and initial support for Nebula KG. More docs coming soon!
 
 ### Bug Fixes
 - None
