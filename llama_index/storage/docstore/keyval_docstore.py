@@ -207,8 +207,9 @@ class KVDocumentStore(BaseDocumentStore):
                 return
 
         for doc_id in ref_doc_info.doc_ids:
-            self.delete_document(doc_id, raise_error=False, remove_ref_doc_node=True)
+            self.delete_document(doc_id, raise_error=False, remove_ref_doc_node=False)
 
+        self._kvstore.delete(ref_doc_id, collection=self._metadata_collection)
         self._kvstore.delete(ref_doc_id, collection=self._ref_doc_collection)
 
     def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
