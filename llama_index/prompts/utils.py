@@ -34,27 +34,3 @@ def get_biggest_prompt(prompts: List[Prompt]) -> Prompt:
     empty_prompt_txt_lens = [len(txt) for txt in empty_prompt_txts]
     biggest_prompt = prompts[empty_prompt_txt_lens.index(max(empty_prompt_txt_lens))]
     return biggest_prompt
-
-
-def convert_to_handlebars(text: str):
-    """Convert a python format string to handlebars template.
-
-    In python format string, single braces {} are used for variable substitution,
-        and double braces {{}} are used for escaping actual braces (e.g. for JSON dict)
-    In handlebars template, double braces {{}} are used for variable substitution,
-        and single braces are actual braces (e.g. for JSON dict)
-    """
-    # Replace double braces with a temporary placeholder
-    var_left = "TEMP_BRACE_LEFT"
-    var_right = "TEMP_BRACE_RIGHT"
-    text = text.replace("{{", var_left)
-    text = text.replace("}}", var_right)
-
-    # Replace single braces with double braces
-    text = text.replace("{", "{{")
-    text = text.replace("}", "}}")
-
-    # Replace the temporary placeholder with single braces
-    text = text.replace(var_left, "{")
-    text = text.replace(var_right, "}")
-    return text

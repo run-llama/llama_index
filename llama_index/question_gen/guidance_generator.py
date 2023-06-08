@@ -1,17 +1,17 @@
-import re
 from typing import TYPE_CHECKING, List, Optional, Sequence
 
-from llama_index.prompts.utils import convert_to_handlebars
+from pydantic import BaseModel
+
+from llama_index.prompts.guidance_utils import (convert_to_handlebars,
+                                                pydantic_to_guidance)
 
 if TYPE_CHECKING:
     from guidance import Program
     from guidance.llms import LLM
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.question_gen.prompts import (
-    DEFAULT_SUB_QUESTION_PROMPT_TMPL,
-    build_tools_text,
-)
+from llama_index.question_gen.prompts import (DEFAULT_SUB_QUESTION_PROMPT_TMPL,
+                                              build_tools_text)
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.tools.types import ToolMetadata
 
@@ -19,6 +19,8 @@ DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL = convert_to_handlebars(
     DEFAULT_SUB_QUESTION_PROMPT_TMPL
 )
 
+class SubQuestionList(BaseModel):
+    sub_questions: List[SubQuestion]
 
 class GuidanceQuestionGenerator(BaseQuestionGenerator):
     def __init__(
@@ -43,7 +45,9 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
 
         # construct guidance program
         llm = llm or OpenAI("text-davinci-003")
-        guidance_program = Program(prompt_template_str, llm=llm)
+        output_str = pydantic_to_guidance(SubQuestionList)
+        full_str = prompt_template_str + "\n" + output_str
+        guidance_program = Program(full_str, llm=llm)
 
         return cls(guidance_program)
 
