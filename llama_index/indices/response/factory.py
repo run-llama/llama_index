@@ -3,7 +3,6 @@ from typing import Optional
 from llama_index.indices.response.accumulate import Accumulate
 from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.response.compact_and_accumulate import CompactAndAccumulate
-from llama_index.indices.response.compact_citation import Citation
 from llama_index.indices.response.compact_and_refine import CompactAndRefine
 from llama_index.indices.response.generation import Generation
 from llama_index.indices.response.refine import Refine
@@ -82,12 +81,6 @@ def get_response_builder(
             text_qa_template=text_qa_template,
             streaming=streaming,
             use_async=use_async,
-        )
-    elif mode == ResponseMode.COMPACT_CITE:
-        return Citation(
-            service_context=service_context,
-            text_qa_template=text_qa_template,
-            streaming=streaming,
         )
     else:
         raise ValueError(f"Unknown mode: {mode}")
