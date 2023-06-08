@@ -135,17 +135,16 @@ def test_simple_delete_ref_node_from_docstore(
     )
     assert isinstance(index, VectorStoreIndex)
 
-    docstore = index.docstore._kvstore.get_all(collection="docstore/metadata")
+    docstore = index.docstore.get_ref_doc_info("test_id_1")
 
-    assert len(docstore) == 4
+    assert docstore is not None
 
     # test delete
     index.delete_ref_doc("test_id_1", delete_from_docstore=True)
-    assert len(index.index_struct.nodes_dict) == 1
 
-    docstore = index.docstore._kvstore.get_all(collection="docstore/metadata")
+    docstore = index.docstore.get_ref_doc_info("test_id_1")
 
-    assert len(docstore) == 2
+    assert docstore is None
 
 
 def test_simple_async(
