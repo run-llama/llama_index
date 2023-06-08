@@ -230,7 +230,14 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
 
         self.callback_manager.on_event_end(
             CBEventType.LLM,
-            payload={"response": completion, "formatted_prompt": formatted_prompt},
+            payload={
+                "response": completion,
+                "formatted_prompt": formatted_prompt,
+                "formatted_prompt_tokens_count": inputs["input_ids"].size(1),
+                "prediction_tokens_count": len(completion_tokens),
+                "total_tokens_used": len(completion_tokens)
+                + inputs["input_ids"].size(1),
+            },
             event_id=event_id,
         )
         return completion, formatted_prompt
