@@ -22,8 +22,8 @@ try:
     import psycopg2  # noqa: F401
 
     # connection check
-    conn = psycopg2.connect(**PARAMS)  # type: ignore
-    conn.close()
+    conn__ = psycopg2.connect(**PARAMS)  # type: ignore
+    conn__.close()
 
     postgres_not_available = False
 except (ImportError, Exception):
