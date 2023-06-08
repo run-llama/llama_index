@@ -38,23 +38,21 @@ class FeedbackQueryTransformation(BaseQueryTransform):
 
     def __init__(
         self,
-        evaluation: Optional[Evaluation] = None,
         llm_predictor: Optional[BaseLLMPredictor] = None,
         resynthesize_query: bool = False,
         resynthesis_prompt: Optional[Prompt] = None,
     ) -> None:
         super().__init__()
-        self.evaluation = evaluation
         self.llm_predictor = llm_predictor or LLMPredictor()
         self.should_resynthesize_query = resynthesize_query
         self.resynthesis_prompt = resynthesis_prompt or DEFAULT_RESYNTHESIS_PROMPT
 
-    def set_eval(self, evaluation: Evaluation) -> None:
-        """Set evaluation."""
-        self.evaluation = evaluation
-
     def _run(self, query_bundle: QueryBundle, extra_info: Dict) -> QueryBundle:
         orig_query_str = query_bundle.query_str
+        if extra_info.get("evaluation") and isinstance(
+            extra_info.get("evaluation"), Evaluation
+        ):
+            self.evaluation = extra_info.get("evaluation")
         if self.evaluation is None:
             raise ValueError("Evaluation is not set.")
         if self.evaluation.feedback == "YES" or self.evaluation.feedback == "NO":
@@ -81,7 +79,8 @@ class FeedbackQueryTransformation(BaseQueryTransform):
             )
         return QueryBundle(new_query, custom_embedding_strs=[orig_query_str])
 
-    def _construct_feedback(self, response: Optional[str]) -> str:
+    @staticmethod
+    def _construct_feedback(response: Optional[str]) -> str:
         """Construct feedback from response."""
         if response is None:
             return ""

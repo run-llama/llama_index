@@ -18,6 +18,7 @@ class GuidelineEvaluator(BaseEvaluator):
     Args:
         service_context(ServiceContext): The service context to use for evaluation.
         guidelines(str): User-added guidelines to use for evaluation.
+        eval_template(str): The template to use for evaluation.
     """
 
     def __init__(
