@@ -38,6 +38,7 @@ def is_chat_model(service_context: ServiceContext) -> bool:
         return False
     
 def get_user_chat_history(chat_history: dict, user_id: str = '') -> str:
+    user_chat_history = ""
     # Picking specific user chat history
     if user_id != '' and chat_history.get(user_id):
         user_chat_history = chat_history.get(user_id)
