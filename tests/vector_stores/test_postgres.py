@@ -102,7 +102,7 @@ def test_add_to_db_and_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-def test_query(db: None, node_embeddings: List[NodeWithEmbedding]) -> None:
+def test_add_to_db_query_and_delete(db: None, node_embeddings: List[NodeWithEmbedding]) -> None:
     pg = PGVectorStore.from_params(
         **PARAMS,  # type: ignore
         database=TEST_DB,
@@ -110,3 +110,16 @@ def test_query(db: None, node_embeddings: List[NodeWithEmbedding]) -> None:
     )
     pg.add(node_embeddings)
     assert isinstance(pg, PGVectorStore)
+
+    q = VectorStoreQuery(query_embedding=[0] * 1536, similarity_top_k=1)
+
+    res = pg.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 1
+    assert res.nodes[0].doc_id == "bbb"
+    pg.delete("bbb")
+
+    res = pg.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 1
+    assert res.nodes[0].doc_id == "aaa"
