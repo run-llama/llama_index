@@ -18,6 +18,9 @@ def _validate_is_flat_dict(metadata_dict: dict) -> None:
         if not isinstance(key, str):
             raise ValueError("Metadata key must be str!")
         if not isinstance(val, (str, int, float)):
+            """
+            if val is None, should not raise error because the default value of a key in a dictionary is None
+            """
             if val is not None:
                 raise ValueError("Value must be one of (str, int, float)")
 
