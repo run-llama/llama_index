@@ -61,12 +61,8 @@ class PGVectorStore(VectorStore):
         self._create_tables_if_not_exists()
 
     def __del__(self) -> None:
-        try:
-            print(self._conn)
-            self._conn.close()
-            self.engine.dispose()
-        except:
-            pass
+        self._conn.close()
+        self.engine.dispose()
 
     @classmethod
     def from_params(

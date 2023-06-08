@@ -27,7 +27,7 @@ def connection_check() -> None:
 
 try:
 
-    import psycopg2
+    import psycopg2  # noqa: F401
 
     connection_check()
     postgres_not_available = False
@@ -48,11 +48,11 @@ def db(conn: Any) -> Generator:
     conn.autocommit = True
 
     with conn.cursor() as c:
-        c.execute("CREATE DATABASE vector_db")
+        c.execute(f"CREATE DATABASE {TEST_DB}")
         conn.commit()
     yield
     with conn.cursor() as c:
-        c.execute("DROP DATABASE vector_db")
+        c.execute(f"DROP DATABASE {TEST_DB}")
         conn.commit()
 
 
