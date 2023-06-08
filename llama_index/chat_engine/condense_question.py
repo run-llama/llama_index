@@ -54,7 +54,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         cls,
         query_engine: BaseQueryEngine,
         condense_question_prompt: Optional[Prompt] = None,
-        chat_history: dict = {"default":""},
+        chat_history: dict = {"default": ""},
         service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -69,12 +69,10 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             condense_question_prompt,
             chat_history,
             service_context,
-            verbose=verbose
+            verbose=verbose,
         )
 
-    def _condense_question(
-        self, user_chat_history: str, last_message: str
-    ) -> str:
+    def _condense_question(self, user_chat_history: str, last_message: str) -> str:
         """
         Generate standalone question from conversation context and last message.
         """
@@ -104,8 +102,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         )
         return response
 
-    def chat(self, message: str, user_id: str = '') -> RESPONSE_TYPE:
-
+    def chat(self, message: str, user_id: str = "") -> RESPONSE_TYPE:
         # Retrieves specific chat history
         user_chat_history = get_user_chat_history(self._chat_history, user_id)
 
@@ -116,22 +113,22 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         logger.info(log_str)
         if self._verbose:
             print(log_str)
-
         # Query with standalone question
         response = self._query_engine.query(condensed_question)
 
         # Adding new user query and response
-        user_chat_history = user_chat_history + '\nHuman: ' + message + '\nAssistant: ' + str(response)
+        user_chat_history = (
+            user_chat_history + "\nHuman: " + message + "\nAssistant: " + str(response)
+        )
 
         # Updating chat history
-        if user_id != '':
+        if user_id != "":
             self._chat_history[user_id] = user_chat_history
         else:
             self._chat_history["default"] = user_chat_history
-            
         return response
 
-    async def achat(self, message: str, user_id: str = '') -> RESPONSE_TYPE:
+    async def achat(self, message: str, user_id: str = "") -> RESPONSE_TYPE:
         # Retrieves specific chat history
         user_chat_history = get_user_chat_history(self._chat_history, user_id)
 
@@ -142,30 +139,27 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         logger.info(log_str)
         if self._verbose:
             print(log_str)
-
         # Query with standalone question
         response = await self._query_engine.aquery(condensed_question)
 
         # Adding new user query and response
-        user_chat_history = user_chat_history + '\nHuman: ' + message + '\nAssistant: ' + str(response)
+        user_chat_history = (
+            user_chat_history + "\nHuman: " + message + "\nAssistant: " + str(response)
+        )
 
         # Updating chat history
-        if user_id != '':
+        if user_id != "":
             self._chat_history[user_id] = user_chat_history
         else:
             self._chat_history["default"] = user_chat_history
-
         return response
 
-    def reset(self, user_id: str = '', reset_all: bool = False) -> None:
+    def reset(self, user_id: str = "", reset_all: bool = False) -> None:
         # Clear chat history for particular user_id or default chat history
-        # from the dict. If reset_all is set to True, delete every conversation. 
+        # from the dict. If reset_all is set to True, delete every conversation.
         if reset_all:
-            self._chat_history = {"default":""}
-        
-        elif user_id != '' and self._chat_history.get(user_id):
+            self._chat_history = {"default": ""}
+        elif user_id != "" and self._chat_history.get(user_id):
             del self._chat_history[user_id]
-        
         else:
             self._chat_history["default"] = ""
-        
