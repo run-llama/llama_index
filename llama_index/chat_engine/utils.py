@@ -36,7 +36,8 @@ def is_chat_model(service_context: ServiceContext) -> bool:
     except AttributeError:
         # NOTE: in testing, our mock llm predictor doesn't have llm attribute
         return False
-    
+
+
 def get_user_chat_history(chat_history: dict, user_id: str = "") -> str:
     user_chat_history = ""
     # Picking specific user chat history
