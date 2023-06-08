@@ -16,6 +16,8 @@ from llama_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 DEFAULT_NODE_SCORE = 1000.0
+GLOBAL_EXPLORE_NODE_LIMIT = 3
+REL_TEXT_LIMIT = 30
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,7 @@ class KGTableRetriever(BaseRetriever):
             "embedding", or "hybrid".
         similarity_top_k (int): The number of top embeddings to use
             (if embeddings are used).
+        graph_store_query_depth (int): The depth of the graph store query.
     """
 
     def __init__(
@@ -71,6 +74,8 @@ class KGTableRetriever(BaseRetriever):
         include_text: bool = True,
         retriever_mode: Optional[KGRetrieverMode] = KGRetrieverMode.KEYWORD,
         similarity_top_k: int = 2,
+        graph_store_query_depth: int = 2,
+        use_global_node_triplets: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -87,6 +92,10 @@ class KGTableRetriever(BaseRetriever):
         self.similarity_top_k = similarity_top_k
         self._include_text = include_text
         self._retriever_mode = KGRetrieverMode(retriever_mode)
+
+        self._graph_store = index.graph_store
+        self.graph_store_query_depth = graph_store_query_depth
+        self.use_global_node_triplets = use_global_node_triplets
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -115,6 +124,7 @@ class KGTableRetriever(BaseRetriever):
     ) -> List[NodeWithScore]:
         """Get nodes for response."""
         logger.info(f"> Starting query: {query_bundle.query_str}")
+        node_visited = set()
         keywords = self._get_keywords(query_bundle.query_str)
         logger.info(f"> Query keywords: {keywords}")
         rel_texts = []
@@ -123,12 +133,39 @@ class KGTableRetriever(BaseRetriever):
 
         if self._retriever_mode != KGRetrieverMode.EMBEDDING:
             for keyword in keywords:
-                cur_rel_texts = self._index_struct.get_rel_map_texts(keyword)
-                rel_texts.extend(cur_rel_texts)
-                cur_rel_map[keyword] = self._index_struct.get_rel_map_tuples(keyword)
-                if self._include_text:
-                    for node_id in self._index_struct.get_node_ids(keyword):
-                        chunk_indices_count[node_id] += 1
+                subjs = set((keyword,))
+                if self.use_global_node_triplets:
+                    # Get nodes from keyword search, and add them to the subjs set.
+                    # This helps introduce more global knowledge into the query.
+                    # While it's more expensive, thus to be turned off by default,
+                    # it can be useful for some applications.
+                    node_ids = self._index_struct.search_node_by_keyword(keyword)
+                    for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
+                        if node_id in node_visited:
+                            continue
+                        extended_subjs = self._get_keywords(
+                            self._docstore.get_node(node_id).get_text()
+                        )
+                        node_visited.add(node_id)
+                        subjs.update(extended_subjs)
+                        if self._include_text:
+                            chunk_indices_count[node_id] += 1
+
+                rel_map = self._graph_store.get_rel_map(
+                    list(subjs), self.graph_store_query_depth
+                )
+                logger.debug(f"rel_map: {rel_map}")
+
+                if not rel_map:
+                    continue
+                rel_texts.extend(
+                    [
+                        f"{sub} {rel_obj}"
+                        for sub, rel_objs in rel_map.items()
+                        for rel_obj in rel_objs
+                    ]
+                )
+                cur_rel_map.update(rel_map)
 
         if (
             self._retriever_mode != KGRetrieverMode.KEYWORD
@@ -156,9 +193,9 @@ class KGTableRetriever(BaseRetriever):
             if self._include_text:
                 keywords = self._extract_rel_text_keywords(top_rel_texts)
                 nested_node_ids = [
-                    self._index_struct.get_node_ids(keyword) for keyword in keywords
+                    self._index_struct.search_node_by_keyword(keyword)
+                    for keyword in keywords
                 ]
-                # flatten list
                 node_ids = [_id for ids in nested_node_ids for _id in ids]
                 for node_id in node_ids:
                     chunk_indices_count[node_id] += 1
@@ -170,6 +207,17 @@ class KGTableRetriever(BaseRetriever):
         # remove any duplicates from keyword + embedding queries
         if self._retriever_mode == KGRetrieverMode.HYBRID:
             rel_texts = list(set(rel_texts))
+
+            # remove shorter rel_texts that are substrings of longer rel_texts
+            rel_texts.sort(key=len, reverse=True)
+            for i in range(len(rel_texts)):
+                for j in range(i + 1, len(rel_texts)):
+                    if rel_texts[j] in rel_texts[i]:
+                        rel_texts[j] = ""
+            rel_texts = [rel_text for rel_text in rel_texts if rel_text != ""]
+
+            # truncate rel_texts to REL_TEXT_LIMIT
+            rel_texts = rel_texts[:REL_TEXT_LIMIT]
 
         sorted_chunk_indices = sorted(
             list(chunk_indices_count.keys()),
@@ -199,8 +247,10 @@ class KGTableRetriever(BaseRetriever):
         # add relationships as Node
         # TODO: make initial text customizable
         rel_initial_text = (
-            "The following are knowledge triplets "
-            "in the form of (subset, predicate, object):"
+            f"The following are knowledge triplets in max depth"
+            f" {self.graph_store_query_depth} "
+            f"in the form of "
+            f"`subject [predicate, object, predicate_next_hop, object_next_hop ...]`"
         )
         rel_info = [rel_initial_text] + rel_texts
         rel_node_info = {

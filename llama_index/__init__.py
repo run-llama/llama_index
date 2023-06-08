@@ -25,6 +25,10 @@ from llama_index.indices.keyword_table import (
     GPTRAKEKeywordTableIndex,
     GPTSimpleKeywordTableIndex,
 )
+from llama_index.indices.knowledge_graph import (
+    KnowledgeGraphIndex,
+    GPTKnowledgeGraphIndex,
+)
 from llama_index.indices.list import ListIndex, GPTListIndex
 from llama_index.indices.tree import TreeIndex, GPTTreeIndex
 from llama_index.indices.vector_store import VectorStoreIndex, GPTVectorStoreIndex
@@ -148,8 +152,10 @@ __all__ = [
     "PandasIndex",
     "EmptyIndex",
     "DocumentSummaryIndex",
+    "KnowledgeGraphIndex",
     # indices - legacy names
     "GPTKeywordTableIndex",
+    "GPTKnowledgeGraphIndex",
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
     "GPTListIndex",
