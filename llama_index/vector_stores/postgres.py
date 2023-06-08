@@ -7,6 +7,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.utils import node_to_metadata_dict
 
 
 def get_data_model(base: Type, index_name: str) -> Any:
@@ -37,23 +38,21 @@ class PGVectorStore(VectorStore):
     def __init__(self, connection_string: str, table_name: str) -> None:
         try:
             import sqlalchemy  # noqa: F401
-        except ImportError:
-            raise ImportError("`sqlalchemy` package not found")
-
-        try:
             import pgvector  # noqa: F401
-        except ImportError:
-            raise ImportError("`pgvector` package not found")
-
-        try:
             import psycopg2  # noqa: F401
         except ImportError:
-            raise ImportError("`psycopg2-binary` package not found")
-
-        from sqlalchemy.orm import declarative_base
+            raise ImportError(
+                """`sqlalchemy`, `pgvector`, and 
+            `psycopg2-binary` packages should be pre installed"""
+            )
 
         self.connection_string = connection_string
         self.table_name: str = table_name.lower()
+        self._conn: Any
+
+        # def __enter__(self):
+        from sqlalchemy.orm import declarative_base
+
         self._conn = self._connect()
         self._base = declarative_base()
         # sqlalchemy model
@@ -61,18 +60,34 @@ class PGVectorStore(VectorStore):
         self._create_extension()
         self._create_tables_if_not_exists()
 
+    def __del__(self) -> None:
+        try:
+            print(self._conn)
+            self._conn.close()
+            self.engine.dispose()
+        except:
+            pass
+
     @classmethod
-    def conn_str_from_params(
-        cls, host: str, port: int, database: str, user: str, password: str
-    ) -> str:
+    def from_params(
+        cls,
+        host: str,
+        port: int,
+        database: str,
+        user: str,
+        password: str,
+        table_name: str,
+    ) -> "PGVectorStore":
         """Return connection string from database parameters."""
-        return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+        conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+        return cls(connection_string=conn_str, table_name=table_name)
 
     def _connect(self) -> Any:
         import sqlalchemy
 
-        engine = sqlalchemy.create_engine(self.connection_string)
-        conn: sqlalchemy.engine.Connection = engine.connect()
+        self.engine = sqlalchemy.create_engine(self.connection_string)
+        conn: sqlalchemy.engine.Connection = self.engine.connect()
+
         return conn
 
     def _create_tables_if_not_exists(self) -> None:
@@ -100,7 +115,7 @@ class PGVectorStore(VectorStore):
                     doc_id=result.id,
                     embedding=result.embedding,
                     text=result.node.text,
-                    extra_info=result.node.extra_info,
+                    extra_info=node_to_metadata_dict(result.node),
                 )
                 session.add(item)
             session.commit()
