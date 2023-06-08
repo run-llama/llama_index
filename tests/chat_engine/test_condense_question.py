@@ -22,7 +22,7 @@ def test_condense_question_chat_engine(
     response = engine.chat("Test message 2")
     assert str(response) == (
         "{'question': 'Test message 2', 'chat_history': \"\\nHuman: Test message 1"
-        " \\nAssistant: {'question': 'Test message 1', 'chat_history': ''}\"}"
+        "\\nAssistant: {'question': 'Test message 1', 'chat_history': ''}\"}"
     )
 
     engine.reset()
