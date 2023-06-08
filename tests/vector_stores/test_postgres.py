@@ -102,7 +102,9 @@ def test_add_to_db_and_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-def test_add_to_db_query_and_delete(db: None, node_embeddings: List[NodeWithEmbedding]) -> None:
+def test_add_to_db_query_and_delete(
+    db: None, node_embeddings: List[NodeWithEmbedding]
+) -> None:
     pg = PGVectorStore.from_params(
         **PARAMS,  # type: ignore
         database=TEST_DB,
