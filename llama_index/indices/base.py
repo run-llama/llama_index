@@ -236,7 +236,7 @@ class BaseIndex(Generic[IS], ABC):
 
         self.delete_nodes(
             ref_doc_info.doc_ids,
-            delete_from_docstore=delete_from_docstore,
+            delete_from_docstore=False,
             **delete_kwargs,
         )
 
