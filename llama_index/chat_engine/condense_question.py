@@ -104,7 +104,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         )
         return response
 
-    def chat(self, message: str, user_id: str = None) -> RESPONSE_TYPE:
+    def chat(self, message: str, user_id: str = '') -> RESPONSE_TYPE:
 
         # Retrieves specific chat history
         user_chat_history = get_user_chat_history(self._chat_history, user_id)
@@ -121,10 +121,10 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         response = self._query_engine.query(condensed_question)
 
         # Adding new user query and response
-        user_chat_history = user_chat_history + '\nHuman: ' + message + ' \nAssistant: ' + str(response)
+        user_chat_history = user_chat_history + '\nHuman: ' + message + '\nAssistant: ' + str(response)
 
         # Updating chat history
-        if user_id:
+        if user_id != '':
             self._chat_history[user_id] = user_chat_history
         else:
             self._chat_history["default"] = user_chat_history
