@@ -3,16 +3,16 @@
 ## [Unreleased]
 
 ### New Features
-- Added support for graph stores under the hood, and initial support for Nebula KG. More docs coming soon!
+- Added support for graph stores under the hood, and initial support for Nebula KG. More docs coming soon! (#2581)
 
 ### Bug Fixes
-- None
+- Fixed bug with `delete_ref_doc` not removing all metadata from the docstore (#6192)
 
 ### Breaking/Deprecated API Changes
 - None
 
 ### Miscellaneous 
-- Added changelog officially to github repo
+- Added changelog officially to github repo (#6191)
 
 ## [v0.6.21] - 2023-06-06
 
