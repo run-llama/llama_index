@@ -52,3 +52,5 @@ class ResponseMode(str, Enum):
     answers for each of them and finally return the concatenation. 
     This mode is faster than accumulate since we make fewer calls to the LLM.
     """
+
+    COMPACT_CITE = 'compact_cite'
