@@ -38,7 +38,9 @@ def test_condense_question_chat_engine_with_init_history(
     engine = CondenseQuestionChatEngine.from_defaults(
         query_engine=query_engine,
         service_context=mock_service_context,
-        chat_history={"default":"\nHuman: test human message\nAssistant: test ai message"},
+        chat_history={
+            "default": "\nHuman: test human message\nAssistant: test ai message"
+        },
     )
 
     response = engine.chat("new human message")
