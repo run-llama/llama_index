@@ -26,8 +26,7 @@ def connection_check() -> None:
 
 
 try:
-
-    import psycopg2  # noqa: F401
+    import psycopg2  # noqa: F811
 
     connection_check()
     postgres_not_available = False
