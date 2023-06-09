@@ -205,10 +205,13 @@ class CitationQueryEngine(BaseQueryEngine):
                 # NOTE currently this does not take into account escaped chars
                 num_char_overlap = split.num_char_overlap or 0
                 chunk_len = len(split.text_chunk)
-                new_node_info = {
-                    "start": start_offset - num_char_overlap,
-                    "end": start_offset - num_char_overlap + chunk_len,
-                }
+
+                new_node_info = (
+                    node.node.node_info.copy() if node.node.node_info else {}
+                )
+                new_node_info["start"] = start_offset - num_char_overlap
+                new_node_info["end"] = start_offset - num_char_overlap + chunk_len
+
                 start_offset += chunk_len + 1
 
                 new_nodes.append(
