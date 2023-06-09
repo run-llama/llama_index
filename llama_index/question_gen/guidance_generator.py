@@ -37,12 +37,12 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
     def from_defaults(
         cls,
         prompt_template_str: str = DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL,
-        llm: Optional["GuidanceLLM"] = None,
+        guidance_llm: Optional["GuidanceLLM"] = None,
         verbose: bool = False,
     ) -> "GuidanceQuestionGenerator":
         program = GuidancePydanticProgram(
             output_cls=SubQuestionList,
-            llm=llm,
+            llm=guidance_llm,
             prompt_template_str=prompt_template_str,
             verbose=verbose,
         )

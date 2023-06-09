@@ -3,8 +3,7 @@ from typing import TYPE_CHECKING, Any, Optional, Type
 from llama_index.program.base_program import BasePydanticProgram, Model
 from llama_index.prompts.guidance_utils import (
     parse_pydantic_from_guidance_program,
-    pydantic_to_guidance_output_template_markdown,
-)
+    pydantic_to_guidance_output_template_markdown)
 
 if TYPE_CHECKING:
     from guidance.llms import LLM as GuidanceLLM
@@ -15,7 +14,7 @@ class GuidancePydanticProgram(BasePydanticProgram):
         self,
         output_cls: Type[Model],
         prompt_template_str: str,
-        llm: Optional["GuidanceLLM"] = None,
+        guidance_llm: Optional["GuidanceLLM"] = None,
         verbose: bool = False,
     ):
         try:
@@ -26,7 +25,7 @@ class GuidancePydanticProgram(BasePydanticProgram):
                 "guidance package not found." "please run `pip install guidance`"
             ) from e
 
-        llm = llm or OpenAI("text-davinci-003")
+        llm = guidance_llm or OpenAI("text-davinci-003")
         output_str = pydantic_to_guidance_output_template_markdown(output_cls)
         full_str = prompt_template_str + "\n" + output_str
         self._guidance_program = Program(full_str, llm=llm, silent=not verbose)
