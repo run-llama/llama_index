@@ -1,19 +1,15 @@
-from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, Type
 
-from pydantic import BaseModel
-
+from llama_index.program.base import BasePydanticProgram, Model
 from llama_index.prompts.guidance_utils import (
     parse_pydantic_from_guidance_program,
-    pydantic_to_guidance_output_template_markdown,
-)
+    pydantic_to_guidance_output_template_markdown)
 
 if TYPE_CHECKING:
     from guidance.llms import LLM as GuidanceLLM
 
-Model = TypeVar("Model", bound=BaseModel)
 
-
-class GuidancePydanticProgram(Generic[Model]):
+class GuidancePydanticProgram(BasePydanticProgram):
     def __init__(
         self,
         output_cls: Type[Model],
@@ -37,6 +33,7 @@ class GuidancePydanticProgram(Generic[Model]):
 
     def __call__(
         self,
+        *args: Any,
         **kwargs: Any,
     ) -> Model:
         executed_program = self._guidance_program(**kwargs)
