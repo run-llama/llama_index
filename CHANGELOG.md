@@ -4,6 +4,7 @@
 
 ### New Features
 - Added support for graph stores under the hood, and initial support for Nebula KG. More docs coming soon! (#2581)
+- Added guideline evaluator to allow llm to provide feedback based on user guidelines
 
 ### Bug Fixes
 - Fixed bug with `delete_ref_doc` not removing all metadata from the docstore (#6192)
