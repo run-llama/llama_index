@@ -17,10 +17,6 @@ from llama_index.langchain_helpers.text_splitter import (
 )
 from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
 from llama_index.prompts.base import Prompt
-from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-    RefinePrompt,
-)
 from llama_index.response.schema import RESPONSE_TYPE
 
 
@@ -123,13 +119,13 @@ class CitationQueryEngine(BaseQueryEngine):
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
         text_splitter: Optional[TextSplitter] = None,
+        citation_qa_template: Prompt = CITATION_QA_TEMPLATE,
+        citation_refine_template: Prompt = CITATION_REFINE_TEMPLATE,
         retriever: Optional[BaseRetriever] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
         # response synthesizer args
         response_mode: ResponseMode = ResponseMode.COMPACT,
-        text_qa_template: Optional[QuestionAnswerPrompt] = CITATION_QA_TEMPLATE,
-        refine_template: Optional[RefinePrompt] = CITATION_REFINE_TEMPLATE,
         response_kwargs: Optional[Dict] = None,
         use_async: bool = False,
         streaming: bool = False,
@@ -148,16 +144,14 @@ class CitationQueryEngine(BaseQueryEngine):
             text_splitter (Optional[TextSplitter]):
                 A text splitter for creating citation source nodes. Default is
                 a SentenceSplitter.
+            citation_qa_template (Prompt): Template for initial citation QA
+            citation_refine_template (Prompt): Template for citation refinement.
             retriever (BaseRetriever): A retriever object.
             service_context (Optional[ServiceContext]): A ServiceContext object.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
                 node postprocessors.
             verbose (bool): Whether to print out debug info.
             response_mode (ResponseMode): A ResponseMode object.
-            text_qa_template (Optional[QuestionAnswerPrompt]): A QuestionAnswerPrompt
-                object.
-            refine_template (Optional[RefinePrompt]): A RefinePrompt object.
-            simple_template (Optional[SimpleInputPrompt]): A SimpleInputPrompt object.
             response_kwargs (Optional[Dict]): A dict of response kwargs.
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.
@@ -169,8 +163,8 @@ class CitationQueryEngine(BaseQueryEngine):
 
         response_synthesizer = ResponseSynthesizer.from_args(
             service_context=index.service_context,
-            text_qa_template=text_qa_template,
-            refine_template=refine_template,
+            text_qa_template=citation_qa_template,
+            refine_template=citation_refine_template,
             response_mode=response_mode,
             response_kwargs=response_kwargs,
             use_async=use_async,
