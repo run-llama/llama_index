@@ -7,6 +7,7 @@
 
 ### Bug Fixes
 - Fixed bug with `delete_ref_doc` not removing all metadata from the docstore (#6192)
+- FIxed bug with loading existing QDrantVectorStore (#6230)
 
 ### Breaking/Deprecated API Changes
 - None
