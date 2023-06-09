@@ -6,7 +6,7 @@ An index that that is built on top of an existing vector store.
 
 import logging
 import os
-from typing import Any, Callable, Dict, List, Optional, TypeVar, cast
+from typing import Any, Dict, List, Optional, cast
 
 from llama_index.data_structs.node import Node
 from llama_index.vector_stores.types import (
@@ -14,7 +14,6 @@ from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
-    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
@@ -163,7 +162,7 @@ class MongoDBVectorStore(VectorStore):
             {"$project": {"score": {"$meta": "searchScore"}, self._embedding_key: 0}},
         ]
         logger.debug("Running query pipeline: %s", pipeline)
-        cursor = self._collection.aggregate(pipeline)
+        cursor = self._collection.aggregate(pipeline)  # type: ignore
         top_k_nodes = []
         top_k_ids = []
         top_k_scores = []
