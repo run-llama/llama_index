@@ -11,7 +11,7 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.type import ResponseMode
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter
+from llama_index.langchain_helpers.text_splitter import TokenTextSplitter, SentenceSplitter
 from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompts import (
@@ -74,7 +74,7 @@ DEFAULT_SOURCE_CHUNK_SIZE = 512
 DEFAULT_SOURCE_CHUNK_OVERLAP = 20
 
 
-class CitaitonQueryEngine(BaseQueryEngine):
+class CitationQueryEngine(BaseQueryEngine):
     """Citation query engine.
 
     Args:
@@ -100,7 +100,7 @@ class CitaitonQueryEngine(BaseQueryEngine):
         text_splitter: Optional[TextSplitter] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self.text_splitter = text_splitter or TokenTextSplitter(
+        self.text_splitter = text_splitter or SentenceSplitter(
             chunk_size=source_chunk_size, chunk_overlap=source_chunk_overlap
         )
         self._retriever = retriever
@@ -131,8 +131,8 @@ class CitaitonQueryEngine(BaseQueryEngine):
         optimizer: Optional[BaseTokenUsageOptimizer] = None,
         # class-specific args
         **kwargs: Any,
-    ) -> "CitaitonQueryEngine":
-        """Initialize a CitaitonQueryEngine object."
+    ) -> "CitationQueryEngine":
+        """Initialize a CitationQueryEngine object."
 
         Args:
             retriever (BaseRetriever): A retriever object.
