@@ -4,8 +4,9 @@
 
 ### New Features
 - Added support for graph stores under the hood, and initial support for Nebula KG. More docs coming soon! (#2581)
-- Added guideline evaluator to allow llm to provide feedback based on user guidelines
-- Added support for MongoDB Vector stores to enable Atlas knnbeta search
+- Added guideline evaluator to allow llm to provide feedback based on user guidelines (#4664)
+- Added support for MongoDB Vector stores to enable Atlas knnbeta search (#6379)
+- Added new CitationQueryEngine for inline citations of sources in response text (#6239)
 
 ### Bug Fixes
 - Fixed bug with `delete_ref_doc` not removing all metadata from the docstore (#6192)
