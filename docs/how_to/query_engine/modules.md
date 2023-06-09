@@ -24,4 +24,5 @@ maxdepth: 1
 <Retry Query Engine> /examples/query_engine/RetryQueryEngine.ipynb
 <Retry Source Query Engine> /examples/query_engine/RetryQueryEngine.ipynb
 /examples/query_engine/json_query_engine.ipynb
+/examples/query_engine/citation_query_engine.ipynb
 ```
