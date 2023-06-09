@@ -3,9 +3,7 @@ from typing import List
 from pydantic import BaseModel
 
 from llama_index.prompts.guidance_utils import (
-    convert_to_handlebars,
-    pydantic_to_guidance_output_template,
-)
+    convert_to_handlebars, pydantic_to_guidance_output_template)
 
 
 def test_convert_to_handlebars() -> None:
@@ -22,9 +20,9 @@ class TestSimpleModel(BaseModel):
 
 EXPECTED_SIMPLE_STR = """\
 {
-  attr0: "{{gen 'attr0' stop='"'}}",
-  attr1: "{{gen 'attr1' stop='"'}}",
-}
+  "attr0": "{{gen 'attr0' stop='"'}}",
+  "attr1": "{{gen 'attr1' stop='"'}}",
+}\
 """
 
 
@@ -34,11 +32,11 @@ class TestNestedModel(BaseModel):
 
 EXPECTED_NESTED_STR = """\
 {
-  attr2: [{{#geneach 'attr2' stop=']'}}{{#unless @first}}, {{/unless}}{
-  attr0: "{{gen 'attr0' stop='"'}}",
-  attr1: "{{gen 'attr1' stop='"'}}",
+  "attr2": [{{#geneach 'attr2' stop=']'}}{{#unless @first}}, {{/unless}}{
+  "attr0": "{{gen 'attr0' stop='"'}}",
+  "attr1": "{{gen 'attr1' stop='"'}}",
 }{{/geneach}}],
-}
+}\
 """
 
 
