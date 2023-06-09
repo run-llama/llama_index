@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Any, Generic, Optional, Type
 
 from llama_index.program.base_program import BasePydanticProgram, Model
 from llama_index.prompts.guidance_utils import (
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from guidance.llms import LLM as GuidanceLLM
 
 
-class GuidancePydanticProgram(BasePydanticProgram):
+class GuidancePydanticProgram(BasePydanticProgram, Generic[Model]):
     def __init__(
         self,
         output_cls: Type[Model],

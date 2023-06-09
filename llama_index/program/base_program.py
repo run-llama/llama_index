@@ -8,7 +8,7 @@ Model = TypeVar("Model", bound=BaseModel)
 
 class BasePydanticProgram(ABC, Generic[Model]):
     @property
-    @abstractmethod 
+    @abstractmethod
     def output_cls(self) -> Type[Model]:
         pass
 

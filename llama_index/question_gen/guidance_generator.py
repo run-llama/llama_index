@@ -21,7 +21,12 @@ DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL = convert_to_handlebars(
 
 
 class SubQuestionList(BaseModel):
-    sub_questions: List[SubQuestion]
+    """A pydantic object wrapping a list of sub-questions.
+
+    This is mostly used to make getting a json schema easier.
+    """
+
+    items: List[SubQuestion]
 
 
 class GuidanceQuestionGenerator(BaseQuestionGenerator):
@@ -40,9 +45,9 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
         guidance_llm: Optional["GuidanceLLM"] = None,
         verbose: bool = False,
     ) -> "GuidanceQuestionGenerator":
-        program = GuidancePydanticProgram(
+        program = GuidancePydanticProgram[SubQuestionList](
             output_cls=SubQuestionList,
-            llm=guidance_llm,
+            guidance_llm=guidance_llm,
             prompt_template_str=prompt_template_str,
             verbose=verbose,
         )
@@ -54,10 +59,11 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
     ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
-        return self._program(
+        question_list = self._program(
             tools_str=tools_str,
             query_str=query_str,
         )
+        return question_list.items
 
     async def agenerate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle
