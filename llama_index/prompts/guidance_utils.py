@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import BaseModel
 
@@ -27,24 +27,37 @@ def convert_to_handlebars(text: str):
     return text
 
 
-def pydantic_to_guidance(cls: Type[BaseModel]) -> str:
-    return json_schema_to_guidance(cls.schema())
+def wrap_json_markdown(text: str) -> str:
+    return "```json\n" + text + "\n```"
 
 
-def json_schema_to_guidance(
+def pydantic_to_guidance_output_template(cls: Type[BaseModel]) -> str:
+    output = json_schema_to_guidance_output_template(cls.schema(), root=cls.schema())
+    return wrap_json_markdown(output)
+
+
+def json_schema_to_guidance_output_template(
     schema: dict,
-    key=None, 
-    indent=0,
+    key: Optional[str] = None,
+    indent: int = 0,
+    root: Optional[dict] = None,
 ) -> str:
     out = ""
+    if "type" not in schema and "$ref" in schema:
+        ref = schema["$ref"]
+        model = ref.split("/")[-1]
+        return json_schema_to_guidance_output_template(
+            root["definitions"][model], key, indent, root
+        )
+
     if schema["type"] == "object":
         out += "  " * indent + "{\n"
         for k, v in schema["properties"].items():
             out += (
                 "  " * (indent + 1)
-                + k
+                + f'"{k}"'
                 + ": "
-                + json_schema_to_guidance(v, k, indent + 1)
+                + json_schema_to_guidance_output_template(v, k, indent + 1, root)
                 + ",\n"
             )
         out += "  " * indent + "}"
@@ -60,7 +73,7 @@ def json_schema_to_guidance(
             + "' stop=']'"
             + extra_args
             + "}}{{#unless @first}}, {{/unless}}"
-            + json_schema_to_guidance(schema["items"], "this")
+            + json_schema_to_guidance_output_template(schema["items"], "this", 0, root)
             + "{{/geneach}}]"
         )
     elif schema["type"] == "string":

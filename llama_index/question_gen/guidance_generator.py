@@ -2,8 +2,9 @@ from typing import TYPE_CHECKING, List, Optional, Sequence
 
 from pydantic import BaseModel
 
-from llama_index.prompts.guidance_utils import (convert_to_handlebars,
-                                                pydantic_to_guidance)
+from llama_index.output_parsers.utils import parse_json_markdown
+from llama_index.prompts.guidance_utils import (
+    convert_to_handlebars, pydantic_to_guidance_output_template)
 
 if TYPE_CHECKING:
     from guidance import Program
@@ -19,13 +20,22 @@ DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL = convert_to_handlebars(
     DEFAULT_SUB_QUESTION_PROMPT_TMPL
 )
 
+
+def _parse_output_from_guidance_program(program: "Program"):
+    output = program.text.split("<Output>")[-1]
+    json_dict = parse_json_markdown(output)
+    sub_questions = SubQuestionList.parse_obj(json_dict)
+    return sub_questions
+
+
 class SubQuestionList(BaseModel):
     sub_questions: List[SubQuestion]
+
 
 class GuidanceQuestionGenerator(BaseQuestionGenerator):
     def __init__(
         self,
-        guidance_program: Program,
+        guidance_program: "Program",
     ) -> None:
         self._guidance_program = guidance_program
 
@@ -33,7 +43,7 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
     def from_defaults(
         cls,
         prompt_template_str: str = DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL,
-        llm: Optional[LLM] = None,
+        llm: Optional["LLM"] = None,
     ):
         try:
             from guidance import Program
@@ -45,7 +55,7 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
 
         # construct guidance program
         llm = llm or OpenAI("text-davinci-003")
-        output_str = pydantic_to_guidance(SubQuestionList)
+        output_str = pydantic_to_guidance_output_template(SubQuestionList)
         full_str = prompt_template_str + "\n" + output_str
         guidance_program = Program(full_str, llm=llm)
 
@@ -61,12 +71,10 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
             query_str=query_str,
         )
 
-        # TODO: figure out how to get this from the program
-        output = program.get()
-        return output
+        return _parse_output_from_guidance_program(program=program)
 
     async def agenerate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle
     ) -> List[SubQuestion]:
-        # TODO: implement async version
+        # TODO: currently guidance does not support async calls
         return self.generate(tools=tools, query=query)
