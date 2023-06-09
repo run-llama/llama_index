@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Type, TypeVar
 
+from llama_index.output_parsers.base import OutputParserException
 from llama_index.output_parsers.utils import parse_json_markdown
 
 if TYPE_CHECKING:
@@ -121,9 +122,25 @@ def json_schema_to_guidance_output_template(
 Model = TypeVar("Model", bound=BaseModel)
 
 
-def parse_output_from_guidance(program: "Program", cls: Type[Model]) -> Model:
-    # NOTE: a better way is to extract via Program.
-    output = program.text.split("<Output>")[-1]
-    json_dict = parse_json_markdown(output)
-    sub_questions = cls.parse_obj(json_dict)
+def parse_pydantic_from_guidance_program(program: "Program", cls: Type[Model]) -> Model:
+    """Parse output from guidance program.
+
+    This is a temporary solution for parsing a pydantic object out of an executed
+    guidance program.
+
+    NOTE: right now we assume the output is the last markdown formatted json block
+
+    NOTE: a better way is to extract via Program.variables, but guidance does not
+          support extracting nested objects right now.
+          So we call back to manually parsing the final text after program execution
+    """
+    try:
+        output = program.text.split("```json")[-1]
+        output = "```json" + output
+        json_dict = parse_json_markdown(output)
+        sub_questions = cls.parse_obj(json_dict)
+    except Exception as e:
+        raise OutputParserException(
+            "Failed to parse pydantic object from guidance program"
+        ) from e
     return sub_questions
