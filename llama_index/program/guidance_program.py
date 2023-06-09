@@ -4,7 +4,8 @@ from pydantic import BaseModel
 
 from llama_index.prompts.guidance_utils import (
     parse_pydantic_from_guidance_program,
-    pydantic_to_guidance_output_template_markdown)
+    pydantic_to_guidance_output_template_markdown,
+)
 
 if TYPE_CHECKING:
     from guidance.llms import LLM as GuidanceLLM
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
 Model = TypeVar("Model", bound=BaseModel)
 
 
-class PydanticGuidanceProgram(Generic[Model]):
+class GuidancePydanticProgram(Generic[Model]):
     def __init__(
         self,
         output_cls: Type[Model],
