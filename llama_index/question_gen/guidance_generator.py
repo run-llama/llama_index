@@ -1,18 +1,22 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, List, Optional, Sequence
 
 from pydantic import BaseModel
 
 from llama_index.prompts.guidance_utils import (
-    convert_to_handlebars, parse_pydantic_from_guidance_program,
-    pydantic_to_guidance_output_template_markdown)
+    convert_to_handlebars,
+    parse_pydantic_from_guidance_program,
+    pydantic_to_guidance_output_template_markdown,
+)
 
 if TYPE_CHECKING:
     from guidance import Program
     from guidance.llms import LLM
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.question_gen.prompts import (DEFAULT_SUB_QUESTION_PROMPT_TMPL,
-                                              build_tools_text)
+from llama_index.question_gen.prompts import (
+    DEFAULT_SUB_QUESTION_PROMPT_TMPL,
+    build_tools_text,
+)
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.tools.types import ToolMetadata
 
@@ -29,6 +33,7 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
     def __init__(
         self,
         guidance_program: "Program",
+        verbose: bool = False,
     ) -> None:
         self._guidance_program = guidance_program
 
@@ -38,6 +43,7 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
         prompt_template_str: str = DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL,
         output_str: Optional[str] = None,
         llm: Optional["LLM"] = None,
+        verbose: bool = False,
     ) -> "GuidanceQuestionGenerator":
         try:
             from guidance import Program
@@ -53,9 +59,9 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
             SubQuestionList
         )
         full_str = prompt_template_str + "\n" + output_str
-        guidance_program = Program(full_str, llm=llm, silent=True)
+        guidance_program = Program(full_str, llm=llm, silent=not verbose)
 
-        return cls(guidance_program)
+        return cls(guidance_program, verbose)
 
     def generate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle
