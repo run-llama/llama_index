@@ -128,7 +128,9 @@ class MongoDBVectorStore(VectorStore):
 
         """
         # delete by filtering on the doc_id metadata
-        self._collection.delete_one(filter={"id": ref_doc_id}, **delete_kwargs)
+        self._collection.delete_one(
+            filter={self._metadata_key + ".ref_doc_id": ref_doc_id}, **delete_kwargs
+        )
 
     @property
     def client(self) -> Any:
