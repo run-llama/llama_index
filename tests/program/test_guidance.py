@@ -16,7 +16,7 @@ def test_guidance_pydantic_program() -> None:
     program = GuidancePydanticProgram(
         output_cls=TestModel,
         prompt_template_str="This is a test prompt with a {{test_input}}.",
-        llm=MockLLM(),
+        guidance_llm=MockLLM(),
     )
 
     assert program.output_cls == TestModel
