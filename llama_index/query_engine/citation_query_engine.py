@@ -11,7 +11,10 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.type import ResponseMode
-from llama_index.langchain_helpers.text_splitter import TokenTextSplitter, SentenceSplitter
+from llama_index.langchain_helpers.text_splitter import (
+    TokenTextSplitter,
+    SentenceSplitter,
+)
 from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompts import (
@@ -70,8 +73,8 @@ CITATION_REFINE_TEMPLATE = Prompt(
     "Answer: "
 )
 
-DEFAULT_SOURCE_CHUNK_SIZE = 512
-DEFAULT_SOURCE_CHUNK_OVERLAP = 20
+DEFAULT_CITATION_CHUNK_SIZE = 512
+DEFAULT_CITATION_CHUNK_OVERLAP = 20
 
 
 class CitationQueryEngine(BaseQueryEngine):
@@ -81,13 +84,13 @@ class CitationQueryEngine(BaseQueryEngine):
         retriever (BaseRetriever): A retriever object.
         response_synthesizer (Optional[ResponseSynthesizer]):
             A ResponseSynthesizer object.
-        source_node_size (int):
-            Size of source chunks, default=512. Useful for controlling
+        citation_chunk_size (int):
+            Size of citation chunks, default=512. Useful for controlling
             granularity of sources.
-        source_node_overlap (int): Overlap of source nodes, default=20.
+        citation_chunk_overlap (int): Overlap of citation nodes, default=20.
         text_splitter (Optional[TextSplitter]):
             A text splitter for creating citation source nodes. Default is
-            a TokenTextSplitter.
+            a SentenceSplitter.
         callback_manager (Optional[CallbackManager]): A callback manager.
     """
 
@@ -95,13 +98,13 @@ class CitationQueryEngine(BaseQueryEngine):
         self,
         retriever: BaseRetriever,
         response_synthesizer: Optional[ResponseSynthesizer] = None,
-        source_chunk_size: int = DEFAULT_SOURCE_CHUNK_SIZE,
-        source_chunk_overlap: int = DEFAULT_SOURCE_CHUNK_OVERLAP,
+        citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
+        citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
         text_splitter: Optional[TextSplitter] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self.text_splitter = text_splitter or SentenceSplitter(
-            chunk_size=source_chunk_size, chunk_overlap=source_chunk_overlap
+            chunk_size=citation_chunk_size, chunk_overlap=citation_chunk_overlap
         )
         self._retriever = retriever
         self._response_synthesizer = (
@@ -115,8 +118,8 @@ class CitationQueryEngine(BaseQueryEngine):
     def from_args(
         cls,
         index: BaseGPTIndex,
-        source_chunk_size: int = DEFAULT_SOURCE_CHUNK_SIZE,
-        source_chunk_overlap: int = DEFAULT_SOURCE_CHUNK_OVERLAP,
+        citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
+        citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
         text_splitter: Optional[TextSplitter] = None,
         retriever: Optional[BaseRetriever] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
@@ -135,6 +138,14 @@ class CitationQueryEngine(BaseQueryEngine):
         """Initialize a CitationQueryEngine object."
 
         Args:
+            index: (BastGPTIndex): index to use for querying
+            citation_chunk_size (int):
+                Size of citation chunks, default=512. Useful for controlling
+                granularity of sources.
+            citation_chunk_overlap (int): Overlap of citation nodes, default=20.
+            text_splitter (Optional[TextSplitter]):
+                A text splitter for creating citation source nodes. Default is
+                a SentenceSplitter.
             retriever (BaseRetriever): A retriever object.
             service_context (Optional[ServiceContext]): A ServiceContext object.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
@@ -171,8 +182,8 @@ class CitationQueryEngine(BaseQueryEngine):
             retriever=retriever,
             response_synthesizer=response_synthesizer,
             callback_manager=index.service_context.callback_manager,
-            source_chunk_size=source_chunk_size,
-            source_chunk_overlap=source_chunk_overlap,
+            citation_chunk_size=citation_chunk_size,
+            citation_chunk_overlap=citation_chunk_overlap,
             text_splitter=text_splitter,
         )
 
