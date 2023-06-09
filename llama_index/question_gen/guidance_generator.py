@@ -51,7 +51,7 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
         except ImportError as e:
             raise ImportError(
                 "guidance package not found." "please run `pip install guidance`"
-            )
+            ) from e
 
         # construct guidance program
         llm = llm or OpenAI("text-davinci-003")

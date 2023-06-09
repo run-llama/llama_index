@@ -60,7 +60,8 @@ def json_schema_to_guidance_output_template(
 ) -> str:
     """Convert a json schema to guidance output template.
 
-    Implementation based on https://github.com/microsoft/guidance/blob/main/notebooks/applications/jsonformer.ipynb
+    Implementation based on https://github.com/microsoft/guidance/\
+        blob/main/notebooks/applications/jsonformer.ipynb
     Modified to support nested pydantic models.
     """
     out = ""
