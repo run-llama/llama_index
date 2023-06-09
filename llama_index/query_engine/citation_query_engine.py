@@ -25,12 +25,12 @@ from llama_index.response.schema import RESPONSE_TYPE
 
 
 CITATION_QA_TEMPLATE = Prompt(
-    "Please provide an answer based only on the given sources. "
+    "Please provide an answer based solely on the provided sources. "
     "When referencing information from a source, "
-    "cite the appropriate source(s) by their numbers. "
-    "All answers should provide at least one source. "
-    "Do not use a source if it does not help answer a question. "
-    "If no sources are helpful, you should say that. "
+    "cite the appropriate source(s) using their corresponding numbers. "
+    "Every answer should include at least one source citation. "
+    "Only cite a source when you are explicitly referencing it. "
+    "If none of the sources are helpful, you should indicate that. "
     "For example:\n"
     "Source 1:\n"
     "The sky is red in the evening and blue in the morning.\n"
@@ -38,7 +38,7 @@ CITATION_QA_TEMPLATE = Prompt(
     "Water is wet when the sky is red.\n"
     "Query: When is water wet?\n"
     "Answer: Water will be wet when the sky is red [2], "
-    "which happens in the evening [1].\n"
+    "which occurs in the evening [1].\n"
     "Now it's your turn. Below are several numbered sources of information:"
     "\n------\n"
     "{context_str}"
@@ -48,10 +48,12 @@ CITATION_QA_TEMPLATE = Prompt(
 )
 
 CITATION_REFINE_TEMPLATE = Prompt(
-    "Please provide an answer based only on the given sources. "
-    "When referencing information from a source, cite the appropriate source(s). "
-    "All answers should provide at least one source. "
-    "Do not use a source if it does not help answer a question. "
+    "Please provide an answer based solely on the provided sources. "
+    "When referencing information from a source, "
+    "cite the appropriate source(s) using their corresponding numbers. "
+    "Every answer should include at least one source citation. "
+    "Only cite a source when you are explicitly referencing it. "
+    "If none of the sources are helpful, you should indicate that. "
     "For example:\n"
     "Source 1:\n"
     "The sky is red in the evening and blue in the morning.\n"
@@ -59,7 +61,7 @@ CITATION_REFINE_TEMPLATE = Prompt(
     "Water is wet when the sky is red.\n"
     "Query: When is water wet?\n"
     "Answer: Water will be wet when the sky is red [2], "
-    "which happens in the evening [1].\n"
+    "which occurs in the evening [1].\n"
     "Now it's your turn. "
     "We have provided an existing answer: {existing_answer}"
     "Below are several numbered sources of information. "
