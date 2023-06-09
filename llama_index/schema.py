@@ -12,17 +12,13 @@ from llama_index.utils import get_new_id
 def _validate_is_flat_dict(metadata_dict: dict) -> None:
     """
     Validate that metadata dict is flat,
-    and key is str, and value is one of (str, int, float).
+    and key is str, and value is one of (str, int, float, None).
     """
     for key, val in metadata_dict.items():
         if not isinstance(key, str):
             raise ValueError("Metadata key must be str!")
-        if not isinstance(val, (str, int, float)):
-            """
-            Default value of val is None, should not raise error because the default value of a key in a dictionary is None
-            """
-            if val is not None:
-                raise ValueError("Value must be one of (str, int, float)")
+        if not isinstance(val, (str, int, float, type(None))):
+            raise ValueError("Value must be one of (str, int, float, None)")
 
 
 @dataclass
