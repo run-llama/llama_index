@@ -57,6 +57,7 @@ def json_schema_to_guidance_output_template(
     key: Optional[str] = None,
     indent: int = 0,
     root: Optional[dict] = None,
+    use_pattern_control: bool = False,
 ) -> str:
     """Convert a json schema to guidance output template.
 
@@ -107,10 +108,13 @@ def json_schema_to_guidance_output_template(
         if key is None:
             raise ValueError("key should not be None")
         return "\"{{gen '" + key + "' stop='\"'}}\""
-    elif schema["type"] == "number":
+    elif schema["type"] in ["integer", "number"]:
         if key is None:
             raise ValueError("key should not be None")
-        return "{{gen '" + key + "' pattern='[0-9\\.]' stop=','}}"
+        if use_pattern_control:
+            return "{{gen '" + key + "' pattern='[0-9\\.]' stop=','}}"
+        else:
+            return "\"{{gen '" + key + "' stop='\"'}}\""
     elif schema["type"] == "boolean":
         if key is None:
             raise ValueError("key should not be None")
@@ -123,7 +127,7 @@ def json_schema_to_guidance_output_template(
 Model = TypeVar("Model", bound=BaseModel)
 
 
-def parse_pydantic_from_guidance_program(program: "Program", cls: Type[Model]) -> Model:
+def parse_pydantic_from_guidance_program(program: "Program", cls: Type[Model], verbose: bool = False) -> Model:
     """Parse output from guidance program.
 
     This is a temporary solution for parsing a pydantic object out of an executed
@@ -138,6 +142,9 @@ def parse_pydantic_from_guidance_program(program: "Program", cls: Type[Model]) -
     try:
         output = program.text.split("```json")[-1]
         output = "```json" + output
+        if verbose:
+            print('Raw output:')
+            print(output)
         json_dict = parse_json_markdown(output)
         sub_questions = cls.parse_obj(json_dict)
     except Exception as e:

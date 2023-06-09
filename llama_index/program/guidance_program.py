@@ -31,6 +31,7 @@ class GuidancePydanticProgram(BasePydanticProgram, Generic[Model]):
         full_str = prompt_template_str + "\n" + output_str
         self._guidance_program = Program(full_str, llm=llm, silent=not verbose)
         self._output_cls = output_cls
+        self._verbose = verbose
 
     @property
     def output_cls(self) -> Type[Model]:
@@ -44,6 +45,6 @@ class GuidancePydanticProgram(BasePydanticProgram, Generic[Model]):
         executed_program = self._guidance_program(**kwargs)
 
         pydantic_obj = parse_pydantic_from_guidance_program(
-            program=executed_program, cls=self._output_cls
+            program=executed_program, cls=self._output_cls, verbose=self._verbose
         )
         return pydantic_obj
