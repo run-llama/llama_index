@@ -2,24 +2,18 @@ from typing import TYPE_CHECKING, List, Optional, Sequence
 
 from pydantic import BaseModel
 
-from llama_index.program.guidance_program import PydanticGuidanceProgram
-from llama_index.prompts.guidance_utils import (
-    convert_to_handlebars,
-    parse_pydantic_from_guidance_program,
-    pydantic_to_guidance_output_template_markdown,
-)
-
-if TYPE_CHECKING:
-    from guidance import Program
-    from guidance.llms import LLM
-
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.program.guidance_program import PydanticGuidanceProgram
+from llama_index.prompts.guidance_utils import convert_to_handlebars
 from llama_index.question_gen.prompts import (
     DEFAULT_SUB_QUESTION_PROMPT_TMPL,
     build_tools_text,
 )
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.tools.types import ToolMetadata
+
+if TYPE_CHECKING:
+    from guidance.llms import LLM as GuidanceLLM
 
 DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL = convert_to_handlebars(
     DEFAULT_SUB_QUESTION_PROMPT_TMPL
@@ -43,7 +37,7 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
     def from_defaults(
         cls,
         prompt_template_str: str = DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL,
-        llm: Optional["LLM"] = None,
+        llm: Optional["GuidanceLLM"] = None,
         verbose: bool = False,
     ) -> "GuidanceQuestionGenerator":
         program = PydanticGuidanceProgram(
