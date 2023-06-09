@@ -16,6 +16,8 @@ jobs:
         python-version: ["3.9"]
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -27,4 +29,3 @@ jobs:
           pip install -r data_requirements.txt
       - name: Run linter
         run: make lint
-        
