@@ -127,7 +127,9 @@ def json_schema_to_guidance_output_template(
 Model = TypeVar("Model", bound=BaseModel)
 
 
-def parse_pydantic_from_guidance_program(program: "Program", cls: Type[Model], verbose: bool = False) -> Model:
+def parse_pydantic_from_guidance_program(
+    program: "Program", cls: Type[Model], verbose: bool = False
+) -> Model:
     """Parse output from guidance program.
 
     This is a temporary solution for parsing a pydantic object out of an executed
@@ -143,7 +145,7 @@ def parse_pydantic_from_guidance_program(program: "Program", cls: Type[Model], v
         output = program.text.split("```json")[-1]
         output = "```json" + output
         if verbose:
-            print('Raw output:')
+            print("Raw output:")
             print(output)
         json_dict = parse_json_markdown(output)
         sub_questions = cls.parse_obj(json_dict)

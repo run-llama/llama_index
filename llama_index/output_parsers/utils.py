@@ -18,6 +18,10 @@ def parse_json_markdown(text: str) -> Any:
         json_obj = json.loads(json_string)
     except json.JSONDecodeError as e_json:
         try:
+            # NOTE: parsing again with pyyaml
+            #       pyyaml is less strict, and allows for trailing commas
+            #       right now we rely on this since guidance program generates 
+            #       trailing commas
             json_obj = yaml.safe_load(json_string)
         except yaml.YAMLError as e_yaml:
             raise OutputParserException(
