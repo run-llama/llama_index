@@ -53,7 +53,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
             extra_info.get("evaluation"), Evaluation
         ):
             self.evaluation = extra_info.get("evaluation")
-        if self.evaluation is None:
+        if self.evaluation is None or not isinstance(self.evaluation, Evaluation):
             raise ValueError("Evaluation is not set.")
         if self.evaluation.feedback == "YES" or self.evaluation.feedback == "NO":
             new_query = (
