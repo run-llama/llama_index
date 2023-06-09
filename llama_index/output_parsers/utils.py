@@ -20,6 +20,8 @@ def parse_json_markdown(text: str) -> Any:
         try:
             json_obj = yaml.safe_load(json_string)
         except yaml.YAMLError as e_yaml:
-            raise OutputParserException(f"Got invalid JSON object. Error: {e_json} {e_yaml}")
+            raise OutputParserException(
+                f"Got invalid JSON object. Error: {e_json} {e_yaml}"
+            )
 
     return json_obj

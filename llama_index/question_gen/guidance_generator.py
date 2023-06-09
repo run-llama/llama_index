@@ -1,31 +1,28 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING, List, Optional, Sequence, cast
 
 from pydantic import BaseModel
 
-from llama_index.output_parsers.utils import parse_json_markdown
 from llama_index.prompts.guidance_utils import (
-    convert_to_handlebars, pydantic_to_guidance_output_template)
+    convert_to_handlebars,
+    parse_output_from_guidance,
+    pydantic_to_guidance_output_template_markdown,
+)
 
 if TYPE_CHECKING:
     from guidance import Program
     from guidance.llms import LLM
 
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.question_gen.prompts import (DEFAULT_SUB_QUESTION_PROMPT_TMPL,
-                                              build_tools_text)
+from llama_index.question_gen.prompts import (
+    DEFAULT_SUB_QUESTION_PROMPT_TMPL,
+    build_tools_text,
+)
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.tools.types import ToolMetadata
 
 DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL = convert_to_handlebars(
     DEFAULT_SUB_QUESTION_PROMPT_TMPL
 )
-
-
-def _parse_output_from_guidance_program(program: "Program"):
-    output = program.text.split("<Output>")[-1]
-    json_dict = parse_json_markdown(output)
-    sub_questions = SubQuestionList.parse_obj(json_dict)
-    return sub_questions
 
 
 class SubQuestionList(BaseModel):
@@ -43,8 +40,9 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
     def from_defaults(
         cls,
         prompt_template_str: str = DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL,
+        output_str: Optional[str] = None,
         llm: Optional["LLM"] = None,
-    ):
+    ) -> "GuidanceQuestionGenerator":
         try:
             from guidance import Program
             from guidance.llms import OpenAI
@@ -55,9 +53,11 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
 
         # construct guidance program
         llm = llm or OpenAI("text-davinci-003")
-        output_str = pydantic_to_guidance_output_template(SubQuestionList)
+        output_str = output_str or pydantic_to_guidance_output_template_markdown(
+            SubQuestionList
+        )
         full_str = prompt_template_str + "\n" + output_str
-        guidance_program = Program(full_str, llm=llm)
+        guidance_program = Program(full_str, llm=llm, silent=True)
 
         return cls(guidance_program)
 
@@ -71,7 +71,11 @@ class GuidanceQuestionGenerator(BaseQuestionGenerator):
             query_str=query_str,
         )
 
-        return _parse_output_from_guidance_program(program=program)
+        subq_list = cast(
+            SubQuestionList,
+            parse_output_from_guidance(program=program, cls=SubQuestionList),
+        )
+        return subq_list.sub_questions
 
     async def agenerate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle
