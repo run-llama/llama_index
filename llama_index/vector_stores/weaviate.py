@@ -8,16 +8,23 @@ import logging
 from typing import Any, List, Optional, cast
 from uuid import uuid4
 
-from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryMode,
-                                             VectorStoreQueryResult)
+from llama_index.vector_stores.types import (
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+    VectorStoreQueryResult,
+)
 from llama_index.vector_stores.utils import DEFAULT_TEXT_KEY
-from llama_index.vector_stores.weaviate_utils import (NODE_SCHEMA, add_node,
-                                                      class_schema_exists,
-                                                      create_default_schema,
-                                                      parse_get_response,
-                                                      to_node)
+from llama_index.vector_stores.weaviate_utils import (
+    NODE_SCHEMA,
+    add_node,
+    class_schema_exists,
+    create_default_schema,
+    get_all_properties,
+    parse_get_response,
+    to_node,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -147,33 +154,33 @@ class WeaviateVectorStore(VectorStore):
         if query.filters is not None:
             raise ValueError("Metadata filters not implemented for Weaviate yet.")
 
-        prop_names = [p["name"] for p in NODE_SCHEMA]
-        vector = query.query_embedding
+        all_properties = get_all_properties(self._index_name)
 
         # build query
-        query = self._client.query.get(self._index_name, prop_names).with_additional(
-            ["id", "vector"]
-        )
+        query_builder = self._client.query.get(self._index_name, all_properties)
+        query_builder = query_builder.with_additional(["id", "vector"])
+
+        vector = query.query_embedding
         if query.mode == VectorStoreQueryMode.DEFAULT:
             logger.debug("Using vector search")
             if vector is not None:
-                query = query.with_near_vector(
+                query_builder = query_builder.with_near_vector(
                     {
                         "vector": vector,
                     }
                 )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             logger.debug(f"Using hybrid search with alpha {query.alpha}")
-            query = query.with_hybrid(
+            query = query_builder.with_hybrid(
                 query=query.query_str,
                 alpha=query.alpha,
                 vector=vector,
             )
-        query = query.with_limit(query.similarity_top_k)
+        query_builder = query_builder.with_limit(query.similarity_top_k)
         logger.debug(f"Using limit of {query.similarity_top_k}")
 
         # execute query
-        query_result = query.do()
+        query_result = query_builder.do()
 
         # parse results
         parsed_result = parse_get_response(query_result)

@@ -14,11 +14,9 @@ if TYPE_CHECKING:
 
 from llama_index.data_structs.data_structs import Node
 from llama_index.data_structs.node import DocumentRelationship
-from llama_index.vector_stores.utils import (
-    DEFAULT_TEXT_KEY,
-    metadata_dict_to_node,
-    node_to_metadata_dict,
-)
+from llama_index.vector_stores.utils import (DEFAULT_TEXT_KEY,
+                                             metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 _logger = logging.getLogger(__name__)
 
@@ -75,7 +73,6 @@ def parse_get_response(response: Dict) -> Dict:
 def class_schema_exists(client: Any, class_name: str) -> None:
     """Create schema."""
     validate_client(client)
-
     schema = client.schema.get()
     classes = schema["classes"]
     existing_class_names = {c["class"] for c in classes}
@@ -91,6 +88,18 @@ def create_default_schema(client: Any, class_name: str) -> None:
         "properties": NODE_SCHEMA,
     }
     client.schema.create_class(class_schema)
+
+
+def get_all_properties(client: Any, class_name: str) -> None:
+    """Get all properties of a class."""
+    validate_client(client)
+    schema = client.schema.get()
+    classes = schema["classes"]
+    classes_by_name = {c["class"]: c for c in classes}
+    if class_name not in classes_by_name:
+        raise ValueError(f'{class_name} schema does not exist.')
+    schema = classes_by_name[class_name]
+    return [p['name'] for p in schema['properties']]
 
 
 def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, dict]:
