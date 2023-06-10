@@ -1,4 +1,4 @@
-# 💡 Contributing to LlamaIndex
+# Contributing to LlamaIndex
 Interested in contributing to LlamaIndex? Here's how to get started! 
 
 ## Contribution Guideline
@@ -17,7 +17,7 @@ Also, join our Discord for ideas and discussions: https://discord.gg/dGcwcsnxhU.
 
 ### 1. 🆕 Extend Core Modules
 The most impactful way to contribute to LlamaIndex is extending our core modules:
-![LlamaIndex modules](docs/_static/contribution/contrib.png)
+![LlamaIndex modules](https://github.com/jerryjliu/llama_index/raw/main/docs/_static/contribution/contrib.png)
 
 We welcome contributions in _all_ modules shown above.
 So far, we have implemented a core set of functionalities for each.

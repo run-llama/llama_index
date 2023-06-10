@@ -49,7 +49,7 @@ Some of these core modules are shown below along with example tutorials (not com
 - [LLM Reranking Guide (Great Gatsby)](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb)
 
 **Chat Engines**
-- [Chat Engines How-To](/how_to/query/chat_engines.md)
+- [Chat Engines How-To](../how_to/chat_engine/root.md)
 
 
 ### Using LlamaIndex as as Tool within an Agent Framework

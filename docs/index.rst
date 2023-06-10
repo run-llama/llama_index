@@ -53,7 +53,15 @@ to fit their needs.
 
    getting_started/installation.md
    getting_started/starter_example.md
-   changelog.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Development
+   :hidden:
+
+   development/contributing.rst
+   development/documentation.rst
+   development/changelog.rst
 
 .. toctree::
    :maxdepth: 2
