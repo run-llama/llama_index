@@ -6,8 +6,8 @@ from llama_index.query_engine.router_query_engine import (
     RetrieverRouterQueryEngine,
     RouterQueryEngine,
 )
-from llama_index.query_engine.sql_vector_query_engine import SQLAutoVectorQueryEngine
 from llama_index.query_engine.sql_join_query_engine import SQLJoinQueryEngine
+from llama_index.query_engine.sql_vector_query_engine import SQLAutoVectorQueryEngine
 from llama_index.query_engine.sub_question_query_engine import SubQuestionQueryEngine
 from llama_index.query_engine.transform_query_engine import TransformQueryEngine
 
@@ -19,7 +19,7 @@ __all__ = [
     "RouterQueryEngine",
     "RetrieverRouterQueryEngine",
     "SubQuestionQueryEngine",
-    "SQLAutoVectorQueryEngine",
     "SQLJoinQueryEngine",
+    "SQLAutoVectorQueryEngine",
     "RetryQueryEngine",
 ]

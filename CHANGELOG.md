@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### New Features
+- Added `SQLJoinQueryEngine` (generalization of `SQLAutoVectorQueryEngine`) (#6265)
 - Added support for graph stores under the hood, and initial support for Nebula KG. More docs coming soon! (#2581)
 
 ### Bug Fixes
