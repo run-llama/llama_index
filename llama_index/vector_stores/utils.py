@@ -69,8 +69,8 @@ def metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
     extra_info = {}
     for key, val in metadata.items():
         # NOTE: right now we enforce extra_info to be dict of simple types.
-        #       dump anything that's not a simple type in node_info.
-        if not isinstance(val, (str, int, float, type(None))):
+        #       dump anything that's not a simple type into node_info.
+        if isinstance(val, (str, int, float, type(None))):
             extra_info[key] = val
         else:
             node_info[key] = val
