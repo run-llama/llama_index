@@ -326,7 +326,7 @@ index = VectorStoreIndex.from_documents(uber_docs, storage_context=storage_conte
 
 ## Loading Data from Vector Stores using Data Connector
 
-LlamaIndex supports oading data from the following sources. See [Data Connectors](/how_to/data_connectors.md) for more details and API documentation.
+LlamaIndex supports loading data from the following sources. See [Data Connectors](../connector/root.md) for more details and API documentation.
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 

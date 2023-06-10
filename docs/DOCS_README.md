@@ -1,4 +1,4 @@
-# LlamaIndex Documentation
+# Documentation Guide
 
 ## A guide for docs contributors
 
