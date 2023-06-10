@@ -1,5 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence
-from langchain.text_splitter import TextSplitter
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from llama_index.callbacks.schema import CBEventType
 from llama_index.data_structs.node import NodeWithScore, Node
@@ -12,8 +11,8 @@ from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.type import ResponseMode
 from llama_index.langchain_helpers.text_splitter import (
-    TokenTextSplitter,
     SentenceSplitter,
+    TokenTextSplitter,
 )
 from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
 from llama_index.prompts.base import Prompt
@@ -74,6 +73,8 @@ CITATION_REFINE_TEMPLATE = Prompt(
 DEFAULT_CITATION_CHUNK_SIZE = 512
 DEFAULT_CITATION_CHUNK_OVERLAP = 20
 
+TextSplitterType = Union[SentenceSplitter, TokenTextSplitter]
+
 
 class CitationQueryEngine(BaseQueryEngine):
     """Citation query engine.
@@ -86,7 +87,7 @@ class CitationQueryEngine(BaseQueryEngine):
             Size of citation chunks, default=512. Useful for controlling
             granularity of sources.
         citation_chunk_overlap (int): Overlap of citation nodes, default=20.
-        text_splitter (Optional[TextSplitter]):
+        text_splitter (Optional[TextSplitterType]):
             A text splitter for creating citation source nodes. Default is
             a SentenceSplitter.
         callback_manager (Optional[CallbackManager]): A callback manager.
@@ -98,7 +99,7 @@ class CitationQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[ResponseSynthesizer] = None,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
-        text_splitter: Optional[TextSplitter] = None,
+        text_splitter: Optional[TextSplitterType] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self.text_splitter = text_splitter or SentenceSplitter(
@@ -118,7 +119,7 @@ class CitationQueryEngine(BaseQueryEngine):
         index: BaseGPTIndex,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
-        text_splitter: Optional[TextSplitter] = None,
+        text_splitter: Optional[TextSplitterType] = None,
         citation_qa_template: Prompt = CITATION_QA_TEMPLATE,
         citation_refine_template: Prompt = CITATION_REFINE_TEMPLATE,
         retriever: Optional[BaseRetriever] = None,
@@ -141,7 +142,7 @@ class CitationQueryEngine(BaseQueryEngine):
                 Size of citation chunks, default=512. Useful for controlling
                 granularity of sources.
             citation_chunk_overlap (int): Overlap of citation nodes, default=20.
-            text_splitter (Optional[TextSplitter]):
+            text_splitter (Optional[TextSplitterType]):
                 A text splitter for creating citation source nodes. Default is
                 a SentenceSplitter.
             citation_qa_template (Prompt): Template for initial citation QA
@@ -185,11 +186,9 @@ class CitationQueryEngine(BaseQueryEngine):
 
     def _create_citation_nodes(self, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
         """Modify retrieved nodes to be granular sources."""
-        text_splitter = TokenTextSplitter(chunk_size=256, chunk_overlap=20)
-
         new_nodes: List[NodeWithScore] = []
         for node in nodes:
-            splits = text_splitter.split_text_with_overlaps(node.node.get_text())
+            splits = self.text_splitter.split_text_with_overlaps(node.node.get_text())
 
             start_offset = 0
             if node.node.node_info:
