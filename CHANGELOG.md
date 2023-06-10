@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### New Features
+- Added `SQLJoinQueryEngine` (generalization of `SQLAutoVectorQueryEngine`) (#6265)
 - Added support for graph stores under the hood, and initial support for Nebula KG. More docs coming soon! (#2581)
 - Added guideline evaluator to allow llm to provide feedback based on user guidelines (#4664)
 - Added support for MongoDB Vector stores to enable Atlas knnbeta search (#6379)
