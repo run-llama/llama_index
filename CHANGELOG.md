@@ -3,6 +3,20 @@
 ## [Unreleased]
 
 ### New Features
+- None
+
+### Bug Fixes
+- None
+
+### Breaking/Deprecated API Changes
+- None
+
+### Miscellaneous
+- None
+
+## [v0.6.22] - 2023-06-10
+
+### New Features
 - Added `SQLJoinQueryEngine` (generalization of `SQLAutoVectorQueryEngine`) (#6265)
 - Added support for graph stores under the hood, and initial support for Nebula KG. More docs coming soon! (#2581)
 - Added guideline evaluator to allow llm to provide feedback based on user guidelines (#4664)
@@ -12,9 +26,6 @@
 ### Bug Fixes
 - Fixed bug with `delete_ref_doc` not removing all metadata from the docstore (#6192)
 - FIxed bug with loading existing QDrantVectorStore (#6230)
-
-### Breaking/Deprecated API Changes
-- None
 
 ### Miscellaneous 
 - Added changelog officially to github repo (#6191)
