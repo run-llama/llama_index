@@ -46,7 +46,6 @@ LlamaIndex provides tools for both beginner users and advanced users. Our high-l
 5 lines of code. Our lower-level APIs allow advanced users to customize and extend any module (data connectors, indices, retrievers, query engines, reranking modules),
 to fit their needs.
 
-
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started
@@ -54,7 +53,7 @@ to fit their needs.
 
    getting_started/installation.md
    getting_started/starter_example.md
-
+   changelog.rst
 
 .. toctree::
    :maxdepth: 2
