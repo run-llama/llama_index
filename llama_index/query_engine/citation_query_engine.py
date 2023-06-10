@@ -11,10 +11,7 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response.type import ResponseMode
-from llama_index.langchain_helpers.text_splitter import (
-    TokenTextSplitter,
-    SentenceSplitter,
-)
+from llama_index.langchain_helpers.text_splitter import SentenceSplitter
 from llama_index.optimization.optimizer import BaseTokenUsageOptimizer
 from llama_index.prompts.base import Prompt
 from llama_index.response.schema import RESPONSE_TYPE
@@ -185,11 +182,9 @@ class CitationQueryEngine(BaseQueryEngine):
 
     def _create_citation_nodes(self, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
         """Modify retrieved nodes to be granular sources."""
-        text_splitter = TokenTextSplitter(chunk_size=256, chunk_overlap=20)
-
         new_nodes: List[NodeWithScore] = []
         for node in nodes:
-            splits = text_splitter.split_text_with_overlaps(node.node.get_text())
+            splits = self.text_splitter.split_text_with_overlaps(node.node.get_text())
 
             start_offset = 0
             if node.node.node_info:
