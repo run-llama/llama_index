@@ -61,6 +61,7 @@ to fit their needs.
 
    development/contributing.rst
    development/documentation.rst
+   development/privacy.md
    development/changelog.rst
 
 .. toctree::
