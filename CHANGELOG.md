@@ -1,18 +1,12 @@
 # ChangeLog
 
-## [Unreleased]
+## [v0.6.23] - 2023-06-11
 
-### New Features
-- None
-
-### Bug Fixes
-- None
-
-### Breaking/Deprecated API Changes
-- None
-
-### Miscellaneous
-- None
+### Bug Fixes / Nits
+- Remove hardcoded chunk size for citation query engine (#6408)
+- Mongo demo improvements (#6406)
+- Fix notebook (#6418)
+- Cleanup RetryQuery notebook (#6381)
 
 ## [v0.6.22] - 2023-06-10
 
