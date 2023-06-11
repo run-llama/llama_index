@@ -23,6 +23,7 @@ as the storage backend for `VectorStoreIndex`.
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
+- MongoDB Atlas (`MongoDBVectorStore`). [Installation/Quickstart] (https://www.mongodb.com/atlas/database).
 
 A detailed API reference is [found here](/reference/indices/vector_store.rst).
 
@@ -299,11 +300,33 @@ vector_store = DocArrayHnswVectorStore(work_dir='hnsw_index')
 vector_store = DocArrayInMemoryVectorStore()
 ```
 
+**MongoDBAtlas**
+```python
+# Provide URI to constructor, or use environment variable
+import pymongo
+from llama_index.vector_stores.mongodb import MongoDBVectorStore
+from llama_index.indices.vector_store.base import VectorStoreIndex
+from llama_index.storage.storage_context import StorageContext
+from llama_index.readers.file.base import SimpleDirectoryReader
+
+# mongo_uri = os.environ["MONGO_URI"]
+mongo_uri = "mongodb+srv://<username>:<password>@<host>?retryWrites=true&w=majority"
+mongodb_client = pymongo.MongoClient(mongo_uri)
+
+# construct store
+store = MongoDBVectorStore(mongodb_client)
+storage_context = StorageContext.from_defaults(vector_store=store)
+uber_docs = SimpleDirectoryReader(input_files=["../data/10k/uber_2021.pdf"]).load_data()
+
+# construct index
+index = VectorStoreIndex.from_documents(uber_docs, storage_context=storage_context)
+```
+
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
 
 ## Loading Data from Vector Stores using Data Connector
 
-LlamaIndex supports oading data from the following sources. See [Data Connectors](/how_to/data_connectors.md) for more details and API documentation.
+LlamaIndex supports loading data from the following sources. See [Data Connectors](../connector/root.md) for more details and API documentation.
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
@@ -428,4 +451,5 @@ maxdepth: 1
 ../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 ../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb
 ../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
+../../examples/vector_stores/MongoDBVectorStoreDemo.ipynb
 ```

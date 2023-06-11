@@ -21,6 +21,7 @@ maxdepth: 1
 /examples/query_transformations/SimpleIndexDemo-multistep.ipynb
 /examples/query_engine/SQLRouterQueryEngine.ipynb
 /examples/query_engine/SQLAutoVectorQueryEngine.ipynb
+/examples/query_engine/SQLJoinQueryEngine.ipynb
 Retry Query Engine </examples/evaluation/RetryQuery.ipynb>
 Retry Source Query Engine </examples/evaluation/RetryQuery.ipynb>
 /examples/query_engine/json_query_engine.ipynb
