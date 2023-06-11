@@ -3,7 +3,9 @@ from typing import List
 from pydantic import BaseModel
 
 from llama_index.prompts.guidance_utils import (
-    convert_to_handlebars, pydantic_to_guidance_output_template)
+    convert_to_handlebars,
+    pydantic_to_guidance_output_template,
+)
 
 
 def test_convert_to_handlebars() -> None:
