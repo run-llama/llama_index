@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### New Features
-- None
+- Added better support for vector store with existing data (e.g. allow configurable text key) for Pinecone and Weaviate. (#6393)
 
 ### Bug Fixes
 - None
