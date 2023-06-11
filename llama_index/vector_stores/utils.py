@@ -1,5 +1,4 @@
 import json
-from dataclasses import field
 from typing import Any, Dict, Tuple
 
 from llama_index.data_structs.node import DocumentRelationship, Node
@@ -36,7 +35,9 @@ def node_to_metadata_dict(node: Node) -> dict:
     return metadata
 
 
-def metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
+def metadata_dict_to_node(
+    metadata: dict, text_key: str = DEFAULT_TEXT_KEY
+) -> Tuple[dict, dict, dict]:
     """Common logic for loading Node data from metadata dict."""
     # make a copy first
     metadata = metadata.copy()
@@ -52,14 +53,14 @@ def metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
     relationships_str = metadata.pop("relationships", "")
     relationships: Dict[DocumentRelationship, str]
     if relationships_str == "":
-        relationships = field(default_factory=dict)
+        relationships = {}
     else:
         relationships = {
             DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
         }
 
     # remove other known fields
-    metadata.pop("text", None)
+    metadata.pop(text_key, None)
     metadata.pop("id", None)
     metadata.pop("document_id", None)
     metadata.pop("doc_id", None)

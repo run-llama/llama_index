@@ -70,8 +70,8 @@ def parse_get_response(response: Dict) -> Dict:
     return data_response["Get"]
 
 
-def class_schema_exists(client: Any, class_name: str) -> None:
-    """Create schema."""
+def class_schema_exists(client: Any, class_name: str) -> bool:
+    """Check if class schema exists."""
     validate_client(client)
     schema = client.schema.get()
     classes = schema["classes"]
@@ -90,16 +90,16 @@ def create_default_schema(client: Any, class_name: str) -> None:
     client.schema.create_class(class_schema)
 
 
-def get_all_properties(client: Any, class_name: str) -> None:
+def get_all_properties(client: Any, class_name: str) -> List[str]:
     """Get all properties of a class."""
     validate_client(client)
     schema = client.schema.get()
     classes = schema["classes"]
     classes_by_name = {c["class"]: c for c in classes}
     if class_name not in classes_by_name:
-        raise ValueError(f'{class_name} schema does not exist.')
+        raise ValueError(f"{class_name} schema does not exist.")
     schema = classes_by_name[class_name]
-    return [p['name'] for p in schema['properties']]
+    return [p["name"] for p in schema["properties"]]
 
 
 def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, dict]:
@@ -132,6 +132,8 @@ def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, di
 def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> Node:
     """Convert to Node."""
     additional = entry.pop("_additional")
+    text = entry.pop(text_key, "")
+
     try:
         extra_info, node_info, relationships = metadata_dict_to_node(entry)
     except Exception as e:
@@ -139,8 +141,7 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> Node:
         extra_info, node_info, relationships = _legacy_metadata_dict_to_node(entry)
 
     return Node(
-        text=entry.get(text_key, ""),
-        embedding=additional["vector"],
+        text=text,
         doc_id=additional["id"],
         extra_info=extra_info,
         node_info=node_info,

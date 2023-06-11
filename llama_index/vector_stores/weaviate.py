@@ -8,23 +8,17 @@ import logging
 from typing import Any, List, Optional, cast
 from uuid import uuid4
 
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-    VectorStoreQueryResult,
-)
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryMode,
+                                             VectorStoreQueryResult)
 from llama_index.vector_stores.utils import DEFAULT_TEXT_KEY
-from llama_index.vector_stores.weaviate_utils import (
-    NODE_SCHEMA,
-    add_node,
-    class_schema_exists,
-    create_default_schema,
-    get_all_properties,
-    parse_get_response,
-    to_node,
-)
+from llama_index.vector_stores.weaviate_utils import (NODE_SCHEMA, add_node,
+                                                      class_schema_exists,
+                                                      create_default_schema,
+                                                      get_all_properties,
+                                                      parse_get_response,
+                                                      to_node)
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +77,7 @@ class WeaviateVectorStore(VectorStore):
         self._text_key = text_key
 
         # create default schema if does not exist
-        if class_schema_exists(self._client, self._index_name):
+        if not class_schema_exists(self._client, self._index_name):
             create_default_schema(self._client, self._index_name)
 
     @property
@@ -154,7 +148,7 @@ class WeaviateVectorStore(VectorStore):
         if query.filters is not None:
             raise ValueError("Metadata filters not implemented for Weaviate yet.")
 
-        all_properties = get_all_properties(self._index_name)
+        all_properties = get_all_properties(self._client, self._index_name)
 
         # build query
         query_builder = self._client.query.get(self._index_name, all_properties)
