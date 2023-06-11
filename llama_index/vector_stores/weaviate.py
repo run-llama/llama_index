@@ -13,7 +13,7 @@ from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
                                              VectorStoreQueryMode,
                                              VectorStoreQueryResult)
 from llama_index.vector_stores.utils import DEFAULT_TEXT_KEY
-from llama_index.vector_stores.weaviate_utils import (NODE_SCHEMA, add_node,
+from llama_index.vector_stores.weaviate_utils import (add_node,
                                                       class_schema_exists,
                                                       create_default_schema,
                                                       get_all_properties,

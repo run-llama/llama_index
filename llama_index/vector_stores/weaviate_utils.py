@@ -14,9 +14,11 @@ if TYPE_CHECKING:
 
 from llama_index.data_structs.data_structs import Node
 from llama_index.data_structs.node import DocumentRelationship
-from llama_index.vector_stores.utils import (DEFAULT_TEXT_KEY,
-                                             metadata_dict_to_node,
-                                             node_to_metadata_dict)
+from llama_index.vector_stores.utils import (
+    DEFAULT_TEXT_KEY,
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
 
 _logger = logging.getLogger(__name__)
 
