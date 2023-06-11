@@ -4,6 +4,7 @@
 
 ### New Features
 - Added better support for vector store with existing data (e.g. allow configurable text key) for Pinecone and Weaviate. (#6393)
+- Support batched upsert for Pineone (#6393)
 
 ### Bug Fixes
 - None
