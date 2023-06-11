@@ -71,14 +71,14 @@ class WeaviateVectorStore(VectorStore):
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
             logger.warning("class_prefix is deprecated, please use class_name")
-            if not class_prefix[0].isupper():
-                raise ValueError(
-                    "Class prefix must start with a capital letter, e.g. 'Gpt'"
-                )
             # legacy, kept for backward compatibility
             index_name = f"{class_prefix}_Node"
 
         self._index_name = index_name or f"LlamaIndex_{uuid4().hex}"
+        if not self._index_name[0].isupper():
+            raise ValueError(
+                "Index name must start with a capital letter, e.g. 'LlamaIndex'"
+            )
         self._text_key = text_key
 
         # create default schema if does not exist
