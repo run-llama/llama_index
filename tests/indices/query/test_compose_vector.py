@@ -334,7 +334,6 @@ def test_recursive_query_pinecone_pinecone(
         service_context=mock_service_context,
         **pinecone_kwargs
     )
-    query_str = "Foo?"
     custom_query_engines = {
         index.index_id: index.as_query_engine(similarity_top_k=1) for index in indices
     }
@@ -342,6 +341,7 @@ def test_recursive_query_pinecone_pinecone(
         similarity_top_k=1
     )
     query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
+    query_str = "Foo?"
     response = query_engine.query(query_str)
     assert str(response) == ("Foo?:Foo?:This is another test.")
     query_str = "Orange?"

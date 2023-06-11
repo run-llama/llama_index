@@ -1,8 +1,9 @@
 import json
-from dataclasses import field
 from typing import Any, Dict, Tuple
 
 from llama_index.data_structs.node import DocumentRelationship, Node
+
+DEFAULT_TEXT_KEY = "text"
 
 
 def node_to_metadata_dict(node: Node) -> dict:
@@ -34,7 +35,9 @@ def node_to_metadata_dict(node: Node) -> dict:
     return metadata
 
 
-def metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
+def metadata_dict_to_node(
+    metadata: dict, text_key: str = DEFAULT_TEXT_KEY
+) -> Tuple[dict, dict, dict]:
     """Common logic for loading Node data from metadata dict."""
     # make a copy first
     metadata = metadata.copy()
@@ -50,20 +53,27 @@ def metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
     relationships_str = metadata.pop("relationships", "")
     relationships: Dict[DocumentRelationship, str]
     if relationships_str == "":
-        relationships = field(default_factory=dict)
+        relationships = {}
     else:
         relationships = {
             DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
         }
 
     # remove other known fields
-    metadata.pop("text", None)
+    metadata.pop(text_key, None)
     metadata.pop("id", None)
     metadata.pop("document_id", None)
     metadata.pop("doc_id", None)
     metadata.pop("ref_doc_id", None)
 
-    # remaining metadata is extra_info
-    extra_info = metadata
+    # remaining metadata is extra_info or node_info
+    extra_info = {}
+    for key, val in metadata.items():
+        # NOTE: right now we enforce extra_info to be dict of simple types.
+        #       dump anything that's not a simple type into node_info.
+        if isinstance(val, (str, int, float, type(None))):
+            extra_info[key] = val
+        else:
+            node_info[key] = val
 
     return extra_info, node_info, relationships
