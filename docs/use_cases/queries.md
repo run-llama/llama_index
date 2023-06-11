@@ -86,7 +86,7 @@ response = query_engine.query("<query_str>")
 ```
 
 **Guides**
-- [Composability](/how_to/index_structs/composability.md)
+- [Composability](../how_to/index/composability.md)
 - [City Analysis](../examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
 
@@ -154,7 +154,7 @@ decompose_transform = DecomposeQueryTransform(
 This module will help break down a complex query into a simpler one over your existing index structure.
 
 **Guides**
-- [Query Transformations](/how_to/query/query_transformations.md)
+- [Query Transformations](../how_to/query_engine/advanced/query_transformations.md)
 - [City Analysis Compare/Contrast Example](../examples//composable_indices/city_analysis/City_Analysis-Decompose.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb))
 
 You can also rely on the LLM to *infer* whether to perform compare/contrast queries (see Multi-Document Queries below).
@@ -214,7 +214,7 @@ the module will first decompose the query into a simpler initial question "What 
 query the index, and then ask followup questions.
 
 **Guides**
-- [Query Transformations](/how_to/query/query_transformations.md)
+- [Query Transformations](../how_to/query_engine/advanced/query_transformations.md)
 - [Multi-Step Query Decomposition](../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 
@@ -225,7 +225,7 @@ LlamaIndex can support queries that require an understanding of time. It can do 
 - Sort by recency and filter outdated context.
 
 **Guides**
-- [Second-Stage Postprocessing Guide](/how_to/query/second_stage.md)
+- [Second-Stage Postprocessing Guide](../how_to/query_engine/advanced/second_stage.md)
 - [Prev/Next Postprocessing](../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
 - [Recency Postprocessing](../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
 
