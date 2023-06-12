@@ -40,7 +40,7 @@ class Response:
         """Get formatted source nodes as a string."""
         formatted_sources = []
         for node_with_score in self.source_nodes:
-            truncated_text = truncate_text(node_with_score.node.text, 100)
+            truncated_text = truncate_text(node_with_score.node.text or "", 100)
             formatted_sources.append("NodeWithScore(")
             formatted_sources.append("  node=Node(")
             formatted_sources.append("    text='{}',".format(truncated_text.replace('\n', '\\n')))
