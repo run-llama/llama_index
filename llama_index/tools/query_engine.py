@@ -1,3 +1,4 @@
+from pydantic import BaseModel, Field
 from typing import Any, Optional, cast
 
 from llama_index.indices.query.base import BaseQueryEngine
@@ -60,3 +61,17 @@ class QueryEngineTool(BaseTool):
             description=self.metadata.description,
         )
         return LlamaIndexTool.from_tool_config(tool_config=tool_config)
+
+    def as_openai_json_function(self) -> dict:
+        class QueryIndex(BaseModel):
+            query_str: str = Field(
+                ..., description="The text or question to perform a search with."
+            )
+
+        json_schema = {
+            "name": self.metadata.name,
+            "description": self.metadata.description,
+            "parameters": {"type": "object", "properties": QueryIndex.schema()},
+        }
+
+        return json_schema
