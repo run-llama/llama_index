@@ -3,7 +3,9 @@
 ## [Unreleased]
 
 ### New Features
-- None
+- Added better support for vector store with existing data (e.g. allow configurable text key) for Pinecone and Weaviate. (#6393)
+- Support batched upsert for Pineone (#6393)
+- Added initial [guidance](https://github.com/microsoft/guidance/) integration. Added `GuidancePydanticProgram` for generic structured output generation and `GuidanceQuestionGenerator` for generating sub-questions in `SubQuestionQueryEngine`.
 
 ### Bug Fixes
 - None
@@ -13,6 +15,14 @@
 
 ### Miscellaneous
 - None
+
+## [v0.6.23] - 2023-06-11
+
+### Bug Fixes / Nits
+- Remove hardcoded chunk size for citation query engine (#6408)
+- Mongo demo improvements (#6406)
+- Fix notebook (#6418)
+- Cleanup RetryQuery notebook (#6381)
 
 ## [v0.6.22] - 2023-06-10
 
