@@ -10,7 +10,7 @@ One particularly exciting aspect of guidance is the ability to output structured
 
 This is particularly powerful for weaker LLMs which be smaller in parameter count, and not trained on sufficient source code data to be able to reliably produce well-formed, hierarchical structured output.
 
-## Creating a guidance program to generate pydantic objects 
+### Creating a guidance program to generate pydantic objects 
 In LlamaIndex, we provide an initial integration with guidance, to make it super easy for generating structured output (more specifically pydantic objects).
 
 For example, if we want to generate an album of songs, with the following schema:
@@ -57,7 +57,7 @@ Album(name='The Shining', artist='Jack Torrance', songs=[Song(title='All Work an
 
 You can play with [this notebook](/examples/output_parsing/guidance_pydantic_program.ipynb) for more details.
 
-## Using guidance to improve the robustness of our sub-question query engine.
+### Using guidance to improve the robustness of our sub-question query engine.
 LlamaIndex provides a toolkit of advanced query engines for tackling different use-cases.
 Several relies on structured output in intermediate steps.
 We can use guidance to improve the robustness of these query engines, by making sure the
