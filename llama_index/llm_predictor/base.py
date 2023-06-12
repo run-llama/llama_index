@@ -234,7 +234,13 @@ class LLMPredictor(BaseLLMPredictor):
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
         self.callback_manager.on_event_end(
             CBEventType.LLM,
-            payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
+            payload={
+                "response": llm_prediction,
+                "formatted_prompt": formatted_prompt,
+                "formatted_prompt_tokens_count": prompt_tokens_count,
+                "prediction_tokens_count": prediction_tokens_count,
+                "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
+            },
             event_id=event_id,
         )
         return llm_prediction, formatted_prompt
@@ -336,7 +342,13 @@ class LLMPredictor(BaseLLMPredictor):
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
         self.callback_manager.on_event_end(
             CBEventType.LLM,
-            payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
+            payload={
+                "response": llm_prediction,
+                "formatted_prompt": formatted_prompt,
+                "formatted_prompt_tokens_count": prompt_tokens_count,
+                "prediction_tokens_count": prediction_tokens_count,
+                "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
+            },
             event_id=event_id,
         )
         return llm_prediction, formatted_prompt

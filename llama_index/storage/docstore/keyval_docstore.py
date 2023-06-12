@@ -161,14 +161,17 @@ class KVDocumentStore(BaseDocumentStore):
             return
 
         ref_doc_id = metadata.get("ref_doc_id", None)
+
         if ref_doc_id is None:
             return
 
         ref_doc_info = self._kvstore.get(
             ref_doc_id, collection=self._ref_doc_collection
         )
+
         if ref_doc_info is not None:
             ref_doc_obj = RefDocInfo(**ref_doc_info)
+
             ref_doc_obj.doc_ids.remove(doc_id)
 
             # delete ref_doc from collection if it has no more doc_ids
@@ -178,8 +181,8 @@ class KVDocumentStore(BaseDocumentStore):
                     ref_doc_obj.to_dict(),
                     collection=self._ref_doc_collection,
                 )
-            else:
-                self._kvstore.delete(ref_doc_id, collection=self._ref_doc_collection)
+
+            self._kvstore.delete(ref_doc_id, collection=self._metadata_collection)
 
     def delete_document(
         self, doc_id: str, raise_error: bool = True, remove_ref_doc_node: bool = True
@@ -205,6 +208,8 @@ class KVDocumentStore(BaseDocumentStore):
 
         for doc_id in ref_doc_info.doc_ids:
             self.delete_document(doc_id, raise_error=False, remove_ref_doc_node=False)
+
+        self._kvstore.delete(ref_doc_id, collection=self._metadata_collection)
         self._kvstore.delete(ref_doc_id, collection=self._ref_doc_collection)
 
     def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
