@@ -11,6 +11,12 @@ if TYPE_CHECKING:
 
 
 class GuidancePydanticProgram(BasePydanticProgram, Generic[Model]):
+    """
+    A guidance-based function that returns a pydantic model.
+
+    Note: this interface is not yet stable.
+    """
+
     def __init__(
         self,
         output_cls: Type[Model],
