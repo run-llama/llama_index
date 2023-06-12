@@ -35,6 +35,27 @@ class Response:
             source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
             texts.append(source_text)
         return "\n\n".join(texts)
+    
+    def formatted_source_nodes(self) -> str:
+        """Get formatted source nodes as a string."""
+        formatted_sources = []
+        for node_with_score in self.source_nodes:
+            truncated_text = truncate_text(node_with_score.node.text, 100)
+            formatted_sources.append("NodeWithScore(")
+            formatted_sources.append("  node=Node(")
+            formatted_sources.append("    text='{}',".format(truncated_text.replace('\n', '\\n')))
+            formatted_sources.append("    embedding={}, ".format(node_with_score.node.embedding))
+            formatted_sources.append("    doc_hash='{}', ".format(node_with_score.node.doc_hash))
+            formatted_sources.append("    extra_info={}, ".format(node_with_score.node.extra_info))
+            formatted_sources.append("    node_info={}), ".format(node_with_score.node.node_info))
+            formatted_sources.append("  relationships={")
+            for relationship, value in node_with_score.node.relationships.items():
+                formatted_sources.append("    {}: '{}',".format(relationship, value))
+            formatted_sources.append("  }),")
+            formatted_sources.append("  score={}".format(node_with_score.score))
+            formatted_sources.append(")")
+            formatted_sources.append("\n")
+        return "\n".join(formatted_sources)
 
 
 @dataclass
