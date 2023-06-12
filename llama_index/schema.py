@@ -1,6 +1,7 @@
 """Base schema for data structures."""
 from abc import abstractmethod
 from dataclasses import dataclass
+from datetime import datetime
 from hashlib import sha256
 from typing import Any, Dict, List, Optional
 
@@ -17,7 +18,7 @@ def _validate_is_flat_dict(metadata_dict: dict) -> None:
     for key, val in metadata_dict.items():
         if not isinstance(key, str):
             raise ValueError("Metadata key must be str!")
-        if not isinstance(val, (str, int, float, type(None))):
+        if not isinstance(val, (str, int, float, type(None), datetime)):
             raise ValueError("Value must be one of (str, int, float, None)")
 
 
