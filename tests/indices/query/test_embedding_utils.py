@@ -41,6 +41,11 @@ def test_get_top_k_mmr_embeddings() -> None:
     )
     assert result_ids == [0, 2, 1]
 
+    # Tests that embedding ids map properly to results
+    _, result_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, embedding_ids=["A", "B", "C"], mmr_threshold=0.5
+    )
+    assert result_ids == ["A", "C", "B"]
     # Test that it will go back to the original order under a high threshold
     _, result_ids = get_top_k_mmr_embeddings(
         query_embedding, embeddings, mmr_threshold=1

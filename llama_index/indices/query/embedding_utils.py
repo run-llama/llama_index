@@ -1,5 +1,6 @@
 """Embedding utils for queries."""
 import heapq
+import math
 from typing import Any, Callable, List, Optional, Tuple
 
 from llama_index.embeddings.base import similarity as default_similarity_fn
@@ -107,44 +108,52 @@ def get_top_k_mmr_embeddings(
     discount by their similarity to previous results.
 
     A mmr_threshold of 0 will strongly avoid similarity to previous results.
-    A mmr_threshold of 1 will compare similarity the query and ignore previous results.
+    A mmr_threshold of 1 will check similarity the query and ignore previous results.
 
     """
-
     threshold = mmr_threshold or 0.5
-    print("Threshold is ", threshold)
+    similarity_fn = similarity_fn or default_similarity_fn
+
     if embedding_ids is None:
         embedding_ids = [i for i in range(len(embeddings))]
-    similarity_fn = similarity_fn or default_similarity_fn
-    embed_map = dict(zip(embedding_ids, range(len(embedding_ids))))
-    similarities: List[List[Any]] = []
-    # similarities is omposed of lists of similarity score against query, id,
-    # and similarity score against other results
+    full_embed_map = dict(zip(embedding_ids, range(len(embedding_ids))))
+    embed_map = full_embed_map.copy()
+    embed_similarity = {}
+    score: float = -math.inf
+    high_score_id = None
 
     for i, emb in enumerate(embeddings):
         similarity = similarity_fn(query_embedding, emb)
-        similarities.append([similarity, embedding_ids[i], 0])
+        embed_similarity[embedding_ids[i]] = similarity
+        if similarity * threshold > score:
+            high_score_id = embedding_ids[i]
+            score = similarity * threshold
 
-    # Create initial scored similarity list
-    similarities.sort(key=lambda x: x[0], reverse=True)
     results: List[Tuple[Any, Any]] = []
     while len(results) < (similarity_top_k or len(embeddings)):
         # Calculate the similarity score the for the leading one.
-        similarity, recent_embedding_id, overlap = similarities.pop(0)
-        results.append(
-            (threshold * similarity - (1 - threshold) * overlap, recent_embedding_id)
-        )
+        results.append((score, high_score_id))
 
-        # update remaining entries
-        for index, (_, embed_id, _) in enumerate(similarities):
-            similarity_with_recent = similarity_fn(
+        # Reset so a new high scoring result can be found
+        del embed_map[high_score_id]
+        recent_embedding_id = high_score_id
+        score = -math.inf
+
+        # Iterate through results to find high score
+        for embed_id in embed_map.keys():
+            overlap_with_recent = similarity_fn(
                 embeddings[embed_map[embed_id]],
-                embeddings[embed_map[recent_embedding_id]],
+                embeddings[full_embed_map[recent_embedding_id]],
             )
-            similarities[index][2] = max(similarities[index][2], similarity_with_recent)
-        similarities.sort(
-            key=lambda x: threshold * x[0] - ((1 - threshold) * x[2]), reverse=True
-        )
+            if (
+                threshold * embed_similarity[embed_id]
+                - ((1 - threshold) * overlap_with_recent)
+                > score
+            ):
+                score = threshold * embed_similarity[embed_id] - (
+                    (1 - threshold) * overlap_with_recent
+                )
+                high_score_id = embed_id
 
     result_similarities = [s for s, _ in results]
     result_ids = [n for _, n in results]
