@@ -19,6 +19,16 @@ class TokenCountingEvent:
 
 
 class TokenCountingHandler(BaseCallbackHandler):
+    """Callback handler for counting tokens in LLM and Embedding events.
+
+    Args:
+        tokenizer:
+            Tokenizer to use. Defaults to the global tokenizer
+            (see llama_index.utils.globals_helper).
+        event_starts_to_ignore: List of event types to ignore at the start of a trace.
+        event_ends_to_ignore: List of event types to ignore at the end of a trace.
+    """
+
     def __init__(
         self,
         tokenizer: Optional[Callable[[str], List]] = None,
@@ -60,6 +70,7 @@ class TokenCountingHandler(BaseCallbackHandler):
         event_id: str = "",
         **kwargs: Any
     ) -> None:
+        """Count the LLM or Embedding tokens as needed."""
         if (
             event_type == CBEventType.LLM
             and event_type not in self.event_ends_to_ignore
@@ -95,6 +106,7 @@ class TokenCountingHandler(BaseCallbackHandler):
                 )
 
     def get_last_llm_token_count(self) -> TokenCountingEvent:
+        """Get the TokenCountingEvent of the last LLM event."""
         if len(self.llm_token_counts) > 0:
             return self.llm_token_counts[-1]
         else:
@@ -103,6 +115,7 @@ class TokenCountingHandler(BaseCallbackHandler):
             )
 
     def get_last_embedding_token_count(self) -> TokenCountingEvent:
+        """Get the TokenCountingEvent of the last Embedding event."""
         if len(self.embedding_token_counts) > 0:
             return self.embedding_token_counts[-1]
         else:
@@ -112,20 +125,25 @@ class TokenCountingHandler(BaseCallbackHandler):
 
     @property
     def total_llm_token_count(self) -> int:
+        """Get the current total LLM token count."""
         return sum([x.total_token_count for x in self.llm_token_counts])
 
     @property
     def prompt_llm_token_count(self) -> int:
+        """Get the current total LLM prompt token count."""
         return sum([x.prompt_token_count for x in self.llm_token_counts])
 
     @property
     def completion_llm_token_count(self) -> int:
+        """Get the current total LLM completion token count."""
         return sum([x.completion_token_count for x in self.llm_token_counts])
 
     @property
     def total_embedding_token_count(self) -> int:
+        """Get the current total Embedding token count."""
         return sum([x.total_token_count for x in self.embedding_token_counts])
 
     def reset_counts(self) -> None:
+        """Reset the token counts."""
         self.llm_token_counts = []
         self.embedding_token_counts = []
