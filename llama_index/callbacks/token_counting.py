@@ -34,7 +34,7 @@ class TokenCountingHandler(BaseCallbackHandler):
         tokenizer: Optional[Callable[[str], List]] = None,
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
-    ):
+    ) -> None:
         self.llm_token_counts: List[TokenCountingEvent] = []
         self.embedding_token_counts: List[TokenCountingEvent] = []
         self.tokenizer = tokenizer or globals_helper.tokenizer
