@@ -13,7 +13,7 @@ class ToolMetadata:
     fn_schema: Optional[Type[BaseModel]] = None
 
     def to_openai_function(self) -> Dict[str, Any]:
-        """To openai function."""
+        """To OpenAI function."""
         if self.fn_schema is None:
             raise NotImplementedError()
         else:

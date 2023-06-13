@@ -1,3 +1,3 @@
-from llama_index.agent.openai_chat_agent import OpenAIChatAgent
+from llama_index.agent.openai_agent import OpenAIAgent
 
-__all__ = ["OpenAIChatAgent"]
+__all__ = ["OpenAIAgent"]
