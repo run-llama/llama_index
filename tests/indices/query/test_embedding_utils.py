@@ -13,7 +13,7 @@ def test_get_top_k_mmr_embeddings() -> None:
 
     # Results score should follow from the mmr algorithm
     query_embedding = [5.0, 0.0, 0.0]
-    embeddings = [[4.0, 3.0, 0.0], [3.0, 4.0, 0.0], [-4.0, 3.0, 0.0]]    
+    embeddings = [[4.0, 3.0, 0.0], [3.0, 4.0, 0.0], [-4.0, 3.0, 0.0]]
     result_similarities, result_ids = get_top_k_mmr_embeddings(
         query_embedding, embeddings, mmr_threshold=0.8
     )

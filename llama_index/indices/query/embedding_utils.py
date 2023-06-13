@@ -103,7 +103,7 @@ def get_top_k_mmr_embeddings(
     similarity_cutoff: Optional[float] = None,
     mmr_threshold: Optional[float] = None,
 ) -> Tuple[List[float], List]:
-    """Get top nodes by similarity to the query, 
+    """Get top nodes by similarity to the query,
     discount by their similarity to previous results.
 
     A mmr_threshold of 0 will strongly avoid similarity to previous results.
@@ -112,14 +112,13 @@ def get_top_k_mmr_embeddings(
     """
 
     threshold = mmr_threshold or 0.5
+    print("Threshold is ", threshold)
     if embedding_ids is None:
         embedding_ids = [i for i in range(len(embeddings))]
     similarity_fn = similarity_fn or default_similarity_fn
     embed_map = dict(zip(embedding_ids, range(len(embedding_ids))))
-    similarities: List[List[Any]] = (
-        []
-    )  
-    # similarities is omposed of lists of similarity score against query, id, 
+    similarities: List[List[Any]] = []
+    # similarities is omposed of lists of similarity score against query, id,
     # and similarity score against other results
 
     for i, emb in enumerate(embeddings):
@@ -128,7 +127,7 @@ def get_top_k_mmr_embeddings(
 
     # Create initial scored similarity list
     similarities.sort(key=lambda x: x[0], reverse=True)
-    results: List[Tuple[Any,Any]] = [] 
+    results: List[Tuple[Any, Any]] = []
     while len(results) < (similarity_top_k or len(embeddings)):
         # Calculate the similarity score the for the leading one.
         similarity, recent_embedding_id, overlap = similarities.pop(0)
