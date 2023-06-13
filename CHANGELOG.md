@@ -4,7 +4,10 @@
 
 ### New Features
 - Added FLARE query engine (#6419).
+- New `TokenCountingCallback` to customize and track embedding, prompt, and completion token usage (#6440)
 
+### Breaking/Deprecated API Changes
+- Deprecated current token tracking (llm predicotr and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
 
 ## [v0.6.24] - 2023-06-12
 
@@ -12,15 +15,6 @@
 - Added better support for vector store with existing data (e.g. allow configurable text key) for Pinecone and Weaviate. (#6393)
 - Support batched upsert for Pineone (#6393)
 - Added initial [guidance](https://github.com/microsoft/guidance/) integration. Added `GuidancePydanticProgram` for generic structured output generation and `GuidanceQuestionGenerator` for generating sub-questions in `SubQuestionQueryEngine` (#6246).
-
-### Bug Fixes
-- None
-
-### Breaking/Deprecated API Changes
-- None
-
-### Miscellaneous
-- None
 
 ## [v0.6.23] - 2023-06-11
 
