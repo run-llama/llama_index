@@ -151,21 +151,14 @@ class SimpleVectorStore(VectorStore):
                 embedding_ids=node_ids,
             )
         elif query.mode == MMR_MODE:
-            if "mmr_threshold" in kwargs:
-                top_similarities, top_ids = get_top_k_mmr_embeddings(
-                    query_embedding,
-                    embeddings,
-                    similarity_top_k=query.similarity_top_k,
-                    embedding_ids=node_ids,
-                    mmr_threshold=kwargs["mmr_threshold"],
-                )
-            else:
-                top_similarities, top_ids = get_top_k_mmr_embeddings(
-                    query_embedding,
-                    embeddings,
-                    similarity_top_k=query.similarity_top_k,
-                    embedding_ids=node_ids,
-                )
+            mmr_threshold=kwargs.get("mmr_threshold", None)
+            top_similarities, top_ids = get_top_k_mmr_embeddings(
+                query_embedding,
+                embeddings,
+                similarity_top_k=query.similarity_top_k,
+                embedding_ids=node_ids,
+                mmr_threshold=mmr_threshold,
+            )
         elif query.mode == VectorStoreQueryMode.DEFAULT:
             top_similarities, top_ids = get_top_k_embeddings(
                 query_embedding,
