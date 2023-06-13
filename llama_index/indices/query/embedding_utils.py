@@ -92,3 +92,62 @@ def get_top_k_embeddings_learner(
     result_ids = [embedding_ids[ix] for ix in top_sorted_ix]
 
     return result_similarities, result_ids
+
+
+def get_top_k_mmr_embeddings(
+    query_embedding: List[float],
+    embeddings: List[List[float]],
+    similarity_fn: Optional[Callable[..., float]] = None,
+    similarity_top_k: Optional[int] = None,
+    embedding_ids: Optional[List] = None,
+    similarity_cutoff: Optional[float] = None,
+    mmr_threshold: Optional[float] = None,
+) -> Tuple[List[float], List]:
+    """Get top nodes by similarity to the query, 
+    discount by their similarity to previous results.
+
+    A mmr_threshold of 0 will strongly avoid similarity to previous results.
+    A mmr_threshold of 1 will compare similarity the query and ignore previous results.
+
+    """
+
+    threshold = mmr_threshold or 0.5
+    if embedding_ids is None:
+        embedding_ids = [i for i in range(len(embeddings))]
+    similarity_fn = similarity_fn or default_similarity_fn
+    embed_map = dict(zip(embedding_ids, range(len(embedding_ids))))
+    similarities: List[List[Any]] = (
+        []
+    )  
+    # similarities is omposed of lists of similarity score against query, id, 
+    # and similarity score against other results
+
+    for i, emb in enumerate(embeddings):
+        similarity = similarity_fn(query_embedding, emb)
+        similarities.append([similarity, embedding_ids[i], 0])
+
+    # Create initial scored similarity list
+    similarities.sort(key=lambda x: x[0], reverse=True)
+    results: List[Tuple[Any,Any]] = [] 
+    while len(results) < (similarity_top_k or len(embeddings)):
+        # Calculate the similarity score the for the leading one.
+        similarity, recent_embedding_id, overlap = similarities.pop(0)
+        results.append(
+            (threshold * similarity - (1 - threshold) * overlap, recent_embedding_id)
+        )
+
+        # update remaining entries
+        for index, (_, embed_id, _) in enumerate(similarities):
+            similarity_with_recent = similarity_fn(
+                embeddings[embed_map[embed_id]],
+                embeddings[embed_map[recent_embedding_id]],
+            )
+            similarities[index][2] = max(similarities[index][2], similarity_with_recent)
+        similarities.sort(
+            key=lambda x: threshold * x[0] - ((1 - threshold) * x[2]), reverse=True
+        )
+
+    result_similarities = [s for s, _ in results]
+    result_ids = [n for _, n in results]
+
+    return result_similarities, result_ids
