@@ -1,6 +1,6 @@
 # ChangeLog
 
-## [Unreleased]
+## [v0.6.24] - 2023-06-12
 
 ### New Features
 - Added better support for vector store with existing data (e.g. allow configurable text key) for Pinecone and Weaviate. (#6393)
