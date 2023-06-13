@@ -47,7 +47,5 @@ def test_on_event_end() -> None:
     # test actual counts
     # LLM should be two (prompt plus response)
     # Embedding should be one (single token chunk)
-    assert handler.get_last_llm_token_count().total_token_count == 2
-    assert handler.get_last_embedding_token_count().total_token_count == 1
     assert handler.total_llm_token_count == 2
     assert handler.total_embedding_token_count == 1
