@@ -24,8 +24,8 @@ class MilvusVectorStore(VectorStore):
 
     In this vector store we store the text, its embedding and
     a few pieces of its metadata in a Milvus collection. This implemnetation
-    allows the use of an already existing collection if it is one that was created
-    this vector store. It also supports creating a new one if the collection doesnt
+    allows the use of an already existing collection.
+    It also supports creating a new one if the collection doesnt
     exist or if `overwrite` is set to True.
 
     Args:
@@ -113,7 +113,7 @@ class MilvusVectorStore(VectorStore):
         # Figure out if there is already a created collection
         if utility.has_collection(self.collection_name, using=self.alias):
             self.collection = Collection(
-                self.collection_name, using=self.alias, consistency_level="Strong"
+                self.collection_name, using=self.alias
             )
         else:
             self.collection = None
