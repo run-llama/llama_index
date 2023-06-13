@@ -8,8 +8,8 @@ from llama_index.tools.types import BaseTool
 class BaseChatAgent(BaseChatEngine):
     """A chat agent is a chat engine that makes use of tools."""
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def from_tools(
         cls,
         tools: Sequence[BaseTool],
