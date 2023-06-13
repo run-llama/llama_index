@@ -78,7 +78,7 @@ class BaseEmbedding:
         query_tokens_count = len(self._tokenizer(query))
         self._total_tokens_used += query_tokens_count
         self.callback_manager.on_event_end(
-            CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
+            CBEventType.EMBEDDING, payload={"chunks": [query]}, event_id=event_id
         )
         return query_embedding
 
@@ -134,7 +134,7 @@ class BaseEmbedding:
         text_tokens_count = len(self._tokenizer(text))
         self._total_tokens_used += text_tokens_count
         self.callback_manager.on_event_end(
-            CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
+            CBEventType.EMBEDDING, payload={"chunks": [text]}, event_id=event_id
         )
         return text_embedding
 
@@ -170,7 +170,7 @@ class BaseEmbedding:
                 result_embeddings.extend(embeddings)
                 self.callback_manager.on_event_end(
                     CBEventType.EMBEDDING,
-                    payload={"num_nodes": len(embeddings)},
+                    payload={"chunks": cur_batch_texts},
                     event_id=event_id,
                 )
 
@@ -208,7 +208,7 @@ class BaseEmbedding:
                 result_ids.extend(cur_batch_ids)
                 self.callback_manager.on_event_end(
                     CBEventType.EMBEDDING,
-                    payload={"num_nodes": len(cur_batch_ids)},
+                    payload={"chunks": cur_batch_texts},
                     event_id=event_id,
                 )
 

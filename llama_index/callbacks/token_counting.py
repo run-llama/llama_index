@@ -105,24 +105,6 @@ class TokenCountingHandler(BaseCallbackHandler):
                     )
                 )
 
-    def get_last_llm_token_count(self) -> TokenCountingEvent:
-        """Get the TokenCountingEvent of the last LLM event."""
-        if len(self.llm_token_counts) > 0:
-            return self.llm_token_counts[-1]
-        else:
-            return TokenCountingEvent(
-                prompt="", completion="", prompt_token_count=0, completion_token_count=0
-            )
-
-    def get_last_embedding_token_count(self) -> TokenCountingEvent:
-        """Get the TokenCountingEvent of the last Embedding event."""
-        if len(self.embedding_token_counts) > 0:
-            return self.embedding_token_counts[-1]
-        else:
-            return TokenCountingEvent(
-                prompt="", completion="", prompt_token_count=0, completion_token_count=0
-            )
-
     @property
     def total_llm_token_count(self) -> int:
         """Get the current total LLM token count."""
