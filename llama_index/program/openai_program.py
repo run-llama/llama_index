@@ -56,7 +56,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
         prompt_template_str: str,
         llm: Optional[ChatOpenAI] = None,
         verbose: bool = False,
-    ):
+    ) -> "OpenAIPydanticProgram":
         llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
         if not isinstance(llm, ChatOpenAI):
             raise ValueError("llm must be a ChatOpenAI instance")
