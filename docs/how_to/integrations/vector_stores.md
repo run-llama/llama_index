@@ -433,6 +433,7 @@ caption: Examples
 maxdepth: 1
 ---
 ../../examples/vector_stores/SimpleIndexDemo.ipynb
+../../examples/vector_stores/SimpleIndexDemoMMR.ipynb
 ../../examples/vector_stores/RedisIndexDemo.ipynb
 ../../examples/vector_stores/QdrantIndexDemo.ipynb
 ../../examples/vector_stores/FaissIndexDemo.ipynb
