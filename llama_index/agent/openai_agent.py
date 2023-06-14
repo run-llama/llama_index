@@ -17,6 +17,8 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools import BaseTool
 
+DEFAULT_MAX_FUNCTION_CALLS = 5
+
 
 class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
     def __init__(
@@ -25,7 +27,7 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
         llm: ChatOpenAI,
         chat_history: ChatMessageHistory,
         verbose: bool = False,
-        max_function_calls: int = 5,
+        max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._llm = llm

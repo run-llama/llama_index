@@ -42,10 +42,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def monkey_patch_langchain():
+def monkey_patch_langchain() -> None:
     from langchain import schema
     from langchain.chat_models import openai
 
     # monkey patch
     openai._convert_message_to_dict = _convert_message_to_dict
-    schema.FunctionMessage = FunctionMessage
+    schema.FunctionMessage = FunctionMessage  # type: ignore
