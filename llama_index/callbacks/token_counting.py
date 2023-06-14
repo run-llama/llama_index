@@ -34,10 +34,12 @@ class TokenCountingHandler(BaseCallbackHandler):
         tokenizer: Optional[Callable[[str], List]] = None,
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
+        verbose: bool = False,
     ) -> None:
         self.llm_token_counts: List[TokenCountingEvent] = []
         self.embedding_token_counts: List[TokenCountingEvent] = []
         self.tokenizer = tokenizer or globals_helper.tokenizer
+        self._verbose = verbose
 
         super().__init__(
             event_starts_to_ignore=event_starts_to_ignore or [],
@@ -59,7 +61,7 @@ class TokenCountingHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         return event_id
 
@@ -68,7 +70,7 @@ class TokenCountingHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Count the LLM or Embedding tokens as needed."""
         if (
@@ -89,11 +91,21 @@ class TokenCountingHandler(BaseCallbackHandler):
                     ),
                 )
             )
+
+            if self._verbose:
+                print(
+                    "LLM Prompt Token Usage: "
+                    f"{self.llm_token_counts[-1].prompt_token_count}\n"
+                    "LLM Completion Token Usage: "
+                    f"{self.llm_token_counts[-1].completion_token_count}",
+                    flush=True,
+                )
         elif (
             event_type == CBEventType.EMBEDDING
             and event_type not in self.event_ends_to_ignore
             and payload is not None
         ):
+            total_chunk_tokens = 0
             for chunk in payload.get("chunks", []):
                 self.embedding_token_counts.append(
                     TokenCountingEvent(
@@ -104,6 +116,10 @@ class TokenCountingHandler(BaseCallbackHandler):
                         completion_token_count=0,
                     )
                 )
+                total_chunk_tokens += self.embedding_token_counts[-1].total_token_count
+
+            if self._verbose:
+                print(f"Embedding Token Usage: {total_chunk_tokens}", flush=True)
 
     @property
     def total_llm_token_count(self) -> int:
