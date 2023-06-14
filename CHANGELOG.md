@@ -1,5 +1,15 @@
 # ChangeLog
 
+## [v0.6.26] - 2023-06-14
+
+### New Features
+- Adds maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode.
+
+## [v0.6.25] - 2023-06-13
+
+### New Features
+- Added FLARE query engine (#6419).
+
 ## [v0.6.24] - 2023-06-12
 
 ### New Features
