@@ -15,7 +15,7 @@ from llama_index.chat_engine.types import BaseChatEngine
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.response.schema import RESPONSE_TYPE, Response
-from llama_index.tools.types import BaseTool
+from llama_index.tools import BaseTool
 
 
 class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
@@ -34,10 +34,6 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
         self._verbose = verbose
         self._max_function_calls = max_function_calls
         self.callback_manager = callback_manager or CallbackManager([])
-
-    @property
-    def chat_history(self) -> ChatMessageHistory:
-        return self._chat_history
 
     @classmethod
     def from_tools(
