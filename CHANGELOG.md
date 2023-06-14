@@ -1,10 +1,10 @@
 # ChangeLog
 
 ## Unreleased
-- Add maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode (#6446)
 
 ### New Features
 - Add node doc_id filtering to weaviate (#6467)
+- Add maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode (#6446)
 
 ## [v0.6.26] - 2023-06-14
 
