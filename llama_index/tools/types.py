@@ -15,13 +15,21 @@ class ToolMetadata:
     def to_openai_function(self) -> Dict[str, Any]:
         """To OpenAI function."""
         if self.fn_schema is None:
-            raise NotImplementedError()
-        else:
-            return {
-                "name": self.name,
-                "description": self.description,
-                "parameters": self.fn_schema.schema(),
+            parameters = {
+                "properties": {
+                    "input": {"title": "input query string", "type": "string"},
+                },
+                "required": ["input"],
+                "type": "object",
             }
+        else:
+            parameters = self.fn_schema.schema()
+
+        return {
+            "name": self.name,
+            "description": self.description,
+            "parameters": parameters,
+        }
 
 
 class BaseTool:

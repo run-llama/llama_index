@@ -7,15 +7,15 @@ from llama_index.agent.utils import FunctionMessage, monkey_patch_langchain
 #       monkey patch it to support it
 monkey_patch_langchain()
 
-from langchain.chat_models import ChatOpenAI
-from langchain.memory import ChatMessageHistory
+from langchain.chat_models import ChatOpenAI  # noqa: E402
+from langchain.memory import ChatMessageHistory  # noqa: E402
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.chat_engine.types import BaseChatEngine
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.response.schema import RESPONSE_TYPE, Response
-from llama_index.tools import BaseTool
+from llama_index.callbacks.base import CallbackManager  # noqa: E402
+from llama_index.chat_engine.types import BaseChatEngine  # noqa: E402
+from llama_index.indices.query.base import BaseQueryEngine  # noqa: E402
+from llama_index.indices.query.schema import QueryBundle  # noqa: E402
+from llama_index.response.schema import RESPONSE_TYPE, Response  # noqa: E402
+from llama_index.tools import BaseTool  # noqa: E402
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 SUPPORTED_MODEL_NAMES = [
@@ -55,7 +55,7 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
         if not isinstance(llm, ChatOpenAI):
             raise ValueError("llm must be a ChatOpenAI instance")
 
-        if not llm.model_name in SUPPORTED_MODEL_NAMES:
+        if llm.model_name not in SUPPORTED_MODEL_NAMES:
             raise ValueError(
                 f"Model name {llm.model_name} not supported. "
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
@@ -87,14 +87,15 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 continue
 
             function_message = self._call_function(function_call)
-            n_function_calls += 1
             chat_history.add_message(function_message)
+            n_function_calls += 1
 
             # send function call & output back to get another response
-            ai_message = self._llm.predict_messages(chat_history.messages)
+            ai_message = self._llm.predict_messages(
+                chat_history.messages, functions=functions
+            )
+            chat_history.add_message(ai_message)
             function_call = ai_message.additional_kwargs.get("function_call", None)
-
-        chat_history.add_message(ai_message)
 
         return Response(ai_message.content)
 
@@ -119,14 +120,15 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 continue
 
             function_message = self._call_function(function_call)
-            n_function_calls += 1
             chat_history.add_message(function_message)
+            n_function_calls += 1
 
-            # send function back to get a natural language response
-            ai_message = await self._llm.apredict_messages(chat_history.messages)
+            # send function call & output back to get another response
+            ai_message = await self._llm.apredict_messages(
+                chat_history.messages, functions=functions
+            )
+            chat_history.add_message(ai_message)
             function_call = ai_message.additional_kwargs.get("function_call", None)
-
-        chat_history.add_message(ai_message)
 
         return Response(ai_message.content)
 
