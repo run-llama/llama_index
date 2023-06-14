@@ -18,6 +18,10 @@ from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.tools import BaseTool
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
+SUPPORTED_MODEL_NAMES = [
+    "gpt-3.5-turbo-0613",
+    "gpt-4-0613",
+]
 
 
 class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
@@ -47,9 +51,15 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
     ) -> "OpenAIAgent":
         tools = tools or []
         lc_chat_history = chat_history or ChatMessageHistory()
-        llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-next")
+        llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
         if not isinstance(llm, ChatOpenAI):
             raise ValueError("llm must be a ChatOpenAI instance")
+
+        if not llm.model_name in SUPPORTED_MODEL_NAMES:
+            raise ValueError(
+                f"Model name {llm.model_name} not supported. "
+                f"Supported model names: {SUPPORTED_MODEL_NAMES}"
+            )
 
         return cls(tools=tools, llm=llm, chat_history=lc_chat_history, verbose=verbose)
 
