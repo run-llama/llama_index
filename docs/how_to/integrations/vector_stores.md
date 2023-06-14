@@ -424,7 +424,7 @@ documents = reader.load_data(
 
 ```
 
-[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/data_connectors).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/data_connectors).
 
 
 ```{toctree}
