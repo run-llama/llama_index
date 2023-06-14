@@ -5,6 +5,9 @@
 ### New Features
 - Add node doc_id filtering to weaviate (#6467)
 
+### Bug Fixes / Nits
+- `as_chat_engine` properly inherits the current service context (#6470)
+
 ## [v0.6.26] - 2023-06-14
 
 ### New Features

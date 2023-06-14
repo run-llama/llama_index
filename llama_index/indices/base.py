@@ -348,7 +348,9 @@ class BaseIndex(Generic[IS], ABC):
 
             query_engine = self.as_query_engine(**kwargs)
             return CondenseQuestionChatEngine.from_defaults(
-                query_engine=query_engine, **kwargs
+                query_engine=query_engine,
+                service_context=self.service_context,
+                **kwargs,
             )
         elif chat_mode == ChatMode.REACT:
             # NOTE: lazy import
@@ -356,7 +358,9 @@ class BaseIndex(Generic[IS], ABC):
 
             query_engine = self.as_query_engine(**kwargs)
             return ReActChatEngine.from_query_engine(
-                query_engine=query_engine, **kwargs
+                query_engine=query_engine,
+                service_context=self.service_context,
+                **kwargs,
             )
         else:
             raise ValueError(f"Unknown chat mode: {chat_mode}")
