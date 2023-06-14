@@ -1,8 +1,9 @@
 from typing import Optional
-from llama_index.chat_engine.types import ChatHistoryType
-from langchain.memory import ChatMessageHistory
-from langchain.chat_models.base import BaseChatModel
 
+from langchain.chat_models.base import BaseChatModel
+from langchain.memory import ChatMessageHistory
+
+from llama_index.chat_engine.types import ChatHistoryType
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 
