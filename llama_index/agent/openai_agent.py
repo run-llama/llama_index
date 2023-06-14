@@ -76,12 +76,8 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
                 continue
 
-            function_output = self._call_function(function_call)
+            function_message = self._call_function(function_call)
             n_function_calls += 1
-
-            function_message = FunctionMessage(
-                content=function_output, name=function_call["name"]
-            )
             chat_history.add_message(function_message)
 
             # send function call & output back to get another response
@@ -112,12 +108,8 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
                 continue
 
-            function_output = self._call_function(function_call)
+            function_message = self._call_function(function_call)
             n_function_calls += 1
-
-            function_message = FunctionMessage(
-                content=function_output, name=function_call["name"]
-            )
             chat_history.add_message(function_message)
 
             # send function back to get a natural language response
@@ -134,7 +126,7 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
             raise ValueError(f"Tool with name {name} not found")
         return name_to_tool[name]
 
-    def _call_function(self, function_call: dict) -> str:
+    def _call_function(self, function_call: dict) -> FunctionMessage:
         """Call a function and return the output as a string."""
         name = function_call["name"]
         arguments_str = function_call["arguments"]
@@ -147,7 +139,7 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
         if self._verbose:
             print(f"Got output: {output}")
             print("========================")
-        return str(output)
+        return FunctionMessage(content=str(output), name=function_call["name"])
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
