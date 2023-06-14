@@ -1,5 +1,20 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- Add node doc_id filtering to weaviate (#6467)
+
+## [v0.6.26] - 2023-06-14
+
+### New Features
+- Add OpenAIAgent and tutorial notebook for "build your own agent" (#6461)
+- Add OpenAIPydanticProgram (#6462)
+
+### Bug Fixes / Nits
+- Fix citation engine import (#6456)
+
+
 ## [v0.6.25] - 2023-06-13
 
 ### New Features
