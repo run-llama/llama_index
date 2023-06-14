@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from llama_index.agent.utils import FunctionMessage, monkey_patch_langchain
 
 # TODO: right now langchain does not support function messages
-#       we need to monkey patch it to support it
+#       monkey patch it to support it
 monkey_patch_langchain()
 
 from langchain.chat_models import ChatOpenAI
