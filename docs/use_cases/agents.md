@@ -10,6 +10,21 @@ that query in order to return the correct result. The key agent components can i
 
 Research developments in LLMs (e.g. [ChatGPT Plugins](https://openai.com/blog/chatgpt-plugins)), LLM research ([ReAct](https://arxiv.org/abs/2210.03629), [Toolformer](https://arxiv.org/abs/2302.04761)) and LLM tooling ([LangChain](https://python.langchain.com/en/latest/modules/agents.html), [Semantic Kernel](https://github.com/microsoft/semantic-kernel)) have popularized the concept of agents.
 
+
+## LlamaIndex Agents
+
+With the [new OpenAI API](https://openai.com/blog/function-calling-and-other-api-updates) that supports function calling, it’s never been easier to build your own agent!
+
+Learn how to write your own OpenAI agent in **under 50 lines of code**, or directly use our super simple
+`OpenAIAgent` implementation.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/agent/openai_agent.ipynb
+```
+
 ## Agents + LlamaIndex
 
 LlamaIndex provides some amazing tools to manage and interact with your data within your LLM application. And it can be a core tool that you use while building an agent-based app.
@@ -72,5 +87,4 @@ LlamaIndex can be used as a ChatGPT retrieval plugin (we have a TODO to develop 
 
 **Resources**
 - [LlamaIndex ChatGPT Retrieval Plugin](https://github.com/openai/chatgpt-retrieval-plugin#llamaindex)
-
 
