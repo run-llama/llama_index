@@ -4,6 +4,10 @@
 
 ### New Features
 - Add node doc_id filtering to weaviate (#6467)
+- New `TokenCountingCallback` to customize and track embedding, prompt, and completion token usage (#6440)
+
+### Breaking/Deprecated API Changes
+- Deprecated current token tracking (llm predicotr and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
 
 ## [v0.6.26] - 2023-06-14
 
@@ -19,10 +23,6 @@
 
 ### New Features
 - Added FLARE query engine (#6419).
-- New `TokenCountingCallback` to customize and track embedding, prompt, and completion token usage (#6440)
-
-### Breaking/Deprecated API Changes
-- Deprecated current token tracking (llm predicotr and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
 
 ## [v0.6.24] - 2023-06-12
 
