@@ -1,9 +1,16 @@
 # ChangeLog
 
+## Unreleased
+- Add maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode (#6446)
+
 ## [v0.6.26] - 2023-06-14
 
 ### New Features
-- Adds maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode.
+- Add OpenAIAgent and tutorial notebook for "build your own agent" (#6461)
+- Add OpenAIPydanticProgram (#6462)
+
+### Bug Fixes / Nits
+- Fix citation engine import (#6456)
 
 ## [v0.6.25] - 2023-06-13
 
