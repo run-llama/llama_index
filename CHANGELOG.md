@@ -1,6 +1,8 @@
 # ChangeLog
 
 ## Unreleased
+
+### New Features
 - Add node doc_id filtering to weaviate (#6467)
 
 ## [v0.6.26] - 2023-06-14
