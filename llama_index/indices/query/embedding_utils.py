@@ -131,7 +131,7 @@ def get_top_k_mmr_embeddings(
 
     results: List[Tuple[Any, Any]] = []
 
-    embedding_length =  len(embeddings or [])
+    embedding_length = len(embeddings or [])
     similarity_top_k_count = similarity_top_k or embedding_length
     while len(results) < min(similarity_top_k_count, embedding_length):
         # Calculate the similarity score the for the leading one.
