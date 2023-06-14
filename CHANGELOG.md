@@ -1,11 +1,27 @@
 # ChangeLog
 
+## [v0.6.26] - 2023-06-14
+
+### New Features
+- Add OpenAIAgent and tutorial notebook for "build your own agent" (#6461)
+- Add OpenAIPydanticProgram (#6462)
+
+### Bug Fixes / Nits
+- Fix citation engine import (#6456)
+
+
+## [v0.6.25] - 2023-06-13
+
+### New Features
+- Added FLARE query engine (#6419).
+
+
 ## [v0.6.24] - 2023-06-12
 
 ### New Features
 - Added better support for vector store with existing data (e.g. allow configurable text key) for Pinecone and Weaviate. (#6393)
 - Support batched upsert for Pineone (#6393)
-- Added initial [guidance](https://github.com/microsoft/guidance/) integration. Added `GuidancePydanticProgram` for generic structured output generation and `GuidanceQuestionGenerator` for generating sub-questions in `SubQuestionQueryEngine`.
+- Added initial [guidance](https://github.com/microsoft/guidance/) integration. Added `GuidancePydanticProgram` for generic structured output generation and `GuidanceQuestionGenerator` for generating sub-questions in `SubQuestionQueryEngine` (#6246).
 
 ### Bug Fixes
 - None
