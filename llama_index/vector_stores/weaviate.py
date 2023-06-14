@@ -155,8 +155,23 @@ class WeaviateVectorStore(VectorStore):
 
         all_properties = get_all_properties(self._client, self._index_name)
 
+        # list of documents to constrain search
+        add_filtering = True
+        if query.doc_ids:
+            filter_with_doc_ids = {
+                "operator": "Or",
+                "operands": [
+                    {"path": ["doc_id"], "operator": "Equal", "valueString": doc_id}
+                    for doc_id in query.doc_ids
+                ],
+            }
+        else:
+            add_filtering = False
+
         # build query
         query_builder = self._client.query.get(self._index_name, all_properties)
+        if add_filtering:
+            query_builder = query_builder.with_where(filter_with_doc_ids)
         query_builder = query_builder.with_additional(["id", "vector"])
 
         vector = query.query_embedding
