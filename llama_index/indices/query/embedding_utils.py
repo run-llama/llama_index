@@ -114,7 +114,7 @@ def get_top_k_mmr_embeddings(
     threshold = mmr_threshold or 0.5
     similarity_fn = similarity_fn or default_similarity_fn
 
-    if embedding_ids is None:
+    if embedding_ids is None or embedding_ids == []:
         embedding_ids = [i for i in range(len(embeddings))]
     full_embed_map = dict(zip(embedding_ids, range(len(embedding_ids))))
     embed_map = full_embed_map.copy()
@@ -130,7 +130,10 @@ def get_top_k_mmr_embeddings(
             score = similarity * threshold
 
     results: List[Tuple[Any, Any]] = []
-    while len(results) < (similarity_top_k or len(embeddings)):
+
+    embedding_length =  len(embeddings or [])
+    similarity_top_k_count = similarity_top_k or embedding_length
+    while len(results) < min(similarity_top_k_count, embedding_length):
         # Calculate the similarity score the for the leading one.
         results.append((score, high_score_id))
 
