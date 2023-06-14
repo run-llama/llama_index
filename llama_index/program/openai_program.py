@@ -61,7 +61,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
         if not isinstance(llm, ChatOpenAI):
             raise ValueError("llm must be a ChatOpenAI instance")
 
-        if not llm.model_name in SUPPORTED_MODEL_NAMES:
+        if llm.model_name not in SUPPORTED_MODEL_NAMES:
             raise ValueError(
                 f"Model name {llm.model_name} not supported. "
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
@@ -93,7 +93,8 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
         )
         if "function_call" not in ai_message.additional_kwargs:
             raise ValueError(
-                "Expected function call in ai_message.additional_kwargs, but none found."
+                "Expected function call in ai_message.additional_kwargs, "
+                "but none found."
             )
 
         function_call = ai_message.additional_kwargs["function_call"]
