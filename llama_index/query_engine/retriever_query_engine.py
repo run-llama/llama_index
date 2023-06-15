@@ -134,7 +134,9 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        query_id = self.callback_manager.on_event_start(CBEventType.QUERY)
+        query_id = self.callback_manager.on_event_start(
+            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+        )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = self._retriever.retrieve(query_bundle)
@@ -147,12 +149,18 @@ class RetrieverQueryEngine(BaseQueryEngine):
             nodes=nodes,
         )
 
-        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_id)
+        self.callback_manager.on_event_end(
+            CBEventType.QUERY,
+            payload={"response": response},
+            event_id=query_id,
+        )
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
-        query_id = self.callback_manager.on_event_start(CBEventType.QUERY)
+        query_id = self.callback_manager.on_event_start(
+            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+        )
 
         retrieve_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = self._retriever.retrieve(query_bundle)
@@ -165,7 +173,11 @@ class RetrieverQueryEngine(BaseQueryEngine):
             nodes=nodes,
         )
 
-        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_id)
+        self.callback_manager.on_event_end(
+            CBEventType.QUERY,
+            payload={"response": response},
+            event_id=query_id,
+        )
         return response
 
     @property

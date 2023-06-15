@@ -3,10 +3,10 @@
 import json
 import logging
 import os
-import fsspec
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, cast
 
+import fsspec
 from dataclasses_json import DataClassJsonMixin
 
 from llama_index.indices.query.embedding_utils import (
@@ -38,12 +38,12 @@ class SimpleVectorStoreData(DataClassJsonMixin):
 
     Args:
         embedding_dict (Optional[dict]): dict mapping doc_ids to embeddings.
-        text_id_to_doc_id (Optional[dict]): dict mapping text_ids to doc_ids.
+        text_id_to_ref_doc_id (Optional[dict]): dict mapping text_ids to ref_doc_ids.
 
     """
 
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
-    text_id_to_doc_id: Dict[str, str] = field(default_factory=dict)
+    text_id_to_ref_doc_id: Dict[str, str] = field(default_factory=dict)
 
 
 class SimpleVectorStore(VectorStore):
@@ -95,19 +95,25 @@ class SimpleVectorStore(VectorStore):
         """Add embedding_results to index."""
         for result in embedding_results:
             self._data.embedding_dict[result.id] = result.embedding
-            self._data.text_id_to_doc_id[result.id] = result.ref_doc_id
+            self._data.text_id_to_ref_doc_id[result.id] = result.ref_doc_id
         return [result.id for result in embedding_results]
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
         text_ids_to_delete = set()
-        for text_id, doc_id_ in self._data.text_id_to_doc_id.items():
-            if doc_id == doc_id_:
+        for text_id, ref_doc_id_ in self._data.text_id_to_ref_doc_id.items():
+            if ref_doc_id == ref_doc_id_:
                 text_ids_to_delete.add(text_id)
 
         for text_id in text_ids_to_delete:
             del self._data.embedding_dict[text_id]
-            del self._data.text_id_to_doc_id[text_id]
+            del self._data.text_id_to_ref_doc_id[text_id]
 
     def query(
         self,

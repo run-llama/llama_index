@@ -60,7 +60,7 @@ dotenv.load_dotenv("../../../.env")
 # load documents
 documents = SimpleDirectoryReader('../../../examples/paul_graham_essay/data/').load_data()
 print(len(documents))
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 ```
 
 At this point, everything has been the same. Now - let's instantiate a S3 filesystem and save / load from there.

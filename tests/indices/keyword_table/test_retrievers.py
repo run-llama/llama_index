@@ -1,6 +1,6 @@
 from typing import List
 from unittest.mock import patch
-from llama_index.indices.keyword_table.simple_base import GPTSimpleKeywordTableIndex
+from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.schema.base import Document
@@ -22,7 +22,7 @@ def test_retrieve(
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = GPTSimpleKeywordTableIndex.from_documents(
+    table = SimpleKeywordTableIndex.from_documents(
         documents, service_context=mock_service_context
     )
 

@@ -67,7 +67,7 @@ callback_manager = CallbackManager([llama_debug])
 
 llm = ChatOpenAI(model_name='gpt-3.5-turbo', temperature=0)
 llm_predictor = LLMPredictor(llm=llm)
-service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, chunk_size=512, callback_manager=callback_manager, is_global=True)
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor, chunk_size=512, callback_manager=callback_manager)
 ```
 
 Then, set the global service context object

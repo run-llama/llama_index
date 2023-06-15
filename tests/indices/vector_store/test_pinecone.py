@@ -6,7 +6,7 @@ import pytest
 
 from llama_index.data_structs.node import Node
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.readers.schema.base import Document
 from tests.indices.vector_store.utils import get_pinecone_storage_context
 from tests.mock_utils.mock_utils import mock_tokenizer
@@ -29,9 +29,9 @@ def test_build_pinecone(
     documents: List[Document],
     mock_service_context: ServiceContext,
 ) -> None:
-    """Test build GPTVectorStoreIndex with PineconeVectorStore."""
+    """Test build VectorStoreIndex with PineconeVectorStore."""
     storage_context = get_pinecone_storage_context()
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents=documents,
         storage_context=storage_context,
         service_context=mock_service_context,
@@ -49,7 +49,7 @@ def test_node_with_metadata(
 ) -> None:
     storage_context = get_pinecone_storage_context()
     input_nodes = [Node(text="test node text", extra_info={"key": "value"})]
-    index = GPTVectorStoreIndex(
+    index = VectorStoreIndex(
         input_nodes,
         storage_context=storage_context,
         service_context=mock_service_context,

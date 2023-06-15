@@ -1,25 +1,22 @@
 """Evaporate wrapper."""
 
-from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.prompts import (
-    QuestionAnswerPrompt,
-)
-from llama_index.data_structs.node import Node
-from typing import Optional, List, Dict, Tuple
-from llama_index.experimental.evaporate.prompts import (
-    SchemaIDPrompt,
-    FnGeneratePrompt,
-    SCHEMA_ID_PROMPT,
-    FN_GENERATION_PROMPT,
-)
-from llama_index.indices.list.base import GPTListIndex
-from collections import defaultdict
-from typing import Set, Any
-from contextlib import contextmanager
-import signal
-
-import re
 import random
+import re
+import signal
+from collections import defaultdict
+from contextlib import contextmanager
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+from llama_index.data_structs.node import Node
+from llama_index.experimental.evaporate.prompts import (
+    FN_GENERATION_PROMPT,
+    SCHEMA_ID_PROMPT,
+    FnGeneratePrompt,
+    SchemaIDPrompt,
+)
+from llama_index.indices.list.base import ListIndex
+from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.prompts import QuestionAnswerPrompt
 
 
 class TimeoutException(Exception):
@@ -144,7 +141,7 @@ class EvaporateExtractor:
     def extract_fn_from_nodes(self, nodes: List[Node], field: str) -> str:
         """Extract function from nodes."""
         function_field = get_function_field_from_attribute(field)
-        index = GPTListIndex(nodes)
+        index = ListIndex(nodes)
         new_prompt = self._fn_generate_prompt.partial_format(
             attribute=field, function_field=function_field
         )

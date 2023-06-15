@@ -7,7 +7,7 @@ Nodes are decoupled from the indices.
 import uuid
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Optional, Sequence, Set
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -163,12 +163,15 @@ class IndexList(IndexStruct):
 class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
 
-    # mapping from vector store id to node id
+    # TODO: slightly deprecated, should likely be a list or set now
+    # mapping from vector store id to node doc_id
     nodes_dict: Dict[str, str] = field(default_factory=dict)
-    # mapping from doc_id to vector store id
+
+    # TODO: deprecated, not used
+    # mapping from node doc_id to vector store id
     doc_id_dict: Dict[str, List[str]] = field(default_factory=dict)
 
-    # TODO: temporary hack to store embeddings for simple vector index
+    # TODO: deprecated, not used
     # this should be empty for all other indices
     embeddings_dict: Dict[str, List[float]] = field(default_factory=dict)
 
@@ -182,20 +185,12 @@ class IndexDict(IndexStruct):
         # self.nodes_dict[int_id] = node
         vector_id = text_id if text_id is not None else node.get_doc_id()
         self.nodes_dict[vector_id] = node.get_doc_id()
-        if node.ref_doc_id is not None:
-            if node.ref_doc_id not in self.doc_id_dict:
-                self.doc_id_dict[node.ref_doc_id] = []
-            self.doc_id_dict[node.ref_doc_id].append(vector_id)
 
         return vector_id
 
     def delete(self, doc_id: str) -> None:
         """Delete a Node."""
-        if doc_id not in self.doc_id_dict:
-            return
-        for vector_id in self.doc_id_dict[doc_id]:
-            del self.nodes_dict[vector_id]
-        del self.doc_id_dict[doc_id]
+        del self.nodes_dict[doc_id]
 
     @classmethod
     def get_type(cls) -> IndexStructType:
@@ -209,9 +204,14 @@ class KG(IndexStruct):
 
     # Unidirectional
 
+    # table of keywords to node ids
     table: Dict[str, Set[str]] = field(default_factory=dict)
-    # text_chunks: Dict[str, Node] = field(default_factory=dict)
-    rel_map: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
+
+    # TODO: legacy attribute, remove in future releases
+    rel_map: Dict[str, List[List[str]]] = field(default_factory=dict)
+
+    # TBD, should support vector store, now we just persist the embedding memory
+    # maybe chainable abstractions for *_stores could be designed
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
 
     @property
@@ -223,13 +223,6 @@ class KG(IndexStruct):
         """Add embedding to dict."""
         self.embedding_dict[triplet_str] = embedding
 
-    def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:
-        """Upsert a knowledge triplet to the graph."""
-        subj, relationship, obj = triplet
-        if subj not in self.rel_map:
-            self.rel_map[subj] = []
-        self.rel_map[subj].append((obj, relationship))
-
     def add_node(self, keywords: List[str], node: Node) -> None:
         """Add text to table."""
         node_id = node.get_doc_id()
@@ -237,42 +230,12 @@ class KG(IndexStruct):
             if keyword not in self.table:
                 self.table[keyword] = set()
             self.table[keyword].add(node_id)
-        # self.text_chunks[node_id] = node
 
-    def get_rel_map_texts(self, keyword: str) -> List[str]:
-        """Get the corresponding knowledge for a given keyword."""
-        # NOTE: return a single node for now
-        if keyword not in self.rel_map:
-            return []
-        texts = []
-        for obj, rel in self.rel_map[keyword]:
-            texts.append(str((keyword, rel, obj)))
-        return texts
-
-    def get_rel_map_tuples(self, keyword: str) -> List[Tuple[str, str]]:
-        """Get the corresponding knowledge for a given keyword."""
-        # NOTE: return a single node for now
-        if keyword not in self.rel_map:
-            return []
-        return self.rel_map[keyword]
-
-    def get_node_ids(self, keyword: str, depth: int = 1) -> List[str]:
-        """Get the corresponding knowledge for a given keyword."""
-        if depth > 1:
-            raise ValueError("Depth > 1 not supported yet.")
+    def search_node_by_keyword(self, keyword: str) -> List[str]:
+        """Search for nodes by keyword."""
         if keyword not in self.table:
             return []
-        keywords = [keyword]
-        # some keywords may correspond to a leaf node, may not be in rel_map
-        if keyword in self.rel_map:
-            keywords.extend([child for child, _ in self.rel_map[keyword]])
-
-        node_ids: List[str] = []
-        for keyword in keywords:
-            for node_id in self.table.get(keyword, set()):
-                node_ids.append(node_id)
-            # TODO: Traverse (with depth > 1)
-        return node_ids
+        return list(self.table[keyword])
 
     @classmethod
     def get_type(cls) -> IndexStructType:
@@ -281,7 +244,7 @@ class KG(IndexStruct):
 
 
 @dataclass
-class EmptyIndex(IndexDict):
+class EmptyIndexStruct(IndexStruct):
     """Empty index."""
 
     @classmethod

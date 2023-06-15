@@ -6,6 +6,7 @@ slack_sdk
 discord.py
 boto3
 moto[s3,dynamodb]
+jsonpath-ng
 
 # google
 google-api-python-client

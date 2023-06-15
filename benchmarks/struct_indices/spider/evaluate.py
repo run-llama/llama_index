@@ -12,7 +12,7 @@ from llama_index.response.schema import Response
 from spider_utils import create_indexes, load_examples
 from tqdm import tqdm
 
-from llama_index.indices.struct_store.sql import GPTSQLStructStoreIndex, SQLQueryMode
+from llama_index.indices.struct_store.sql import SQLStructStoreIndex, SQLQueryMode
 
 logging.getLogger("root").setLevel(logging.WARNING)
 
@@ -68,7 +68,7 @@ def _match(
 
 def _get_answers(
     llm: ChatOpenAI,
-    indexes: Dict[str, GPTSQLStructStoreIndex],
+    indexes: Dict[str, SQLStructStoreIndex],
     db_names: List[str],
     sql_queries: List[str],
     examples: List[dict],

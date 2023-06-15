@@ -5,10 +5,11 @@ from typing import Any, Callable, Dict, Generic, Optional, Sequence, TypeVar
 
 from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import BaseStructTable
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from llama_index.prompts.prompts import SchemaExtractPrompt
+from llama_index.storage.docstore.types import RefDocInfo
 
 BST = TypeVar("BST", bound=BaseStructTable)
 
@@ -35,8 +36,8 @@ def default_output_parser(output: str) -> Optional[Dict[str, Any]]:
 OUTPUT_PARSER_TYPE = Callable[[str], Optional[Dict[str, Any]]]
 
 
-class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
-    """Base GPT Struct Store Index."""
+class BaseStructStoreIndex(BaseIndex[BST], Generic[BST]):
+    """Base Struct Store Index."""
 
     def __init__(
         self,
@@ -59,6 +60,11 @@ class BaseGPTStructStoreIndex(BaseGPTIndex[BST], Generic[BST]):
             **kwargs,
         )
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a node."""
         raise NotImplementedError("Delete not implemented for Struct Store Index.")
+
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        raise NotImplementedError("Struct Store Index does not support ref_doc_info.")

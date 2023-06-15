@@ -30,12 +30,12 @@ Below we show a few examples of LLM customization. This includes
 An example snippet of customizing the LLM being used is shown below.
 In this example, we use `text-davinci-002` instead of `text-davinci-003`. Available models include `text-davinci-003`,`text-curie-001`,`text-babbage-001`,`text-ada-001`, `code-davinci-002`,`code-cushman-001`. Note that
 you may plug in any LLM shown on Langchain's
-[LLM](https://langchain.readthedocs.io/en/latest/modules/llms.html) page.
+[LLM](https://python.langchain.com/en/latest/modules/models/llms/integrations.html) page.
 
 ```python
 
 from llama_index import (
-    GPTKeywordTableIndex,
+    KeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
     ServiceContext
@@ -49,7 +49,7 @@ llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # build index
-index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
+index = KeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 query_engine = index.as_query_engine()
@@ -68,7 +68,7 @@ For OpenAI, Cohere, AI21, you just need to set the `max_tokens` parameter
 ```python
 
 from llama_index import (
-    GPTKeywordTableIndex,
+    KeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
     ServiceContext
@@ -82,7 +82,7 @@ llm_predictor = LLMPredictor(llm=OpenAI(temperature=0, model_name="text-davinci-
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
 # build index
-index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
+index = KeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 query_engine = index.as_query_engine()
@@ -97,7 +97,7 @@ If you are using other LLM classes from langchain, you may need to explicitly co
 ```python
 
 from llama_index import (
-    GPTKeywordTableIndex,
+    KeywordTableIndex,
     SimpleDirectoryReader,
     LLMPredictor,
     ServiceContext
@@ -126,7 +126,7 @@ service_context = ServiceContext.from_defaults(
 )
 
 # build index
-index = GPTKeywordTableIndex.from_documents(documents, service_context=service_context)
+index = KeywordTableIndex.from_documents(documents, service_context=service_context)
 
 # get response from query
 query_engine = index.as_query_engine()
@@ -137,6 +137,10 @@ response = query_engine.query("What did the author do after his time at Y Combin
 ## Example: Using a HuggingFace LLM
 
 LlamaIndex supports using LLMs from HuggingFace directly. Note that for a completely private experience, also setup a local embedding model (example [here](./embeddings.md#custom-embeddings)).
+
+Many open-source models from HuggingFace require either some preamble before before each prompt, which is a `system_prompt`. Additionally, queries themselves may need an additional wrapper around the `query_str` itself. All this information is usually available from the HuggingFace model card for the model you are using.
+
+Below, this example uses both the `system_prompt` and `query_wrapper_prompt`, using specific prompts from the model card found [here](https://huggingface.co/stabilityai/stablelm-tuned-alpha-3b).
 
 ```python
 from llama_index.prompts.prompts import SimpleInputPrompt
@@ -156,8 +160,7 @@ from llama_index.llm_predictor import HuggingFaceLLMPredictor
 stablelm_predictor = HuggingFaceLLMPredictor(
     max_input_size=4096, 
     max_new_tokens=256,
-    temperature=0.7,
-    do_sample=False,
+    generate_kwargs={"temperature": 0.7, "do_sample": False}
     system_prompt=system_prompt,
     query_wrapper_prompt=query_wrapper_prompt,
     tokenizer_name="StabilityAI/stablelm-tuned-alpha-3b",
@@ -174,7 +177,16 @@ service_context = ServiceContext.from_defaults(
 )
 ```
 
-An API reference can be found [here](../../reference/llm_predictor.rst).
+Some models will raise errors if all the keys from the tokenizer are passed to the model. A common tokenizer output that causes issues is `token_type_ids`. Below is an example of configuring the predictor to remove this before passing the inputs to the model:
+
+```python
+HuggingFaceLLMPredictor(
+    ...
+    tokenizer_outputs_to_remove=["token_type_ids"]
+) 
+```
+
+A full API reference can be found [here](../../reference/llm_predictor.rst).
 
 Several example notebooks are also listed below:
 
@@ -193,7 +205,7 @@ Here is a small example using locally running facebook/OPT model and Huggingface
 ```python
 import torch
 from langchain.llms.base import LLM
-from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex
+from llama_index import SimpleDirectoryReader, LangchainEmbedding, ListIndex
 from llama_index import LLMPredictor, ServiceContext
 from transformers import pipeline
 from typing import Optional, List, Mapping, Any
@@ -236,7 +248,7 @@ service_context = ServiceContext.from_defaults(
 
 # Load the your data
 documents = SimpleDirectoryReader('./data').load_data()
-index = GPTListIndex.from_documents(documents, service_context=service_context)
+index = ListIndex.from_documents(documents, service_context=service_context)
 
 # Query and print response
 query_engine = index.as_query_engine()

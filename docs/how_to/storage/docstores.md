@@ -26,7 +26,7 @@ docstore.add_documents(nodes)
 storage_context = StorageContext.from_defaults(docstore=docstore)
 
 # build index
-index = GPTVectorStoreIndex(nodes, storage_context=storage_context)
+index = VectorStoreIndex(nodes, storage_context=storage_context)
 ```
 
 Under the hood, `MongoDocumentStore` connects to a fixed MongoDB database and initializes new collections (or loads existing collections) for your nodes.

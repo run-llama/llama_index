@@ -1,9 +1,9 @@
 import logging
-
 from typing import Optional
+
 from llama_index.callbacks.base import CallbackManager
 from llama_index.evaluation.base import QueryResponseEvaluator
-from llama_index.indices.list.base import GPTListIndex
+from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
@@ -55,7 +55,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
                     new_docs.append(Document(node.node.get_text()))
             if len(new_docs) == 0:
                 raise ValueError("No source nodes passed evaluation.")
-            new_index = GPTListIndex.from_documents(new_docs)
+            new_index = ListIndex.from_documents(new_docs)
             new_retriever_engine = RetrieverQueryEngine(new_index.as_retriever())
             new_query_engine = RetrySourceQueryEngine(
                 new_retriever_engine, self._evaluator, self.max_retries - 1

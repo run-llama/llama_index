@@ -41,6 +41,9 @@ class PromptType(str, Enum):
     # Pandas prompt
     PANDAS = "pandas"
 
+    # JSON path prompt
+    JSON_PATH = "json_path"
+
     # Single select prompt
     SINGLE_SELECT = "single_select"
 
