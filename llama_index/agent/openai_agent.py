@@ -84,7 +84,7 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
         while function_call is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
-                continue
+                break
 
             function_message = self._call_function(function_call)
             chat_history.add_message(function_message)
