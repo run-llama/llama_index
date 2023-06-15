@@ -4,16 +4,17 @@ from typing import Any, Optional
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
-from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.prompts.base import Prompt
+from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
+from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.prompts.prompt_type import PromptType
-from llama_index.indices.service_context import ServiceContext
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +95,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[Prompt] = None,
+        resynthesize_table_context: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -109,6 +111,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         )
         self._context_query_kwargs = context_query_kwargs or {}
         self._synthesize_response = synthesize_response
+        self._resynthesize_table_context = resynthesize_table_context
         super().__init__(index.service_context.callback_manager)
 
     @property
@@ -144,10 +147,24 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
         return tables_desc_str
 
+    def _synthesize_table_context(self, query_bundle: QueryBundle) -> str:
+        context_builder = SQLContextContainerBuilder(self._sql_database)
+        table_schema_index = context_builder.derive_index_from_context(
+            VectorStoreIndex,
+        )
+        query_str = query_bundle.query_str
+        table_desc_str = context_builder.query_index_for_context(
+            table_schema_index, query_str, store_context_str=False
+        )
+        return table_desc_str
+
     @llm_token_counter("query")
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
-        table_desc_str = self._get_table_context(query_bundle)
+        if self._resynthesize_table_context:
+            table_desc_str = self._synthesize_table_context(query_bundle)
+        else:
+            table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
         response_str, _ = self._service_context.llm_predictor.predict(
