@@ -208,8 +208,10 @@ def iter_batch(iterable: Union[Iterable, Generator], size: int) -> Iterable:
 
 
 def concat_dirs(dir1: str, dir2: str) -> str:
-    """Concat dir1 and dir2 while avoiding backslashes when running on windows.
-    os.path.join(dir1,dir2) will add a backslash before dir2 if dir1 does not end with a slash, so we make sure it does.
+    """
+    Concat dir1 and dir2 while avoiding backslashes when running on windows.
+    os.path.join(dir1,dir2) will add a backslash before dir2 if dir1 does not
+    end with a slash, so we make sure it does.
     """
     dir1 += "/" if dir1[-1] != "/" else ""
     return os.path.join(dir1, dir2)
