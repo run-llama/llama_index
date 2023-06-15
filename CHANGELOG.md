@@ -12,6 +12,7 @@
 
 ### Bug Fixes / Nits
 - `as_chat_engine` properly inherits the current service context (#6470)
+- use namespace when deleting from pinecone (#6475)
 
 ## [v0.6.26] - 2023-06-14
 
