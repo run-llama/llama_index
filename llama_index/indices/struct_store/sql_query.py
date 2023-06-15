@@ -133,6 +133,8 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         """
         if self._sql_context_container.context_str is not None:
             tables_desc_str = self._sql_context_container.context_str
+        elif self._resynthesize_table_context:
+            tables_desc_str = self._synthesize_table_context(query_bundle)
         else:
             table_desc_list = []
             context_dict = self._sql_context_container.context_dict
@@ -161,10 +163,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
     @llm_token_counter("query")
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
-        if self._resynthesize_table_context:
-            table_desc_str = self._synthesize_table_context(query_bundle)
-        else:
-            table_desc_str = self._get_table_context(query_bundle)
+        table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
         response_str, _ = self._service_context.llm_predictor.predict(
