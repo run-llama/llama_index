@@ -1,21 +1,21 @@
 """Simple keyword-table based index.
 
-Similar to GPTKeywordTableIndex, but uses a simpler keyword extraction
+Similar to KeywordTableIndex, but uses a simpler keyword extraction
 technique that doesn't involve GPT - just uses regex.
 
 """
 
 from typing import Set
 
-from llama_index.indices.keyword_table.base import BaseGPTKeywordTableIndex
+from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import simple_extract_keywords
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
-class GPTSimpleKeywordTableIndex(BaseGPTKeywordTableIndex):
-    """GPT Simple Keyword Table Index.
+class SimpleKeywordTableIndex(BaseKeywordTableIndex):
+    """Simple Keyword Table Index.
 
     This index uses a simple regex extractor to extract keywords from the text.
 
@@ -24,3 +24,7 @@ class GPTSimpleKeywordTableIndex(BaseGPTKeywordTableIndex):
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
         return simple_extract_keywords(text, self.max_keywords_per_chunk)
+
+
+# legacy
+GPTSimpleKeywordTableIndex = SimpleKeywordTableIndex

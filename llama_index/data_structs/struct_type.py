@@ -83,6 +83,8 @@ class IndexStructType(str, Enum):
     SQL = "sql"
     # for KG index
     KG = "kg"
+    SIMPLE_KG = "simple_kg"
+    NEBULAGRAPH = "nebulagraph"
 
     # EMPTY
     EMPTY = "empty"

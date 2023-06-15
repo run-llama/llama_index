@@ -1,4 +1,4 @@
-"""Query for GPTKeywordTableIndex."""
+"""Query for KeywordTableIndex."""
 import logging
 from abc import abstractmethod
 from collections import defaultdict
@@ -6,9 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.keyword_table.base import (
-    BaseGPTKeywordTableIndex,
-)
+from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import (
     extract_keywords_given_response,
     rake_extract_keywords,
@@ -28,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseKeywordTableRetriever(BaseRetriever):
-    """Base GPT Keyword Table Index Query.
+    """Base Keyword Table Retriever.
 
     Arguments are shared among subclasses.
 
@@ -50,7 +48,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: BaseGPTKeywordTableIndex,
+        index: BaseKeywordTableIndex,
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         query_keyword_extract_template: Optional[QueryKeywordExtractPrompt] = None,
         max_keywords_per_query: int = 10,

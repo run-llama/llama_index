@@ -5,17 +5,18 @@ pure LLM calls.
 
 """
 
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
-from llama_index.data_structs.data_structs import EmptyIndex
+from llama_index.data_structs.data_structs import EmptyIndexStruct
 from llama_index.data_structs.node import Node
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
+from llama_index.storage.docstore.types import RefDocInfo
 
 
-class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
-    """GPT Empty Index.
+class EmptyIndex(BaseIndex[EmptyIndexStruct]):
+    """Empty Index.
 
     An index that doesn't contain any documents. Used for
     pure LLM calls.
@@ -25,18 +26,18 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
 
     """
 
-    index_struct_cls = EmptyIndex
+    index_struct_cls = EmptyIndexStruct
 
     def __init__(
         self,
-        index_struct: Optional[EmptyIndex] = None,
+        index_struct: Optional[EmptyIndexStruct] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             nodes=None,
-            index_struct=index_struct or EmptyIndex(),
+            index_struct=index_struct or EmptyIndexStruct(),
             service_context=service_context,
             **kwargs,
         )
@@ -47,7 +48,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
 
         return EmptyIndexRetriever(self)
 
-    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> EmptyIndex:
+    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> EmptyIndexStruct:
         """Build the index from documents.
 
         Args:
@@ -57,7 +58,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
             IndexList: The created list index.
         """
         del nodes  # Unused
-        index_struct = EmptyIndex()
+        index_struct = EmptyIndexStruct()
         return index_struct
 
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
@@ -65,6 +66,15 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
         del nodes  # Unused
         raise NotImplementedError("Cannot insert into an empty index.")
 
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a node."""
         raise NotImplementedError("Cannot delete from an empty index.")
+
+    @property
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        raise NotImplementedError("ref_doc_info not supported for an empty index.")
+
+
+# legacy
+GPTEmptyIndex = EmptyIndex

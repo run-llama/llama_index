@@ -109,11 +109,12 @@ class QdrantVectorStore(VectorStore):
             ids.extend(node_ids)
         return ids
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document.
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
-            doc_id: (str): document id
+            ref_doc_id (str): The doc_id of the document to delete.
 
         """
         from qdrant_client.http import models as rest
@@ -123,7 +124,7 @@ class QdrantVectorStore(VectorStore):
             points_selector=rest.Filter(
                 must=[
                     rest.FieldCondition(
-                        key="doc_id", match=rest.MatchValue(value=doc_id)
+                        key="doc_id", match=rest.MatchValue(value=ref_doc_id)
                     )
                 ]
             ),

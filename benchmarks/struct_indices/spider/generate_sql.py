@@ -11,7 +11,7 @@ from langchain.base_language import BaseLanguageModel
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
 
-from llama_index import GPTSQLStructStoreIndex, LLMPredictor, SQLDatabase
+from llama_index import SQLStructStoreIndex, LLMPredictor, SQLDatabase
 from typing import Any, cast
 
 logging.getLogger("root").setLevel(logging.WARNING)
@@ -22,7 +22,7 @@ _newlines = re.compile(r"\n+")
 
 
 def _generate_sql(
-    llama_index: GPTSQLStructStoreIndex,
+    llama_index: SQLStructStoreIndex,
     nl_query_text: str,
 ) -> str:
     """Generate SQL query for the given NL query text."""
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                     text("select name from sqlite_master where type = 'table'")
                 ).fetchone(),
             )[0]
-            llm_indexes[db_name] = GPTSQLStructStoreIndex.from_documents(
+            llm_indexes[db_name] = SQLStructStoreIndex.from_documents(
                 documents=[],
                 llm_predictor=llm_predictor,
                 sql_database=db,

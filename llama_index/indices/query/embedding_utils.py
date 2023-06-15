@@ -1,6 +1,7 @@
 """Embedding utils for queries."""
-
-from typing import Callable, List, Optional, Tuple
+import heapq
+import math
+from typing import Any, Callable, List, Optional, Tuple
 
 from llama_index.embeddings.base import similarity as default_similarity_fn
 import numpy as np
@@ -21,20 +22,16 @@ def get_top_k_embeddings(
 
     similarity_fn = similarity_fn or default_similarity_fn
 
-    similarities = []
-    for emb in embeddings:
+    similarity_heap: List[Tuple[float, Any]] = []
+    for i, emb in enumerate(embeddings):
         similarity = similarity_fn(query_embedding, emb)
-        similarities.append(similarity)
-
-    sorted_tups = sorted(
-        zip(similarities, embedding_ids), key=lambda x: x[0], reverse=True
-    )
-
-    if similarity_cutoff is not None:
-        sorted_tups = [tup for tup in sorted_tups if tup[0] > similarity_cutoff]
-
-    similarity_top_k = similarity_top_k or len(sorted_tups)
-    result_tups = sorted_tups[:similarity_top_k]
+        if similarity_cutoff is None or similarity > similarity_cutoff:
+            heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
+            if similarity_top_k and len(similarity_heap) > similarity_top_k:
+                heapq.heappop(similarity_heap)
+    result_tups = [
+        (s, id) for s, id in sorted(similarity_heap, key=lambda x: x[0], reverse=True)
+    ]
 
     result_similarities = [s for s, _ in result_tups]
     result_ids = [n for _, n in result_tups]
@@ -94,5 +91,74 @@ def get_top_k_embeddings_learner(
 
     result_similarities = similarities[top_sorted_ix]
     result_ids = [embedding_ids[ix] for ix in top_sorted_ix]
+
+    return result_similarities, result_ids
+
+
+def get_top_k_mmr_embeddings(
+    query_embedding: List[float],
+    embeddings: List[List[float]],
+    similarity_fn: Optional[Callable[..., float]] = None,
+    similarity_top_k: Optional[int] = None,
+    embedding_ids: Optional[List] = None,
+    similarity_cutoff: Optional[float] = None,
+    mmr_threshold: Optional[float] = None,
+) -> Tuple[List[float], List]:
+    """Get top nodes by similarity to the query,
+    discount by their similarity to previous results.
+
+    A mmr_threshold of 0 will strongly avoid similarity to previous results.
+    A mmr_threshold of 1 will check similarity the query and ignore previous results.
+
+    """
+    threshold = mmr_threshold or 0.5
+    similarity_fn = similarity_fn or default_similarity_fn
+
+    if embedding_ids is None or embedding_ids == []:
+        embedding_ids = [i for i in range(len(embeddings))]
+    full_embed_map = dict(zip(embedding_ids, range(len(embedding_ids))))
+    embed_map = full_embed_map.copy()
+    embed_similarity = {}
+    score: float = -math.inf
+    high_score_id = None
+
+    for i, emb in enumerate(embeddings):
+        similarity = similarity_fn(query_embedding, emb)
+        embed_similarity[embedding_ids[i]] = similarity
+        if similarity * threshold > score:
+            high_score_id = embedding_ids[i]
+            score = similarity * threshold
+
+    results: List[Tuple[Any, Any]] = []
+
+    embedding_length = len(embeddings or [])
+    similarity_top_k_count = similarity_top_k or embedding_length
+    while len(results) < min(similarity_top_k_count, embedding_length):
+        # Calculate the similarity score the for the leading one.
+        results.append((score, high_score_id))
+
+        # Reset so a new high scoring result can be found
+        del embed_map[high_score_id]
+        recent_embedding_id = high_score_id
+        score = -math.inf
+
+        # Iterate through results to find high score
+        for embed_id in embed_map.keys():
+            overlap_with_recent = similarity_fn(
+                embeddings[embed_map[embed_id]],
+                embeddings[full_embed_map[recent_embedding_id]],
+            )
+            if (
+                threshold * embed_similarity[embed_id]
+                - ((1 - threshold) * overlap_with_recent)
+                > score
+            ):
+                score = threshold * embed_similarity[embed_id] - (
+                    (1 - threshold) * overlap_with_recent
+                )
+                high_score_id = embed_id
+
+    result_similarities = [s for s, _ in results]
+    result_ids = [n for _, n in results]
 
     return result_similarities, result_ids

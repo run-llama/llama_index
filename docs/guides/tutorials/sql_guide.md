@@ -5,7 +5,7 @@ LlamaIndex provides a lot of advanced features, powered by LLM's, to both create
 unstructured data, as well as analyze this structured data through augmented text-to-SQL capabilities.
 
 This guide helps walk through each of these capabilities. Specifically, we cover the following topics:
-- **Inferring Structured Datapoints**: Converting unstructured data to structured data.
+- **Inferring Structured Datapoints**: Converting unstructured data to structured data. 
 - **Text-to-SQL (basic)**: How to query a set of tables using natural language.
 - **Injecting Context**: How to inject context for each table into the text-to-SQL prompt. The context
     can be manually added, or it can be derived from unstructured documents.
@@ -17,13 +17,14 @@ We will walk through a toy example table which contains city/population/country 
 
 ## Setup
 
+A notebook for this initial section is [available here](../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb).
+
 First, we use SQLAlchemy to setup a simple sqlite db:
 ```python
 from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, select, column
 
 engine = create_engine("sqlite:///:memory:")
-metadata_obj = MetaData(bind=engine)
-
+metadata_obj = MetaData()
 ```
 
 We then create a toy `city_stats` table:
@@ -37,7 +38,7 @@ city_stats_table = Table(
     Column("population", Integer),
     Column("country", String(16), nullable=False),
 )
-metadata_obj.create_all()
+metadata_obj.create_all(engine)
 ```
 
 Now it's time to insert some datapoints!
@@ -66,14 +67,15 @@ this allows the db to be used within LlamaIndex:
 from llama_index import SQLDatabase
 
 sql_database = SQLDatabase(engine, include_tables=["city_stats"])
-
 ```
 
 If the db is already populated with data, we can instantiate the SQL index
 with a blank documents list. Otherwise see the below section.
 
 ```python
-index = GPTSQLStructStoreIndex(
+from llama_index import SQLStructStoreIndex
+
+index = SQLStructStoreIndex(
     [],
     sql_database=sql_database, 
     table_name="city_stats",
@@ -94,7 +96,6 @@ from llama_index import download_loader
 
 WikipediaReader = download_loader("WikipediaReader")
 wiki_docs = WikipediaReader().load_data(pages=['Toronto', 'Berlin', 'Tokyo'])
-
 ```
 
 When we build the SQL index, we can specify these docs as the 
@@ -102,12 +103,12 @@ first input; these documents will be converted
 to structured datapoints and inserted into the db:
 
 ```python
-from llama_index import GPTSQLStructStoreIndex, SQLDatabase
+from llama_index import SQLStructStoreIndex, SQLDatabase
 
 sql_database = SQLDatabase(engine, include_tables=["city_stats"])
 # NOTE: the table_name specified here is the table that you
 # want to extract into from unstructured documents.
-index = GPTSQLStructStoreIndex.from_documents(
+index = SQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -119,7 +120,7 @@ You can take a look at the current table to verify that the datapoints have been
 ```python
 # view current table
 stmt = select(
-    [column("city_name"), column("population"), column("country")]
+    city_stats_table.c["city_name", "population", "country"]
 ).select_from(city_stats_table)
 
 with engine.connect() as connection:
@@ -140,7 +141,6 @@ A simple example is shown here:
 query_engine = index.as_query_engine()
 response = query_engine.query("Which city has the highest population?")
 print(response)
-
 ```
 
 You can access the underlying derived SQL query through `response.extra_info['sql_query']`.
@@ -163,6 +163,8 @@ We offer you a context builder class to better manage the context within your SQ
 and a few other optional parameters, and builds a `SQLContextContainer` object
 that you can then pass to the index during construction + query-time.
 
+A notebook for this section is [available here](../../examples/index_structs/struct_indices/SQLIndexDemo-Context.ipynb).
+
 You can add context manually to the context builder. The code snippet below shows you how:
 
 ```python
@@ -177,7 +179,7 @@ context_builder = SQLContextContainerBuilder(sql_database, context_dict=table_co
 context_container = context_builder.build_context_container()
 
 # building the index
-index = GPTSQLStructStoreIndex.from_documents(
+index = SQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -204,7 +206,7 @@ context_builder = SQLContextContainerBuilder.from_documents(
 context_container = context_builder.build_context_container()
 
 # building the index
-index = GPTSQLStructStoreIndex.from_documents(
+index = SQLStructStoreIndex.from_documents(
     wiki_docs, 
     sql_database=sql_database, 
     table_name="city_stats",
@@ -229,15 +231,17 @@ stores the context on the generated context container.
 
 You can then build the context container, and pass it to the index during query-time!
 
+A notebook for this section is [available here](../../examples/index_structs/struct_indices/SQLIndexDemo-ManyTables.ipynb).
+
 ```python
-from llama_index import GPTSQLStructStoreIndex, SQLDatabase, GPTVectorStoreIndex
+from llama_index import SQLStructStoreIndex, SQLDatabase, VectorStoreIndex
 from llama_index.indices.struct_store import SQLContextContainerBuilder
 
 sql_database = SQLDatabase(engine)
 # build a vector index from the table schema information
 context_builder = SQLContextContainerBuilder(sql_database)
 table_schema_index = context_builder.derive_index_from_context(
-    GPTVectorStoreIndex,
+    VectorStoreIndex,
     store_index=True
 )
 
@@ -245,15 +249,23 @@ query_str = "Which city has the highest population?"
 
 # query the table schema index using the helper method
 # to retrieve table context
-SQLContextContainerBuilder.query_index_for_context(
+context_builder.query_index_for_context(
     table_schema_index,
     query_str,
     store_context_str=True
 )
 
+context_container = context_builder.build_context_container()
+
+index = SQLStructStoreIndex(
+    [],
+    sql_database=sql_database,
+    sql_context_container=context_container
+)
+
 # query the SQL index with the table context
 query_engine = index.as_query_engine()
-response = query_engine.query(query_str, sql_context_container=context_container)
+response = query_engine.query(query_str)
 print(response)
 
 ```

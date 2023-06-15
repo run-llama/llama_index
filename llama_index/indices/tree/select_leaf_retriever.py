@@ -9,7 +9,8 @@ from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response import get_response_builder
-from llama_index.indices.tree.base import GPTTreeIndex
+from llama_index.indices.tree.base import TreeIndex
+from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
@@ -71,7 +72,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: GPTTreeIndex,
+        index: TreeIndex,
         query_template: Optional[TreeSelectPrompt] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         refine_template: Optional[RefinePrompt] = None,
@@ -170,11 +171,16 @@ class TreeSelectLeafRetriever(BaseRetriever):
             query_template = self.query_template.partial_format(
                 num_chunks=len(cur_node_list), query_str=query_str
             )
-            numbered_node_text = (
-                self._service_context.prompt_helper.get_numbered_text_from_nodes(
-                    cur_node_list, prompt=query_template
+            text_splitter = (
+                self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                    prompt=query_template,
+                    num_chunks=len(cur_node_list),
                 )
             )
+            numbered_node_text = get_numbered_text_from_nodes(
+                cur_node_list, text_splitter=text_splitter
+            )
+
             (
                 response,
                 formatted_query_prompt,
@@ -188,11 +194,17 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 query_str=query_str,
                 branching_factor=self.child_branch_factor,
             )
-            numbered_node_text = (
-                self._service_context.prompt_helper.get_numbered_text_from_nodes(
-                    cur_node_list, prompt=query_template_multiple
+
+            text_splitter = (
+                self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                    prompt=query_template_multiple,
+                    num_chunks=len(cur_node_list),
                 )
             )
+            numbered_node_text = get_numbered_text_from_nodes(
+                cur_node_list, text_splitter=text_splitter
+            )
+
             (
                 response,
                 formatted_query_prompt,
@@ -287,11 +299,16 @@ class TreeSelectLeafRetriever(BaseRetriever):
             query_template = self.query_template.partial_format(
                 num_chunks=len(cur_node_list), query_str=query_str
             )
-            numbered_node_text = (
-                self._service_context.prompt_helper.get_numbered_text_from_nodes(
-                    cur_node_list, prompt=query_template
+            text_splitter = (
+                self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                    prompt=query_template,
+                    num_chunks=len(cur_node_list),
                 )
             )
+            numbered_node_text = get_numbered_text_from_nodes(
+                cur_node_list, text_splitter=text_splitter
+            )
+
             (
                 response,
                 formatted_query_prompt,
@@ -305,11 +322,17 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 query_str=query_str,
                 branching_factor=self.child_branch_factor,
             )
-            numbered_node_text = (
-                self._service_context.prompt_helper.get_numbered_text_from_nodes(
-                    cur_node_list, prompt=query_template_multiple
+
+            text_splitter = (
+                self._service_context.prompt_helper.get_text_splitter_given_prompt(
+                    prompt=query_template_multiple,
+                    num_chunks=len(cur_node_list),
                 )
             )
+            numbered_node_text = get_numbered_text_from_nodes(
+                cur_node_list, text_splitter=text_splitter
+            )
+
             (
                 response,
                 formatted_query_prompt,

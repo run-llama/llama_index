@@ -2,7 +2,7 @@
 
 Llama Index has many use cases (semantic search, summarization, etc.) that are [well documented](https://gpt-index.readthedocs.io/en/latest/use_cases/queries.html). However, this doesn't mean we can't apply Llama Index to very specific use cases!
 
-In this tutorial, we will go through the design process of using Llama Index to extract terms and definitions from text, while allowing users to query those terms later. Using [Streamlit](https://streamlit.io/), we can provide an easy to build frontend for running and testing all of this, and quickly iterate with our design.
+In this tutorial, we will go through the design process of using Llama Index to extract terms and definitions from text, while allowing users to query those terms later. Using [Streamlit](https://streamlit.io/), we can provide an easy way to build frontend for running and testing all of this, and quickly iterate with our design.
 
 This tutorial assumes you have Python3.9+ and the following packages installed:
 
@@ -77,7 +77,7 @@ Now that we are able to define LLM settings and upload text, we can try using Ll
 We can add the following functions to both initialize our LLM, as well as use it to extract terms from the input text.
 
 ```python
-from llama_index import Document, GPTListIndex, LLMPredictor, ServiceContext, PromptHelper, load_index_from_storage
+from llama_index import Document, ListIndex, LLMPredictor, ServiceContext, load_index_from_storage
 
 def get_llm(llm_name, model_temperature, api_key, max_tokens=256):
     os.environ['OPENAI_API_KEY'] = api_key
@@ -90,12 +90,9 @@ def extract_terms(documents, term_extract_str, llm_name, model_temperature, api_
     llm = get_llm(llm_name, model_temperature, api_key, max_tokens=1024)
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm),
-                                                   prompt_helper=PromptHelper(max_input_size=4096,
-                                                                              max_chunk_overlap=20,
-                                                                              num_output=1024),
-                                                   chunk_size_limit=1024)
+                                                   chunk_size=1024)
 
-    temp_index = GPTListIndex.from_documents(documents, service_context=service_context)
+    temp_index = ListIndex.from_documents(documents, service_context=service_context)
     query_engine = temp_index.as_query_engine(response_mode="tree_summarize")
     terms_definitions = str(query_engine.query(term_extract_str))
     terms_definitions = [x for x in terms_definitions.split("\n") if x and 'Term:' in x and 'Definition:' in x]
@@ -123,7 +120,7 @@ There's a lot going on now, let's take a moment to go over what is happening.
 
 `get_llm()` is instantiating the LLM based on the user configuration from the setup tab. Based on the model name, we need to use the appropriate class (`OpenAI` vs. `ChatOpenAI`).
 
-`extract_terms()` is where all the good stuff happens. First, we call `get_llm()` with `max_tokens=1024`, since we don't want to limit the model too much when it is extracting our terms and definitions (the default is 256 if not set). Then, we define our `ServiceContext` object, aligning `num_output` with our `max_tokens` value, as well as setting the chunk size to be no larger than the output. When documents are indexed by Llama Index, they are broken into chunks (also called nodes) if they are large, and `chunk_size_limit` sets the maximum size for these chunks.
+`extract_terms()` is where all the good stuff happens. First, we call `get_llm()` with `max_tokens=1024`, since we don't want to limit the model too much when it is extracting our terms and definitions (the default is 256 if not set). Then, we define our `ServiceContext` object, aligning `num_output` with our `max_tokens` value, as well as setting the chunk size to be no larger than the output. When documents are indexed by Llama Index, they are broken into chunks (also called nodes) if they are large, and `chunk_size` sets the size for these chunks.
 
 Next, we create a temporary list index and pass in our service context. A list index will read every single piece of text in our index, which is perfect for extracting terms. Finally, we use our pre-defined query text to extract terms, using `response_mode="tree_summarize`. This response mode will generate a tree of summaries from the bottom up, where each parent summarizes its children. Finally, the top of the tree is returned, which will contain all our extracted terms and definitions.
 
@@ -131,7 +128,7 @@ Lastly, we do some minor post processing. We assume the model followed instructi
 
 ## Saving Extracted Terms
 
-Now that we can extract terms, we need to put them somewhere so that we can query for them later. A `GPTVectorStoreIndex` should be a perfect choice for now! But in addition, our app should also keep track of which terms are inserted into the index so that we can inspect them later. Using `st.session_state`, we can store the current list of terms in a session dict, unique to each user!
+Now that we can extract terms, we need to put them somewhere so that we can query for them later. A `VectorStoreIndex` should be a perfect choice for now! But in addition, our app should also keep track of which terms are inserted into the index so that we can inspect them later. Using `st.session_state`, we can store the current list of terms in a session dict, unique to each user!
 
 First things first though, let's add a feature to initialize a global vector index and another function to insert the extracted terms.
 
@@ -148,12 +145,12 @@ def insert_terms(terms_to_definition):
 
 @st.cache_resource
 def initialize_index(llm_name, model_temperature, api_key):
-    """Create the GPTSQLStructStoreIndex object."""
+    """Create the SQLStructStoreIndex object."""
     llm = get_llm(llm_name, model_temperature, api_key)
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))
 
-    index = GPTVectorStoreIndex([], service_context=service_context)
+    index = VectorStoreIndex([], service_context=service_context)
 
     return index
 
@@ -273,7 +270,7 @@ After inserting, remove the line of code we used to save the index to disk. With
 ```python
 @st.cache_resource
 def initialize_index(llm_name, model_temperature, api_key):
-    """Create the GPTSQLStructStoreIndex object."""
+    """Create the SQLStructStoreIndex object."""
     llm = get_llm(llm_name, model_temperature, api_key)
 
     service_context = ServiceContext.from_defaults(llm_predictor=LLMPredictor(llm=llm))

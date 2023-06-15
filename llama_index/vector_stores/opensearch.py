@@ -40,6 +40,7 @@ class OpensearchVectorClient:
         dim: int,
         embedding_field: str = "embedding",
         text_field: str = "content",
+        extra_info_field: str = "extra_info",
         method: Optional[dict] = None,
         auth: Optional[dict] = None,
     ):
@@ -72,13 +73,16 @@ class OpensearchVectorClient:
                 # docker image.
                 auth["basic_auth"] = ("admin", "admin")
             self._client = httpx.Client(
-                base_url=endpoint, verify=auth["verify"], auth=auth["basic_auth"]
+                base_url=endpoint,
+                verify=auth["verify"],
+                auth=auth["basic_auth"],
             )
 
         self._endpoint = endpoint
         self._dim = dim
         self._index = index
         self._text_field = text_field
+        self._extra_info_field = extra_info_field
         # initialize mapping
         idx_conf = {
             "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
@@ -105,11 +109,16 @@ class OpensearchVectorClient:
                 {
                     self._text_field: result.node.get_text(),
                     self._embedding_field: result.embedding,
+                    self._extra_info_field: result.node.extra_info,
+                    "node_info": result.node.node_info,
+                    "relationships": result.node.relationships,
                 }
             )
         bulk = "\n".join([json.dumps(v) for v in bulk_req]) + "\n"
         res = self._client.post(
-            "/_bulk", headers={"Content-Type": "application/x-ndjson"}, content=bulk
+            "/_bulk",
+            headers={"Content-Type": "application/x-ndjson"},
+            content=bulk,
         )
         assert res.status_code == 200
         assert not res.json()["errors"], "expected no errors while indexing docs"
@@ -132,7 +141,12 @@ class OpensearchVectorClient:
             json={
                 "size": k,
                 "query": {
-                    "knn": {self._embedding_field: {"vector": query_embedding, "k": k}}
+                    "knn": {
+                        self._embedding_field: {
+                            "vector": query_embedding,
+                            "k": k,
+                        }
+                    }
                 },
             },
         )
@@ -142,8 +156,17 @@ class OpensearchVectorClient:
         for hit in res.json()["hits"]["hits"]:
             source = hit["_source"]
             text = source[self._text_field]
+            extra_info = source.get(self._extra_info_field)
             doc_id = hit["_id"]
-            node = Node(text=text, extra_info=source, doc_id=doc_id)
+            node_info = source.get("node_info")
+            relationships = source.get("relationships")
+            node = Node(
+                text=text,
+                extra_info=extra_info,
+                doc_id=doc_id,
+                node_info=node_info,
+                relationships=relationships,
+            )
             ids.append(doc_id)
             nodes.append(node)
             scores.append(hit["_score"])
@@ -191,14 +214,15 @@ class OpensearchVectorStore(VectorStore):
         self._client.index_results(embedding_results)
         return [result.id for result in embedding_results]
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document.
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
-            doc_id (str): document id
+            ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self._client.delete_doc_id(doc_id)
+        self._client.delete_doc_id(ref_doc_id)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.

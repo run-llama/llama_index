@@ -6,15 +6,15 @@ from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import PandasStructTable
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.struct_store.base import BaseGPTStructStoreIndex
+from llama_index.indices.struct_store.base import BaseStructStoreIndex
 
 import pandas as pd
 
 
-class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
-    """Base GPT Pandas Index.
+class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
+    """Pandas Index.
 
-    The GPTPandasStructStoreIndex is an index that stores
+    The PandasIndex is an index that stores
     a Pandas dataframe under the hood.
     Currently index "construction" is not supported.
 
@@ -52,9 +52,9 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.indices.struct_store.pandas_query import GPTNLPandasQueryEngine
+        from llama_index.indices.struct_store.pandas_query import NLPandasQueryEngine
 
-        return GPTNLPandasQueryEngine(self, **kwargs)
+        return NLPandasQueryEngine(self, **kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> PandasStructTable:
         """Build index from documents."""
@@ -64,3 +64,7 @@ class GPTPandasIndex(BaseGPTStructStoreIndex[PandasStructTable]):
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
         raise NotImplementedError("We currently do not support inserting documents.")
+
+
+# legacy
+GPTPandasIndex = PandasIndex

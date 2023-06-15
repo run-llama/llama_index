@@ -2,7 +2,7 @@ from typing import List, cast
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.vector_store.base import GPTVectorStoreIndex
+from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.readers.schema.base import Document
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import SimpleVectorStore
@@ -14,7 +14,7 @@ def test_faiss_query(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test embedding query."""
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents=documents,
         storage_context=faiss_storage_context,
         service_context=mock_service_context,
@@ -33,7 +33,7 @@ def test_simple_query(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test embedding query."""
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         documents, service_context=mock_service_context
     )
 
@@ -56,7 +56,7 @@ def test_query_and_similarity_scores(
         "This is a test v2."
     )
     document = Document(doc_text)
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         [document], service_context=mock_service_context
     )
 
@@ -71,7 +71,7 @@ def test_query_and_similarity_scores(
 def test_simple_check_ids(
     mock_service_context: ServiceContext,
 ) -> None:
-    """Test build GPTVectorStoreIndex."""
+    """Test build VectorStoreIndex."""
     ref_doc_id = "ref_doc_id_test"
     source_rel = {DocumentRelationship.SOURCE: ref_doc_id}
     all_nodes = [
@@ -80,7 +80,7 @@ def test_simple_check_ids(
         Node("This is another test.", doc_id="node3", relationships=source_rel),
         Node("This is a test v2.", doc_id="node4", relationships=source_rel),
     ]
-    index = GPTVectorStoreIndex(all_nodes, service_context=mock_service_context)
+    index = VectorStoreIndex(all_nodes, service_context=mock_service_context)
 
     # test query
     query_str = "What is?"
@@ -91,7 +91,7 @@ def test_simple_check_ids(
     assert nodes[0].node.doc_id == "node3"
     vector_store = cast(SimpleVectorStore, index._vector_store)
     assert "node3" in vector_store._data.embedding_dict
-    assert "node3" in vector_store._data.text_id_to_doc_id
+    assert "node3" in vector_store._data.text_id_to_ref_doc_id
 
 
 def test_faiss_check_ids(
@@ -109,7 +109,7 @@ def test_faiss_check_ids(
         Node("This is a test v2.", doc_id="node4", relationships=source_rel),
     ]
 
-    index = GPTVectorStoreIndex(
+    index = VectorStoreIndex(
         all_nodes,
         storage_context=faiss_storage_context,
         service_context=mock_service_context,
@@ -133,7 +133,7 @@ def test_query_and_count_tokens(mock_service_context: ServiceContext) -> None:
         "This is a test v2."
     )
     document = Document(doc_text)
-    index = GPTVectorStoreIndex.from_documents(
+    index = VectorStoreIndex.from_documents(
         [document], service_context=mock_service_context
     )
     assert index.service_context.embed_model.total_tokens_used == 20

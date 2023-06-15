@@ -87,11 +87,12 @@ class LanceDBVectorStore(VectorStore):
             self.connection.create_table(self.table_name, data)
         return ids
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document.
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
-            doc_id (str): document id
+            ref_doc_id (str): The doc_id of the document to delete.
 
         """
         raise NotImplementedError("Delete not yet implemented for LanceDB.")

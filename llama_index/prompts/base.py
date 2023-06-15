@@ -1,17 +1,14 @@
 """Base module for prompts."""
 from copy import deepcopy
-from string import Formatter
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
 from langchain import BasePromptTemplate as BaseLangchainPrompt
 from langchain import PromptTemplate as LangchainPrompt
-from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.base_language import BaseLanguageModel
+from langchain.chains.prompt_selector import ConditionalPromptSelector
 
 from llama_index.output_parsers.base import BaseOutputParser
 from llama_index.prompts.prompt_type import PromptType
-
-PMT = TypeVar("PMT", bound="Prompt")
 
 
 class Prompt:
@@ -24,9 +21,6 @@ class Prompt:
 
     """
 
-    input_variables: List[str]
-    prompt_type: str = PromptType.CUSTOM
-
     def __init__(
         self,
         template: Optional[str] = None,
@@ -34,6 +28,8 @@ class Prompt:
         langchain_prompt_selector: Optional[ConditionalPromptSelector] = None,
         stop_token: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
+        prompt_type: str = PromptType.CUSTOM,
+        metadata: Optional[Dict[str, Any]] = None,
         **prompt_kwargs: Any,
     ) -> None:
         """Init params."""
@@ -48,18 +44,9 @@ class Prompt:
                 raise ValueError(
                     "`template` must be specified if `langchain_prompt` is None"
                 )
-            # validate
-            tmpl_vars = {
-                v for _, v, _, _ in Formatter().parse(template) if v is not None
-            }
-            if tmpl_vars != set(self.input_variables):
-                raise ValueError(
-                    f"Invalid template: {template}, variables do not match the "
-                    f"required input_variables: {self.input_variables}"
-                )
 
-            self.prompt = LangchainPrompt(
-                input_variables=self.input_variables, template=template, **prompt_kwargs
+            self.prompt = LangchainPrompt.from_template(
+                template=template, **prompt_kwargs
             )
             self.prompt_selector = ConditionalPromptSelector(default_prompt=self.prompt)
         # finally, check if langchain_prompt is provided
@@ -72,47 +59,50 @@ class Prompt:
             self.prompt = langchain_prompt
             self.prompt_selector = ConditionalPromptSelector(default_prompt=self.prompt)
 
-        # validate all prompts in prompt selector
-        all_lc_prompts = [self.prompt_selector.default_prompt]
-        for _, prompt in self.prompt_selector.conditionals:
-            all_lc_prompts.append(prompt)
-        for lc_prompt in all_lc_prompts:
-            if set(lc_prompt.input_variables) != set(self.input_variables):
-                raise ValueError(
-                    f"Invalid prompt: {langchain_prompt}, variables do not match the "
-                    f"required input_variables: {self.input_variables}"
-                )
         self.partial_dict: Dict[str, Any] = {}
         self.prompt_kwargs = prompt_kwargs
         self.stop_token = stop_token
+        # NOTE: this is only used for token counting and testing
+        self.prompt_type = prompt_type
 
         self.output_parser = output_parser
 
+        self._original_template = template
+
+        # Metadata is used to pass arbitrary information to other consumers of the
+        # prompt. For example, VellumPromptRegistry uses this to access vellum-specific
+        # identifiers that users can pass along with the prompt.
+        self.metadata = metadata or {}
+
+    @property
+    def original_template(self) -> str:
+        """Return the originally specified template, if supplied."""
+
+        if not self._original_template:
+            raise ValueError("No original template specified.")
+
+        return self._original_template
+
     @classmethod
     def from_langchain_prompt(
-        cls: Type[PMT], prompt: BaseLangchainPrompt, **kwargs: Any
-    ) -> PMT:
+        cls, prompt: BaseLangchainPrompt, **kwargs: Any
+    ) -> "Prompt":
         """Load prompt from LangChain prompt."""
         return cls(langchain_prompt=prompt, **kwargs)
 
     @classmethod
     def from_langchain_prompt_selector(
-        cls: Type[PMT], prompt_selector: ConditionalPromptSelector, **kwargs: Any
-    ) -> PMT:
+        cls, prompt_selector: ConditionalPromptSelector, **kwargs: Any
+    ) -> "Prompt":
         """Load prompt from LangChain prompt."""
         return cls(langchain_prompt_selector=prompt_selector, **kwargs)
 
-    def partial_format(self: PMT, **kwargs: Any) -> PMT:
+    def partial_format(self, **kwargs: Any) -> "Prompt":
         """Format the prompt partially.
 
         Return an instance of itself.
 
         """
-        for k in kwargs.keys():
-            if k not in self.input_variables:
-                raise ValueError(
-                    f"Invalid input variable: {k}, not found in input_variables"
-                )
         try:
             # NOTE: this is a hack to get around deepcopy failing on output parser
             output_parser = self.output_parser
@@ -129,8 +119,11 @@ class Prompt:
 
     @classmethod
     def from_prompt(
-        cls: Type[PMT], prompt: "Prompt", llm: Optional[BaseLanguageModel] = None
-    ) -> PMT:
+        cls,
+        prompt: "Prompt",
+        llm: Optional[BaseLanguageModel] = None,
+        prompt_type: Optional[PromptType] = None,
+    ) -> "Prompt":
         """Create a prompt from an existing prompt.
 
         Use case: If the existing prompt is already partially filled,
@@ -147,7 +140,11 @@ class Prompt:
                 format_dict[var] = f"{{{var}}}"
 
         template_str = prompt.format(llm=llm, **format_dict)
-        cls_obj: PMT = cls(template_str, **prompt.prompt_kwargs)
+        cls_obj = cls(
+            template_str,
+            prompt_type=prompt_type or PromptType.CUSTOM,
+            **prompt.prompt_kwargs,
+        )
         return cls_obj
 
     def get_langchain_prompt(

@@ -1,20 +1,20 @@
 """Dataset generation from documents"""
 from __future__ import annotations
 
-from typing import List, Optional
 import re
+from typing import List, Optional
+
+from langchain.chat_models import ChatOpenAI
 
 from llama_index import (
     Document,
-    GPTListIndex,
+    ListIndex,
+    LLMPredictor,
     QuestionAnswerPrompt,
     ServiceContext,
-    LLMPredictor,
 )
-from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
 from llama_index.data_structs.node import Node, NodeWithScore
-
-from langchain.chat_models import ChatOpenAI
+from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """Context information is below.\n"
 "\n---------------------\n{context_str}\n---------------------\n"
@@ -112,12 +112,16 @@ class DatasetGenerator:
             question_gen_query=question_gen_query,
         )
 
-    def _node_question_generator(self, nodes: List[Node]) -> List[str]:
+    def _node_question_generator(
+        self, nodes: List[Node], num: Optional[int] = None
+    ) -> List[str]:
         """Node question generator."""
-        questions = []
+        questions: List[str] = []
 
         for node in nodes:
-            index = GPTListIndex.from_documents([Document(node.get_text())])
+            if num is not None and len(questions) >= num:
+                break
+            index = ListIndex.from_documents([Document(node.get_text())])
 
             query_engine = index.as_query_engine(
                 service_context=self.service_context,
@@ -136,8 +140,10 @@ class DatasetGenerator:
 
         questions = [question for question in questions if question != ""]
 
+        if num is not None:
+            questions = questions[:num]
         return questions
 
-    def generate_questions_from_nodes(self) -> List[str]:
+    def generate_questions_from_nodes(self, num: Optional[int] = None) -> List[str]:
         """Generates questions for each document."""
-        return self._node_question_generator(self.nodes)
+        return self._node_question_generator(self.nodes, num)

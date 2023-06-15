@@ -1,0 +1,25 @@
+name: General Question
+description: Ask a question
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this question form!
+        Please complete the following form to help us assist you.
+  - type: checkboxes
+    id: pre-question
+    attributes:
+      label: Question Validation
+      description: By submitting this issue, you agree that you've previously search our [documentation](https://gpt-index.readthedocs.io/en/latest/index.html) and [discord](https://discord.gg/dGcwcsnxhU) and did not find a proper answer to your question.
+      options:
+        - label: I have searched both the documentation and discord for an answer.
+          required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: Ask your question here!
+    validations:
+      required: true

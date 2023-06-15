@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: LlamaIndex Documentation
+    url: https://gpt-index.readthedocs.io/en/latest/index.html
+    about: Please review/search the latest documentation before posting an issue.
+  - name: LlamaIndex Community Support
+    url: https://discord.gg/dGcwcsnxhU
+    about: Please direct any questions on the usage of LlamaIndex to the discord. Feel free to search the discord to find answers to questions as well!

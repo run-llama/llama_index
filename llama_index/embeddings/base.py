@@ -162,11 +162,17 @@ class BaseEmbedding:
             self._total_tokens_used += text_tokens_count
             if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
                 # flush
+                event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
                 cur_batch_texts = [text for _, text in cur_batch]
                 embeddings = self._get_text_embeddings(cur_batch_texts)
                 result_ids.extend(cur_batch_ids)
                 result_embeddings.extend(embeddings)
+                self.callback_manager.on_event_end(
+                    CBEventType.EMBEDDING,
+                    payload={"num_nodes": len(embeddings)},
+                    event_id=event_id,
+                )
 
                 cur_batch = []
 
@@ -193,12 +199,18 @@ class BaseEmbedding:
             self._total_tokens_used += text_tokens_count
             if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
                 # flush
+                event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
                 cur_batch_texts = [text for _, text in cur_batch]
                 embeddings_coroutines.append(
                     self._aget_text_embeddings(cur_batch_texts)
                 )
                 result_ids.extend(cur_batch_ids)
+                self.callback_manager.on_event_end(
+                    CBEventType.EMBEDDING,
+                    payload={"num_nodes": len(cur_batch_ids)},
+                    event_id=event_id,
+                )
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         result_embeddings = [
