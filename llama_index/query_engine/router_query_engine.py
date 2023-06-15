@@ -2,7 +2,7 @@ import logging
 from typing import Callable, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
@@ -56,7 +56,7 @@ class RouterQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         event_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         )
         result = self._selector.select(self._metadatas, query_bundle)
         try:
@@ -68,7 +68,7 @@ class RouterQueryEngine(BaseQueryEngine):
         response = selected_query_engine.query(query_bundle)
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
-            payload={"response": response},
+            payload={EventPayload.RESPONSE: response},
             event_id=event_id,
         )
         return response
