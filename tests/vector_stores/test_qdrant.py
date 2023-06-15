@@ -26,6 +26,10 @@ def node_embeddings() -> List[NodeWithEmbedding]:
                 text="lorem ipsum",
                 doc_id="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
                 relationships={DocumentRelationship.SOURCE: "test-0"},
+                extra_info={
+                    "author": "Stephen King",
+                    "theme": "Friendship",
+                },
             ),
         ),
         NodeWithEmbedding(
@@ -34,6 +38,10 @@ def node_embeddings() -> List[NodeWithEmbedding]:
                 text="lorem ipsum",
                 doc_id="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
                 relationships={DocumentRelationship.SOURCE: "test-1"},
+                extra_info={
+                    "director": "Francis Ford Coppola",
+                    "theme": "Mafia",
+                },
             ),
         ),
     ]
