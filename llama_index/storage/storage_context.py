@@ -24,6 +24,7 @@ from llama_index.storage.index_store.types import BaseIndexStore
 from llama_index.vector_stores.simple import DEFAULT_PERSIST_FNAME as VECTOR_STORE_FNAME
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
+from llama_index.utils import concat_dirs
 
 DEFAULT_PERSIST_DIR = "./storage"
 
@@ -101,10 +102,17 @@ class StorageContext:
             persist_dir (str): directory to persist the storage context
 
         """
-        docstore_path = str(Path(persist_dir) / docstore_fname)
-        index_store_path = str(Path(persist_dir) / index_store_fname)
-        vector_store_path = str(Path(persist_dir) / vector_store_fname)
-        graph_store_path = str(Path(persist_dir) / graph_store_fname)
+        if fs is not None:
+            docstore_path = concat_dirs(persist_dir, docstore_fname)
+            index_store_path = concat_dirs(persist_dir, index_store_fname)
+            vector_store_path = concat_dirs(persist_dir, vector_store_fname)
+            graph_store_path = concat_dirs(persist_dir, graph_store_fname)
+        else:
+            docstore_path = str(Path(persist_dir) / docstore_fname)
+            index_store_path = str(Path(persist_dir) / index_store_fname)
+            vector_store_path = str(Path(persist_dir) / vector_store_fname)
+            graph_store_path = str(Path(persist_dir) / graph_store_fname)
+
         self.docstore.persist(persist_path=docstore_path, fs=fs)
         self.index_store.persist(persist_path=index_store_path, fs=fs)
         self.vector_store.persist(persist_path=vector_store_path, fs=fs)
