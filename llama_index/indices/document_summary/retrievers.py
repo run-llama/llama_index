@@ -7,7 +7,7 @@ This module contains retrievers for document summary indices.
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
@@ -151,7 +151,9 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
                 query_bundle.embedding_strs
             )
             self._index._service_context.callback_manager.on_event_end(
-                CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
+                CBEventType.EMBEDDING,
+                payload={EventPayload.CHUNKS: query_bundle.embedding_strs},
+                event_id=event_id,
             )
 
         event_id = self._index._service_context.callback_manager.on_event_start(
@@ -170,7 +172,9 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         ) = embed_model.get_queued_text_embeddings()
         self._index._service_context.callback_manager.on_event_end(
             CBEventType.EMBEDDING,
-            payload={"num_nodes": len(result_ids)},
+            payload={
+                EventPayload.CHUNKS: [x for x in nodes if node.embedding is not None]
+            },
             event_id=event_id,
         )
         for new_id, text_embedding in zip(result_ids, result_embeddings):

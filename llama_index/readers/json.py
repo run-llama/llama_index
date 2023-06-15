@@ -54,15 +54,15 @@ class JSONReader(BaseReader):
 
     Args:
         levels_back (int): the number of levels to go back in the JSON tree, 0
-        if you want all levels. If levels_back is None, then we just format the
-        JSON and make each line an embedding
+          if you want all levels. If levels_back is None, then we just format the
+          JSON and make each line an embedding
 
         collapse_length (int): the maximum number of characters a JSON fragment
-        would be collapsed in the output (levels_back needs to be not None)
-        ex: if collapse_length = 10, and
-        input is {a: [1, 2, 3], b: {"hello": "world", "foo": "bar"}}
-        then a would be collapsed into one line, while b would not.
-        Recommend starting around 100 and then adjusting from there.
+          would be collapsed in the output (levels_back needs to be not None)
+          ex: if collapse_length = 10, and
+          input is {a: [1, 2, 3], b: {"hello": "world", "foo": "bar"}}
+          then a would be collapsed into one line, while b would not.
+          Recommend starting around 100 and then adjusting from there.
 
     """
 
