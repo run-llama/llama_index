@@ -25,6 +25,7 @@ from llama_index.vector_stores.simple import DEFAULT_PERSIST_FNAME as VECTOR_STO
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
 from llama_index.utils import concat_dirs
+
 DEFAULT_PERSIST_DIR = "./storage"
 
 
