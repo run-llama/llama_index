@@ -2,6 +2,7 @@ import asyncio
 from typing import Any, Dict, Tuple
 
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
+
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.base import default_output_parser
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
@@ -47,7 +48,9 @@ def test_sql_index_query(
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     # query the index with natural language
-    nl_query_engine = NLStructStoreQueryEngine(index, **query_kwargs)
+    nl_query_engine = NLStructStoreQueryEngine(
+        index, resynthesize_table_context=False, **query_kwargs
+    )
     response = nl_query_engine.query("test_table:user_id,foo")
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
@@ -88,7 +91,9 @@ def test_sql_index_async_query(
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     # query the index with natural language
-    nl_query_engine = NLStructStoreQueryEngine(index, **query_kwargs)
+    nl_query_engine = NLStructStoreQueryEngine(
+        index, resynthesize_table_context=False, **query_kwargs
+    )
     task = nl_query_engine.aquery("test_table:user_id,foo")
     response = asyncio.run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"

@@ -18,8 +18,8 @@ from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.sql import (
-    SQLStructStoreIndex,
     SQLContextContainerBuilder,
+    SQLStructStoreIndex,
 )
 from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
@@ -342,5 +342,5 @@ def test_sql_index_with_index_context(
         **index_kwargs
     )
     # just assert this runs
-    sql_query_engine = NLStructStoreQueryEngine(index)
+    sql_query_engine = NLStructStoreQueryEngine(index, resynthesize_table_context=False)
     sql_query_engine.query(QueryBundle("test_table:foo"))
