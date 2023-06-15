@@ -12,6 +12,7 @@ from dataclasses_json import DataClassJsonMixin
 from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
+    get_top_k_mmr_embeddings,
 )
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
@@ -30,6 +31,8 @@ LEARNER_MODES = {
     VectorStoreQueryMode.LINEAR_REGRESSION,
     VectorStoreQueryMode.LOGISTIC_REGRESSION,
 }
+
+MMR_MODE = VectorStoreQueryMode.MMR
 
 
 @dataclass
@@ -146,6 +149,15 @@ class SimpleVectorStore(VectorStore):
                 embeddings,
                 similarity_top_k=query.similarity_top_k,
                 embedding_ids=node_ids,
+            )
+        elif query.mode == MMR_MODE:
+            mmr_threshold = kwargs.get("mmr_threshold", None)
+            top_similarities, top_ids = get_top_k_mmr_embeddings(
+                query_embedding,
+                embeddings,
+                similarity_top_k=query.similarity_top_k,
+                embedding_ids=node_ids,
+                mmr_threshold=mmr_threshold,
             )
         elif query.mode == VectorStoreQueryMode.DEFAULT:
             top_similarities, top_ids = get_top_k_embeddings(

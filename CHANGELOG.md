@@ -4,6 +4,7 @@
 
 ### New Features
 - Add node doc_id filtering to weaviate (#6467)
+- Add maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode (#6446)
 
 ### Bug Fixes / Nits
 - `as_chat_engine` properly inherits the current service context (#6470)
@@ -17,12 +18,10 @@
 ### Bug Fixes / Nits
 - Fix citation engine import (#6456)
 
-
 ## [v0.6.25] - 2023-06-13
 
 ### New Features
 - Added FLARE query engine (#6419).
-
 
 ## [v0.6.24] - 2023-06-12
 
