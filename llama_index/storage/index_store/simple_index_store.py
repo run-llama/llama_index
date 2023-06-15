@@ -9,6 +9,7 @@ from llama_index.storage.index_store.types import (
     DEFAULT_PERSIST_FNAME,
     DEFAULT_PERSIST_PATH,
 )
+from llama_index.utils import concat_dirs
 
 
 class SimpleIndexStore(KVIndexStore):
@@ -35,7 +36,7 @@ class SimpleIndexStore(KVIndexStore):
     ) -> "SimpleIndexStore":
         """Create a SimpleIndexStore from a persist directory."""
         if fs is not None:
-            persist_path = persist_dir + "/" + DEFAULT_PERSIST_FNAME
+            persist_path = concat_dirs(persist_dir, DEFAULT_PERSIST_FNAME)
         else:
             persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)
