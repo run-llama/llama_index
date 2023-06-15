@@ -182,7 +182,7 @@ class SimpleDirectoryReader(BaseReader):
                 metadata = self.file_metadata(str(input_file))
 
             file_suffix = input_file.suffix.lower()
-            if file_suffix in self.supported_suffix:
+            if file_suffix in self.supported_suffix or file_suffix in self.file_extractor:
                 # use file readers
                 if file_suffix not in self.file_extractor:
                     # instantiate file reader if not already
