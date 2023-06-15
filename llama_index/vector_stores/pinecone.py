@@ -238,7 +238,9 @@ class PineconeVectorStore(VectorStore):
         """
         # delete by filtering on the doc_id metadata
         self._pinecone_index.delete(
-            filter={"doc_id": {"$eq": ref_doc_id}}, **delete_kwargs
+            filter={"doc_id": {"$eq": ref_doc_id}},
+            namespace=self._namespace,
+            **delete_kwargs,
         )
 
     @property

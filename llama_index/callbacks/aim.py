@@ -7,7 +7,7 @@ except ModuleNotFoundError:
     Run, Text = None, None
 
 from llama_index.callbacks.base import BaseCallbackHandler
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -109,14 +109,14 @@ class AimCallback(BaseCallbackHandler):
 
         if event_type is CBEventType.LLM and payload:
             self._run.track(
-                Text(payload["formatted_prompt"]),
+                Text(payload[EventPayload.PROMPT]),
                 name="prompt",
                 step=self._llm_response_step,
                 context={"event_id": event_id},
             )
 
             self._run.track(
-                Text(payload["response"]),
+                Text(payload[EventPayload.RESPONSE]),
                 name="response",
                 step=self._llm_response_step,
                 context={"event_id": event_id},
@@ -124,7 +124,7 @@ class AimCallback(BaseCallbackHandler):
 
             self._llm_response_step += 1
         elif event_type is CBEventType.CHUNKING and payload:
-            for chunk_id, chunk in enumerate(payload["chunks"]):
+            for chunk_id, chunk in enumerate(payload[EventPayload.CHUNKS]):
                 self._run.track(
                     Text(chunk),
                     name="chunk",
