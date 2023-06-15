@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, List, Optional, Protocol, Union, runtime_checkable
 
 import fsspec
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictInt, StrictFloat, StrictStr
 
 from llama_index.data_structs.node import Node
 
@@ -57,10 +57,15 @@ class VectorStoreQueryMode(str, Enum):
 
 
 class ExactMatchFilter(BaseModel):
-    """Exact match metadata filter for vector stores."""
+    """Exact match metadata filter for vector stores.
+
+    Value uses Strict* types, as int, float and str are compatible types and were all
+    converted to string before.
+
+    See: https://docs.pydantic.dev/latest/usage/types/#strict-types"""
 
     key: str
-    value: Union[str, int, float]
+    value: Union[StrictInt, StrictFloat, StrictStr]
 
 
 class MetadataFilters(BaseModel):
