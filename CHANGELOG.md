@@ -8,6 +8,10 @@
 
 ### Breaking/Deprecated API Changes
 - Deprecated current token tracking (llm predicotr and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
+- Add maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode (#6446)
+
+### Bug Fixes / Nits
+- `as_chat_engine` properly inherits the current service context (#6470)
 
 ## [v0.6.26] - 2023-06-14
 
@@ -17,7 +21,6 @@
 
 ### Bug Fixes / Nits
 - Fix citation engine import (#6456)
-
 
 ## [v0.6.25] - 2023-06-13
 
