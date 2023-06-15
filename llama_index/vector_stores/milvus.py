@@ -8,13 +8,13 @@ from typing import Any, List, Optional
 from uuid import uuid4
 
 from llama_index.data_structs.node import DocumentRelationship, Node
-from llama_index.vector_stores.types import (
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-    VectorStoreQueryResult,
-)
+from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryMode,
+                                             VectorStoreQueryResult)
+from llama_index.vector_stores.utils import (DEFAULT_DOC_ID_KEY,
+                                             DEFAULT_EMBEDDING_KEY,
+                                             DEFAULT_TEXT_KEY)
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,10 @@ class MilvusVectorStore(VectorStore):
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         dim: Optional[int] = None,
+        embedding_field: str = DEFAULT_EMBEDDING_KEY,
+        text_field: str = DEFAULT_TEXT_KEY,
+        doc_id_field: str = DEFAULT_DOC_ID_KEY,
+        consistency_level: Optional[int] = "Strong",
         host: str = "localhost",
         port: int = 19530,
         user: str = "",
@@ -87,6 +91,10 @@ class MilvusVectorStore(VectorStore):
         self.search_params = search_params
         self.index_params = index_params
         self.dim = dim
+        self.embedding_field = embedding_field
+        self.text_field = text_field
+        self.doc_id_field = doc_id_field
+        self.consistency_level = consistency_level
         self.host = host
         self.port = port
         self.user = user
@@ -199,19 +207,19 @@ class MilvusVectorStore(VectorStore):
                     max_length=65535,
                 ),
                 FieldSchema(
-                    name="doc_id",
+                    name=self.doc_id_field,
                     dtype=DataType.VARCHAR,
                     description="Source document ID",
                     max_length=65535,
                 ),
                 FieldSchema(
-                    name="text",
+                    name=self.text_field,
                     dtype=DataType.VARCHAR,
                     description="The embedding vector",
                     max_length=65535,
                 ),
                 FieldSchema(
-                    name="embedding",
+                    name=self.embedding_field,
                     dtype=DataType.FLOAT_VECTOR,
                     description="The embedding vector",
                     dim=self.dim,
@@ -223,7 +231,7 @@ class MilvusVectorStore(VectorStore):
                 self.collection_name,
                 col_schema,
                 using=self.alias,
-                consistency_level="Strong",
+                consistency_level=self.consistency_level,
             )
             logger.debug(
                 f"Successfully created a new collection: {self.collection_name}"
@@ -248,7 +256,7 @@ class MilvusVectorStore(VectorStore):
 
             try:
                 self.collection.create_index(
-                    "embedding", index_params=self.index_params, using=self.alias
+                    self.embedding_field, index_params=self.index_params, using=self.alias
                 )
             # If default did not work, most likely on Zilliz Cloud
             except MilvusException:
@@ -259,7 +267,7 @@ class MilvusVectorStore(VectorStore):
                     "params": {},
                 }
                 self.collection.create_index(
-                    "embedding", index_params=self.index_params, using=self.alias
+                    self.embedding_field, index_params=self.index_params, using=self.alias
                 )
 
             # If search params dont exist already, grab the default
@@ -362,7 +370,7 @@ class MilvusVectorStore(VectorStore):
         try:
             # Begin by querying for the primary keys to delete
             doc_ids = ['"' + entry + '"' for entry in doc_ids]
-            entries = self.collection.query(f"doc_id in [{','.join(doc_ids)}]")
+            entries = self.collection.query(f"{self.doc_id_field} in [{','.join(doc_ids)}]")
             ids = [entry["id"] for entry in entries]
             ids = ['"' + entry + '"' for entry in ids]
             self.collection.delete(f"id in [{','.join(ids)}]")
@@ -378,6 +386,8 @@ class MilvusVectorStore(VectorStore):
             query_embedding (List[float]): query embedding
             similarity_top_k (int): top k most similar nodes
             doc_ids (Optional[List[str]]): list of doc_ids to filter by
+            output_fields (Optional[List[str]]): list of fields to return
+            embedding_field (Optional[str]): name of embedding field
         """
         from pymilvus import MilvusException
 
@@ -393,15 +403,21 @@ class MilvusVectorStore(VectorStore):
         expr: Optional[str] = None
         if query.doc_ids is not None and len(query.doc_ids) != 0:
             expr_list = ['"' + entry + '"' for entry in query.doc_ids]
-            expr = f"doc_id in [{','.join(expr_list)}]"
+            expr = f"{self.doc_id_field} in [{','.join(expr_list)}]"
+
+        if query.output_fields is None:
+            output_fields = [self.doc_id_field, self.text_field]
+
+        if query.embedding_field is None:
+            embedding_field = self.embedding_field
 
         try:
             res = self.collection.search(
                 [query.query_embedding],
-                "embedding",
+                embedding_field,
                 self.search_params,
                 limit=query.similarity_top_k,
-                output_fields=["doc_id", "text"],
+                output_fields=output_fields,
                 expr=expr,
             )
             logger.debug(
@@ -422,9 +438,9 @@ class MilvusVectorStore(VectorStore):
         for hit in res[0]:
             node = Node(
                 doc_id=hit.id,
-                text=hit.entity.get("text"),
+                text=hit.entity.get(self.text_field),
                 relationships={
-                    DocumentRelationship.SOURCE: hit.entity.get("doc_id"),
+                    DocumentRelationship.SOURCE: hit.entity.get(self.doc_id_field),
                 },
             )
             nodes.append(node)
