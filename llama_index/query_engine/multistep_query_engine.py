@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import StepDecomposeQueryTransform
@@ -74,7 +74,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         query_event_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         )
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
 
@@ -87,14 +87,14 @@ class MultiStepQueryEngine(BaseQueryEngine):
 
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
-            payload={"response": final_response},
+            payload={EventPayload.RESPONSE: final_response},
             event_id=query_event_id,
         )
         return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         event_id = self.callback_manager.on_event_start(
-            CBEventType.QUERY, payload={"query_str": query_bundle.query_str}
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         )
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
 
@@ -107,7 +107,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
 
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
-            payload={"response": final_response},
+            payload={EventPayload.RESPONSE: final_response},
             event_id=event_id,
         )
         return final_response

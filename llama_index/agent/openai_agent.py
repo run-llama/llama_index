@@ -48,6 +48,8 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
         llm: Optional[ChatOpenAI] = None,
         chat_history: Optional[ChatMessageHistory] = None,
         verbose: bool = False,
+        max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> "OpenAIAgent":
         tools = tools or []
         lc_chat_history = chat_history or ChatMessageHistory()
@@ -61,7 +63,14 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
 
-        return cls(tools=tools, llm=llm, chat_history=lc_chat_history, verbose=verbose)
+        return cls(
+            tools=tools,
+            llm=llm,
+            chat_history=lc_chat_history,
+            verbose=verbose,
+            max_function_calls=max_function_calls,
+            callback_manager=callback_manager,
+        )
 
     def reset(self) -> None:
         self._chat_history.clear()
@@ -84,7 +93,7 @@ class OpenAIAgent(BaseChatEngine, BaseQueryEngine):
         while function_call is not None:
             if n_function_calls >= self._max_function_calls:
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
-                continue
+                break
 
             function_message = self._call_function(function_call)
             chat_history.add_message(function_message)

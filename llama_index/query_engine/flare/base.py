@@ -235,7 +235,7 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
             )
 
         # NOTE: at the moment, does not support streaming
-        return Response(response=cur_response)
+        return Response(response=cur_response, source_nodes=source_nodes)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self._query(query_bundle)

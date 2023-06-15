@@ -424,7 +424,7 @@ documents = reader.load_data(
 
 ```
 
-[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/data_connectors).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/data_connectors).
 
 
 ```{toctree}
@@ -433,6 +433,7 @@ caption: Examples
 maxdepth: 1
 ---
 ../../examples/vector_stores/SimpleIndexDemo.ipynb
+../../examples/vector_stores/SimpleIndexDemoMMR.ipynb
 ../../examples/vector_stores/RedisIndexDemo.ipynb
 ../../examples/vector_stores/QdrantIndexDemo.ipynb
 ../../examples/vector_stores/FaissIndexDemo.ipynb
