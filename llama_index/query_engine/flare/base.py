@@ -61,7 +61,7 @@ Answer: The Great Gatsby is a novel written by F. Scott Fitzgerald. It is about 
 """
 
 DEFAULT_END = """
-Now given the following task, and an the stub of an existing answer, generate the \
+Now given the following task, and the stub of an existing answer, generate the \
 next portion of the answer. You may use the Search API \
 "[Search(query)]" whenever possible.
 If the answer is complete and no longer contains any "[Search(query)]" tags, write \
