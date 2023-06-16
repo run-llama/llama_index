@@ -4,7 +4,7 @@ from typing import Dict, Type
 
 from llama_index.data_structs.data_structs import (
     KG,
-    EmptyIndex,
+    EmptyIndexStruct,
     IndexDict,
     IndexGraph,
     IndexList,
@@ -24,6 +24,6 @@ INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_CLASS: Dict[IndexStructType, Type[IndexStruct]
     IndexStructType.SQL: SQLStructTable,
     IndexStructType.PANDAS: PandasStructTable,
     IndexStructType.KG: KG,
-    IndexStructType.EMPTY: EmptyIndex,
+    IndexStructType.EMPTY: EmptyIndexStruct,
     IndexStructType.DOCUMENT_SUMMARY: IndexDocumentSummary,
 }

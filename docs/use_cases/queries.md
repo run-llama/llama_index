@@ -13,9 +13,9 @@ a simple in-memory vector store for you to get started, but you can also choose
 to use any one of our [vector store integrations](/how_to/integrations/vector_stores.md):
 
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do growing up?")
 print(response)
@@ -41,7 +41,7 @@ In general, a list index would be suited for this use case. A list index by defa
 Empirically, setting `response_mode="tree_summarize"` also leads to better summarization results.
 
 ```python
-index = GPTListIndex.from_documents(documents)
+index = ListIndex.from_documents(documents)
 
 query_engine = index.as_query_engine(
     response_mode="tree_summarize"
@@ -73,20 +73,20 @@ Specifically, compose a list index over your subindices. A list index inherently
 it can synthesize information across your heterogeneous data sources.
 
 ```python
-from llama_index import GPTVectorStoreIndex, GPTListIndex
+from llama_index import VectorStoreIndex, ListIndex
 from llama_index.indices.composability import ComposableGraph
 
-index1 = GPTVectorStoreIndex.from_documents(notion_docs)
-index2 = GPTVectorStoreIndex.from_documents(slack_docs)
+index1 = VectorStoreIndex.from_documents(notion_docs)
+index2 = VectorStoreIndex.from_documents(slack_docs)
 
-graph = ComposableGraph.from_indices(GPTListIndex, [index1, index2], index_summaries=["summary1", "summary2"])
+graph = ComposableGraph.from_indices(ListIndex, [index1, index2], index_summaries=["summary1", "summary2"])
 query_engine = graph.as_query_engine()
 response = query_engine.query("<query_str>")
 
 ```
 
 **Guides**
-- [Composability](/how_to/index_structs/composability.md)
+- [Composability](../how_to/index/composability.md)
 - [City Analysis](../examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
 
@@ -101,14 +101,14 @@ To do this, first build the sub-indices over different data sources.
 Then construct the corresponding query engines, and give each query engine a description to obtain a `QueryEngineTool`.
 
 ```python
-from llama_index import GPTTreeIndex, GPTVectorStoreIndex
+from llama_index import TreeIndex, VectorStoreIndex
 from llama_index.tools import QueryEngineTool
 
 ...
 
 # define sub-indices
-index1 = GPTVectorStoreIndex.from_documents(notion_docs)
-index2 = GPTVectorStoreIndex.from_documents(slack_docs)
+index1 = VectorStoreIndex.from_documents(notion_docs)
+index2 = VectorStoreIndex.from_documents(slack_docs)
 
 # define query engines and tools
 tool1 = QueryEngineTool.from_defaults(
@@ -154,7 +154,7 @@ decompose_transform = DecomposeQueryTransform(
 This module will help break down a complex query into a simpler one over your existing index structure.
 
 **Guides**
-- [Query Transformations](/how_to/query/query_transformations.md)
+- [Query Transformations](../how_to/query_engine/advanced/query_transformations.md)
 - [City Analysis Compare/Contrast Example](../examples//composable_indices/city_analysis/City_Analysis-Decompose.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb))
 
 You can also rely on the LLM to *infer* whether to perform compare/contrast queries (see Multi-Document Queries below).
@@ -214,7 +214,7 @@ the module will first decompose the query into a simpler initial question "What 
 query the index, and then ask followup questions.
 
 **Guides**
-- [Query Transformations](/how_to/query/query_transformations.md)
+- [Query Transformations](../how_to/query_engine/advanced/query_transformations.md)
 - [Multi-Step Query Decomposition](../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 
@@ -225,7 +225,7 @@ LlamaIndex can support queries that require an understanding of time. It can do 
 - Sort by recency and filter outdated context.
 
 **Guides**
-- [Second-Stage Postprocessing Guide](/how_to/query/second_stage.md)
+- [Second-Stage Postprocessing Guide](../how_to/query_engine/advanced/second_stage.md)
 - [Prev/Next Postprocessing](../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
 - [Recency Postprocessing](../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
 

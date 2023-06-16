@@ -3,15 +3,16 @@
 import json
 import logging
 import os
-import fsspec
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, cast
 
+import fsspec
 from dataclasses_json import DataClassJsonMixin
 
 from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
+    get_top_k_mmr_embeddings,
 )
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
@@ -22,6 +23,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
+from llama_index.utils import concat_dirs
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,8 @@ LEARNER_MODES = {
     VectorStoreQueryMode.LOGISTIC_REGRESSION,
 }
 
+MMR_MODE = VectorStoreQueryMode.MMR
+
 
 @dataclass
 class SimpleVectorStoreData(DataClassJsonMixin):
@@ -38,12 +42,12 @@ class SimpleVectorStoreData(DataClassJsonMixin):
 
     Args:
         embedding_dict (Optional[dict]): dict mapping doc_ids to embeddings.
-        text_id_to_doc_id (Optional[dict]): dict mapping text_ids to doc_ids.
+        text_id_to_ref_doc_id (Optional[dict]): dict mapping text_ids to ref_doc_ids.
 
     """
 
     embedding_dict: Dict[str, List[float]] = field(default_factory=dict)
-    text_id_to_doc_id: Dict[str, str] = field(default_factory=dict)
+    text_id_to_ref_doc_id: Dict[str, str] = field(default_factory=dict)
 
 
 class SimpleVectorStore(VectorStore):
@@ -76,7 +80,10 @@ class SimpleVectorStore(VectorStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleVectorStore":
         """Load from persist dir."""
-        persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        if fs is not None:
+            persist_path = concat_dirs(persist_dir, DEFAULT_PERSIST_FNAME)
+        else:
+            persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)
 
     @property
@@ -95,19 +102,25 @@ class SimpleVectorStore(VectorStore):
         """Add embedding_results to index."""
         for result in embedding_results:
             self._data.embedding_dict[result.id] = result.embedding
-            self._data.text_id_to_doc_id[result.id] = result.ref_doc_id
+            self._data.text_id_to_ref_doc_id[result.id] = result.ref_doc_id
         return [result.id for result in embedding_results]
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
         text_ids_to_delete = set()
-        for text_id, doc_id_ in self._data.text_id_to_doc_id.items():
-            if doc_id == doc_id_:
+        for text_id, ref_doc_id_ in self._data.text_id_to_ref_doc_id.items():
+            if ref_doc_id == ref_doc_id_:
                 text_ids_to_delete.add(text_id)
 
         for text_id in text_ids_to_delete:
             del self._data.embedding_dict[text_id]
-            del self._data.text_id_to_doc_id[text_id]
+            del self._data.text_id_to_ref_doc_id[text_id]
 
     def query(
         self,
@@ -140,6 +153,15 @@ class SimpleVectorStore(VectorStore):
                 embeddings,
                 similarity_top_k=query.similarity_top_k,
                 embedding_ids=node_ids,
+            )
+        elif query.mode == MMR_MODE:
+            mmr_threshold = kwargs.get("mmr_threshold", None)
+            top_similarities, top_ids = get_top_k_mmr_embeddings(
+                query_embedding,
+                embeddings,
+                similarity_top_k=query.similarity_top_k,
+                embedding_ids=node_ids,
+                mmr_threshold=mmr_threshold,
             )
         elif query.mode == VectorStoreQueryMode.DEFAULT:
             top_similarities, top_ids = get_top_k_embeddings(

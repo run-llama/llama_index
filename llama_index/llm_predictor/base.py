@@ -14,7 +14,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.llms import AI21
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.prompts.base import Prompt
@@ -218,7 +218,7 @@ class LLMPredictor(BaseLLMPredictor):
 
         """
         llm_payload = {**prompt_args}
-        llm_payload["template"] = prompt
+        llm_payload[EventPayload.TEMPLATE] = prompt
         event_id = self.callback_manager.on_event_start(
             CBEventType.LLM,
             payload=llm_payload,
@@ -234,7 +234,14 @@ class LLMPredictor(BaseLLMPredictor):
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
         self.callback_manager.on_event_end(
             CBEventType.LLM,
-            payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
+            payload={
+                EventPayload.RESPONSE: llm_prediction,
+                EventPayload.PROMPT: formatted_prompt,
+                # deprecated
+                "formatted_prompt_tokens_count": prompt_tokens_count,
+                "prediction_tokens_count": prediction_tokens_count,
+                "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
+            },
             event_id=event_id,
         )
         return llm_prediction, formatted_prompt
@@ -321,7 +328,7 @@ class LLMPredictor(BaseLLMPredictor):
 
         """
         llm_payload = {**prompt_args}
-        llm_payload["template"] = prompt
+        llm_payload[EventPayload.TEMPLATE] = prompt
         event_id = self.callback_manager.on_event_start(
             CBEventType.LLM, payload=llm_payload
         )
@@ -336,7 +343,14 @@ class LLMPredictor(BaseLLMPredictor):
         self._total_tokens_used += prompt_tokens_count + prediction_tokens_count
         self.callback_manager.on_event_end(
             CBEventType.LLM,
-            payload={"response": llm_prediction, "formatted_prompt": formatted_prompt},
+            payload={
+                EventPayload.RESPONSE: llm_prediction,
+                EventPayload.PROMPT: formatted_prompt,
+                # deprecated
+                "formatted_prompt_tokens_count": prompt_tokens_count,
+                "prediction_tokens_count": prediction_tokens_count,
+                "total_tokens_used": prompt_tokens_count + prediction_tokens_count,
+            },
             event_id=event_id,
         )
         return llm_prediction, formatted_prompt

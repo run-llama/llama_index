@@ -2,10 +2,10 @@
 
 By default, LlamaIndex hides away the complexities and let you query your data in under 5 lines of code:
 ```python
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()
 response = query_engine.query("Summarize the documents.")
 ```
@@ -18,7 +18,7 @@ Under the hood, LlamaIndex also supports a swappable **storage layer** that allo
 ### Low-Level API
 To do this, instead of the high-level API,
 ```python
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 ```
 we use a lower-level API that gives more granular control:
 ```python
@@ -42,7 +42,7 @@ storage_context = StorageContext.from_defaults(
 storage_context.docstore.add_documents(nodes)
 
 # build index
-index = GPTVectorStoreIndex(nodes, storage_context=storage_context)
+index = VectorStoreIndex(nodes, storage_context=storage_context)
 
 # save index
 index.storage_context.persist(persist_dir="<persist_dir>")
@@ -71,7 +71,7 @@ loaded_indicies = load_index_from_storage(storage_context, index_ids=["<index_id
 You can customize the underlying storage with a one-line change to instantiate different document stores, index stores, and vector stores.
 See [Document Stores](/how_to/storage/docstores.md), [Vector Stores](/how_to/storage/vector_stores.md), [Index Stores](/how_to/storage/index_stores.md) guides for more details.
 
-For saving and loading a graph/composable index, see the [full guide here](/how_to/index_structs/composability.md).
+For saving and loading a graph/composable index, see the [full guide here](../index/composability.md).
 
 ### Vector Store Integrations and Storage
 
@@ -81,6 +81,8 @@ The vector stores that support this practice are:
 
 - ChatGPTRetrievalPluginClient
 - ChromaVectorStore
+- DocArrayHnswVectorStore
+- DocArrayInMemoryVectorStore
 - LanceDBVectorStore
 - MetalVectorStore
 - MilvusVectorStore
@@ -95,7 +97,7 @@ A small example using Pinecone is below:
 
 ```python
 import pinecone
-from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.vector_stores import PineconeVectorStore
 
 # Creating a Pinecone index
@@ -109,15 +111,8 @@ pinecone.create_index(
 )
 index = pinecone.Index("quickstart")
 
-# can define filters specific to this vector index (so you can
-# reuse pinecone indexes)
-metadata_filters = {"title": "paul_graham_essay"}
-
 # construct vector store
-vector_store = PineconeVectorStore(
-    pinecone_index=index,
-    metadata_filters=metadata_filters
-)
+vector_store = PineconeVectorStore(pinecone_index=index)
 
 # create storage context
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
@@ -126,8 +121,14 @@ storage_context = StorageContext.from_defaults(vector_store=vector_store)
 documents = SimpleDirectoryReader("./data").load_data()
 
 # create index, which will insert documents/vectors to pinecone
-index = GPTVectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+```
 
-# re-build/load the index by conntect to the same vector store
-loaded_index = GPTVectorStoreIndex([], storage_context=storage_context)
+If you have an existing vector store with data already loaded in, 
+you can connect to it and directly create a `VectorStoreIndex` as follows:
+
+```python
+index = pinecone.Index("quickstart")
+vector_store = PineconeVectorStore(pinecone_index=index)
+loaded_index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
 ```

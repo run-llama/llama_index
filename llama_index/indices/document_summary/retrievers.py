@@ -4,24 +4,23 @@ This module contains retrievers for document summary indices.
 
 """
 
-from llama_index.callbacks.schema import CBEventType
-from llama_index.indices.document_summary.base import GPTDocumentSummaryIndex
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.base_retriever import BaseRetriever
-from typing import Any, List, Optional, Callable, Tuple, Dict
-from llama_index.data_structs.node import Node, NodeWithScore
-from llama_index.prompts.choice_select import ChoiceSelectPrompt
-from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.query.embedding_utils import (
-    get_top_k_embeddings,
-)
-from llama_index.prompts.choice_select import (
-    DEFAULT_CHOICE_SELECT_PROMPT,
-)
 import logging
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.data_structs.node import Node, NodeWithScore
+from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.document_summary.base import DocumentSummaryIndex
+from llama_index.indices.query.embedding_utils import get_top_k_embeddings
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
+)
+from llama_index.prompts.choice_select import (
+    DEFAULT_CHOICE_SELECT_PROMPT,
+    ChoiceSelectPrompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,13 +32,13 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
     By default, select relevant summaries from index using LLM calls.
 
     Args:
-        index (GPTDocumentSummaryIndex): The index to retrieve from.
+        index (DocumentSummaryIndex): The index to retrieve from.
 
     """
 
     def __init__(
         self,
-        index: GPTDocumentSummaryIndex,
+        index: DocumentSummaryIndex,
         choice_select_prompt: Optional[ChoiceSelectPrompt] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
@@ -102,12 +101,12 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
     NOTE: implementation is similar to ListIndexEmbeddingRetriever.
 
     Args:
-        index (GPTDocumentSummaryIndex): The index to retrieve from.
+        index (DocumentSummaryIndex): The index to retrieve from.
 
     """
 
     def __init__(
-        self, index: GPTDocumentSummaryIndex, similarity_top_k: int = 1, **kwargs: Any
+        self, index: DocumentSummaryIndex, similarity_top_k: int = 1, **kwargs: Any
     ) -> None:
         """Init params."""
         self._index = index
@@ -152,7 +151,9 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
                 query_bundle.embedding_strs
             )
             self._index._service_context.callback_manager.on_event_end(
-                CBEventType.EMBEDDING, payload={"num_nodes": 1}, event_id=event_id
+                CBEventType.EMBEDDING,
+                payload={EventPayload.CHUNKS: query_bundle.embedding_strs},
+                event_id=event_id,
             )
 
         event_id = self._index._service_context.callback_manager.on_event_start(
@@ -171,7 +172,9 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         ) = embed_model.get_queued_text_embeddings()
         self._index._service_context.callback_manager.on_event_end(
             CBEventType.EMBEDDING,
-            payload={"num_nodes": len(result_ids)},
+            payload={
+                EventPayload.CHUNKS: [x for x in nodes if node.embedding is not None]
+            },
             event_id=event_id,
         )
         for new_id, text_embedding in zip(result_ids, result_embeddings):

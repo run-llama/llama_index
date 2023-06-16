@@ -10,6 +10,8 @@ that query in order to return the correct result. The key agent components can i
 
 Research developments in LLMs (e.g. [ChatGPT Plugins](https://openai.com/blog/chatgpt-plugins)), LLM research ([ReAct](https://arxiv.org/abs/2210.03629), [Toolformer](https://arxiv.org/abs/2302.04761)) and LLM tooling ([LangChain](https://python.langchain.com/en/latest/modules/agents.html), [Semantic Kernel](https://github.com/microsoft/semantic-kernel)) have popularized the concept of agents.
 
+
+
 ## Agents + LlamaIndex
 
 LlamaIndex provides some amazing tools to manage and interact with your data within your LLM application. And it can be a core tool that you use while building an agent-based app.
@@ -37,7 +39,7 @@ Some of these core modules are shown below along with example tutorials (not com
 
 
 **Query Transformations**
-- [How-To](/how_to/query/query_transformations.md)
+- [How-To](/how_to/query_engine/advanced/query_transformations.md)
 - [Multi-Step Query Decomposition](/examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 **Routing**
@@ -45,11 +47,11 @@ Some of these core modules are shown below along with example tutorials (not com
 - [Router Query Engine Guide](/examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
 
 **LLM Reranking**
-- [Second Stage Processing How-To](/how_to/query/second_stage.md)
+- [Second Stage Processing How-To](/how_to/query_engine/advanced/second_stage.md)
 - [LLM Reranking Guide (Great Gatsby)](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb)
 
 **Chat Engines**
-- [Chat Engines How-To](/how_to/query/chat_engines.md)
+- [Chat Engines How-To](../how_to/chat_engine/root.md)
 
 
 ### Using LlamaIndex as as Tool within an Agent Framework
@@ -64,6 +66,7 @@ LlamaIndex query engines can be easily packaged as Tools to be used within a Lan
 **Resources**
 - [LangChain integration guide](/how_to/integrations/using_with_langchain.md)
 - [Building a Chatbot Tutorial (LangChain + LlamaIndex)](/guides/tutorials/building_a_chatbot.md)
+- [OnDemandLoaderTool Tutorial](/examples/tools/OnDemandLoaderTool.ipynb)
 
 #### ChatGPT
 
@@ -73,3 +76,16 @@ LlamaIndex can be used as a ChatGPT retrieval plugin (we have a TODO to develop 
 - [LlamaIndex ChatGPT Retrieval Plugin](https://github.com/openai/chatgpt-retrieval-plugin#llamaindex)
 
 
+### Native OpenAIAgent
+
+With the [new OpenAI API](https://openai.com/blog/function-calling-and-other-api-updates) that supports function calling, it’s never been easier to build your own agent!
+
+Learn how to write your own OpenAI agent in **under 50 lines of code**, or directly use our super simple
+`OpenAIAgent` implementation.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/agent/openai_agent.ipynb
+```

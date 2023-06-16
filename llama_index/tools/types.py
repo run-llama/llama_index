@@ -1,12 +1,35 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Dict, Optional, Type
+
+from langchain.tools import StructuredTool, Tool
+from pydantic import BaseModel
 
 
 @dataclass
 class ToolMetadata:
     description: str
     name: Optional[str] = None
+    fn_schema: Optional[Type[BaseModel]] = None
+
+    def to_openai_function(self) -> Dict[str, Any]:
+        """To OpenAI function."""
+        if self.fn_schema is None:
+            parameters = {
+                "properties": {
+                    "input": {"title": "input query string", "type": "string"},
+                },
+                "required": ["input"],
+                "type": "object",
+            }
+        else:
+            parameters = self.fn_schema.schema()
+
+        return {
+            "name": self.name,
+            "description": self.description,
+            "parameters": parameters,
+        }
 
 
 class BaseTool:
@@ -18,3 +41,42 @@ class BaseTool:
     @abstractmethod
     def __call__(self, input: Any) -> None:
         pass
+
+    def _process_langchain_tool_kwargs(
+        self,
+        langchain_tool_kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Process langchain tool kwargs."""
+        if "name" not in langchain_tool_kwargs:
+            langchain_tool_kwargs["name"] = self.metadata.name or ""
+        if "description" not in langchain_tool_kwargs:
+            langchain_tool_kwargs["description"] = self.metadata.description
+        if "fn_schema" not in langchain_tool_kwargs:
+            langchain_tool_kwargs["args_schema"] = self.metadata.fn_schema
+        return langchain_tool_kwargs
+
+    def to_langchain_tool(
+        self,
+        **langchain_tool_kwargs: Any,
+    ) -> Tool:
+        """To langchain tool."""
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
+            langchain_tool_kwargs
+        )
+        return Tool.from_function(
+            func=self.__call__,
+            **langchain_tool_kwargs,
+        )
+
+    def to_langchain_structured_tool(
+        self,
+        **langchain_tool_kwargs: Any,
+    ) -> StructuredTool:
+        """To langchain structured tool."""
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
+            langchain_tool_kwargs
+        )
+        return StructuredTool.from_function(
+            func=self.__call__,
+            **langchain_tool_kwargs,
+        )

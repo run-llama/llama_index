@@ -70,6 +70,7 @@ class SimpleDirectoryReader(BaseReader):
         exclude_hidden: bool = True,
         errors: str = "ignore",
         recursive: bool = False,
+        filename_as_id: bool = False,
         required_exts: Optional[List[str]] = None,
         file_extractor: Optional[Dict[str, BaseReader]] = None,
         num_files_limit: Optional[int] = None,
@@ -106,6 +107,7 @@ class SimpleDirectoryReader(BaseReader):
 
         self.supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
         self.file_metadata = file_metadata
+        self.filename_as_id = filename_as_id
 
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
@@ -180,7 +182,10 @@ class SimpleDirectoryReader(BaseReader):
                 metadata = self.file_metadata(str(input_file))
 
             file_suffix = input_file.suffix.lower()
-            if file_suffix in self.supported_suffix:
+            if (
+                file_suffix in self.supported_suffix
+                or file_suffix in self.file_extractor
+            ):
                 # use file readers
                 if file_suffix not in self.file_extractor:
                     # instantiate file reader if not already
@@ -188,6 +193,12 @@ class SimpleDirectoryReader(BaseReader):
                     self.file_extractor[file_suffix] = reader_cls()
                 reader = self.file_extractor[file_suffix]
                 docs = reader.load_data(input_file, extra_info=metadata)
+
+                # iterate over docs if needed
+                if self.filename_as_id:
+                    for i, doc in enumerate(docs):
+                        doc.doc_id = f"{str(input_file)}_part_{i}"
+
                 documents.extend(docs)
             else:
                 # do standard read
@@ -195,6 +206,9 @@ class SimpleDirectoryReader(BaseReader):
                     data = f.read()
 
                 doc = Document(data, extra_info=metadata)
+                if self.filename_as_id:
+                    doc.doc_id = str(input_file)
+
                 documents.append(doc)
 
         return documents

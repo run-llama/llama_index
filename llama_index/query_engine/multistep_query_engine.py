@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import StepDecomposeQueryTransform
@@ -73,7 +73,9 @@ class MultiStepQueryEngine(BaseQueryEngine):
         super().__init__(callback_manager)
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        query_event_id = self.callback_manager.on_event_start(CBEventType.QUERY)
+        query_event_id = self.callback_manager.on_event_start(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        )
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
 
         final_response = self._response_synthesizer.synthesize(
@@ -83,11 +85,17 @@ class MultiStepQueryEngine(BaseQueryEngine):
         )
         final_response.extra_info = extra_info
 
-        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=query_event_id)
+        self.callback_manager.on_event_end(
+            CBEventType.QUERY,
+            payload={EventPayload.RESPONSE: final_response},
+            event_id=query_event_id,
+        )
         return final_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        event_id = self.callback_manager.on_event_start(CBEventType.QUERY)
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        )
         nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
 
         final_response = await self._response_synthesizer.asynthesize(
@@ -97,7 +105,11 @@ class MultiStepQueryEngine(BaseQueryEngine):
         )
         final_response.extra_info = extra_info
 
-        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=event_id)
+        self.callback_manager.on_event_end(
+            CBEventType.QUERY,
+            payload={EventPayload.RESPONSE: final_response},
+            event_id=event_id,
+        )
         return final_response
 
     def _combine_queries(

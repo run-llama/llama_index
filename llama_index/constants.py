@@ -7,9 +7,13 @@ DEFAULT_CHUNK_SIZE = 1024
 DEFAULT_CHUNK_OVERLAP = 20
 DEFAULT_SIMILARITY_TOP_K = 2
 
+# NOTE: for text-embedding-ada-002
+DEFAULT_EMBEDDING_DIM = 1536
+
 
 TYPE_KEY = "__type__"
 DATA_KEY = "__data__"
 VECTOR_STORE_KEY = "vector_store"
+GRAPH_STORE_KEY = "graph_store"
 INDEX_STORE_KEY = "index_store"
 DOC_STORE_KEY = "doc_store"

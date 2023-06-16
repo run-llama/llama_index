@@ -53,7 +53,6 @@ class ImageVisionLLMReader(BaseReader):
     def load_data(
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
-
         """Parse file."""
         from PIL import Image
 

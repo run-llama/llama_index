@@ -1,5 +1,5 @@
 from typing import Any, List, Optional, Sequence
-from llama_index.indices.base import BaseGPTIndex
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_CLASS
 from llama_index.storage.storage_context import StorageContext
@@ -13,7 +13,7 @@ def load_index_from_storage(
     storage_context: StorageContext,
     index_id: Optional[str] = None,
     **kwargs: Any,
-) -> BaseGPTIndex:
+) -> BaseIndex:
     """Load index from storage context.
 
     Args:
@@ -49,7 +49,7 @@ def load_indices_from_storage(
     storage_context: StorageContext,
     index_ids: Optional[Sequence[str]] = None,
     **kwargs: Any,
-) -> List[BaseGPTIndex]:
+) -> List[BaseIndex]:
     """Load multiple indices from storage context
 
     Args:

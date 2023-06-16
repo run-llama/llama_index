@@ -55,6 +55,9 @@ class VectorStoreQueryMode(str, Enum):
     LOGISTIC_REGRESSION = "logistic_regression"
     LINEAR_REGRESSION = "linear_regression"
 
+    # maximum marginal relevance
+    MMR = "mmr"
+
 
 class ExactMatchFilter(BaseModel):
     """Exact match metadata filter for vector stores."""
@@ -123,6 +126,9 @@ class VectorStoreQuery:
     # metadata filters
     filters: Optional[MetadataFilters] = None
 
+    # only for mmr
+    mmr_threshold: Optional[float] = None
+
 
 @runtime_checkable
 class VectorStore(Protocol):
@@ -143,8 +149,9 @@ class VectorStore(Protocol):
         """Add embedding results to vector store."""
         ...
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete doc."""
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id."""
         ...
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:

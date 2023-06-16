@@ -1,7 +1,7 @@
 """Base index classes."""
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.data_structs.data_structs import IndexStruct
@@ -10,17 +10,17 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.schema.base import Document
-from llama_index.storage.docstore.types import BaseDocumentStore
+from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.token_counter import llm_token_counter
 
 IS = TypeVar("IS", bound=IndexStruct)
-IndexType = TypeVar("IndexType", bound="BaseGPTIndex")
+IndexType = TypeVar("IndexType", bound="BaseIndex")
 
 logger = logging.getLogger(__name__)
 
 
-class BaseGPTIndex(Generic[IS], ABC):
+class BaseIndex(Generic[IS], ABC):
     """Base LlamaIndex.
 
     Args:
@@ -60,6 +60,7 @@ class BaseGPTIndex(Generic[IS], ABC):
         self._storage_context = storage_context or StorageContext.from_defaults()
         self._docstore = self._storage_context.docstore
         self._vector_store = self._storage_context.vector_store
+        self._graph_store = self._storage_context.graph_store
 
         with self._service_context.callback_manager.as_trace("index_construction"):
             if index_struct is None:
@@ -188,38 +189,110 @@ class BaseGPTIndex(Generic[IS], ABC):
             )
 
     @abstractmethod
-    def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document."""
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete a node."""
+
+    def delete_nodes(
+        self,
+        doc_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete a list of nodes from the index.
+
+        Args:
+            doc_ids (List[str]): A list of doc_ids from the nodes to delete
+
+        """
+        for doc_id in doc_ids:
+            self._delete_node(doc_id, **delete_kwargs)
+            if delete_from_docstore:
+                self.docstore.delete_document(doc_id, raise_error=False)
+
+        self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document from the index.
-
         All nodes in the index related to the index will be deleted.
 
         Args:
-            doc_id (str): document id
+            doc_id (str): A doc_id of the ingested document
 
         """
-        logger.debug(f"> Deleting document: {doc_id}")
-        self._delete(doc_id, **delete_kwargs)
-        self._storage_context.index_store.add_index_struct(self._index_struct)
+        logger.warning(
+            "delete() is now deprecated, please refer to delete_ref_doc() to delete "
+            "ingested documents+nodes or delete_nodes to delete a list of nodes."
+        )
+        self.delete_ref_doc(doc_id)
+
+    def delete_ref_doc(
+        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
+    ) -> None:
+        """Delete a document and it's nodes by using ref_doc_id."""
+        ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+        if ref_doc_info is None:
+            logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
+            return
+
+        self.delete_nodes(
+            ref_doc_info.doc_ids,
+            delete_from_docstore=False,
+            **delete_kwargs,
+        )
+
+        if delete_from_docstore:
+            self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
 
     def update(self, document: Document, **update_kwargs: Any) -> None:
-        """Update a document.
+        """Update a document and it's corresponding nodes.
 
         This is equivalent to deleting the document and then inserting it again.
 
         Args:
-            document (Union[BaseDocument, BaseGPTIndex]): document to update
+            document (Union[BaseDocument, BaseIndex]): document to update
+            insert_kwargs (Dict): kwargs to pass to insert
+            delete_kwargs (Dict): kwargs to pass to delete
+
+        """
+        logger.warning(
+            "update() is now deprecated, please refer to update_ref_doc() to update "
+            "ingested documents+nodes."
+        )
+        self.update_ref_doc(document, **update_kwargs)
+
+    def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
+        """Update a document and it's corresponding nodes.
+
+        This is equivalent to deleting the document and then inserting it again.
+
+        Args:
+            document (Union[BaseDocument, BaseIndex]): document to update
             insert_kwargs (Dict): kwargs to pass to insert
             delete_kwargs (Dict): kwargs to pass to delete
 
         """
         with self._service_context.callback_manager.as_trace("update"):
-            self.delete(document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {}))
+            self.delete_ref_doc(
+                document.get_doc_id(), **update_kwargs.pop("delete_kwargs", {})
+            )
             self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
 
     def refresh(
+        self, documents: Sequence[Document], **update_kwargs: Any
+    ) -> List[bool]:
+        """Refresh an index with documents that have changed.
+
+        This allows users to save LLM and Embedding model calls, while only
+        updating documents that have any changes in text or extra_info. It
+        will also insert any documents that previously were not stored.
+        """
+        logger.warning(
+            "refresh() is now deprecated, please refer to refresh_ref_docs() to "
+            "refresh ingested documents+nodes with an updated list of documents."
+        )
+        return self.refresh_ref_docs(documents, **update_kwargs)
+
+    def refresh_ref_docs(
         self, documents: Sequence[Document], **update_kwargs: Any
     ) -> List[bool]:
         """Refresh an index with documents that have changed.
@@ -235,13 +308,21 @@ class BaseGPTIndex(Generic[IS], ABC):
                     document.get_doc_id()
                 )
                 if existing_doc_hash != document.get_doc_hash():
-                    self.update(document, **update_kwargs)
+                    self.update_ref_doc(
+                        document, **update_kwargs.pop("update_kwargs", {})
+                    )
                     refreshed_documents[i] = True
                 elif existing_doc_hash is None:
                     self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
                     refreshed_documents[i] = True
 
             return refreshed_documents
+
+    @property
+    @abstractmethod
+    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+        """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
+        ...
 
     @abstractmethod
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
@@ -267,7 +348,9 @@ class BaseGPTIndex(Generic[IS], ABC):
 
             query_engine = self.as_query_engine(**kwargs)
             return CondenseQuestionChatEngine.from_defaults(
-                query_engine=query_engine, **kwargs
+                query_engine=query_engine,
+                service_context=self.service_context,
+                **kwargs,
             )
         elif chat_mode == ChatMode.REACT:
             # NOTE: lazy import
@@ -275,7 +358,13 @@ class BaseGPTIndex(Generic[IS], ABC):
 
             query_engine = self.as_query_engine(**kwargs)
             return ReActChatEngine.from_query_engine(
-                query_engine=query_engine, **kwargs
+                query_engine=query_engine,
+                service_context=self.service_context,
+                **kwargs,
             )
         else:
             raise ValueError(f"Unknown chat mode: {chat_mode}")
+
+
+# legacy
+BaseGPTIndex = BaseIndex

@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 
 from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.list.base import GPTListIndex, ListRetrieverMode
+from llama_index.indices.list.base import ListIndex, ListRetrieverMode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.schema.base import Document
 
@@ -13,7 +13,7 @@ def test_build_list(
     documents: List[Document], mock_service_context: ServiceContext
 ) -> None:
     """Test build list."""
-    list_index = GPTListIndex.from_documents(
+    list_index = ListIndex.from_documents(
         documents, service_context=mock_service_context
     )
     assert len(list_index.index_struct.nodes) == 4
@@ -39,12 +39,12 @@ def test_refresh_list(
         more_documents[i].doc_id = str(i)
 
     # create index
-    list_index = GPTListIndex.from_documents(
+    list_index = ListIndex.from_documents(
         more_documents, service_context=mock_service_context
     )
 
     # check that no documents are refreshed
-    refreshed_docs = list_index.refresh(more_documents)
+    refreshed_docs = list_index.refresh_ref_docs(more_documents)
     assert refreshed_docs[0] is False
     assert refreshed_docs[1] is False
 
@@ -54,7 +54,7 @@ def test_refresh_list(
         more_documents[i].doc_id = str(i)
 
     # second document should refresh
-    refreshed_docs = list_index.refresh(more_documents)
+    refreshed_docs = list_index.refresh_ref_docs(more_documents)
     assert refreshed_docs[0] is False
     assert refreshed_docs[1] is True
 
@@ -68,7 +68,7 @@ def test_build_list_multiple(mock_service_context: ServiceContext) -> None:
         Document("Hello world.\nThis is a test."),
         Document("This is another test.\nThis is a test v2."),
     ]
-    list_index = GPTListIndex.from_documents(
+    list_index = ListIndex.from_documents(
         documents, service_context=mock_service_context
     )
     assert len(list_index.index_struct.nodes) == 4
@@ -85,7 +85,7 @@ def test_list_insert(
     mock_service_context: ServiceContext,
 ) -> None:
     """Test insert to list."""
-    list_index = GPTListIndex([], service_context=mock_service_context)
+    list_index = ListIndex([], service_context=mock_service_context)
     assert len(list_index.index_struct.nodes) == 0
     list_index.insert(documents[0])
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
@@ -98,7 +98,7 @@ def test_list_insert(
     # test insert with ID
     document = documents[0]
     document.doc_id = "test_id"
-    list_index = GPTListIndex([])
+    list_index = ListIndex([])
     list_index.insert(document)
     # check contents of nodes
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
@@ -118,11 +118,17 @@ def test_list_delete(
         Document("This is a test v2.", doc_id="test_id_3"),
     ]
 
-    # delete from documents
-    list_index = GPTListIndex.from_documents(
+    list_index = ListIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
-    list_index.delete("test_id_1")
+
+    # test ref doc info for three docs
+    all_ref_doc_info = list_index.ref_doc_info
+    for idx, ref_doc_id in enumerate(all_ref_doc_info.keys()):
+        assert new_documents[idx].doc_id == ref_doc_id
+
+    # delete from documents
+    list_index.delete_ref_doc("test_id_1")
     assert len(list_index.index_struct.nodes) == 2
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     assert nodes[0].ref_doc_id == "test_id_2"
@@ -133,10 +139,10 @@ def test_list_delete(
     source_doc = list_index.docstore.get_document("test_id_1", raise_error=False)
     assert source_doc is None
 
-    list_index = GPTListIndex.from_documents(
+    list_index = ListIndex.from_documents(
         new_documents, service_context=mock_service_context
     )
-    list_index.delete("test_id_2")
+    list_index.delete_ref_doc("test_id_2")
     assert len(list_index.index_struct.nodes) == 3
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     assert nodes[0].ref_doc_id == "test_id_1"
@@ -168,7 +174,7 @@ def test_as_retriever(
     documents: List[Document],
     mock_service_context: ServiceContext,
 ) -> None:
-    list_index = GPTListIndex.from_documents(
+    list_index = ListIndex.from_documents(
         documents, service_context=mock_service_context
     )
     default_retriever = list_index.as_retriever(

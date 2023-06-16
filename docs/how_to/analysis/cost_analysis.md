@@ -16,28 +16,28 @@ The cost of building and querying each index is a TODO in the reference document
 
 #### Indices with no LLM calls
 The following indices don't require LLM calls at all during building (0 cost):
-- `GPTListIndex`
-- `GPTSimpleKeywordTableIndex` - uses a regex keyword extractor to extract keywords from each document
-- `GPTRAKEKeywordTableIndex` - uses a RAKE keyword extractor to extract keywords from each document
+- `ListIndex`
+- `SimpleKeywordTableIndex` - uses a regex keyword extractor to extract keywords from each document
+- `RAKEKeywordTableIndex` - uses a RAKE keyword extractor to extract keywords from each document
 
 #### Indices with LLM calls
 The following indices do require LLM calls during build time:
-- `GPTTreeIndex` - use LLM to hierarchically summarize the text to build the tree
-- `GPTKeywordTableIndex` - use LLM to extract keywords from each document
+- `TreeIndex` - use LLM to hierarchically summarize the text to build the tree
+- `KeywordTableIndex` - use LLM to extract keywords from each document
 
 
 ### Query Time
 
 There will always be >= 1 LLM call during query time, in order to synthesize the final answer. 
-Some indices contain cost tradeoffs between index building and querying. `GPTListIndex`, for instance,
+Some indices contain cost tradeoffs between index building and querying. `ListIndex`, for instance,
 is free to build, but running a query over a list index (without filtering or embedding lookups), will
 call the LLM {math}`N` times.
 
 Here are some notes regarding each of the indices:
-- `GPTListIndex`: by default requires {math}`N` LLM calls, where N is the number of nodes.
-- `GPTTreeIndex`: by default requires {math}`\log (N)` LLM calls, where N is the number of leaf nodes. 
+- `ListIndex`: by default requires {math}`N` LLM calls, where N is the number of nodes.
+- `TreeIndex`: by default requires {math}`\log (N)` LLM calls, where N is the number of leaf nodes. 
     - Setting `child_branch_factor=2` will be more expensive than the default `child_branch_factor=1` (polynomial vs logarithmic), because we traverse 2 children instead of just 1 for each parent node.
-- `GPTKeywordTableIndex`: by default requires an LLM call to extract query keywords.
+- `KeywordTableIndex`: by default requires an LLM call to extract query keywords.
     - Can do `index.as_retriever(retriever_mode="simple")` or `index.as_retriever(retriever_mode="rake")` to also use regex/RAKE keyword extractors on your query text.
 
 
@@ -60,14 +60,14 @@ You can then use this predictor during both index construction and querying. Exa
 
 **Index Construction**
 ```python
-from llama_index import GPTTreeIndex, MockLLMPredictor, SimpleDirectoryReader
+from llama_index import TreeIndex, MockLLMPredictor, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
 # the "mock" llm predictor is our token counter
 llm_predictor = MockLLMPredictor(max_tokens=256)
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
-# pass the "mock" llm_predictor into GPTTreeIndex during index construction
-index = GPTTreeIndex.from_documents(documents, service_context=service_context)
+# pass the "mock" llm_predictor into TreeIndex during index construction
+index = TreeIndex.from_documents(documents, service_context=service_context)
 
 # get number of tokens used
 print(llm_predictor.last_token_usage)
@@ -92,7 +92,7 @@ You can use it in tandem with `MockLLMPredictor`.
 
 ```python
 from llama_index import (
-    GPTVectorStoreIndex, 
+    VectorStoreIndex, 
     MockLLMPredictor, 
     MockEmbedding, 
     SimpleDirectoryReader,
@@ -100,7 +100,7 @@ from llama_index import (
 )
 
 documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = GPTVectorStoreIndex.from_documents(documents)
+index = VectorStoreIndex.from_documents(documents)
 
 # specify both a MockLLMPredictor as wel as MockEmbedding
 llm_predictor = MockLLMPredictor(max_tokens=256)

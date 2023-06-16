@@ -24,10 +24,20 @@ While each callback may not leverage each event type, the following events are a
 
 You can implement your own callback to track and trace these events, or use an existing callback.
 
+Currently supported callbacks are as follows:
+
+- TokenCountingHandler -> Flexible token counting for prompt, completion, and embedding token usage. `See the migration details here <./callbacks/token_counting_migration.html>`_ 
+- LlamaDebugHanlder -> Basic tracking and tracing for events. Example usage can be found in the notebook below.
+- WandbCallbackHandler -> Tracking of events and traces using the Wandb Prompts frontend. More details are in the notebook below or at `Wandb <https://docs.wandb.ai/guides/prompts/quickstart>`_
+- AimCallback -> Tracking of LLM inputs and outputs. Example usage can be found in the notebook below.
+
 .. toctree::
    :maxdepth: 1
    :caption: Callbacks
 
+   ./callbacks/token_counting_migration.md
+   ../examples/callbacks/TokenCountingHandler.ipynb
    ../examples/callbacks/LlamaDebugHandler.ipynb
+   ../examples/callbacks/WandbCallbackHandler.ipynb
    ../examples/callbacks/AimCallback.ipynb
    ../../reference/callbacks.rst
