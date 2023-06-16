@@ -61,12 +61,16 @@ Answer: The Great Gatsby is a novel written by F. Scott Fitzgerald. It is about 
 """
 
 DEFAULT_END = """
-Now given the following task, please provide the response. You may use the Search API \
+Now given the following task, and an the stub of an existing answer, generate the \
+next portion of the answer. You may use the Search API \
 "[Search(query)]" whenever possible.
 If the answer is complete and no longer contains any "[Search(query)]" tags, write \
     "done" to finish the task.
 Do not write "done" if the answer still contains "[Search(query)]" tags.
-Do not make up answers. It is better to use "[Search(query)]" tags than .
+Do not make up answers. It is better to generate one "[Search(query)]" tag and stop generation
+than to fill in the answer with made up information with no "[Search(query)]" tags
+or multiple "[Search(query)]" tags that assume a structure in the answer.
+Try to limit generation to one sentence if possible.
 
 """
 
@@ -77,7 +81,8 @@ DEFAULT_INSTRUCT_PROMPT_TMPL = (
     + (
         """
 Query: {query_str}
-Answer: {existing_answer}"""
+Existing Answer: {existing_answer}
+Answer: """
     )
 )
 
@@ -105,7 +110,6 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
             query task output parser. Defaults to None.
         max_iterations (int): max iterations. Defaults to 10.
         max_lookahead_query_tasks (int): max lookahead query tasks. Defaults to 1.
-        num_prefix_chars (int): number of prefix chars. Defaults to 40.
         callback_manager (Optional[CallbackManager]): callback manager.
             Defaults to None.
         verbose (bool): give verbose outputs. Defaults to False.
@@ -122,7 +126,6 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         query_task_output_parser: Optional[QueryTaskOutputParser] = None,
         max_iterations: int = 10,
         max_lookahead_query_tasks: int = 1,
-        num_prefix_chars: int = 40,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
     ) -> None:
@@ -140,12 +143,9 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         )
         self._max_iterations = max_iterations
         self._max_lookahead_query_tasks = max_lookahead_query_tasks
-        self._num_prefix_chars = num_prefix_chars
         self._verbose = verbose
 
-    def _get_relevant_lookahead_response(
-        self, updated_lookahead_resp: str, num_prefix_chars: int
-    ) -> str:
+    def _get_relevant_lookahead_response(self, updated_lookahead_resp: str) -> str:
         """Get relevant lookahead response."""
         # if there's remaining query tasks, then truncate the response
         # until the start position of the first tag
@@ -159,9 +159,7 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         else:
             first_task = remaining_query_tasks[0]
             relevant_lookahead_resp = updated_lookahead_resp[: first_task.start_idx]
-        # remove prefix from lookahead resp
-        relevant_lookahead_resp_wo_prefix = relevant_lookahead_resp[num_prefix_chars:]
-        return relevant_lookahead_resp_wo_prefix
+        return relevant_lookahead_resp
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Query and get response."""
@@ -205,13 +203,10 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
                 query_answers.append(query_answer)
                 source_nodes.extend(answer_obj.source_nodes)
 
-            num_prefix_chars = min(self._num_prefix_chars, len(cur_response))
-            lookahead_resp_w_prefix = cur_response[-num_prefix_chars:] + lookahead_resp
-
             # fill in the lookahead response template with the query answers
             # from the query engine
             updated_lookahead_resp = self._lookahead_answer_inserter.insert(
-                lookahead_resp_w_prefix, query_tasks, query_answers
+                lookahead_resp, query_tasks, query_answers, prev_response=cur_response
             )
 
             # get "relevant" lookahead response by truncating the updated
@@ -219,7 +214,7 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
             # also remove the prefix from the lookahead response, so that
             # we can concatenate it with the existing response
             relevant_lookahead_resp_wo_prefix = self._get_relevant_lookahead_response(
-                updated_lookahead_resp, num_prefix_chars
+                updated_lookahead_resp
             )
 
             if self._verbose:

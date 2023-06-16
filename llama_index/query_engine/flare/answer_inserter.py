@@ -29,6 +29,7 @@ class BaseLookaheadAnswerInserter(ABC):
         response: str,
         query_tasks: List[QueryTask],
         answers: List[str],
+        prev_response: Optional[str] = None,
     ) -> str:
         """Insert answers into response."""
 
@@ -37,17 +38,33 @@ DEFAULT_ANSWER_INSERT_PROMPT_TMPL = """
 An existing 'lookahead response' is given below. The lookahead response
 contains `[Search(query)]` tags. Some queries have been executed and the
 response retrieved. The queries and answers are also given below.
-Given the initial lookahead template, and also queries and answers,
+Also the previous response (the response before the lookahead response)
+is given below.
+Given the lookahead template, previous response, and also queries and answers,
 please 'fill in' the lookahead template with the appropriate answers.
+
+NOTE: Please make sure that the final response grammatically follows
+the previous response + lookahead template. For example, if the previous
+response is "New York City has a population of " and the lookahead
+template is "[Search(What is the population of New York City?)]", then
+the final response should be "8.4 million".
 
 NOTE: the lookahead template may not be a complete sentence and may
 contain trailing/leading commas, etc. Please preserve the original
-formatting of the lookahead template and only replace the `[Search(query)]`
-tags with the answers.
+formatting of the lookahead template if possible.
+
+NOTE: 
+
+NOTE: the exception to the above rule is if the answer to a query
+is equivalent to "I don't know" or "I don't have an answer". In this case,
+modify the lookahead template to indicate that the answer is not known.
 
 NOTE: the lookahead template may contain multiple `[Search(query)]` tags
     and only a subset of these queries have been executed.
     Do not replace the `[Search(query)]` tags that have not been executed.
+
+Previous Response:
+
 
 Lookahead Template:
 Red is for [Search(What is the meaning of Ghana's \
@@ -62,6 +79,9 @@ Filled in Answers:
 Red is for the blood of those who died in the country's struggle for independence, \
     green for forests, and gold for mineral wealth.
 
+Previous Response:
+One of the largest cities in the world
+
 Lookahead Template:
 , the city contains a population of [Search(What is the population \
     of New York City?)]
@@ -72,6 +92,22 @@ Answer: The population of New York City is 8.4 million
 
 Synthesized Response:
 , the city contains a population of 8.4 million
+
+Previous Response:
+the city contains a population of 
+
+Lookahead Template:
+[Search(What is the population of New York City?)]
+
+Query-Answer Pairs:
+Query: What is the population of New York City?
+Answer: The population of New York City is 8.4 million
+
+Synthesized Response:
+8.4 million
+
+Previous Response:
+{prev_response}
 
 Lookahead Template:
 {lookahead_response}
@@ -111,8 +147,11 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
         response: str,
         query_tasks: List[QueryTask],
         answers: List[str],
+        prev_response: Optional[str] = None,
     ) -> str:
         """Insert answers into response."""
+        prev_response = prev_response or ""
+
         query_answer_pairs = ""
         for query_task, answer in zip(query_tasks, answers):
             query_answer_pairs += f"Query: {query_task.query_str}\nAnswer: {answer}\n"
@@ -121,6 +160,7 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
             self._answer_insert_prompt,
             lookahead_response=response,
             query_answer_pairs=query_answer_pairs,
+            prev_response=prev_response,
         )
         return response
 
@@ -141,6 +181,7 @@ class DirectLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
         response: str,
         query_tasks: List[QueryTask],
         answers: List[str],
+        prev_response: Optional[str] = None,
     ) -> str:
         """Insert answers into response."""
         for query_task, answer in zip(query_tasks, answers):
