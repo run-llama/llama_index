@@ -1,15 +1,16 @@
 import json
 from typing import Optional, Sequence
 
-from langchain.chat_models import ChatOpenAI  # noqa: E402
-from langchain.memory import ChatMessageHistory  # noqa: E402
+from langchain.chat_models import ChatOpenAI
+from langchain.memory import ChatMessageHistory
+from langchain.schema import FunctionMessage
 
-from llama_index.callbacks.base import CallbackManager  # noqa: E402
-from llama_index.chat_engine.types import BaseChatEngine  # noqa: E402
-from llama_index.indices.query.base import BaseQueryEngine  # noqa: E402
-from llama_index.indices.query.schema import QueryBundle  # noqa: E402
-from llama_index.response.schema import RESPONSE_TYPE, Response  # noqa: E402
-from llama_index.tools import BaseTool  # noqa: E402
+from llama_index.callbacks.base import CallbackManager
+from llama_index.chat_engine.types import BaseChatEngine
+from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.tools import BaseTool
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 SUPPORTED_MODEL_NAMES = [
