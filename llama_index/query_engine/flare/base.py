@@ -67,7 +67,8 @@ next portion of the answer. You may use the Search API \
 If the answer is complete and no longer contains any "[Search(query)]" tags, write \
     "done" to finish the task.
 Do not write "done" if the answer still contains "[Search(query)]" tags.
-Do not make up answers. It is better to generate one "[Search(query)]" tag and stop generation
+Do not make up answers. It is better to generate one "[Search(query)]" tag and stop \
+generation
 than to fill in the answer with made up information with no "[Search(query)]" tags
 or multiple "[Search(query)]" tags that assume a structure in the answer.
 Try to limit generation to one sentence if possible.
