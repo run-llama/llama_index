@@ -16,11 +16,13 @@ from langchain.llms import AI21
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.langchain_helpers.streaming import \
-    StreamingGeneratorCallbackHandler
+from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.prompts.base import Prompt
-from llama_index.utils import (ErrorToRetry, globals_helper,
-                               retry_on_exceptions_with_backoff)
+from llama_index.utils import (
+    ErrorToRetry,
+    globals_helper,
+    retry_on_exceptions_with_backoff,
+)
 
 logger = logging.getLogger(__name__)
 
