@@ -1,12 +1,6 @@
 import json
 from typing import Optional, Sequence
 
-from llama_index.agent.utils import FunctionMessage, monkey_patch_langchain
-
-# TODO: right now langchain does not support function messages
-#       monkey patch it to support it
-monkey_patch_langchain()
-
 from langchain.chat_models import ChatOpenAI  # noqa: E402
 from langchain.memory import ChatMessageHistory  # noqa: E402
 
