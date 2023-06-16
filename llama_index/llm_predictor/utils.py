@@ -11,6 +11,9 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         .. code-block:: python
 
             max_tokens = openai.modelname_to_contextsize("text-davinci-003")
+
+    Modified from:
+        https://github.com/hwchase17/langchain/blob/master/langchain/llms/openai.py
     """
     model_token_mapping = {
         "gpt-4-32k-0613": 32768,
