@@ -73,7 +73,7 @@ class RouterQueryEngine(BaseQueryEngine):
         response_docs = []
         for response in responses:
             if isinstance(response, StreamingResponse):
-                response_docs.append(Document(response.get_response()))
+                response_docs.append(Document(response.get_response().response))
             else:
                 response_docs.append(Document(response.response))
 
@@ -90,7 +90,7 @@ class RouterQueryEngine(BaseQueryEngine):
         response_docs = []
         for response in responses:
             if isinstance(response, StreamingResponse):
-                response_docs.append(Document(response.get_response()))
+                response_docs.append(Document(response.get_response().response))
             else:
                 response_docs.append(Document(response.response))
 
