@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Optional, Sequence
+from typing import Callable, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.base import CallbackManager
@@ -11,7 +11,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.readers.schema.base import Document
-from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.selectors.llm_selectors import LLMSingleSelector, LLMMultiSelector
 from llama_index.selectors.types import BaseSelector
 from llama_index.tools.query_engine import QueryEngineTool
@@ -62,24 +62,39 @@ class RouterQueryEngine(BaseQueryEngine):
         elif selector is None and not select_multi:
             selector = LLMSingleSelector.from_defaults(service_context=service_context)
 
-        # selector = selector or LLMSingleSelector.from_defaults()
-        return cls(selector, query_engine_tools, select_multi=select_multi)
+        assert selector is not None
+
+        return cls(selector, query_engine_tools)
 
     def _combine_responses(
-        self, responses: RESPONSE_TYPE, query_bundle: QueryBundle
+        self, responses: List[RESPONSE_TYPE], query_bundle: QueryBundle
     ) -> RESPONSE_TYPE:
         """Combine multiple response from sub-engines."""
-        summary_index = ListIndex.from_documents([Document(str(x)) for x in responses])
+        response_docs = []
+        for response in responses:
+            if isinstance(response, StreamingResponse):
+                response_docs.append(Document(response.get_response()))
+            else:
+                response_docs.append(Document(response.response))
+
+        summary_index = ListIndex.from_documents(response_docs)
 
         query_engine = summary_index.as_query_engine(response_mode="tree_summarize")
 
         return query_engine.query(query_bundle)
 
     async def _acombine_responses(
-        self, responses: RESPONSE_TYPE, query_bundle: QueryBundle
+        self, responses: List[RESPONSE_TYPE], query_bundle: QueryBundle
     ) -> RESPONSE_TYPE:
         """Async combine multiple response from sub-engines."""
-        summary_index = ListIndex.from_documents([Document(str(x)) for x in responses])
+        response_docs = []
+        for response in responses:
+            if isinstance(response, StreamingResponse):
+                response_docs.append(Document(response.get_response()))
+            else:
+                response_docs.append(Document(response.response))
+
+        summary_index = ListIndex.from_documents(response_docs)
 
         query_engine = summary_index.as_query_engine(response_mode="tree_summarize")
 
