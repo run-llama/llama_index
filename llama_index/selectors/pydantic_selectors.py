@@ -106,7 +106,7 @@ class PydanticMultiSelector(BaseSelector):
         prompt_template_str: str = DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,
         max_outputs: Optional[int] = None,
         verbose: bool = False,
-    ) -> "PydanticSingleSelector":
+    ) -> "PydanticMultiSelector":
 
         if program is None:
             output_cls = output_cls or MultiSelection
