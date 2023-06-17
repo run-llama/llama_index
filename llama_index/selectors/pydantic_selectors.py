@@ -6,6 +6,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.program.openai_program import (
     OpenAIPydanticProgram,
     BasePydanticProgram,
+    Model,
 )
 from llama_index.selectors.llm_selectors import _build_choices_text
 from llama_index.selectors.prompts import (
@@ -16,12 +17,12 @@ from llama_index.selectors.types import BaseSelector, SelectorResult
 from llama_index.tools.types import ToolMetadata
 
 
-class SingleSelection(BaseModel):
+class SingleSelection(Model):
     index: int
     reason: str
 
 
-class MultiSelection(BaseModel):
+class MultiSelection(Model):
     selections: List[SingleSelection]
 
 
@@ -50,7 +51,7 @@ class PydanticSingleSelector(BaseSelector):
         cls,
         program: Optional[BasePydanticProgram] = None,
         llm: Optional[ChatOpenAI] = None,
-        output_cls: Optional[BaseModel] = None,
+        output_cls: Optional[Model] = None,
         prompt_template_str: str = DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL,
         verbose: bool = False,
     ) -> "PydanticSingleSelector":
