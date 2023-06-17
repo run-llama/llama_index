@@ -6,7 +6,7 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.program.openai_program import (
     OpenAIPydanticProgram,
     BasePydanticProgram,
-    Model,
+    Model
 )
 from llama_index.selectors.llm_selectors import _build_choices_text
 from llama_index.selectors.prompts import (
@@ -17,12 +17,12 @@ from llama_index.selectors.types import BaseSelector, SelectorResult
 from llama_index.tools.types import ToolMetadata
 
 
-class SingleSelection(Model):
+class SingleSelection(BaseModel):
     index: int
     reason: str
 
 
-class MultiSelection(Model):
+class MultiSelection(BaseModel):
     selections: List[SingleSelection]
 
 
