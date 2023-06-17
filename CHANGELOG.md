@@ -1,10 +1,11 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.27] - 2023-06-16
 
 ### New Features
 - Add node doc_id filtering to weaviate (#6467)
 - New `TokenCountingCallback` to customize and track embedding, prompt, and completion token usage (#6440)
+- OpenAI Retrieval Function Agent (#6491)
 
 ### Breaking/Deprecated API Changes
 - Deprecated current token tracking (llm predicotr and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
@@ -15,6 +16,8 @@
 - Use namespace when deleting from pinecone (#6475)
 - Fix paths when using fsspec on windows (#3778)
 - Fix for using custom file readers in `SimpleDirectoryReader` (#6477)
+- Edit MMR Notebook (#6486)
+- FLARE fixes (#6484)
 
 ## [v0.6.26] - 2023-06-14
 
