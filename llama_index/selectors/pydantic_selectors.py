@@ -6,7 +6,6 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.program.openai_program import (
     OpenAIPydanticProgram,
     BasePydanticProgram,
-    Model
 )
 from llama_index.selectors.llm_selectors import _build_choices_text
 from llama_index.selectors.prompts import (
@@ -51,15 +50,13 @@ class PydanticSingleSelector(BaseSelector):
         cls,
         program: Optional[BasePydanticProgram] = None,
         llm: Optional[ChatOpenAI] = None,
-        output_cls: Optional[Model] = None,
         prompt_template_str: str = DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL,
         verbose: bool = False,
     ) -> "PydanticSingleSelector":
 
         if program is None:
-            output_cls = output_cls or SingleSelection
             program = OpenAIPydanticProgram.from_defaults(
-                output_cls=output_cls,
+                output_cls=SingleSelection,
                 prompt_template_str=prompt_template_str,
                 llm=llm,
                 verbose=verbose,
@@ -103,16 +100,14 @@ class PydanticMultiSelector(BaseSelector):
         cls,
         program: Optional[BasePydanticProgram] = None,
         llm: Optional[ChatOpenAI] = None,
-        output_cls: Optional[BaseModel] = None,
         prompt_template_str: str = DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,
         max_outputs: Optional[int] = None,
         verbose: bool = False,
     ) -> "PydanticMultiSelector":
 
         if program is None:
-            output_cls = output_cls or MultiSelection
             program = OpenAIPydanticProgram.from_defaults(
-                output_cls=output_cls,
+                output_cls=MultiSelection,
                 prompt_template_str=prompt_template_str,
                 llm=llm,
                 verbose=verbose,
