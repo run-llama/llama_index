@@ -1,6 +1,6 @@
 import json
 from abc import abstractmethod
-from typing import Optional, Sequence, Callable, List
+from typing import Optional, Callable, List
 
 from llama_index.agent.utils import FunctionMessage, monkey_patch_langchain
 
@@ -11,9 +11,9 @@ monkey_patch_langchain()
 from langchain.chat_models import ChatOpenAI  # noqa: E402
 from langchain.memory import ChatMessageHistory  # noqa: E402
 
-from llama_index.data_structs.node import NodeWithScore
-from llama_index.data_structs.node import Node
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.data_structs.node import NodeWithScore  # noqa: E402
+from llama_index.data_structs.node import Node  # noqa: E402
+from llama_index.indices.base_retriever import BaseRetriever  # noqa: E402
 from llama_index.callbacks.base import CallbackManager  # noqa: E402
 from llama_index.chat_engine.types import BaseChatEngine  # noqa: E402
 from llama_index.indices.query.base import BaseQueryEngine  # noqa: E402
@@ -26,6 +26,32 @@ SUPPORTED_MODEL_NAMES = [
     "gpt-3.5-turbo-0613",
     "gpt-4-0613",
 ]
+
+
+def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
+    """Get function by name."""
+    name_to_tool = {tool.metadata.name: tool for tool in tools}
+    if name not in name_to_tool:
+        raise ValueError(f"Tool with name {name} not found")
+    return name_to_tool[name]
+
+
+def call_function(
+    tools: List[BaseTool], function_call: dict, verbose: bool = False
+) -> FunctionMessage:
+    """Call a function and return the output as a string."""
+    name = function_call["name"]
+    arguments_str = function_call["arguments"]
+    if verbose:
+        print("=== Calling Function ===")
+        print(f"Calling function: {name} with args: {arguments_str}")
+    tool = get_function_by_name(tools, name)
+    argument_dict = json.loads(arguments_str)
+    output = tool(**argument_dict)
+    if verbose:
+        print(f"Got output: {output}")
+        print("========================")
+    return FunctionMessage(content=str(output), name=function_call["name"])
 
 
 class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
@@ -73,7 +99,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
                 break
 
-            function_message = self._call_function(tools, function_call)
+            function_message = call_function(
+                tools, function_call, verbose=self._verbose
+            )
             chat_history.add_message(function_message)
             n_function_calls += 1
 
@@ -107,7 +135,9 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
                 print(f"Exceeded max function calls: {self._max_function_calls}.")
                 continue
 
-            function_message = self._call_function(tools, function_call)
+            function_message = call_function(
+                tools, function_call, verbose=self._verbose
+            )
             chat_history.add_message(function_message)
             n_function_calls += 1
 
@@ -119,29 +149,6 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
             function_call = ai_message.additional_kwargs.get("function_call", None)
 
         return Response(ai_message.content)
-
-    def _get_function_by_name(self, tools: List[BaseTool], name: str) -> BaseTool:
-        name_to_tool = {tool.metadata.name: tool for tool in tools}
-        if name not in name_to_tool:
-            raise ValueError(f"Tool with name {name} not found")
-        return name_to_tool[name]
-
-    def _call_function(
-        self, tools: List[BaseTool], function_call: dict
-    ) -> FunctionMessage:
-        """Call a function and return the output as a string."""
-        name = function_call["name"]
-        arguments_str = function_call["arguments"]
-        if self._verbose:
-            print("=== Calling Function ===")
-            print(f"Calling function: {name} with args: {arguments_str}")
-        tool = self._get_function_by_name(tools, name)
-        argument_dict = json.loads(arguments_str)
-        output = tool(**argument_dict)
-        if self._verbose:
-            print(f"Got output: {output}")
-            print("========================")
-        return FunctionMessage(content=str(output), name=function_call["name"])
 
     # ===== Query Engine Interface =====
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
@@ -160,7 +167,7 @@ class BaseOpenAIAgent(BaseChatEngine, BaseQueryEngine):
 class OpenAIAgent(BaseOpenAIAgent):
     def __init__(
         self,
-        tools: Sequence[BaseTool],
+        tools: List[BaseTool],
         llm: ChatOpenAI,
         chat_history: ChatMessageHistory,
         verbose: bool = False,
@@ -179,7 +186,7 @@ class OpenAIAgent(BaseOpenAIAgent):
     @classmethod
     def from_tools(
         cls,
-        tools: Optional[Sequence[BaseTool]] = None,
+        tools: Optional[List[BaseTool]] = None,
         llm: Optional[ChatOpenAI] = None,
         chat_history: Optional[ChatMessageHistory] = None,
         verbose: bool = False,
@@ -244,14 +251,14 @@ class RetrieverOpenAIAgent(BaseOpenAIAgent):
     @classmethod
     def from_retriever(
         cls,
-        retriever: Sequence[BaseTool],
+        retriever: BaseRetriever,
         node_to_tool_fn: Callable[[Node], BaseTool],
         llm: Optional[ChatOpenAI] = None,
         chat_history: Optional[ChatMessageHistory] = None,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
-    ) -> "OpenAIAgent":
+    ) -> "RetrieverOpenAIAgent":
         lc_chat_history = chat_history or ChatMessageHistory()
         llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
         if not isinstance(llm, ChatOpenAI):
