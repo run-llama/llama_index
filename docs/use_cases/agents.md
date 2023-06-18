@@ -88,4 +88,7 @@ Learn how to write your own OpenAI agent in **under 50 lines of code**, or direc
 maxdepth: 1
 ---
 /examples/agent/openai_agent.ipynb
+/examples/agent/openai_agent_with_query_engine.ipynb
+/examples/agent/openai_agent_retrieval.ipynb
+/examples/agent/openai_agent_query_cookbook.ipynb
 ```

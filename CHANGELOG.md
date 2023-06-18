@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- New OpenAI Agent + Query Engine Cookbook (#6496)
+
 ## [v0.6.27] - 2023-06-16
 
 ### New Features
