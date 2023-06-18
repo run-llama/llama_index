@@ -47,6 +47,18 @@ def prepare_subjs_param(subjs: Optional[List[str]]) -> dict:
     return {"subjs": subjs_byte}
 
 
+def escape_str(value: str) -> str:
+    """Escape String for NebulaGraph Query."""
+    patterns = {
+        '"': " ",
+    }
+    for pattern in patterns:
+        if pattern in value:
+            value = value.replace(pattern, patterns[pattern])
+
+    return value
+
+
 class NebulaGraphStore(GraphStore):
     """NebulaGraph graph store."""
 
@@ -264,14 +276,19 @@ class NebulaGraphStore(GraphStore):
         # | "player100" | [1997, "team204"]                  |
         # ...
         # +-------------+------------------------------------+
+        rel_map: Dict[Any, List[Any]] = {}
+        if subjs is None or len(subjs) == 0:
+            # unlike simple graph_store, we don't do get_all here
+            return rel_map
+
         if len(self._edge_types) == 1:
-            # MATCH (s)-[e:follow*..2]->() WHERE id(s) IN ["player100", "player101"]
+            # MATCH (s)-[e:follow*..2]-() WHERE id(s) IN ["player100", "player101"]
             #   WITH id(s) AS subj, [rel in e | [rel.degree, dst(rel)] ] AS rels
             # RETURN
             #   subj,
             #   REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels
             query = (
-                f"MATCH (s)-[e:`{self._edge_types[0]}`*..{depth}]->() "
+                f"MATCH (s)-[e:`{self._edge_types[0]}`*..{depth}]-() "
                 f"  WHERE id(s) IN $subjs "
                 f"WITH "
                 f"id(s) AS subj,"
@@ -286,7 +303,7 @@ class NebulaGraphStore(GraphStore):
         else:
             # edge_types = ["follow", "serve"]
             # rel_prop_names = ["degree", "start_year"]
-            # MATCH (s)-[e:follow|serve*..2]->()
+            # MATCH (s)-[e:follow|serve*..2]-()
             # WHERE id(s) IN ["player100", "player101"]
             #   WITH id(s) AS subj,
             # [rel in e | [CASE type(rel)
@@ -327,7 +344,6 @@ class NebulaGraphStore(GraphStore):
         subjs_ = result.column_values("subj") or []
         rels_ = result.column_values("flattened_rels") or []
 
-        rel_map: Dict[Any, List[Any]] = {}
         for subj, rel in zip(subjs_, rels_):
             subj_ = subj.cast()
             rel_ = rel.cast()
@@ -345,7 +361,10 @@ class NebulaGraphStore(GraphStore):
         # But this makes more sense for multi-hop relation path.
 
         # lower case subjs
-        subjs = [subj.lower() for subj in subjs] if subjs else None
+        if subjs is not None:
+            subjs = [escape_str(subj.lower()) for subj in subjs]
+            if len(subjs) == 0:
+                return {}
 
         return self.get_flat_rel_map(subjs, depth)
 
@@ -360,9 +379,9 @@ class NebulaGraphStore(GraphStore):
         # thus we have to assume subj to be the first entity.tag_name
 
         # lower case subj, rel, obj
-        subj = subj.lower()
-        rel = rel.lower()
-        obj = obj.lower()
+        subj = escape_str(subj.lower())
+        rel = escape_str(rel.lower())
+        obj = escape_str(obj.lower())
 
         edge_type = self._edge_types[0]
         rel_prop_name = self._rel_prop_names[0]
@@ -381,7 +400,7 @@ class NebulaGraphStore(GraphStore):
         logger.debug(f"upsert_triplet() DML query: {dml_query}")
         result = self.execute(dml_query)
         assert (
-            result.is_succeeded()
+            result and result.is_succeeded()
         ), f"Failed to upsert triplet: {subj} {rel} {obj}, query: {dml_query}"
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
@@ -394,9 +413,9 @@ class NebulaGraphStore(GraphStore):
         """
 
         # lower case subj, rel, obj
-        subj = subj.lower()
-        rel = rel.lower()
-        obj = obj.lower()
+        subj = escape_str(subj.lower())
+        rel = escape_str(rel.lower())
+        obj = escape_str(rel.lower())
 
         # DELETE EDGE serve "player100" -> "team204"@7696463696635583936;
         edge_type = self._edge_types[0]
@@ -409,7 +428,7 @@ class NebulaGraphStore(GraphStore):
         logger.debug(f"delete() DML query: {dml_query}")
         result = self.execute(dml_query)
         assert (
-            result.is_succeeded()
+            result and result.is_succeeded()
         ), f"Failed to delete triplet: {subj} {rel} {obj}, query: {dml_query}"
         # Get isolated vertices to be deleted
         # MATCH (s) WHERE id(s) IN ["player700"] AND NOT (s)-[]-()
@@ -430,5 +449,5 @@ class NebulaGraphStore(GraphStore):
 
         result = self.execute(dml_query)
         assert (
-            result.is_succeeded()
+            result and result.is_succeeded()
         ), f"Failed to delete isolated vertices: {isolated}, query: {dml_query}"
