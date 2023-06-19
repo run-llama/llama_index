@@ -1,9 +1,15 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.28] - 2023-06-19
 
 ### New Features
 - New OpenAI Agent + Query Engine Cookbook (#6496)
+- allow recursive data extraction (pydantic program)  (#6503)
+
+### Bug Fixes / Nits
+- update mongo interface (#6501)
+- fixes that we forgot to include for openai pydantic program (#6503) (#6504)
+- Fix github pics in Airbyte notebook (#6493)
 
 ## [v0.6.27] - 2023-06-16
 

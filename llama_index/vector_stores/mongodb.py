@@ -29,7 +29,7 @@ def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
     return filters
 
 
-class MongoDBVectorStore(VectorStore):
+class MongoDBAtlasVectorSearch(VectorStore):
     """MongoDB Vector Store.
 
     In this vector store, embeddings and docs are stored within a
