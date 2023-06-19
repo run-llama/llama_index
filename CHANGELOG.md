@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- Fix blank similarity score when using weaviate (#6512)
+
 ## [v0.6.28] - 2023-06-19
 
 ### New Features
