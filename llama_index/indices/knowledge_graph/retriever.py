@@ -130,26 +130,27 @@ class KGTableRetriever(BaseRetriever):
         rel_texts = []
         cur_rel_map = {}
         chunk_indices_count: Dict[str, int] = defaultdict(int)
-
         if self._retriever_mode != KGRetrieverMode.EMBEDDING:
             for keyword in keywords:
                 subjs = set((keyword,))
-                if self.use_global_node_triplets:
-                    # Get nodes from keyword search, and add them to the subjs set.
-                    # This helps introduce more global knowledge into the query.
-                    # While it's more expensive, thus to be turned off by default,
-                    # it can be useful for some applications.
-                    node_ids = self._index_struct.search_node_by_keyword(keyword)
-                    for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
-                        if node_id in node_visited:
-                            continue
+                node_ids = self._index_struct.search_node_by_keyword(keyword)
+                for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
+                    if node_id in node_visited:
+                        continue
+
+                    if self._include_text:
+                        chunk_indices_count[node_id] += 1
+
+                    node_visited.add(node_id)
+                    if self.use_global_node_triplets:
+                        # Get nodes from keyword search, and add them to the subjs
+                        # set. This helps introduce more global knowledge into the
+                        # query. While it's more expensive, thus to be turned off
+                        # by default, it can be useful for some applications.
                         extended_subjs = self._get_keywords(
                             self._docstore.get_node(node_id).get_text()
                         )
-                        node_visited.add(node_id)
                         subjs.update(extended_subjs)
-                        if self._include_text:
-                            chunk_indices_count[node_id] += 1
 
                 rel_map = self._graph_store.get_rel_map(
                     list(subjs), self.graph_store_query_depth
