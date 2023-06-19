@@ -33,7 +33,7 @@ class Node(BaseModel):
         default=NodeType.FILE,
         description="Either a file or folder, use the name to determine which it could be",
     )
-            
+
 
 class DirectoryTree(BaseModel):
     """
