@@ -6,11 +6,12 @@ An index that that is built on top of an existing vector store.
 
 import logging
 import os
-from typing import Any, Dict, List, Optional, cast
-
 import fsspec
-import numpy as np
 from fsspec.implementations.local import LocalFileSystem
+from typing import Any, List, cast, Optional
+
+import numpy as np
+
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
@@ -37,8 +38,6 @@ class FaissVectorStore(VectorStore):
     """
 
     stores_text: bool = False
-    _current_id: int = 0
-    _doc_id_to_ids: Dict[str, List[int]]
 
     def __init__(
         self,
