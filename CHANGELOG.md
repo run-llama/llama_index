@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- add default input size for Cohere and AI21 (#6485)
+
 ## [v0.6.28] - 2023-06-19
 
 ### New Features
