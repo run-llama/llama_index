@@ -60,6 +60,6 @@ maxdepth: 1
 ../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 ../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb
 ../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
-../../examples/vector_stores/MongoDBVectorStoreDemo.ipynb
+../../examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 ```
 

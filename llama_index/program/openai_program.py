@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, Optional, Type
+from typing import Any, Dict, Generic, Optional, Type, Union
 
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
@@ -14,19 +14,19 @@ SUPPORTED_MODEL_NAMES = [
 
 def _openai_function(output_cls: Type[Model]) -> Dict[str, Any]:
     """Convert pydantic class to OpenAI function."""
+    schema = output_cls.schema()
     return {
-        "name": "output_pydantic",
-        "description": "generate JSON object representing a pydantic model",
+        "name": schema["title"],
+        "description": schema["description"],
         "parameters": output_cls.schema(),
     }
 
 
-def _openai_function_call() -> Dict[str, Any]:
+def _openai_function_call(output_cls: Type[Model]) -> Dict[str, Any]:
     """Default OpenAI function to call."""
+    schema = output_cls.schema()
     return {
-        "function_call": {
-            "name": "output_pydantic",
-        }
+        "name": schema["title"],
     }
 
 
@@ -42,12 +42,14 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
         output_cls: Type[Model],
         llm: ChatOpenAI,
         prompt: Prompt,
+        function_call: Union[str, Dict[str, Any]],
         verbose: bool = False,
     ) -> None:
         self._output_cls = output_cls
         self._llm = llm
         self._prompt = prompt
         self._verbose = verbose
+        self._function_call = function_call
 
     @classmethod
     def from_defaults(
@@ -56,6 +58,7 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
         prompt_template_str: str,
         llm: Optional[ChatOpenAI] = None,
         verbose: bool = False,
+        function_call: Optional[Union[str, Dict[str, Any]]] = None,
     ) -> "OpenAIPydanticProgram":
         llm = llm or ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-0613")
         if not isinstance(llm, ChatOpenAI):
@@ -67,10 +70,12 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
                 f"Supported model names: {SUPPORTED_MODEL_NAMES}"
             )
         prompt = Prompt(prompt_template_str)
+        function_call = function_call or "auto"
         return cls(
             output_cls=output_cls,
             llm=llm,
             prompt=prompt,
+            function_call=function_call,
             verbose=verbose,
         )
 
@@ -85,11 +90,13 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
     ) -> Model:
         formatted_prompt = self._prompt.format(**kwargs)
 
+        openai_fn_spec = _openai_function(self._output_cls)
+
         ai_message = self._llm.predict_messages(
             messages=[HumanMessage(content=formatted_prompt)],
-            functions=[_openai_function(self._output_cls)],
+            functions=[openai_fn_spec],
             # TODO: support forcing the desired function call
-            # function_call=_openai_function_call(),
+            function_call=self._function_call,
         )
         if "function_call" not in ai_message.additional_kwargs:
             raise ValueError(
@@ -98,9 +105,9 @@ class OpenAIPydanticProgram(BasePydanticProgram, Generic[Model]):
             )
 
         function_call = ai_message.additional_kwargs["function_call"]
-        name = function_call["name"]
-        arguments_str = function_call["arguments"]
         if self._verbose:
+            name = function_call["name"]
+            arguments_str = function_call["arguments"]
             print(f"Function call: {name} with args: {arguments_str}")
 
         output = self.output_cls.parse_raw(function_call["arguments"])
