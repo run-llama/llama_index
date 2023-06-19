@@ -70,6 +70,8 @@ class RouterQueryEngine(BaseQueryEngine):
         self, responses: List[RESPONSE_TYPE], query_bundle: QueryBundle
     ) -> RESPONSE_TYPE:
         """Combine multiple response from sub-engines."""
+        logger.info("Combining responses from multiple query engines.")
+
         response_docs = []
         for response in responses:
             if isinstance(response, StreamingResponse):
@@ -87,6 +89,8 @@ class RouterQueryEngine(BaseQueryEngine):
         self, responses: List[RESPONSE_TYPE], query_bundle: QueryBundle
     ) -> RESPONSE_TYPE:
         """Async combine multiple response from sub-engines."""
+        logger.info("Combining responses from multiple query engines.")
+
         response_docs = []
         for response in responses:
             if isinstance(response, StreamingResponse):
@@ -109,7 +113,10 @@ class RouterQueryEngine(BaseQueryEngine):
 
         if len(result.inds) > 1:
             responses = []
-            for engine_ind in result.inds:
+            for i, engine_ind in enumerate(result.inds):
+                logger.info(
+                    f"Selecting query engine {engine_ind}: " f"{result.reasons[i]}."
+                )
                 selected_query_engine = self._query_engines[engine_ind]
                 responses.append(selected_query_engine.query(query_bundle))
 
@@ -142,7 +149,10 @@ class RouterQueryEngine(BaseQueryEngine):
 
         if len(result.inds) > 1:
             tasks = []
-            for engine_ind in result.inds:
+            for i, engine_ind in enumerate(result.inds):
+                logger.info(
+                    f"Selecting query engine {engine_ind}: " f"{result.reasons[i]}."
+                )
                 selected_query_engine = self._query_engines[engine_ind]
                 tasks.append(selected_query_engine.aquery(query_bundle))
 
