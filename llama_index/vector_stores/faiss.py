@@ -11,11 +11,14 @@ from typing import Any, Dict, List, Optional, cast
 import fsspec
 import numpy as np
 from fsspec.implementations.local import LocalFileSystem
-from llama_index.vector_stores.types import (DEFAULT_PERSIST_DIR,
-                                             DEFAULT_PERSIST_FNAME,
-                                             NodeWithEmbedding, VectorStore,
-                                             VectorStoreQuery,
-                                             VectorStoreQueryResult)
+from llama_index.vector_stores.types import (
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
+    NodeWithEmbedding,
+    VectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
 logger = logging.getLogger()
 
