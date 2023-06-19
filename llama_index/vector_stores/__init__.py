@@ -1,4 +1,5 @@
 """Vector stores."""
+import warnings
 
 from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from llama_index.vector_stores.chroma import ChromaVectorStore
@@ -24,6 +25,17 @@ from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.tair import TairVectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
+
+# Backwards compatibility. Warn about deprecation.
+class SupabaseVectorStore(PgVectorStore):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "SupabaseVectorStore is deprecated, please use PgVectorStore instead",
+            DeprecationWarning,
+        )
+        super().__init__(*args, **kwargs)
+
+
 __all__ = [
     "SimpleVectorStore",
     "RedisVectorStore",
@@ -44,4 +56,5 @@ __all__ = [
     "DocArrayInMemoryVectorStore",
     "DocArrayHnswVectorStore",
     "PgVectorStore",
+    "SupabaseVectorStore",
 ]
