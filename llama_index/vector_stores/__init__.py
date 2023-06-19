@@ -1,28 +1,25 @@
 """Vector stores."""
 
-from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
+from llama_index.vector_stores.chatgpt_plugin import \
+    ChatGPTRetrievalPluginClient
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
+from llama_index.vector_stores.docarray import (DocArrayHnswVectorStore,
+                                                DocArrayInMemoryVectorStore)
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.vector_stores.metal import MetalVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.myscale import MyScaleVectorStore
-from llama_index.vector_stores.opensearch import (
-    OpensearchVectorClient,
-    OpensearchVectorStore,
-)
+from llama_index.vector_stores.opensearch import (OpensearchVectorClient,
+                                                  OpensearchVectorStore)
+from llama_index.vector_stores.pgvector import PgVectorStore
 from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.vector_stores.redis import RedisVectorStore
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.tair import TairVectorStore
-from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
-from llama_index.vector_stores.docarray import (
-    DocArrayHnswVectorStore,
-    DocArrayInMemoryVectorStore,
-)
 
 __all__ = [
     "SimpleVectorStore",
@@ -43,5 +40,5 @@ __all__ = [
     "TairVectorStore",
     "DocArrayInMemoryVectorStore",
     "DocArrayHnswVectorStore",
-    "SupabaseVectorStore",
+    "PgVectorStore",
 ]

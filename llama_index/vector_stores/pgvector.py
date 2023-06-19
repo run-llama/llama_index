@@ -4,24 +4,22 @@ from typing import Any, List
 
 from llama_index.constants import DEFAULT_EMBEDDING_DIM
 from llama_index.data_structs.node import Node
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-    NodeWithEmbedding,
-    VectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-)
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.types import (MetadataFilters,
+                                             NodeWithEmbedding, VectorStore,
+                                             VectorStoreQuery,
+                                             VectorStoreQueryResult)
+from llama_index.vector_stores.utils import (metadata_dict_to_node,
+                                             node_to_metadata_dict)
 
 logger = logging.getLogger(__name__)
 
 
-class SupabaseVectorStore(VectorStore):
-    """Supbabase Vector.
+class PgVectorStore(VectorStore):
+    """PgVector.
 
     In this vector store, embeddings are stored in Postgres table using pgvector.
 
-    During query time, the index uses pgvector/Supabase to query for the top
+    During query time, the index uses pgvector to query for the top
     k most similar nodes.
 
     Args:
@@ -91,7 +89,7 @@ class SupabaseVectorStore(VectorStore):
         for result in embedding_results:
             metadata_dict = node_to_metadata_dict(result.node)
             # NOTE: keep text in metadata dict since there's no special field in
-            #       Supabase Vector.
+            #       PgVector.
             metadata_dict["text"] = result.node.text
             data.append((result.id, result.embedding, metadata_dict))
             ids.append(result.id)

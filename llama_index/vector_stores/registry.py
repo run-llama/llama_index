@@ -1,7 +1,8 @@
 from enum import Enum
 from typing import Dict, Type
 
-from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
+from llama_index.vector_stores.chatgpt_plugin import \
+    ChatGPTRetrievalPluginClient
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
@@ -9,11 +10,11 @@ from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.myscale import MyScaleVectorStore
 from llama_index.vector_stores.opensearch import OpensearchVectorStore
+from llama_index.vector_stores.pgvector import PgVectorStore
 from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.vector_stores.redis import RedisVectorStore
 from llama_index.vector_stores.simple import SimpleVectorStore
-from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.types import VectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
@@ -32,7 +33,7 @@ class VectorStoreType(str, Enum):
     MILVUS = "milvus"
     DEEPLAKE = "deeplake"
     MYSCALE = "myscale"
-    SUPABASE = "supabase"
+    PGVECTOR = "pgvector"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -41,7 +42,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.WEAVIATE: WeaviateVectorStore,
     VectorStoreType.QDRANT: QdrantVectorStore,
     VectorStoreType.LANCEDB: LanceDBVectorStore,
-    VectorStoreType.SUPABASE: SupabaseVectorStore,
+    VectorStoreType.PGVECTOR: PgVectorStore,
     VectorStoreType.MILVUS: MilvusVectorStore,
     VectorStoreType.PINECONE: PineconeVectorStore,
     VectorStoreType.OPENSEARCH: OpensearchVectorStore,
