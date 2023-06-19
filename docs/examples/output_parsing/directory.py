@@ -20,8 +20,6 @@ class Node(BaseModel):
         children (List[Node]): The list of child nodes (if any).
         node_type (NodeType): The type of the node, either a file or a folder.
 
-    Methods:
-        print_paths: Prints the path of the node and its children.
     """
 
     name: str = Field(..., description="Name of the folder")
@@ -42,8 +40,10 @@ class DirectoryTree(BaseModel):
     Args:
         root (Node): The root node of the tree.
 
-    Methods:
-        print_paths: Prints the paths of the root node and its children.
     """
 
     root: Node = Field(..., description="Root folder of the directory tree")
+
+
+Node.update_forward_refs()
+DirectoryTree.update_forward_refs()
