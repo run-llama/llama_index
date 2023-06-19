@@ -415,7 +415,7 @@ class NebulaGraphStore(GraphStore):
         # lower case subj, rel, obj
         subj = escape_str(subj.lower())
         rel = escape_str(rel.lower())
-        obj = escape_str(rel.lower())
+        obj = escape_str(obj.lower())
 
         # DELETE EDGE serve "player100" -> "team204"@7696463696635583936;
         edge_type = self._edge_types[0]

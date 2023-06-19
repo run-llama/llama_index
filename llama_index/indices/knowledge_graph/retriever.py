@@ -147,6 +147,10 @@ class KGTableRetriever(BaseRetriever):
                         # set. This helps introduce more global knowledge into the
                         # query. While it's more expensive, thus to be turned off
                         # by default, it can be useful for some applications.
+
+                        # TODO: we should a keyword-node_id map in IndexStruct, so that
+                        # node-keywords extraction with LLM will be called only once
+                        # during indexing.
                         extended_subjs = self._get_keywords(
                             self._docstore.get_node(node_id).get_text()
                         )
