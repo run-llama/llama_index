@@ -23,6 +23,7 @@ from llama_index.vector_stores.weaviate_utils import (
     get_all_properties,
     parse_get_response,
     to_node,
+    get_node_similarity,
 )
 
 logger = logging.getLogger(__name__)
@@ -172,7 +173,7 @@ class WeaviateVectorStore(VectorStore):
         query_builder = self._client.query.get(self._index_name, all_properties)
         if add_filtering:
             query_builder = query_builder.with_where(filter_with_doc_ids)
-        query_builder = query_builder.with_additional(["id", "vector"])
+        query_builder = query_builder.with_additional(["id", "vector", "distance"])
 
         vector = query.query_embedding
         if query.mode == VectorStoreQueryMode.DEFAULT:
@@ -199,9 +200,13 @@ class WeaviateVectorStore(VectorStore):
         # parse results
         parsed_result = parse_get_response(query_result)
         entries = parsed_result[self._index_name]
+
+        similarities = [get_node_similarity(entry) for entry in entries]
         nodes = [to_node(entry, text_key=self._text_key) for entry in entries]
 
         nodes = nodes[: query.similarity_top_k]
         node_idxs = [str(i) for i in range(len(nodes))]
 
-        return VectorStoreQueryResult(nodes=nodes, ids=node_idxs)
+        return VectorStoreQueryResult(
+            nodes=nodes, ids=node_idxs, similarities=similarities
+        )

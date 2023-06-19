@@ -131,6 +131,11 @@ def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, di
     return extra_info, node_info, relationships
 
 
+def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
+    """Get node similarity."""
+    return entry["_additional"][similarity_key]
+
+
 def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> Node:
     """Convert to Node."""
     additional = entry.pop("_additional")
@@ -148,6 +153,7 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> Node:
         extra_info=extra_info,
         node_info=node_info,
         relationships=relationships,
+        embedding=additional["vector"],
     )
 
 
