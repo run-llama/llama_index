@@ -39,7 +39,8 @@ class SQLTableRetriever(BaseRetriever):
 
         # Specific table case. Use initialized tables if specified.
         if self._tables or self._index._tables:
-            tables = self._tables
+            if self._tables:
+                tables = self._tables
             if not tables and self._index._tables:
                 tables = self._index._tables
             if not tables:
