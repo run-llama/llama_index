@@ -1,7 +1,9 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Generator, Optional, Sequence, Union
 
 from pydantic import BaseModel, Field
+
+from llama_index.llm_predictor.base import LLMMetadata
 
 
 # ===== Generic Model Input - Chat =====
@@ -63,15 +65,25 @@ ChatResponseType = Union[ChatResponse, Generator[ChatDeltaResponse, None, None]]
 
 
 class LLM(ABC):
+
+    @property
+    @abstractmethod
+    def metadata() -> LLMMetadata:
+        pass
+
+    @abstractmethod
     def chat(messages: Sequence[Message]) -> ChatResponseType:
         pass
 
+    @abstractmethod
     def complete(prompt: str) -> CompletionResponseType:
         pass
 
     # ===== Async Endpoints =====
+    @abstractmethod
     async def achat(messages: Sequence[Message]) -> ChatResponseType:
         pass
 
+    @abstractmethod
     async def acomplete(prompt: str) -> CompletionResponseType:
         pass

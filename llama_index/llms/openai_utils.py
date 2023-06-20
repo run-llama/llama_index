@@ -103,29 +103,31 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
     )
 
 
-def completion_with_retry(model: str, max_retries: int, **kwargs: Any) -> Any:
+def completion_with_retry(is_chat_model: bool, max_retries: int, **kwargs: Any) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
-        client = get_completion_endpoint(model)
+        client = get_completion_endpoint(is_chat_model)
         return client.create(**kwargs)
 
-    return _completion_with_retry(model=model, **kwargs)
+    return _completion_with_retry(**kwargs)
 
 
-async def acompletion_with_retry(model: str, max_retries: int, **kwargs: Any) -> Any:
+async def acompletion_with_retry(
+    is_chat_model: bool, max_retries: int, **kwargs: Any
+) -> Any:
     """Use tenacity to retry the async completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
         # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-        client = get_completion_endpoint(model)
+        client = get_completion_endpoint(is_chat_model)
         return await client.acreate(**kwargs)
 
-    return await _completion_with_retry(model=model, **kwargs)
+    return await _completion_with_retry(**kwargs)
 
 
 def openai_modelname_to_contextsize(modelname: str) -> int:
@@ -170,8 +172,8 @@ def is_chat_model(model: str) -> bool:
     return model in CHAT_MODELS
 
 
-def get_completion_endpoint(model: str) -> CompletionClientType:
-    if is_chat_model(model):
+def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
+    if is_chat_model:
         return openai.ChatCompletion
     else:
         return openai.Completion
