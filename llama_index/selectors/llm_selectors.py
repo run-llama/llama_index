@@ -12,7 +12,7 @@ from llama_index.selectors.prompts import (
     MultiSelectPrompt,
     SingleSelectPrompt,
 )
-from llama_index.selectors.types import BaseSelector, SelectorResult
+from llama_index.selectors.types import BaseSelector, SelectorResult, SingleSelection
 from llama_index.tools.types import ToolMetadata
 
 
@@ -30,9 +30,13 @@ def _structured_output_to_selector_result(output: Any) -> SelectorResult:
     """Convert structured output to selector result."""
     structured_output = cast(StructuredOutput, output)
     answers = cast(List[Answer], structured_output.parsed_output)
-    inds = [answer.choice - 1 for answer in answers]  # for zero indexing
-    reasons = [answer.reason for answer in answers]
-    return SelectorResult(inds=inds, reasons=reasons)
+
+    # adjust for zero indexing
+    selections = [
+        SingleSelection(index=answer.choice - 1, reason=answer.reason)
+        for answer in answers
+    ]
+    return SelectorResult(selections=selections)
 
 
 class LLMSingleSelector(BaseSelector):
