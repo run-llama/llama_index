@@ -15,7 +15,12 @@ from langchain.llms import AI21
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.constants import (
+    AI21_J2_CONTEXT_WINDOW,
+    COHERE_CONTEXT_WINDOW,
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+)
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
@@ -25,9 +30,6 @@ from llama_index.utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-_COHERE_MAX_INPUT_SIZE = 2048
-_AI21_J2_MAX_INPUT_SIZE = 8192
 
 
 @dataclass
@@ -60,13 +62,15 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         # June 2023: Cohere's supported max input size for Generation models is 2048
         # Reference: <https://docs.cohere.com/docs/tokens>
         return LLMMetadata(
-            context_window=_COHERE_MAX_INPUT_SIZE, num_output=llm.max_tokens
+            context_window=COHERE_CONTEXT_WINDOW, num_output=llm.max_tokens
         )
     elif isinstance(llm, AI21):
-        # June 2023: AI21's supported max input size for J2 models is 8K (8192 tokens to be exact)
+        # June 2023:
+        #   AI21's supported max input size for
+        #   J2 models is 8K (8192 tokens to be exact)
         # Reference: <https://docs.ai21.com/changelog/increased-context-length-for-j2-foundation-models>
         return LLMMetadata(
-            context_window=_AI21_J2_MAX_INPUT_SIZE, num_output=llm.maxTokens
+            context_window=AI21_J2_CONTEXT_WINDOW, num_output=llm.maxTokens
         )
     else:
         return LLMMetadata()
