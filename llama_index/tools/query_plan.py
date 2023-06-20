@@ -7,7 +7,7 @@ from llama_index.tools.types import ToolMetadata
 from llama_index.response.schema import Response
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.data_structs.node import NodeWithScore, Node
-from typing import List, Any, Optional
+from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, Field
 from llama_index.indices.query.schema import QueryBundle
 from langchain.input import print_text
@@ -17,9 +17,6 @@ DEFAULT_NAME = "query_plan_tool"
 
 QUERYNODE_QUERY_STR_DESC = """\
 Question we are asking. This is the query string that will be executed. \
-We will either provide a tool to execute the query, or a list of child nodes \
-containing sub-questions that will be executed first, and the results of which \
-will be used as context to execute the current query string.\
 """
 
 QUERYNODE_TOOL_NAME_DESC = """\
@@ -28,10 +25,11 @@ Should NOT be specified if there are subquestions to be specified, in which \
 case child_nodes should be nonempty instead.\
 """
 
-QUERYNODE_CHILD_NODES_DESC = """\
-List of child nodes representing sub-questions that need to be answered in order \
+QUERYNODE_DEPENDENCIES_DESC = """\
+List of sub-questions that need to be answered in order \
 to answer the question given by `query_str`.\
-Should be blank if `tool_name` is specified.\
+Should be blank if there are no sub-questions to be specified, in which case \
+`tool_name` is specified.\
 """
 
 
@@ -47,46 +45,28 @@ class QueryNode(BaseModel):
 
     # NOTE: inspired from https://github.com/jxnl/openai_function_call/pull/3/files
 
+    id: int = Field(..., description="ID of the query node.")
     query_str: str = Field(..., description=QUERYNODE_QUERY_STR_DESC)
     tool_name: Optional[str] = Field(
         default=None, description="Name of the tool to execute the `query_str`."
     )
-    child_nodes: List["QueryNode"] = Field(..., description=QUERYNODE_CHILD_NODES_DESC)
+    dependencies: List[int] = Field(
+        default_factory=list, description=QUERYNODE_DEPENDENCIES_DESC
+    )
 
 
 class QueryPlan(BaseModel):
     """Query plan.
 
-    Contains the root QueryNode (which is a recursive object).
-    The root node should contain the original query string to be executed.
-
-    Example query plan in JSON format:
-
-    ```json
-    {
-        "root": {
-            "query_str": "Compare the demographics of France and Italy.",
-            "child_nodes": [
-                {
-                    "query_str": "What are the demographics of France?",
-                    "tool_name": "france_demographics",
-                    "child_nodes": []
-                },
-                {
-                    "query_str": "What are the demographics of Italy?",
-                    "tool_name": "italy_demographics",
-                    "child_nodes": []
-                }
-            ]
-        }
-    }
-    ```
+    Contains a list of QueryNode objects (which is a recursive object).
+    Out of the list of QueryNode objects, one of them must be the root node.
+    The root node is the one that isn't a dependency of any other node.
 
     """
 
-    root: QueryNode = Field(
+    nodes: List[QueryNode] = Field(
         ...,
-        description="Root node of the query plan. Should contain the original query string to be executed.",
+        description="The original question we are asking.",
     )
 
 
@@ -160,24 +140,36 @@ class QueryPlanTool(BaseTool):
 
         return metadata
 
-    def _execute_node(self, node: QueryNode) -> str:
+    def _execute_node(self, node: QueryNode, nodes_dict: Dict[str, QueryNode]) -> str:
         """Execute node."""
         print_text(f"Executing node {node.json()}\n", color="blue")
-        if len(node.child_nodes) > 0:
-            print_text(f"Executing {len(node.child_nodes)} child nodes\n", color="pink")
+        if len(node.dependencies) > 0:
+            print_text(
+                f"Executing {len(node.dependencies)} child nodes\n", color="pink"
+            )
+            child_query_nodes = [nodes_dict[dep] for dep in node.dependencies]
             # execute the child nodes first
             child_responses: List[str] = [
-                self._execute_node(child) for child in node.child_nodes
+                self._execute_node(child, nodes_dict) for child in child_query_nodes
             ]
-
+            # form the child Node/NodeWithScore objects
+            child_nodes = []
+            for child_query_node, child_response in zip(
+                child_query_nodes, child_responses
+            ):
+                node_text = (
+                    f"Query: {child_query_node.query_str}\n"
+                    f"Response: {child_response}\n"
+                )
+                child_node = Node(node_text)
+                child_nodes.append(child_node)
             # use ResponseSynthesizer to combine results
-            child_nodes = [Node(r) for r in child_responses]
             child_nodes_with_scores = [NodeWithScore(n, 1.0) for n in child_nodes]
             response = self._response_synthesizer.synthesize(
                 query_bundle=QueryBundle(node.query_str),
                 nodes=child_nodes_with_scores,
             )
-
+            return response
         else:
             # this is a leaf request, execute the query string using the specified tool
             tool = self._query_tools_dict[node.tool_name]
@@ -191,10 +183,27 @@ class QueryPlanTool(BaseTool):
         )
         return response
 
+    def _find_root_nodes(self, nodes_dict: Dict[str, QueryNode]) -> List[QueryNode]:
+        """Find root node."""
+        # the root node is the one that isn't a dependency of any other node
+        node_counts = {node_id: 0 for node_id in nodes_dict.keys()}
+        for node in nodes_dict.values():
+            for dep in node.dependencies:
+                node_counts[dep] += 1
+        root_node_ids = [
+            node_id for node_id, count in node_counts.items() if count == 0
+        ]
+        return [nodes_dict[node_id] for node_id in root_node_ids]
+
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Call."""
         # the kwargs represented as a JSON object
         # should be a QueryPlan object
         query_plan = QueryPlan(**kwargs)
 
-        return self._execute_node(query_plan.root)
+        nodes_dict = {node.id: node for node in query_plan.nodes}
+        root_nodes = self._find_root_nodes(nodes_dict)
+        if len(root_nodes) > 1:
+            raise ValueError("Query plan should have exactly one root node.")
+
+        return self._execute_node(root_nodes[0], nodes_dict)
