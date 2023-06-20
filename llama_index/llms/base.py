@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Awaitable, Generator, Optional, Sequence, Union
+from typing import Any, Generator, Optional, Sequence, Union
 
 from pydantic import BaseModel, Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -92,11 +92,9 @@ class LLM(ABC):
     @abstractmethod
     async def achat(
         self, messages: Sequence[Message], **kwargs: Any
-    ) -> Awaitable[ChatResponseType]:
+    ) -> ChatResponseType:
         pass
 
     @abstractmethod
-    async def acomplete(
-        self, prompt: str, **kwargs: Any
-    ) -> Awaitable[CompletionResponseType]:
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponseType:
         pass
