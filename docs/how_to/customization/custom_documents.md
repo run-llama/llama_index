@@ -12,7 +12,7 @@ There are a few ways to set up this dictionary:
 document = Document(
     'text', 
     extra_info={
-        'filename', '<doc_file_name>', 
+        'filename': '<doc_file_name>', 
         'category': '<category>'
     }
 )
@@ -21,7 +21,7 @@ document = Document(
 2. After the document is created:
 
 ```python
-document.extra_info = {'filename', '<doc_file_name>'}
+document.extra_info = {'filename': '<doc_file_name>'}
 ```
 
 3. Set the filename automatically using the `SimpleDirectoryReader` and `file_metadata` hook. This will automatically run the hook on each document to set the `extra_info` field:
