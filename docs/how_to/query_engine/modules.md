@@ -28,4 +28,5 @@ Retry Guideline Query Engine </examples/evaluation/RetryQuery.ipynb>
 /examples/query_engine/json_query_engine.ipynb
 /examples/query_engine/citation_query_engine.ipynb
 /examples/query_engine/flare_query_engine.ipynb
+/examples/query_engine/pandas_query_engine.ipynb
 ```

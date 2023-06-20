@@ -6,12 +6,11 @@ import pandas as pd
 
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.query_engine.pandas_query_engine import PandasQueryEngine
 
 
 def test_pandas_query_engine(mock_service_context: ServiceContext) -> None:
-    """Test PandasIndex."""
+    """Test pandas query engine."""
     # Test on some sample data
     df = pd.DataFrame(
         {
