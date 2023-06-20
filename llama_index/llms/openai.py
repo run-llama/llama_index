@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Awaitable, Dict, Sequence
 
 from pydantic import BaseModel, Field
 from llama_index.llm_predictor.base import LLMMetadata
@@ -169,3 +169,17 @@ class OpenAI(LLM, BaseModel):
                     )
 
             return gen()
+
+    async def achat(
+        self,
+        messages: Sequence[Message],
+        **kwargs: Any,
+    ) -> Awaitable[ChatResponseType]:
+        # TODO: implement async chat
+        return self.chat(messages, **kwargs)
+
+    async def acomplete(
+        self, prompt: str, **kwargs
+    ) -> Awaitable[CompletionResponseType]:
+        # TODO: implement async complete
+        return self.acomplete(prompt, **kwargs)

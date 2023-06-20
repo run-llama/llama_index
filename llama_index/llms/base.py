@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generator, Optional, Sequence, Union
+from typing import Any, Awaitable, Generator, Optional, Sequence, Union
 
 from pydantic import BaseModel, Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -77,22 +77,22 @@ class LLMMetadata(BaseModel):
 class LLM(ABC):
     @property
     @abstractmethod
-    def metadata() -> LLMMetadata:
+    def metadata(self) -> LLMMetadata:
         pass
 
     @abstractmethod
-    def chat(messages: Sequence[Message]) -> ChatResponseType:
+    def chat(self, messages: Sequence[Message], **kwargs: Any) -> ChatResponseType:
         pass
 
     @abstractmethod
-    def complete(prompt: str) -> CompletionResponseType:
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponseType:
         pass
 
     # ===== Async Endpoints =====
     @abstractmethod
-    async def achat(messages: Sequence[Message]) -> ChatResponseType:
+    async def achat(self, messages: Sequence[Message], **kwargs: Any) -> Awaitable[ChatResponseType]:
         pass
 
     @abstractmethod
-    async def acomplete(prompt: str) -> CompletionResponseType:
+    async def acomplete(self, prompt: str, **kwargs) -> Awaitable[CompletionResponseType]:
         pass
