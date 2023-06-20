@@ -48,7 +48,6 @@ class SQLTableIndex(BaseStructStoreIndex[SQLStructTable]):
         sql_database: SQLDatabase,
         vector_store_index: VectorStoreIndex,
         service_context: Optional[ServiceContext] = None,
-        tables: Optional[List[Union[str, Table]]] = None,
         extra_context_dict: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -56,7 +55,6 @@ class SQLTableIndex(BaseStructStoreIndex[SQLStructTable]):
         if sql_database is None:
             raise ValueError("sql_database must be specified")
         self.sql_database = sql_database
-        self._tables = tables
         self._vector_store_index = vector_store_index
         self._service_context = service_context or ServiceContext.from_defaults()
         self._extra_context_dict = extra_context_dict or {}
