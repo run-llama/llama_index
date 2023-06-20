@@ -1,19 +1,22 @@
 """Default query for SQLStructStoreIndex."""
 import logging
-from typing import Any, Optional
+from typing import Any, List, Optional, Union
+
+from sqlalchemy import Table
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
-from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
+from llama_index.indices.struct_store.sql_table import SQLTableIndex
 from llama_index.prompts.base import Prompt
+from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
+from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
 from llama_index.token_counter.token_counter import llm_token_counter
-from llama_index.prompts.prompt_type import PromptType
-from llama_index.indices.service_context import ServiceContext
 
 logger = logging.getLogger(__name__)
 
@@ -142,6 +145,134 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
                 table_desc_list.append(table_desc)
             tables_desc_str = "\n\n".join(table_desc_list)
 
+        return tables_desc_str
+
+    @llm_token_counter("query")
+    def _query(self, query_bundle: QueryBundle) -> Response:
+        """Answer a query."""
+        table_desc_str = self._get_table_context(query_bundle)
+        logger.info(f"> Table desc str: {table_desc_str}")
+
+        response_str, _ = self._service_context.llm_predictor.predict(
+            self._text_to_sql_prompt,
+            query_str=query_bundle.query_str,
+            schema=table_desc_str,
+            dialect=self._sql_database.dialect,
+        )
+
+        sql_query_str = self._parse_response_to_sql(response_str)
+        # assume that it's a valid SQL query
+        logger.debug(f"> Predicted SQL query: {sql_query_str}")
+
+        raw_response_str, extra_info = self._sql_database.run_sql(sql_query_str)
+        extra_info["sql_query"] = sql_query_str
+
+        if self._synthesize_response:
+            response_str, _ = self._service_context.llm_predictor.predict(
+                self._response_synthesis_prompt,
+                query_str=query_bundle.query_str,
+                sql_query=sql_query_str,
+                sql_response_str=raw_response_str,
+            )
+        else:
+            response_str = raw_response_str
+
+        response = Response(response=response_str, extra_info=extra_info)
+        return response
+
+    @llm_token_counter("aquery")
+    async def _aquery(self, query_bundle: QueryBundle) -> Response:
+        """Answer a query."""
+        table_desc_str = self._get_table_context(query_bundle)
+        logger.info(f"> Table desc str: {table_desc_str}")
+
+        (
+            response_str,
+            formatted_prompt,
+        ) = await self._service_context.llm_predictor.apredict(
+            self._text_to_sql_prompt,
+            query_str=query_bundle.query_str,
+            schema=table_desc_str,
+            dialect=self._sql_database.dialect,
+        )
+
+        sql_query_str = self._parse_response_to_sql(response_str)
+        # assume that it's a valid SQL query
+        logger.debug(f"> Predicted SQL query: {sql_query_str}")
+
+        response_str, extra_info = self._sql_database.run_sql(sql_query_str)
+        extra_info["sql_query"] = sql_query_str
+        response = Response(response=response_str, extra_info=extra_info)
+        return response
+
+
+class SQLTableQueryEngine(BaseQueryEngine):
+    def __init__(
+        self,
+        index: SQLTableIndex,
+        **kwargs: Any,
+    ) -> None:
+        self._sql_database = index.sql_database
+        super().__init__(index.service_context.callback_manager)
+
+    def _query(self, query_bundle: QueryBundle) -> Response:
+        """Answer a query."""
+        # NOTE: override query method in order to fetch the right results.
+        # NOTE: since the query_str is a SQL query, it doesn't make sense
+        # to use ResponseBuilder anywhere.
+        response_str, extra_info = self._sql_database.run_sql(query_bundle.query_str)
+        response = Response(response=response_str, extra_info=extra_info)
+        return response
+
+    async def _aquery(self, query_bundle: QueryBundle) -> Response:
+        return self._query(query_bundle)
+
+
+class NLSQLTableQueryEngine(BaseQueryEngine):
+    def __init__(
+        self,
+        index: SQLTableIndex,
+        text_to_sql_prompt: Optional[Prompt] = None,
+        context_query_kwargs: Optional[dict] = None,
+        synthesize_response: bool = True,
+        response_synthesis_prompt: Optional[Prompt] = None,
+        tables: Optional[Union[List[str], List[Table]]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize params."""
+        self._index = index
+        self._sql_database = index.sql_database
+        self._service_context = index.service_context
+
+        self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
+        self._response_synthesis_prompt = (
+            response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT
+        )
+        self._context_query_kwargs = context_query_kwargs or {}
+        self._synthesize_response = synthesize_response
+        self._tables = tables
+        super().__init__(index.service_context.callback_manager)
+
+    @property
+    def service_context(self) -> ServiceContext:
+        """Get service context."""
+        return self._service_context
+
+    def _parse_response_to_sql(self, response: str) -> str:
+        """Parse response to SQL."""
+        result_response = response.strip()
+        return result_response
+
+    def _get_table_context(self, query_bundle: QueryBundle) -> str:
+        """Get table context.
+
+        Get tables schema + optional context as a single string.
+
+        """
+        retriever = self._index.as_retriever(tables=self._tables)
+        sources = retriever.retrieve(query_bundle)
+        node_strs = [node.node.get_text() for node in sources]
+        tables_desc_str = "\n\n".join(node_strs)
         return tables_desc_str
 
     @llm_token_counter("query")
