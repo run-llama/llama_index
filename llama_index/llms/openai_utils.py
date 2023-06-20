@@ -1,7 +1,8 @@
 import logging
-from typing import Any, Callable, List, Sequence, Union
+from typing import Any, Callable, List, Sequence, Type, Union
 
 import openai
+from openai import Completion, ChatCompletion
 from tenacity import (
     before_sleep_log,
     retry,
@@ -80,7 +81,7 @@ DISCONTINUED_MODELS = {
 
 logger = logging.getLogger(__name__)
 
-CompletionClientType = Union[openai.Completion, openai.ChatCompletion]
+CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:

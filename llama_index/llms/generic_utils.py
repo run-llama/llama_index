@@ -75,6 +75,7 @@ def chat_response_to_completion_response(
 
         def gen() -> Generator[CompletionDeltaResponse, None, None]:
             for delta in chat_response:
+                assert isinstance(delta, ChatDeltaResponse)
                 yield CompletionDeltaResponse(
                     text=delta.message.content,
                     delta=delta.delta,
