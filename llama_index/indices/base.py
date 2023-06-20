@@ -42,9 +42,9 @@ class BaseIndex(Generic[IS], ABC):
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and nodes is None:
-            raise ValueError("One of documents or index_struct must be provided.")
+            raise ValueError("One of nodes or index_struct must be provided.")
         if index_struct is not None and nodes is not None:
-            raise ValueError("Only one of documents or index_struct can be provided.")
+            raise ValueError("Only one of nodes or index_struct can be provided.")
         # This is to explicitly make sure that the old UX is not used
         if nodes is not None and len(nodes) >= 1 and not isinstance(nodes[0], Node):
             if isinstance(nodes[0], Document):
@@ -348,7 +348,9 @@ class BaseIndex(Generic[IS], ABC):
 
             query_engine = self.as_query_engine(**kwargs)
             return CondenseQuestionChatEngine.from_defaults(
-                query_engine=query_engine, **kwargs
+                query_engine=query_engine,
+                service_context=self.service_context,
+                **kwargs,
             )
         elif chat_mode == ChatMode.REACT:
             # NOTE: lazy import
@@ -356,7 +358,9 @@ class BaseIndex(Generic[IS], ABC):
 
             query_engine = self.as_query_engine(**kwargs)
             return ReActChatEngine.from_query_engine(
-                query_engine=query_engine, **kwargs
+                query_engine=query_engine,
+                service_context=self.service_context,
+                **kwargs,
             )
         else:
             raise ValueError(f"Unknown chat mode: {chat_mode}")

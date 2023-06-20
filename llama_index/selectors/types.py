@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from pydantic import BaseModel
 from typing import List, Sequence, Union
 
 from llama_index.indices.query.schema import QueryBundle, QueryType
@@ -8,18 +8,25 @@ from llama_index.tools.types import ToolMetadata
 MetadataType = Union[str, ToolMetadata]
 
 
-@dataclass
-class SelectorResult:
-    inds: List[int]
-    reasons: List[str]
+class SingleSelection(BaseModel):
+    """A single selection of a choice."""
+
+    index: int
+    reason: str
+
+
+class MultiSelection(BaseModel):
+    """A multi-selection of choices."""
+
+    selections: List[SingleSelection]
 
     @property
     def ind(self) -> int:
-        if len(self.inds) != 1:
+        if len(self.selections) != 1:
             raise ValueError(
-                f"There are {len(self.inds)} selections, " "please use .inds."
+                f"There are {len(self.selections)} selections, " "please use .inds."
             )
-        return self.inds[0]
+        return self.selections[0].index
 
     @property
     def reason(self) -> str:
@@ -27,7 +34,19 @@ class SelectorResult:
             raise ValueError(
                 f"There are {len(self.reasons)} selections, " "please use .reasons."
             )
-        return self.reasons[0]
+        return self.selections[0].reason
+
+    @property
+    def inds(self) -> List[int]:
+        return [x.index for x in self.selections]
+
+    @property
+    def reasons(self) -> List[str]:
+        return [x.reason for x in self.selections]
+
+
+# separate name for clarity and to not confuse function calling model
+SelectorResult = MultiSelection
 
 
 def _wrap_choice(choice: MetadataType) -> ToolMetadata:

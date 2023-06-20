@@ -1,10 +1,78 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+- multi-selector support in router query engine (#6518)
+- pydantic selector support in router query engine using OpenAI function calling API (#6518)
+- streaming response support in `CondenseQuestionChatEngine` and `SimpleChatEngine` (#6524) 
+
+### Bug Fixes / Nits
+- better error handling in the mbox reader (#6248)
+- fix for sorted nodes in `PrevNextNodePostprocessor` (#6048)
+
+### Breaking/Deprecated API Changes
+- Refactor PandasQueryEngine to take in df directly, deprecate PandasIndex (#6527)
+
+## [v0.6.29] - 2023-06-20
+
+### New Features
+
+- query planning tool with OpenAI Function API (#6520)
+- docs: example of kg+vector index (#6497)
+- Set context window sizes for Cohere and AI21(J2 model) (#6485)
+
+### Bug Fixes / Nits
+- add default input size for Cohere and AI21 (#6485)
+- docs: replace comma with colon in dict object (#6439)
+- extra space in prompt and error message update (#6443)
+- [Issue 6417] Fix prompt_templates docs page (#6499)
+- Rip out monkey patch and update model to context window mapping (#6490)
+
+
+## [v0.6.28] - 2023-06-19
+
+### New Features
+- New OpenAI Agent + Query Engine Cookbook (#6496)
+- allow recursive data extraction (pydantic program)  (#6503)
+
+### Bug Fixes / Nits
+- update mongo interface (#6501)
+- fixes that we forgot to include for openai pydantic program (#6503) (#6504)
+- Fix github pics in Airbyte notebook (#6493)
+
+## [v0.6.27] - 2023-06-16
+
+### New Features
+- Add node doc_id filtering to weaviate (#6467)
+- New `TokenCountingCallback` to customize and track embedding, prompt, and completion token usage (#6440)
+- OpenAI Retrieval Function Agent (#6491)
+
+### Breaking/Deprecated API Changes
+- Deprecated current token tracking (llm predictor and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
+- Add maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode (#6446)
+
+### Bug Fixes / Nits
+- `as_chat_engine` properly inherits the current service context (#6470)
+- Use namespace when deleting from pinecone (#6475)
+- Fix paths when using fsspec on windows (#3778)
+- Fix for using custom file readers in `SimpleDirectoryReader` (#6477)
+- Edit MMR Notebook (#6486)
+- FLARE fixes (#6484)
+
+## [v0.6.26] - 2023-06-14
+
+### New Features
+- Add OpenAIAgent and tutorial notebook for "build your own agent" (#6461)
+- Add OpenAIPydanticProgram (#6462)
+
+### Bug Fixes / Nits
+- Fix citation engine import (#6456)
+
 ## [v0.6.25] - 2023-06-13
 
 ### New Features
 - Added FLARE query engine (#6419).
-
 
 ## [v0.6.24] - 2023-06-12
 
@@ -12,15 +80,6 @@
 - Added better support for vector store with existing data (e.g. allow configurable text key) for Pinecone and Weaviate. (#6393)
 - Support batched upsert for Pineone (#6393)
 - Added initial [guidance](https://github.com/microsoft/guidance/) integration. Added `GuidancePydanticProgram` for generic structured output generation and `GuidanceQuestionGenerator` for generating sub-questions in `SubQuestionQueryEngine` (#6246).
-
-### Bug Fixes
-- None
-
-### Breaking/Deprecated API Changes
-- None
-
-### Miscellaneous
-- None
 
 ## [v0.6.23] - 2023-06-11
 

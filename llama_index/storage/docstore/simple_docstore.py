@@ -11,6 +11,7 @@ from llama_index.storage.docstore.types import (
 )
 from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
 from llama_index.storage.kvstore.types import BaseInMemoryKVStore
+from llama_index.utils import concat_dirs
 
 
 class SimpleDocumentStore(KVDocumentStore):
@@ -49,7 +50,10 @@ class SimpleDocumentStore(KVDocumentStore):
 
         """
 
-        persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        if fs is not None:
+            persist_path = concat_dirs(persist_dir, DEFAULT_PERSIST_FNAME)
+        else:
+            persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, namespace=namespace, fs=fs)
 
     @classmethod

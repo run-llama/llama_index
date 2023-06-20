@@ -12,6 +12,7 @@ from dataclasses_json import DataClassJsonMixin
 from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
+    get_top_k_mmr_embeddings,
 )
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
@@ -22,6 +23,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
+from llama_index.utils import concat_dirs
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,8 @@ LEARNER_MODES = {
     VectorStoreQueryMode.LINEAR_REGRESSION,
     VectorStoreQueryMode.LOGISTIC_REGRESSION,
 }
+
+MMR_MODE = VectorStoreQueryMode.MMR
 
 
 @dataclass
@@ -76,7 +80,10 @@ class SimpleVectorStore(VectorStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleVectorStore":
         """Load from persist dir."""
-        persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        if fs is not None:
+            persist_path = concat_dirs(persist_dir, DEFAULT_PERSIST_FNAME)
+        else:
+            persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)
 
     @property
@@ -146,6 +153,15 @@ class SimpleVectorStore(VectorStore):
                 embeddings,
                 similarity_top_k=query.similarity_top_k,
                 embedding_ids=node_ids,
+            )
+        elif query.mode == MMR_MODE:
+            mmr_threshold = kwargs.get("mmr_threshold", None)
+            top_similarities, top_ids = get_top_k_mmr_embeddings(
+                query_embedding,
+                embeddings,
+                similarity_top_k=query.similarity_top_k,
+                embedding_ids=node_ids,
+                mmr_threshold=mmr_threshold,
             )
         elif query.mode == VectorStoreQueryMode.DEFAULT:
             top_similarities, top_ids = get_top_k_embeddings(
