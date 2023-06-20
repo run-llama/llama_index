@@ -2,7 +2,6 @@
 
 import logging
 from abc import abstractmethod
-from dataclasses import dataclass
 from threading import Thread
 from typing import Any, Generator, Optional, Protocol, Tuple, runtime_checkable
 
@@ -18,10 +17,9 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import (
     AI21_J2_CONTEXT_WINDOW,
     COHERE_CONTEXT_WINDOW,
-    DEFAULT_CONTEXT_WINDOW,
-    DEFAULT_NUM_OUTPUTS,
 )
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
+from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai_utils import openai_modelname_to_contextsize
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
@@ -31,18 +29,6 @@ from llama_index.utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class LLMMetadata:
-    """LLM metadata.
-
-    We extract this metadata to help with our prompts.
-
-    """
-
-    context_window: int = DEFAULT_CONTEXT_WINDOW
-    num_output: int = DEFAULT_NUM_OUTPUTS
 
 
 def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:

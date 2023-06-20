@@ -2,8 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Generator, Optional, Sequence, Union
 
 from pydantic import BaseModel, Field
-
-from llama_index.llm_predictor.base import LLMMetadata
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 
 # ===== Generic Model Input - Chat =====
@@ -64,8 +63,18 @@ CompletionResponseType = Union[
 ChatResponseType = Union[ChatResponse, Generator[ChatDeltaResponse, None, None]]
 
 
-class LLM(ABC):
+class LLMMetadata(BaseModel):
+    """LLM metadata.
 
+    We extract this metadata to help with our prompts.
+
+    """
+
+    context_window: int = DEFAULT_CONTEXT_WINDOW
+    num_output: int = DEFAULT_NUM_OUTPUTS
+
+
+class LLM(ABC):
     @property
     @abstractmethod
     def metadata() -> LLMMetadata:
