@@ -1,8 +1,9 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional, Type, Dict
+from typing import Any, Dict, Optional, Type
+
+from langchain.tools import StructuredTool, Tool
 from pydantic import BaseModel
-from langchain.tools import Tool, StructuredTool
 
 
 @dataclass
@@ -10,6 +11,25 @@ class ToolMetadata:
     description: str
     name: Optional[str] = None
     fn_schema: Optional[Type[BaseModel]] = None
+
+    def to_openai_function(self) -> Dict[str, Any]:
+        """To OpenAI function."""
+        if self.fn_schema is None:
+            parameters = {
+                "properties": {
+                    "input": {"title": "input query string", "type": "string"},
+                },
+                "required": ["input"],
+                "type": "object",
+            }
+        else:
+            parameters = self.fn_schema.schema()
+
+        return {
+            "name": self.name,
+            "description": self.description,
+            "parameters": parameters,
+        }
 
 
 class BaseTool:
@@ -19,7 +39,7 @@ class BaseTool:
         pass
 
     @abstractmethod
-    def __call__(self, input: Any) -> None:
+    def __call__(self, input: Any) -> Any:
         pass
 
     def _process_langchain_tool_kwargs(

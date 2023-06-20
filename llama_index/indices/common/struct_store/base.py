@@ -4,7 +4,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import StructDatapoint
 from llama_index.indices.response import get_response_builder
@@ -114,14 +114,16 @@ class SQLDocumentContextBuilder:
             refine_prompt_with_schema,
         )
         event_id = self._service_context.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"documents": documents}
+            CBEventType.CHUNKING, payload={EventPayload.DOCUMENTS: documents}
         )
         text_chunks = []
         for doc in documents:
             chunks = text_splitter.split_text(doc.get_text())
             text_chunks.extend(chunks)
         self._service_context.callback_manager.on_event_end(
-            CBEventType.CHUNKING, payload={"chunks": text_chunks}, event_id=event_id
+            CBEventType.CHUNKING,
+            payload={EventPayload.CHUNKS: text_chunks},
+            event_id=event_id,
         )
 
         # feed in the "query_str" or the task

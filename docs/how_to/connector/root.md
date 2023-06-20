@@ -45,5 +45,5 @@ See below for detailed guides.
 ---
 maxdepth: 2
 ---
-modules.md
+modules.rst
 ```

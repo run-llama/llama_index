@@ -2,7 +2,7 @@
 
 Documents also offer the chance to include useful metadata. Using the `extra_info` dictionary on each document, additional information can be included to help inform responses and track down sources for query responses. This information can be anything, such as filenames or categories, but the only requirement is that the keys must be strings, and the values must be either `str`, `float`, or `int`.
 
-Any information set in the `extra_info` dictionary of each document will show up in the `extra_info` of each source node created from the document.
+Any information set in the `extra_info` dictionary of each document will show up in the `extra_info` of each source node created from the document. Additionaly, this information is included in the nodes, enabling the index to utilize it on queries and responses.
 
 There are a few ways to set up this dictionary:
 
@@ -12,7 +12,7 @@ There are a few ways to set up this dictionary:
 document = Document(
     'text', 
     extra_info={
-        'filename', '<doc_file_name>', 
+        'filename': '<doc_file_name>', 
         'category': '<category>'
     }
 )
@@ -21,7 +21,7 @@ document = Document(
 2. After the document is created:
 
 ```python
-document.extra_info = {'filename', '<doc_file_name>'}
+document.extra_info = {'filename': '<doc_file_name>'}
 ```
 
 3. Set the filename automatically using the `SimpleDirectoryReader` and `file_metadata` hook. This will automatically run the hook on each document to set the `extra_info` field:

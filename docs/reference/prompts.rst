@@ -20,15 +20,6 @@ The list of ChatGPT refine prompts can be
 `found here <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py>`_.
 
 
-Prompts
-^^^^^^^
-
-.. automodule:: llama_index.prompts.prompts
-   :members:
-   :inherited-members:
-   :exclude-members: get_full_format_args
-
-
 Base Prompt Class
 ^^^^^^^^^^^^^^^^^
 
@@ -37,3 +28,7 @@ Base Prompt Class
    :inherited-members:
    :exclude-members: Config, construct, copy, dict, from_examples, from_file, get_full_format_args, output_parser, save, template, template_format, update_forward_refs, validate_variable_names, json, template_is_valid
 
+
+Subclass Prompts (deprecated)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Deprecated, but still available for reference at `this link <https://github.com/jerryjliu/llama_index/blob/113109365b216428440b19eb23c9fae749d6880a/llama_index/prompts/prompts.py>`_.

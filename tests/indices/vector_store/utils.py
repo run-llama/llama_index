@@ -52,6 +52,7 @@ class MockPineconeIndex:
             tup = self._tuples[index]
             match = MagicMock()
             match.metadata = tup["metadata"]
+            match.id = tup["id"]
             matches.append(match)
 
         response = MagicMock()

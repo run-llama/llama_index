@@ -28,6 +28,7 @@ They mainly differ in 2 aspects:
 * MyScale
 * Tair
 * DocArray
+* MongoDB Atlas
 
 ### Others
 * ChatGPTRetrievalPlugin
@@ -59,5 +60,6 @@ maxdepth: 1
 ../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 ../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb
 ../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
+../../examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 ```
 

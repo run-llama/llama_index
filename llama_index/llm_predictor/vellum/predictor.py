@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any, Tuple, Generator, Optional, cast
 
 from llama_index import Prompt
-from llama_index.callbacks import CallbackManager, CBEventType
+from llama_index.callbacks import CallbackManager
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.llm_predictor.vellum.exceptions import VellumGenerateException
 from llama_index.llm_predictor.vellum.prompt_registry import VellumPromptRegistry
@@ -87,8 +88,8 @@ class VellumPredictor(BaseLLMPredictor):
                     self.callback_manager.on_event_end(
                         CBEventType.LLM,
                         payload={
-                            "response": complete_text,
-                            "formatted_prompt": compiled_prompt.text,
+                            EventPayload.RESPONSE: complete_text,
+                            EventPayload.PROMPT: compiled_prompt.text,
                         },
                         event_id=event_id,
                     )
@@ -200,8 +201,8 @@ class VellumPredictor(BaseLLMPredictor):
         self.callback_manager.on_event_end(
             CBEventType.LLM,
             payload={
-                "response": completion_text,
-                "formatted_prompt": compiled_prompt.text,
+                EventPayload.RESPONSE: completion_text,
+                EventPayload.PROMPT: compiled_prompt.text,
             },
             event_id=event_id,
         )

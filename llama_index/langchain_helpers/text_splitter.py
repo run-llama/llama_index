@@ -6,7 +6,7 @@ from langchain.text_splitter import TextSplitter
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.utils import globals_helper
 
 
@@ -129,12 +129,14 @@ class TokenTextSplitter(TextSplitter):
     def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
         event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"text": text}
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
         )
         text_splits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
         chunks = [text_split.text_chunk for text_split in text_splits]
         self.callback_manager.on_event_end(
-            CBEventType.CHUNKING, payload={"chunks": chunks}, event_id=event_id
+            CBEventType.CHUNKING,
+            payload={EventPayload.CHUNKS: chunks},
+            event_id=event_id,
         )
         return chunks
 
@@ -145,7 +147,7 @@ class TokenTextSplitter(TextSplitter):
         if text == "":
             return []
         event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"text": text}
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
         )
 
         # NOTE: Consider extra info str that will be added to the chunk at query time
@@ -237,7 +239,7 @@ class TokenTextSplitter(TextSplitter):
         docs = self._postprocess_splits(docs)
         self.callback_manager.on_event_end(
             CBEventType.CHUNKING,
-            payload={"chunks": [x.text_chunk for x in docs]},
+            payload={EventPayload.CHUNKS: [x.text_chunk for x in docs]},
             event_id=event_id,
         )
         return docs
@@ -346,7 +348,7 @@ class SentenceSplitter(TextSplitter):
         if text == "":
             return []
         event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"text": text}
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
         )
 
         # NOTE: Consider extra info str that will be added to the chunk at query time
@@ -443,7 +445,7 @@ class SentenceSplitter(TextSplitter):
 
         self.callback_manager.on_event_end(
             CBEventType.CHUNKING,
-            payload={"chunks": [x.text_chunk for x in docs]},
+            payload={EventPayload.CHUNKS: [x.text_chunk for x in docs]},
             event_id=event_id,
         )
         return docs
@@ -451,12 +453,14 @@ class SentenceSplitter(TextSplitter):
     def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
         event_id = self.callback_manager.on_event_start(
-            CBEventType.CHUNKING, payload={"text": text}
+            CBEventType.CHUNKING, payload={EventPayload.CHUNKS: text}
         )
         text_splits = self.split_text_with_overlaps(text, extra_info_str=extra_info_str)
         chunks = [text_split.text_chunk for text_split in text_splits]
         self.callback_manager.on_event_end(
-            CBEventType.CHUNKING, payload={"chunks": chunks}, event_id=event_id
+            CBEventType.CHUNKING,
+            payload={EventPayload.CHUNKS: chunks},
+            event_id=event_id,
         )
         return chunks
 
