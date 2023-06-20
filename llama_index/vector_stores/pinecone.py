@@ -19,7 +19,18 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    DEFAULT_TEXT_KEY,
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
+
+ID_KEY = "id"
+VECTOR_KEY = "values"
+SPARSE_VECTOR_KEY = "sparse_values"
+METADATA_KEY = "metadata"
+
+DEFAULT_BATCH_SIZE = 100
 
 _logger = logging.getLogger(__name__)
 
@@ -135,6 +146,8 @@ class PineconeVectorStore(VectorStore):
         insert_kwargs: Optional[Dict] = None,
         add_sparse_vector: bool = False,
         tokenizer: Optional[Callable] = None,
+        text_key: str = DEFAULT_TEXT_KEY,
+        batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -172,6 +185,8 @@ class PineconeVectorStore(VectorStore):
         if tokenizer is None:
             tokenizer = get_default_tokenizer()
         self._tokenizer = tokenizer
+        self._text_key = text_key
+        self._batch_size = batch_size
 
     def add(
         self,
@@ -184,32 +199,33 @@ class PineconeVectorStore(VectorStore):
 
         """
         ids = []
+        entries = []
         for result in embedding_results:
             node_id = result.id
             node = result.node
 
-            metadata = {
-                "text": node.text or "",
-                "id": node_id,
-            }
-
-            additional_metadata = node_to_metadata_dict(node)
-            metadata.update(additional_metadata)
+            metadata = node_to_metadata_dict(node)
+            metadata[self._text_key] = node.text or ""
 
             entry = {
-                "id": node_id,
-                "values": result.embedding,
-                "metadata": metadata,
+                ID_KEY: node_id,
+                VECTOR_KEY: result.embedding,
+                METADATA_KEY: metadata,
             }
             if self._add_sparse_vector:
                 sparse_vector = generate_sparse_vectors(
                     [node.get_text()], self._tokenizer
                 )[0]
-                entry.update({"sparse_values": sparse_vector})
-            self._pinecone_index.upsert(
-                [entry], namespace=self._namespace, **self._insert_kwargs
-            )
+                entry[SPARSE_VECTOR_KEY] = sparse_vector
+
             ids.append(node_id)
+            entries.append(entry)
+        self._pinecone_index.upsert(
+            entries,
+            namespace=self._namespace,
+            batch_size=self._batch_size,
+            **self._insert_kwargs,
+        )
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -222,7 +238,9 @@ class PineconeVectorStore(VectorStore):
         """
         # delete by filtering on the doc_id metadata
         self._pinecone_index.delete(
-            filter={"doc_id": {"$eq": ref_doc_id}}, **delete_kwargs
+            filter={"doc_id": {"$eq": ref_doc_id}},
+            namespace=self._namespace,
+            **delete_kwargs,
         )
 
     @property
@@ -285,11 +303,11 @@ class PineconeVectorStore(VectorStore):
         top_k_ids = []
         top_k_scores = []
         for match in response.matches:
-            text = match.metadata["text"]
-            id = match.metadata["id"]
+            text = match.metadata[self._text_key]
+            id = match.id
             try:
                 extra_info, node_info, relationships = metadata_dict_to_node(
-                    match.metadata
+                    match.metadata, text_key=self._text_key
                 )
             except Exception:
                 _logger.debug(

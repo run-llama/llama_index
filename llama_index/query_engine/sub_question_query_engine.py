@@ -93,9 +93,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         sub_questions = self._question_gen.generate(self._metadatas, query_bundle)
 
+        colors = get_color_mapping([str(i) for i in range(len(sub_questions))])
+
         if self._verbose:
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
-            colors = get_color_mapping([str(i) for i in range(len(sub_questions))])
 
         if self._use_async:
             tasks = [
@@ -124,9 +125,10 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             self._metadatas, query_bundle
         )
 
+        colors = get_color_mapping([str(i) for i in range(len(sub_questions))])
+
         if self._verbose:
             print_text(f"Generated {len(sub_questions)} sub questions.\n")
-            colors = get_color_mapping([str(i) for i in range(len(sub_questions))])
 
         tasks = [
             self._aquery_subq(sub_q, color=colors[str(ind)])

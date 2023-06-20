@@ -5,7 +5,7 @@ from threading import Thread
 from typing import Any, List, Generator, Optional, Tuple
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
@@ -200,7 +200,7 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
         """
 
         llm_payload = {**prompt_args}
-        llm_payload["template"] = prompt
+        llm_payload[EventPayload.TEMPLATE] = prompt
         event_id = self.callback_manager.on_event_start(
             CBEventType.LLM, payload=llm_payload
         )
@@ -230,7 +230,15 @@ class HuggingFaceLLMPredictor(BaseLLMPredictor):
 
         self.callback_manager.on_event_end(
             CBEventType.LLM,
-            payload={"response": completion, "formatted_prompt": formatted_prompt},
+            payload={
+                EventPayload.RESPONSE: completion,
+                EventPayload.PROMPT: formatted_prompt,
+                # deprecated
+                "formatted_prompt_tokens_count": inputs["input_ids"].size(1),
+                "prediction_tokens_count": len(completion_tokens),
+                "total_tokens_used": len(completion_tokens)
+                + inputs["input_ids"].size(1),
+            },
             event_id=event_id,
         )
         return completion, formatted_prompt

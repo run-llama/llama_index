@@ -96,10 +96,10 @@ DEFAULT_REFINE_PROMPT = Prompt(
 
 
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
-    "Context information is below. \n"
+    "Context information is below.\n"
     "---------------------\n"
-    "{context_str}"
-    "\n---------------------\n"
+    "{context_str}\n"
+    "---------------------\n"
     "Given the context information and not prior knowledge, "
     "answer the question: {query_str}\n"
 )

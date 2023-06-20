@@ -1,6 +1,6 @@
 Pandas Query Engine
 =======================
 
-.. automodule:: llama_index.indices.struct_store.pandas_query
+.. automodule:: llama_index.query_engine.pandas_query_engine
    :members:
    :inherited-members:

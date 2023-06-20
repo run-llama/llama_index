@@ -3,11 +3,15 @@
 Contains simple parser for mbox files.
 
 """
+import logging
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
 from llama_index.readers.schema.base import Document
+
+logger = logging.getLogger(__name__)
 
 
 class MboxReader(BaseReader):
@@ -32,7 +36,7 @@ class MboxReader(BaseReader):
         *args: Any,
         max_count: int = 0,
         message_format: str = DEFAULT_MESSAGE_FORMAT,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         try:
@@ -65,32 +69,36 @@ class MboxReader(BaseReader):
 
         # Iterate through all messages
         for _, _msg in enumerate(mbox):
-            msg: mailbox.mboxMessage = _msg
-            # Parse multipart messages
-            if msg.is_multipart():
-                for part in msg.walk():
-                    ctype = part.get_content_type()
-                    cdispo = str(part.get("Content-Disposition"))
-                    if ctype == "text/plain" and "attachment" not in cdispo:
-                        content = part.get_payload(decode=True)  # decode
-                        break
-            # Get plain message payload for non-multipart messages
-            else:
-                content = msg.get_payload(decode=True)
+            try:
+                msg: mailbox.mboxMessage = _msg
+                # Parse multipart messages
+                if msg.is_multipart():
+                    for part in msg.walk():
+                        ctype = part.get_content_type()
+                        cdispo = str(part.get("Content-Disposition"))
+                        if ctype == "text/plain" and "attachment" not in cdispo:
+                            content = part.get_payload(decode=True)  # decode
+                            break
+                # Get plain message payload for non-multipart messages
+                else:
+                    content = msg.get_payload(decode=True)
 
-            # Parse message HTML content and remove unneeded whitespace
-            soup = BeautifulSoup(content)
-            stripped_content = " ".join(soup.get_text().split())
-            # Format message to include date, sender, receiver and subject
-            msg_string = self.message_format.format(
-                _date=msg["date"],
-                _from=msg["from"],
-                _to=msg["to"],
-                _subject=msg["subject"],
-                _content=stripped_content,
-            )
-            # Add message string to results
-            results.append(msg_string)
+                # Parse message HTML content and remove unneeded whitespace
+                soup = BeautifulSoup(content)
+                stripped_content = " ".join(soup.get_text().split())
+                # Format message to include date, sender, receiver and subject
+                msg_string = self.message_format.format(
+                    _date=msg["date"],
+                    _from=msg["from"],
+                    _to=msg["to"],
+                    _subject=msg["subject"],
+                    _content=stripped_content,
+                )
+                # Add message string to results
+                results.append(msg_string)
+            except Exception as e:
+                logger.warning(f"Failed to parse message:\n{_msg}\n with exception {e}")
+
             # Increment counter and return if max count is met
             i += 1
             if self.max_count > 0 and i >= self.max_count:

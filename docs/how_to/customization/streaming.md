@@ -67,6 +67,7 @@ maxdepth: 1
 ---
 
 ../../examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
+../../examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
 ```
 
 

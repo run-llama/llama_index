@@ -55,6 +55,9 @@ class VectorStoreQueryMode(str, Enum):
     LOGISTIC_REGRESSION = "logistic_regression"
     LINEAR_REGRESSION = "linear_regression"
 
+    # maximum marginal relevance
+    MMR = "mmr"
+
 
 class ExactMatchFilter(BaseModel):
     """Exact match metadata filter for vector stores."""
@@ -122,6 +125,9 @@ class VectorStoreQuery:
 
     # metadata filters
     filters: Optional[MetadataFilters] = None
+
+    # only for mmr
+    mmr_threshold: Optional[float] = None
 
 
 @runtime_checkable

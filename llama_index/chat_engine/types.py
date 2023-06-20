@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from llama_index.response.schema import RESPONSE_TYPE
 
@@ -64,4 +64,4 @@ class ChatMode(str, Enum):
 """
 Chat history is a list of (human_message, assistant_message) tuples.
 """
-ChatHistoryType = List[Tuple[str, str]]
+ChatHistoryType = List[Tuple[str, Union[str, RESPONSE_TYPE]]]

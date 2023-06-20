@@ -22,6 +22,8 @@ as the storage backend for `VectorStoreIndex`.
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
+- DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
+- MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart] (https://www.mongodb.com/atlas/database).
 
 A detailed API reference is [found here](/reference/indices/vector_store.rst).
 
@@ -283,11 +285,48 @@ vector_store = MyScaleVectorStore(
 )
 ```
 
+**DocArray**
+
+```python
+from llama_index.vector_stores import (
+    DocArrayHnswVectorStore, 
+    DocArrayInMemoryVectorStore,
+)
+
+# construct vector store
+vector_store = DocArrayHnswVectorStore(work_dir='hnsw_index')
+
+# alternatively, construct the in-memory vector store
+vector_store = DocArrayInMemoryVectorStore()
+```
+
+**MongoDBAtlas**
+```python
+# Provide URI to constructor, or use environment variable
+import pymongo
+from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
+from llama_index.indices.vector_store.base import VectorStoreIndex
+from llama_index.storage.storage_context import StorageContext
+from llama_index.readers.file.base import SimpleDirectoryReader
+
+# mongo_uri = os.environ["MONGO_URI"]
+mongo_uri = "mongodb+srv://<username>:<password>@<host>?retryWrites=true&w=majority"
+mongodb_client = pymongo.MongoClient(mongo_uri)
+
+# construct store
+store = MongoDBAtlasVectorSearch(mongodb_client)
+storage_context = StorageContext.from_defaults(vector_store=store)
+uber_docs = SimpleDirectoryReader(input_files=["../data/10k/uber_2021.pdf"]).load_data()
+
+# construct index
+index = VectorStoreIndex.from_documents(uber_docs, storage_context=storage_context)
+```
+
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
 
 ## Loading Data from Vector Stores using Data Connector
 
-LlamaIndex supports oading data from the following sources. See [Data Connectors](/how_to/data_connectors.md) for more details and API documentation.
+LlamaIndex supports loading data from the following sources. See [Data Connectors](../connector/root.md) for more details and API documentation.
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
@@ -385,7 +424,7 @@ documents = reader.load_data(
 
 ```
 
-[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/examples/data_connectors).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/data_connectors).
 
 
 ```{toctree}
@@ -394,6 +433,7 @@ caption: Examples
 maxdepth: 1
 ---
 ../../examples/vector_stores/SimpleIndexDemo.ipynb
+../../examples/vector_stores/SimpleIndexDemoMMR.ipynb
 ../../examples/vector_stores/RedisIndexDemo.ipynb
 ../../examples/vector_stores/QdrantIndexDemo.ipynb
 ../../examples/vector_stores/FaissIndexDemo.ipynb
@@ -410,4 +450,7 @@ maxdepth: 1
 ../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
 ../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
+../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb
+../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
+../../examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
 ```

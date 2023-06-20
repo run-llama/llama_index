@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Tuple
 
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.node import IndexNode, Node, NodeWithScore
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.query.base import BaseQueryEngine
@@ -51,7 +51,9 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
     ) -> RESPONSE_TYPE:
         """Query a single index."""
         index_id = index_id or self._graph.root_id
-        event_id = self.callback_manager.on_event_start(CBEventType.QUERY)
+        event_id = self.callback_manager.on_event_start(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        )
 
         # get query engine
         if index_id in self._custom_query_engines:
@@ -62,7 +64,9 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         retrieve_event_id = self.callback_manager.on_event_start(CBEventType.RETRIEVE)
         nodes = query_engine.retrieve(query_bundle)
         self.callback_manager.on_event_end(
-            CBEventType.RETRIEVE, payload={"nodes": nodes}, event_id=retrieve_event_id
+            CBEventType.RETRIEVE,
+            payload={EventPayload.NODES: nodes},
+            event_id=retrieve_event_id,
         )
 
         if self._recursive:
@@ -81,7 +85,11 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         else:
             response = query_engine.synthesize(query_bundle, nodes)
 
-        self.callback_manager.on_event_end(CBEventType.QUERY, event_id=event_id)
+        self.callback_manager.on_event_end(
+            CBEventType.QUERY,
+            payload={EventPayload.RESPONSE: response},
+            event_id=event_id,
+        )
         return response
 
     def _fetch_recursive_nodes(

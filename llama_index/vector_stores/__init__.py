@@ -16,8 +16,13 @@ from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.vector_stores.redis import RedisVectorStore
 from llama_index.vector_stores.simple import SimpleVectorStore
+from llama_index.vector_stores.tair import TairVectorStore
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.docarray import (
+    DocArrayHnswVectorStore,
+    DocArrayInMemoryVectorStore,
+)
 
 __all__ = [
     "SimpleVectorStore",
@@ -35,5 +40,8 @@ __all__ = [
     "DeepLakeVectorStore",
     "MyScaleVectorStore",
     "LanceDBVectorStore",
+    "TairVectorStore",
+    "DocArrayInMemoryVectorStore",
+    "DocArrayHnswVectorStore",
     "SupabaseVectorStore",
 ]

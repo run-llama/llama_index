@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, Generator, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
@@ -189,7 +189,7 @@ class ResponseSynthesizer:
         response = self._prepare_response_output(response_str, source_nodes)
         self._callback_manager.on_event_end(
             CBEventType.SYNTHESIZE,
-            payload={"response": response},
+            payload={EventPayload.RESPONSE: response},
             event_id=event_id,
         )
 
@@ -228,7 +228,7 @@ class ResponseSynthesizer:
         response = self._prepare_response_output(response_str, source_nodes)
         self._callback_manager.on_event_end(
             CBEventType.SYNTHESIZE,
-            payload={"response": response},
+            payload={EventPayload.RESPONSE: response},
             event_id=event_id,
         )
 

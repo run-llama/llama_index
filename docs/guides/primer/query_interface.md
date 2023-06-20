@@ -13,7 +13,7 @@ Querying an index or a graph involves a three main components:
 ## Design Philosophy: Progressive Disclosure of Complexity
 
 Progressive disclosure of complexity is a design philosophy that aims to strike 
-ka balance between the needs of beginners and experts. The idea is that you should 
+a balance between the needs of beginners and experts. The idea is that you should 
 give users the simplest and most straightforward interface or experience possible 
 when they first encounter a system or product, but then gradually reveal more 
 complexity and advanced features as users become more familiar with the system. 
