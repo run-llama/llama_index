@@ -36,7 +36,7 @@ class MboxReader(BaseReader):
         *args: Any,
         max_count: int = 0,
         message_format: str = DEFAULT_MESSAGE_FORMAT,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         try:
