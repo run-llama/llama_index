@@ -4,8 +4,11 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.schema import ChatGeneration
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatHistoryType
-from llama_index.chat_engine.utils import (is_chat_model, to_chat_buffer,
-                                           to_langchain_chat_history)
+from llama_index.chat_engine.utils import (
+    is_chat_model,
+    to_chat_buffer,
+    to_langchain_chat_history,
+)
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.prompts.base import Prompt
