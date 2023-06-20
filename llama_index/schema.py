@@ -254,7 +254,7 @@ class TextNode(BaseNode):
             [
                 self.metadata_template.format(key=key, value=str(value))
                 for key, value in self.metadata.items()
-                if key in self.usable_metadata
+                if self.usable_metadata is None or key in self.usable_metadata
             ]
         )
 
