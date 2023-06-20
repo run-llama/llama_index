@@ -141,3 +141,8 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def reset(self) -> None:
         # Clear chat history
         self._chat_history = []
+
+    @property
+    def chat_history(self) -> ChatHistoryType:
+        """Get chat history as human and ai message pairs."""
+        return [(str(human), str(ai)) for human, ai in self._chat_history]
