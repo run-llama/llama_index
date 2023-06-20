@@ -80,6 +80,10 @@ class BaseNode(BaseModel):
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="A flat dictionary of metadata fields"
     )
+    usable_metadata: List[str] = Field(
+        default_factory=list,
+        description="Metadata keys that are used during retrieval.",
+    )
     relationships: Dict[DataRelationship, RelatedNodeInfo] = Field(
         default_factory=dict,
         description="A mapping of relationships to other node information.",
@@ -240,6 +244,7 @@ class TextNode(BaseNode):
             [
                 self.metadata_template.format(key=key, value=str(value))
                 for key, value in self.metadata.items()
+                if key in self.usable_metadata
             ]
         )
 
