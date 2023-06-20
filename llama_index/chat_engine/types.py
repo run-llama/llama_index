@@ -64,4 +64,4 @@ class ChatMode(str, Enum):
 """
 Chat history is a list of (human_message, assistant_message) tuples.
 """
-ChatHistoryType = List[Tuple[str, str]]
+ChatHistoryType = List[Tuple[str, str | RESPONSE_TYPE]]
