@@ -6,6 +6,7 @@
 - multi-selector support in router query engine (#6518)
 - pydantic selector support in router query engine using OpenAI function calling API (#6518)
 - streaming response support in `CondenseQuestionChatEngine` and `SimpleChatEngine` (#6524) 
+- metadata filtering support in `QdrantVectorStore` (#6476)
 
 ### Bug Fixes / Nits
 - better error handling in the mbox reader (#6248)
