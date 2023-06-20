@@ -68,7 +68,7 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         # June 2023:
         #   AI21's supported max input size for
         #   J2 models is 8K (8192 tokens to be exact)
-        # Reference: <https://docs.ai21.com/changelog/increased-context-length-for-j2-foundation-models>
+        # Reference: <https://docs.ai21.com/changelog/increased-context-length-for-j2-foundation-models>  # noqa
         return LLMMetadata(
             context_window=AI21_J2_CONTEXT_WINDOW, num_output=llm.maxTokens
         )
