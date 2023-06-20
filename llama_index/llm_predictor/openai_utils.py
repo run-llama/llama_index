@@ -81,7 +81,8 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
 
     if modelname in DISCONTINUED_MODELS:
         raise ValueError(
-            f"OpenAI model {modelname} has been discontinued. Please choose another model."
+            f"OpenAI model {modelname} has been discontinued. "
+            "Please choose another model."
         )
 
     context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
