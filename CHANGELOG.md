@@ -1,9 +1,20 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.29] - 2023-06-20
+
+### New Features
+
+- query planning tool with OpenAI Function API (#6520)
+- docs: example of kg+vector index (#6497)
+- Set context window sizes for Cohere and AI21(J2 model) (#6485)
 
 ### Bug Fixes / Nits
 - add default input size for Cohere and AI21 (#6485)
+- docs: replace comma with colon in dict object (#6439)
+- extra space in prompt and error message update (#6443)
+- [Issue 6417] Fix prompt_templates docs page (#6499)
+- Rip out monkey patch and update model to context window mapping (#6490)
+
 
 ## [v0.6.28] - 2023-06-19
 
