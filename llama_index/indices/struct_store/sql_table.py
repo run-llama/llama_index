@@ -36,17 +36,9 @@ class SQLTableIndex(BaseStructStoreIndex[SQLStructTable]):
         vector_index (Optional[VectorStoreIndex]): Vector index to use for
             storing table data.
         service_context (Optional[ServiceContext]): Service context.
-        table_names (Optional[List[str]]): Names of the tables to use
-            for extracting data.
-            You can specify either table_names or tables or neither.
-            If specified, only these tables will be used.
-        tables (Optional[List[Table]]): SQLAlchemy Table object to use.
-            Specifying the Table object explicitly, instead of
-            the table name, allows you to pass in a view.
-            You can specify either table_names or tables or neither.
-            If specified, only these tables will be used.
-
-
+        tables (Optional[List[Union[str, Table]]]): List of tables to use.
+        extra_context_dict (Optional[Dict[str, str]]): Extra context dict. Keys
+            should be table names.
     """
 
     index_struct_cls = SQLStructTable
