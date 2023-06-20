@@ -1,6 +1,5 @@
 from langchain.chat_models import ChatOpenAI
-from pydantic import BaseModel
-from typing import Any, List, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.program.openai_program import (
@@ -12,21 +11,13 @@ from llama_index.selectors.prompts import (
     DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,
     DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL,
 )
-from llama_index.selectors.types import BaseSelector, SelectorResult
+from llama_index.selectors.types import (
+    BaseSelector,
+    SelectorResult,
+    MultiSelection,
+    SingleSelection,
+)
 from llama_index.tools.types import ToolMetadata
-
-
-class SingleSelection(BaseModel):
-    """A single selection of a choice."""
-
-    index: int
-    reason: str
-
-
-class MultiSelection(BaseModel):
-    """A multi-selection of choices."""
-
-    selections: List[SingleSelection]
 
 
 def _pydantic_output_to_selector_result(output: Any) -> SelectorResult:
@@ -35,12 +26,12 @@ def _pydantic_output_to_selector_result(output: Any) -> SelectorResult:
     Takes into account zero-indexing on answer indexes.
     """
     if isinstance(output, SingleSelection):
-        return SelectorResult(inds=[output.index - 1], reasons=[output.reason])
+        output.index -= 1
+        return SelectorResult(selections=[output])
     elif isinstance(output, MultiSelection):
-        return SelectorResult(
-            inds=[x.index - 1 for x in output.selections],
-            reasons=[x.reason for x in output.selections],
-        )
+        for idx in range(len(output.selections)):
+            output.selections[idx].index -= 1
+        return SelectorResult(selections=output.selections)
     else:
         raise ValueError(f"Unsupported output type: {type(output)}")
 

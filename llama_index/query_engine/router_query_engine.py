@@ -6,14 +6,15 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.list.base import ListIndex
+from llama_index.indices.response.tree_summarize import TreeSummarize
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.readers.schema.base import Document
-from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
+from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.selectors.llm_selectors import LLMSingleSelector, LLMMultiSelector
 from llama_index.selectors.types import BaseSelector
+from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
+from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.types import ToolMetadata
 
@@ -31,7 +32,8 @@ class RouterQueryEngine(BaseQueryEngine):
         query_engine_tools (Sequence[QueryEngineTool]): A sequence of candidate
             query engines. They must be wrapped as tools to expose metadata to
             the selector.
-        callback_manager (Optional[CallbackManager]): A callback manager.
+        service_context (Optional[ServiceContext]): A service context.
+        summarizer (Optional[TreeSummarize]): Tree summarizer to summarize sub-results.
 
     """
 
@@ -39,15 +41,20 @@ class RouterQueryEngine(BaseQueryEngine):
         self,
         selector: BaseSelector,
         query_engine_tools: Sequence[QueryEngineTool],
-        callback_manager: Optional[CallbackManager] = None,
+        service_context: Optional[ServiceContext] = None,
+        summarizer: Optional[TreeSummarize] = None,
     ) -> None:
+        self.service_context = service_context or ServiceContext.from_defaults()
         self._selector = selector
         self._query_engines = [x.query_engine for x in query_engine_tools]
         self._metadatas = [x.metadata for x in query_engine_tools]
+        self._summarizer = summarizer or TreeSummarize(
+            service_context=self.service_context,
+            text_qa_template=DEFAULT_TEXT_QA_PROMPT,
+            refine_template=DEFAULT_REFINE_PROMPT_SEL,
+        )
 
-        if len(query_engine_tools) > 0:
-            callback_manager = query_engine_tools[0].query_engine.callback_manager
-        super().__init__(callback_manager)
+        super().__init__(self.service_context.callback_manager)
 
     @classmethod
     def from_defaults(
@@ -55,6 +62,7 @@ class RouterQueryEngine(BaseQueryEngine):
         query_engine_tools: Sequence[QueryEngineTool],
         service_context: Optional[ServiceContext] = None,
         selector: Optional[BaseSelector] = None,
+        summarizer: Optional[TreeSummarize] = None,
         select_multi: bool = False,
     ) -> "RouterQueryEngine":
         if selector is None and select_multi:
@@ -64,7 +72,12 @@ class RouterQueryEngine(BaseQueryEngine):
 
         assert selector is not None
 
-        return cls(selector, query_engine_tools)
+        return cls(
+            selector,
+            query_engine_tools,
+            service_context=service_context,
+            summarizer=summarizer,
+        )
 
     def _combine_responses(
         self, responses: List[RESPONSE_TYPE], query_bundle: QueryBundle
@@ -72,18 +85,13 @@ class RouterQueryEngine(BaseQueryEngine):
         """Combine multiple response from sub-engines."""
         logger.info("Combining responses from multiple query engines.")
 
-        response_docs = []
+        response_strs = []
         for response in responses:
-            if isinstance(response, StreamingResponse):
-                response_docs.append(Document(response.get_response().response))
-            else:
-                response_docs.append(Document(response.response))
+            response_strs.append(str(response))
 
-        summary_index = ListIndex.from_documents(response_docs)
+        summary = self._summarizer.get_response(query_bundle.query_str, response_strs)
 
-        query_engine = summary_index.as_query_engine(response_mode="tree_summarize")
-
-        return query_engine.query(query_bundle)
+        return summary
 
     async def _acombine_responses(
         self, responses: List[RESPONSE_TYPE], query_bundle: QueryBundle
@@ -91,18 +99,15 @@ class RouterQueryEngine(BaseQueryEngine):
         """Async combine multiple response from sub-engines."""
         logger.info("Combining responses from multiple query engines.")
 
-        response_docs = []
+        response_strs = []
         for response in responses:
-            if isinstance(response, StreamingResponse):
-                response_docs.append(Document(response.get_response().response))
-            else:
-                response_docs.append(Document(response.response))
+            response_strs.append(str(response))
 
-        summary_index = ListIndex.from_documents(response_docs)
+        summary = await self._summarizer.aget_response(
+            query_bundle.query_str, response_strs
+        )
 
-        query_engine = summary_index.as_query_engine(response_mode="tree_summarize")
-
-        return await query_engine.aquery(query_bundle)
+        return summary
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         event_id = self.callback_manager.on_event_start(
