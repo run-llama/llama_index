@@ -2,9 +2,7 @@
 
 
 from llama_index.tools.types import BaseTool
-from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.types import ToolMetadata
-from llama_index.response.schema import Response
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.data_structs.node import NodeWithScore, Node
 from typing import Dict, List, Any, Optional
@@ -104,7 +102,7 @@ class QueryPlanTool(BaseTool):
     @classmethod
     def from_defaults(
         cls,
-        query_engine_tools: List[QueryEngineTool],
+        query_engine_tools: List[BaseTool],
         response_synthesizer: Optional[ResponseSynthesizer] = None,
         name: Optional[str] = None,
         description_prefix: Optional[str] = None,
@@ -140,14 +138,16 @@ class QueryPlanTool(BaseTool):
 
         return metadata
 
-    def _execute_node(self, node: QueryNode, nodes_dict: Dict[str, QueryNode]) -> str:
+    def _execute_node(self, node: QueryNode, nodes_dict: Dict[int, QueryNode]) -> str:
         """Execute node."""
         print_text(f"Executing node {node.json()}\n", color="blue")
         if len(node.dependencies) > 0:
             print_text(
                 f"Executing {len(node.dependencies)} child nodes\n", color="pink"
             )
-            child_query_nodes = [nodes_dict[dep] for dep in node.dependencies]
+            child_query_nodes: List[QueryNode] = [
+                nodes_dict[dep] for dep in node.dependencies
+            ]
             # execute the child nodes first
             child_responses: List[str] = [
                 self._execute_node(child, nodes_dict) for child in child_query_nodes
@@ -165,11 +165,12 @@ class QueryPlanTool(BaseTool):
                 child_nodes.append(child_node)
             # use ResponseSynthesizer to combine results
             child_nodes_with_scores = [NodeWithScore(n, 1.0) for n in child_nodes]
-            response = self._response_synthesizer.synthesize(
+            response_obj = self._response_synthesizer.synthesize(
                 query_bundle=QueryBundle(node.query_str),
                 nodes=child_nodes_with_scores,
             )
-            return response
+            response = str(response_obj)
+
         else:
             # this is a leaf request, execute the query string using the specified tool
             tool = self._query_tools_dict[node.tool_name]
@@ -183,7 +184,7 @@ class QueryPlanTool(BaseTool):
         )
         return response
 
-    def _find_root_nodes(self, nodes_dict: Dict[str, QueryNode]) -> List[QueryNode]:
+    def _find_root_nodes(self, nodes_dict: Dict[int, QueryNode]) -> List[QueryNode]:
         """Find root node."""
         # the root node is the one that isn't a dependency of any other node
         node_counts = {node_id: 0 for node_id in nodes_dict.keys()}
