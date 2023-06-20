@@ -42,7 +42,7 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
         """Initialize params."""
         logger.warning(
             "PandasIndex is deprecated. \
-            Please directly use `PandasQueryEngine` instead."
+            Please directly use `PandasQueryEngine(df)` instead."
         )
 
         if nodes is not None:
@@ -60,8 +60,7 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.query_engine.pandas_query_engine import \
-            PandasQueryEngine
+        from llama_index.query_engine.pandas_query_engine import PandasQueryEngine
 
         return PandasQueryEngine.from_index(self, **kwargs)
 
