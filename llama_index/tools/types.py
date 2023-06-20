@@ -39,7 +39,7 @@ class BaseTool:
         pass
 
     @abstractmethod
-    def __call__(self, input: Any) -> None:
+    def __call__(self, input: Any) -> Any:
         pass
 
     def _process_langchain_tool_kwargs(

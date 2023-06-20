@@ -15,8 +15,14 @@ from langchain.llms import AI21
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.constants import (
+    AI21_J2_CONTEXT_WINDOW,
+    COHERE_CONTEXT_WINDOW,
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+)
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
+from llama_index.llm_predictor.openai_utils import openai_modelname_to_contextsize
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
     ErrorToRetry,
@@ -45,20 +51,28 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         raise ValueError("llm must be an instance of langchain.llms.base.LLM")
     if isinstance(llm, OpenAI):
         return LLMMetadata(
-            context_window=OpenAI().modelname_to_contextsize(llm.model_name),
+            context_window=openai_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens,
         )
     elif isinstance(llm, ChatOpenAI):
         return LLMMetadata(
-            context_window=OpenAI().modelname_to_contextsize(llm.model_name),
+            context_window=openai_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens or -1,
         )
     elif isinstance(llm, Cohere):
-        # TODO: figure out max input size for cohere
-        return LLMMetadata(num_output=llm.max_tokens)
+        # June 2023: Cohere's supported max input size for Generation models is 2048
+        # Reference: <https://docs.cohere.com/docs/tokens>
+        return LLMMetadata(
+            context_window=COHERE_CONTEXT_WINDOW, num_output=llm.max_tokens
+        )
     elif isinstance(llm, AI21):
-        # TODO: figure out max input size for AI21
-        return LLMMetadata(num_output=llm.maxTokens)
+        # June 2023:
+        #   AI21's supported max input size for
+        #   J2 models is 8K (8192 tokens to be exact)
+        # Reference: <https://docs.ai21.com/changelog/increased-context-length-for-j2-foundation-models>  # noqa
+        return LLMMetadata(
+            context_window=AI21_J2_CONTEXT_WINDOW, num_output=llm.maxTokens
+        )
     else:
         return LLMMetadata()
 
