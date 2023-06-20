@@ -22,7 +22,7 @@ from llama_index.constants import (
     DEFAULT_NUM_OUTPUTS,
 )
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
-from llama_index.llm_predictor.openai_utils import openai_modelname_to_contextsize
+from llama_index.llms.openai_utils import openai_modelname_to_contextsize
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
     ErrorToRetry,
