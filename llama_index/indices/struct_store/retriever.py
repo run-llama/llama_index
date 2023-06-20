@@ -23,7 +23,7 @@ class SQLTableRetriever(BaseRetriever):
         self,
         index: SQLTableIndex,
         query_tmpl: Optional[str] = None,
-        tables: Optional[Union[List[str], List[Table]]] = None,
+        tables: Optional[List[Union[str, Table]]] = None,
         **kwargs: Any
     ) -> None:
         self._index = index
@@ -38,17 +38,11 @@ class SQLTableRetriever(BaseRetriever):
         vector_store_index = self._index.vector_store_index
 
         # Specific table case. Use initialized tables if specified.
-        if self._tables or self._index._tables:
-            if self._tables:
-                tables = self._tables
-            if not tables and self._index._tables:
-                tables = self._index._tables
-            if not tables:
-                raise ValueError("No tables specified.")
+        if self._tables:
             vector_index_retriever = vector_store_index.as_retriever(similarity_top_k=1)
             tables = [
                 str(table.name) if isinstance(table, Table) else table
-                for table in tables
+                for table in self._tables
             ]
             scored_nodes: List[NodeWithScore] = []
             embed_model = self._index.service_context.embed_model
