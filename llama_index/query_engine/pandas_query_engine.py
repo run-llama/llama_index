@@ -95,7 +95,6 @@ class PandasQueryEngine(BaseQueryEngine):
     ) -> None:
         """Initialize params."""
         self._df = df
-        self._service_context = service_context
 
         self._head = head
         self._pandas_prompt = pandas_prompt or DEFAULT_PANDAS_PROMPT
@@ -103,10 +102,12 @@ class PandasQueryEngine(BaseQueryEngine):
         self._output_processor = output_processor or default_output_processor
         self._output_kwargs = output_kwargs or {}
         self._verbose = verbose
+        self._service_context = service_context or ServiceContext.from_defaults()
+
         super().__init__(self._service_context.callback_manager)
-    
+
     @classmethod
-    def from_index(cls, index: PandasIndex, **kwargs: Any):
+    def from_index(cls, index: PandasIndex, **kwargs: Any) -> "PandasQueryEngine":
         logger.warning(
             "PandasIndex is deprecated. "
             "Directly construct PandasQueryEngine with df instead."

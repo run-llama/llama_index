@@ -63,7 +63,7 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
         from llama_index.query_engine.pandas_query_engine import \
             PandasQueryEngine
 
-        return PandasQueryEngine(self, **kwargs)
+        return PandasQueryEngine.from_index(self, **kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> PandasStructTable:
         """Build index from documents."""
