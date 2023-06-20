@@ -90,9 +90,13 @@ class LLM(ABC):
 
     # ===== Async Endpoints =====
     @abstractmethod
-    async def achat(self, messages: Sequence[Message], **kwargs: Any) -> Awaitable[ChatResponseType]:
+    async def achat(
+        self, messages: Sequence[Message], **kwargs: Any
+    ) -> Awaitable[ChatResponseType]:
         pass
 
     @abstractmethod
-    async def acomplete(self, prompt: str, **kwargs) -> Awaitable[CompletionResponseType]:
+    async def acomplete(
+        self, prompt: str, **kwargs
+    ) -> Awaitable[CompletionResponseType]:
         pass
