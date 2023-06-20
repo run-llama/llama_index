@@ -8,6 +8,7 @@ from langchain.input import print_text
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.prompts import PandasPrompt
@@ -64,7 +65,7 @@ def default_output_processor(
         return err_string
 
 
-class NLPandasQueryEngine(BaseQueryEngine):
+class PandasQueryEngine(BaseQueryEngine):
     """GPT Pandas query.
 
     Convert natural language to Pandas python code.
@@ -82,18 +83,18 @@ class NLPandasQueryEngine(BaseQueryEngine):
 
     def __init__(
         self,
-        index: PandasIndex,
+        df: pd.DataFrame,
         instruction_str: Optional[str] = None,
         output_processor: Optional[Callable] = None,
         pandas_prompt: Optional[PandasPrompt] = None,
         output_kwargs: Optional[dict] = None,
         head: int = 5,
         verbose: bool = False,
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self.df = index.df
-        self._service_context = index.service_context
+        self._df = df
 
         self._head = head
         self._pandas_prompt = pandas_prompt or DEFAULT_PANDAS_PROMPT
@@ -101,20 +102,27 @@ class NLPandasQueryEngine(BaseQueryEngine):
         self._output_processor = output_processor or default_output_processor
         self._output_kwargs = output_kwargs or {}
         self._verbose = verbose
+        self._service_context = service_context or ServiceContext.from_defaults()
+
         super().__init__(self._service_context.callback_manager)
+
+    @classmethod
+    def from_index(cls, index: PandasIndex, **kwargs: Any) -> "PandasQueryEngine":
+        logger.warning(
+            "PandasIndex is deprecated. "
+            "Directly construct PandasQueryEngine with df instead."
+        )
+        return cls(df=index.df, service_context=index.service_context, **kwargs)
 
     def _get_table_context(self) -> str:
         """Get table context."""
-        return str(self.df.head(self._head))
+        return str(self._df.head(self._head))
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         context = self._get_table_context()
 
-        (
-            pandas_response_str,
-            formatted_prompt,
-        ) = self._service_context.llm_predictor.predict(
+        (pandas_response_str, _,) = self._service_context.llm_predictor.predict(
             self._pandas_prompt,
             df_str=context,
             query_str=query_bundle.query_str,
@@ -125,7 +133,7 @@ class NLPandasQueryEngine(BaseQueryEngine):
             print_text(f"> Pandas Instructions:\n" f"```\n{pandas_response_str}\n```\n")
         pandas_output = self._output_processor(
             pandas_response_str,
-            self.df,
+            self._df,
             **self._output_kwargs,
         )
         if self._verbose:
@@ -142,4 +150,5 @@ class NLPandasQueryEngine(BaseQueryEngine):
 
 
 # legacy
-GPTNLPandasQueryEngine = NLPandasQueryEngine
+NLPandasQueryEngine = PandasQueryEngine
+GPTNLPandasQueryEngine = PandasQueryEngine

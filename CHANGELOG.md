@@ -7,6 +7,9 @@
 - pydantic selector support in router query engine using OpenAI function calling API (#6518)
 - streaming response support in `CondenseQuestionChatEngine` and `SimpleChatEngine` (#6524) 
 
+### Breaking/Deprecated API Changes
+- Refactor PandasQueryEngine to take in df directly, deprecate PandasIndex (#6527)
+
 ## [v0.6.29] - 2023-06-20
 
 ### New Features
@@ -42,7 +45,7 @@
 - OpenAI Retrieval Function Agent (#6491)
 
 ### Breaking/Deprecated API Changes
-- Deprecated current token tracking (llm predicotr and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
+- Deprecated current token tracking (llm predictor and embed model will no longer track tokens in the future, please use the `TokenCountingCallback` (#6440)
 - Add maximal marginal relevance to the Simple Vector Store, which can be enabled as a query mode (#6446)
 
 ### Bug Fixes / Nits
