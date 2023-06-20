@@ -1,4 +1,4 @@
-from typing import Any, Awaitable, Dict, Optional, Sequence
+from typing import Any, Awaitable, Dict, Generator, Optional, Sequence
 
 from pydantic import BaseModel, Field
 from llama_index.llm_predictor.base import LLMMetadata
@@ -79,7 +79,7 @@ class OpenAI(LLM, BaseModel):
         }
         return model_kwargs
 
-    def _get_all_kwargs(self, **kwargs) -> Dict[str, Any]:
+    def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
             **self._model_kwargs,
             **kwargs,
@@ -110,7 +110,7 @@ class OpenAI(LLM, BaseModel):
             )
         else:
 
-            def gen():
+            def gen() -> Generator[ChatDeltaResponse, None, None]:
                 text = ""
                 for response in completion_with_retry(
                     is_chat_model=self._is_chat_model,
@@ -156,7 +156,7 @@ class OpenAI(LLM, BaseModel):
             )
         else:
 
-            def gen():
+            def gen() -> Generator[CompletionDeltaResponse, None, None]:
                 text = ""
                 for response in completion_with_retry(
                     is_chat_model=self._is_chat_model,
@@ -201,7 +201,7 @@ class OpenAI(LLM, BaseModel):
         return self.chat(messages, **kwargs)
 
     async def acomplete(
-        self, prompt: str, **kwargs
+        self, prompt: str, **kwargs: Any
     ) -> Awaitable[CompletionResponseType]:
         # TODO: implement async complete
-        return self.acomplete(prompt, **kwargs)
+        return self.complete(prompt, **kwargs)

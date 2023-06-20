@@ -47,8 +47,9 @@ def completion_response_to_chat_response(
         )
     elif isinstance(completion_response, Generator):
 
-        def gen():
+        def gen() -> Generator[ChatDeltaResponse, None, None]:
             for delta in completion_response:
+                assert isinstance(delta, CompletionDeltaResponse)
                 yield ChatDeltaResponse(
                     message=ChatMessage(role="assistant", content=delta.text),
                     delta=delta.delta,
@@ -63,7 +64,7 @@ def completion_response_to_chat_response(
 
 def chat_response_to_completion_response(
     chat_response: ChatResponseType,
-) -> None:
+) -> CompletionResponseType:
     """Convert a chat response to a completion response."""
     if isinstance(chat_response, ChatResponse):
         return CompletionResponse(
@@ -72,7 +73,7 @@ def chat_response_to_completion_response(
         )
     elif isinstance(chat_response, Generator):
 
-        def gen():
+        def gen() -> Generator[CompletionDeltaResponse, None, None]:
             for delta in chat_response:
                 yield CompletionDeltaResponse(
                     text=delta.message.content,

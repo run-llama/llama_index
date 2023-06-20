@@ -97,6 +97,6 @@ class LLM(ABC):
 
     @abstractmethod
     async def acomplete(
-        self, prompt: str, **kwargs
+        self, prompt: str, **kwargs: Any
     ) -> Awaitable[CompletionResponseType]:
         pass
