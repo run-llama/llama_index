@@ -9,6 +9,7 @@
 
 ### Bug Fixes / Nits
 - better error handling in the mbox reader (#6248)
+- fix for sorted nodes in `PrevNextNodePostprocessor` (#6048)
 
 ### Breaking/Deprecated API Changes
 - Refactor PandasQueryEngine to take in df directly, deprecate PandasIndex (#6527)
