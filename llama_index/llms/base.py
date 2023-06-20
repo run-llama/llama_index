@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Generator, Sequence, Union
+from typing import Generator, Optional, Sequence, Union
 
 from pydantic import BaseModel, Field
 
@@ -20,24 +20,22 @@ class FunctionMessage(ChatMessage):
 
 # ===== Generic Model Output - Chat =====
 class ChatResponse(BaseModel):
-    role: str
-    text: str
+    message: Message
+    raw: Optional[dict] = None
 
 
-class ChatDeltaResponse(BaseModel):
-    role: str
+class ChatDeltaResponse(ChatResponse):
     delta: str
-    text: str
 
 
 # ===== Generic Model Output - Completion =====
 class CompletionResponse(BaseModel):
     text: str
+    raw: Optional[dict] = None
 
 
-class CompletionDeltaResponse(BaseModel):
+class CompletionDeltaResponse(CompletionResponse):
     delta: str
-    text: str
 
 
 CompletionResponseType = Union[

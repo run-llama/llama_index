@@ -1,9 +1,15 @@
+from typing import Generator, Sequence
 
-
-
-from typing import Sequence
-
-from llama_index.llms.base import ChatMessage, Message
+from llama_index.llms.base import (
+    ChatDeltaResponse,
+    ChatMessage,
+    ChatResponse,
+    ChatResponseType,
+    CompletionDeltaResponse,
+    CompletionResponse,
+    CompletionResponseType,
+    Message,
+)
 
 
 def messages_to_prompt(messages: Sequence[Message]) -> str:
@@ -28,3 +34,55 @@ def messages_to_prompt(messages: Sequence[Message]) -> str:
 def prompt_to_messages(prompt: str) -> Sequence[Message]:
     """Convert a string prompt to a sequence of messages."""
     return [ChatMessage(role="user", content=prompt)]
+
+
+def completion_response_to_chat_response(
+    completion_response: CompletionResponseType,
+) -> ChatResponseType:
+    """Convert a completion response to a chat response."""
+    if isinstance(completion_response, CompletionResponse):
+        return ChatResponse(
+            message=ChatMessage(role="assistant", content=completion_response.text),
+            raw=completion_response.raw,
+        )
+    elif isinstance(
+        completion_response, Generator[CompletionDeltaResponse, None, None]
+    ):
+
+        def gen():
+            for delta in completion_response:
+                yield ChatDeltaResponse(
+                    message=ChatMessage(role="assistant", content=delta.text),
+                    delta=delta.delta,
+                    raw=delta.raw,
+                )
+
+        return gen()
+
+    else:
+        return ValueError("Invalid completion response type.")
+
+
+def chat_response_to_completion_response(
+    chat_response: ChatResponseType,
+) -> None:
+    """Convert a chat response to a completion response."""
+    if isinstance(chat_response, ChatResponse):
+        return CompletionResponse(
+            text=chat_response.message.content,
+            raw=chat_response.raw,
+        )
+    elif isinstance(chat_response, Generator[ChatDeltaResponse, None, None]):
+
+        def gen():
+            for delta in chat_response:
+                yield CompletionDeltaResponse(
+                    text=delta.message.content,
+                    delta=delta.delta,
+                    raw=delta.raw,
+                )
+
+        return gen()
+
+    else:
+        return ValueError("Invalid chat response type.")

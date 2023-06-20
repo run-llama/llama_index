@@ -1,10 +1,11 @@
-from typing import Any, Dict, Generator, Sequence
+from typing import Any, Dict, Sequence
 
 from pydantic import BaseModel, Field
 
 from llama_index.llms.base import (
     LLM,
     ChatDeltaResponse,
+    ChatMessage,
     ChatResponse,
     ChatResponseType,
     CompletionDeltaResponse,
@@ -12,7 +13,12 @@ from llama_index.llms.base import (
     CompletionResponseType,
     Message,
 )
-from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
+from llama_index.llms.generic_utils import (
+    chat_response_to_completion_response,
+    completion_response_to_chat_response,
+    messages_to_prompt,
+    prompt_to_messages,
+)
 from llama_index.llms.openai_utils import (
     completion_with_retry,
     is_chat_model,
@@ -34,13 +40,17 @@ class OpenAI(LLM, BaseModel):
         if self.is_chat_model:
             return self._chat(messages, **kwargs)
         else:
+            # normalize input
             prompt = messages_to_prompt(messages)
-            return self._complete(prompt, **kwargs)
+            completion_response = self._complete(prompt, **kwargs)
+            # normalize output
+            return completion_response_to_chat_response(completion_response)
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponseType:
         if self.is_chat_model:
             messages = prompt_to_messages(prompt)
-            return self._chat(messages, **kwargs)
+            chat_response = self._chat(messages, **kwargs)
+            return chat_response_to_completion_response(chat_response)
         else:
             return self._complete(prompt, **kwargs)
 
@@ -68,8 +78,11 @@ class OpenAI(LLM, BaseModel):
             role = response["choices"][0]["message"]["role"]
             text = response["choices"][0]["message"]["content"]
             return ChatResponse(
-                role=role,
-                text=text,
+                message=ChatMessage(
+                    role=role,
+                    content=text,
+                ),
+                raw=response,
             )
         else:
 
@@ -86,9 +99,12 @@ class OpenAI(LLM, BaseModel):
                     delta = delta["choices"][0]["delta"].get("content", "")
                     text += delta
                     yield ChatDeltaResponse(
-                        role=role,
+                        message=ChatMessage(
+                            role=role,
+                            content=text,
+                        ),
                         delta=delta,
-                        text=text,
+                        raw=response,
                     )
 
             return gen()
@@ -107,6 +123,7 @@ class OpenAI(LLM, BaseModel):
             text = response["choices"][0]["text"]
             return CompletionResponse(
                 text=text,
+                raw=response,
             )
         else:
 
@@ -123,6 +140,7 @@ class OpenAI(LLM, BaseModel):
                     yield CompletionDeltaResponse(
                         delta=delta,
                         text=text,
+                        raw=response,
                     )
 
             return gen()
