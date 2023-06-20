@@ -88,15 +88,15 @@ class OpenAI(LLM, BaseModel):
 
             def gen():
                 text = ""
-                for delta in completion_with_retry(
+                for response in completion_with_retry(
                     model=self.model,
                     max_retries=self.max_retries,
                     messages=message_dicts,
                     stream=self.stream,
                     **params,
                 ):
-                    role = delta["choices"][0]["delta"].get("role", "assistant")
-                    delta = delta["choices"][0]["delta"].get("content", "")
+                    role = response["choices"][0]["delta"].get("role", "assistant")
+                    delta = response["choices"][0]["delta"].get("content", "")
                     text += delta
                     yield ChatDeltaResponse(
                         message=ChatMessage(

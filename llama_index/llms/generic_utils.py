@@ -45,9 +45,7 @@ def completion_response_to_chat_response(
             message=ChatMessage(role="assistant", content=completion_response.text),
             raw=completion_response.raw,
         )
-    elif isinstance(
-        completion_response, Generator[CompletionDeltaResponse, None, None]
-    ):
+    elif isinstance(completion_response, Generator):
 
         def gen():
             for delta in completion_response:
@@ -72,7 +70,7 @@ def chat_response_to_completion_response(
             text=chat_response.message.content,
             raw=chat_response.raw,
         )
-    elif isinstance(chat_response, Generator[ChatDeltaResponse, None, None]):
+    elif isinstance(chat_response, Generator):
 
         def gen():
             for delta in chat_response:
