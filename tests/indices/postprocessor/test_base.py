@@ -1,26 +1,27 @@
 """Node postprocessor tests."""
 
 from pathlib import Path
-import pytest
-from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
+from typing import Any, Dict, List, Tuple, cast
+from unittest.mock import patch
 
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
-from llama_index.indices.service_context import ServiceContext
-from llama_index.data_structs.node import Node, DocumentRelationship, NodeWithScore
+import pytest
+
+from llama_index.data_structs.node import DocumentRelationship, Node, NodeWithScore
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.postprocessor.node import (
-    PrevNextNodePostprocessor,
     KeywordNodePostprocessor,
+    PrevNextNodePostprocessor,
 )
 from llama_index.indices.postprocessor.node_recency import (
-    FixedRecencyPostprocessor,
     EmbeddingRecencyPostprocessor,
+    FixedRecencyPostprocessor,
     TimeWeightedPostprocessor,
 )
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor import LLMPredictor
-from unittest.mock import patch
-from llama_index.embeddings.openai import OpenAIEmbedding
-from typing import List, Any, Tuple, cast, Dict
+from llama_index.prompts.prompts import Prompt, SimpleInputPrompt
+from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -59,10 +60,11 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     """Test forward-back processor."""
 
     nodes = [
-        Node("Hello world.", doc_id="1"),
+        Node("Hello world.", doc_id="3"),
         Node("This is a test.", doc_id="2"),
-        Node("This is another test.", doc_id="3"),
+        Node("This is another test.", doc_id="1"),
         Node("This is a test v2.", doc_id="4"),
+        Node("This is a test v3.", doc_id="5"),
     ]
     nodes_with_scores = [NodeWithScore(node) for node in nodes]
     for i, node in enumerate(nodes):
@@ -84,9 +86,9 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     )
     processed_nodes = node_postprocessor.postprocess_nodes([nodes_with_scores[0]])
     assert len(processed_nodes) == 3
-    assert processed_nodes[0].node.get_doc_id() == "1"
+    assert processed_nodes[0].node.get_doc_id() == "3"
     assert processed_nodes[1].node.get_doc_id() == "2"
-    assert processed_nodes[2].node.get_doc_id() == "3"
+    assert processed_nodes[2].node.get_doc_id() == "1"
 
     # check for multiple nodes (nodes should not be duped)
     node_postprocessor = PrevNextNodePostprocessor(
@@ -97,7 +99,7 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     )
     assert len(processed_nodes) == 3
     assert processed_nodes[0].node.get_doc_id() == "2"
-    assert processed_nodes[1].node.get_doc_id() == "3"
+    assert processed_nodes[1].node.get_doc_id() == "1"
     assert processed_nodes[2].node.get_doc_id() == "4"
 
     # check for previous
@@ -108,9 +110,9 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         [nodes_with_scores[1], nodes_with_scores[2]]
     )
     assert len(processed_nodes) == 3
-    assert processed_nodes[0].node.get_doc_id() == "1"
+    assert processed_nodes[0].node.get_doc_id() == "3"
     assert processed_nodes[1].node.get_doc_id() == "2"
-    assert processed_nodes[2].node.get_doc_id() == "3"
+    assert processed_nodes[2].node.get_doc_id() == "1"
 
     # check that both works
     node_postprocessor = PrevNextNodePostprocessor(
@@ -120,7 +122,7 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     assert len(processed_nodes) == 3
     # nodes are sorted
     assert processed_nodes[0].node.get_doc_id() == "2"
-    assert processed_nodes[1].node.get_doc_id() == "3"
+    assert processed_nodes[1].node.get_doc_id() == "1"
     assert processed_nodes[2].node.get_doc_id() == "4"
 
     # check that num_nodes too high still works
@@ -128,12 +130,39 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         docstore=docstore, num_nodes=4, mode="both"
     )
     processed_nodes = node_postprocessor.postprocess_nodes([nodes_with_scores[2]])
+    assert len(processed_nodes) == 5
+    # nodes are sorted
+    assert processed_nodes[0].node.get_doc_id() == "3"
+    assert processed_nodes[1].node.get_doc_id() == "2"
+    assert processed_nodes[2].node.get_doc_id() == "1"
+    assert processed_nodes[3].node.get_doc_id() == "4"
+    assert processed_nodes[4].node.get_doc_id() == "5"
+
+    # check that nodes with gaps works
+    node_postprocessor = PrevNextNodePostprocessor(
+        docstore=docstore, num_nodes=1, mode="both"
+    )
+    processed_nodes = node_postprocessor.postprocess_nodes(
+        [nodes_with_scores[0], nodes_with_scores[4]]
+    )
     assert len(processed_nodes) == 4
     # nodes are sorted
-    assert processed_nodes[0].node.get_doc_id() == "1"
+    assert processed_nodes[0].node.get_doc_id() == "3"
     assert processed_nodes[1].node.get_doc_id() == "2"
-    assert processed_nodes[2].node.get_doc_id() == "3"
-    assert processed_nodes[3].node.get_doc_id() == "4"
+    assert processed_nodes[2].node.get_doc_id() == "4"
+    assert processed_nodes[3].node.get_doc_id() == "5"
+
+    # check that nodes with gaps works
+    node_postprocessor = PrevNextNodePostprocessor(
+        docstore=docstore, num_nodes=0, mode="both"
+    )
+    processed_nodes = node_postprocessor.postprocess_nodes(
+        [nodes_with_scores[0], nodes_with_scores[4]]
+    )
+    assert len(processed_nodes) == 2
+    # nodes are sorted
+    assert processed_nodes[0].node.get_doc_id() == "3"
+    assert processed_nodes[1].node.get_doc_id() == "5"
 
     # check that raises value error for invalid mode
     with pytest.raises(ValueError):
