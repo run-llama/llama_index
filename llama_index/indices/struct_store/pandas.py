@@ -1,6 +1,9 @@
 """Pandas csv structured store."""
 
+import logging
 from typing import Any, Optional, Sequence
+
+import pandas as pd
 
 from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import PandasStructTable
@@ -8,7 +11,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.struct_store.base import BaseStructStoreIndex
 
-import pandas as pd
+logger = logging.getLogger(__name__)
 
 
 class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
@@ -37,6 +40,11 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
+        logger.warning(
+            "PandasIndex is deprecated. \
+            Please directly use `PandasQueryEngine` instead."
+        )
+
         if nodes is not None:
             raise ValueError("We currently do not support indexing documents or nodes.")
         self.df = df
@@ -52,9 +60,10 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.indices.struct_store.pandas_query import NLPandasQueryEngine
+        from llama_index.query_engine.pandas_query_engine import \
+            PandasQueryEngine
 
-        return NLPandasQueryEngine(self, **kwargs)
+        return PandasQueryEngine(self, **kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> PandasStructTable:
         """Build index from documents."""
