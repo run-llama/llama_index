@@ -120,6 +120,9 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         knowledge_strs = response.strip().split("\n")
         results = []
         for text in knowledge_strs:
+            if text == "" or text[0] != "(":
+                # skip empty lines and non-triplets
+                continue
             tokens = text[1:-1].split(",")
             if len(tokens) != 3:
                 continue
@@ -241,8 +244,11 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             all_ref_doc_info[ref_doc_id] = ref_doc_info
         return all_ref_doc_info
 
-    def get_networkx_graph(self) -> Any:
+    def get_networkx_graph(self, limit: int = 100) -> Any:
         """Get networkx representation of the graph structure.
+
+        Args:
+            limit (int): Number of starting nodes to be included in the graph.
 
         NOTE: This function requires networkx to be installed.
         NOTE: This is a beta feature.
@@ -256,17 +262,18 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             )
 
         g = nx.Graph()
-        # add nodes
-        # TBD: for simple triplets, nodes could be omitted
+        # add nodes with limited number of starting nodes
         for node_name in self.index_struct.table.keys():
+            if limit <= 0:
+                break
             g.add_node(node_name)
+            limit -= 1
 
         # add edges
-        # TBD: limit for full graph scan could be added
-        rel_map = self._graph_store.get_rel_map(None, 1)
+        rel_map = self._graph_store.get_rel_map(list(g.nodes().keys()), 1)
         for keyword in rel_map.keys():
             for obj, rel in rel_map[keyword]:
-                g.add_edge(keyword, obj, title=rel)
+                g.add_edge(keyword, obj, label=rel, title=rel)
 
         return g
 
