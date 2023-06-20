@@ -28,7 +28,7 @@ from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
 # Backwards compatibility. Warn about deprecation.
 class SupabaseVectorStore(PgVectorStore):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> "SupabaseVectorStore":
         warnings.warn(
             "SupabaseVectorStore is deprecated, please use PgVectorStore instead",
             DeprecationWarning,
