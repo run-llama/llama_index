@@ -6,10 +6,12 @@
 - multi-selector support in router query engine (#6518)
 - pydantic selector support in router query engine using OpenAI function calling API (#6518)
 - streaming response support in `CondenseQuestionChatEngine` and `SimpleChatEngine` (#6524) 
+- metadata filtering support in `QdrantVectorStore` (#6476)
 
 ### Bug Fixes / Nits
 - better error handling in the mbox reader (#6248)
 - Fix blank similarity score when using weaviate (#6512)
+- fix for sorted nodes in `PrevNextNodePostprocessor` (#6048)
 
 ### Breaking/Deprecated API Changes
 - Refactor PandasQueryEngine to take in df directly, deprecate PandasIndex (#6527)
