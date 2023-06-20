@@ -64,10 +64,15 @@ class BaseNode(BaseModel):
 
     """
 
-    _id: str = ""
-    embedding: Optional[List[float]] = None
-    hash: Optional[str] = None
-    weight: float = 1.0
+    _id: Optional[str] = Field(default=None, description="Unique ID of the node.")
+    embedding: Optional[List[float]] = Field(
+        default=None, description="Embedding of the node."
+    )
+    hash: Optional[str] = Field(default=None, description="Hash of the node content.")
+    weight: float = Field(
+        default=1.0,
+        description="Optional field to weight the node similarity during retrieval.",
+    )
 
     """"
     metadata fields
@@ -80,8 +85,8 @@ class BaseNode(BaseModel):
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="A flat dictionary of metadata fields"
     )
-    usable_metadata: List[str] = Field(
-        default_factory=list,
+    usable_metadata: Optional[List[str]] = Field(
+        default=None,
         description="Metadata keys that are used during retrieval.",
     )
     relationships: Dict[DataRelationship, RelatedNodeInfo] = Field(
@@ -92,10 +97,10 @@ class BaseNode(BaseModel):
     def __post_init__(self) -> None:
         """Post init."""
         # assign doc_id if not set
-        if not self._id:
+        if self._id is None:
             self._id = get_new_id(set())
         if self.hash is None:
-            self.hash = self._generate_hash()
+            self.hash = self._generate_node_hash()
 
         if self.metadata is not None:
             _validate_is_flat_dict(self.metadata)
@@ -194,8 +199,12 @@ class BaseNode(BaseModel):
 
 class TextNode(BaseNode):
     content: str
-    start_char_idx: Optional[int] = None
-    end_char_idx: Optional[int] = None
+    start_char_idx: Optional[int] = Field(
+        default=None, description="Start char index of the node."
+    )
+    end_char_idx: Optional[int] = Field(
+        default=None, description="End char index of the node."
+    )
     text_template: str = Field(
         default=DEFAULT_TEXT_NODE_TMPL,
         description=(
@@ -240,6 +249,7 @@ class TextNode(BaseNode):
 
     def metadata_str(self) -> str:
         """Convert metadata to a string."""
+
         return self.metadata_seperator.join(
             [
                 self.metadata_template.format(key=key, value=str(value))
