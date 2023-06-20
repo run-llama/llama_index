@@ -7,6 +7,9 @@
 - pydantic selector support in router query engine using OpenAI function calling API (#6518)
 - streaming response support in `CondenseQuestionChatEngine` and `SimpleChatEngine` (#6524) 
 
+### Bug Fixes / Nits
+- better error handling in the mbox reader (#6248)
+
 ### Breaking/Deprecated API Changes
 - Refactor PandasQueryEngine to take in df directly, deprecate PandasIndex (#6527)
 
