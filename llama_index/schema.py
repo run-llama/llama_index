@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from pydantic import BaseModel, Field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from llama_index.utils import get_new_id
 
@@ -57,6 +57,9 @@ class RelatedNodeInfo(BaseModel):
     hash: Optional[str] = None
 
 
+RELATED_NODE_TYPE = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
+
+
 class BaseNode(BaseModel):
     """Base node Object.
 
@@ -89,7 +92,7 @@ class BaseNode(BaseModel):
         default=None,
         description="Metadata keys that are used during retrieval.",
     )
-    relationships: Dict[DataRelationship, RelatedNodeInfo] = Field(
+    relationships: Dict[DataRelationship, RELATED_NODE_TYPE] = Field(
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
@@ -146,40 +149,48 @@ class BaseNode(BaseModel):
         return self.relationships.get(DataRelationship.SOURCE, None)
 
     @property
-    def prev_node_id(self) -> str:
+    def prev_node_id(self) -> RelatedNodeInfo:
         """Prev node id."""
         if DataRelationship.PREVIOUS not in self.relationships:
             raise ValueError("Object does not have previous link")
-        if not isinstance(self.relationships[DataRelationship.PREVIOUS], str):
-            raise ValueError("Previous object must be a string id")
-        return self.relationships[DataRelationship.PREVIOUS]
+
+        relation = self.relationships[DataRelationship.PREVIOUS]
+        if not isinstance(relation, RelatedNodeInfo):
+            raise ValueError("Previous object must be a single RelatedNodeInfo object")
+        return relation
 
     @property
-    def next_node_id(self) -> str:
+    def next_node_id(self) -> RelatedNodeInfo:
         """Next node id."""
         if DataRelationship.NEXT not in self.relationships:
             raise ValueError("Object does not have next link")
-        if not isinstance(self.relationships[DataRelationship.NEXT], str):
-            raise ValueError("Next object must be a string id")
-        return self.relationships[DataRelationship.NEXT]
+
+        relation = self.relationships[DataRelationship.NEXT]
+        if not isinstance(relation, RelatedNodeInfo):
+            raise ValueError("Next object must be a single RelatedNodeInfo object")
+        return relation
 
     @property
-    def parent_object_id(self) -> str:
+    def parent_object_id(self) -> RelatedNodeInfo:
         """Parent node id."""
         if DataRelationship.PARENT not in self.relationships:
             raise ValueError("Object does not have parent link")
-        if not isinstance(self.relationships[DataRelationship.PARENT], str):
-            raise ValueError("Parent object must be a string id")
-        return self.relationships[DataRelationship.PARENT]
+
+        relation = self.relationships[DataRelationship.PARENT]
+        if not isinstance(relation, RelatedNodeInfo):
+            raise ValueError("Parent object must be a single RelatedNodeInfo object")
+        return relation
 
     @property
-    def child_object_ids(self) -> List[str]:
+    def child_object_ids(self) -> List[RelatedNodeInfo]:
         """Child node ids."""
         if DataRelationship.CHILD not in self.relationships:
             raise ValueError("Object does not have child objects")
-        if not isinstance(self.relationships[DataRelationship.CHILD], list):
-            raise ValueError("Child objects must be a list ids")
-        return self.relationships[DataRelationship.CHILD]
+
+        relation = self.relationships[DataRelationship.PARENT]
+        if not isinstance(relation, list):
+            raise ValueError("Child objects must be a list of RelatedNodeInfo objects.")
+        return relation
 
     @property
     def extra_info(self) -> Dict[str, Any]:
