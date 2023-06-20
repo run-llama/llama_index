@@ -17,6 +17,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.langchain_helpers.streaming import StreamingGeneratorCallbackHandler
+from llama_index.llm_predictor.openai_utils import openai_modelname_to_contextsize
 from llama_index.prompts.base import Prompt
 from llama_index.utils import (
     ErrorToRetry,
@@ -45,12 +46,12 @@ def _get_llm_metadata(llm: BaseLanguageModel) -> LLMMetadata:
         raise ValueError("llm must be an instance of langchain.llms.base.LLM")
     if isinstance(llm, OpenAI):
         return LLMMetadata(
-            context_window=OpenAI().modelname_to_contextsize(llm.model_name),
+            context_window=openai_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens,
         )
     elif isinstance(llm, ChatOpenAI):
         return LLMMetadata(
-            context_window=OpenAI().modelname_to_contextsize(llm.model_name),
+            context_window=openai_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens or -1,
         )
     elif isinstance(llm, Cohere):
