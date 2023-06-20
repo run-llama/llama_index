@@ -5,6 +5,7 @@
 ### New Features
 - multi-selector support in router query engine (#6518)
 - pydantic selector support in router query engine using OpenAI function calling API (#6518)
+- streaming response support in `CondenseQuestionChatEngine` and `SimpleChatEngine` (#6524) 
 
 ## [v0.6.29] - 2023-06-20
 
