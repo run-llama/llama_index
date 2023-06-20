@@ -17,11 +17,15 @@ from llama_index.tools.types import ToolMetadata
 
 
 class SingleSelection(BaseModel):
+    """A single selection of a choice."""
+
     index: int
     reason: str
 
 
 class MultiSelection(BaseModel):
+    """A multi-selection of choices."""
+
     selections: List[SingleSelection]
 
 
