@@ -52,6 +52,10 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         if "response_mode" not in kwargs:
             kwargs["response_mode"] = "generation"
+        else:
+            if kwargs["response_mode"] != "generation":
+                raise ValueError("EmptyIndex only supports response_mode=generation.")
+
         return super().as_query_engine(**kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> EmptyIndexStruct:
