@@ -10,6 +10,7 @@
 
 ### Bug Fixes / Nits
 - better error handling in the mbox reader (#6248)
+- Fix blank similarity score when using weaviate (#6512)
 - fix for sorted nodes in `PrevNextNodePostprocessor` (#6048)
 
 ### Breaking/Deprecated API Changes
@@ -29,7 +30,6 @@
 - extra space in prompt and error message update (#6443)
 - [Issue 6417] Fix prompt_templates docs page (#6499)
 - Rip out monkey patch and update model to context window mapping (#6490)
-
 
 ## [v0.6.28] - 2023-06-19
 
