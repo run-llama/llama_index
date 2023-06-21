@@ -35,11 +35,11 @@ class SQLTableRetriever(BaseRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         """Retrieve nodes."""
-        vector_store_index = self._index.vector_store_index
+        index = self._index.index
 
         # Specific table case. Use initialized tables if specified.
         if self._tables:
-            vector_index_retriever = vector_store_index.as_retriever(similarity_top_k=1)
+            vector_index_retriever = index.as_retriever(similarity_top_k=1)
             tables = [
                 str(table.name) if isinstance(table, Table) else table
                 for table in self._tables
@@ -59,5 +59,5 @@ class SQLTableRetriever(BaseRetriever):
             context_query_str = self._query_tmpl.format(
                 orig_query_str=query_bundle.query_str
             )
-            vector_index_retriever = vector_store_index.as_retriever()
+            vector_index_retriever = index.as_retriever()
             return vector_index_retriever.retrieve(QueryBundle(context_query_str))

@@ -1,18 +1,15 @@
 """SQL Structured Store."""
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Union
-
-from sqlalchemy import Table
+from typing import Any, Dict, Optional, Sequence, Union
 
 from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import SQLStructTable
+from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.base import BaseStructStoreIndex
-from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
-from llama_index.readers.base import Document
 
 
 class SQLQueryMode(str, Enum):
@@ -46,7 +43,7 @@ class SQLTableIndex(BaseStructStoreIndex[SQLStructTable]):
     def __init__(
         self,
         sql_database: SQLDatabase,
-        vector_store_index: VectorStoreIndex,
+        index: BaseIndex,
         service_context: Optional[ServiceContext] = None,
         extra_context_dict: Optional[Dict[str, str]] = None,
         **kwargs: Any,
@@ -55,7 +52,7 @@ class SQLTableIndex(BaseStructStoreIndex[SQLStructTable]):
         if sql_database is None:
             raise ValueError("sql_database must be specified")
         self.sql_database = sql_database
-        self._vector_store_index = vector_store_index
+        self._index = index
         self._service_context = service_context or ServiceContext.from_defaults()
         self._extra_context_dict = extra_context_dict or {}
 
@@ -68,28 +65,27 @@ class SQLTableIndex(BaseStructStoreIndex[SQLStructTable]):
 
     def _build_index_from_tables(self) -> None:
         """Build index from sql tables."""
-        docs = []
+        nodes = []
         for table_name in self.sql_database.get_usable_table_names():
             table_desc = self.sql_database.get_single_table_info(table_name)
             table_text = f"Schema of table {table_name}:\n" f"{table_desc}\n"
-            docs.append(Document(table_text, extra_info={"table_name": table_name}))
+            nodes.append(Node(text=table_text, extra_info={"table_name": table_name}))
         for table_name, table_context in self._extra_context_dict.items():
-            docs.append(
-                Document(
-                    f"{table_name}: {table_context}",
+            nodes.append(
+                Node(
+                    text=f"{table_name}: {table_context}",
                     extra_info={"table_name": table_name},
                 )
             )
-        nodes = self._service_context.node_parser.get_nodes_from_documents(docs)
-        self._vector_store_index.insert_nodes(nodes)
+        self._index.insert_nodes(nodes)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> SQLStructTable:
         index_struct = self.index_struct_cls()
         return index_struct
 
     @property
-    def vector_store_index(self) -> VectorStoreIndex:
-        return self._vector_store_index
+    def index(self) -> BaseIndex:
+        return self._index
 
     def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
         """Insert a document."""
