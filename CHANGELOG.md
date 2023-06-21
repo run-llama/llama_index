@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+- properly convert weaviate distance to score (#6545)
+
 ## [v0.6.30] - 2023-06-21
 
 ### New Features
