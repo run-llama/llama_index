@@ -11,6 +11,7 @@ from llama_index.data_structs.data_structs import EmptyIndexStruct
 from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 
@@ -47,6 +48,11 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
         from llama_index.indices.empty.retrievers import EmptyIndexRetriever
 
         return EmptyIndexRetriever(self)
+
+    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        if "response_mode" not in kwargs:
+            kwargs["response_mode"] = "generation"
+        return super().as_query_engine(**kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> EmptyIndexStruct:
         """Build the index from documents.
