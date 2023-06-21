@@ -28,6 +28,8 @@ def messages_to_prompt(messages: Sequence[Message]) -> str:
         if addtional_kwargs:
             string_message += f"\n{addtional_kwargs}"
         string_messages.append(string_message)
+    
+    string_messages.append("assistant: ")
     return "\n".join(string_messages)
 
 
