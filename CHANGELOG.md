@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.30] - 2023-06-21
 
 ### New Features
 - multi-selector support in router query engine (#6518)
