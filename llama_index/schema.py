@@ -25,8 +25,8 @@ def _validate_is_flat_dict(metadata_dict: dict) -> None:
             raise ValueError("Value must be one of (str, int, float, None)")
 
 
-class DataRelationship(str, Enum):
-    """Document relationships used in `Node` class.
+class NodeRelationship(str, Enum):
+    """Node relationships used in `BaseNode` class.
 
     Attributes:
         SOURCE: The node is the source document.
@@ -92,7 +92,7 @@ class BaseNode(BaseModel):
         default=None,
         description="Metadata keys that are used during retrieval.",
     )
-    relationships: Dict[DataRelationship, RELATED_NODE_TYPE] = Field(
+    relationships: Dict[NodeRelationship, RELATED_NODE_TYPE] = Field(
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
@@ -132,6 +132,8 @@ class BaseNode(BaseModel):
 
     @property
     def node_id(self) -> str:
+        if self._id is None:
+            raise ValueError("Node ID is not set!")
         return self._id
 
     @property
@@ -140,54 +142,60 @@ class BaseNode(BaseModel):
         return self.is_id_none is None
 
     @property
-    def source_object_id(self) -> Optional[str]:
-        """Source object id.
+    def source_node(self) -> Optional[RelatedNodeInfo]:
+        """Source object node.
 
         Extracted from the relationships field.
 
         """
-        return self.relationships.get(DataRelationship.SOURCE, None)
+        if NodeRelationship.SOURCE not in self.relationships:
+            return None
+
+        relation = self.relationships[NodeRelationship.SOURCE]
+        if isinstance(relation, list): 
+            raise ValueError("Source object must be a single RelatedNodeInfo object")
+        return relation
 
     @property
-    def prev_node_id(self) -> RelatedNodeInfo:
-        """Prev node id."""
-        if DataRelationship.PREVIOUS not in self.relationships:
+    def prev_node(self) -> RelatedNodeInfo:
+        """Prev node."""
+        if NodeRelationship.PREVIOUS not in self.relationships:
             raise ValueError("Object does not have previous link")
 
-        relation = self.relationships[DataRelationship.PREVIOUS]
+        relation = self.relationships[NodeRelationship.PREVIOUS]
         if not isinstance(relation, RelatedNodeInfo):
             raise ValueError("Previous object must be a single RelatedNodeInfo object")
         return relation
 
     @property
-    def next_node_id(self) -> RelatedNodeInfo:
-        """Next node id."""
-        if DataRelationship.NEXT not in self.relationships:
+    def next_node(self) -> RelatedNodeInfo:
+        """Next node."""
+        if NodeRelationship.NEXT not in self.relationships:
             raise ValueError("Object does not have next link")
 
-        relation = self.relationships[DataRelationship.NEXT]
+        relation = self.relationships[NodeRelationship.NEXT]
         if not isinstance(relation, RelatedNodeInfo):
             raise ValueError("Next object must be a single RelatedNodeInfo object")
         return relation
 
     @property
-    def parent_object_id(self) -> RelatedNodeInfo:
-        """Parent node id."""
-        if DataRelationship.PARENT not in self.relationships:
+    def parent_node(self) -> RelatedNodeInfo:
+        """Parent node."""
+        if NodeRelationship.PARENT not in self.relationships:
             raise ValueError("Object does not have parent link")
 
-        relation = self.relationships[DataRelationship.PARENT]
+        relation = self.relationships[NodeRelationship.PARENT]
         if not isinstance(relation, RelatedNodeInfo):
             raise ValueError("Parent object must be a single RelatedNodeInfo object")
         return relation
 
     @property
-    def child_object_ids(self) -> List[RelatedNodeInfo]:
-        """Child node ids."""
-        if DataRelationship.CHILD not in self.relationships:
+    def child_nodes(self) -> List[RelatedNodeInfo]:
+        """Child nodes."""
+        if NodeRelationship.CHILD not in self.relationships:
             raise ValueError("Object does not have child objects")
 
-        relation = self.relationships[DataRelationship.PARENT]
+        relation = self.relationships[NodeRelationship.PARENT]
         if not isinstance(relation, list):
             raise ValueError("Child objects must be a list of RelatedNodeInfo objects.")
         return relation
@@ -246,17 +254,16 @@ class TextNode(BaseNode):
         return ObjectType.TEXT
 
     @property
+    def is_content_none(self) -> bool:
+        """Check if content is None."""
+        return self.content == ""
+
     def get_content(self) -> str:
         """Get object content."""
         metadata_str = self.metadata_str()
         return self.text_template.format(
             content=self.content, metadata_str=metadata_str
         )
-
-    @property
-    def is_content_none(self) -> bool:
-        """Check if content is None."""
-        return self.content == ""
 
     def metadata_str(self) -> str:
         """Convert metadata to a string."""
@@ -279,9 +286,9 @@ class TextNode(BaseNode):
         return self.get_content()
 
     @property
-    def ref_doc_id(self) -> Optional[str]:
+    def ref_doc_id(self) -> Optional[RELATED_NODE_TYPE]:
         """Deprecated: Get ref doc id."""
-        return self.source_object_id
+        return self.source_node
 
     @property
     def node_info(self) -> Dict[str, Any]:
