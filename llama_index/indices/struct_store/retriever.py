@@ -39,7 +39,7 @@ class SQLTableRetriever(BaseRetriever):
 
         # Specific table case. Use initialized tables if specified.
         if self._tables:
-            vector_index_retriever = index.as_retriever(similarity_top_k=1)
+            vector_index_retriever = index.as_retriever()
             tables = [
                 str(table.name) if isinstance(table, Table) else table
                 for table in self._tables
@@ -52,6 +52,14 @@ class SQLTableRetriever(BaseRetriever):
                     embedding=embed_model.get_query_embedding("table_name: " + table),
                 )
                 result = vector_index_retriever.retrieve(new_query)
+
+                # check that the retrieved nodes contain the correct table info.
+                def filter_node(node: NodeWithScore) -> bool:
+                    if node.node.extra_info:
+                        return ["table_name"] == table
+                    return False
+
+                filter(filter_node, result)
                 scored_nodes.extend(result)
             logger.debug("Retrieved nodes: %s", scored_nodes)
             return scored_nodes
