@@ -11,7 +11,7 @@ from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
-from llama_index.indices.struct_store.sql_table import SQLTableIndex
+from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.prompts.base import Prompt
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from llama_index.prompts.prompt_type import PromptType
@@ -209,11 +209,11 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 class SQLTableQueryEngine(BaseQueryEngine):
     def __init__(
         self,
-        index: SQLTableIndex,
+        sql_database: SQLDatabase,
         **kwargs: Any,
     ) -> None:
-        self._sql_database = index.sql_database
-        super().__init__(index.service_context.callback_manager)
+        self._sql_database = sql_database
+        super().__init__(**kwargs)
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
@@ -231,18 +231,18 @@ class SQLTableQueryEngine(BaseQueryEngine):
 class NLSQLTableQueryEngine(BaseQueryEngine):
     def __init__(
         self,
-        index: SQLTableIndex,
+        sql_database: SQLDatabase,
         text_to_sql_prompt: Optional[Prompt] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[Prompt] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._index = index
-        self._sql_database = index.sql_database
-        self._service_context = index.service_context
+        self._sql_database = sql_database
+        self._service_context = service_context or ServiceContext.from_defaults()
 
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._response_synthesis_prompt = (
@@ -251,7 +251,7 @@ class NLSQLTableQueryEngine(BaseQueryEngine):
         self._context_query_kwargs = context_query_kwargs or {}
         self._synthesize_response = synthesize_response
         self._tables = tables
-        super().__init__(index.service_context.callback_manager)
+        super().__init__(self._service_context.callback_manager, **kwargs)
 
     @property
     def service_context(self) -> ServiceContext:
@@ -269,10 +269,26 @@ class NLSQLTableQueryEngine(BaseQueryEngine):
         Get tables schema + optional context as a single string.
 
         """
-        retriever = self._index.as_retriever(tables=self._tables)
-        sources = retriever.retrieve(query_bundle)
-        node_strs = [node.node.get_text() for node in sources]
-        tables_desc_str = "\n\n".join(node_strs)
+        context_strs = []
+        if self._tables:
+            for table in self._tables:
+                if isinstance(table, Table):
+                    table_str = str(table.name)
+                if isinstance(table, str):
+                    table_str = table
+                else:
+                    raise ValueError(f"Unknown table type: {table}")
+                table_info = self._sql_database.get_single_table_info(table_str)
+                context_strs.append(table_info)
+
+        else:
+            # get all tables
+            table_names = self._sql_database.get_table_names()
+            for table_name in table_names:
+                table_info = self._sql_database.get_single_table_info(table_name)
+                context_strs.append(table_info)
+
+        tables_desc_str = "\n\n".join(context_strs)
         return tables_desc_str
 
     @llm_token_counter("query")

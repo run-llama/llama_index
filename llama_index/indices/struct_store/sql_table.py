@@ -107,8 +107,8 @@ class SQLTableIndex(BaseStructStoreIndex[SQLStructTable]):
         )
 
         if query_mode == SQLQueryMode.NL:
-            return NLSQLTableQueryEngine(self, **kwargs)
+            return NLSQLTableQueryEngine(self.sql_database, **kwargs)
         elif query_mode == SQLQueryMode.SQL:
-            return SQLTableQueryEngine(self, **kwargs)
+            return SQLTableQueryEngine(self.sql_database, **kwargs)
         else:
             raise ValueError(f"Unknown query mode: {query_mode}")
