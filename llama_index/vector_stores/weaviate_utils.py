@@ -6,7 +6,6 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 
 import json
 import logging
-import math
 from dataclasses import field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
@@ -135,7 +134,8 @@ def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, di
 def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
     """Get converted node similarity from distance."""
     distance = float(entry["_additional"][similarity_key])
-    return 1.0 - math.exp(-distance)
+    # convert distance https://forum.weaviate.io/t/distance-vs-certainty-scores/258
+    return 1.0 - distance
 
 
 def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> Node:
