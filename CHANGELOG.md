@@ -7,6 +7,7 @@
 - pydantic selector support in router query engine using OpenAI function calling API (#6518)
 - streaming response support in `CondenseQuestionChatEngine` and `SimpleChatEngine` (#6524) 
 - metadata filtering support in `QdrantVectorStore` (#6476)
+- add `PGVectorStore` to support postgres with pgvector (#6190)
 
 ### Bug Fixes / Nits
 - better error handling in the mbox reader (#6248)
