@@ -48,7 +48,7 @@ class SimpleMongoReader(BaseReader):
         db_name: str,
         collection_name: str,
         field_names: List[str] = ["text"],
-        field_names_metadata: List[str] = [],
+        field_names_metadata: Optional[List[str]] = None,
         query_dict: Optional[Dict] = None,
     ) -> List[Document]:
         """Load data from the input directory.
@@ -58,9 +58,9 @@ class SimpleMongoReader(BaseReader):
             collection_name (str): name of the collection.
             field_names(List[str]): names of the fields to be concatenated.
                 Defaults to ["text"]
-            field_names_metadata (List[str]): field names for 
+            field_names_metadata (Optional[List[str]]): field names for 
                 metadata to be included in Document. e.g. "_id".
-                Defaults to []
+                Defaults to None
             query_dict (Optional[Dict]): query to filter documents.
                 Defaults to None
 
@@ -70,6 +70,7 @@ class SimpleMongoReader(BaseReader):
         """
         documents = []
         db = self.client[db_name]
+        field_names_metadata = field_names_metadata or []
         if query_dict is None:
             cursor = db[collection_name].find()
         else:
