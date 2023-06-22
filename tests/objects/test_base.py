@@ -6,9 +6,10 @@ from llama_index.indices.list.base import ListIndex
 from llama_index.objects.base_node_mapping import SimpleObjectNodeMapping
 from llama_index.objects.tool_node_mapping import SimpleToolNodeMapping
 from llama_index.tools.function_tool import FunctionTool
+from llama_index.indices.service_context import ServiceContext
 
 
-def test_object_index() -> None:
+def test_object_index(mock_service_context: ServiceContext) -> None:
     """Test object index."""
 
     obj_index = ObjectIndex.from_objects(
@@ -22,7 +23,7 @@ def test_object_index() -> None:
     assert obj_index.as_retriever().retrieve("test") == ["a", "b", "c", "d"]
 
 
-def test_object_index_with_tools() -> None:
+def test_object_index_with_tools(mock_service_context: ServiceContext) -> None:
     """Test object index with tools."""
 
     tool1 = FunctionTool.from_defaults(fn=lambda x: x, name="test_tool")
