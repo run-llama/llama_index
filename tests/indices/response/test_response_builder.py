@@ -11,8 +11,7 @@ from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.readers.schema.base import Document
 from tests.indices.vector_store.mock_services import MockEmbedding
-from tests.mock_utils.mock_prompts import (MOCK_REFINE_PROMPT,
-                                           MOCK_TEXT_QA_PROMPT)
+from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 
 def mock_tokenizer(text: str) -> List[str]:
