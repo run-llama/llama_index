@@ -7,13 +7,13 @@ from typing import Dict, List, Optional, cast
 
 from pydantic import BaseModel, Field, validator
 
-from llama_index.data_structs.node import DocumentRelationship, NodeWithScore
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response import get_response_builder
 from llama_index.indices.response.type import ResponseMode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt, RefinePrompt
+from llama_index.schema import NodeRelationship, NodeWithScore
 from llama_index.storage.docstore import BaseDocumentStore
 
 logger = logging.getLogger(__name__)
@@ -53,14 +53,14 @@ class KeywordNodePostprocessor(BasePydanticNodePostprocessor):
             if self.required_keywords is not None:
                 for keyword in self.required_keywords:
                     pattern = r"\b" + re.escape(keyword) + r"\b"
-                    keyword_presence = re.search(pattern, node.get_text())
+                    keyword_presence = re.search(pattern, node.get_content())
                     if not keyword_presence:
                         should_use_node = False
 
             if self.exclude_keywords is not None:
                 for keyword in self.exclude_keywords:
                     pattern = r"\b" + re.escape(keyword) + r"\b"
-                    keyword_presence = re.search(keyword, node.get_text())
+                    keyword_presence = re.search(keyword, node.get_content())
                     if keyword_presence:
                         should_use_node = False
 
@@ -108,13 +108,16 @@ def get_forward_nodes(
     cur_count = 0
     # get forward nodes in an iterative manner
     while cur_count < num_nodes:
-        if DocumentRelationship.NEXT not in node.relationships:
+        if NodeRelationship.NEXT not in node.relationships:
             break
-        next_node_id = node.relationships[DocumentRelationship.NEXT]
+
+        next_node_info = node.next_node
+        if next_node_info is None:
+            break
+
+        next_node_id = next_node_info.node_id
         next_node = docstore.get_node(next_node_id)
-        if next_node is None:
-            break
-        nodes[next_node.get_doc_id()] = NodeWithScore(next_node)
+        nodes[next_node.get_doc_id()] = NodeWithScore(node=next_node)
         node = next_node
         cur_count += 1
     return nodes
@@ -129,13 +132,14 @@ def get_backward_nodes(
     nodes: Dict[str, NodeWithScore] = {node.get_doc_id(): node_with_score}
     cur_count = 0
     while cur_count < num_nodes:
-        if DocumentRelationship.PREVIOUS not in node.relationships:
+        prev_node_info = node.prev_node
+        if prev_node_info is None:
             break
-        prev_node_id = node.relationships[DocumentRelationship.PREVIOUS]
+        prev_node_id = prev_node_info.node_id
         prev_node = docstore.get_node(prev_node_id)
         if prev_node is None:
             break
-        nodes[prev_node.get_doc_id()] = NodeWithScore(prev_node)
+        nodes[prev_node.get_doc_id()] = NodeWithScore(node=prev_node)
         node = prev_node
         cur_count += 1
     return nodes
@@ -199,14 +203,14 @@ class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             for i, cand in enumerate(sorted_nodes):
                 node_id = node.node.get_doc_id()
                 # prepend to current candidate
-                if node_id == cand.node.relationships.get(
-                    DocumentRelationship.PREVIOUS
-                ):
+                prev_node_info = cand.node.prev_node
+                next_node_info = cand.node.next_node
+                if prev_node_info is not None and node_id == prev_node_info.node_id:
                     node_inserted = True
                     sorted_nodes.insert(i, node)
                     break
                 # append to current candidate
-                elif node_id == cand.node.relationships.get(DocumentRelationship.NEXT):
+                elif next_node_info is not None and node_id == next_node_info.node_id:
                     node_inserted = True
                     sorted_nodes.insert(i + 1, node)
                     break
@@ -324,7 +328,7 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
                 mode=ResponseMode.TREE_SUMMARIZE,
             )
             raw_pred = response_builder.get_response(
-                text_chunks=[node.node.get_text()],
+                text_chunks=[node.node.get_content()],
                 query_str=query_bundle.query_str,
             )
             raw_pred = cast(str, raw_pred)

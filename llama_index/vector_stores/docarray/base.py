@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Type
 import numpy as np
 from pydantic import Field
 
-from llama_index.data_structs.node import Node
+from llama_index.schema import TextNode
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -115,7 +115,7 @@ class DocArrayVectorStore(VectorStore, ABC):
             self._schema(
                 id=result.id,
                 metadata=node_to_metadata_dict(result.node),
-                text=result.node.get_text(),
+                text=result.node.get_content(),
                 embedding=result.embedding,
             )
             for result in embedding_results
@@ -179,11 +179,13 @@ class DocArrayVectorStore(VectorStore, ABC):
         for doc in docs:
             extra_info, node_info, relationships = metadata_dict_to_node(doc.metadata)
             nodes.append(
-                Node(
-                    doc_id=doc.id,
+                TextNode(
+                    id_=doc.id,
                     text=doc.text,
-                    extra_info=extra_info,
+                    metadata=extra_info,
                     node_info=node_info,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
                     relationships=relationships,
                 )
             )

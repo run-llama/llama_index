@@ -54,5 +54,5 @@ class TwitterTweetReader(BaseReader):
             response = " "
             for tweet in tweets.data:
                 response = response + tweet.text + "\n"
-            results.append(Document(response))
+            results.append(Document(text=response))
         return results

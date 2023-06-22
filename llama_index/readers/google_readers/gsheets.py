@@ -60,7 +60,7 @@ class GoogleSheetsReader(BaseReader):
         for spreadsheet_id in spreadsheet_ids:
             sheet = self._load_sheet(spreadsheet_id)
             results.append(
-                Document(sheet, extra_info={"spreadsheet_id": spreadsheet_id})
+                Document(text=sheet, metadata={"spreadsheet_id": spreadsheet_id})
             )
         return results
 

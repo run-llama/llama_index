@@ -48,7 +48,6 @@ class PydanticSingleSelector(BaseSelector):
         prompt_template_str: str = DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL,
         verbose: bool = False,
     ) -> "PydanticSingleSelector":
-
         if program is None:
             program = OpenAIPydanticProgram.from_defaults(
                 output_cls=SingleSelection,
@@ -99,7 +98,6 @@ class PydanticMultiSelector(BaseSelector):
         max_outputs: Optional[int] = None,
         verbose: bool = False,
     ) -> "PydanticMultiSelector":
-
         if program is None:
             program = OpenAIPydanticProgram.from_defaults(
                 output_cls=MultiSelection,

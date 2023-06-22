@@ -48,7 +48,7 @@ def test_give_response(
 
     # test multiple lines
     response = builder.get_response(
-        text_chunks=[documents[0].get_text()], query_str=query_str
+        text_chunks=[documents[0].get_content()], query_str=query_str
     )
     expected_answer = (
         "What is?:"

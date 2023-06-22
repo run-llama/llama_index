@@ -28,6 +28,6 @@ class StringIterableReader(BaseReader):
         """Load the data."""
         results = []
         for text in texts:
-            results.append(Document(text))
+            results.append(Document(text=text))
 
         return results

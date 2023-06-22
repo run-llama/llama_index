@@ -26,7 +26,7 @@ def test_token_predictor(mock_split: Any) -> None:
         "This is another test.\n"
         "This is a test v2."
     )
-    document = Document(doc_text)
+    document = Document(text=doc_text)
     llm = MagicMock(spec=BaseLLM)
     llm_predictor = MockLLMPredictor(max_tokens=256, llm=llm)
     service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)

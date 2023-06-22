@@ -36,12 +36,12 @@ def test_build_simple(
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
-        assert (node.text, embedding) in actual_node_tups
+        assert (node.get_content(), embedding) in actual_node_tups
 
     # test ref doc info
     all_ref_doc_info = index.ref_doc_info
     for idx, ref_doc_id in enumerate(all_ref_doc_info.keys()):
-        assert documents[idx].doc_id == ref_doc_id
+        assert documents[idx].node_id == ref_doc_id
 
 
 def test_simple_insert(
@@ -70,7 +70,7 @@ def test_simple_insert(
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
-        assert (node.text, embedding) in actual_node_tups
+        assert (node.get_content(), embedding) in actual_node_tups
 
 
 def test_simple_delete(
@@ -78,10 +78,10 @@ def test_simple_delete(
 ) -> None:
     """Test delete VectorStoreIndex."""
     new_documents = [
-        Document("Hello world.", doc_id="test_id_0"),
-        Document("This is a test.", doc_id="test_id_1"),
-        Document("This is another test.", doc_id="test_id_2"),
-        Document("This is a test v2.", doc_id="test_id_3"),
+        Document(text="Hello world.", id_="test_id_0"),
+        Document(text="This is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+        Document(text="This is a test v2.", id_="test_id_3"),
     ]
     index = VectorStoreIndex.from_documents(
         documents=new_documents, service_context=mock_service_context
@@ -102,10 +102,10 @@ def test_simple_delete(
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
-        assert (node.text, embedding, node.ref_doc_id) in actual_node_tups
+        assert (node.get_content(), embedding, node.ref_doc_id) in actual_node_tups
 
     # test insert
-    index.insert(Document("Hello world backup.", doc_id="test_id_0"))
+    index.insert(Document(text="Hello world backup.", id_="test_id_0"))
     assert len(index.index_struct.nodes_dict) == 4
     actual_node_tups = [
         ("Hello world backup.", [1, 0, 0, 0, 0], "test_id_0"),
@@ -119,7 +119,7 @@ def test_simple_delete(
         # NOTE: this test breaks abstraction
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
-        assert (node.text, embedding, node.ref_doc_id) in actual_node_tups
+        assert (node.get_content(), embedding, node.ref_doc_id) in actual_node_tups
 
 
 def test_simple_delete_ref_node_from_docstore(
@@ -127,8 +127,8 @@ def test_simple_delete_ref_node_from_docstore(
 ) -> None:
     """Test delete VectorStoreIndex."""
     new_documents = [
-        Document("This is a test.", doc_id="test_id_1"),
-        Document("This is another test.", doc_id="test_id_2"),
+        Document(text="This is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
     ]
     index = VectorStoreIndex.from_documents(
         documents=new_documents, service_context=mock_service_context
@@ -171,7 +171,7 @@ def test_simple_async(
         node = index.docstore.get_node(node_id)
         vector_store = cast(SimpleVectorStore, index._vector_store)
         embedding = vector_store.get(text_id)
-        assert (node.text, embedding) in actual_node_tups
+        assert (node.get_content(), embedding) in actual_node_tups
 
 
 def test_simple_insert_save(

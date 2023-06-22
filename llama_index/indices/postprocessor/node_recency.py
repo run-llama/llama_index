@@ -1,14 +1,14 @@
 """Node recency post-processor."""
-
-from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
-from llama_index.data_structs.node import NodeWithScore
 from pydantic import Field
 from typing import Optional, List, Set
 import pandas as pd
 import numpy as np
 from datetime import datetime
+
+from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.service_context import ServiceContext
+from llama_index.schema import NodeWithScore
 
 
 # NOTE: currently not being used
@@ -158,7 +158,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
         embed_model = self.service_context.embed_model
         for node in sorted_nodes:
             embed_model.queue_text_for_embedding(
-                node.node.get_doc_id(), node.node.get_text()
+                node.node.get_doc_id(), node.node.get_content()
             )
 
         _, text_embeddings = embed_model.get_queued_text_embeddings()
@@ -171,7 +171,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
             # we want to optimize for retrieval results
 
             query_text = self.query_embedding_tmpl.format(
-                context_str=node.node.get_text(),
+                context_str=node.node.get_content(),
             )
             query_embedding = embed_model.get_query_embedding(query_text)
 
@@ -221,10 +221,10 @@ class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
             score = node_with_score.score or 1.0
             node = node_with_score.node
             # time score
-            if node.node_info is None:
-                raise ValueError("node_info is None")
+            if node.metadata is None:
+                raise ValueError("metadata is None")
 
-            last_accessed = node.node_info.get(self.last_accessed_key, None)
+            last_accessed = node.metadata.get(self.last_accessed_key, None)
             if last_accessed is None:
                 last_accessed = now
 
@@ -239,11 +239,13 @@ class TimeWeightedPostprocessor(BasePydanticNodePostprocessor):
 
         top_k = min(self.top_k, len(sorted_tups))
         result_tups = sorted_tups[:top_k]
-        result_nodes = [NodeWithScore(n.node, score) for score, n in result_tups]
+        result_nodes = [
+            NodeWithScore(node=n.node, score=score) for score, n in result_tups
+        ]
 
         # set __last_accessed__ to now
         if self.time_access_refresh:
             for node_with_score in result_nodes:
-                node_with_score.node.get_node_info()[self.last_accessed_key] = now
+                node_with_score.node.metadata[self.last_accessed_key] = now
 
         return result_nodes

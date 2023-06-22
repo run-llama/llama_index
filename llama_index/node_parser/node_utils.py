@@ -4,21 +4,20 @@
 import logging
 from typing import List
 
-from llama_index.data_structs.node import DocumentRelationship, ImageNode, Node
 from llama_index.langchain_helpers.text_splitter import (
     TextSplit,
     TextSplitter,
     TokenTextSplitter,
 )
 from llama_index.readers.schema.base import ImageDocument
-from llama_index.schema import BaseDocument
+from llama_index.schema import BaseNode, NodeRelationship, ImageNode, TextNode
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
 
 
 def get_text_splits_from_document(
-    document: BaseDocument,
+    document: BaseNode,
     text_splitter: TextSplitter,
     include_extra_info: bool = True,
 ) -> List[TextSplit]:
@@ -27,12 +26,12 @@ def get_text_splits_from_document(
     if isinstance(text_splitter, TokenTextSplitter):
         # use this to extract extra information about the chunks
         text_splits = text_splitter.split_text_with_overlaps(
-            document.get_text(),
-            extra_info_str=document.extra_info_str if include_extra_info else None,
+            document.get_content(),
+            extra_info_str=document.metadata_str() if include_extra_info else None,
         )
     else:
         text_chunks = text_splitter.split_text(
-            document.get_text(),
+            document.get_content(),
         )
         text_splits = [TextSplit(text_chunk=text_chunk) for text_chunk in text_chunks]
 
@@ -40,11 +39,11 @@ def get_text_splits_from_document(
 
 
 def get_nodes_from_document(
-    document: BaseDocument,
+    document: BaseNode,
     text_splitter: TextSplitter,
     include_extra_info: bool = True,
     include_prev_next_rel: bool = False,
-) -> List[Node]:
+) -> List[TextNode]:
     """Get nodes from document."""
     text_splits = get_text_splits_from_document(
         document=document,
@@ -52,37 +51,41 @@ def get_nodes_from_document(
         include_extra_info=include_extra_info,
     )
 
-    nodes: List[Node] = []
+    nodes: List[TextNode] = []
     index_counter = 0
     for i, text_split in enumerate(text_splits):
         text_chunk = text_split.text_chunk
         logger.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
-        index_pos_info = None
+        start_char_idx = None
+        end_char_idx = None
         if text_split.num_char_overlap is not None:
-            index_pos_info = {
-                # NOTE: start is inclusive, end is exclusive
-                "start": index_counter - text_split.num_char_overlap,
-                "end": index_counter - text_split.num_char_overlap + len(text_chunk),
-            }
+            start_char_idx = (index_counter - text_split.num_char_overlap,)
+            end_char_idx = index_counter - text_split.num_char_overlap + len(text_chunk)
         index_counter += len(text_chunk) + 1
 
         if isinstance(document, ImageDocument):
             image_node = ImageNode(
-                text=text_chunk,
+                content=text_chunk,
                 embedding=document.embedding,
-                extra_info=document.extra_info if include_extra_info else None,
-                node_info=index_pos_info,
+                metadata=document.metadata if include_extra_info else None,
+                start_char_idx=start_char_idx,
+                end_char_idx=end_char_idx,
                 image=document.image,
-                relationships={DocumentRelationship.SOURCE: document.get_doc_id()},
+                relationships={
+                    NodeRelationship.SOURCE: document.as_related_node_info()
+                },
             )
             nodes.append(image_node)  # type: ignore
         else:
-            node = Node(
-                text=text_chunk,
+            node = TextNode(
+                content=text_chunk,
                 embedding=document.embedding,
-                extra_info=document.extra_info if include_extra_info else None,
-                node_info=index_pos_info,
-                relationships={DocumentRelationship.SOURCE: document.get_doc_id()},
+                metadata=document.metadata if include_extra_info else None,
+                start_char_idx=start_char_idx,
+                end_char_idx=end_char_idx,
+                relationships={
+                    NodeRelationship.SOURCE: document.as_related_node_info()
+                },
             )
             nodes.append(node)
 
@@ -90,12 +93,12 @@ def get_nodes_from_document(
     if include_prev_next_rel:
         for i, node in enumerate(nodes):
             if i > 0:
-                node.relationships[DocumentRelationship.PREVIOUS] = nodes[
+                node.relationships[NodeRelationship.PREVIOUS] = nodes[
                     i - 1
-                ].get_doc_id()
+                ].as_related_node_info()
             if i < len(nodes) - 1:
-                node.relationships[DocumentRelationship.NEXT] = nodes[
+                node.relationships[NodeRelationship.NEXT] = nodes[
                     i + 1
-                ].get_doc_id()
+                ].as_related_node_info()
 
     return nodes

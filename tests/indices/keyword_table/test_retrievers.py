@@ -29,4 +29,4 @@ def test_retrieve(
     retriever = table.as_retriever(retriever_mode="simple")
     nodes = retriever.retrieve(QueryBundle("Hello"))
     assert len(nodes) == 1
-    assert nodes[0].node.text == "Hello world."
+    assert nodes[0].node.get_content() == "Hello world."

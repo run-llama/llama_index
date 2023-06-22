@@ -9,10 +9,10 @@ from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union
 
 from llama_index.data_structs.data_structs import IndexList
-from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
+from llama_index.schema import BaseNode
 from llama_index.storage.docstore.types import RefDocInfo
 
 
@@ -44,7 +44,7 @@ class ListIndex(BaseIndex[IndexList]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[Node]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[IndexList] = None,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
@@ -77,7 +77,7 @@ class ListIndex(BaseIndex[IndexList]):
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
-    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexList:
+    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexList:
         """Build the index from documents.
 
         Args:
@@ -91,18 +91,18 @@ class ListIndex(BaseIndex[IndexList]):
             index_struct.add_node(n)
         return index_struct
 
-    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         for n in nodes:
             # print("inserting node to index struct: ", n.get_doc_id())
             self._index_struct.add_node(n)
 
-    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
         cur_node_ids = self._index_struct.nodes
         cur_nodes = self._docstore.get_nodes(cur_node_ids)
-        nodes_to_keep = [n for n in cur_nodes if n.doc_id != doc_id]
-        self._index_struct.nodes = [n.get_doc_id() for n in nodes_to_keep]
+        nodes_to_keep = [n for n in cur_nodes if n.node_id != node_id]
+        self._index_struct.nodes = [n.node_id for n in nodes_to_keep]
 
     @property
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
@@ -112,15 +112,15 @@ class ListIndex(BaseIndex[IndexList]):
 
         all_ref_doc_info = {}
         for node in nodes:
-            ref_doc_id = node.ref_doc_id
-            if not ref_doc_id:
+            ref_node = node.source_node
+            if not ref_node:
                 continue
 
-            ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+            ref_doc_info = self.docstore.get_ref_doc_info(ref_node.node_id)
             if not ref_doc_info:
                 continue
 
-            all_ref_doc_info[ref_doc_id] = ref_doc_info
+            all_ref_doc_info[ref_node.node_id] = ref_doc_info
         return all_ref_doc_info
 
 

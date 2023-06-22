@@ -69,7 +69,7 @@ class FaissReader(BaseReader):
 
         if not separate_documents:
             # join all documents into one
-            text_list = [doc.get_text() for doc in documents]
+            text_list = [doc.get_content() for doc in documents]
             text = "\n\n".join(text_list)
             documents = [Document(text=text)]
 

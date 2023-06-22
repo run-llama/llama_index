@@ -13,7 +13,6 @@ from sqlalchemy import (
     select,
 )
 
-from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.indices.list.base import ListIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -24,7 +23,7 @@ from llama_index.indices.struct_store.sql import (
 from llama_index.indices.struct_store.sql_query import NLStructStoreQueryEngine
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.readers.schema.base import Document
-from llama_index.schema import BaseDocument
+from llama_index.schema import BaseNode, NodeRelationship, TextNode, RelatedNodeInfo
 from tests.mock_utils.mock_prompts import MOCK_TABLE_CONTEXT_PROMPT
 
 
@@ -108,13 +107,13 @@ def test_sql_index_nodes(
 
     # try with different parent ids
     nodes = [
-        Node(
+        TextNode(
             text="user_id:2,foo:bar",
-            relationships={DocumentRelationship.SOURCE: "test"},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test1")},
         ),
-        Node(
+        TextNode(
             text="user_id:8,foo:hello",
-            relationships={DocumentRelationship.SOURCE: "test2"},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test2")},
         ),
     ]
     sql_database = SQLDatabase(engine, metadata=metadata_obj)
@@ -139,13 +138,13 @@ def test_sql_index_nodes(
 
     # try with same parent ids
     nodes = [
-        Node(
+        TextNode(
             text="user_id:2,foo:bar",
-            relationships={DocumentRelationship.SOURCE: "test"},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test1")},
         ),
-        Node(
+        TextNode(
             text="user_id:8,foo:hello",
-            relationships={DocumentRelationship.SOURCE: "test"},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test2")},
         ),
     ]
     sql_database = SQLDatabase(engine, metadata=metadata_obj)
@@ -230,8 +229,8 @@ def test_sql_index_with_context(
     # test setting sql_context_builder
     sql_database = SQLDatabase(engine)
     # this should cause the mock QuestionAnswer prompt to run
-    context_documents_dict: Dict[str, List[BaseDocument]] = {
-        "test_table": [Document("test_table_context")]
+    context_documents_dict: Dict[str, List[BaseNode]] = {
+        "test_table": [Document(text="test_table_context")]
     }
     sql_context_builder = SQLContextContainerBuilder.from_documents(
         context_documents_dict,

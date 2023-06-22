@@ -108,9 +108,9 @@ class MarkdownReader(BaseReader):
         # TODO: don't include headers right now
         for header, value in tups:
             if header is None:
-                results.append(Document(value, extra_info=extra_info))
+                results.append(Document(text=value, metadata=extra_info))
             else:
                 results.append(
-                    Document(f"\n\n{header}\n{value}", extra_info=extra_info)
+                    Document(text=f"\n\n{header}\n{value}", metadata=extra_info)
                 )
         return results

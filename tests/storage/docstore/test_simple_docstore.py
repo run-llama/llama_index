@@ -3,7 +3,8 @@
 
 from pathlib import Path
 import pytest
-from llama_index.data_structs.node import Node
+
+from llama_index.schema import TextNode
 from llama_index.storage.docstore import SimpleDocumentStore
 from llama_index.readers.schema.base import Document
 from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
@@ -16,8 +17,8 @@ def simple_docstore(simple_kvstore: SimpleKVStore) -> SimpleDocumentStore:
 
 def test_docstore(simple_docstore: SimpleDocumentStore) -> None:
     """Test docstore."""
-    doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
-    node = Node("my node", doc_id="d2", node_info={"node": "info"})
+    doc = Document(text="hello world", id_="d1", metadata={"foo": "bar"})
+    node = TextNode(text="my node", id_="d2", metadata={"node": "info"})
 
     # test get document
     docstore = simple_docstore
@@ -31,8 +32,8 @@ def test_docstore(simple_docstore: SimpleDocumentStore) -> None:
 def test_docstore_persist(tmp_path: Path) -> None:
     """Test docstore."""
     persist_path = str(tmp_path / "test_file.txt")
-    doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
-    node = Node("my node", doc_id="d2", node_info={"node": "info"})
+    doc = Document(text="hello world", id_="d1", metadata={"foo": "bar"})
+    node = TextNode(text="my node", id_="d2", metadata={"node": "info"})
 
     # add documents and then persist to dir
     docstore = SimpleDocumentStore()
@@ -48,8 +49,8 @@ def test_docstore_persist(tmp_path: Path) -> None:
 
 
 def test_docstore_dict() -> None:
-    doc = Document("hello world", doc_id="d1", extra_info={"foo": "bar"})
-    node = Node("my node", doc_id="d2", node_info={"node": "info"})
+    doc = Document(text="hello world", id_="d1", metadata={"foo": "bar"})
+    node = TextNode(text="my node", id_="d2", metadata={"node": "info"})
 
     # add documents and then save to dict
     docstore = SimpleDocumentStore()

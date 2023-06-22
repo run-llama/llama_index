@@ -1,14 +1,14 @@
 """Query plan tool."""
 
+from langchain.input import print_text
+from pydantic import BaseModel, Field
+from typing import Dict, List, Any, Optional
 
+from llama_index.indices.query.response_synthesis import ResponseSynthesizer
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.schema import NodeWithScore, TextNode
 from llama_index.tools.types import BaseTool
 from llama_index.tools.types import ToolMetadata
-from llama_index.indices.query.response_synthesis import ResponseSynthesizer
-from llama_index.data_structs.node import NodeWithScore, Node
-from typing import Dict, List, Any, Optional
-from pydantic import BaseModel, Field
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.bridge.langchain import print_text
 
 
 DEFAULT_NAME = "query_plan_tool"
@@ -161,10 +161,12 @@ class QueryPlanTool(BaseTool):
                     f"Query: {child_query_node.query_str}\n"
                     f"Response: {child_response}\n"
                 )
-                child_node = Node(node_text)
+                child_node = TextNode(text=node_text)
                 child_nodes.append(child_node)
             # use ResponseSynthesizer to combine results
-            child_nodes_with_scores = [NodeWithScore(n, 1.0) for n in child_nodes]
+            child_nodes_with_scores = [
+                NodeWithScore(node=n, score=1.0) for n in child_nodes
+            ]
             response_obj = self._response_synthesizer.synthesize(
                 query_bundle=QueryBundle(node.query_str),
                 nodes=child_nodes_with_scores,

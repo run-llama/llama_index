@@ -61,4 +61,4 @@ class VideoAudioReader(BaseReader):
 
         transcript = result["text"]
 
-        return [Document(transcript, extra_info=extra_info)]
+        return [Document(text=transcript, metadata=extra_info)]

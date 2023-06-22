@@ -365,7 +365,7 @@ class GithubRepositoryReader(BaseReader):
                 tmpfile.close()
                 try:
                     docs = reader.load_data(pathlib.Path(tmpfile.name))
-                    parsed_file = "\n\n".join([doc.get_text() for doc in docs])
+                    parsed_file = "\n\n".join([doc.get_content() for doc in docs])
                 except Exception as e:
                     print_if_verbose(self._verbose, f"error while parsing {file_path}")
                     logger.error(

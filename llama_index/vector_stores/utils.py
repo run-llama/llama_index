@@ -1,23 +1,23 @@
 import json
 from typing import Any, Dict, Tuple
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo
 
 DEFAULT_TEXT_KEY = "text"
 
 
-def node_to_metadata_dict(node: Node) -> dict:
+def node_to_metadata_dict(node: BaseNode) -> dict:
     """Common logic for saving Node data into metadata dict."""
     metadata: Dict[str, Any] = {}
 
     # store extra_info directly to allow metadata filtering
-    if node.extra_info is not None:
-        metadata.update(node.extra_info)
+    if node.metadata is not None:
+        metadata.update(node.metadata)
 
     # json-serialize the node_info
     node_info_str = ""
-    if node.node_info is not None:
-        node_info_str = json.dumps(node.node_info)
+    if node.node_info is not None:  # type: ignore[attr-defined]
+        node_info_str = json.dumps(node.node_info)  # type: ignore[attr-defined]
     metadata["node_info"] = node_info_str
 
     # json-serialize the relationships
@@ -51,12 +51,12 @@ def metadata_dict_to_node(
 
     # load relationships from json string
     relationships_str = metadata.pop("relationships", "")
-    relationships: Dict[DocumentRelationship, str]
+    relationships: Dict[NodeRelationship, RelatedNodeInfo]
     if relationships_str == "":
         relationships = {}
     else:
         relationships = {
-            DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
+            NodeRelationship(k): v for k, v in json.loads(relationships_str).items()
         }
 
     # remove other known fields

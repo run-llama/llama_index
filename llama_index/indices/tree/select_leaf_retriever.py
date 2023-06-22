@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, cast
 
 from llama_index.bridge.langchain import print_text
 
-from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response import get_response_builder
@@ -28,6 +27,7 @@ from llama_index.prompts.prompts import (
     TreeSelectPrompt,
 )
 from llama_index.response.schema import Response
+from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.utils import truncate_text
 
@@ -35,16 +35,16 @@ logger = logging.getLogger(__name__)
 
 
 def get_text_from_node(
-    node: Node,
+    node: BaseNode,
     level: Optional[int] = None,
     verbose: bool = False,
 ) -> str:
     """Get text from node."""
     level_str = "" if level is None else f"[Level {level}]"
-    fmt_text_chunk = truncate_text(node.get_text(), 50)
+    fmt_text_chunk = truncate_text(node.get_content(), 50)
     logger.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
-    response_txt = node.get_text()
+    response_txt = node.get_content()
     fmt_response = truncate_text(response_txt, 200)
     if verbose:
         print_text(f">{level_str} Got node text: {fmt_response}\n", color="blue")
@@ -97,7 +97,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
 
     def _query_with_selected_node(
         self,
-        selected_node: Node,
+        selected_node: BaseNode,
         query_bundle: QueryBundle,
         prev_response: Optional[str] = None,
         level: int = 0,
@@ -133,7 +133,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         if prev_response is None:
             return cur_response
         else:
-            context_msg = selected_node.get_text()
+            context_msg = selected_node.get_content()
             (
                 cur_response,
                 formatted_refine_prompt,
@@ -254,11 +254,11 @@ class TreeSelectLeafRetriever(BaseRetriever):
             logger.info(info_str)
             if self._verbose:
                 print_text(info_str, end="\n")
-            debug_str = " ".join(selected_node.get_text().splitlines())
+            debug_str = " ".join(selected_node.get_content().splitlines())
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
-                f"{ selected_node.get_text() }"
+                f"{ selected_node.get_content() }"
             )
             logger.debug(full_debug_str)
             if self._verbose:
@@ -289,10 +289,10 @@ class TreeSelectLeafRetriever(BaseRetriever):
 
     def _select_nodes(
         self,
-        cur_node_list: List[Node],
+        cur_node_list: List[BaseNode],
         query_bundle: QueryBundle,
         level: int = 0,
-    ) -> List[Node]:
+    ) -> List[BaseNode]:
         query_str = query_bundle.query_str
 
         if self.child_branch_factor == 1:
@@ -383,11 +383,11 @@ class TreeSelectLeafRetriever(BaseRetriever):
             logger.info(info_str)
             if self._verbose:
                 print_text(info_str, end="\n")
-            debug_str = " ".join(selected_node.get_text().splitlines())
+            debug_str = " ".join(selected_node.get_content().splitlines())
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
-                f"{ selected_node.get_text() }"
+                f"{ selected_node.get_content() }"
             )
             logger.debug(full_debug_str)
             if self._verbose:
@@ -401,7 +401,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         cur_node_ids: Dict[int, str],
         query_bundle: QueryBundle,
         level: int = 0,
-    ) -> List[Node]:
+    ) -> List[BaseNode]:
         """Answer a query recursively."""
         cur_nodes = {
             index: self._docstore.get_node(node_id)
@@ -440,4 +440,4 @@ class TreeSelectLeafRetriever(BaseRetriever):
             query_bundle,
             level=0,
         )
-        return [NodeWithScore(node) for node in nodes]
+        return [NodeWithScore(node=node) for node in nodes]

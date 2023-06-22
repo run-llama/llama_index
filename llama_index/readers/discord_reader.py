@@ -140,7 +140,7 @@ class DiscordReader(BaseReader):
                 channel_id, limit=limit, oldest_first=oldest_first
             )
             results.append(
-                Document(channel_content, extra_info={"channel": channel_id})
+                Document(text=channel_content, metadata={"channel": channel_id})
             )
         return results
 

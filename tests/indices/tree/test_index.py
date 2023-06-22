@@ -4,19 +4,19 @@ from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
 from llama_index.data_structs.data_structs import IndexGraph
-from llama_index.data_structs.node import Node
 from llama_index.indices.service_context import ServiceContext
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.readers.schema.base import Document
+from llama_index.schema import BaseNode
 
 
 def _get_left_or_right_node(
     docstore: BaseDocumentStore,
     index_graph: IndexGraph,
-    node: Optional[Node],
+    node: Optional[BaseNode],
     left: bool = True,
-) -> Node:
+) -> BaseNode:
     """Get 'left' or 'right' node."""
     children_dict = index_graph.get_children(node)
     indices = list(children_dict.keys())
@@ -39,12 +39,12 @@ def test_build_tree(
     # check contents of nodes
 
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
-    assert nodes[0].text == "Hello world."
-    assert nodes[1].text == "This is a test."
-    assert nodes[2].text == "This is another test."
-    assert nodes[3].text == "This is a test v2."
-    assert nodes[4].text == ("Hello world.\nThis is a test.")
-    assert nodes[5].text == ("This is another test.\nThis is a test v2.")
+    assert nodes[0].get_content() == "Hello world."
+    assert nodes[1].get_content() == "This is a test."
+    assert nodes[2].get_content() == "This is another test."
+    assert nodes[3].get_content() == "This is a test v2."
+    assert nodes[4].get_content() == ("Hello world.\nThis is a test.")
+    assert nodes[5].get_content() == ("This is another test.\nThis is a test v2.")
 
     # test ref doc info
     all_ref_doc_info = tree.ref_doc_info
@@ -65,22 +65,22 @@ def test_build_tree_with_embed(
         "This is another test.\n"
         "This is a test v2."
     )
-    document = Document(doc_text, embedding=[0.1, 0.2, 0.3])
+    document = Document(text=doc_text, embedding=[0.1, 0.2, 0.3])
     tree = TreeIndex.from_documents(
         [document], service_context=mock_service_context, **index_kwargs
     )
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
     all_nodes = tree.docstore.get_node_dict(tree.index_struct.all_nodes)
-    assert all_nodes[0].text == "Hello world."
-    assert all_nodes[1].text == "This is a test."
-    assert all_nodes[2].text == "This is another test."
-    assert all_nodes[3].text == "This is a test v2."
+    assert all_nodes[0].get_content() == "Hello world."
+    assert all_nodes[1].get_content() == "This is a test."
+    assert all_nodes[2].get_content() == "This is another test."
+    assert all_nodes[3].get_content() == "This is a test v2."
     # make sure all leaf nodes have embeddings
     for i in range(4):
         assert all_nodes[i].embedding == [0.1, 0.2, 0.3]
-    assert all_nodes[4].text == ("Hello world.\nThis is a test.")
-    assert all_nodes[5].text == ("This is another test.\nThis is a test v2.")
+    assert all_nodes[4].get_content() == ("Hello world.\nThis is a test.")
+    assert all_nodes[5].get_content() == ("This is another test.\nThis is a test v2.")
 
 
 OUTPUTS = [
@@ -104,12 +104,12 @@ def test_build_tree_async(
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
-    assert nodes[0].text == "Hello world."
-    assert nodes[1].text == "This is a test."
-    assert nodes[2].text == "This is another test."
-    assert nodes[3].text == "This is a test v2."
-    assert nodes[4].text == ("Hello world.\nThis is a test.")
-    assert nodes[5].text == ("This is another test.\nThis is a test v2.")
+    assert nodes[0].get_content() == "Hello world."
+    assert nodes[1].get_content() == "This is a test."
+    assert nodes[2].get_content() == "This is another test."
+    assert nodes[3].get_content() == "This is a test v2."
+    assert nodes[4].get_content() == ("Hello world.\nThis is a test.")
+    assert nodes[5].get_content() == ("This is another test.\nThis is a test v2.")
 
 
 def test_build_tree_multiple(
@@ -118,8 +118,8 @@ def test_build_tree_multiple(
 ) -> None:
     """Test build tree."""
     new_docs = [
-        Document("Hello world.\nThis is a test."),
-        Document("This is another test.\nThis is a test v2."),
+        Document(text="Hello world.\nThis is a test."),
+        Document(text="This is another test.\nThis is a test v2."),
     ]
     index_kwargs, _ = struct_kwargs
     tree = TreeIndex.from_documents(
@@ -128,10 +128,10 @@ def test_build_tree_multiple(
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
-    assert nodes[0].text == "Hello world."
-    assert nodes[1].text == "This is a test."
-    assert nodes[2].text == "This is another test."
-    assert nodes[3].text == "This is a test v2."
+    assert nodes[0].get_content() == "Hello world."
+    assert nodes[1].get_content() == "This is a test."
+    assert nodes[2].get_content() == "This is another test."
+    assert nodes[3].get_content() == "This is a test v2."
 
 
 def test_insert(
@@ -146,7 +146,7 @@ def test_insert(
     )
 
     # test insert
-    new_doc = Document("This is a new doc.", doc_id="new_doc")
+    new_doc = Document(text="This is a new doc.", id_="new_doc")
     tree.insert(new_doc)
     # Before:
     # Left root node: "Hello world.\nThis is a test."
@@ -158,40 +158,40 @@ def test_insert(
     # "This is a test", "This is a new doc." are the children of
     # "This is a test\n.This is a new doc."
     left_root = _get_left_or_right_node(tree.docstore, tree.index_struct, None)
-    assert left_root.text == "Hello world.\nThis is a test."
+    assert left_root.get_content() == "Hello world.\nThis is a test."
     left_root2 = _get_left_or_right_node(tree.docstore, tree.index_struct, left_root)
     right_root2 = _get_left_or_right_node(
         tree.docstore, tree.index_struct, left_root, left=False
     )
-    assert left_root2.text == "Hello world."
-    assert right_root2.text == "This is a test.\nThis is a new doc."
+    assert left_root2.get_content() == "Hello world."
+    assert right_root2.get_content() == "This is a test.\nThis is a new doc."
     left_root3 = _get_left_or_right_node(tree.docstore, tree.index_struct, right_root2)
     right_root3 = _get_left_or_right_node(
         tree.docstore, tree.index_struct, right_root2, left=False
     )
-    assert left_root3.text == "This is a test."
-    assert right_root3.text == "This is a new doc."
+    assert left_root3.get_content() == "This is a test."
+    assert right_root3.get_content() == "This is a new doc."
     assert right_root3.ref_doc_id == "new_doc"
 
     # test insert from empty (no_id)
     tree = TreeIndex.from_documents(
         [], service_context=mock_service_context, **index_kwargs
     )
-    new_doc = Document("This is a new doc.")
+    new_doc = Document(text="This is a new doc.")
     tree.insert(new_doc)
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
     assert len(nodes) == 1
-    assert nodes[0].text == "This is a new doc."
+    assert nodes[0].get_content() == "This is a new doc."
 
     # test insert from empty (with_id)
     tree = TreeIndex.from_documents(
         [], service_context=mock_service_context, **index_kwargs
     )
-    new_doc = Document("This is a new doc.", doc_id="new_doc_test")
+    new_doc = Document(text="This is a new doc.", id_="new_doc_test")
     tree.insert(new_doc)
     assert len(tree.index_struct.all_nodes) == 1
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
-    assert nodes[0].text == "This is a new doc."
+    assert nodes[0].get_content() == "This is a new doc."
     assert nodes[0].ref_doc_id == "new_doc_test"
 
 
@@ -202,10 +202,10 @@ def test_twice_insert_empty(
     tree = TreeIndex.from_documents([], service_context=mock_service_context)
 
     # test first insert
-    new_doc = Document("This is a new doc.", doc_id="new_doc")
+    new_doc = Document(text="This is a new doc.", id_="new_doc")
     tree.insert(new_doc)
     # test second insert
-    new_doc_second = Document("This is a new doc2.", doc_id="new_doc_2")
+    new_doc_second = Document(text="This is a new doc2.", id_="new_doc_2")
     tree.insert(new_doc_second)
     assert len(tree.index_struct.all_nodes) == 2
 

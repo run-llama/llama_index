@@ -52,7 +52,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
             new_docs = []
             for node, eval_result in zip(orig_nodes, source_evals):
                 if eval_result:
-                    new_docs.append(Document(node.node.get_text()))
+                    new_docs.append(Document(text=node.node.get_content()))
             if len(new_docs) == 0:
                 raise ValueError("No source nodes passed evaluation.")
             new_index = ListIndex.from_documents(new_docs)

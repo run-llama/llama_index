@@ -58,13 +58,13 @@ def retriever_kwargs() -> Dict:
 def documents() -> List[Document]:
     """Get documents."""
     docs = [
-        Document("This is a test v2."),
-        Document("This is another test."),
-        Document("This is a test."),
-        Document("Hello world."),
-        Document("Hello world."),
-        Document("This is a test."),
-        Document("This is another test."),
-        Document("This is a test v2."),
+        Document(text="This is a test v2."),
+        Document(text="This is another test."),
+        Document(text="This is a test."),
+        Document(text="Hello world."),
+        Document(text="Hello world."),
+        Document(text="This is a test."),
+        Document(text="This is another test."),
+        Document(text="This is a test v2."),
     ]
     return docs

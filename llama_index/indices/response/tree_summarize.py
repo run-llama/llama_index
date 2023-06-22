@@ -107,7 +107,6 @@ class TreeSummarize(BaseResponseBuilder):
         summary_template = SummaryPrompt.from_prompt(
             text_qa_template, prompt_type=PromptType.SUMMARY
         )
-
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._service_context.prompt_helper.repack(
             summary_template, text_chunks=text_chunks

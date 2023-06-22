@@ -12,8 +12,8 @@ try:
 except ImportError:
     clickhouse_connect = None  # type: ignore
 
-from llama_index.data_structs.node import Node
 from llama_index.readers.schema.base import Document
+from llama_index.schema import BaseNode
 from llama_index.vector_stores import MyScaleVectorStore
 from llama_index.vector_stores.types import VectorStoreQuery
 
@@ -117,7 +117,7 @@ def test_myscale_combine_search(
     query.query_embedding = index.service_context.embed_model.get_query_embedding(
         cast(str, query.query_str)
     )
-    responseNodes = cast(List[Node], index._vector_store.query(query).nodes)
+    responseNodes = cast(List[BaseNode], index._vector_store.query(query).nodes)
     assert len(responseNodes) == 1
-    assert responseNodes[0].doc_id == "1"
+    assert responseNodes[0].id_ == "1"
     cast(MyScaleVectorStore, index._vector_store).drop()

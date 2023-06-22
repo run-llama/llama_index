@@ -12,8 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 if TYPE_CHECKING:
     from weaviate import Client
 
-from llama_index.data_structs.data_structs import Node
-from llama_index.data_structs.node import DocumentRelationship
+from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
@@ -121,12 +120,13 @@ def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, di
         node_info = json.loads(node_info_str)
 
     relationships_str = entry["relationships"]
-    relationships: Dict[DocumentRelationship, str]
+    relationships: Dict[NodeRelationship, RelatedNodeInfo]
     if relationships_str == "":
         relationships = field(default_factory=dict)
     else:
         relationships = {
-            DocumentRelationship(k): v for k, v in json.loads(relationships_str).items()
+            NodeRelationship(k): RelatedNodeInfo(node_id=v)
+            for k, v in json.loads(relationships_str).items()
         }
     return extra_info, node_info, relationships
 
@@ -138,7 +138,7 @@ def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
     return 1.0 - distance
 
 
-def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> Node:
+def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
     """Convert to Node."""
     additional = entry.pop("_additional")
     text = entry.pop(text_key, "")
@@ -149,11 +149,12 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> Node:
         _logger.debug("Failed to parse Node metadata, fallback to legacy logic.", e)
         extra_info, node_info, relationships = _legacy_metadata_dict_to_node(entry)
 
-    return Node(
+    return TextNode(
         text=text,
-        doc_id=additional["id"],
-        extra_info=extra_info,
-        node_info=node_info,
+        id_=additional["id"],
+        metadata=extra_info,
+        start_char_idx=node_info.get("start", None),
+        end_char_idx=node_info.get("end", None),
         relationships=relationships,
         embedding=additional["vector"],
     )
@@ -161,14 +162,14 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> Node:
 
 def add_node(
     client: "Client",
-    node: Node,
+    node: BaseNode,
     class_name: str,
     batch: Optional[Any] = None,
     text_key: str = DEFAULT_TEXT_KEY,
 ) -> None:
     """Add node."""
     metadata = {}
-    metadata[text_key] = node.text or ""
+    metadata[text_key] = node.get_content() or ""
 
     additional_metadata = node_to_metadata_dict(node)
     metadata.update(additional_metadata)
