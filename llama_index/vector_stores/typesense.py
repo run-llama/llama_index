@@ -46,6 +46,7 @@ class TypesenseVectorStore(VectorStore):
     """
 
     stores_text: bool = True
+    is_embedding_query = False
 
     def __init__(
         self,
