@@ -1,6 +1,5 @@
 from typing import List, Any, Type, Optional
 
-from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
     VectorStore,
     NodeWithEmbedding,
