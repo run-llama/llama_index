@@ -37,6 +37,8 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = Prompt(
 class SQLStructStoreQueryEngine(BaseQueryEngine):
     """GPT SQL query engine over a structured database.
 
+    NOTE: deprecated, kept for backward compatibility
+
     Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made here.
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
@@ -70,6 +72,8 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
 
 class NLStructStoreQueryEngine(BaseQueryEngine):
     """GPT natural language query engine over a structured database.
+
+    NOTE: deprecated, kept for backward compatibility
 
     Given a natural language query, we will extract the query to SQL.
     Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made during
@@ -204,28 +208,6 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         extra_info["sql_query"] = sql_query_str
         response = Response(response=response_str, extra_info=extra_info)
         return response
-
-
-class SQLTableQueryEngine(BaseQueryEngine):
-    def __init__(
-        self,
-        sql_database: SQLDatabase,
-        **kwargs: Any,
-    ) -> None:
-        self._sql_database = sql_database
-        super().__init__(**kwargs)
-
-    def _query(self, query_bundle: QueryBundle) -> Response:
-        """Answer a query."""
-        # NOTE: override query method in order to fetch the right results.
-        # NOTE: since the query_str is a SQL query, it doesn't make sense
-        # to use ResponseBuilder anywhere.
-        response_str, extra_info = self._sql_database.run_sql(query_bundle.query_str)
-        response = Response(response=response_str, extra_info=extra_info)
-        return response
-
-    async def _aquery(self, query_bundle: QueryBundle) -> Response:
-        return self._query(query_bundle)
 
 
 class NLSQLTableQueryEngine(BaseQueryEngine):
