@@ -20,7 +20,7 @@ class SimpleToolNodeMapping(BaseToolNodeMapping):
     """
 
     def __init__(self, tools: Sequence[BaseTool]) -> None:
-        self._tools = {hash(tool): tool for tool in tools}
+        self._tools = {tool.metadata.name: tool for tool in tools}
 
     @classmethod
     def from_objects(
@@ -29,7 +29,7 @@ class SimpleToolNodeMapping(BaseToolNodeMapping):
         return cls(tools)
 
     def add_object(self, tool: BaseTool) -> None:
-        self._objs[tool.metadata.name] = tool
+        self._tools[tool.metadata.name] = tool
 
     def to_node(self, obj: BaseTool) -> BaseTool:
         """To node."""

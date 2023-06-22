@@ -16,20 +16,6 @@ from llama_index.agent.openai_agent import (
 )
 
 
-from typing import Sequence, Dict
-
-
-# class OpenAIFnNodeMapping(BaseObjectNodeMapping[OpenAIFunctionSchema]):
-#     """OpenAI Function node mapping."""
-
-#     def to_node(self, obj: OpenAIFunctionSchema) -> Node:
-#         return Node(text=str(obj.json()))
-
-#     @classmethod
-#     def from_node(cls, node: Node) -> OpenAIFunctionSchema:
-#         return OpenAIFunctionSchema.parse_raw(node.text)
-
-
 class FnRetrieverOpenAIAgent(BaseOpenAIAgent):
     """Function Retriever OpenAI Agent.
 
