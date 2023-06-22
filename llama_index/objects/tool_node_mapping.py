@@ -21,6 +21,10 @@ def convert_tool_to_node(tool: BaseTool) -> Node:
 class BaseToolNodeMapping(BaseObjectNodeMapping[BaseTool]):
     """Base Tool node mapping."""
 
+    def validate_object(self, obj: BaseTool) -> None:
+        if not isinstance(obj, BaseTool):
+            raise ValueError(f"Object must be of type {BaseTool}")
+
 
 class SimpleToolNodeMapping(BaseToolNodeMapping):
     """Simple Tool mapping.
@@ -39,14 +43,14 @@ class SimpleToolNodeMapping(BaseToolNodeMapping):
     ) -> "BaseObjectNodeMapping":
         return cls(objs)
 
-    def add_object(self, tool: BaseTool) -> None:
+    def _add_object(self, tool: BaseTool) -> None:
         self._tools[tool.metadata.name] = tool
 
     def to_node(self, tool: BaseTool) -> Node:
         """To node."""
         return convert_tool_to_node(tool)
 
-    def from_node(self, node: Node) -> BaseTool:
+    def _from_node(self, node: Node) -> BaseTool:
         """From node."""
         if node.node_info is None:
             raise ValueError("Node info must be set")
@@ -63,13 +67,17 @@ class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):
     def __init__(self, objs: Sequence[QueryEngineTool]) -> None:
         self._tools = {tool.metadata.name: tool for tool in objs}
 
+    def validate_object(self, obj: QueryEngineTool) -> None:
+        if not isinstance(obj, QueryEngineTool):
+            raise ValueError(f"Object must be of type {QueryEngineTool}")
+
     @classmethod
     def from_objects(
         cls, objs: Sequence[QueryEngineTool], *args: Any, **kwargs: Any
     ) -> "BaseObjectNodeMapping":
         return cls(objs)
 
-    def add_object(self, tool: QueryEngineTool) -> None:
+    def _add_object(self, tool: QueryEngineTool) -> None:
         if tool.metadata.name is None:
             raise ValueError("Tool name must be set")
         self._tools[tool.metadata.name] = tool
@@ -78,7 +86,7 @@ class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):
         """To node."""
         return convert_tool_to_node(obj)
 
-    def from_node(self, node: Node) -> QueryEngineTool:
+    def _from_node(self, node: Node) -> QueryEngineTool:
         """From node."""
         if node.node_info is None:
             raise ValueError("Node info must be set")

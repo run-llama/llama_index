@@ -27,7 +27,6 @@ class BaseObjectNodeMapping(Generic[OT]):
         """Validate object."""
         pass
 
-    @abstractmethod
     def add_object(self, obj: OT) -> None:
         """Add object.
 
@@ -35,7 +34,17 @@ class BaseObjectNodeMapping(Generic[OT]):
         needs to be initialized with a list of objects.
 
         """
-        pass
+        self.validate_object(obj)
+        self._add_object(obj)
+
+    @abstractmethod
+    def _add_object(self, obj: OT) -> None:
+        """Add object.
+
+        Only needs to be specified if the node mapping
+        needs to be initialized with a list of objects.
+
+        """
 
     @abstractmethod
     def to_node(self, obj: OT) -> Node:
@@ -45,13 +54,23 @@ class BaseObjectNodeMapping(Generic[OT]):
     def to_nodes(self, objs: Sequence[OT]) -> Sequence[Node]:
         return [self.to_node(obj) for obj in objs]
 
-    @abstractmethod
     def from_node(self, node: Node) -> OT:
+        """From node."""
+        obj = self._from_node(node)
+        self.validate_object(obj)
+        return obj
+
+    @abstractmethod
+    def _from_node(self, node: Node) -> OT:
         """From node."""
 
 
 class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
-    """General node mapping that works for any obj."""
+    """General node mapping that works for any obj.
+
+    More specifically, any object with a meaningful string representation.
+
+    """
 
     def __init__(self, objs: Sequence[Any]) -> None:
         for obj in objs:
@@ -64,11 +83,11 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
     ) -> "BaseObjectNodeMapping":
         return cls(objs)
 
-    def add_object(self, obj: Any) -> None:
+    def _add_object(self, obj: Any) -> None:
         self._objs[hash(str(obj))] = obj
 
     def to_node(self, obj: Any) -> Node:
         return Node(text=str(obj))
 
-    def from_node(self, node: Node) -> Any:
+    def _from_node(self, node: Node) -> Any:
         return self._objs[hash(node.text)]
