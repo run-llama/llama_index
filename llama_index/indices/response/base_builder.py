@@ -23,11 +23,11 @@ class BaseResponseBuilder(ABC):
 
     def __init__(
         self,
-        service_context: ServiceContext,
+        service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
     ) -> None:
         """Init params."""
-        self._service_context = service_context
+        self._service_context = service_context or ServiceContext.from_defaults()
         self._streaming = streaming
 
     @property

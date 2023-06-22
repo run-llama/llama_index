@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Sequence, Tuple
 from llama_index.async_utils import run_async_tasks
 from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.prompts import QuestionAnswerPrompt, SummaryPrompt
 from llama_index.token_counter.token_counter import llm_token_counter
@@ -13,17 +14,19 @@ from llama_index.types import RESPONSE_TEXT_TYPE
 class TreeSummarize(BaseResponseBuilder):
     def __init__(
         self,
-        service_context: ServiceContext,
-        text_qa_template: QuestionAnswerPrompt,
+        service_context: Optional[ServiceContext] = None,
+        text_qa_template: Optional[QuestionAnswerPrompt] = None,
         streaming: bool = False,
         use_async: bool = True,
+        verbose: bool = False,
     ) -> None:
         super().__init__(
             service_context=service_context,
             streaming=streaming,
         )
-        self._text_qa_template = text_qa_template
+        self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._use_async = use_async
+        self._verbose = verbose
 
     @llm_token_counter("aget_response")
     async def aget_response(
@@ -43,6 +46,9 @@ class TreeSummarize(BaseResponseBuilder):
         text_chunks = self._service_context.prompt_helper.repack(
             summary_template, text_chunks=text_chunks
         )
+
+        if self._verbose:
+            print(f"{len(text_chunks)} text chunks after repacking")
 
         # give final response if there is only one chunk
         if len(text_chunks) == 1:
@@ -95,6 +101,9 @@ class TreeSummarize(BaseResponseBuilder):
         text_chunks = self._service_context.prompt_helper.repack(
             summary_template, text_chunks=text_chunks
         )
+
+        if self._verbose:
+            print(f"{len(text_chunks)} text chunks after repacking")
 
         # give final response if there is only one chunk
         if len(text_chunks) == 1:
