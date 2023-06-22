@@ -4,7 +4,6 @@ from typing import List, Sequence
 from unittest.mock import Mock
 
 from llama_index.indices.prompt_helper import PromptHelper
-from llama_index.indices.response import ResponseMode, get_response_builder
 from llama_index.indices.response.tree_summarize import TreeSummarize
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import Prompt
