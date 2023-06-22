@@ -1,4 +1,4 @@
-from typing import Any, Generator, Optional, Sequence, cast
+from typing import Any, Generator, Sequence, cast
 
 from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
