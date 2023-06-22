@@ -7,6 +7,7 @@ in sequence in order to answer a given query.
 
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union
+from tqdm import tqdm
 
 from llama_index.data_structs.data_structs import IndexList
 from llama_index.data_structs.node import Node
@@ -59,7 +60,8 @@ class ListIndex(BaseIndex[IndexList]):
 
     def as_retriever(
         self,
-        retriever_mode: Union[str, ListRetrieverMode] = ListRetrieverMode.DEFAULT,
+        retriever_mode: Union[str,
+                              ListRetrieverMode] = ListRetrieverMode.DEFAULT,
         **kwargs: Any,
     ) -> BaseRetriever:
         from llama_index.indices.list.retrievers import (
@@ -87,7 +89,7 @@ class ListIndex(BaseIndex[IndexList]):
             IndexList: The created list index.
         """
         index_struct = IndexList()
-        for n in nodes:
+        for n in tqdm(nodes, desc="Building list index from nodes"):
             index_struct.add_node(n)
         return index_struct
 

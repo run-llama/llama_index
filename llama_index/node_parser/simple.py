@@ -1,5 +1,6 @@
 """Simple node parser."""
 from typing import List, Optional, Sequence
+from tqdm import tqdm
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -66,6 +67,7 @@ class SimpleNodeParser(NodeParser):
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
+        show_progress_bar: bool = False,
     ) -> List[Node]:
         """Parse document into nodes.
 
@@ -75,10 +77,15 @@ class SimpleNodeParser(NodeParser):
 
         """
         event_id = self.callback_manager.on_event_start(
-            CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
+            CBEventType.NODE_PARSING, payload={
+                EventPayload.DOCUMENTS: documents}
         )
         all_nodes: List[Node] = []
-        for document in documents:
+
+        iterable_documents = tqdm(
+            documents, desc="Parsing documents into nodes") if show_progress_bar else documents
+
+        for document in iterable_documents:
             nodes = get_nodes_from_document(
                 document,
                 self._text_splitter,

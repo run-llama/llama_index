@@ -10,6 +10,7 @@ existing keywords in the table.
 
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+from tqdm import tqdm
 
 from llama_index.constants import GRAPH_STORE_KEY
 from llama_index.data_structs.data_structs import KG
@@ -26,6 +27,7 @@ from llama_index.prompts.default_prompts import (
 from llama_index.prompts.prompts import KnowledgeGraphPrompt
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
+
 
 # import registery functions
 
@@ -89,7 +91,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             and isinstance(self.graph_store, SimpleGraphStore)
             and len(self.graph_store._data.graph_dict) == 0
         ):
-            logger.warning("Upgrading previously saved KG index to new storage format.")
+            logger.warning(
+                "Upgrading previously saved KG index to new storage format.")
             self.graph_store._data.graph_dict = self.index_struct.rel_map
 
     @property
@@ -120,9 +123,6 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         knowledge_strs = response.strip().split("\n")
         results = []
         for text in knowledge_strs:
-            if text == "" or text[0] != "(":
-                # skip empty lines and non-triplets
-                continue
             tokens = text[1:-1].split(",")
             if len(tokens) != 3:
                 continue
@@ -134,7 +134,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         """Build the index from nodes."""
         # do simple concatenation
         index_struct = self.index_struct_cls()
-        for n in nodes:
+        for n in tqdm(nodes, desc="Building KG index from nodes"):
             triplets = self._extract_triplets(n.get_text())
             logger.debug(f"> Extracted triplets: {triplets}")
             for triplet in triplets:
@@ -175,7 +175,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                             triplet_str
                         )
                     )
-                    self._index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
+                    self._index_struct.add_to_embedding_dict(
+                        triplet_str, rel_embedding)
 
     def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:
         """Insert triplets.
@@ -244,11 +245,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             all_ref_doc_info[ref_doc_id] = ref_doc_info
         return all_ref_doc_info
 
-    def get_networkx_graph(self, limit: int = 100) -> Any:
+    def get_networkx_graph(self) -> Any:
         """Get networkx representation of the graph structure.
-
-        Args:
-            limit (int): Number of starting nodes to be included in the graph.
 
         NOTE: This function requires networkx to be installed.
         NOTE: This is a beta feature.
@@ -262,18 +260,17 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             )
 
         g = nx.Graph()
-        # add nodes with limited number of starting nodes
+        # add nodes
+        # TBD: for simple triplets, nodes could be omitted
         for node_name in self.index_struct.table.keys():
-            if limit <= 0:
-                break
             g.add_node(node_name)
-            limit -= 1
 
         # add edges
-        rel_map = self._graph_store.get_rel_map(list(g.nodes().keys()), 1)
+        # TBD: limit for full graph scan could be added
+        rel_map = self._graph_store.get_rel_map(None, 1)
         for keyword in rel_map.keys():
             for obj, rel in rel_map[keyword]:
-                g.add_edge(keyword, obj, label=rel, title=rel)
+                g.add_edge(keyword, obj, title=rel)
 
         return g
 

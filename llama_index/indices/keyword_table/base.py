@@ -11,6 +11,7 @@ existing keywords in the table.
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Set, Union
+from tqdm import tqdm
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import KeywordTable
@@ -25,6 +26,7 @@ from llama_index.prompts.default_prompts import (
 )
 from llama_index.prompts.prompts import KeywordExtractPrompt
 from llama_index.storage.docstore.types import RefDocInfo
+
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -129,7 +131,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         self, index_struct: KeywordTable, nodes: Sequence[Node]
     ) -> None:
         """Add document to index."""
-        for n in nodes:
+        for n in tqdm(nodes, desc="Adding nodes to index"):
             keywords = await self._async_extract_keywords(n.get_text())
             index_struct.add_node(list(keywords), n)
 
@@ -199,7 +201,8 @@ class KeywordTableIndex(BaseKeywordTableIndex):
             self.keyword_extract_template,
             text=text,
         )
-        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
+        keywords = extract_keywords_given_response(
+            response, start_token="KEYWORDS:")
         return keywords
 
     async def _async_extract_keywords(self, text: str) -> Set[str]:
@@ -208,7 +211,8 @@ class KeywordTableIndex(BaseKeywordTableIndex):
             self.keyword_extract_template,
             text=text,
         )
-        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
+        keywords = extract_keywords_given_response(
+            response, start_token="KEYWORDS:")
         return keywords
 
 

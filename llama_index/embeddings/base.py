@@ -6,10 +6,12 @@ from enum import Enum
 from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
+from tqdm import tqdm
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.utils import globals_helper
+
 
 # TODO: change to numpy array
 EMB_TYPE = List
@@ -90,7 +92,8 @@ class BaseEmbedding:
         agg_fn: Optional[Callable[..., List[float]]] = None,
     ) -> List[float]:
         """Get aggregated embedding from multiple queries."""
-        query_embeddings = [self.get_query_embedding(query) for query in queries]
+        query_embeddings = [self.get_query_embedding(
+            query) for query in queries]
         agg_fn = agg_fn or mean_agg
         return agg_fn(query_embeddings)
 
@@ -160,13 +163,14 @@ class BaseEmbedding:
         cur_batch: List[Tuple[str, str]] = []
         result_ids: List[str] = []
         result_embeddings: List[List[float]] = []
-        for idx, (text_id, text) in enumerate(text_queue):
+        for idx, (text_id, text) in tqdm(enumerate(text_queue), total=len(text_queue), desc="Generating embeddings"):
             cur_batch.append((text_id, text))
             text_tokens_count = len(self._tokenizer(text))
             self._total_tokens_used += text_tokens_count
             if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
                 # flush
-                event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
+                event_id = self.callback_manager.on_event_start(
+                    CBEventType.EMBEDDING)
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
                 cur_batch_texts = [text for _, text in cur_batch]
                 embeddings = self._get_text_embeddings(cur_batch_texts)
@@ -203,7 +207,8 @@ class BaseEmbedding:
             self._total_tokens_used += text_tokens_count
             if idx == len(text_queue) - 1 or len(cur_batch) == self._embed_batch_size:
                 # flush
-                event_id = self.callback_manager.on_event_start(CBEventType.EMBEDDING)
+                event_id = self.callback_manager.on_event_start(
+                    CBEventType.EMBEDDING)
                 cur_batch_ids = [text_id for text_id, _ in cur_batch]
                 cur_batch_texts = [text for _, text in cur_batch]
                 embeddings_coroutines.append(
