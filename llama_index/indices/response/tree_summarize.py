@@ -52,6 +52,7 @@ class TreeSummarize(BaseResponseBuilder):
 
         # give final response if there is only one chunk
         if len(text_chunks) == 1:
+            response: RESPONSE_TEXT_TYPE
             if self._streaming:
                 response, _ = self._service_context.llm_predictor.stream(
                     summary_template,
@@ -107,6 +108,7 @@ class TreeSummarize(BaseResponseBuilder):
 
         # give final response if there is only one chunk
         if len(text_chunks) == 1:
+            response: RESPONSE_TEXT_TYPE
             if self._streaming:
                 response, _ = self._service_context.llm_predictor.stream(
                     summary_template,
