@@ -105,8 +105,8 @@ class DeepLakeReader(BaseReader):
         documents = []
         for idx in indices:
             document = Document(
-                doc_id=dataset[idx].ids.numpy().tolist()[0],
                 text=str(dataset[idx].text.numpy().tolist()[0]),
+                id_=dataset[idx].ids.numpy().tolist()[0],
             )
 
             documents.append(document)

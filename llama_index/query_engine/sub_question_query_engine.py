@@ -6,7 +6,6 @@ from langchain.input import get_color_mapping, print_text
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.base import CallbackManager
-from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.indices.query.schema import QueryBundle
@@ -14,6 +13,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.schema import NodeWithScore, TextNode
 from llama_index.tools.query_engine import QueryEngineTool
 
 logger = logging.getLogger(__name__)
@@ -138,7 +138,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         nodes_all = cast(List[Optional[NodeWithScore]], nodes_all)
 
         # filter out sub questions that failed
-        nodes = list(filter(None, nodes_all))
+        nodes: List[NodeWithScore] = list(filter(None, nodes_all))
 
         return await self._response_synthesizer.asynthesize(
             query_bundle=query_bundle,
@@ -162,7 +162,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return NodeWithScore(Node(text=node_text))
+            return NodeWithScore(node=TextNode(text=node_text))
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
@@ -184,7 +184,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"[{sub_q.tool_name}] A: {response_text}\n", color=color)
 
-            return NodeWithScore(Node(text=node_text))
+            return NodeWithScore(node=TextNode(text=node_text))
         except ValueError:
             logger.warn(f"[{sub_q.tool_name}] Failed to run {question}")
             return None

@@ -51,7 +51,7 @@ class SimpleWebPageReader(BaseReader):
 
                 response = html2text.html2text(response)
 
-            documents.append(Document(response))
+            documents.append(Document(text=response))
 
         return documents
 
@@ -104,7 +104,7 @@ class TrafilaturaWebReader(BaseReader):
                 if self.error_on_missing:
                     raise ValueError(f"Trafilatura fails to parse page: {url}")
                 continue
-            documents.append(Document(response))
+            documents.append(Document(text=response))
 
         return documents
 
@@ -193,7 +193,7 @@ class BeautifulSoupWebReader(BaseReader):
             else:
                 data = soup.getText()
 
-            documents.append(Document(data, extra_info=extra_info))
+            documents.append(Document(text=data, metadata=extra_info))
 
         return documents
 
@@ -260,7 +260,7 @@ class RssReader(BaseReader):
                     data = html2text.html2text(data)
 
                 extra_info = {"title": entry.title, "link": entry.link}
-                documents.append(Document(data, extra_info=extra_info))
+                documents.append(Document(text=data, metadata=extra_info))
 
         return documents
 

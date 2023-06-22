@@ -3,7 +3,7 @@ import logging
 import math
 from typing import Any, List, Tuple, cast
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import NodeRelationship, TextNode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -29,7 +29,7 @@ def _legacy_metadata_dict_to_node(metadata: dict) -> Tuple[dict, dict, dict]:
     extra_info = metadata
     node_info: dict = {}
     relationships = {
-        DocumentRelationship.SOURCE: metadata["document_id"],
+        NodeRelationship.SOURCE: metadata["document_id"],
     }
     return extra_info, node_info, relationships
 
@@ -81,7 +81,7 @@ class ChromaVectorStore(VectorStore):
             embeddings.append(result.embedding)
             metadatas.append(node_to_metadata_dict(result.node))
             ids.append(result.id)
-            documents.append(result.node.text or "")
+            documents.append(result.node.get_content() or "")
 
         self._collection.add(
             embeddings=embeddings,
@@ -150,11 +150,12 @@ class ChromaVectorStore(VectorStore):
                     metadata
                 )
 
-            node = Node(
-                doc_id=node_id,
+            node = TextNode(
                 text=text,
-                extra_info=extra_info,
-                node_info=node_info,
+                id_=node_id,
+                metadata=extra_info,
+                start_char_idx=node_info.get("start", None),
+                end_char_idx=node_info.get("end", None),
                 relationships=relationships,
             )
             nodes.append(node)

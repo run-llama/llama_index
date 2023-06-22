@@ -21,7 +21,7 @@ def documents() -> List[Document]:
         "This is another test.\n"
         "This is a test v2."
     )
-    return [Document(doc_text)]
+    return [Document(text=doc_text)]
 
 
 @pytest.fixture

@@ -1,12 +1,12 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import StepDecomposeQueryTransform
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.query.response_synthesis import ResponseSynthesizer
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.schema import NodeWithScore, TextNode
 
 
 def default_stop_fn(stop_dict: Dict) -> bool:
@@ -174,5 +174,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
             )
             cur_steps += 1
 
-        nodes = [NodeWithScore(Node(text_chunk)) for text_chunk in text_chunks]
+        nodes = [
+            NodeWithScore(node=TextNode(text=text_chunk)) for text_chunk in text_chunks
+        ]
         return nodes, source_nodes, final_response_extra_info

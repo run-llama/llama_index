@@ -13,7 +13,7 @@ from llama_index import (
     QuestionAnswerPrompt,
     ServiceContext,
 )
-from llama_index.data_structs.node import Node, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """Context information is below.\n"
@@ -51,7 +51,7 @@ class DatasetGenerator:
 
     def __init__(
         self,
-        nodes: List[Node],
+        nodes: List[BaseNode],
         service_context: Optional[ServiceContext] = None,
         num_questions_per_chunk: int = 10,
         text_question_template: Optional[QuestionAnswerPrompt] = None,
@@ -100,7 +100,7 @@ class DatasetGenerator:
             required_keywords=required_keywords,
             exclude_keywords=exclude_keywords,
         )
-        node_with_scores = [NodeWithScore(node) for node in nodes]
+        node_with_scores = [NodeWithScore(node=node) for node in nodes]
         node_with_scores = node_postprocessor.postprocess_nodes(node_with_scores)
         nodes = [node_with_score.node for node_with_score in node_with_scores]
 
@@ -113,7 +113,7 @@ class DatasetGenerator:
         )
 
     def _node_question_generator(
-        self, nodes: List[Node], num: Optional[int] = None
+        self, nodes: List[BaseNode], num: Optional[int] = None
     ) -> List[str]:
         """Node question generator."""
         questions: List[str] = []
@@ -121,7 +121,7 @@ class DatasetGenerator:
         for node in nodes:
             if num is not None and len(questions) >= num:
                 break
-            index = ListIndex.from_documents([Document(node.get_text())])
+            index = ListIndex.from_documents([Document(text=node.get_content())])
 
             query_engine = index.as_query_engine(
                 service_context=self.service_context,

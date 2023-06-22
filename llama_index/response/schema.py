@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, Generator, List, Optional, Union
 
-from llama_index.data_structs.node import NodeWithScore
+from llama_index.schema import NodeWithScore
 from llama_index.utils import truncate_text
 
 
@@ -30,8 +30,8 @@ class Response:
         """Get formatted sources text."""
         texts = []
         for source_node in self.source_nodes:
-            fmt_text_chunk = truncate_text(source_node.node.get_text(), length)
-            doc_id = source_node.node.doc_id or "None"
+            fmt_text_chunk = truncate_text(source_node.node.get_content(), length)
+            doc_id = source_node.node.node_id or "None"
             source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
             texts.append(source_text)
         return "\n\n".join(texts)
@@ -86,9 +86,9 @@ class StreamingResponse:
         """Get formatted sources text."""
         texts = []
         for source_node in self.source_nodes:
-            fmt_text_chunk = truncate_text(source_node.source_text, length)
-            doc_id = source_node.doc_id or "None"
-            source_text = f"> Source (Doc id: {doc_id}): {fmt_text_chunk}"
+            fmt_text_chunk = truncate_text(source_node.node.get_content(), length)
+            node_id = source_node.node.node_id or "None"
+            source_text = f"> Source (Node id: {node_id}): {fmt_text_chunk}"
             texts.append(source_text)
         return "\n\n".join(texts)
 

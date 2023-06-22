@@ -7,15 +7,19 @@ from pydantic import BaseModel, Field
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.schema import TextNode
 
 
 def _get_response_with_sources(response: RESPONSE_TYPE) -> str:
     """Return a response with source node info."""
     source_data = []
     for source_node in response.source_nodes:
-        metadata = (
-            source_node.node.node_info if source_node.node.node_info is not None else {}
-        )
+        metadata = {}
+        if isinstance(source_node.node, TextNode):
+            node_info = source_node.node.node_info
+            if node_info["start"] is not None and node_info["end"] is not None:
+                metadata.update(node_info)
+
         source_data.append(metadata)
         source_data[-1]["ref_doc_id"] = source_node.node.ref_doc_id
         source_data[-1]["score"] = source_node.score

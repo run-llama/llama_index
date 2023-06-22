@@ -145,14 +145,14 @@ class GPTIndexChatMemory(BaseChatMemory):
             source_nodes = response_obj.source_nodes
             if self.return_messages:
                 # get source messages from ids
-                source_ids = [sn.doc_id for sn in source_nodes]
+                source_ids = [sn.node.node_id for sn in source_nodes]
                 source_messages = [
                     m for id, m in self.id_to_message.items() if id in source_ids
                 ]
                 # NOTE: type List[BaseMessage]
                 response: Any = source_messages
             else:
-                source_texts = [sn.source_text for sn in source_nodes]
+                source_texts = [sn.node.get_content() for sn in source_nodes]
                 response = "\n\n".join(source_texts)
         else:
             response = str(response_obj)
@@ -185,8 +185,8 @@ class GPTIndexChatMemory(BaseChatMemory):
 
         human_txt = f"{self.human_prefix}: " + inputs[prompt_input_key]
         ai_txt = f"{self.ai_prefix}: " + outputs[output_key]
-        human_doc = Document(text=human_txt, doc_id=human_message_id)
-        ai_doc = Document(text=ai_txt, doc_id=ai_message_id)
+        human_doc = Document(text=human_txt, id_=human_message_id)
+        ai_doc = Document(text=ai_txt, id_=ai_message_id)
         self.index.insert(human_doc)
         self.index.insert(ai_doc)
 

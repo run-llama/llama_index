@@ -1,12 +1,10 @@
 """Base schema for data structures."""
-from abc import abstractmethod, abstractproperty
-from dataclasses import dataclass
+import uuid
+from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional, Union
-
-from llama_index.utils import get_new_id
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -53,11 +51,12 @@ class ObjectType(str, Enum):
 
 class RelatedNodeInfo(BaseModel):
     node_id: str
+    node_type: Optional[ObjectType] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     hash: Optional[str] = None
 
 
-RELATED_NODE_TYPE = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
+RelatedNodeType = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
 
 
 class BaseNode(BaseModel):
@@ -67,11 +66,13 @@ class BaseNode(BaseModel):
 
     """
 
-    _id: Optional[str] = Field(default=None, description="Unique ID of the node.")
+    id_: str = Field(
+        default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
+    )
     embedding: Optional[List[float]] = Field(
         default=None, description="Embedding of the node."
     )
-    hash: Optional[str] = Field(default=None, description="Hash of the node content.")
+    hash: str = Field(default="", description="Hash of the node content.")
     weight: float = Field(
         default=1.0,
         description="Optional field to weight the node similarity during retrieval.",
@@ -92,17 +93,15 @@ class BaseNode(BaseModel):
         default=None,
         description="Metadata keys that are used during retrieval.",
     )
-    relationships: Dict[NodeRelationship, RELATED_NODE_TYPE] = Field(
+    relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
 
     def __post_init__(self) -> None:
         """Post init."""
-        # assign doc_id if not set
-        if self._id is None:
-            self._id = get_new_id(set())
-        if self.hash is None:
+        # assign hash if not set
+        if not self.hash:
             self.hash = self._generate_node_hash()
 
         if self.metadata is not None:
@@ -125,21 +124,17 @@ class BaseNode(BaseModel):
     def metadata_str(self) -> str:
         """Extra info string."""
 
-    @abstractproperty
-    @property
-    def is_content_none(self) -> bool:
-        """Check if text is None."""
+    @abstractmethod
+    def set_content(self, value: Any) -> None:
+        """Set the content of the node."""
 
     @property
     def node_id(self) -> str:
-        if self._id is None:
-            raise ValueError("Node ID is not set!")
-        return self._id
+        return self.id_
 
-    @property
-    def is_id_none(self) -> bool:
-        """Check if doc_id is None."""
-        return self.is_id_none is None
+    # TODO: DEPRECATED
+    def get_doc_id(self) -> str:
+        return self.id_
 
     @property
     def source_node(self) -> Optional[RelatedNodeInfo]:
@@ -152,15 +147,15 @@ class BaseNode(BaseModel):
             return None
 
         relation = self.relationships[NodeRelationship.SOURCE]
-        if isinstance(relation, list): 
+        if isinstance(relation, list):
             raise ValueError("Source object must be a single RelatedNodeInfo object")
         return relation
 
     @property
-    def prev_node(self) -> RelatedNodeInfo:
+    def prev_node(self) -> Optional[RelatedNodeInfo]:
         """Prev node."""
         if NodeRelationship.PREVIOUS not in self.relationships:
-            raise ValueError("Object does not have previous link")
+            return None
 
         relation = self.relationships[NodeRelationship.PREVIOUS]
         if not isinstance(relation, RelatedNodeInfo):
@@ -168,10 +163,10 @@ class BaseNode(BaseModel):
         return relation
 
     @property
-    def next_node(self) -> RelatedNodeInfo:
+    def next_node(self) -> Optional[RelatedNodeInfo]:
         """Next node."""
         if NodeRelationship.NEXT not in self.relationships:
-            raise ValueError("Object does not have next link")
+            return None
 
         relation = self.relationships[NodeRelationship.NEXT]
         if not isinstance(relation, RelatedNodeInfo):
@@ -179,10 +174,10 @@ class BaseNode(BaseModel):
         return relation
 
     @property
-    def parent_node(self) -> RelatedNodeInfo:
+    def parent_node(self) -> Optional[RelatedNodeInfo]:
         """Parent node."""
         if NodeRelationship.PARENT not in self.relationships:
-            raise ValueError("Object does not have parent link")
+            return None
 
         relation = self.relationships[NodeRelationship.PARENT]
         if not isinstance(relation, RelatedNodeInfo):
@@ -190,15 +185,23 @@ class BaseNode(BaseModel):
         return relation
 
     @property
-    def child_nodes(self) -> List[RelatedNodeInfo]:
+    def child_nodes(self) -> Optional[List[RelatedNodeInfo]]:
         """Child nodes."""
         if NodeRelationship.CHILD not in self.relationships:
-            raise ValueError("Object does not have child objects")
+            return None
 
         relation = self.relationships[NodeRelationship.PARENT]
         if not isinstance(relation, list):
             raise ValueError("Child objects must be a list of RelatedNodeInfo objects.")
         return relation
+
+    @property
+    def ref_doc_id(self) -> Optional[str]:
+        """Deprecated: Get ref doc id."""
+        source_node = self.source_node
+        if source_node is None:
+            return None
+        return source_node.node_id
 
     @property
     def extra_info(self) -> Dict[str, Any]:
@@ -215,9 +218,15 @@ class BaseNode(BaseModel):
             raise ValueError("embedding not set.")
         return self.embedding
 
+    def as_related_node_info(self) -> RelatedNodeInfo:
+        """Get node as RelatedNodeInfo."""
+        return RelatedNodeInfo(
+            node_id=self.node_id, metadata=self.metadata, hash=self.hash
+        )
+
 
 class TextNode(BaseNode):
-    content: str
+    text: str = Field(default="", description="Text content of the node.")
     start_char_idx: Optional[int] = Field(
         default=None, description="Start char index of the node."
     )
@@ -245,7 +254,7 @@ class TextNode(BaseNode):
 
     def _generate_node_hash(self) -> str:
         """Generate a hash to represent the node."""
-        doc_identity = str(self.content) + str(self.metadata_str)
+        doc_identity = str(self.text) + str(self.metadata_str)
         return sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest()
 
     @classmethod
@@ -253,17 +262,10 @@ class TextNode(BaseNode):
         """Get Object type."""
         return ObjectType.TEXT
 
-    @property
-    def is_content_none(self) -> bool:
-        """Check if content is None."""
-        return self.content == ""
-
     def get_content(self) -> str:
         """Get object content."""
         metadata_str = self.metadata_str()
-        return self.text_template.format(
-            content=self.content, metadata_str=metadata_str
-        )
+        return self.text_template.format(content=self.text, metadata_str=metadata_str)
 
     def metadata_str(self) -> str:
         """Convert metadata to a string."""
@@ -276,6 +278,10 @@ class TextNode(BaseNode):
             ]
         )
 
+    def set_content(self, value: str) -> None:
+        """Set the content of the node."""
+        self.text = value
+
     def get_node_info(self) -> Dict[str, Any]:
         """Get node info."""
         return {"start": self.start_char_idx, "end": self.end_char_idx}
@@ -284,11 +290,6 @@ class TextNode(BaseNode):
     def get_text(self) -> str:
         """Deprecated: Get text."""
         return self.get_content()
-
-    @property
-    def ref_doc_id(self) -> Optional[RELATED_NODE_TYPE]:
-        """Deprecated: Get ref doc id."""
-        return self.source_node
 
     @property
     def node_info(self) -> Dict[str, Any]:
@@ -308,7 +309,6 @@ class ImageNode(TextNode):
         return ObjectType.IMAGE
 
 
-@dataclass
 class IndexNode(TextNode):
     """Node with reference to an index."""
 

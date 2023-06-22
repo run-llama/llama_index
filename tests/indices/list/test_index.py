@@ -2,11 +2,11 @@
 
 from typing import Dict, List, Tuple
 
-from llama_index.data_structs.node import Node
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.list.base import ListIndex, ListRetrieverMode
 from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.schema.base import Document
+from llama_index.schema import BaseNode
 
 
 def test_build_list(
@@ -20,10 +20,10 @@ def test_build_list(
     # check contents of nodes
     node_ids = list_index.index_struct.nodes
     nodes = list_index.docstore.get_nodes(node_ids)
-    assert nodes[0].text == "Hello world."
-    assert nodes[1].text == "This is a test."
-    assert nodes[2].text == "This is another test."
-    assert nodes[3].text == "This is a test v2."
+    assert nodes[0].get_content() == "Hello world."
+    assert nodes[1].get_content() == "This is a test."
+    assert nodes[2].get_content() == "This is another test."
+    assert nodes[3].get_content() == "This is a test v2."
 
 
 def test_refresh_list(
@@ -32,7 +32,7 @@ def test_refresh_list(
 ) -> None:
     """Test build list."""
     # add extra document
-    more_documents = documents + [Document("Test document 2")]
+    more_documents = documents + [Document(text="Test document 2")]
 
     # ensure documents have doc_id
     for i in range(len(more_documents)):
@@ -49,7 +49,7 @@ def test_refresh_list(
     assert refreshed_docs[1] is False
 
     # modify a document and test again
-    more_documents = documents + [Document("Test document 2, now with changes!")]
+    more_documents = documents + [Document(text="Test document 2, now with changes!")]
     for i in range(len(more_documents)):
         more_documents[i].doc_id = str(i)
 
@@ -59,14 +59,14 @@ def test_refresh_list(
     assert refreshed_docs[1] is True
 
     test_node = list_index.docstore.get_node(list_index.index_struct.nodes[-1])
-    assert test_node.text == "Test document 2, now with changes!"
+    assert test_node.get_content() == "Test document 2, now with changes!"
 
 
 def test_build_list_multiple(mock_service_context: ServiceContext) -> None:
     """Test build list multiple."""
     documents = [
-        Document("Hello world.\nThis is a test."),
-        Document("This is another test.\nThis is a test v2."),
+        Document(text="Hello world.\nThis is a test."),
+        Document(text="This is another test.\nThis is a test v2."),
     ]
     list_index = ListIndex.from_documents(
         documents, service_context=mock_service_context
@@ -74,10 +74,10 @@ def test_build_list_multiple(mock_service_context: ServiceContext) -> None:
     assert len(list_index.index_struct.nodes) == 4
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     # check contents of nodes
-    assert nodes[0].text == "Hello world."
-    assert nodes[1].text == "This is a test."
-    assert nodes[2].text == "This is another test."
-    assert nodes[3].text == "This is a test v2."
+    assert nodes[0].get_content() == "Hello world."
+    assert nodes[1].get_content() == "This is a test."
+    assert nodes[2].get_content() == "This is another test."
+    assert nodes[3].get_content() == "This is a test v2."
 
 
 def test_list_insert(
@@ -90,10 +90,10 @@ def test_list_insert(
     list_index.insert(documents[0])
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     # check contents of nodes
-    assert nodes[0].text == "Hello world."
-    assert nodes[1].text == "This is a test."
-    assert nodes[2].text == "This is another test."
-    assert nodes[3].text == "This is a test v2."
+    assert nodes[0].get_content() == "Hello world."
+    assert nodes[1].get_content() == "This is a test."
+    assert nodes[2].get_content() == "This is another test."
+    assert nodes[3].get_content() == "This is a test v2."
 
     # test insert with ID
     document = documents[0]
@@ -113,9 +113,9 @@ def test_list_delete(
 ) -> None:
     """Test insert to list and then delete."""
     new_documents = [
-        Document("Hello world.\nThis is a test.", doc_id="test_id_1"),
-        Document("This is another test.", doc_id="test_id_2"),
-        Document("This is a test v2.", doc_id="test_id_3"),
+        Document(text="Hello world.\nThis is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+        Document(text="This is a test v2.", id_="test_id_3"),
     ]
 
     list_index = ListIndex.from_documents(
@@ -132,11 +132,11 @@ def test_list_delete(
     assert len(list_index.index_struct.nodes) == 2
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     assert nodes[0].ref_doc_id == "test_id_2"
-    assert nodes[0].text == "This is another test."
+    assert nodes[0].get_content() == "This is another test."
     assert nodes[1].ref_doc_id == "test_id_3"
-    assert nodes[1].text == "This is a test v2."
+    assert nodes[1].get_content() == "This is a test v2."
     # check that not in docstore anymore
-    source_doc = list_index.docstore.get_document("test_id_1", raise_error=False)
+    source_doc = list_index.docstore.get_ref_doc_info("test_id_1")
     assert source_doc is None
 
     list_index = ListIndex.from_documents(
@@ -146,15 +146,15 @@ def test_list_delete(
     assert len(list_index.index_struct.nodes) == 3
     nodes = list_index.docstore.get_nodes(list_index.index_struct.nodes)
     assert nodes[0].ref_doc_id == "test_id_1"
-    assert nodes[0].text == "Hello world."
+    assert nodes[0].get_content() == "Hello world."
     assert nodes[1].ref_doc_id == "test_id_1"
-    assert nodes[1].text == "This is a test."
+    assert nodes[1].get_content() == "This is a test."
     assert nodes[2].ref_doc_id == "test_id_3"
-    assert nodes[2].text == "This is a test v2."
+    assert nodes[2].get_content() == "This is a test v2."
 
 
 def _get_embeddings(
-    query_str: str, nodes: List[Node]
+    query_str: str, nodes: List[BaseNode]
 ) -> Tuple[List[float], List[List[float]]]:
     """Get node text embedding similarity."""
     text_embed_map: Dict[str, List[float]] = {
@@ -165,7 +165,7 @@ def _get_embeddings(
     }
     node_embeddings = []
     for node in nodes:
-        node_embeddings.append(text_embed_map[node.get_text()])
+        node_embeddings.append(text_embed_map[node.get_content()])
 
     return [1.0, 0, 0, 0, 0], node_embeddings
 

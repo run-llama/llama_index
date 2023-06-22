@@ -8,10 +8,10 @@ pure LLM calls.
 from typing import Any, Dict, Optional, Sequence
 
 from llama_index.data_structs.data_structs import EmptyIndexStruct
-from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
+from llama_index.schema import BaseNode
 from llama_index.storage.docstore.types import RefDocInfo
 
 
@@ -48,7 +48,7 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
 
         return EmptyIndexRetriever(self)
 
-    def _build_index_from_nodes(self, nodes: Sequence[Node]) -> EmptyIndexStruct:
+    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> EmptyIndexStruct:
         """Build the index from documents.
 
         Args:
@@ -61,12 +61,12 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
         index_struct = EmptyIndexStruct()
         return index_struct
 
-    def _insert(self, nodes: Sequence[Node], **insert_kwargs: Any) -> None:
+    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         del nodes  # Unused
         raise NotImplementedError("Cannot insert into an empty index.")
 
-    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
         raise NotImplementedError("Cannot delete from an empty index.")
 

@@ -7,7 +7,7 @@ try:
 except ImportError:
     qdrant_client = None  # type: ignore
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import QdrantVectorStore
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
 
@@ -17,18 +17,22 @@ def node_embeddings() -> List[NodeWithEmbedding]:
     return [
         NodeWithEmbedding(
             embedding=[1.0, 0.0],
-            node=Node(
+            node=TextNode(
                 text="lorem ipsum",
-                doc_id="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
-                relationships={DocumentRelationship.SOURCE: "test-0"},
+                id_="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
+                },
             ),
         ),
         NodeWithEmbedding(
             embedding=[0.0, 1.0],
-            node=Node(
+            node=TextNode(
                 text="lorem ipsum",
-                doc_id="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
-                relationships={DocumentRelationship.SOURCE: "test-1"},
+                id_="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")
+                },
             ),
         ),
     ]

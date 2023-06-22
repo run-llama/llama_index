@@ -165,7 +165,7 @@ class DeepLakeVectorStore(VectorStore):
             extra_info = result.node.extra_info or {}
             metadata = {**extra_info, **{"document_id": result.ref_doc_id}}
             id = result.id
-            text = result.node.get_text()
+            text = result.node.get_content()
 
             data_to_injest.append(
                 {

@@ -93,7 +93,7 @@ class WeaviateReader(BaseReader):
         entries = data_response["Get"][class_name]
         documents = []
         for entry in entries:
-            embedding = None
+            embedding: Optional[List[float]] = None
             # for each entry, join properties into <property>:<value>
             # separated by newlines
             text_list = []
@@ -109,7 +109,7 @@ class WeaviateReader(BaseReader):
 
         if not separate_documents:
             # join all documents into one
-            text_list = [doc.get_text() for doc in documents]
+            text_list = [doc.get_content() for doc in documents]
             text = "\n\n".join(text_list)
             documents = [Document(text=text)]
 

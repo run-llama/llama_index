@@ -85,7 +85,7 @@ class MboxReader(BaseReader):
 
                 # Parse message HTML content and remove unneeded whitespace
                 soup = BeautifulSoup(content)
-                stripped_content = " ".join(soup.get_text().split())
+                stripped_content = " ".join(soup.get_content().split())
                 # Format message to include date, sender, receiver and subject
                 msg_string = self.message_format.format(
                     _date=msg["date"],
@@ -104,4 +104,4 @@ class MboxReader(BaseReader):
             if self.max_count > 0 and i >= self.max_count:
                 break
 
-        return [Document(result, extra_info=extra_info) for result in results]
+        return [Document(text=result, metadata=extra_info) for result in results]

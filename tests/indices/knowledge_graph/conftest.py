@@ -10,4 +10,4 @@ def documents() -> List[Document]:
     # NOTE: one document for now
     # NOTE: in this unit test, document text == triplets
     doc_text = "(foo, is, bar)\n" "(hello, is not, world)\n" "(Jane, is mother of, Bob)"
-    return [Document(doc_text)]
+    return [Document(text=doc_text)]

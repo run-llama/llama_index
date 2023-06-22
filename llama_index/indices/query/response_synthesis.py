@@ -3,7 +3,6 @@ from typing import Any, Dict, Generator, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.data_structs.node import Node, NodeWithScore
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.response import (
@@ -19,6 +18,7 @@ from llama_index.prompts.prompts import (
     SimpleInputPrompt,
 )
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
+from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
@@ -124,10 +124,10 @@ class ResponseSynthesizer:
 
     def _get_extra_info_for_response(
         self,
-        nodes: List[Node],
+        nodes: List[BaseNode],
     ) -> Optional[Dict[str, Any]]:
         """Get extra info for response."""
-        return {node.get_doc_id(): node.extra_info for node in nodes}
+        return {node.get_doc_id(): node.metadata for node in nodes}
 
     def _prepare_response_output(
         self,
@@ -168,7 +168,7 @@ class ResponseSynthesizer:
 
         text_chunks = []
         for node_with_score in nodes:
-            text = node_with_score.node.get_text()
+            text = node_with_score.node.get_content()
             if self._optimizer is not None:
                 text = self._optimizer.optimize(query_bundle, text)
             text_chunks.append(text)
@@ -207,7 +207,7 @@ class ResponseSynthesizer:
 
         text_chunks = []
         for node_with_score in nodes:
-            text = node_with_score.node.get_text()
+            text = node_with_score.node.get_content()
             if self._optimizer is not None:
                 text = self._optimizer.optimize(query_bundle, text)
             text_chunks.append(text)

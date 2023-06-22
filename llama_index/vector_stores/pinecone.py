@@ -10,7 +10,7 @@ from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import TextNode, RelatedNodeInfo, NodeRelationship
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -114,7 +114,7 @@ def _legacy_metadata_dict_to_node(metadata: Dict[str, Any]) -> Tuple[dict, dict,
     extra_info = _get_node_info_from_metadata(metadata, "extra_info")
     node_info = _get_node_info_from_metadata(metadata, "node_info")
     doc_id = metadata["doc_id"]
-    relationships = {DocumentRelationship.SOURCE: doc_id}
+    relationships = {NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc_id)}
     return extra_info, node_info, relationships
 
 
@@ -205,7 +205,7 @@ class PineconeVectorStore(VectorStore):
             node = result.node
 
             metadata = node_to_metadata_dict(node)
-            metadata[self._text_key] = node.text or ""
+            metadata[self._text_key] = node.get_content() or ""
 
             entry = {
                 ID_KEY: node_id,
@@ -214,7 +214,7 @@ class PineconeVectorStore(VectorStore):
             }
             if self._add_sparse_vector:
                 sparse_vector = generate_sparse_vectors(
-                    [node.get_text()], self._tokenizer
+                    [node.get_content()], self._tokenizer
                 )[0]
                 entry[SPARSE_VECTOR_KEY] = sparse_vector
 
@@ -318,11 +318,13 @@ class PineconeVectorStore(VectorStore):
                     match.metadata
                 )
 
-            node = Node(
+            node = TextNode(
                 text=text,
-                doc_id=id,
-                extra_info=extra_info,
+                id_=id,
+                metadata=extra_info,
                 node_info=node_info,
+                start_char_idx=node_info.get("start", None),
+                end_char_idx=node_info.get("end", None),
                 relationships=relationships,
             )
             top_k_ids.append(match.id)

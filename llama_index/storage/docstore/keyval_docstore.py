@@ -2,8 +2,7 @@
 
 from typing import Dict, Optional, Sequence
 
-from llama_index.data_structs.node import Node
-from llama_index.schema import BaseDocument
+from llama_index.schema import BaseNode, TextNode
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.storage.kvstore.types import BaseKVStore
@@ -55,7 +54,7 @@ class KVDocumentStore(BaseDocumentStore):
         self._metadata_collection = f"{namespace}/metadata"
 
     @property
-    def docs(self) -> Dict[str, BaseDocument]:
+    def docs(self) -> Dict[str, BaseNode]:
         """Get all documents.
 
         Returns:
@@ -66,7 +65,7 @@ class KVDocumentStore(BaseDocumentStore):
         return {key: json_to_doc(json) for key, json in json_dict.items()}
 
     def add_documents(
-        self, docs: Sequence[BaseDocument], allow_update: bool = True
+        self, docs: Sequence[BaseNode], allow_update: bool = True
     ) -> None:
         """Add a document to the store.
 
@@ -76,9 +75,6 @@ class KVDocumentStore(BaseDocumentStore):
 
         """
         for doc in docs:
-            if doc.is_doc_id_none:
-                raise ValueError("doc_id not set")
-
             # NOTE: doc could already exist in the store, but we overwrite it
             if not allow_update and self.document_exists(doc.get_doc_id()):
                 raise ValueError(
@@ -90,8 +86,8 @@ class KVDocumentStore(BaseDocumentStore):
             self._kvstore.put(node_key, data, collection=self._node_collection)
 
             # update doc_collection if needed
-            metadata = {"doc_hash": doc.get_doc_hash()}
-            if isinstance(doc, Node) and doc.ref_doc_id is not None:
+            metadata = {"doc_hash": doc.hash}
+            if isinstance(doc, TextNode) and doc.ref_doc_id is not None:
                 ref_doc_info = self.get_ref_doc_info(doc.ref_doc_id) or RefDocInfo()
                 ref_doc_info.doc_ids.append(doc.get_doc_id())
                 if not ref_doc_info.extra_info:
@@ -112,9 +108,7 @@ class KVDocumentStore(BaseDocumentStore):
                     node_key, metadata, collection=self._metadata_collection
                 )
 
-    def get_document(
-        self, doc_id: str, raise_error: bool = True
-    ) -> Optional[BaseDocument]:
+    def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]:
         """Get a document from the store.
 
         Args:

@@ -3,7 +3,6 @@
 from typing import Optional, Sequence
 
 from llama_index.data_structs.data_structs import IndexGraph
-from llama_index.data_structs.node import Node
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
@@ -17,6 +16,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
+from llama_index.schema import BaseNode, TextNode
 
 
 class TreeIndexInserter:
@@ -42,7 +42,7 @@ class TreeIndexInserter:
         self._docstore = docstore or get_default_docstore()
 
     def _insert_under_parent_and_consolidate(
-        self, text_node: Node, parent_node: Optional[Node]
+        self, text_node: BaseNode, parent_node: Optional[BaseNode]
     ) -> None:
         """Insert node under parent and consolidate.
 
@@ -69,29 +69,25 @@ class TreeIndexInserter:
 
             truncated_chunks = self._service_context.prompt_helper.truncate(
                 prompt=self.summary_prompt,
-                text_chunks=[node.get_text() for node in half1],
+                text_chunks=[node.get_content() for node in half1],
             )
             text_chunk1 = "\n".join(truncated_chunks)
 
             summary1, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk1
             )
-            node1 = Node(
-                text=summary1,
-            )
+            node1 = TextNode(text=summary1)
             self.index_graph.insert(node1, children_nodes=half1)
 
             truncated_chunks = self._service_context.prompt_helper.truncate(
                 prompt=self.summary_prompt,
-                text_chunks=[node.get_text() for node in half2],
+                text_chunks=[node.get_content() for node in half2],
             )
             text_chunk2 = "\n".join(truncated_chunks)
             summary2, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk2
             )
-            node2 = Node(
-                text=summary2,
-            )
+            node2 = TextNode(text=summary2)
             self.index_graph.insert(node2, children_nodes=half2)
 
             # insert half1 and half2 as new children of parent_node
@@ -111,7 +107,9 @@ class TreeIndexInserter:
             )
             self._docstore.add_documents([node2], allow_update=False)
 
-    def _insert_node(self, node: Node, parent_node: Optional[Node] = None) -> None:
+    def _insert_node(
+        self, node: BaseNode, parent_node: Optional[BaseNode] = None
+    ) -> None:
         """Insert node."""
         cur_graph_node_ids = self.index_graph.get_children(parent_node)
         cur_graph_nodes = self._docstore.get_node_dict(cur_graph_node_ids)
@@ -136,7 +134,7 @@ class TreeIndexInserter:
             )
             response, _ = self._service_context.llm_predictor.predict(
                 self.insert_prompt,
-                new_chunk_text=node.get_text(),
+                new_chunk_text=node.get_content(),
                 num_chunks=len(cur_graph_node_list),
                 context_list=numbered_text,
             )
@@ -160,18 +158,16 @@ class TreeIndexInserter:
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
             truncated_chunks = self._service_context.prompt_helper.truncate(
                 prompt=self.summary_prompt,
-                text_chunks=[node.get_text() for node in cur_graph_node_list],
+                text_chunks=[node.get_content() for node in cur_graph_node_list],
             )
             text_chunk = "\n".join(truncated_chunks)
             new_summary, _ = self._service_context.llm_predictor.predict(
                 self.summary_prompt, context_str=text_chunk
             )
 
-            parent_node.text = new_summary
+            parent_node.set_content(new_summary)
 
-    def insert(self, nodes: Sequence[Node]) -> None:
+    def insert(self, nodes: Sequence[BaseNode]) -> None:
         """Insert into index_graph."""
-        print("calling insert")
-        print(nodes)
         for node in nodes:
             self._insert_node(node)

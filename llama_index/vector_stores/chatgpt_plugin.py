@@ -7,7 +7,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 from tqdm.auto import tqdm
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -25,14 +25,14 @@ def convert_docs_to_json(embedding_results: List[NodeWithEmbedding]) -> List[Dic
         # https://rb.gy/nmac9u
         doc_dict = {
             "id": embedding_result.id,
-            "text": embedding_result.node.get_text(),
+            "text": embedding_result.node.get_content(),
             # NOTE: this is the doc_id to reference document
             "source_id": embedding_result.ref_doc_id,
             # "url": "...",
             # "created_at": ...,
             # "author": "..."",
         }
-        extra_info = embedding_result.node.extra_info
+        extra_info = embedding_result.node.metadata
         if extra_info is not None:
             if "source" in extra_info:
                 doc_dict["source"] = extra_info["source"]
@@ -146,10 +146,14 @@ class ChatGPTRetrievalPluginClient(VectorStore):
                 result_txt = result["text"]
                 result_score = result["score"]
                 result_ref_doc_id = result["source_id"]
-                node = Node(
-                    doc_id=result_id,
+                node = TextNode(
+                    id_=result_id,
                     text=result_txt,
-                    relationships={DocumentRelationship.SOURCE: result_ref_doc_id},
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(
+                            node_id=result_ref_doc_id
+                        )
+                    },
                 )
                 nodes.append(node)
                 similarities.append(result_score)

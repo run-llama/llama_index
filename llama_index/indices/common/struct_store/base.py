@@ -5,7 +5,6 @@ from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.data_structs.node import Node
 from llama_index.data_structs.table import StructDatapoint
 from llama_index.indices.response import get_response_builder
 from llama_index.indices.service_context import ServiceContext
@@ -27,7 +26,7 @@ from llama_index.prompts.prompts import (
     SchemaExtractPrompt,
     TableContextPrompt,
 )
-from llama_index.schema import BaseDocument
+from llama_index.schema import BaseNode
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -76,7 +75,7 @@ class SQLDocumentContextBuilder:
 
     def build_all_context_from_documents(
         self,
-        documents_dict: Dict[str, List[BaseDocument]],
+        documents_dict: Dict[str, List[BaseNode]],
     ) -> Dict[str, str]:
         """Build context for all tables in the database."""
         context_dict = {}
@@ -88,7 +87,7 @@ class SQLDocumentContextBuilder:
 
     def build_table_context_from_documents(
         self,
-        documents: Sequence[BaseDocument],
+        documents: Sequence[BaseNode],
         table_name: str,
     ) -> str:
         """Build context from documents for a single table."""
@@ -118,7 +117,7 @@ class SQLDocumentContextBuilder:
         )
         text_chunks = []
         for doc in documents:
-            chunks = text_splitter.split_text(doc.get_text())
+            chunks = text_splitter.split_text(doc.get_content())
             text_chunks.extend(chunks)
         self._service_context.callback_manager.on_event_end(
             CBEventType.CHUNKING,
@@ -190,9 +189,9 @@ class BaseStructDatapointExtractor:
     def _get_schema_text(self) -> str:
         """Get schema text for extracting relevant info from unstructured text."""
 
-    def insert_datapoint_from_nodes(self, nodes: Sequence[Node]) -> None:
+    def insert_datapoint_from_nodes(self, nodes: Sequence[BaseNode]) -> None:
         """Extract datapoint from a document and insert it."""
-        text_chunks = [node.get_text() for node in nodes]
+        text_chunks = [node.get_content() for node in nodes]
         fields = {}
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)

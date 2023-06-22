@@ -5,7 +5,7 @@ An index that is built on top of Alibaba Cloud's Tair database.
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -150,7 +150,7 @@ class TairVectorStore(VectorStore):
             attributes = {
                 "id": result.id,
                 "doc_id": result.ref_doc_id,
-                "text": result.node.get_text(),
+                "text": result.node.get_content(),
             }
             metadata_dict = node_to_metadata_dict(result.node)
             attributes.update(metadata_dict)
@@ -228,11 +228,13 @@ class TairVectorStore(VectorStore):
         metadatas = pipe.execute()
         for i, m in enumerate(metadatas):
             doc_id = m[0].decode()
-            node = Node(
+            node = TextNode(
                 text=m[2].decode(),
-                doc_id=doc_id,
+                id_=doc_id,
                 embedding=None,
-                relationships={DocumentRelationship.SOURCE: m[1].decode()},
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=m[1].decode())
+                },
             )
             ids.append(doc_id)
             nodes.append(node)

@@ -63,7 +63,7 @@ class MetalReader(BaseReader):
             documents.append(Document(text=text))
 
         if not separate_documents:
-            text_list = [doc.get_text() for doc in documents]
+            text_list = [doc.get_content() for doc in documents]
             text = "\n\n".join(text_list)
             documents = [Document(text=text)]
 

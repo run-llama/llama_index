@@ -2,11 +2,11 @@
 import logging
 from typing import List
 
-from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.utils import get_sorted_node_list
+from llama_index.schema import NodeWithScore
 
 logger = logging.getLogger(__name__)
 
@@ -34,4 +34,4 @@ class TreeRootRetriever(BaseRetriever):
         logger.info(f"> Starting query: {query_bundle.query_str}")
         root_nodes = self._docstore.get_node_dict(self._index_struct.root_nodes)
         sorted_nodes = get_sorted_node_list(root_nodes)
-        return [NodeWithScore(node) for node in sorted_nodes]
+        return [NodeWithScore(node=node) for node in sorted_nodes]

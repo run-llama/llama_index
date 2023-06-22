@@ -1,11 +1,11 @@
 from typing import List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.data_structs.node import NodeWithScore
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.schema import NodeWithScore
 
 
 class TransformQueryEngine(BaseQueryEngine):

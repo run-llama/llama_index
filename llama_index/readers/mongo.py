@@ -80,6 +80,6 @@ class SimpleMongoReader(BaseReader):
                     )
                 text += item[field_name]
 
-            documents.append(Document(text))
+            documents.append(Document(text=text))
 
         return documents

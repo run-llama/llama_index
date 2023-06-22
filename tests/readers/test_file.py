@@ -303,4 +303,4 @@ def test_filename_as_doc_id() -> None:
 
         # check paths. Split handles path_part_X doc_ids from md and json files
         for doc in documents:
-            assert str(doc.doc_id).split("_part")[0] in doc_paths
+            assert str(doc.node_id).split("_part")[0] in doc_paths

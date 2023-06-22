@@ -86,7 +86,7 @@ class JSONReader(BaseReader):
                 useful_lines = [
                     line for line in lines if not re.match(r"^[{}\[\],]*$", line)
                 ]
-                return [Document("\n".join(useful_lines))]
+                return [Document(text="\n".join(useful_lines))]
             elif self.levels_back is not None:
                 # If levels_back is set, we make the embeddings contain the labels
                 # from further up the JSON tree
@@ -95,4 +95,4 @@ class JSONReader(BaseReader):
                         data, self.levels_back, self.collapse_length, []
                     )
                 ]
-                return [Document("\n".join(lines))]
+                return [Document(text="\n".join(lines))]

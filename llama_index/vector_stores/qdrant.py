@@ -6,7 +6,7 @@ An index that is built on top of an existing Qdrant collection.
 import logging
 from typing import Any, List, Optional, Tuple, cast
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def _legacy_metadata_dict_to_node(payload: Any) -> Tuple[dict, dict, dict]:
     extra_info = payload.get("extra_info", {})
     relationships = {
-        DocumentRelationship.SOURCE: payload.get("doc_id", "None"),
+        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=payload.get("doc_id", "None")),
     }
     node_info: dict = {}
     return extra_info, node_info, relationships
@@ -87,12 +87,13 @@ class QdrantVectorStore(VectorStore):
             payloads = []
             for result in result_batch:
                 assert isinstance(result, NodeWithEmbedding)
+                assert isinstance(result.node, TextNode)
                 node_ids.append(result.id)
                 vectors.append(result.embedding)
                 node = result.node
 
                 metadata = {}
-                metadata["text"] = node.text or ""
+                metadata["text"] = node.get_content() or ""
                 additional_metadata = node_to_metadata_dict(node)
                 metadata.update(additional_metadata)
 
@@ -195,11 +196,12 @@ class QdrantVectorStore(VectorStore):
                     payload
                 )
 
-            node = Node(
-                doc_id=str(point.id),
+            node = TextNode(
+                id_=str(point.id),
                 text=payload.get("text"),
-                extra_info=extra_info,
-                node_info=node_info,
+                metadata=extra_info,
+                start_char_idx=node_info.get("start", None),
+                end_char_idx=node_info.get("end", None),
                 relationships=relationships,
             )
             nodes.append(node)

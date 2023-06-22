@@ -1,12 +1,12 @@
 """Vector store index types."""
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, List, Optional, Protocol, Union, runtime_checkable
+from typing import Any, List, Optional, Protocol, Sequence, Union, runtime_checkable
 
 import fsspec
 from pydantic import BaseModel
 
-from llama_index.data_structs.node import Node
+from llama_index.schema import BaseNode
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"
@@ -22,7 +22,7 @@ class NodeWithEmbedding:
 
     """
 
-    node: Node
+    node: BaseNode
     embedding: List[float]
 
     @property
@@ -38,7 +38,7 @@ class NodeWithEmbedding:
 class VectorStoreQueryResult:
     """Vector store query result."""
 
-    nodes: Optional[List[Node]] = None
+    nodes: Optional[Sequence[BaseNode]] = None
     similarities: Optional[List[float]] = None
     ids: Optional[List[str]] = None
 

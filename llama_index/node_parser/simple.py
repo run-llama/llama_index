@@ -4,11 +4,11 @@ from typing import List, Optional, Sequence
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
-from llama_index.data_structs.node import Node
 from llama_index.langchain_helpers.text_splitter import TextSplitter, TokenTextSplitter
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.readers.schema.base import Document
+from llama_index.schema import BaseNode
 
 
 class SimpleNodeParser(NodeParser):
@@ -66,7 +66,7 @@ class SimpleNodeParser(NodeParser):
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
-    ) -> List[Node]:
+    ) -> List[BaseNode]:
         """Parse document into nodes.
 
         Args:
@@ -77,7 +77,7 @@ class SimpleNodeParser(NodeParser):
         event_id = self.callback_manager.on_event_start(
             CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
         )
-        all_nodes: List[Node] = []
+        all_nodes: List[BaseNode] = []
         for document in documents:
             nodes = get_nodes_from_document(
                 document,

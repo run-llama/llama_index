@@ -14,10 +14,10 @@ def test_build_index(
 ) -> None:
     """Test build tree."""
     docs = [
-        Document("This is a test v2.", doc_id="doc_1"),
-        Document("This is another test.", doc_id="doc_2"),
-        Document("This is a test.", doc_id="doc_3"),
-        Document("Hello world.", doc_id="doc_4"),
+        Document(text="This is a test v2.", id_="doc_1"),
+        Document(text="This is another test.", id_="doc_2"),
+        Document(text="This is a test.", id_="doc_3"),
+        Document(text="Hello world.", id_="doc_4"),
     ]
 
     response_synthesizer = ResponseSynthesizer.from_args(

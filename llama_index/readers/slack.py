@@ -189,7 +189,7 @@ class SlackReader(BaseReader):
                 channel_id, reverse_chronological=reverse_chronological
             )
             results.append(
-                Document(channel_content, extra_info={"channel": channel_id})
+                Document(text=channel_content, metadata={"channel": channel_id})
             )
         return results
 

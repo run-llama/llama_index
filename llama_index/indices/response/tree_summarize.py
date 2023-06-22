@@ -1,7 +1,6 @@
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 from llama_index.data_structs.data_structs import IndexGraph
-from llama_index.data_structs.node import Node
 from llama_index.indices.common_tree.base import GPTTreeIndexBuilder
 from llama_index.indices.response.refine import Refine
 from llama_index.indices.service_context import ServiceContext
@@ -12,6 +11,7 @@ from llama_index.prompts.prompts import (
     RefinePrompt,
     SummaryPrompt,
 )
+from llama_index.schema import BaseNode, TextNode
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -44,6 +44,9 @@ class TreeSummarize(Refine):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
+        import pdb
+
+        pdb.set_trace()
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(text_qa_template)
 
@@ -75,6 +78,9 @@ class TreeSummarize(Refine):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
+        import pdb
+
+        pdb.set_trace()
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(
             text_qa_template, prompt_type=PromptType.SUMMARY
@@ -104,12 +110,12 @@ class TreeSummarize(Refine):
         query_str: str,
         text_chunks: Sequence[str],
         num_children: int = 10,
-    ) -> Tuple[GPTTreeIndexBuilder, List[Node]]:
+    ) -> Tuple[GPTTreeIndexBuilder, Sequence[BaseNode]]:
         """Get tree index builder."""
         text_chunks = self._service_context.prompt_helper.repack(
             summary_template, text_chunks=text_chunks
         )
-        new_nodes = [Node(text=t) for t in text_chunks]
+        new_nodes = [TextNode(text=t) for t in text_chunks]
 
         docstore = get_default_docstore()
         docstore.add_documents(new_nodes, allow_update=False)
@@ -126,13 +132,14 @@ class TreeSummarize(Refine):
         self,
         query_str: str,
         prev_response: Optional[str],
-        root_nodes: Dict[int, Node],
+        root_nodes: Dict[int, BaseNode],
         text_qa_template: QuestionAnswerPrompt,
     ) -> RESPONSE_TEXT_TYPE:
         """Get response from tree builder over root text_chunks."""
         node_list = get_sorted_node_list(root_nodes)
         truncated_chunks = self._service_context.prompt_helper.truncate(
-            prompt=text_qa_template, text_chunks=[node.get_text() for node in node_list]
+            prompt=text_qa_template,
+            text_chunks=[node.get_content() for node in node_list],
         )
         node_text = "\n".join(truncated_chunks)
         # NOTE: the final response could be a string or a stream

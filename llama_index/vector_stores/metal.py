@@ -2,7 +2,7 @@ import json
 import math
 from typing import Any, Dict, List, Tuple
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -31,7 +31,7 @@ def _legacy_metadata_dict_to_node(metadata: Dict[str, Any]) -> Tuple[dict, dict,
     else:
         extra_info = {}
     ref_doc_id = metadata["doc_id"]
-    relationships = {DocumentRelationship.SOURCE: ref_doc_id}
+    relationships = {NodeRelationship.SOURCE: RelatedNodeInfo(node_id=ref_doc_id)}
     node_info: dict = {}
     return extra_info, node_info, relationships
 
@@ -98,11 +98,12 @@ class MetalVectorStore(VectorStore):
                     item["metadata"]
                 )
 
-            node = Node(
+            node = TextNode(
                 text=text,
-                doc_id=id_,
-                extra_info=extra_info,
-                node_info=node_info,
+                id_=id_,
+                metadata=extra_info,
+                start_char_idx=node_info.get("start", None),
+                end_char_idx=node_info.get("end", None),
                 relationships=relationships,
             )
             nodes.append(node)
@@ -133,7 +134,7 @@ class MetalVectorStore(VectorStore):
             ids.append(result.id)
 
             metadata = {}
-            metadata["text"] = result.node.text or ""
+            metadata["text"] = result.node.get_content() or ""
 
             additional_metadata = node_to_metadata_dict(result.node)
             metadata.update(additional_metadata)

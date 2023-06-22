@@ -1,6 +1,6 @@
 """Data struct for document summary index."""
 
-from llama_index.data_structs.node import Node
+from llama_index.schema import BaseNode
 from llama_index.data_structs.data_structs import IndexStruct
 from dataclasses import dataclass, field
 from typing import List, Dict
@@ -23,8 +23,8 @@ class IndexDocumentSummary(IndexStruct):
 
     def add_summary_and_nodes(
         self,
-        summary_node: Node,
-        nodes: List[Node],
+        summary_node: BaseNode,
+        nodes: List[BaseNode],
     ) -> str:
         """Add node and summary."""
         summary_id = summary_node.get_doc_id()

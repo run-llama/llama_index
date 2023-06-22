@@ -8,7 +8,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.data_structs.node import Node
+from llama_index.schema import TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -107,7 +107,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             entry = {
                 self._id_key: node_id,
                 self._embedding_key: result.embedding,
-                self._text_key: node.text or "",
+                self._text_key: node.get_content() or "",
                 self._metadata_key: metadata,
             }
             data_to_insert.append(entry)
@@ -176,11 +176,13 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 res.pop(self._metadata_key)
             )
 
-            node = Node(
+            node = TextNode(
                 text=text,
-                doc_id=id,
-                extra_info=extra_info,
+                id_=id,
+                metadata=extra_info,
                 node_info=node_info,
+                start_char_idx=node_info.get("start", None),
+                end_char_idx=node_info.get("end", None),
                 relationships=relationships,
             )
             top_k_ids.append(id)

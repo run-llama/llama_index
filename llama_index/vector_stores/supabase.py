@@ -3,7 +3,7 @@ import math
 from typing import Any, List
 
 from llama_index.constants import DEFAULT_EMBEDDING_DIM
-from llama_index.data_structs.node import Node
+from llama_index.schema import TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -92,7 +92,7 @@ class SupabaseVectorStore(VectorStore):
             metadata_dict = node_to_metadata_dict(result.node)
             # NOTE: keep text in metadata dict since there's no special field in
             #       Supabase Vector.
-            metadata_dict["text"] = result.node.text
+            metadata_dict["text"] = result.node.get_content()
             data.append((result.id, result.embedding, metadata_dict))
             ids.append(result.id)
 
@@ -140,11 +140,12 @@ class SupabaseVectorStore(VectorStore):
 
             text = metadata.pop("text", None)
             extra_info, node_info, relationships = metadata_dict_to_node(metadata)
-            node = Node(
-                doc_id=id_,
+            node = TextNode(
+                id_=id_,
                 text=text,
-                extra_info=extra_info,
-                node_info=node_info,
+                metadata=extra_info,
+                start_char_idx=node_info.get("start", None),
+                end_char_idx=node_info.get("end", None),
                 relationships=relationships,
             )
 

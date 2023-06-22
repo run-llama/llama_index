@@ -78,13 +78,11 @@ class SteamshipFileReader(BaseReader):
 
             if collapse_blocks:
                 text = join_str.join([b.text for b in file.blocks])
-                docs.append(
-                    Document(text=text, doc_id=file.handle, extra_info=extra_info)
-                )
+                docs.append(Document(text=text, id_=file.handle, extra_info=extra_info))
             else:
                 docs.extend(
                     [
-                        Document(text=b.text, doc_id=file.handle, extra_info=extra_info)
+                        Document(text=b.text, id_=file.handle, extra_info=extra_info)
                         for b in file.blocks
                     ]
                 )
