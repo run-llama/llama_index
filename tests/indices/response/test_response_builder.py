@@ -112,7 +112,10 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
 #     # test response with ResponseMode.TREE_SUMMARIZE
 #     # NOTE: here we want to guarante that prompts have 0 extra tokens
 #     mock_qa_prompt_tmpl = "{context_str}{query_str}"
-#     mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
+# mock_qa_prompt = Prompt(
+#     mock_qa_prompt_tmpl,
+#     prompt_type=PromptType.QUESTION_ANSWER
+# )
 
 #     # max input size is 20, prompt tokens is 2 (query_str)
 #     # --> 18 tokens for 2 chunks -->
