@@ -268,7 +268,6 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         self._summarizer = summarizer or TreeSummarize(
             service_context=self.service_context,
             text_qa_template=DEFAULT_TEXT_QA_PROMPT,
-            refine_template=DEFAULT_REFINE_PROMPT_SEL,
         )
         self._retriever = retriever
 
