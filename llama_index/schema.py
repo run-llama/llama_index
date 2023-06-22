@@ -49,6 +49,13 @@ class ObjectType(str, Enum):
     INDEX = auto()
 
 
+class MetadataMode(str, Enum):
+    ALL = auto()
+    EMBED = auto()
+    LLM = auto()
+    NONE = auto()
+
+
 class RelatedNodeInfo(BaseModel):
     node_id: str
     node_type: Optional[ObjectType] = None
@@ -89,9 +96,13 @@ class BaseNode(BaseModel):
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="A flat dictionary of metadata fields"
     )
-    usable_metadata: Optional[List[str]] = Field(
-        default=None,
-        description="Metadata keys that are used during retrieval.",
+    metadata_keys_to_exclude_for_embed: List[str] = Field(
+        default_factory=list,
+        description="Metadata keys that are used during embedding generation.",
+    )
+    metadata_keys_to_exclude_for_llm: List[str] = Field(
+        default_factory=list,
+        description="Metadata keys that are readable by the LLM.",
     )
     relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
         default_factory=dict,
@@ -117,11 +128,11 @@ class BaseNode(BaseModel):
         """Get Object type."""
 
     @abstractmethod
-    def get_content(self) -> str:
+    def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
         """Get object content."""
 
     @abstractmethod
-    def metadata_str(self) -> str:
+    def metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
         """Extra info string."""
 
     @abstractmethod
@@ -262,19 +273,31 @@ class TextNode(BaseNode):
         """Get Object type."""
         return ObjectType.TEXT
 
-    def get_content(self) -> str:
+    def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
         """Get object content."""
-        metadata_str = self.metadata_str()
+        metadata_str = self.metadata_str(mode=metadata_mode)
         return self.text_template.format(content=self.text, metadata_str=metadata_str)
 
-    def metadata_str(self) -> str:
-        """Convert metadata to a string."""
+    def metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
+        """metadata info string."""
+        if mode == MetadataMode.NONE:
+            return ""
+
+        usable_metadata_keys = set(self.metadata.keys())
+        if mode == MetadataMode.LLM:
+            for key in self.metadata_keys_to_exclude_for_llm:
+                if key in usable_metadata_keys:
+                    usable_metadata_keys.remove(key)
+        elif mode == MetadataMode.EMBED:
+            for key in self.metadata_keys_to_exclude_for_embed:
+                if key in usable_metadata_keys:
+                    usable_metadata_keys.remove(key)
 
         return self.metadata_seperator.join(
             [
                 self.metadata_template.format(key=key, value=str(value))
                 for key, value in self.metadata.items()
-                if self.usable_metadata is None or key in self.usable_metadata
+                if key in usable_metadata_keys
             ]
         )
 
