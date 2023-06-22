@@ -24,12 +24,6 @@ def test_tree_summarize(mock_service_context: ServiceContext) -> None:
     mock_prompt_helper.repack.side_effect = mock_repack
     mock_service_context.prompt_helper = mock_prompt_helper
 
-    tree_summarize = TreeSummarize(
-        service_context=mock_service_context,
-        text_qa_template=mock_qa_prompt,
-        verbose=True,
-    )
-
     query_str = "What is?"
     texts = [
         "Text chunk 1",
@@ -38,5 +32,19 @@ def test_tree_summarize(mock_service_context: ServiceContext) -> None:
         "Text chunk 4",
     ]
 
+    # test sync
+    tree_summarize = TreeSummarize(
+        service_context=mock_service_context,
+        text_qa_template=mock_qa_prompt,
+    )
+    response = tree_summarize.get_response(text_chunks=texts, query_str=query_str)
+    assert str(response) == "Text chunk 1\nText chunk 2\nText chunk 3\nText chunk 4"
+
+    # test async
+    tree_summarize = TreeSummarize(
+        service_context=mock_service_context,
+        text_qa_template=mock_qa_prompt,
+        use_async=True,
+    )
     response = tree_summarize.get_response(text_chunks=texts, query_str=query_str)
     assert str(response) == "Text chunk 1\nText chunk 2\nText chunk 3\nText chunk 4"
