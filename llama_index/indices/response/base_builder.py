@@ -56,7 +56,6 @@ class BaseResponseBuilder(ABC):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get response."""
@@ -68,7 +67,6 @@ class BaseResponseBuilder(ABC):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get response."""
