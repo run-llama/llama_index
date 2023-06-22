@@ -272,7 +272,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         # add edges
         rel_map = self._graph_store.get_rel_map(list(g.nodes().keys()), 1)
         for keyword in rel_map.keys():
-            for obj, rel in rel_map[keyword]:
+            for rel, obj in rel_map[keyword]:
                 g.add_edge(keyword, obj, label=rel, title=rel)
 
         return g
