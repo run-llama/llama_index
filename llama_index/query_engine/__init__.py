@@ -10,6 +10,7 @@ from llama_index.query_engine.retry_query_engine import (
 )
 from llama_index.query_engine.retry_source_query_engine import RetrySourceQueryEngine
 from llama_index.query_engine.router_query_engine import (
+    ToolRetrieverRouterQueryEngine,
     RetrieverRouterQueryEngine,
     RouterQueryEngine,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "MultiStepQueryEngine",
     "RouterQueryEngine",
     "RetrieverRouterQueryEngine",
+    "ToolRetrieverRouterQueryEngine",
     "SubQuestionQueryEngine",
     "SQLJoinQueryEngine",
     "SQLAutoVectorQueryEngine",

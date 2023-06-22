@@ -1,8 +1,6 @@
 """Base object types."""
 
 from typing import TypeVar, Generic, Sequence, Type, Any, List
-from abc import abstractmethod
-from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.vector_store.base import VectorStoreIndex
@@ -10,6 +8,8 @@ from llama_index.objects.base_node_mapping import (
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
 )
+
+from llama_index.indices.query.schema import QueryType
 
 OT = TypeVar("OT")
 
@@ -23,8 +23,8 @@ class ObjectRetriever(Generic[OT]):
         self._retriever = retriever
         self._object_node_mapping = object_node_mapping
 
-    def retrieve(self, query: str) -> List[OT]:
-        nodes = self._retriever.retrieve(query)
+    def retrieve(self, str_or_query_bundle: QueryType) -> List[OT]:
+        nodes = self._retriever.retrieve(str_or_query_bundle)
         return [self._object_node_mapping.from_node(node.node) for node in nodes]
 
 
@@ -50,12 +50,12 @@ class ObjectIndex(Generic[OT]):
         index = index_cls(nodes, **index_kwargs)
         return cls(index, object_node_mapping)
 
-    def insert_object(self, obj: Any):
+    def insert_object(self, obj: Any) -> None:
         self._object_node_mapping.add_object(obj)
         node = self._object_node_mapping.to_node(obj)
         self._index.insert_nodes([node])
 
-    def as_retriever(self, **kwargs) -> ObjectRetriever:
+    def as_retriever(self, **kwargs: Any) -> ObjectRetriever:
         return ObjectRetriever(
             retriever=self._index.as_retriever(**kwargs),
             object_node_mapping=self._object_node_mapping,

@@ -4,7 +4,7 @@ from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
 from llama_index.tools.types import BaseTool
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.data_structs.node import Node
-from typing import Sequence, TypeVar, Any
+from typing import Sequence, Any
 
 
 def convert_tool_to_node(tool: BaseTool) -> Node:
@@ -30,24 +30,26 @@ class SimpleToolNodeMapping(BaseToolNodeMapping):
 
     """
 
-    def __init__(self, tools: Sequence[BaseTool]) -> None:
-        self._tools = {tool.metadata.name: tool for tool in tools}
+    def __init__(self, objs: Sequence[BaseTool]) -> None:
+        self._tools = {tool.metadata.name: tool for tool in objs}
 
     @classmethod
     def from_objects(
-        cls, tools: Sequence[BaseTool], *args: Any, **kwargs: Any
-    ) -> "SimpleToolNodeMapping":
-        return cls(tools)
+        cls, objs: Sequence[BaseTool], *args: Any, **kwargs: Any
+    ) -> "BaseObjectNodeMapping":
+        return cls(objs)
 
     def add_object(self, tool: BaseTool) -> None:
         self._tools[tool.metadata.name] = tool
 
-    def to_node(self, tool: BaseTool) -> BaseTool:
+    def to_node(self, tool: BaseTool) -> Node:
         """To node."""
         return convert_tool_to_node(tool)
 
     def from_node(self, node: Node) -> BaseTool:
         """From node."""
+        if node.node_info is None:
+            raise ValueError("Node info must be set")
         return self._tools[node.node_info["name"]]
 
 
@@ -58,22 +60,26 @@ class BaseQueryToolNodeMapping(BaseObjectNodeMapping[QueryEngineTool]):
 class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):
     """Simple query tool mapping."""
 
-    def __init__(self, tools: Sequence[QueryEngineTool]) -> None:
-        self._tools = {hash(tool): tool for tool in tools}
+    def __init__(self, objs: Sequence[QueryEngineTool]) -> None:
+        self._tools = {tool.metadata.name: tool for tool in objs}
 
     @classmethod
     def from_objects(
-        cls, tools: Sequence[QueryEngineTool]
-    ) -> "SimpleQueryToolNodeMapping":
-        return cls(tools)
+        cls, objs: Sequence[QueryEngineTool], *args: Any, **kwargs: Any
+    ) -> "BaseObjectNodeMapping":
+        return cls(objs)
 
     def add_object(self, tool: QueryEngineTool) -> None:
-        self._objs[tool.metadata.name] = tool
+        if tool.metadata.name is None:
+            raise ValueError("Tool name must be set")
+        self._tools[tool.metadata.name] = tool
 
-    def to_node(self, obj: QueryEngineTool) -> QueryEngineTool:
+    def to_node(self, obj: QueryEngineTool) -> Node:
         """To node."""
         return convert_tool_to_node(obj)
 
     def from_node(self, node: Node) -> QueryEngineTool:
         """From node."""
+        if node.node_info is None:
+            raise ValueError("Node info must be set")
         return self._tools[node.node_info["name"]]

@@ -253,7 +253,8 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
     Selects a set of candidate query engines to execute a query.
 
     Args:
-        retriever (ObjectRetriever): A retriever that retrieves a set of query engine tools.
+        retriever (ObjectRetriever): A retriever that retrieves a set of
+            query engine tools.
         service_context (Optional[ServiceContext]): A service context.
         summarizer (Optional[TreeSummarize]): Tree summarizer to summarize sub-results.
 
@@ -283,7 +284,8 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         query_engine_tools = self._retriever.retrieve(query_bundle)
         responses = []
         for query_engine_tool in query_engine_tools:
-            responses.append(query_engine_tool.query(query_bundle))
+            query_engine = query_engine_tool.query_engine
+            responses.append(query_engine.query(query_bundle))
 
         if len(responses) > 1:
             final_response = combine_responses(
@@ -307,7 +309,8 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         query_engine_tools = self._retriever.retrieve(query_bundle)
         tasks = []
         for query_engine_tool in query_engine_tools:
-            tasks.append(query_engine_tool.aquery(query_bundle))
+            query_engine = query_engine_tool.query_engine
+            tasks.append(query_engine.aquery(query_bundle))
         responses = run_async_tasks(tasks)
         if len(responses) > 1:
             final_response = await acombine_responses(

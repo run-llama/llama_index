@@ -1,11 +1,8 @@
 """Base object types."""
 
-from typing import TypeVar, Generic, Sequence, Type, Any
+from typing import TypeVar, Generic, Sequence, Any
 from abc import abstractmethod
 from llama_index.data_structs.node import Node
-from llama_index.indices.base import BaseIndex
-from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.tools.types import BaseTool
 
 OT = TypeVar("OT")
 
@@ -41,7 +38,7 @@ class BaseObjectNodeMapping(Generic[OT]):
         pass
 
     @abstractmethod
-    def to_node(self, obj: OT) -> OT:
+    def to_node(self, obj: OT) -> Node:
         """To node."""
         pass
 
@@ -53,25 +50,25 @@ class BaseObjectNodeMapping(Generic[OT]):
         """From node."""
 
 
-class SimpleObjectNodeMapping(BaseObjectNodeMapping):
+class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
     """General node mapping that works for any obj."""
 
-    def __init__(self, objs: Sequence[OT]) -> None:
+    def __init__(self, objs: Sequence[Any]) -> None:
         for obj in objs:
             self.validate_object(obj)
         self._objs = {hash(str(obj)): obj for obj in objs}
 
     @classmethod
     def from_objects(
-        cls, objs: Sequence[OT], *args: Any, **kwargs: Any
+        cls, objs: Sequence[Any], *args: Any, **kwargs: Any
     ) -> "BaseObjectNodeMapping":
         return cls(objs)
 
-    def add_object(self, obj: OT) -> None:
+    def add_object(self, obj: Any) -> None:
         self._objs[hash(str(obj))] = obj
 
-    def to_node(self, obj: OT) -> Node:
+    def to_node(self, obj: Any) -> Node:
         return Node(text=str(obj))
 
-    def from_node(self, node: Node) -> OT:
+    def from_node(self, node: Node) -> Any:
         return self._objs[hash(node.text)]

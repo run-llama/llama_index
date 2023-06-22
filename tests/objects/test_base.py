@@ -1,19 +1,14 @@
 """Test object index."""
 
-from typing import List, Dict, Any
-from llama_index.data_structs.node import NodeWithScore, Node
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.objects.base import ObjectIndex, ObjectRetriever
+from llama_index.objects.base import ObjectIndex
 from llama_index.indices.list.base import ListIndex
 
 from llama_index.objects.base_node_mapping import SimpleObjectNodeMapping
 from llama_index.objects.tool_node_mapping import SimpleToolNodeMapping
 from llama_index.tools.function_tool import FunctionTool
 
-from llama_index.indices.base_retriever import BaseRetriever
 
-
-def test_object_index():
+def test_object_index() -> None:
     """Test object index."""
 
     obj_index = ObjectIndex.from_objects(
@@ -27,7 +22,7 @@ def test_object_index():
     assert obj_index.as_retriever().retrieve("test") == ["a", "b", "c", "d"]
 
 
-def test_object_index_with_tools():
+def test_object_index_with_tools() -> None:
     """Test object index with tools."""
 
     tool1 = FunctionTool.from_defaults(fn=lambda x: x, name="test_tool")

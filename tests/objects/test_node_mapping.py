@@ -12,30 +12,28 @@ class TestObject(BaseModel):
 
     name: str
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"TestObject(name='{self.name}')"
 
 
-def test_simple_object_node_mapping():
+def test_simple_object_node_mapping() -> None:
     """Test simple object node mapping."""
 
-    objects = ["a", "b", "c"]
-    node_mapping = SimpleObjectNodeMapping.from_objects(objects)
+    strs = ["a", "b", "c"]
+    node_mapping = SimpleObjectNodeMapping.from_objects(strs)
     assert node_mapping.to_node("a").text == "a"
     assert node_mapping.from_node(node_mapping.to_node("a")) == "a"
-    assert len(node_mapping._objs) == 3
 
     objects = [TestObject(name="a"), TestObject(name="b"), TestObject(name="c")]
     node_mapping = SimpleObjectNodeMapping.from_objects(objects)
     assert node_mapping.to_node(objects[0]).text == "TestObject(name='a')"
     assert node_mapping.from_node(node_mapping.to_node(objects[0])) == objects[0]
-    assert len(node_mapping._objs) == 3
 
 
-def test_tool_object_node_mapping():
+def test_tool_object_node_mapping() -> None:
     """Test tool object node mapping."""
 
     tool1 = FunctionTool.from_defaults(
@@ -51,11 +49,11 @@ def test_tool_object_node_mapping():
     # don't need to check for tool fn schema
     assert (
         "Tool name: test_tool\n" "Tool description: test\n"
-    ) in node_mapping.to_node(tool1).text
+    ) in node_mapping.to_node(tool1).get_text()
     assert node_mapping.from_node(node_mapping.to_node(tool1)) == tool1
     assert (
         "Tool name: test_tool2\n" "Tool description: test\n"
-    ) in node_mapping.to_node(tool2).text
+    ) in node_mapping.to_node(tool2).get_text()
     recon_tool2 = node_mapping.from_node(node_mapping.to_node(tool2))
     assert recon_tool2(1, 2) == 3
 
@@ -65,5 +63,5 @@ def test_tool_object_node_mapping():
     node_mapping.add_object(tool3)
     assert (
         "Tool name: test_tool3\n" "Tool description: test3\n"
-    ) in node_mapping.to_node(tool3).text
+    ) in node_mapping.to_node(tool3).get_text()
     assert node_mapping.from_node(node_mapping.to_node(tool3)) == tool3
