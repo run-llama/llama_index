@@ -2,10 +2,7 @@
 
 from llama_index.agent.openai_agent import BaseOpenAIAgent
 from llama_index.objects.base import ObjectRetriever
-from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
-from llama_index.objects.tool_node_mapping import SimpleToolNodeMapping
-from llama_index.data_structs.node import Node
-from llama_index.tools.types import OpenAIFunctionSchema, BaseTool
+from llama_index.tools.types import BaseTool
 from typing import Optional, List
 from langchain.chat_models import ChatOpenAI
 from llama_index.callbacks.base import CallbackManager

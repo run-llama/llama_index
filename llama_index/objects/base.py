@@ -24,9 +24,7 @@ class ObjectRetriever(Generic[OT]):
         self._object_node_mapping = object_node_mapping
 
     def retrieve(self, query: str) -> List[OT]:
-        print(f"hello: {query}")
         nodes = self._retriever.retrieve(query)
-        print(f"nodes: {nodes}")
         return [self._object_node_mapping.from_node(node.node) for node in nodes]
 
 

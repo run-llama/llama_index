@@ -7,6 +7,17 @@ from llama_index.data_structs.node import Node
 from typing import Sequence, TypeVar, Any
 
 
+def convert_tool_to_node(tool: BaseTool) -> Node:
+    """Function convert Tool to node."""
+    node_text = (
+        f"Tool name: {tool.metadata.name}\n"
+        f"Tool description: {tool.metadata.description}\n"
+    )
+    if tool.metadata.fn_schema is not None:
+        node_text += f"Tool schema: {tool.metadata.fn_schema.schema()}\n"
+    return Node(text=node_text, node_info={"name": tool.metadata.name})
+
+
 class BaseToolNodeMapping(BaseObjectNodeMapping[BaseTool]):
     """Base Tool node mapping."""
 
@@ -31,13 +42,13 @@ class SimpleToolNodeMapping(BaseToolNodeMapping):
     def add_object(self, tool: BaseTool) -> None:
         self._tools[tool.metadata.name] = tool
 
-    def to_node(self, obj: BaseTool) -> BaseTool:
+    def to_node(self, tool: BaseTool) -> BaseTool:
         """To node."""
-        return Node(text=obj.metadata.name)
+        return convert_tool_to_node(tool)
 
     def from_node(self, node: Node) -> BaseTool:
         """From node."""
-        return self._tools[node.text]
+        return self._tools[node.node_info["name"]]
 
 
 class BaseQueryToolNodeMapping(BaseObjectNodeMapping[QueryEngineTool]):
@@ -61,8 +72,8 @@ class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):
 
     def to_node(self, obj: QueryEngineTool) -> QueryEngineTool:
         """To node."""
-        return Node(text=obj.metadata.name)
+        return convert_tool_to_node(obj)
 
     def from_node(self, node: Node) -> QueryEngineTool:
         """From node."""
-        return self._tools[node.text]
+        return self._tools[node.node_info["name"]]
