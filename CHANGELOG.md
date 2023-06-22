@@ -1,9 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.31] - 2023-06-22
 
 ### Bug Fixes / Nits
 - properly convert weaviate distance to score (#6545)
+- fix custom KG retrieval notebook nits (#6551)
 
 ## [v0.6.30] - 2023-06-21
 
