@@ -27,7 +27,6 @@ from llama_index.prompts.default_prompts import (
 from llama_index.prompts.prompts import KeywordExtractPrompt
 from llama_index.storage.docstore.types import RefDocInfo
 
-
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 

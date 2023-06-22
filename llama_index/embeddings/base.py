@@ -12,7 +12,6 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.utils import globals_helper
 
-
 # TODO: change to numpy array
 EMB_TYPE = List
 
