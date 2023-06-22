@@ -11,7 +11,8 @@ from llama_index.prompts.base import Prompt
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.readers.schema.base import Document
 from tests.indices.vector_store.mock_services import MockEmbedding
-from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
+from tests.mock_utils.mock_prompts import (MOCK_REFINE_PROMPT,
+                                           MOCK_TEXT_QA_PROMPT)
 
 
 def mock_tokenizer(text: str) -> List[str]:
@@ -104,47 +105,46 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
     response = builder.get_response(text_chunks=texts, query_str=query_str)
     assert str(response) == "What is?:This:is:a:bar:This:is:a:test"
 
+# TODO: fix test, right now results in infinite loop since mock LLM does not
+#       actually summarize (and make the text shorter)
+# def test_tree_summarize_response(mock_service_context: ServiceContext) -> None:
+#     """Test give response."""
+#     # test response with ResponseMode.TREE_SUMMARIZE
+#     # NOTE: here we want to guarante that prompts have 0 extra tokens
+#     mock_qa_prompt_tmpl = "{context_str}{query_str}"
+#     mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
 
-def test_tree_summarize_response(mock_service_context: ServiceContext) -> None:
-    """Test give response."""
-    # test response with ResponseMode.TREE_SUMMARIZE
-    # NOTE: here we want to guarante that prompts have 0 extra tokens
-    mock_qa_prompt_tmpl = "{context_str}{query_str}"
-    mock_qa_prompt = Prompt(mock_qa_prompt_tmpl, prompt_type=PromptType.QUESTION_ANSWER)
+#     # max input size is 20, prompt tokens is 2 (query_str)
+#     # --> 18 tokens for 2 chunks -->
+#     # 9 tokens per chunk, 5 is padding --> 4 tokens per chunk
+#     prompt_helper = PromptHelper(
+#         context_window=20,
+#         num_output=0,
+#         chunk_overlap_ratio=0,
+#         tokenizer=mock_tokenizer,
+#         separator="\n\n",
+#     )
+#     service_context = mock_service_context
+#     service_context.prompt_helper = prompt_helper
 
-    # max input size is 20, prompt tokens is 2 (query_str)
-    # --> 18 tokens for 2 chunks -->
-    # 9 tokens per chunk, 5 is padding --> 4 tokens per chunk
-    prompt_helper = PromptHelper(
-        context_window=20,
-        num_output=0,
-        chunk_overlap_ratio=0,
-        tokenizer=mock_tokenizer,
-        separator="\n\n",
-    )
-    service_context = mock_service_context
-    service_context.prompt_helper = prompt_helper
+#     # within tree_summarize, make sure that chunk size is 8
+#     query_str = "What is?"
+#     texts = [
+#         "This\n\nis\n\na\n\nbar",
+#         "This\n\nis\n\na\n\ntest",
+#         "This\n\nis\n\nanother\n\ntest",
+#         "This\n\nis\n\na\n\nfoo",
+#     ]
 
-    # within tree_summarize, make sure that chunk size is 8
-    query_str = "What is?"
-    texts = [
-        "This\n\nis\n\na\n\nbar",
-        "This\n\nis\n\na\n\ntest",
-        "This\n\nis\n\nanother\n\ntest",
-        "This\n\nis\n\na\n\nfoo",
-    ]
+#     builder = get_response_builder(
+#         mode=ResponseMode.TREE_SUMMARIZE,
+#         service_context=service_context,
+#         text_qa_template=mock_qa_prompt,
+#     )
 
-    builder = get_response_builder(
-        mode=ResponseMode.TREE_SUMMARIZE,
-        service_context=service_context,
-        text_qa_template=mock_qa_prompt,
-    )
-
-    # TODO: fix test, right now results in infinite loop since mock LLM does not
-    #       actually summarize (and make the text shorter)
-    # response = builder.get_response(text_chunks=texts, query_str=query_str)
-    # TODO: fix this output, the \n join appends unnecessary results at the end
-    # assert str(response) == "What is?:This:is:a:bar:This:is:another:test"
+#     response = builder.get_response(text_chunks=texts, query_str=query_str)
+#     # TODO: fix this output, the \n join appends unnecessary results at the end
+#     assert str(response) == "What is?:This:is:a:bar:This:is:another:test"
 
 
 def test_accumulate_response(
