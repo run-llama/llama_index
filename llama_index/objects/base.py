@@ -6,14 +6,17 @@ from llama_index.data_structs.node import Node
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.indices.objects.node_mapping import (
+from llama_index.objects.base_node_mapping import (
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
-    OT,
 )
+
+OT = TypeVar("OT")
 
 
 class ObjectRetriever(Generic[OT]):
+    """Object retriever."""
+
     def __init__(
         self, retriever: BaseRetriever, object_node_mapping: BaseObjectNodeMapping[OT]
     ):
@@ -22,7 +25,7 @@ class ObjectRetriever(Generic[OT]):
 
     def retrieve(self, query: str) -> List[OT]:
         nodes = self._retriever.retrieve(query)
-        return [self._object_node_mapping.from_node(node) for node in nodes]
+        return [self._object_node_mapping.from_node(node.node) for node in nodes]
 
 
 class ObjectIndex(Generic[OT]):
@@ -42,7 +45,7 @@ class ObjectIndex(Generic[OT]):
         object_mapping_cls: Type[BaseObjectNodeMapping] = SimpleObjectNodeMapping,
         **index_kwargs: Any,
     ) -> "ObjectIndex":
-        object_node_mapping = object_mapping_cls(objects)
+        object_node_mapping = object_mapping_cls.from_objects(objects)
         nodes = object_node_mapping.to_nodes()
         return index_cls(nodes, **index_kwargs)
 
