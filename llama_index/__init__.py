@@ -9,9 +9,6 @@ import logging
 from logging import NullHandler
 from typing import Optional
 
-# LLMs
-from llama_index.llms import OpenAI
-
 from llama_index.data_structs.struct_type import IndexStructType
 
 # embeddings
@@ -141,7 +138,6 @@ logging.getLogger(__name__).addHandler(NullHandler())
 
 
 __all__ = [
-    "OpenAI",
     "StorageContext",
     "ServiceContext",
     "ComposableGraph",
