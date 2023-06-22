@@ -28,7 +28,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
                 },
-                metadata = {
+                metadata={
                     "author": "Stephen King",
                     "theme": "Friendship",
                 },
@@ -42,7 +42,7 @@ def node_embeddings() -> List[NodeWithEmbedding]:
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")
                 },
-                metadata = {
+                metadata={
                     "director": "Francis Ford Coppola",
                     "theme": "Mafia",
                 },

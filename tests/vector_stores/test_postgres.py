@@ -98,7 +98,7 @@ def test_add_to_db_and_query(
     res = pg.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].doc_id == "aaa"
+    assert res.nodes[0].node_id == "aaa"
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
@@ -118,10 +118,10 @@ def test_add_to_db_query_and_delete(
     res = pg.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].doc_id == "bbb"
+    assert res.nodes[0].node_id == "bbb"
     pg.delete("bbb")
 
     res = pg.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].doc_id == "aaa"
+    assert res.nodes[0].node_id == "aaa"
