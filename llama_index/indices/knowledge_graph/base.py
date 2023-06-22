@@ -10,7 +10,7 @@ existing keywords in the table.
 
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from llama_index.constants import GRAPH_STORE_KEY
 from llama_index.data_structs.data_structs import KG

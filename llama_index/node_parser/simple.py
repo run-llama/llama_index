@@ -1,6 +1,6 @@
 """Simple node parser."""
 from typing import List, Optional, Sequence
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload

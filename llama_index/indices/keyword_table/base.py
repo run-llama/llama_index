@@ -11,7 +11,7 @@ existing keywords in the table.
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Set, Union
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import KeywordTable

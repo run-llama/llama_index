@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload

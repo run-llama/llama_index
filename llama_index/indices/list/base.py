@@ -7,7 +7,7 @@ in sequence in order to answer a given query.
 
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from llama_index.data_structs.data_structs import IndexList
 from llama_index.data_structs.node import Node

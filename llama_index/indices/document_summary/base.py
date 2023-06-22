@@ -9,7 +9,7 @@ import logging
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union, cast
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.data_structs.node import DocumentRelationship, Node, NodeWithScore
