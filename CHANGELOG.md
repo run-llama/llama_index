@@ -1,9 +1,11 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.31] - 2023-06-22
 
 ### Bug Fixes / Nits
 - properly convert weaviate distance to score (#6545)
+- refactor tree summarize and fix bug to not truncate context (#6550)
+- fix custom KG retrieval notebook nits (#6551)
 
 ## [v0.6.30] - 2023-06-21
 

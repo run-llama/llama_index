@@ -1,4 +1,4 @@
-from typing import Any, Generator, Optional, Sequence, cast
+from typing import Any, Generator, Sequence, cast
 
 from llama_index.indices.response.base_builder import BaseResponseBuilder
 from llama_index.indices.service_context import ServiceContext
@@ -22,7 +22,6 @@ class SimpleSummarize(BaseResponseBuilder):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
@@ -60,7 +59,6 @@ class SimpleSummarize(BaseResponseBuilder):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str] = None,
         **kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)

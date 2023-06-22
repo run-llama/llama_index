@@ -23,11 +23,11 @@ class BaseResponseBuilder(ABC):
 
     def __init__(
         self,
-        service_context: ServiceContext,
+        service_context: Optional[ServiceContext] = None,
         streaming: bool = False,
     ) -> None:
         """Init params."""
-        self._service_context = service_context
+        self._service_context = service_context or ServiceContext.from_defaults()
         self._streaming = streaming
 
     @property
@@ -56,7 +56,6 @@ class BaseResponseBuilder(ABC):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get response."""
@@ -68,7 +67,6 @@ class BaseResponseBuilder(ABC):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get response."""
