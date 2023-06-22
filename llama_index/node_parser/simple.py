@@ -1,6 +1,5 @@
 """Simple node parser."""
 from typing import List, Optional, Sequence
-from tqdm.auto import tqdm
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -10,6 +9,7 @@ from llama_index.langchain_helpers.text_splitter import TextSplitter, TokenTextS
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.readers.schema.base import Document
+from llama_index.utils import get_tqdm_iterable
 
 
 class SimpleNodeParser(NodeParser):
@@ -67,7 +67,7 @@ class SimpleNodeParser(NodeParser):
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
-        show_progress_bar: bool = False,
+        show_progress: bool = False,
     ) -> List[Node]:
         """Parse document into nodes.
 
@@ -81,13 +81,11 @@ class SimpleNodeParser(NodeParser):
         )
         all_nodes: List[Node] = []
 
-        iterable_documents = (
-            tqdm(documents, desc="Parsing documents into nodes")
-            if show_progress_bar
-            else documents
+        documents_with_progress = get_tqdm_iterable(
+            documents, show_progress, "Parsing documents into nodes"
         )
 
-        for document in iterable_documents:
+        for document in documents_with_progress:
             nodes = get_nodes_from_document(
                 document,
                 self._text_splitter,

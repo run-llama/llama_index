@@ -25,6 +25,7 @@ class BaseIndex(Generic[IS], ABC):
 
     Args:
         nodes (List[Node]): List of nodes to index
+        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         service_context (ServiceContext): Service context container (contains
             components like LLMPredictor, PromptHelper, etc.).
 
@@ -38,6 +39,7 @@ class BaseIndex(Generic[IS], ABC):
         index_struct: Optional[IS] = None,
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
+        show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
@@ -59,6 +61,7 @@ class BaseIndex(Generic[IS], ABC):
         self._service_context = service_context or ServiceContext.from_defaults()
         self._storage_context = storage_context or StorageContext.from_defaults()
         self._docstore = self._storage_context.docstore
+        self._show_progress = show_progress
         self._vector_store = self._storage_context.vector_store
         self._graph_store = self._storage_context.graph_store
 
@@ -75,6 +78,7 @@ class BaseIndex(Generic[IS], ABC):
         documents: Sequence[Document],
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
+        show_progress: bool = False,
         **kwargs: Any,
     ) -> IndexType:
         """Create index from documents.
@@ -92,12 +96,13 @@ class BaseIndex(Generic[IS], ABC):
             for doc in documents:
                 docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
             nodes = service_context.node_parser.get_nodes_from_documents(
-                documents, show_progress_bar=True
+                documents, show_progress=show_progress
             )
             return cls(
                 nodes=nodes,
                 storage_context=storage_context,
                 service_context=service_context,
+                show_progress=show_progress,
                 **kwargs,
             )
 

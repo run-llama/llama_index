@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from requests.adapters import HTTPAdapter, Retry
-from tqdm.auto import tqdm
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (
@@ -14,6 +13,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from llama_index.utils import get_tqdm_iterable
 
 
 def convert_docs_to_json(embedding_results: List[NodeWithEmbedding]) -> List[Dict]:
@@ -94,7 +94,12 @@ class ChatGPTRetrievalPluginClient(VectorStore):
         headers = {"Authorization": f"Bearer {self._bearer_token}"}
 
         docs_to_upload = convert_docs_to_json(embedding_results)
-        for i in tqdm(range(0, len(docs_to_upload), self._batch_size)):
+        iterable_docs = get_tqdm_iterable(
+            range(0, len(docs_to_upload), self._batch_size),
+            show_progress=True,
+            desc="Uploading documents",
+        )
+        for i in iterable_docs:
             i_end = min(i + self._batch_size, len(docs_to_upload))
             self._s.post(
                 f"{self._endpoint_url}/upsert",

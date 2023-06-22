@@ -14,6 +14,7 @@ class NodeParser(ABC):
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
+        show_progress: bool = False,
     ) -> List[Node]:
         """Parse documents into nodes.
 

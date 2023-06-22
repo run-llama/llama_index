@@ -6,11 +6,10 @@ from enum import Enum
 from typing import Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
-from tqdm.auto import tqdm
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.utils import globals_helper
+from llama_index.utils import globals_helper, get_tqdm_iterable
 
 # TODO: change to numpy array
 EMB_TYPE = List
@@ -151,7 +150,9 @@ class BaseEmbedding:
         """
         self._text_queue.append((text_id, text))
 
-    def get_queued_text_embeddings(self) -> Tuple[List[str], List[List[float]]]:
+    def get_queued_text_embeddings(
+        self, show_progress: bool = False
+    ) -> Tuple[List[str], List[List[float]]]:
         """Get queued text embeddings.
 
         Call embedding API to get embeddings for all queued texts.
@@ -161,9 +162,12 @@ class BaseEmbedding:
         cur_batch: List[Tuple[str, str]] = []
         result_ids: List[str] = []
         result_embeddings: List[List[float]] = []
-        for idx, (text_id, text) in tqdm(
-            enumerate(text_queue), total=len(text_queue), desc="Generating embeddings"
-        ):
+
+        queue_with_progress = enumerate(
+            get_tqdm_iterable(text_queue, show_progress, "Generating embeddings")
+        )
+
+        for idx, (text_id, text) in queue_with_progress:
             cur_batch.append((text_id, text))
             text_tokens_count = len(self._tokenizer(text))
             self._total_tokens_used += text_tokens_count
@@ -180,7 +184,6 @@ class BaseEmbedding:
                     payload={EventPayload.CHUNKS: cur_batch_texts},
                     event_id=event_id,
                 )
-
                 cur_batch = []
 
         # reset queue
@@ -188,7 +191,7 @@ class BaseEmbedding:
         return result_ids, result_embeddings
 
     async def aget_queued_text_embeddings(
-        self, text_queue: List[Tuple[str, str]]
+        self, text_queue: List[Tuple[str, str]], show_progress: bool = False
     ) -> Tuple[List[str], List[List[float]]]:
         """Asynchronously get a list of text embeddings.
 
@@ -220,10 +223,27 @@ class BaseEmbedding:
                 )
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
+        nested_embeddings = []
+        if show_progress:
+            try:
+                from tqdm.auto import tqdm
+
+                nested_embeddings = [
+                    await f
+                    for f in tqdm(
+                        asyncio.as_completed(embeddings_coroutines),
+                        total=len(embeddings_coroutines),
+                        desc="Generating embeddings",
+                    )
+                ]
+            except ImportError:
+                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                pass
+        else:
+            nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+
         result_embeddings = [
-            embedding
-            for embeddings in await asyncio.gather(*embeddings_coroutines)
-            for embedding in embeddings
+            embedding for embeddings in nested_embeddings for embedding in embeddings
         ]
 
         return result_ids, result_embeddings

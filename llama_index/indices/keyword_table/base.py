@@ -11,7 +11,7 @@ existing keywords in the table.
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Set, Union
-from tqdm.auto import tqdm
+from llama_index.utils import get_tqdm_iterable
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.data_structs.data_structs import KeywordTable
@@ -53,6 +53,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
             Extraction Prompt
             (see :ref:`Prompt-Templates`).
         use_async (bool): Whether to use asynchronous calls. Defaults to False.
+        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
 
     """
 
@@ -66,6 +67,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         keyword_extract_template: Optional[KeywordExtractPrompt] = None,
         max_keywords_per_chunk: int = 10,
         use_async: bool = False,
+        show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -83,6 +85,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
+            show_progress=show_progress,
             **kwargs,
         )
 
@@ -119,18 +122,31 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         return self._extract_keywords(text)
 
     def _add_nodes_to_index(
-        self, index_struct: KeywordTable, nodes: Sequence[Node]
+        self,
+        index_struct: KeywordTable,
+        nodes: Sequence[Node],
+        show_progress: bool = False,
     ) -> None:
         """Add document to index."""
-        for n in nodes:
+        nodes_with_progress = get_tqdm_iterable(
+            nodes, show_progress, "Extracting keywords from nodes"
+        )
+        for n in nodes_with_progress:
             keywords = self._extract_keywords(n.get_text())
             index_struct.add_node(list(keywords), n)
 
     async def _async_add_nodes_to_index(
-        self, index_struct: KeywordTable, nodes: Sequence[Node]
+        self,
+        index_struct: KeywordTable,
+        nodes: Sequence[Node],
+        show_progress: bool = False,
     ) -> None:
         """Add document to index."""
-        for n in tqdm(nodes, desc="Adding nodes to index"):
+        nodes_with_progress = get_tqdm_iterable(
+            nodes, show_progress, "Extracting keywords from nodes"
+        )
+
+        for n in nodes_with_progress:
             keywords = await self._async_extract_keywords(n.get_text())
             index_struct.add_node(list(keywords), n)
 
@@ -139,10 +155,12 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         # do simple concatenation
         index_struct = KeywordTable(table={})
         if self._use_async:
-            tasks = [self._async_add_nodes_to_index(index_struct, nodes)]
+            tasks = [
+                self._async_add_nodes_to_index(index_struct, nodes, self._show_progress)
+            ]
             run_async_tasks(tasks)
         else:
-            self._add_nodes_to_index(index_struct, nodes)
+            self._add_nodes_to_index(index_struct, nodes, self._show_progress)
 
         return index_struct
 
