@@ -63,8 +63,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 "Cannot initialize from a vector store that does not store text."
             )
 
-        storage_context = StorageContext.from_defaults(
-            vector_store=vector_store)
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
         return cls(
             nodes=[], service_context=service_context, storage_context=storage_context
         )
@@ -165,7 +164,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store
         if not self._vector_store.stores_text or self._store_nodes_override:
-            for result, new_id in tqdm(list(zip(embedding_results, new_ids)), desc="Adding nodes to index"):
+            for result, new_id in tqdm(
+                list(zip(embedding_results, new_ids)), desc="Adding nodes to index"
+            ):
                 index_struct.add_node(result.node, text_id=new_id)
                 self._docstore.add_documents([result.node], allow_update=True)
         else:
@@ -174,8 +175,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             for result, new_id in zip(embedding_results, new_ids):
                 if isinstance(result.node, (ImageNode, IndexNode)):
                     index_struct.add_node(result.node, text_id=new_id)
-                    self._docstore.add_documents(
-                        [result.node], allow_update=True)
+                    self._docstore.add_documents([result.node], allow_update=True)
 
     def _add_nodes_to_index(
         self,
@@ -192,17 +192,20 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not self._vector_store.stores_text or self._store_nodes_override:
             # NOTE: if the vector store doesn't store text,
             # we need to add the nodes to the index struct and document store
-            for result, new_id in tqdm(list(zip(embedding_results, new_ids)), desc="Adding nodes to index"):
+            for result, new_id in tqdm(
+                list(zip(embedding_results, new_ids)), desc="Adding nodes to index"
+            ):
                 index_struct.add_node(result.node, text_id=new_id)
                 self._docstore.add_documents([result.node], allow_update=True)
         else:
             # NOTE: if the vector store keeps text,
             # we only need to add image and index nodes
-            for result, new_id in tqdm(list(zip(embedding_results, new_ids)), desc="Adding nodes to index"):
+            for result, new_id in tqdm(
+                list(zip(embedding_results, new_ids)), desc="Adding nodes to index"
+            ):
                 if isinstance(result.node, (ImageNode, IndexNode)):
                     index_struct.add_node(result.node, text_id=new_id)
-                    self._docstore.add_documents(
-                        [result.node], allow_update=True)
+                    self._docstore.add_documents([result.node], allow_update=True)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDict:
         """Build index from nodes."""

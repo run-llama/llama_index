@@ -123,7 +123,9 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             doc_id_to_nodes[node.ref_doc_id].append(node)
 
         summary_node_dict = {}
-        for doc_id, nodes in tqdm(doc_id_to_nodes.items(), desc="Adding nodes to index"):
+        for doc_id, nodes in tqdm(
+            doc_id_to_nodes.items(), desc="Adding nodes to index"
+        ):
             print(f"current doc id: {doc_id}")
             nodes_with_scores = [NodeWithScore(n) for n in nodes]
             # get the summary for each doc_id
@@ -142,8 +144,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             )
 
         for doc_id, nodes in doc_id_to_nodes.items():
-            index_struct.add_summary_and_nodes(
-                summary_node_dict[doc_id], nodes)
+            index_struct.add_summary_and_nodes(summary_node_dict[doc_id], nodes)
 
     def _build_index_from_nodes(self, nodes: Sequence[Node]) -> IndexDocumentSummary:
         """Build index from nodes."""

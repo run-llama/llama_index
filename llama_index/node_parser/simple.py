@@ -77,13 +77,15 @@ class SimpleNodeParser(NodeParser):
 
         """
         event_id = self.callback_manager.on_event_start(
-            CBEventType.NODE_PARSING, payload={
-                EventPayload.DOCUMENTS: documents}
+            CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
         )
         all_nodes: List[Node] = []
 
-        iterable_documents = tqdm(
-            documents, desc="Parsing documents into nodes") if show_progress_bar else documents
+        iterable_documents = (
+            tqdm(documents, desc="Parsing documents into nodes")
+            if show_progress_bar
+            else documents
+        )
 
         for document in iterable_documents:
             nodes = get_nodes_from_document(

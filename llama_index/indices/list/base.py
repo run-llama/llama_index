@@ -60,8 +60,7 @@ class ListIndex(BaseIndex[IndexList]):
 
     def as_retriever(
         self,
-        retriever_mode: Union[str,
-                              ListRetrieverMode] = ListRetrieverMode.DEFAULT,
+        retriever_mode: Union[str, ListRetrieverMode] = ListRetrieverMode.DEFAULT,
         **kwargs: Any,
     ) -> BaseRetriever:
         from llama_index.indices.list.retrievers import (

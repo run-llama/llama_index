@@ -201,8 +201,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
             self.keyword_extract_template,
             text=text,
         )
-        keywords = extract_keywords_given_response(
-            response, start_token="KEYWORDS:")
+        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
         return keywords
 
     async def _async_extract_keywords(self, text: str) -> Set[str]:
@@ -211,8 +210,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
             self.keyword_extract_template,
             text=text,
         )
-        keywords = extract_keywords_given_response(
-            response, start_token="KEYWORDS:")
+        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
         return keywords
 
 

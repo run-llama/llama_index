@@ -91,8 +91,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             and isinstance(self.graph_store, SimpleGraphStore)
             and len(self.graph_store._data.graph_dict) == 0
         ):
-            logger.warning(
-                "Upgrading previously saved KG index to new storage format.")
+            logger.warning("Upgrading previously saved KG index to new storage format.")
             self.graph_store._data.graph_dict = self.index_struct.rel_map
 
     @property
@@ -175,8 +174,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                             triplet_str
                         )
                     )
-                    self._index_struct.add_to_embedding_dict(
-                        triplet_str, rel_embedding)
+                    self._index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
 
     def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:
         """Insert triplets.

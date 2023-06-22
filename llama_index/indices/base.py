@@ -42,11 +42,9 @@ class BaseIndex(Generic[IS], ABC):
     ) -> None:
         """Initialize with parameters."""
         if index_struct is None and nodes is None:
-            raise ValueError(
-                "One of documents or index_struct must be provided.")
+            raise ValueError("One of documents or index_struct must be provided.")
         if index_struct is not None and nodes is not None:
-            raise ValueError(
-                "Only one of documents or index_struct can be provided.")
+            raise ValueError("Only one of documents or index_struct can be provided.")
         # This is to explicitly make sure that the old UX is not used
         if nodes is not None and len(nodes) >= 1 and not isinstance(nodes[0], Node):
             if isinstance(nodes[0], Document):
@@ -69,8 +67,7 @@ class BaseIndex(Generic[IS], ABC):
                 assert nodes is not None
                 index_struct = self.build_index_from_nodes(nodes)
             self._index_struct = index_struct
-            self._storage_context.index_store.add_index_struct(
-                self._index_struct)
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     @classmethod
     def from_documents(
@@ -93,10 +90,10 @@ class BaseIndex(Generic[IS], ABC):
 
         with service_context.callback_manager.as_trace("index_construction"):
             for doc in documents:
-                docstore.set_document_hash(
-                    doc.get_doc_id(), doc.get_doc_hash())
+                docstore.set_document_hash(doc.get_doc_id(), doc.get_doc_hash())
             nodes = service_context.node_parser.get_nodes_from_documents(
-                documents, show_progress_bar=True)
+                documents, show_progress_bar=True
+            )
             return cls(
                 nodes=nodes,
                 storage_context=storage_context,
@@ -178,8 +175,7 @@ class BaseIndex(Generic[IS], ABC):
         with self._service_context.callback_manager.as_trace("insert_nodes"):
             self.docstore.add_documents(nodes, allow_update=True)
             self._insert(nodes, **insert_kwargs)
-            self._storage_context.index_store.add_index_struct(
-                self._index_struct)
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
@@ -235,8 +231,7 @@ class BaseIndex(Generic[IS], ABC):
         """Delete a document and it's nodes by using ref_doc_id."""
         ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
         if ref_doc_info is None:
-            logger.warning(
-                f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
+            logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
             return
 
         self.delete_nodes(
@@ -318,8 +313,7 @@ class BaseIndex(Generic[IS], ABC):
                     )
                     refreshed_documents[i] = True
                 elif existing_doc_hash is None:
-                    self.insert(
-                        document, **update_kwargs.pop("insert_kwargs", {}))
+                    self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
                     refreshed_documents[i] = True
 
             return refreshed_documents
