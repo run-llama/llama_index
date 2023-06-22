@@ -131,6 +131,13 @@ def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, di
     return extra_info, node_info, relationships
 
 
+def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
+    """Get converted node similarity from distance."""
+    distance = float(entry["_additional"][similarity_key])
+    # convert distance https://forum.weaviate.io/t/distance-vs-certainty-scores/258
+    return 1.0 - distance
+
+
 def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
     """Convert to Node."""
     additional = entry.pop("_additional")
@@ -149,6 +156,7 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
         start_char_idx=node_info.get("start", None),
         end_char_idx=node_info.get("end", None),
         relationships=relationships,
+        embedding=additional["vector"],
     )
 
 

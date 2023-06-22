@@ -214,7 +214,13 @@ class QdrantVectorStore(VectorStore):
         if not query.doc_ids and not query.query_str:
             return None
 
-        from qdrant_client.http.models import FieldCondition, Filter, MatchAny
+        from qdrant_client.http.models import (
+            FieldCondition,
+            Filter,
+            MatchAny,
+            MatchValue,
+            Range,
+        )
 
         must_conditions = []
 
@@ -222,11 +228,34 @@ class QdrantVectorStore(VectorStore):
             must_conditions.append(
                 FieldCondition(
                     key="doc_id",
-                    match=MatchAny(any=[doc_id for doc_id in query.doc_ids]),
+                    match=MatchAny(any=query.doc_ids),
                 )
             )
-        # TODO: implement this
-        if query.filters is not None:
-            raise ValueError("Metadata filters not implemented for Qdrant yet.")
+
+        # Qdrant does not use the query.query_str property for the filtering. Full-text
+        # filtering cannot handle longer queries and can effectively filter our all the
+        # nodes. See: https://github.com/jerryjliu/llama_index/pull/1181
+
+        if query.filters is None:
+            return Filter(must=must_conditions)
+
+        for subfilter in query.filters.filters:
+            if isinstance(subfilter.value, float):
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(
+                            gte=subfilter.value,
+                            lte=subfilter.value,
+                        ),
+                    )
+                )
+            else:
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchValue(value=subfilter.value),
+                    )
+                )
 
         return Filter(must=must_conditions)

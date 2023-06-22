@@ -1,14 +1,23 @@
 # ChangeLog
 
-## Unreleased
+## [v0.6.31] - 2023-06-22
+
+### Bug Fixes / Nits
+- properly convert weaviate distance to score (#6545)
+- fix custom KG retrieval notebook nits (#6551)
+
+## [v0.6.30] - 2023-06-21
 
 ### New Features
 - multi-selector support in router query engine (#6518)
 - pydantic selector support in router query engine using OpenAI function calling API (#6518)
 - streaming response support in `CondenseQuestionChatEngine` and `SimpleChatEngine` (#6524) 
+- metadata filtering support in `QdrantVectorStore` (#6476)
+- add `PGVectorStore` to support postgres with pgvector (#6190)
 
 ### Bug Fixes / Nits
 - better error handling in the mbox reader (#6248)
+- Fix blank similarity score when using weaviate (#6512)
 - fix for sorted nodes in `PrevNextNodePostprocessor` (#6048)
 
 ### Breaking/Deprecated API Changes
@@ -28,7 +37,6 @@
 - extra space in prompt and error message update (#6443)
 - [Issue 6417] Fix prompt_templates docs page (#6499)
 - Rip out monkey patch and update model to context window mapping (#6490)
-
 
 ## [v0.6.28] - 2023-06-19
 
