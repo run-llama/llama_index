@@ -12,12 +12,24 @@ from llama_index.types import RESPONSE_TEXT_TYPE
 
 
 class TreeSummarize(BaseResponseBuilder):
+    """
+    Tree summarize response builder.
+
+    This response builder recursively merges text chunks and summarizes them
+    in a bottom-up fashion (i.e. building a tree from leaves to root).
+
+    More concretely, at each recursively step:
+    1. we repack the text chunks so that each chunk fills the context window of the LLM
+    2. if there is only one chunk, we give the final response
+    3. otherwise, we summarize each chunk and recursively summarize the summaries.
+    """
+
     def __init__(
         self,
         service_context: Optional[ServiceContext] = None,
         text_qa_template: Optional[QuestionAnswerPrompt] = None,
         streaming: bool = False,
-        use_async: bool = True,
+        use_async: bool = False,
         verbose: bool = False,
     ) -> None:
         super().__init__(
