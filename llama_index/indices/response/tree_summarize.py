@@ -78,9 +78,6 @@ class TreeSummarize(Refine):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
-        import pdb
-
-        pdb.set_trace()
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(
             text_qa_template, prompt_type=PromptType.SUMMARY

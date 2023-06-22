@@ -2,7 +2,7 @@ from typing import List, Any, Dict, Union, Generator
 
 import pytest
 
-from llama_index.data_structs.node import DocumentRelationship, Node
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import PGVectorStore
 from llama_index.vector_stores.types import NodeWithEmbedding, VectorStoreQuery
 
@@ -56,18 +56,18 @@ def node_embeddings() -> List[NodeWithEmbedding]:
     return [
         NodeWithEmbedding(
             embedding=[1.0] * 1536,
-            node=Node(
+            node=TextNode(
                 text="lorem ipsum",
-                doc_id="aaa",
-                relationships={DocumentRelationship.SOURCE: "test-0"},
+                id_="aaa",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
             ),
         ),
         NodeWithEmbedding(
             embedding=[0.0] * 1536,
-            node=Node(
+            node=TextNode(
                 text="lorem ipsum",
-                doc_id="bbb",
-                relationships={DocumentRelationship.SOURCE: "test-1"},
+                id_="bbb",
+                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
             ),
         ),
     ]
