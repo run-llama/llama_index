@@ -4,8 +4,11 @@ An index that is built within Milvus.
 
 """
 import logging
+import sys
 from typing import Any, List, Optional
 from uuid import uuid4
+
+sys.path.append('/Users/nawafalageel/Documents/GitHub/llama_index')
 
 from llama_index.data_structs.node import DocumentRelationship, Node
 from llama_index.vector_stores.types import (NodeWithEmbedding, VectorStore,
@@ -67,7 +70,7 @@ class MilvusVectorStore(VectorStore):
         embedding_field: str = DEFAULT_EMBEDDING_KEY,
         text_field: str = DEFAULT_TEXT_KEY,
         doc_id_field: str = DEFAULT_DOC_ID_KEY,
-        consistency_level: Optional[int] = "Strong",
+        consistency_level: Optional[str] = "Strong",
         host: str = "localhost",
         port: int = 19530,
         user: str = "",
@@ -188,13 +191,8 @@ class MilvusVectorStore(VectorStore):
             logger.debug(f"Creating new connection: {self.alias}")
 
     def _create_collection(self) -> None:
-        from pymilvus import (
-            Collection,
-            CollectionSchema,
-            DataType,
-            FieldSchema,
-            MilvusException,
-        )
+        from pymilvus import (Collection, CollectionSchema, DataType,
+                              FieldSchema, MilvusException)
 
         try:
             fields = [
