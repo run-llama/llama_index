@@ -120,14 +120,11 @@ class TypesenseVectorStore(VectorStore):
     @staticmethod
     def _to_typesense_filter(standard_filters: MetadataFilters) -> str:
         """Convert from standard dataclass to typesense filter dict."""
-        filters = {}
         for filter in standard_filters.filters:
-            filters[filter.key] = filter.value
+            if filter.key == "filter_by":
+                return str(filter.value)
 
-        if "filter_by" in filters:
-            return str(filters["filter_by"])
-        else:
-            return ""
+        return ""
 
     def add(
         self,
@@ -175,7 +172,7 @@ class TypesenseVectorStore(VectorStore):
         except ImportError:
             raise ImportError("Typesense not found. Please run `pip install typesense`")
 
-        collection.documents.delete({"filter_by": f"ref_doc_id: {ref_doc_id}"})
+        collection.documents.delete({"filter_by": f"ref_doc_id:={ref_doc_id}"})
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query Typesense index for top k most similar nodes.
