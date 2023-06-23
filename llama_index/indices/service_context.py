@@ -12,6 +12,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.langchain_helpers.chain_wrapper import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
+from llama_index.llms.utils import LLMType
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.simple import SimpleNodeParser
@@ -71,7 +72,7 @@ class ServiceContext:
     def from_defaults(
         cls,
         llm_predictor: Optional[BaseLLMPredictor] = None,
-        llm: Optional[BaseLanguageModel] = None,
+        llm: Optional[LLMType] = None,
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[BaseEmbedding] = None,
         node_parser: Optional[NodeParser] = None,
