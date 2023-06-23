@@ -2,9 +2,8 @@
 
 from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
 
-from typing import List, Any, Sequence, Optional
+from typing import Any, Sequence, Optional
 from pydantic import BaseModel
-from sqlalchemy import Table
 from llama_index.langchain_helpers.sql_wrapper import SQLDatabase
 from llama_index.data_structs.node import Node
 
@@ -26,11 +25,13 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
     def from_objects(
         cls,
         objs: Sequence[SQLTableSchema],
-        sql_database: SQLDatabase,
         *args: Any,
+        sql_database: Optional[SQLDatabase] = None,
         **kwargs: Any,
     ) -> "BaseObjectNodeMapping":
         """Initialize node mapping."""
+        if sql_database is None:
+            raise ValueError("Must provide sql_database")
         # ignore objs, since we are building from sql_database
         return cls(sql_database)
 

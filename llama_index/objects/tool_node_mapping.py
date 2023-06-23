@@ -4,7 +4,7 @@ from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
 from llama_index.tools.types import BaseTool
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.data_structs.node import Node
-from typing import Sequence, Any
+from typing import Sequence, Any, Optional
 
 
 def convert_tool_to_node(tool: BaseTool) -> Node:
@@ -34,7 +34,8 @@ class SimpleToolNodeMapping(BaseToolNodeMapping):
 
     """
 
-    def __init__(self, objs: Sequence[BaseTool]) -> None:
+    def __init__(self, objs: Optional[Sequence[BaseTool]] = None) -> None:
+        objs = objs or []
         self._tools = {tool.metadata.name: tool for tool in objs}
 
     @classmethod
@@ -64,7 +65,8 @@ class BaseQueryToolNodeMapping(BaseObjectNodeMapping[QueryEngineTool]):
 class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):
     """Simple query tool mapping."""
 
-    def __init__(self, objs: Sequence[QueryEngineTool]) -> None:
+    def __init__(self, objs: Optional[Sequence[QueryEngineTool]] = None) -> None:
+        objs = objs or []
         self._tools = {tool.metadata.name: tool for tool in objs}
 
     def validate_object(self, obj: QueryEngineTool) -> None:

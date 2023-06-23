@@ -15,5 +15,5 @@ __all__ = [
     "SimpleToolNodeMapping",
     "SimpleQueryToolNodeMapping",
     "SQLTableNodeMapping",
-    "SQLTableSchema"
+    "SQLTableSchema",
 ]
