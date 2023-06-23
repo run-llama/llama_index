@@ -76,14 +76,14 @@ class MultiStepQueryEngine(BaseQueryEngine):
         query_event_id = self.callback_manager.on_event_start(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         )
-        nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
+        nodes, source_nodes, metadata = self._query_multistep(query_bundle)
 
         final_response = self._response_synthesizer.synthesize(
             query_bundle=query_bundle,
             nodes=nodes,
             additional_source_nodes=source_nodes,
         )
-        final_response.extra_info = extra_info
+        final_response.metadata = metadata
 
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
@@ -96,14 +96,14 @@ class MultiStepQueryEngine(BaseQueryEngine):
         event_id = self.callback_manager.on_event_start(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         )
-        nodes, source_nodes, extra_info = self._query_multistep(query_bundle)
+        nodes, source_nodes, metadata = self._query_multistep(query_bundle)
 
         final_response = await self._response_synthesizer.asynthesize(
             query_bundle=query_bundle,
             nodes=nodes,
             additional_source_nodes=source_nodes,
         )
-        final_response.extra_info = extra_info
+        final_response.metadata = metadata
 
         self.callback_manager.on_event_end(
             CBEventType.QUERY,
@@ -116,13 +116,11 @@ class MultiStepQueryEngine(BaseQueryEngine):
         self, query_bundle: QueryBundle, prev_reasoning: str
     ) -> QueryBundle:
         """Combine queries."""
-        transform_extra_info = {
+        transform_metadata = {
             "prev_reasoning": prev_reasoning,
             "index_summary": self._index_summary,
         }
-        query_bundle = self._query_transform(
-            query_bundle, extra_info=transform_extra_info
-        )
+        query_bundle = self._query_transform(query_bundle, metadata=transform_metadata)
         return query_bundle
 
     def _query_multistep(
@@ -135,7 +133,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
         cur_steps = 0
 
         # use response
-        final_response_extra_info: Dict[str, Any] = {"sub_qa": []}
+        final_response_metadata: Dict[str, Any] = {"sub_qa": []}
 
         text_chunks = []
         source_nodes = []
@@ -165,7 +163,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
             for source_node in cur_response.source_nodes:
                 source_nodes.append(source_node)
             # update extra info
-            final_response_extra_info["sub_qa"].append(
+            final_response_metadata["sub_qa"].append(
                 (updated_query_bundle.query_str, cur_response)
             )
 
@@ -177,4 +175,4 @@ class MultiStepQueryEngine(BaseQueryEngine):
         nodes = [
             NodeWithScore(node=TextNode(text=text_chunk)) for text_chunk in text_chunks
         ]
-        return nodes, source_nodes, final_response_extra_info
+        return nodes, source_nodes, final_response_metadata

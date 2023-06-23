@@ -40,11 +40,11 @@ def _get_node_info_from_metadata(
     metadata: Dict[str, Any], field_prefix: str
 ) -> Dict[str, Any]:
     """Get node extra info from metadata."""
-    node_extra_info = {}
+    node_metadata = {}
     for key, value in metadata.items():
         if key.startswith(field_prefix + "_"):
-            node_extra_info[key.replace(field_prefix + "_", "")] = value
-    return node_extra_info
+            node_metadata[key.replace(field_prefix + "_", "")] = value
+    return node_metadata
 
 
 def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
@@ -303,7 +303,7 @@ class PineconeVectorStore(VectorStore):
                 _logger.debug(
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
-                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     match.metadata, text_key=self._text_key
                 )
 
@@ -312,7 +312,7 @@ class PineconeVectorStore(VectorStore):
                 node = TextNode(
                     text=text,
                     id_=id,
-                    metadata=extra_info,
+                    metadata=metadata,
                     node_info=node_info,
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),

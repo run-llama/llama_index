@@ -146,14 +146,14 @@ class ChromaVectorStore(VectorStore):
                 node.set_content(text)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     metadata
                 )
 
                 node = TextNode(
                     text=text,
                     id_=node_id,
-                    metadata=extra_info,
+                    metadata=metadata,
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),
                     relationships=relationships,

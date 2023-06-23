@@ -93,10 +93,10 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         for n in nodes:
             if n.embedding is None:
                 self._service_context.embed_model.queue_text_for_embedding(
-                    n.get_doc_id(), n.get_content(metadata_mode=MetadataMode.EMBED)
+                    n.node_id, n.get_content(metadata_mode=MetadataMode.EMBED)
                 )
             else:
-                id_to_embed_map[n.get_doc_id()] = n.embedding
+                id_to_embed_map[n.node_id] = n.embedding
 
         # call embedding model to get embeddings
         (
@@ -108,7 +108,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         results = []
         for node in nodes:
-            embedding = id_to_embed_map[node.get_doc_id()]
+            embedding = id_to_embed_map[node.node_id]
             result = NodeWithEmbedding(node=node, embedding=embedding)
             results.append(result)
         return results
@@ -129,10 +129,10 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         for n in nodes:
             if n.embedding is None:
                 text_queue.append(
-                    (n.get_doc_id(), n.get_content(metadata_mode=MetadataMode.EMBED))
+                    (n.node_id, n.get_content(metadata_mode=MetadataMode.EMBED))
                 )
             else:
-                id_to_embed_map[n.get_doc_id()] = n.embedding
+                id_to_embed_map[n.node_id] = n.embedding
 
         # call embedding model to get embeddings
         (
@@ -147,7 +147,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         results = []
         for node in nodes:
-            embedding = id_to_embed_map[node.get_doc_id()]
+            embedding = id_to_embed_map[node.node_id]
             result = NodeWithEmbedding(node=node, embedding=embedding)
             results.append(result)
         return results

@@ -23,7 +23,7 @@ def test_storage_context_dict() -> None:
     loaded_storage_context = StorageContext.from_dict(save_dict)
 
     # test
-    assert loaded_storage_context.docstore.get_node(node.get_doc_id()) == node
+    assert loaded_storage_context.docstore.get_node(node.node_id) == node
     assert (
         storage_context.index_store.get_index_struct(index_struct.index_id)
         == index_struct

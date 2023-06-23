@@ -202,7 +202,7 @@ def test_file_metadata() -> None:
         documents = reader.load_data()
 
         for d in documents:
-            assert d.extra_info is not None and d.extra_info["author"] == test_author
+            assert d.metadata is not None and d.metadata["author"] == test_author
 
 
 def test_excluded_files() -> None:

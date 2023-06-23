@@ -35,9 +35,7 @@ class VideoAudioReader(BaseReader):
 
         self.parser_config = {"model": model}
 
-    def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
-    ) -> List[Document]:
+    def load_data(self, file: Path, metadata: Optional[Dict] = None) -> List[Document]:
         """Parse file."""
         import whisper
 
@@ -61,4 +59,4 @@ class VideoAudioReader(BaseReader):
 
         transcript = result["text"]
 
-        return [Document(text=transcript, metadata=extra_info)]
+        return [Document(text=transcript, metadata=metadata)]

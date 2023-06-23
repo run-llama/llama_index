@@ -114,9 +114,9 @@ class MyScaleVectorStore(VectorStore):
                 "type": "JSON",
                 "extract_func": lambda x: json.dumps(x.node.node_info),
             },
-            "extra_info": {
+            "metadata": {
                 "type": "JSON",
-                "extract_func": lambda x: json.dumps(x.node.extra_info),
+                "extract_func": lambda x: json.dumps(x.node.metadata),
             },
         }
 
@@ -249,7 +249,7 @@ class MyScaleVectorStore(VectorStore):
             node = TextNode(
                 id_=r["doc_id"],
                 text=r["text"],
-                metadata=r["extra_info"],
+                metadata=r["metadata"],
                 start_char_idx=start_char_idx,
                 end_char_idx=end_char_idx,
                 relationships={

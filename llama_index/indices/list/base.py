@@ -94,7 +94,6 @@ class ListIndex(BaseIndex[IndexList]):
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         for n in nodes:
-            # print("inserting node to index struct: ", n.get_doc_id())
             self._index_struct.add_node(n)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:

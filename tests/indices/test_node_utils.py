@@ -38,7 +38,7 @@ def test_get_nodes_from_document(
     nodes = get_nodes_from_document(
         documents[0],
         text_splitter,
-        include_extra_info=False,
+        include_metadata=False,
     )
     assert len(nodes) == 2
     actual_chunk_sizes = [
@@ -49,14 +49,14 @@ def test_get_nodes_from_document(
     )
 
 
-def test_get_nodes_from_document_with_extra_info(
+def test_get_nodes_from_document_with_metadata(
     documents: List[Document], text_splitter: TokenTextSplitter
 ) -> None:
     """Test get nodes from document with extra info have desired chunk size."""
     nodes = get_nodes_from_document(
         documents[0],
         text_splitter,
-        include_extra_info=True,
+        include_metadata=True,
     )
     assert len(nodes) == 3
     actual_chunk_sizes = [

@@ -8,9 +8,9 @@ from llama_index.schema import NodeWithScore
 from llama_index.utils import truncate_text
 
 
-def pprint_extra_info(extra_info: Dict[str, Any]) -> None:
+def pprint_metadata(metadata: Dict[str, Any]) -> None:
     """Display extra info for jupyter notebook."""
-    pprint(extra_info)
+    pprint(metadata)
 
 
 def pprint_source_node(

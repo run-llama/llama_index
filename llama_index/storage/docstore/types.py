@@ -18,7 +18,7 @@ class RefDocInfo(DataClassJsonMixin):
     """Dataclass to represent ingested documents."""
 
     doc_ids: List = field(default_factory=list)
-    extra_info: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 class BaseDocumentStore(ABC):

@@ -105,7 +105,7 @@ class VectorIndexRetriever(BaseRetriever):
                 if (not self._vector_store.stores_text) or (
                     source_node is not None and source_node.node_type != ObjectType.TEXT
                 ):
-                    node_id = query_result.nodes[i].get_doc_id()
+                    node_id = query_result.nodes[i].node_id
                     if node_id in self._docstore.docs:
                         query_result.nodes[
                             i

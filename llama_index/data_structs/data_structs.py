@@ -55,7 +55,7 @@ class IndexGraph(IndexStruct):
 
     def get_index(self, node: BaseNode) -> int:
         """Get index of node."""
-        return self.node_id_to_index[node.get_doc_id()]
+        return self.node_id_to_index[node.node_id]
 
     def insert(
         self,
@@ -65,7 +65,7 @@ class IndexGraph(IndexStruct):
     ) -> None:
         """Insert node."""
         index = index or self.size
-        node_id = node.get_doc_id()
+        node_id = node.node_id
 
         self.all_nodes[index] = node_id
 
@@ -120,7 +120,7 @@ class KeywordTable(IndexStruct):
         for keyword in keywords:
             if keyword not in self.table:
                 self.table[keyword] = set()
-            self.table[keyword].add(node.get_doc_id())
+            self.table[keyword].add(node.node_id)
 
     @property
     def node_ids(self) -> Set[str]:
@@ -152,7 +152,7 @@ class IndexList(IndexStruct):
     def add_node(self, node: BaseNode) -> None:
         """Add text to table, return current position in list."""
         # don't worry about child indices for now, nodes are all in order
-        self.nodes.append(node.get_doc_id())
+        self.nodes.append(node.node_id)
 
     @classmethod
     def get_type(cls) -> IndexStructType:
@@ -184,8 +184,8 @@ class IndexDict(IndexStruct):
         """Add text to table, return current position in list."""
         # # don't worry about child indices for now, nodes are all in order
         # self.nodes_dict[int_id] = node
-        vector_id = text_id if text_id is not None else node.get_doc_id()
-        self.nodes_dict[vector_id] = node.get_doc_id()
+        vector_id = text_id if text_id is not None else node.node_id
+        self.nodes_dict[vector_id] = node.node_id
 
         return vector_id
 
@@ -226,7 +226,7 @@ class KG(IndexStruct):
 
     def add_node(self, keywords: List[str], node: BaseNode) -> None:
         """Add text to table."""
-        node_id = node.get_doc_id()
+        node_id = node.node_id
         for keyword in keywords:
             if keyword not in self.table:
                 self.table[keyword] = set()

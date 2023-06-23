@@ -70,14 +70,14 @@ def legacy_metadata_dict_to_node(
     metadata.pop("doc_id", None)
     metadata.pop("ref_doc_id", None)
 
-    # remaining metadata is extra_info or node_info
-    extra_info = {}
+    # remaining metadata is metadata or node_info
+    metadata = {}
     for key, val in metadata.items():
-        # NOTE: right now we enforce extra_info to be dict of simple types.
+        # NOTE: right now we enforce metadata to be dict of simple types.
         #       dump anything that's not a simple type into node_info.
         if isinstance(val, (str, int, float, type(None))):
-            extra_info[key] = val
+            metadata[key] = val
         else:
             node_info[key] = val
 
-    return extra_info, node_info, relationships
+    return metadata, node_info, relationships

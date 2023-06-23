@@ -27,7 +27,7 @@ class NodeWithEmbedding:
 
     @property
     def id(self) -> str:
-        return self.node.get_doc_id()
+        return self.node.node_id
 
     @property
     def ref_doc_id(self) -> str:

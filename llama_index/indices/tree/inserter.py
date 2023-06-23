@@ -97,9 +97,7 @@ class TreeIndexInserter:
             # insert half1 and half2 as new children of parent_node
             # first remove child indices from parent node
             if parent_node is not None:
-                self.index_graph.node_id_to_children_ids[
-                    parent_node.get_doc_id()
-                ] = list()
+                self.index_graph.node_id_to_children_ids[parent_node.node_id] = list()
             else:
                 self.index_graph.root_nodes = {}
             self.index_graph.insert_under_parent(

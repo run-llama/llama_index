@@ -57,7 +57,7 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
     # infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
     date_key: str = "date"
     # if false, then search node info
-    in_extra_info: bool = True
+    in_metadata: bool = True
 
     def postprocess_nodes(
         self,
@@ -69,7 +69,7 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
-        # query_bundle = cast(QueryBundle, extra_info["query_bundle"])
+        # query_bundle = cast(QueryBundle, metadata["query_bundle"])
         # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
         # raw_pred, _ = self.service_context.llm_predictor.predict(
         #     prompt=infer_recency_prompt,
@@ -81,7 +81,7 @@ class FixedRecencyPostprocessor(BasePydanticNodePostprocessor):
         #     return nodes
 
         # sort nodes by date
-        info_dict_attr = "extra_info" if self.in_extra_info else "node_info"
+        info_dict_attr = "metadata" if self.in_metadata else "node_info"
         node_dates = pd.to_datetime(
             [getattr(node.node, info_dict_attr)[self.date_key] for node in nodes]
         )
@@ -133,7 +133,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
-        # query_bundle = cast(QueryBundle, extra_info["query_bundle"])
+        # query_bundle = cast(QueryBundle, metadata["query_bundle"])
         # infer_recency_prompt = SimpleInputPrompt(self.infer_recency_tmpl)
         # raw_pred, _ = self.service_context.llm_predictor.predict(
         #     prompt=infer_recency_prompt,
@@ -155,14 +155,14 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
         embed_model = self.service_context.embed_model
         for node in sorted_nodes:
             embed_model.queue_text_for_embedding(
-                node.node.get_doc_id(),
+                node.node.node_id,
                 node.node.get_content(metadata_mode=MetadataMode.EMBED),
             )
 
         _, text_embeddings = embed_model.get_queued_text_embeddings()
         node_ids_to_skip: Set[str] = set()
         for idx, node in enumerate(sorted_nodes):
-            if node.node.get_doc_id() in node_ids_to_skip:
+            if node.node.node_id in node_ids_to_skip:
                 continue
             # get query embedding for the "query" node
             # NOTE: not the same as the text embedding because
@@ -174,19 +174,17 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
             query_embedding = embed_model.get_query_embedding(query_text)
 
             for idx2 in range(idx + 1, len(sorted_nodes)):
-                if sorted_nodes[idx2].node.get_doc_id() in node_ids_to_skip:
+                if sorted_nodes[idx2].node.node_id in node_ids_to_skip:
                     continue
                 node2 = sorted_nodes[idx2]
                 if (
                     np.dot(query_embedding, text_embeddings[idx2])
                     > self.similarity_cutoff
                 ):
-                    node_ids_to_skip.add(node2.node.get_doc_id())
+                    node_ids_to_skip.add(node2.node.node_id)
 
         return [
-            node
-            for node in sorted_nodes
-            if node.node.get_doc_id() not in node_ids_to_skip
+            node for node in sorted_nodes if node.node.node_id not in node_ids_to_skip
         ]
 
 

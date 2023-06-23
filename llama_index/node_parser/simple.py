@@ -18,7 +18,7 @@ class SimpleNodeParser(NodeParser):
 
     Args:
         text_splitter (Optional[TextSplitter]): text splitter
-        include_extra_info (bool): whether to include extra info in nodes
+        include_metadata (bool): whether to include extra info in nodes
         include_prev_next_rel (bool): whether to include prev/next relationships
 
     """
@@ -26,7 +26,7 @@ class SimpleNodeParser(NodeParser):
     def __init__(
         self,
         text_splitter: Optional[TextSplitter] = None,
-        include_extra_info: bool = True,
+        include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
@@ -35,7 +35,7 @@ class SimpleNodeParser(NodeParser):
         self._text_splitter = text_splitter or TokenTextSplitter(
             callback_manager=self.callback_manager
         )
-        self._include_extra_info = include_extra_info
+        self._include_metadata = include_metadata
         self._include_prev_next_rel = include_prev_next_rel
 
     @classmethod
@@ -43,7 +43,7 @@ class SimpleNodeParser(NodeParser):
         cls,
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
-        include_extra_info: bool = True,
+        include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         callback_manager: Optional[CallbackManager] = None,
     ) -> "SimpleNodeParser":
@@ -58,7 +58,7 @@ class SimpleNodeParser(NodeParser):
         )
         return cls(
             text_splitter=token_text_splitter,
-            include_extra_info=include_extra_info,
+            include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
             callback_manager=callback_manager,
         )
@@ -71,7 +71,7 @@ class SimpleNodeParser(NodeParser):
 
         Args:
             documents (Sequence[Document]): documents to parse
-            include_extra_info (bool): whether to include extra info in nodes
+            include_metadata (bool): whether to include extra info in nodes
 
         """
         event_id = self.callback_manager.on_event_start(
@@ -82,7 +82,7 @@ class SimpleNodeParser(NodeParser):
             nodes = get_nodes_from_document(
                 document,
                 self._text_splitter,
-                self._include_extra_info,
+                self._include_metadata,
                 include_prev_next_rel=self._include_prev_next_rel,
             )
             all_nodes.extend(nodes)

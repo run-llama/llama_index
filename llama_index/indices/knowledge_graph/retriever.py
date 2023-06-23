@@ -281,7 +281,7 @@ class KGTableRetriever(BaseRetriever):
 
         return sorted_nodes_with_scores
 
-    def _get_extra_info_for_response(
+    def _get_metadata_for_response(
         self, nodes: List[BaseNode]
     ) -> Optional[Dict[str, Any]]:
         """Get extra info for response."""

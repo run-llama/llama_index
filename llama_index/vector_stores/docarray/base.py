@@ -186,13 +186,13 @@ class DocArrayVectorStore(VectorStore, ABC):
                 node.text = doc.text
             except Exception:
                 # TODO: legacy metadata support
-                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     doc.metadata
                 )
                 node = TextNode(
                     id_=doc.id,
                     text=doc.text,
-                    metadata=extra_info,
+                    metadata=metadata,
                     node_info=node_info,
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),

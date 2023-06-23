@@ -111,13 +111,13 @@ class TrafilaturaWebReader(BaseReader):
 
 def _substack_reader(soup: Any) -> Tuple[str, Dict[str, Any]]:
     """Extract text from Substack blog post."""
-    extra_info = {
+    metadata = {
         "Title of this Substack post": soup.select_one("h1.post-title").getText(),
         "Subtitle": soup.select_one("h3.subtitle").getText(),
         "Author": soup.select_one("span.byline-names").getText(),
     }
     text = soup.select_one("div.available-content").getText()
-    return text, extra_info
+    return text, metadata
 
 
 DEFAULT_WEBSITE_EXTRACTOR: Dict[str, Callable[[Any], Tuple[str, Dict[str, Any]]]] = {
@@ -186,14 +186,14 @@ class BeautifulSoupWebReader(BaseReader):
             soup = BeautifulSoup(page.content, "html.parser")
 
             data = ""
-            extra_info = {"URL": url}
+            metadata = {"URL": url}
             if hostname in self.website_extractor:
                 data, metadata = self.website_extractor[hostname](soup)
-                extra_info.update(metadata)
+                metadata.update(metadata)
             else:
                 data = soup.getText()
 
-            documents.append(Document(text=data, metadata=extra_info))
+            documents.append(Document(text=data, metadata=metadata))
 
         return documents
 
@@ -259,8 +259,8 @@ class RssReader(BaseReader):
 
                     data = html2text.html2text(data)
 
-                extra_info = {"title": entry.title, "link": entry.link}
-                documents.append(Document(text=data, metadata=extra_info))
+                metadata = {"title": entry.title, "link": entry.link}
+                documents.append(Document(text=data, metadata=metadata))
 
         return documents
 

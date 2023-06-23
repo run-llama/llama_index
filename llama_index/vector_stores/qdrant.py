@@ -185,14 +185,14 @@ class QdrantVectorStore(VectorStore):
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
-                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
                 )
 
                 node = TextNode(
                     id_=str(point.id),
                     text=payload.get("text"),
-                    metadata=extra_info,
+                    metadata=metadata,
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),
                     relationships=relationships,
