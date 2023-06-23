@@ -41,11 +41,23 @@ class ObjectIndex(Generic[OT]):
     def from_objects(
         cls,
         objects: Sequence[OT],
-        index_cls: Type[BaseIndex] = VectorStoreIndex,
         object_mapping_cls: Type[BaseObjectNodeMapping] = SimpleObjectNodeMapping,
+        index_cls: Type[BaseIndex] = VectorStoreIndex,
         **index_kwargs: Any,
     ) -> "ObjectIndex":
         object_node_mapping = object_mapping_cls.from_objects(objects)
+        nodes = object_node_mapping.to_nodes(objects)
+        index = index_cls(nodes, **index_kwargs)
+        return cls(index, object_node_mapping)
+
+    @classmethod
+    def from_objects_and_mapping(
+        cls,
+        objects: Sequence[OT],
+        object_node_mapping: BaseObjectNodeMapping,
+        index_cls: Type[BaseIndex] = VectorStoreIndex,
+        **index_kwargs: Any,
+    ) -> "ObjectIndex":
         nodes = object_node_mapping.to_nodes(objects)
         index = index_cls(nodes, **index_kwargs)
         return cls(index, object_node_mapping)

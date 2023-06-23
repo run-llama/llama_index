@@ -6,6 +6,7 @@ from llama_index.objects.tool_node_mapping import (
     SimpleToolNodeMapping,
     SimpleQueryToolNodeMapping,
 )
+from llama_index.objects.table_node_mapping import SQLTableNodeMapping, SQLTableSchema
 
 __all__ = [
     "ObjectRetriever",
@@ -13,4 +14,5 @@ __all__ = [
     "SimpleObjectNodeMapping",
     "SimpleToolNodeMapping",
     "SimpleQueryToolNodeMapping",
+    "SQLTableNodeMapping",
 ]
