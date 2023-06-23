@@ -29,21 +29,21 @@ class Refine(BaseResponseBuilder):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        return self.get_response(query_str, text_chunks, prev_response)
+        return self.get_response(query_str, text_chunks, **response_kwargs)
 
     @llm_token_counter("get_response")
     def get_response(
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
-        prev_response_obj = cast(Optional[RESPONSE_TEXT_TYPE], prev_response)
+        prev_response_obj = cast(
+            Optional[RESPONSE_TEXT_TYPE], response_kwargs.get("prev_response", None)
+        )
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
             if prev_response_obj is None:

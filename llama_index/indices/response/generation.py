@@ -23,12 +23,10 @@ class Generation(BaseResponseBuilder):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         # NOTE: ignore text chunks and previous response
         del text_chunks
-        del prev_response
 
         if not self._streaming:
             (
@@ -51,12 +49,10 @@ class Generation(BaseResponseBuilder):
         self,
         query_str: str,
         text_chunks: Sequence[str],
-        prev_response: Optional[str] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         # NOTE: ignore text chunks and previous response
         del text_chunks
-        del prev_response
 
         if not self._streaming:
             response, formatted_prompt = self._service_context.llm_predictor.predict(
