@@ -101,9 +101,9 @@ class VectorIndexRetriever(BaseRetriever):
             # NOTE: vector store keeps text, returns nodes.
             # Only need to recover image or index nodes from docstore
             for i in range(len(query_result.nodes)):
-                parent_node = query_result.nodes[i].parent_node
+                source_node = query_result.nodes[i].source_node
                 if (not self._vector_store.stores_text) or (
-                    parent_node is not None and parent_node.node_type != ObjectType.TEXT
+                    source_node is not None and source_node.node_type != ObjectType.TEXT
                 ):
                     node_id = query_result.nodes[i].get_doc_id()
                     if node_id in self._docstore.docs:

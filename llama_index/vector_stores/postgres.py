@@ -1,6 +1,6 @@
 from typing import List, Any, Type, Optional
 
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     VectorStore,
     NodeWithEmbedding,
@@ -110,7 +110,7 @@ class PGVectorStore(VectorStore):
                 item = self.table_class(
                     doc_id=result.id,
                     embedding=result.embedding,
-                    text=result.node.get_content(),
+                    text=result.node.get_content(metadata_mode=MetadataMode.NONE),
                     extra_info=node_to_metadata_dict(result.node, remove_text=True),
                 )
                 session.add(item)

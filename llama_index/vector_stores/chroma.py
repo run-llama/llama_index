@@ -3,7 +3,7 @@ import logging
 import math
 from typing import Any, List, cast
 
-from llama_index.schema import TextNode
+from llama_index.schema import TextNode, MetadataMode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -76,7 +76,9 @@ class ChromaVectorStore(VectorStore):
             embeddings.append(result.embedding)
             metadatas.append(node_to_metadata_dict(result.node, remove_text=True))
             ids.append(result.id)
-            documents.append(result.node.get_content() or "")
+            documents.append(
+                result.node.get_content(metadata_mode=MetadataMode.NONE) or ""
+            )
 
         self._collection.add(
             embeddings=embeddings,

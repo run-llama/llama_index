@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 if TYPE_CHECKING:
     from weaviate import Client
 
-from llama_index.schema import BaseNode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
@@ -142,7 +142,7 @@ def add_node(
 ) -> None:
     """Add node."""
     metadata = {}
-    metadata[text_key] = node.get_content() or ""
+    metadata[text_key] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
 
     additional_metadata = node_to_metadata_dict(node, remove_text=True)
     metadata.update(additional_metadata)

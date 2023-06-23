@@ -121,7 +121,14 @@ class DatasetGenerator:
         for node in nodes:
             if num is not None and len(questions) >= num:
                 break
-            index = ListIndex.from_documents([Document(text=node.get_content(metadata_mode=MetadataMode.NONE), metadata=node.metadata)])
+            index = ListIndex.from_documents(
+                [
+                    Document(
+                        text=node.get_content(metadata_mode=MetadataMode.NONE),
+                        metadata=node.metadata,
+                    )
+                ]
+            )
 
             query_engine = index.as_query_engine(
                 service_context=self.service_context,

@@ -3,7 +3,7 @@ import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 from typing import Any, Dict, List, Optional, Union
 
 
@@ -79,7 +79,6 @@ class BaseNode(BaseModel):
     embedding: Optional[List[float]] = Field(
         default=None, description="Embedding of the node."
     )
-    hash: str = Field(default="", description="Hash of the node content.")
     weight: float = Field(
         default=1.0,
         description="Optional field to weight the node similarity during retrieval.",
@@ -108,19 +107,7 @@ class BaseNode(BaseModel):
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
-
-    def __post_init__(self) -> None:
-        """Post init."""
-        # assign hash if not set
-        if not self.hash:
-            self.hash = self._generate_node_hash()
-
-        if self.metadata is not None:
-            _validate_is_flat_dict(self.metadata)
-
-    @abstractmethod
-    def _generate_node_hash(self) -> str:
-        """Generate a hash to represent the node."""
+    hash: str = Field(default="", description="Hash of the node content.")
 
     @classmethod
     @abstractmethod
@@ -263,10 +250,16 @@ class TextNode(BaseNode):
         description="Seperator between metadata fields when converting to string.",
     )
 
-    def _generate_node_hash(self) -> str:
+    @root_validator
+    def _check_hash(cls, values: dict) -> dict:
         """Generate a hash to represent the node."""
-        doc_identity = str(self.text) + str(self.metadata_str)
-        return sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest()
+        text = values.get("text", "")
+        metadata = values.get("metadata", {})
+        doc_identity = str(text) + str(metadata)
+        values["hash"] = str(
+            sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest()
+        )
+        return values
 
     @classmethod
     def get_type(cls) -> str:
@@ -276,7 +269,9 @@ class TextNode(BaseNode):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
         """Get object content."""
         metadata_str = self.metadata_str(mode=metadata_mode)
-        return self.text_template.format(content=self.text, metadata_str=metadata_str).strip()
+        return self.text_template.format(
+            content=self.text, metadata_str=metadata_str
+        ).strip()
 
     def metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
         """metadata info string."""

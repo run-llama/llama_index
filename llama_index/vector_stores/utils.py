@@ -30,7 +30,6 @@ def node_to_metadata_dict(
 
 def metadata_dict_to_node(metadata: dict) -> TextNode:
     """Common logic for loading Node data from metadata dict."""
-
     node_json = metadata.get("_node_content", None)
     if node_json is None:
         raise ValueError("Node content not found in metadata dict.")

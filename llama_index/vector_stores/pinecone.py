@@ -10,7 +10,7 @@ from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.schema import TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -206,7 +206,8 @@ class PineconeVectorStore(VectorStore):
             }
             if self._add_sparse_vector:
                 sparse_vector = generate_sparse_vectors(
-                    [node.get_content()], self._tokenizer
+                    [node.get_content(metadata_mode=MetadataMode.EMBED)],
+                    self._tokenizer,
                 )[0]
                 entry[SPARSE_VECTOR_KEY] = sparse_vector
 

@@ -5,14 +5,18 @@ from typing import Any, Dict, List, Optional, Type
 import numpy as np
 from pydantic import Field
 
-from llama_index.schema import TextNode
+from llama_index.schema import TextNode, MetadataMode
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +119,7 @@ class DocArrayVectorStore(VectorStore, ABC):
             self._schema(
                 id=result.id,
                 metadata=node_to_metadata_dict(result.node),
-                text=result.node.get_content(),
+                text=result.node.get_content(metadata_mode=MetadataMode.NONE),
                 embedding=result.embedding,
             )
             for result in embedding_results
@@ -177,9 +181,15 @@ class DocArrayVectorStore(VectorStore, ABC):
             )
         nodes, ids = [], []
         for doc in docs:
-            extra_info, node_info, relationships = metadata_dict_to_node(doc.metadata)
-            nodes.append(
-                TextNode(
+            try:
+                node = metadata_dict_to_node(doc.metadata)
+                node.text = doc.text
+            except Exception:
+                # TODO: legacy metadata support
+                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
+                    doc.metadata
+                )
+                node = TextNode(
                     id_=doc.id,
                     text=doc.text,
                     metadata=extra_info,
@@ -188,7 +198,8 @@ class DocArrayVectorStore(VectorStore, ABC):
                     end_char_idx=node_info.get("end", None),
                     relationships=relationships,
                 )
-            )
+
+            nodes.append(node)
             ids.append(doc.id)
         logger.info(f"Found {len(nodes)} results for the query")
 

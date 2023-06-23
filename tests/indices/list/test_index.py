@@ -36,7 +36,7 @@ def test_refresh_list(
 
     # ensure documents have doc_id
     for i in range(len(more_documents)):
-        more_documents[i].doc_id = str(i)
+        more_documents[i].doc_id = str(i)  # type: ignore[misc]
 
     # create index
     list_index = ListIndex.from_documents(
@@ -51,7 +51,7 @@ def test_refresh_list(
     # modify a document and test again
     more_documents = documents + [Document(text="Test document 2, now with changes!")]
     for i in range(len(more_documents)):
-        more_documents[i].doc_id = str(i)
+        more_documents[i].doc_id = str(i)  # type: ignore[misc]
 
     # second document should refresh
     refreshed_docs = list_index.refresh_ref_docs(more_documents)
@@ -97,7 +97,7 @@ def test_list_insert(
 
     # test insert with ID
     document = documents[0]
-    document.doc_id = "test_id"
+    document.doc_id = "test_id"  # type: ignore[misc]
     list_index = ListIndex([])
     list_index.insert(document)
     # check contents of nodes
@@ -136,7 +136,7 @@ def test_list_delete(
     assert nodes[1].ref_doc_id == "test_id_3"
     assert nodes[1].get_content() == "This is a test v2."
     # check that not in docstore anymore
-    source_doc = list_index.docstore.get_ref_doc_info("test_id_1")
+    source_doc = list_index.docstore.get_document("test_id_1", raise_error=False)
     assert source_doc is None
 
     list_index = ListIndex.from_documents(

@@ -8,7 +8,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.schema import TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -111,7 +111,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             entry = {
                 self._id_key: node_id,
                 self._embedding_key: result.embedding,
-                self._text_key: node.get_content() or "",
+                self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
             }
             data_to_insert.append(entry)

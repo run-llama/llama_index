@@ -2,7 +2,7 @@
 import json
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.schema import TextNode
+from llama_index.schema import MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
     VectorStore,
@@ -110,7 +110,9 @@ class OpensearchVectorClient:
             bulk_req.append({"index": {"_index": self._index, "_id": result.id}})
             bulk_req.append(
                 {
-                    self._text_field: result.node.get_content(),
+                    self._text_field: result.node.get_content(
+                        metadata_mode=MetadataMode.NONE
+                    ),
                     self._embedding_field: result.embedding,
                     self._extra_info_field: result.node.metadata,
                     "node_info": node_info,

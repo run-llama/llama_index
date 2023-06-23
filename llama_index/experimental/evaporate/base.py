@@ -122,10 +122,14 @@ class EvaporateExtractor:
         for node in nodes:
             llm_predictor = self._service_context.llm_predictor
             result, _ = llm_predictor.predict(
-                self._schema_id_prompt, topic=topic, chunk=node.get_content(metadata_mode=MetadataMode.LLM)
+                self._schema_id_prompt,
+                topic=topic,
+                chunk=node.get_content(metadata_mode=MetadataMode.LLM),
             )
 
-            existing_fields = extract_field_dicts(result, node.get_content(metadata_mode=MetadataMode.LLM))
+            existing_fields = extract_field_dicts(
+                result, node.get_content(metadata_mode=MetadataMode.LLM)
+            )
 
             for field in existing_fields:
                 field2count[field] += 1

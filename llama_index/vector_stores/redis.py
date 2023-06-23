@@ -14,7 +14,7 @@ from llama_index.readers.redis.utils import (
     convert_bytes,
     get_redis_query,
 )
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -149,7 +149,7 @@ class RedisVectorStore(VectorStore):
             mapping = {
                 "id": result.id,
                 "doc_id": result.ref_doc_id,
-                "text": result.node.get_content(),
+                "text": result.node.get_content(metadata_mode=MetadataMode.NONE),
                 self._vector_key: array_to_buffer(result.embedding),
             }
             additional_metadata = node_to_metadata_dict(result.node, remove_text=True)

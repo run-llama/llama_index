@@ -163,7 +163,8 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         for node in nodes:
             if node.embedding is None:
                 embed_model.queue_text_for_embedding(
-                    node.get_doc_id(), node.get_content(metadata_mode=MetadataMode.EMBED)
+                    node.get_doc_id(),
+                    node.get_content(metadata_mode=MetadataMode.EMBED),
                 )
             else:
                 id_to_embed_map[node.get_doc_id()] = node.embedding

@@ -254,7 +254,9 @@ class TreeSelectLeafRetriever(BaseRetriever):
             logger.info(info_str)
             if self._verbose:
                 print_text(info_str, end="\n")
-            debug_str = " ".join(selected_node.get_content(metadata_mode=MetadataMode.LLM).splitlines())
+            debug_str = " ".join(
+                selected_node.get_content(metadata_mode=MetadataMode.LLM).splitlines()
+            )
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
@@ -383,7 +385,9 @@ class TreeSelectLeafRetriever(BaseRetriever):
             logger.info(info_str)
             if self._verbose:
                 print_text(info_str, end="\n")
-            debug_str = " ".join(selected_node.get_content(metadata_mode=MetadataMode.LLM).splitlines())
+            debug_str = " ".join(
+                selected_node.get_content(metadata_mode=MetadataMode.LLM).splitlines()
+            )
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "

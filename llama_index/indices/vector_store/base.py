@@ -128,7 +128,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         text_queue: List[Tuple[str, str]] = []
         for n in nodes:
             if n.embedding is None:
-                text_queue.append((n.get_doc_id(), n.get_content(metadata_mode=MetadataMode.EMBED)))
+                text_queue.append(
+                    (n.get_doc_id(), n.get_content(metadata_mode=MetadataMode.EMBED))
+                )
             else:
                 id_to_embed_map[n.get_doc_id()] = n.embedding
 
