@@ -97,11 +97,11 @@ class BaseNode(BaseModel):
     )
     metadata_keys_to_exclude_for_embed: List[str] = Field(
         default_factory=list,
-        description="Metadata keys that are used during embedding generation.",
+        description="Metadata keys that are exluded from text for the embed model.",
     )
     metadata_keys_to_exclude_for_llm: List[str] = Field(
         default_factory=list,
-        description="Metadata keys that are readable by the LLM.",
+        description="Metadata keys that are exluded from text for the LLM.",
     )
     relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
         default_factory=dict,
