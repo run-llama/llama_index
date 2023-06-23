@@ -4,19 +4,18 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 
 """
 
-import json
 import logging
-from dataclasses import field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 if TYPE_CHECKING:
     from weaviate import Client
 
-from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import BaseNode, TextNode
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
     node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
 )
 
 _logger = logging.getLogger(__name__)
@@ -103,34 +102,6 @@ def get_all_properties(client: Any, class_name: str) -> List[str]:
     return [p["name"] for p in schema["properties"]]
 
 
-def _legacy_metadata_dict_to_node(entry: Dict[str, Any]) -> Tuple[dict, dict, dict]:
-    """Legacy logic for converting metadata dict to node data.
-    Only for backwards compatibility.
-    """
-    extra_info_str = entry["extra_info"]
-    if extra_info_str == "":
-        extra_info = {}
-    else:
-        extra_info = json.loads(extra_info_str)
-
-    node_info_str = entry["node_info"]
-    if node_info_str == "":
-        node_info = {}
-    else:
-        node_info = json.loads(node_info_str)
-
-    relationships_str = entry["relationships"]
-    relationships: Dict[NodeRelationship, RelatedNodeInfo]
-    if relationships_str == "":
-        relationships = field(default_factory=dict)
-    else:
-        relationships = {
-            NodeRelationship(k): RelatedNodeInfo(node_id=v)
-            for k, v in json.loads(relationships_str).items()
-        }
-    return extra_info, node_info, relationships
-
-
 def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
     """Get converted node similarity from distance."""
     distance = float(entry["_additional"][similarity_key])
@@ -144,20 +115,22 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
     text = entry.pop(text_key, "")
 
     try:
-        extra_info, node_info, relationships = metadata_dict_to_node(entry)
+        node = metadata_dict_to_node(entry)
+        node.text = text
     except Exception as e:
         _logger.debug("Failed to parse Node metadata, fallback to legacy logic.", e)
-        extra_info, node_info, relationships = _legacy_metadata_dict_to_node(entry)
+        extra_info, node_info, relationships = legacy_metadata_dict_to_node(entry)
 
-    return TextNode(
-        text=text,
-        id_=additional["id"],
-        metadata=extra_info,
-        start_char_idx=node_info.get("start", None),
-        end_char_idx=node_info.get("end", None),
-        relationships=relationships,
-        embedding=additional["vector"],
-    )
+        node = TextNode(
+            text=text,
+            id_=additional["id"],
+            metadata=extra_info,
+            start_char_idx=node_info.get("start", None),
+            end_char_idx=node_info.get("end", None),
+            relationships=relationships,
+            embedding=additional["vector"],
+        )
+    return node
 
 
 def add_node(
@@ -171,7 +144,7 @@ def add_node(
     metadata = {}
     metadata[text_key] = node.get_content() or ""
 
-    additional_metadata = node_to_metadata_dict(node)
+    additional_metadata = node_to_metadata_dict(node, remove_text=True)
     metadata.update(additional_metadata)
 
     vector = node.embedding

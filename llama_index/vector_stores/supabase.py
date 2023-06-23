@@ -11,7 +11,10 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,10 +92,10 @@ class SupabaseVectorStore(VectorStore):
         ids = []
 
         for result in embedding_results:
-            metadata_dict = node_to_metadata_dict(result.node)
             # NOTE: keep text in metadata dict since there's no special field in
             #       Supabase Vector.
-            metadata_dict["text"] = result.node.get_content()
+            metadata_dict = node_to_metadata_dict(result.node, remove_text=False)
+
             data.append((result.id, result.embedding, metadata_dict))
             ids.append(result.id)
 
@@ -137,17 +140,21 @@ class SupabaseVectorStore(VectorStore):
         nodes = []
         for id_, distance, metadata in results:
             """shape of the result is [(vector, distance, metadata)]"""
-
             text = metadata.pop("text", None)
-            extra_info, node_info, relationships = metadata_dict_to_node(metadata)
-            node = TextNode(
-                id_=id_,
-                text=text,
-                metadata=extra_info,
-                start_char_idx=node_info.get("start", None),
-                end_char_idx=node_info.get("end", None),
-                relationships=relationships,
-            )
+
+            try:
+                node = metadata_dict_to_node(metadata)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                extra_info, node_info, relationships = metadata_dict_to_node(metadata)
+                node = TextNode(
+                    id_=id_,
+                    text=text,
+                    metadata=extra_info,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
 
             nodes.append(node)
             similarities.append(1.0 - math.exp(-distance))

@@ -152,7 +152,7 @@ class TairVectorStore(VectorStore):
                 "doc_id": result.ref_doc_id,
                 "text": result.node.get_content(),
             }
-            metadata_dict = node_to_metadata_dict(result.node)
+            metadata_dict = node_to_metadata_dict(result.node, remove_text=True)
             attributes.update(metadata_dict)
 
             ids.append(result.id)
@@ -227,6 +227,7 @@ class TairVectorStore(VectorStore):
             pipe.tvs_hmget(self._index_name, key, "id", "doc_id", "text")
         metadatas = pipe.execute()
         for i, m in enumerate(metadatas):
+            # TODO: properly get the _node_conent
             doc_id = m[0].decode()
             node = TextNode(
                 text=m[2].decode(),

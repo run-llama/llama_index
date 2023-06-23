@@ -18,7 +18,7 @@ from llama_index.prompts.prompts import (
     SimpleInputPrompt,
 )
 from llama_index.response.schema import RESPONSE_TYPE, Response, StreamingResponse
-from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)
@@ -168,7 +168,7 @@ class ResponseSynthesizer:
 
         text_chunks = []
         for node_with_score in nodes:
-            text = node_with_score.node.get_content()
+            text = node_with_score.node.get_content(metadata_mode=MetadataMode.LLM)
             if self._optimizer is not None:
                 text = self._optimizer.optimize(query_bundle, text)
             text_chunks.append(text)
@@ -207,7 +207,7 @@ class ResponseSynthesizer:
 
         text_chunks = []
         for node_with_score in nodes:
-            text = node_with_score.node.get_content()
+            text = node_with_score.node.get_content(metadata_mode=MetadataMode.LLM)
             if self._optimizer is not None:
                 text = self._optimizer.optimize(query_bundle, text)
             text_chunks.append(text)

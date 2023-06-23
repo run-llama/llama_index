@@ -13,7 +13,7 @@ from llama_index import (
     QuestionAnswerPrompt,
     ServiceContext,
 )
-from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
 from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """Context information is below.\n"
@@ -121,7 +121,7 @@ class DatasetGenerator:
         for node in nodes:
             if num is not None and len(questions) >= num:
                 break
-            index = ListIndex.from_documents([Document(text=node.get_content())])
+            index = ListIndex.from_documents([Document(text=node.get_content(metadata_mode=MetadataMode.NONE), metadata=node.metadata)])
 
             query_engine = index.as_query_engine(
                 service_context=self.service_context,

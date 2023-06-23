@@ -26,7 +26,7 @@ from llama_index.prompts.prompts import (
     SchemaExtractPrompt,
     TableContextPrompt,
 )
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -117,7 +117,7 @@ class SQLDocumentContextBuilder:
         )
         text_chunks = []
         for doc in documents:
-            chunks = text_splitter.split_text(doc.get_content())
+            chunks = text_splitter.split_text(doc.get_content(metadata_mode=MetadataMode.LLM))
             text_chunks.extend(chunks)
         self._service_context.callback_manager.on_event_end(
             CBEventType.CHUNKING,
@@ -191,7 +191,7 @@ class BaseStructDatapointExtractor:
 
     def insert_datapoint_from_nodes(self, nodes: Sequence[BaseNode]) -> None:
         """Extract datapoint from a document and insert it."""
-        text_chunks = [node.get_content() for node in nodes]
+        text_chunks = [node.get_content(metadata_mode=MetadataMode.LLM) for node in nodes]
         fields = {}
         for i, text_chunk in enumerate(text_chunks):
             fmt_text_chunk = truncate_text(text_chunk, 50)

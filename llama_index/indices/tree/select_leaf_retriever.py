@@ -27,7 +27,7 @@ from llama_index.prompts.prompts import (
     TreeSelectPrompt,
 )
 from llama_index.response.schema import Response
-from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.utils import truncate_text
 
@@ -41,10 +41,10 @@ def get_text_from_node(
 ) -> str:
     """Get text from node."""
     level_str = "" if level is None else f"[Level {level}]"
-    fmt_text_chunk = truncate_text(node.get_content(), 50)
+    fmt_text_chunk = truncate_text(node.get_content(metadata_mode=MetadataMode.LLM), 50)
     logger.debug(f">{level_str} Searching in chunk: {fmt_text_chunk}")
 
-    response_txt = node.get_content()
+    response_txt = node.get_content(metadata_mode=MetadataMode.LLM)
     fmt_response = truncate_text(response_txt, 200)
     if verbose:
         print_text(f">{level_str} Got node text: {fmt_response}\n", color="blue")
@@ -133,7 +133,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         if prev_response is None:
             return cur_response
         else:
-            context_msg = selected_node.get_content()
+            context_msg = selected_node.get_content(metadata_mode=MetadataMode.LLM)
             (
                 cur_response,
                 formatted_refine_prompt,
@@ -254,11 +254,11 @@ class TreeSelectLeafRetriever(BaseRetriever):
             logger.info(info_str)
             if self._verbose:
                 print_text(info_str, end="\n")
-            debug_str = " ".join(selected_node.get_content().splitlines())
+            debug_str = " ".join(selected_node.get_content(metadata_mode=MetadataMode.LLM).splitlines())
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
-                f"{ selected_node.get_content() }"
+                f"{ selected_node.get_content(metadata_mode=MetadataMode.LLM) }"
             )
             logger.debug(full_debug_str)
             if self._verbose:
@@ -383,11 +383,11 @@ class TreeSelectLeafRetriever(BaseRetriever):
             logger.info(info_str)
             if self._verbose:
                 print_text(info_str, end="\n")
-            debug_str = " ".join(selected_node.get_content().splitlines())
+            debug_str = " ".join(selected_node.get_content(metadata_mode=MetadataMode.LLM).splitlines())
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
-                f"{ selected_node.get_content() }"
+                f"{ selected_node.get_content(metadata_mode=MetadataMode.LLM) }"
             )
             logger.debug(full_debug_str)
             if self._verbose:

@@ -144,6 +144,8 @@ def test_tree_summarize_response(mock_service_context: ServiceContext) -> None:
         refine_template=mock_refine_prompt,
     )
 
+    import pdb
+    pdb.set_trace()
     response = builder.get_response(
         text_chunks=texts, query_str=query_str, num_children=2
     )

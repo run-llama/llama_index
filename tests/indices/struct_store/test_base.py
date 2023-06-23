@@ -144,7 +144,7 @@ def test_sql_index_nodes(
         ),
         TextNode(
             text="user_id:8,foo:hello",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test2")},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test1")},
         ),
     ]
     sql_database = SQLDatabase(engine, metadata=metadata_obj)

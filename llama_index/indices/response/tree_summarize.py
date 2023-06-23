@@ -11,7 +11,7 @@ from llama_index.prompts.prompts import (
     RefinePrompt,
     SummaryPrompt,
 )
-from llama_index.schema import BaseNode, TextNode
+from llama_index.schema import BaseNode, TextNode, MetadataMode
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.token_counter.token_counter import llm_token_counter
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -44,9 +44,6 @@ class TreeSummarize(Refine):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Get tree summarize response."""
-        import pdb
-
-        pdb.set_trace()
         text_qa_template = self.text_qa_template.partial_format(query_str=query_str)
         summary_template = SummaryPrompt.from_prompt(text_qa_template)
 
@@ -136,7 +133,7 @@ class TreeSummarize(Refine):
         node_list = get_sorted_node_list(root_nodes)
         truncated_chunks = self._service_context.prompt_helper.truncate(
             prompt=text_qa_template,
-            text_chunks=[node.get_content() for node in node_list],
+            text_chunks=[node.get_content(metadata_mode=MetadataMode.LLM) for node in node_list],
         )
         node_text = "\n".join(truncated_chunks)
         # NOTE: the final response could be a string or a stream

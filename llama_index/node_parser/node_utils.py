@@ -10,7 +10,7 @@ from llama_index.langchain_helpers.text_splitter import (
     TokenTextSplitter,
 )
 from llama_index.readers.schema.base import ImageDocument
-from llama_index.schema import BaseNode, NodeRelationship, ImageNode, TextNode
+from llama_index.schema import BaseNode, NodeRelationship, ImageNode, TextNode, MetadataMode
 from llama_index.utils import truncate_text
 
 logger = logging.getLogger(__name__)
@@ -59,13 +59,13 @@ def get_nodes_from_document(
         start_char_idx = None
         end_char_idx = None
         if text_split.num_char_overlap is not None:
-            start_char_idx = (index_counter - text_split.num_char_overlap,)
+            start_char_idx = index_counter - text_split.num_char_overlap
             end_char_idx = index_counter - text_split.num_char_overlap + len(text_chunk)
         index_counter += len(text_chunk) + 1
 
         if isinstance(document, ImageDocument):
             image_node = ImageNode(
-                content=text_chunk,
+                text=text_chunk,
                 embedding=document.embedding,
                 metadata=document.metadata if include_extra_info else None,
                 start_char_idx=start_char_idx,
@@ -78,7 +78,7 @@ def get_nodes_from_document(
             nodes.append(image_node)  # type: ignore
         else:
             node = TextNode(
-                content=text_chunk,
+                text=text_chunk,
                 embedding=document.embedding,
                 metadata=document.metadata if include_extra_info else None,
                 start_char_idx=start_char_idx,

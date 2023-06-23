@@ -1,7 +1,7 @@
 import sys
 from unittest.mock import MagicMock
 
-from llama_index.schema import NodeRelationship, TextNode
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import NodeWithEmbedding
 
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
@@ -22,7 +22,9 @@ def test_weaviate_add() -> None:
                 node=TextNode(
                     text="test node text",
                     id_="test node id",
-                    relationships={NodeRelationship.SOURCE: "test doc id"},
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test doc id")
+                    },
                 ),
                 embedding=[0.5, 0.5],
             )

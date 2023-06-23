@@ -55,8 +55,8 @@ def ddb_docstore(kvstore_from_mocked_table: DynamoDBKVStore) -> DynamoDBDocument
 @pytest.mark.skipif(not has_boto_libs, reason="boto3 and/or moto not installed")
 def test_docstore(ddb_docstore: DynamoDBDocumentStore) -> None:
     """Test docstore."""
-    doc = Document(text="hello world", _id="d1", metadata={"foo": "bar"})
-    node = TextNode(text="my node", _id="d2", metadata={"node": "info"})
+    doc = Document(text="hello world", id_="d1", metadata={"foo": "bar"})
+    node = TextNode(text="my node", id_="d2", metadata={"node": "info"})
 
     # test get document
     docstore = ddb_docstore
