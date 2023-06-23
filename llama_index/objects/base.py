@@ -1,6 +1,6 @@
 """Base object types."""
 
-from typing import TypeVar, Generic, Sequence, Type, Any, List
+from typing import TypeVar, Generic, Sequence, Type, Any, List, Optional
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.vector_store.base import VectorStoreIndex
@@ -41,14 +41,15 @@ class ObjectIndex(Generic[OT]):
     def from_objects(
         cls,
         objects: Sequence[OT],
+        object_mapping: Optional[BaseObjectNodeMapping] = None,
         index_cls: Type[BaseIndex] = VectorStoreIndex,
-        object_mapping_cls: Type[BaseObjectNodeMapping] = SimpleObjectNodeMapping,
         **index_kwargs: Any,
     ) -> "ObjectIndex":
-        object_node_mapping = object_mapping_cls.from_objects(objects)
-        nodes = object_node_mapping.to_nodes(objects)
+        if object_mapping is None:
+            object_mapping = SimpleObjectNodeMapping.from_objects(objects)
+        nodes = object_mapping.to_nodes(objects)
         index = index_cls(nodes, **index_kwargs)
-        return cls(index, object_node_mapping)
+        return cls(index, object_mapping)
 
     def insert_object(self, obj: Any) -> None:
         self._object_node_mapping.add_object(obj)

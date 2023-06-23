@@ -1,6 +1,6 @@
 """Base object types."""
 
-from typing import TypeVar, Generic, Sequence, Any
+from typing import TypeVar, Generic, Sequence, Any, Optional
 from abc import abstractmethod
 from llama_index.data_structs.node import Node
 
@@ -72,7 +72,8 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
 
     """
 
-    def __init__(self, objs: Sequence[Any]) -> None:
+    def __init__(self, objs: Optional[Sequence[Any]] = None) -> None:
+        objs = objs or []
         for obj in objs:
             self.validate_object(obj)
         self._objs = {hash(str(obj)): obj for obj in objs}
