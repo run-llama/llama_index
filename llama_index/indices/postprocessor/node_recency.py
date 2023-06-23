@@ -8,7 +8,7 @@ from datetime import datetime
 from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, MetadataMode
 
 
 # NOTE: currently not being used
@@ -120,8 +120,6 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
     service_context: ServiceContext
     # infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
     date_key: str = "date"
-    # if false, then search node info
-    in_extra_info: bool = True
     similarity_cutoff: float = Field(default=0.7)
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)
 
@@ -147,9 +145,8 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
         #     return nodes
 
         # sort nodes by date
-        info_dict_attr = "extra_info" if self.in_extra_info else "node_info"
         node_dates = pd.to_datetime(
-            [getattr(node.node, info_dict_attr)[self.date_key] for node in nodes]
+            [node.node.metadata[self.date_key] for node in nodes]
         )
         sorted_node_idxs = np.flip(node_dates.argsort())
         sorted_nodes: List[NodeWithScore] = [nodes[idx] for idx in sorted_node_idxs]
@@ -158,7 +155,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
         embed_model = self.service_context.embed_model
         for node in sorted_nodes:
             embed_model.queue_text_for_embedding(
-                node.node.get_doc_id(), node.node.get_content()
+                node.node.get_doc_id(), node.node.get_content(metadata_mode=MetadataMode.EMBED)
             )
 
         _, text_embeddings = embed_model.get_queued_text_embeddings()
@@ -171,7 +168,7 @@ class EmbeddingRecencyPostprocessor(BasePydanticNodePostprocessor):
             # we want to optimize for retrieval results
 
             query_text = self.query_embedding_tmpl.format(
-                context_str=node.node.get_content(),
+                context_str=node.node.get_content(metadata_mode=MetadataMode.EMBED),
             )
             query_embedding = embed_model.get_query_embedding(query_text)
 

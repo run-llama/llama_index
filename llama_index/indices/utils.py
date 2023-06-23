@@ -3,7 +3,7 @@ import logging
 import re
 from typing import Dict, List, Optional, Set, Tuple
 
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import globals_helper, truncate_text
 from llama_index.vector_stores.types import VectorStoreQueryResult
 
@@ -75,7 +75,7 @@ def default_format_node_batch_fn(
     fmt_node_txts = []
     for idx in range(len(summary_nodes)):
         number = idx + 1
-        fmt_node_txts.append(f"Document {number}:\n{summary_nodes[idx].get_content()}")
+        fmt_node_txts.append(f"Document {number}:\n{summary_nodes[idx].get_content(metadata_mode=MetadataMode.LLM)}")
     return "\n\n".join(fmt_node_txts)
 
 

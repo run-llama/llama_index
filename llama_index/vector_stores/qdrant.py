@@ -4,9 +4,9 @@ An index that is built on top of an existing Qdrant collection.
 
 """
 import logging
-from typing import Any, List, Optional, Tuple, cast
+from typing import Any, List, Optional, cast
 
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import TextNode
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     NodeWithEmbedding,
@@ -14,18 +14,13 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def _legacy_metadata_dict_to_node(payload: Any) -> Tuple[dict, dict, dict]:
-    extra_info = payload.get("extra_info", {})
-    relationships = {
-        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=payload.get("doc_id", "None")),
-    }
-    node_info: dict = {}
-    return extra_info, node_info, relationships
 
 
 class QdrantVectorStore(VectorStore):
@@ -92,10 +87,7 @@ class QdrantVectorStore(VectorStore):
                 vectors.append(result.embedding)
                 node = result.node
 
-                metadata = {}
-                metadata["text"] = node.get_content() or ""
-                additional_metadata = node_to_metadata_dict(node)
-                metadata.update(additional_metadata)
+                metadata = node_to_metadata_dict(node)
 
                 payloads.append(metadata)
 
@@ -189,21 +181,22 @@ class QdrantVectorStore(VectorStore):
         for point in response:
             payload = cast(Payload, point.payload)
             try:
-                extra_info, node_info, relationships = metadata_dict_to_node(payload)
+                node = metadata_dict_to_node(payload)
             except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
                 logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
                 )
 
-            node = TextNode(
-                id_=str(point.id),
-                text=payload.get("text"),
-                metadata=extra_info,
-                start_char_idx=node_info.get("start", None),
-                end_char_idx=node_info.get("end", None),
-                relationships=relationships,
-            )
+                node = TextNode(
+                    id_=str(point.id),
+                    text=payload.get("text"),
+                    metadata=extra_info,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
             nodes.append(node)
             similarities.append(point.score)
             ids.append(str(point.id))

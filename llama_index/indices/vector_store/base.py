@@ -11,7 +11,7 @@ from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
-from llama_index.schema import BaseNode, ImageNode, IndexNode
+from llama_index.schema import BaseNode, ImageNode, IndexNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.token_counter.token_counter import llm_token_counter
@@ -93,7 +93,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         for n in nodes:
             if n.embedding is None:
                 self._service_context.embed_model.queue_text_for_embedding(
-                    n.get_doc_id(), n.get_content()
+                    n.get_doc_id(), n.get_content(metadata_mode=MetadataMode.EMBED)
                 )
             else:
                 id_to_embed_map[n.get_doc_id()] = n.embedding
@@ -128,7 +128,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         text_queue: List[Tuple[str, str]] = []
         for n in nodes:
             if n.embedding is None:
-                text_queue.append((n.get_doc_id(), n.get_content()))
+                text_queue.append((n.get_doc_id(), n.get_content(metadata_mode=MetadataMode.EMBED)))
             else:
                 id_to_embed_map[n.get_doc_id()] = n.embedding
 

@@ -15,7 +15,7 @@ from llama_index.prompts.choice_select import (
     DEFAULT_CHOICE_SELECT_PROMPT,
     ChoiceSelectPrompt,
 )
-from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore, MetadataMode
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class ListIndexEmbeddingRetriever(BaseRetriever):
                 nodes_embedded += 1
                 node.embedding = (
                     self._index.service_context.embed_model.get_text_embedding(
-                        node.get_content()
+                        node.get_content(metadata_mode=MetadataMode.EMBED)
                     )
                 )
 

@@ -192,12 +192,12 @@ class SimpleDirectoryReader(BaseReader):
                     reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
                     self.file_extractor[file_suffix] = reader_cls()
                 reader = self.file_extractor[file_suffix]
-                docs = reader.load_data(input_file, extra_info=metadata)
+                docs = reader.load_data(input_file, extra_info=metadata or {})
 
                 # iterate over docs if needed
                 if self.filename_as_id:
                     for i, doc in enumerate(docs):
-                        doc._id = f"{str(input_file)}_part_{i}"
+                        doc.id_ = f"{str(input_file)}_part_{i}"
 
                 documents.extend(docs)
             else:
@@ -205,9 +205,9 @@ class SimpleDirectoryReader(BaseReader):
                 with open(input_file, "r", errors=self.errors, encoding="utf8") as f:
                     data = f.read()
 
-                doc = Document(text=data, metadata=metadata)
+                doc = Document(text=data, metadata=metadata or {})
                 if self.filename_as_id:
-                    doc._id = str(input_file)
+                    doc.id_ = str(input_file)
 
                 documents.append(doc)
 

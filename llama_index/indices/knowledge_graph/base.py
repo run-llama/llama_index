@@ -23,7 +23,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.prompts.prompts import KnowledgeGraphPrompt
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 
@@ -135,7 +135,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         # do simple concatenation
         index_struct = self.index_struct_cls()
         for n in nodes:
-            triplets = self._extract_triplets(n.get_content())
+            triplets = self._extract_triplets(n.get_content(metadata_mode=MetadataMode.LLM))
             logger.debug(f"> Extracted triplets: {triplets}")
             for triplet in triplets:
                 subj, _, obj = triplet
@@ -159,7 +159,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         for n in nodes:
-            triplets = self._extract_triplets(n.get_content())
+            triplets = self._extract_triplets(n.get_content(metadata_mode=MetadataMode.LLM))
             logger.debug(f"Extracted triplets: {triplets}")
             for triplet in triplets:
                 subj, _, obj = triplet

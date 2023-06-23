@@ -16,7 +16,11 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +106,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             node_id = result.id
             node = result.node
 
-            metadata = node_to_metadata_dict(node)
+            metadata = node_to_metadata_dict(node, remove_text=True)
 
             entry = {
                 self._id_key: node_id,
@@ -172,19 +176,26 @@ class MongoDBAtlasVectorSearch(VectorStore):
             text = res.pop(self._text_key)
             score = res.pop("score")
             id = res.pop(self._id_key)
-            extra_info, node_info, relationships = metadata_dict_to_node(
-                res.pop(self._metadata_key)
-            )
 
-            node = TextNode(
-                text=text,
-                id_=id,
-                metadata=extra_info,
-                node_info=node_info,
-                start_char_idx=node_info.get("start", None),
-                end_char_idx=node_info.get("end", None),
-                relationships=relationships,
-            )
+            try:
+                node = metadata_dict_to_node(res.pop(self._metadata_key))
+                node.set_content(text)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
+                    res.pop(self._metadata_key)
+                )
+
+                node = TextNode(
+                    text=text,
+                    id_=id,
+                    metadata=extra_info,
+                    node_info=node_info,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
             top_k_ids.append(id)
             top_k_nodes.append(node)
             top_k_scores.append(score)

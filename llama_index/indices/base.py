@@ -91,7 +91,6 @@ class BaseIndex(Generic[IS], ABC):
         with service_context.callback_manager.as_trace("index_construction"):
             for doc in documents:
                 docstore.set_document_hash(doc.get_doc_id(), doc.hash)
-
             nodes = service_context.node_parser.get_nodes_from_documents(documents)
 
             return cls(

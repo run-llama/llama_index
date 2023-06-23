@@ -7,7 +7,7 @@ from llama_index.indices.postprocessor.node import BasePydanticNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.prompts import QuestionAnswerPrompt
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, MetadataMode
 
 
 DEFAULT_PII_TMPL = (
@@ -82,7 +82,7 @@ class PIINodePostprocessor(BasePydanticNodePostprocessor):
         new_nodes = []
         for node_with_score in nodes:
             node = node_with_score.node
-            new_text, mapping_info = self.mask_pii(node.get_content())
+            new_text, mapping_info = self.mask_pii(node.get_content(metadata_mode=MetadataMode.LLM))
             new_node = deepcopy(node)
             new_node.metadata[self.pii_node_info_key] = mapping_info
             new_node.get_content() == new_text
@@ -125,7 +125,7 @@ class NERPIINodePostprocessor(BasePydanticNodePostprocessor):
         new_nodes = []
         for node_with_score in nodes:
             node = node_with_score.node
-            new_text, mapping_info = self.mask_pii(ner, node.get_content())
+            new_text, mapping_info = self.mask_pii(ner, node.get_content(metadata_mode=MetadataMode.LLM))
             new_node = deepcopy(node)
             new_node.metadata[self.pii_node_info_key] = mapping_info
             new_node.get_content() == new_text

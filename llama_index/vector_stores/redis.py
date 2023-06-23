@@ -152,7 +152,7 @@ class RedisVectorStore(VectorStore):
                 "text": result.node.get_content(),
                 self._vector_key: array_to_buffer(result.embedding),
             }
-            additional_metadata = node_to_metadata_dict(result.node)
+            additional_metadata = node_to_metadata_dict(result.node, remove_text=True)
             mapping.update(additional_metadata)
 
             ids.append(result.id)

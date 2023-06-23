@@ -25,6 +25,7 @@ from llama_index.schema import (
     NodeWithScore,
     RelatedNodeInfo,
     TextNode,
+    MetadataMode
 )
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
@@ -222,9 +223,7 @@ def test_fixed_recency_postprocessor(
         node_with_scores, query_bundle=query_bundle
     )
     assert len(result_nodes) == 1
-    assert (
-        result_nodes[0].node.get_content() == "date: 2020-01-04\n\nThis is a test v2."
-    )
+    assert result_nodes[0].node.get_content() == "date: 2020-01-04\n\nThis is a test v2."    
 
 
 @patch.object(LLMPredictor, "predict", side_effect=mock_recency_predict)

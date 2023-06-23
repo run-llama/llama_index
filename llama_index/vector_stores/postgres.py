@@ -1,12 +1,13 @@
 from typing import List, Any, Type, Optional
 
+from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
     VectorStore,
     NodeWithEmbedding,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict
+from llama_index.vector_stores.utils import node_to_metadata_dict, metadata_dict_to_node
 
 
 def get_data_model(base: Type, index_name: str) -> Any:
@@ -22,7 +23,7 @@ def get_data_model(base: Type, index_name: str) -> Any:
         id = Column(BIGINT, primary_key=True, autoincrement=True)
         text = Column(VARCHAR, nullable=False)
         extra_info = Column(JSON)
-        doc_id = Column(VARCHAR)
+        doc_id = Column(VARCHAR)  # TODO: change to node_id
         embedding = Column(Vector(1536))  # type: ignore
 
     tablename = "data_%s" % index_name  # dynamic table name
@@ -110,7 +111,7 @@ class PGVectorStore(VectorStore):
                     doc_id=result.id,
                     embedding=result.embedding,
                     text=result.node.get_content(),
-                    extra_info=node_to_metadata_dict(result.node),
+                    extra_info=node_to_metadata_dict(result.node, remove_text=True),
                 )
                 session.add(item)
             session.commit()
@@ -138,16 +139,21 @@ class PGVectorStore(VectorStore):
         similarities = []
         ids = []
         for item, sim in results:
+            try:
+                node = metadata_dict_to_node(item.extra_info)
+                node.set_content(str(item.text))
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                node = TextNode(
+                    id_=item.doc_id,
+                    text=item.text,
+                    extra_info=item.extra_info,
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),
+                    },
+                )
             similarities.append(sim)
             ids.append(item.doc_id)
-            node = Node(
-                doc_id=item.doc_id,
-                text=item.text,
-                extra_info=item.extra_info,
-                relationships={
-                    DocumentRelationship.SOURCE: item.doc_id,
-                },
-            )
             nodes.append(node)
 
         return VectorStoreQueryResult(

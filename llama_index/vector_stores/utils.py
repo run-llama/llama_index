@@ -1,30 +1,23 @@
 import json
 from typing import Any, Dict, Tuple
 
-from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo
+from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, TextNode
 
 DEFAULT_TEXT_KEY = "text"
 
 
-def node_to_metadata_dict(node: BaseNode) -> dict:
+def node_to_metadata_dict(
+    node: BaseNode, remove_text: bool = False, text_field: str = DEFAULT_TEXT_KEY
+) -> dict:
     """Common logic for saving Node data into metadata dict."""
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = node.metadata
 
-    # store extra_info directly to allow metadata filtering
-    if node.metadata is not None:
-        metadata.update(node.metadata)
+    # store entire node as json string - some minor text duplication but meh
+    node_dict = node.dict()
+    if remove_text:
+        node_dict[text_field] = ""
 
-    # json-serialize the node_info
-    node_info_str = ""
-    if node.node_info is not None:  # type: ignore[attr-defined]
-        node_info_str = json.dumps(node.node_info)  # type: ignore[attr-defined]
-    metadata["node_info"] = node_info_str
-
-    # json-serialize the relationships
-    relationships_str = ""
-    if node.relationships is not None:
-        relationships_str = json.dumps(node.relationships)
-    metadata["relationships"] = relationships_str
+    metadata["_node_content"] = json.dumps(node_dict)
 
     # store ref doc id at top level to allow metadata filtering
     # kept for backwards compatibility, will consolidate in future
@@ -35,7 +28,18 @@ def node_to_metadata_dict(node: BaseNode) -> dict:
     return metadata
 
 
-def metadata_dict_to_node(
+def metadata_dict_to_node(metadata: dict) -> TextNode:
+    """Common logic for loading Node data from metadata dict."""
+
+    node_json = metadata.get("_node_content", None)
+    if node_json is None:
+        raise ValueError("Node content not found in metadata dict.")
+
+    return TextNode.parse_raw(node_json)
+
+
+# TODO: Deprecated conversion functions
+def legacy_metadata_dict_to_node(
     metadata: dict, text_key: str = DEFAULT_TEXT_KEY
 ) -> Tuple[dict, dict, dict]:
     """Common logic for loading Node data from metadata dict."""
@@ -56,7 +60,8 @@ def metadata_dict_to_node(
         relationships = {}
     else:
         relationships = {
-            NodeRelationship(k): v for k, v in json.loads(relationships_str).items()
+            NodeRelationship(k): RelatedNodeInfo(node_id=str(v))
+            for k, v in json.loads(relationships_str).items()
         }
 
     # remove other known fields

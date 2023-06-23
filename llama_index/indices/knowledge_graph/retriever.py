@@ -11,7 +11,7 @@ from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from llama_index.prompts.prompts import QueryKeywordExtractPrompt
-from llama_index.schema import BaseNode, NodeWithScore, TextNode
+from llama_index.schema import BaseNode, NodeWithScore, TextNode, MetadataMode
 from llama_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -152,7 +152,7 @@ class KGTableRetriever(BaseRetriever):
                         # node-keywords extraction with LLM will be called only once
                         # during indexing.
                         extended_subjs = self._get_keywords(
-                            self._docstore.get_node(node_id).get_content()
+                            self._docstore.get_node(node_id).get_content(metadata_mode=MetadataMode.LLM)
                         )
                         subjs.update(extended_subjs)
 

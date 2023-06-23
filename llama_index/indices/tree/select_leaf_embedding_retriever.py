@@ -9,7 +9,7 @@ from llama_index.indices.tree.select_leaf_retriever import (
     TreeSelectLeafRetriever,
 )
 from llama_index.indices.utils import get_sorted_node_list
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, MetadataMode
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):
         for node in nodes:
             if node.embedding is None:
                 node.embedding = self._service_context.embed_model.get_text_embedding(
-                    node.get_content()
+                    node.get_content(metadata_mode=MetadataMode.EMBED)
                 )
 
             similarity = self._service_context.embed_model.similarity(

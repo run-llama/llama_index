@@ -1,8 +1,7 @@
-import json
 import math
-from typing import Any, Dict, List, Tuple
+from typing import Any, List
 
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -10,7 +9,11 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
+)
 
 
 def _to_metal_filters(standard_filters: MetadataFilters) -> list:
@@ -23,17 +26,6 @@ def _to_metal_filters(standard_filters: MetadataFilters) -> list:
             }
         )
     return filters
-
-
-def _legacy_metadata_dict_to_node(metadata: Dict[str, Any]) -> Tuple[dict, dict, dict]:
-    if "extra_info" in metadata:
-        extra_info = json.loads(metadata["extra_info"])
-    else:
-        extra_info = {}
-    ref_doc_id = metadata["doc_id"]
-    relationships = {NodeRelationship.SOURCE: RelatedNodeInfo(node_id=ref_doc_id)}
-    node_info: dict = {}
-    return extra_info, node_info, relationships
 
 
 class MetalVectorStore(VectorStore):
@@ -89,23 +81,23 @@ class MetalVectorStore(VectorStore):
 
             # load additional Node data
             try:
-                extra_info, node_info, relationships = metadata_dict_to_node(
-                    item["metadata"]
-                )
+                node = metadata_dict_to_node(item["metadata"])
+                node.set_content(text)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
+                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
                     item["metadata"]
                 )
 
-            node = TextNode(
-                text=text,
-                id_=id_,
-                metadata=extra_info,
-                start_char_idx=node_info.get("start", None),
-                end_char_idx=node_info.get("end", None),
-                relationships=relationships,
-            )
+                node = TextNode(
+                    text=text,
+                    id_=id_,
+                    metadata=extra_info,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
             nodes.append(node)
             ids.append(id_)
 
@@ -136,7 +128,7 @@ class MetalVectorStore(VectorStore):
             metadata = {}
             metadata["text"] = result.node.get_content() or ""
 
-            additional_metadata = node_to_metadata_dict(result.node)
+            additional_metadata = node_to_metadata_dict(result.node, remove_text=True)
             metadata.update(additional_metadata)
 
             payload = {

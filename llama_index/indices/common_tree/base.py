@@ -14,6 +14,7 @@ from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import get_sorted_node_list, truncate_text
 from llama_index.prompts.prompts import SummaryPrompt
+from llama_index.schema import MetadataMode
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +88,7 @@ class GPTTreeIndexBuilder:
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
             truncated_chunks = self._service_context.prompt_helper.truncate(
                 prompt=self.summary_prompt,
-                text_chunks=[node.get_content() for node in cur_nodes_chunk],
+                text_chunks=[node.get_content(metadata_mode=MetadataMode.LLM) for node in cur_nodes_chunk],
             )
             text_chunk = "\n".join(truncated_chunks)
             indices.append(i)

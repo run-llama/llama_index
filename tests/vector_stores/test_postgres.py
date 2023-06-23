@@ -59,7 +59,9 @@ def node_embeddings() -> List[NodeWithEmbedding]:
             node=TextNode(
                 text="lorem ipsum",
                 id_="aaa",
-                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
+                },
             ),
         ),
         NodeWithEmbedding(
@@ -67,7 +69,9 @@ def node_embeddings() -> List[NodeWithEmbedding]:
             node=TextNode(
                 text="lorem ipsum",
                 id_="bbb",
-                relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
+                },
             ),
         ),
     ]

@@ -21,7 +21,7 @@ from llama_index.prompts.choice_select import (
     DEFAULT_CHOICE_SELECT_PROMPT,
     ChoiceSelectPrompt,
 )
-from llama_index.schema import NodeWithScore, BaseNode
+from llama_index.schema import NodeWithScore, BaseNode, MetadataMode
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +163,7 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         for node in nodes:
             if node.embedding is None:
                 embed_model.queue_text_for_embedding(
-                    node.get_doc_id(), node.get_content()
+                    node.get_doc_id(), node.get_content(metadata_mode=MetadataMode.EMBED)
                 )
             else:
                 id_to_embed_map[node.get_doc_id()] = node.embedding

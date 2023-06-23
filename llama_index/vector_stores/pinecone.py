@@ -8,9 +8,9 @@ import logging
 import os
 from collections import Counter
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.schema import TextNode, RelatedNodeInfo, NodeRelationship
+from llama_index.schema import TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     NodeWithEmbedding,
@@ -23,6 +23,7 @@ from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
     node_to_metadata_dict,
+    legacy_metadata_dict_to_node,
 )
 
 ID_KEY = "id"
@@ -108,14 +109,6 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     for filter in standard_filters.filters:
         filters[filter.key] = filter.value
     return filters
-
-
-def _legacy_metadata_dict_to_node(metadata: Dict[str, Any]) -> Tuple[dict, dict, dict]:
-    extra_info = _get_node_info_from_metadata(metadata, "extra_info")
-    node_info = _get_node_info_from_metadata(metadata, "node_info")
-    doc_id = metadata["doc_id"]
-    relationships = {NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc_id)}
-    return extra_info, node_info, relationships
 
 
 class PineconeVectorStore(VectorStore):
@@ -204,8 +197,7 @@ class PineconeVectorStore(VectorStore):
             node_id = result.id
             node = result.node
 
-            metadata = node_to_metadata_dict(node)
-            metadata[self._text_key] = node.get_content() or ""
+            metadata = node_to_metadata_dict(node, remove_text=False)
 
             entry = {
                 ID_KEY: node_id,
@@ -303,30 +295,28 @@ class PineconeVectorStore(VectorStore):
         top_k_ids = []
         top_k_scores = []
         for match in response.matches:
-            text = match.metadata[self._text_key]
-            id = match.id
             try:
-                extra_info, node_info, relationships = metadata_dict_to_node(
-                    match.metadata, text_key=self._text_key
-                )
+                node = metadata_dict_to_node(match.metadata)
             except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
                 _logger.debug(
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
-                # NOTE: deprecated legacy logic for backward compatibility
-                extra_info, node_info, relationships = _legacy_metadata_dict_to_node(
-                    match.metadata
+                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
+                    match.metadata, text_key=self._text_key
                 )
 
-            node = TextNode(
-                text=text,
-                id_=id,
-                metadata=extra_info,
-                node_info=node_info,
-                start_char_idx=node_info.get("start", None),
-                end_char_idx=node_info.get("end", None),
-                relationships=relationships,
-            )
+                text = match.metadata[self._text_key]
+                id = match.id
+                node = TextNode(
+                    text=text,
+                    id_=id,
+                    metadata=extra_info,
+                    node_info=node_info,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
             top_k_ids.append(match.id)
             top_k_nodes.append(node)
             top_k_scores.append(match.score)

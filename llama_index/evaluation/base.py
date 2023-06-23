@@ -133,7 +133,7 @@ class ResponseEvaluator:
         context = []
 
         for context_info in response.source_nodes:
-            context.append(Document(text=context_info.node.get_content()))
+            context.append(Document(context_info.node.get_content()))
 
         return context
 
@@ -253,7 +253,7 @@ class QueryResponseEvaluator(BaseEvaluator):
         context = []
 
         for context_info in response.source_nodes:
-            context.append(Document(text=context_info.node.get_content()))
+            context.append(Document(context_info.node.get_content()))
 
         return context
 
