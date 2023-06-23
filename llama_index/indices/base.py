@@ -280,7 +280,7 @@ class BaseIndex(Generic[IS], ABC):
         """Refresh an index with documents that have changed.
 
         This allows users to save LLM and Embedding model calls, while only
-        updating documents that have any changes in text or extra_info. It
+        updating documents that have any changes in text or metadata. It
         will also insert any documents that previously were not stored.
         """
         logger.warning(
@@ -295,7 +295,7 @@ class BaseIndex(Generic[IS], ABC):
         """Refresh an index with documents that have changed.
 
         This allows users to save LLM and Embedding model calls, while only
-        updating documents that have any changes in text or extra_info. It
+        updating documents that have any changes in text or metadata. It
         will also insert any documents that previously were not stored.
         """
         with self._service_context.callback_manager.as_trace("refresh"):

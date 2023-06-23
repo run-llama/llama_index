@@ -76,12 +76,12 @@ class KVDocumentStore(BaseDocumentStore):
         """
         for doc in docs:
             # NOTE: doc could already exist in the store, but we overwrite it
-            if not allow_update and self.document_exists(doc.get_doc_id()):
+            if not allow_update and self.document_exists(doc.node_id):
                 raise ValueError(
-                    f"doc_id {doc.get_doc_id()} already exists. "
+                    f"doc_id {doc.node_id} already exists. "
                     "Set allow_update to True to overwrite."
                 )
-            node_key = doc.get_doc_id()
+            node_key = doc.node_id
             data = doc_to_json(doc)
             self._kvstore.put(node_key, data, collection=self._node_collection)
 
@@ -89,9 +89,9 @@ class KVDocumentStore(BaseDocumentStore):
             metadata = {"doc_hash": doc.hash}
             if isinstance(doc, TextNode) and doc.ref_doc_id is not None:
                 ref_doc_info = self.get_ref_doc_info(doc.ref_doc_id) or RefDocInfo()
-                ref_doc_info.doc_ids.append(doc.get_doc_id())
-                if not ref_doc_info.extra_info:
-                    ref_doc_info.extra_info = doc.extra_info or {}
+                ref_doc_info.doc_ids.append(doc.node_id)
+                if not ref_doc_info.metadata:
+                    ref_doc_info.metadata = doc.metadata or {}
                 self._kvstore.put(
                     doc.ref_doc_id,
                     ref_doc_info.to_dict(),

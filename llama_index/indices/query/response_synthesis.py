@@ -122,12 +122,12 @@ class ResponseSynthesizer:
             verbose,
         )
 
-    def _get_extra_info_for_response(
+    def _get_metadata_for_response(
         self,
         nodes: List[BaseNode],
     ) -> Optional[Dict[str, Any]]:
         """Get extra info for response."""
-        return {node.get_doc_id(): node.metadata for node in nodes}
+        return {node.node_id: node.metadata for node in nodes}
 
     def _prepare_response_output(
         self,
@@ -135,7 +135,7 @@ class ResponseSynthesizer:
         source_nodes: List[NodeWithScore],
     ) -> RESPONSE_TYPE:
         """Prepare response object from response string."""
-        response_extra_info = self._get_extra_info_for_response(
+        response_metadata = self._get_metadata_for_response(
             [node_with_score.node for node_with_score in source_nodes]
         )
 
@@ -143,13 +143,13 @@ class ResponseSynthesizer:
             return Response(
                 response_str,
                 source_nodes=source_nodes,
-                extra_info=response_extra_info,
+                metadata=response_metadata,
             )
         elif response_str is None or isinstance(response_str, Generator):
             return StreamingResponse(
                 response_str,
                 source_nodes=source_nodes,
-                extra_info=response_extra_info,
+                metadata=response_metadata,
             )
         else:
             raise ValueError(

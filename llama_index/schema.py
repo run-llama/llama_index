@@ -130,10 +130,6 @@ class BaseNode(BaseModel):
     def node_id(self) -> str:
         return self.id_
 
-    # TODO: DEPRECATED
-    def get_doc_id(self) -> str:
-        return self.id_
-
     @property
     def source_node(self) -> Optional[RelatedNodeInfo]:
         """Source object node.
@@ -304,10 +300,8 @@ class TextNode(BaseNode):
         """Get node info."""
         return {"start": self.start_char_idx, "end": self.end_char_idx}
 
-    # TODO: deprecated node properties
     def get_text(self) -> str:
-        """Deprecated: Get text."""
-        return self.get_content()
+        return self.get_content(metadata_mode=MetadataMode.NONE)
 
     @property
     def node_info(self) -> Dict[str, Any]:

@@ -40,7 +40,7 @@ class OpensearchVectorClient:
         dim: int,
         embedding_field: str = "embedding",
         text_field: str = "content",
-        extra_info_field: str = "extra_info",
+        metadata_field: str = "metadata",
         method: Optional[dict] = None,
         auth: Optional[dict] = None,
     ):
@@ -82,7 +82,7 @@ class OpensearchVectorClient:
         self._dim = dim
         self._index = index
         self._text_field = text_field
-        self._extra_info_field = extra_info_field
+        self._metadata_field = metadata_field
         # initialize mapping
         idx_conf = {
             "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
@@ -114,7 +114,7 @@ class OpensearchVectorClient:
                         metadata_mode=MetadataMode.NONE
                     ),
                     self._embedding_field: result.embedding,
-                    self._extra_info_field: result.node.metadata,
+                    self._metadata_field: result.node.metadata,
                     "node_info": node_info,
                     "relationships": result.node.relationships,
                 }
@@ -161,7 +161,7 @@ class OpensearchVectorClient:
         for hit in res.json()["hits"]["hits"]:
             source = hit["_source"]
             text = source[self._text_field]
-            extra_info = source.get(self._extra_info_field)
+            metadata = source.get(self._metadata_field)
             node_id = hit["_id"]
             node_info = source.get("node_info")
             relationships = source.get("relationships")
@@ -173,7 +173,7 @@ class OpensearchVectorClient:
 
             node = TextNode(
                 text=text,
-                metadata=extra_info,
+                metadata=metadata,
                 id_=node_id,
                 start_char_idx=start_char_idx,
                 end_char_idx=end_char_idx,

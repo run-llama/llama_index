@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def get_text_splits_from_document(
     document: BaseNode,
     text_splitter: TextSplitter,
-    include_extra_info: bool = True,
+    include_metadata: bool = True,
 ) -> List[TextSplit]:
     """Break the document into chunks with additional info."""
     # TODO: clean up since this only exists due to the diff w LangChain's TextSplitter
@@ -33,7 +33,7 @@ def get_text_splits_from_document(
         # use this to extract extra information about the chunks
         text_splits = text_splitter.split_text_with_overlaps(
             document.get_content(metadata_mode=MetadataMode.NONE),
-            extra_info_str=document.metadata_str() if include_extra_info else None,
+            metadata_str=document.metadata_str() if include_metadata else None,
         )
     else:
         text_chunks = text_splitter.split_text(
@@ -47,14 +47,14 @@ def get_text_splits_from_document(
 def get_nodes_from_document(
     document: BaseNode,
     text_splitter: TextSplitter,
-    include_extra_info: bool = True,
+    include_metadata: bool = True,
     include_prev_next_rel: bool = False,
 ) -> List[TextNode]:
     """Get nodes from document."""
     text_splits = get_text_splits_from_document(
         document=document,
         text_splitter=text_splitter,
-        include_extra_info=include_extra_info,
+        include_metadata=include_metadata,
     )
 
     nodes: List[TextNode] = []
@@ -73,7 +73,7 @@ def get_nodes_from_document(
             image_node = ImageNode(
                 text=text_chunk,
                 embedding=document.embedding,
-                metadata=document.metadata if include_extra_info else {},
+                metadata=document.metadata if include_metadata else {},
                 start_char_idx=start_char_idx,
                 end_char_idx=end_char_idx,
                 image=document.image,
@@ -86,7 +86,7 @@ def get_nodes_from_document(
             node = TextNode(
                 text=text_chunk,
                 embedding=document.embedding,
-                metadata=document.metadata if include_extra_info else {},
+                metadata=document.metadata if include_metadata else {},
                 start_char_idx=start_char_idx,
                 end_char_idx=end_char_idx,
                 relationships={

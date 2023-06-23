@@ -163,11 +163,11 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         for node in nodes:
             if node.embedding is None:
                 embed_model.queue_text_for_embedding(
-                    node.get_doc_id(),
+                    node.node_id,
                     node.get_content(metadata_mode=MetadataMode.EMBED),
                 )
             else:
-                id_to_embed_map[node.get_doc_id()] = node.embedding
+                id_to_embed_map[node.node_id] = node.embedding
 
         (
             result_ids,
@@ -182,5 +182,5 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         )
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
-        node_embeddings = [id_to_embed_map[n.get_doc_id()] for n in nodes]
+        node_embeddings = [id_to_embed_map[n.node_id] for n in nodes]
         return query_bundle.embedding, node_embeddings

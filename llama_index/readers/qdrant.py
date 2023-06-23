@@ -179,7 +179,7 @@ class QdrantReader(BaseReader):
             document = Document(
                 doc_id=payload.get("doc_id"),
                 text=payload.get("text"),
-                extra_info=payload.get("extra_info"),
+                metadata=payload.get("metadata"),
                 embedding=vector,
             )
             documents.append(document)

@@ -70,7 +70,7 @@ class ChromaReader(BaseReader):
                 doc_id=result[0][0],
                 text=result[1][0],
                 embedding=result[2][0],
-                extra_info=result[3][0],
+                metadata=result[3][0],
             )
             documents.append(document)
 

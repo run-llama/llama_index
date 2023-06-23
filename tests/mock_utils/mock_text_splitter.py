@@ -6,7 +6,7 @@ from llama_index.langchain_helpers.text_splitter import TextSplit
 
 
 def patch_token_splitter_newline(
-    self: Any, text: str, extra_info_str: Optional[str] = None
+    self: Any, text: str, metadata_str: Optional[str] = None
 ) -> List[str]:
     """Mock token splitter by newline."""
     if text == "":
@@ -15,7 +15,7 @@ def patch_token_splitter_newline(
 
 
 def patch_token_splitter_newline_with_overlaps(
-    self: Any, text: str, extra_info_str: Optional[str]
+    self: Any, text: str, metadata_str: Optional[str]
 ) -> List[TextSplit]:
     """Mock token splitter by newline."""
     if text == "":
@@ -25,7 +25,7 @@ def patch_token_splitter_newline_with_overlaps(
 
 
 def mock_token_splitter_newline(
-    text: str, extra_info_str: Optional[str] = None
+    text: str, metadata_str: Optional[str] = None
 ) -> List[str]:
     """Mock token splitter by newline."""
     if text == "":
@@ -34,7 +34,7 @@ def mock_token_splitter_newline(
 
 
 def mock_token_splitter_newline_with_overlaps(
-    text: str, extra_info_str: Optional[str]
+    text: str, metadata_str: Optional[str]
 ) -> List[TextSplit]:
     """Mock token splitter by newline."""
     if text == "":

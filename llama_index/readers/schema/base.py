@@ -25,6 +25,10 @@ class Document(TextNode):
         """Get document ID."""
         return self.id_
 
+    def get_doc_id(self) -> str:
+        """TODO: Deprecated: Get document ID."""
+        return self.id_
+
     def __setattr__(self, name: str, value: object) -> None:
         if name in self._compat_fields:
             name = self._compat_fields[name]

@@ -72,7 +72,7 @@ class PsychicReader(BaseReader):
                 Document(
                     text=text,
                     doc_id=doc_id,
-                    extra_info={"connector_id": connector_id, "account_id": account_id},
+                    metadata={"connector_id": connector_id, "account_id": account_id},
                 )
             )
 

@@ -119,12 +119,12 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
         node.text = text
     except Exception as e:
         _logger.debug("Failed to parse Node metadata, fallback to legacy logic.", e)
-        extra_info, node_info, relationships = legacy_metadata_dict_to_node(entry)
+        metadata, node_info, relationships = legacy_metadata_dict_to_node(entry)
 
         node = TextNode(
             text=text,
             id_=additional["id"],
-            metadata=extra_info,
+            metadata=metadata,
             start_char_idx=node_info.get("start", None),
             end_char_idx=node_info.get("end", None),
             relationships=relationships,
@@ -148,7 +148,7 @@ def add_node(
     metadata.update(additional_metadata)
 
     vector = node.embedding
-    id = node.get_doc_id()
+    id = node.node_id
 
     # if batch object is provided (via a context manager), use that instead
     if batch is not None:

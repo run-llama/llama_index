@@ -32,18 +32,18 @@ def convert_docs_to_json(embedding_results: List[NodeWithEmbedding]) -> List[Dic
             # "created_at": ...,
             # "author": "..."",
         }
-        extra_info = embedding_result.node.metadata
-        if extra_info is not None:
-            if "source" in extra_info:
-                doc_dict["source"] = extra_info["source"]
-            if "source_id" in extra_info:
-                doc_dict["source_id"] = extra_info["source_id"]
-            if "url" in extra_info:
-                doc_dict["url"] = extra_info["url"]
-            if "created_at" in extra_info:
-                doc_dict["created_at"] = extra_info["created_at"]
-            if "author" in extra_info:
-                doc_dict["author"] = extra_info["author"]
+        metadata = embedding_result.node.metadata
+        if metadata is not None:
+            if "source" in metadata:
+                doc_dict["source"] = metadata["source"]
+            if "source_id" in metadata:
+                doc_dict["source_id"] = metadata["source_id"]
+            if "url" in metadata:
+                doc_dict["url"] = metadata["url"]
+            if "created_at" in metadata:
+                doc_dict["created_at"] = metadata["created_at"]
+            if "author" in metadata:
+                doc_dict["author"] = metadata["author"]
 
         docs.append(doc_dict)
     return docs

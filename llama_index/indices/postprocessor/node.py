@@ -104,7 +104,7 @@ def get_forward_nodes(
 ) -> Dict[str, NodeWithScore]:
     """Get forward nodes."""
     node = node_with_score.node
-    nodes: Dict[str, NodeWithScore] = {node.get_doc_id(): node_with_score}
+    nodes: Dict[str, NodeWithScore] = {node.node_id: node_with_score}
     cur_count = 0
     # get forward nodes in an iterative manner
     while cur_count < num_nodes:
@@ -117,7 +117,7 @@ def get_forward_nodes(
 
         next_node_id = next_node_info.node_id
         next_node = docstore.get_node(next_node_id)
-        nodes[next_node.get_doc_id()] = NodeWithScore(node=next_node)
+        nodes[next_node.node_id] = NodeWithScore(node=next_node)
         node = next_node
         cur_count += 1
     return nodes
@@ -129,7 +129,7 @@ def get_backward_nodes(
     """Get backward nodes."""
     node = node_with_score.node
     # get backward nodes in an iterative manner
-    nodes: Dict[str, NodeWithScore] = {node.get_doc_id(): node_with_score}
+    nodes: Dict[str, NodeWithScore] = {node.node_id: node_with_score}
     cur_count = 0
     while cur_count < num_nodes:
         prev_node_info = node.prev_node
@@ -139,7 +139,7 @@ def get_backward_nodes(
         prev_node = docstore.get_node(prev_node_id)
         if prev_node is None:
             break
-        nodes[prev_node.get_doc_id()] = NodeWithScore(node=prev_node)
+        nodes[prev_node.node_id] = NodeWithScore(node=prev_node)
         node = prev_node
         cur_count += 1
     return nodes
@@ -180,7 +180,7 @@ class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
         """Postprocess nodes."""
         all_nodes: Dict[str, NodeWithScore] = {}
         for node in nodes:
-            all_nodes[node.node.get_doc_id()] = node
+            all_nodes[node.node.node_id] = node
             if self.mode == "next":
                 all_nodes.update(get_forward_nodes(node, self.num_nodes, self.docstore))
             elif self.mode == "previous":
@@ -201,7 +201,7 @@ class PrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             # variable to check if cand node is inserted
             node_inserted = False
             for i, cand in enumerate(sorted_nodes):
-                node_id = node.node.get_doc_id()
+                node_id = node.node.node_id
                 # prepend to current candidate
                 prev_node_info = cand.node.prev_node
                 next_node_info = cand.node.next_node
@@ -318,7 +318,7 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
 
         all_nodes: Dict[str, NodeWithScore] = {}
         for node in nodes:
-            all_nodes[node.node.get_doc_id()] = node
+            all_nodes[node.node.node_id] = node
             # use response builder instead of llm_predictor directly
             # to be more robust to handling long context
             response_builder = get_response_builder(
@@ -349,5 +349,5 @@ class AutoPrevNextNodePostprocessor(BasePydanticNodePostprocessor):
             else:
                 raise ValueError(f"Invalid mode: {mode}")
 
-        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.node.get_doc_id())
+        sorted_nodes = sorted(all_nodes.values(), key=lambda x: x.node.node_id)
         return list(sorted_nodes)

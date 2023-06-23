@@ -78,17 +78,13 @@ def test_forward_back_processor(tmp_path: Path) -> None:
             node.relationships.update(
                 {
                     NodeRelationship.PREVIOUS: RelatedNodeInfo(
-                        node_id=nodes[i - 1].get_doc_id()
+                        node_id=nodes[i - 1].node_id
                     )
                 },
             )
         if i < len(nodes) - 1:
             node.relationships.update(
-                {
-                    NodeRelationship.NEXT: RelatedNodeInfo(
-                        node_id=nodes[i + 1].get_doc_id()
-                    )
-                },
+                {NodeRelationship.NEXT: RelatedNodeInfo(node_id=nodes[i + 1].node_id)},
             )
 
     docstore = SimpleDocumentStore()
@@ -100,9 +96,9 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     )
     processed_nodes = node_postprocessor.postprocess_nodes([nodes_with_scores[0]])
     assert len(processed_nodes) == 3
-    assert processed_nodes[0].node.get_doc_id() == "3"
-    assert processed_nodes[1].node.get_doc_id() == "2"
-    assert processed_nodes[2].node.get_doc_id() == "1"
+    assert processed_nodes[0].node.node_id == "3"
+    assert processed_nodes[1].node.node_id == "2"
+    assert processed_nodes[2].node.node_id == "1"
 
     # check for multiple nodes (nodes should not be duped)
     node_postprocessor = PrevNextNodePostprocessor(
@@ -112,9 +108,9 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         [nodes_with_scores[1], nodes_with_scores[2]]
     )
     assert len(processed_nodes) == 3
-    assert processed_nodes[0].node.get_doc_id() == "2"
-    assert processed_nodes[1].node.get_doc_id() == "1"
-    assert processed_nodes[2].node.get_doc_id() == "4"
+    assert processed_nodes[0].node.node_id == "2"
+    assert processed_nodes[1].node.node_id == "1"
+    assert processed_nodes[2].node.node_id == "4"
 
     # check for previous
     node_postprocessor = PrevNextNodePostprocessor(
@@ -124,9 +120,9 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         [nodes_with_scores[1], nodes_with_scores[2]]
     )
     assert len(processed_nodes) == 3
-    assert processed_nodes[0].node.get_doc_id() == "3"
-    assert processed_nodes[1].node.get_doc_id() == "2"
-    assert processed_nodes[2].node.get_doc_id() == "1"
+    assert processed_nodes[0].node.node_id == "3"
+    assert processed_nodes[1].node.node_id == "2"
+    assert processed_nodes[2].node.node_id == "1"
 
     # check that both works
     node_postprocessor = PrevNextNodePostprocessor(
@@ -135,9 +131,9 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     processed_nodes = node_postprocessor.postprocess_nodes([nodes_with_scores[2]])
     assert len(processed_nodes) == 3
     # nodes are sorted
-    assert processed_nodes[0].node.get_doc_id() == "2"
-    assert processed_nodes[1].node.get_doc_id() == "1"
-    assert processed_nodes[2].node.get_doc_id() == "4"
+    assert processed_nodes[0].node.node_id == "2"
+    assert processed_nodes[1].node.node_id == "1"
+    assert processed_nodes[2].node.node_id == "4"
 
     # check that num_nodes too high still works
     node_postprocessor = PrevNextNodePostprocessor(
@@ -146,11 +142,11 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     processed_nodes = node_postprocessor.postprocess_nodes([nodes_with_scores[2]])
     assert len(processed_nodes) == 5
     # nodes are sorted
-    assert processed_nodes[0].node.get_doc_id() == "3"
-    assert processed_nodes[1].node.get_doc_id() == "2"
-    assert processed_nodes[2].node.get_doc_id() == "1"
-    assert processed_nodes[3].node.get_doc_id() == "4"
-    assert processed_nodes[4].node.get_doc_id() == "5"
+    assert processed_nodes[0].node.node_id == "3"
+    assert processed_nodes[1].node.node_id == "2"
+    assert processed_nodes[2].node.node_id == "1"
+    assert processed_nodes[3].node.node_id == "4"
+    assert processed_nodes[4].node.node_id == "5"
 
     # check that nodes with gaps works
     node_postprocessor = PrevNextNodePostprocessor(
@@ -161,10 +157,10 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     )
     assert len(processed_nodes) == 4
     # nodes are sorted
-    assert processed_nodes[0].node.get_doc_id() == "3"
-    assert processed_nodes[1].node.get_doc_id() == "2"
-    assert processed_nodes[2].node.get_doc_id() == "4"
-    assert processed_nodes[3].node.get_doc_id() == "5"
+    assert processed_nodes[0].node.node_id == "3"
+    assert processed_nodes[1].node.node_id == "2"
+    assert processed_nodes[2].node.node_id == "4"
+    assert processed_nodes[3].node.node_id == "5"
 
     # check that nodes with gaps works
     node_postprocessor = PrevNextNodePostprocessor(
@@ -175,8 +171,8 @@ def test_forward_back_processor(tmp_path: Path) -> None:
     )
     assert len(processed_nodes) == 2
     # nodes are sorted
-    assert processed_nodes[0].node.get_doc_id() == "3"
-    assert processed_nodes[1].node.get_doc_id() == "5"
+    assert processed_nodes[0].node.node_id == "3"
+    assert processed_nodes[1].node.node_id == "5"
 
     # check that raises value error for invalid mode
     with pytest.raises(ValueError):
@@ -204,7 +200,7 @@ def test_fixed_recency_postprocessor(
 ) -> None:
     """Test fixed recency processor."""
 
-    # try in extra_info
+    # try in metadata
     nodes = [
         TextNode(
             text="Hello world.",
@@ -306,7 +302,7 @@ def test_embedding_recency_postprocessor(
     postprocessor = EmbeddingRecencyPostprocessor(
         top_k=1,
         service_context=service_context,
-        in_extra_info=False,
+        in_metadata=False,
         query_embedding_tmpl="{context_str}",
     )
     query_bundle: QueryBundle = QueryBundle(query_str="What is?")
@@ -317,7 +313,7 @@ def test_embedding_recency_postprocessor(
     assert result_nodes[0].node.get_content() == "This is a test v2."
     assert cast(Dict, result_nodes[0].node.metadata)["date"] == "2020-01-04"
     assert result_nodes[1].node.get_content() == "This is another test."
-    assert result_nodes[1].node.get_doc_id() == "3v2"
+    assert result_nodes[1].node.node_id == "3v2"
     assert cast(Dict, result_nodes[1].node.metadata)["date"] == "2020-01-03"
     assert result_nodes[2].node.get_content() == "This is a test."
     assert cast(Dict, result_nodes[2].node.metadata)["date"] == "2020-01-02"
@@ -344,7 +340,7 @@ def test_time_weighted_postprocessor(
     """Test time weighted processor."""
 
     key = "__last_accessed__"
-    # try in extra_info
+    # try in metadata
     nodes = [
         TextNode(text="Hello world.", id_="1", metadata={key: 0}),
         TextNode(text="This is a test.", id_="2", metadata={key: 1}),
@@ -390,7 +386,7 @@ def test_keyword_postprocessor() -> None:
     """Test keyword processor."""
 
     key = "__last_accessed__"
-    # try in extra_info
+    # try in metadata
     nodes = [
         TextNode(text="Hello world.", id_="1", metadata={key: 0}),
         TextNode(text="This is a test.", id_="2", metadata={key: 1}),

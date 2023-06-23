@@ -20,7 +20,7 @@ class Response:
 
     response: Optional[str]
     source_nodes: List[NodeWithScore] = field(default_factory=list)
-    extra_info: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
 
     def __str__(self) -> str:
         """Convert to string representation."""
@@ -50,7 +50,7 @@ class StreamingResponse:
 
     response_gen: Optional[Generator]
     source_nodes: List[NodeWithScore] = field(default_factory=list)
-    extra_info: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None
 
     def __str__(self) -> str:
@@ -69,7 +69,7 @@ class StreamingResponse:
             for text in self.response_gen:
                 response_txt += text
             self.response_txt = response_txt
-        return Response(self.response_txt, self.source_nodes, self.extra_info)
+        return Response(self.response_txt, self.source_nodes, self.metadata)
 
     def print_response_stream(self) -> None:
         """Print the response stream."""

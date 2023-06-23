@@ -86,7 +86,7 @@ class PptxReader(BaseReader):
     def load_data(
         self,
         file: Path,
-        extra_info: Optional[Dict] = None,
+        metadata: Optional[Dict] = None,
     ) -> List[Document]:
         """Parse file."""
         from pptx import Presentation
@@ -110,4 +110,4 @@ class PptxReader(BaseReader):
                 if hasattr(shape, "text"):
                     result += f"{shape.text}\n"
 
-        return [Document(text=result, metadata=extra_info)]
+        return [Document(text=result, metadata=metadata)]

@@ -27,7 +27,7 @@ class IndexDocumentSummary(IndexStruct):
         nodes: List[BaseNode],
     ) -> str:
         """Add node and summary."""
-        summary_id = summary_node.get_doc_id()
+        summary_id = summary_node.node_id
         ref_doc_id = summary_node.ref_doc_id
         if ref_doc_id is None:
             raise ValueError(
@@ -37,7 +37,7 @@ class IndexDocumentSummary(IndexStruct):
         self.doc_id_to_summary_id[ref_doc_id] = summary_id
 
         for node in nodes:
-            node_id = node.get_doc_id()
+            node_id = node.node_id
             if summary_id not in self.summary_id_to_node_ids:
                 self.summary_id_to_node_ids[summary_id] = []
             self.summary_id_to_node_ids[summary_id].append(node_id)
