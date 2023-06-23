@@ -24,6 +24,7 @@ as the storage backend for `VectorStoreIndex`.
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart] (https://www.mongodb.com/atlas/database).
+- Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 
 A detailed API reference is [found here](/reference/indices/vector_store.rst).
 
@@ -75,6 +76,7 @@ response = query_engine.query("What did the author do growing up?")
 Below we show more examples of how to construct various vector stores we support.
 
 **Redis**
+
 First, start Redis-Stack (or get url from Redis provider)
 
 ```bash
