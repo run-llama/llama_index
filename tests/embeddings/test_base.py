@@ -1,8 +1,8 @@
 """Embeddings."""
 from typing import Any, List
 from unittest.mock import patch
-from llama_index.embeddings.base import mean_agg
 
+from llama_index.embeddings.base import mean_agg
 from llama_index.embeddings.openai import OpenAIEmbedding
 
 
@@ -75,6 +75,20 @@ def test_embedding_similarity() -> None:
     query_embedding = [0.0, 1.0, 0.0]
     cosine = embed_model.similarity(query_embedding, text_embedding)
     assert cosine == 0.8
+
+
+def test_embedding_similarity_euclidean() -> None:
+    embed_model = OpenAIEmbedding()
+    query_embedding = [1.0, 0.0]
+    text1_embedding = [0.0, 1.0]  # further from query_embedding distance=1.414
+    text2_embedding = [1.0, 1.0]  # closer to query_embedding distance=1.0
+    euclidean_similarity1 = embed_model.similarity(
+        query_embedding, text1_embedding, mode="euclidean"
+    )
+    euclidean_similarity2 = embed_model.similarity(
+        query_embedding, text2_embedding, mode="euclidean"
+    )
+    assert euclidean_similarity1 < euclidean_similarity2
 
 
 def test_mean_agg() -> None:
